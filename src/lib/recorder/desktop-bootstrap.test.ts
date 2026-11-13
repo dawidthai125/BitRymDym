@@ -8,12 +8,15 @@ describe("desktop bootstrap", () => {
       supabaseUrl: "https://example.supabase.co",
       anonKey: "public-anon",
       beats: [
-        { id: "beat-1", title: "Noc", bpm: 140 },
+        { id: "beat-1", title: "Noc", bpm: 140, durationSeconds: 119.6 },
         { id: "beat-2", title: "Dzień", bpm: Number.NaN },
       ],
     });
     expect(Object.keys(body).sort()).toEqual(["anonKey", "beats", "supabaseUrl"]);
     expect(body.beats[1]?.bpm).toBe(0);
+    expect(body.beats[0]?.durationSeconds).toBe(120);
+    expect(body.beats[1]?.durationSeconds).toBe(0);
+    expect(Object.keys(body.beats[0] ?? {}).sort()).toEqual(["bpm", "durationSeconds", "id", "title"]);
     expect(body.beats).toHaveLength(2);
   });
 

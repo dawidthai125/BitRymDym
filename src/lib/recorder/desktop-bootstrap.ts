@@ -4,6 +4,8 @@ export type DesktopBeatChoice = {
   id: string;
   title: string;
   bpm: number;
+  /** Beat length for the recorder timeline. 0 when unknown. */
+  durationSeconds?: number;
 };
 
 export function desktopBootstrapBody(input: {
@@ -27,6 +29,10 @@ export function desktopBootstrapBody(input: {
       id: beat.id,
       title: beat.title,
       bpm: Number.isFinite(beat.bpm) ? beat.bpm : 0,
+      durationSeconds:
+        typeof beat.durationSeconds === "number" && Number.isFinite(beat.durationSeconds) && beat.durationSeconds > 0
+          ? Math.round(beat.durationSeconds)
+          : 0,
     })),
   };
 }

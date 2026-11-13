@@ -1,12 +1,14 @@
-"""Windows recorder. Mic to WAV, then the existing account, site, and project.
+"""Windows recording studio. Audacity-style tracks: catalog beat, vocal tracks up to the plan limit.
 
 Run from this folder: python record_app.py
-Effects are the site chain, saved on the vocal track. Mix, master, and notes
-stay on the site. This program does not load VST plugins.
+Record from the cursor with the beat and the other tracks in the headphones, edit clips on the
+timeline (select, delete, cut, copy, paste, split, move), then Gotowe: send to the site Studio
+(mix and master there) or, in Gold, save stems. No VST, no external listen links.
 """
 
 from __future__ import annotations
 
+import array
 import ctypes
 import json
 import math
@@ -20,8 +22,10 @@ import tkinter as tk
 import tkinter.font as tkfont
 import tkinter.ttk as ttk
 import webbrowser
+from dataclasses import dataclass, field, replace
 from datetime import datetime
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
+from typing import Callable
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -38,11 +42,9 @@ from account_upload import (
     upload_vocals,
 )
 from desk import (
-    fold_peaks,
     quality_note,
     scan_capture_log,
     level_text,
-    list_saved_takes,
     max_recording_tracks,
     max_take_seconds,
     open_session,
@@ -51,13 +53,29 @@ from desk import (
     read_prefs,
     seal_session,
     studio_url,
+    file_seconds,
     tail_peak_db,
     wav_data_offset_of,
-    wav_seconds,
     write_prefs,
 )
-from own_fx import FX, build_chain, display_tier, limits_from_usage
-from record_wav import edit_span, read_mono16, replace_mono16, take_stats, write_pcm16_wav
+from own_fx import display_tier, limits_from_usage
+from record_wav import read_mono16, replace_mono16, take_stats, write_pcm16_wav
+from timeline import (
+    RATE,
+    Clip,
+    block_peaks,
+    carve,
+    clip_at,
+    clip_key,
+    clip_samples,
+    extract,
+    ordered,
+    place,
+    render,
+    shift,
+    split_at,
+    track_end,
+)
 
 # tokens.css dark tape deck. Families match src/app/layout.tsx.
 # ExtraBold is the poster face (Big Shoulders 800). Fallbacks are the site stack.
@@ -75,6 +93,10 @@ LINE = "#3a3028"
 LINE_STRONG = "#5c4c3c"
 REC = "#ff4b36"
 REC_DEEP = "#8d2418"
+LANE_BG = "#120e0b"
+SEL_BG = "#3a3028"
+# Vocal clip colors, warm and tape-like, readable with dark ink on top.
+TRACK_COLORS = ("#e8735a", "#f2a93b", "#d9c45a", "#7cc68d", "#5fb6c9", "#9b8be0", "#d27fc0", "#e0937a")
 FONT_POSTER = "Arial Narrow"
 FONT_DISPLAY = "Georgia"
 FONT_UI = "Segoe UI"
@@ -164,6 +186,45 @@ SESSION = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-session.
 PREFS = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-prefs.json"
 PENDING = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-upload.json"
 TAKES = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "takes"
+DESK = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-sesja.json"
+
+
+@dataclass
+class Track:
+    """One vocal track. The beat is not a Track and does not count to the plan limit."""
+
+    name: str
+    color: str = TRACK_COLORS[0]
+    clips: list[Clip] = field(default_factory=list)
+    muted: bool = False
+    solo: bool = False
+    gain_db: float = 0.0
+
+
+def clock_text(seconds: float) -> str:
+    seconds = max(0.0, seconds)
+    return f"{int(seconds // 60)}:{seconds % 60:05.2f}"
+
+
+def shade(color: str, factor: float) -> str:
+    """Same hue, darker (factor < 1). Keeps the tape palette without new colors."""
+    raw = color.lstrip("#")
+    parts = [int(raw[index : index + 2], 16) for index in (0, 2, 4)]
+    return "#" + "".join(f"{max(0, min(255, int(part * factor))):02x}" for part in parts)
+
+
+def count_word(count: int, one: str, few: str, many: str) -> str:
+    """Polish plural: 1 ścieżka, 2 ścieżki, 5 ścieżek, 22 ścieżki."""
+    if count == 1:
+        return f"{count} {one}"
+    if count % 10 in (2, 3, 4) and count % 100 not in (12, 13, 14):
+        return f"{count} {few}"
+    return f"{count} {many}"
+
+
+def safe_name(text: str) -> str:
+    cleaned = "".join(char if char.isalnum() or char in "-_ " else "-" for char in text).strip().replace(" ", "-")
+    return cleaned[:60] or "nagranie"
 
 
 def first_file(paths: list[Path]) -> Path | None:
@@ -307,14 +368,19 @@ def mix_argv(
     beat: str | None,
     vocals: list[tuple[Path, float, float]],
     limit: int | None,
+    beat_start: float = 0.0,
+    beat_gain_db: float = 0.0,
 ) -> list[str]:
+    """Beat from beat_start (the cursor) plus vocal tracks already rendered from the same point."""
     argv = [ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin"]
     stems: list[tuple[float, float]] = []
     if beat:
+        if beat_start > 0:
+            argv.extend(["-ss", f"{beat_start:.3f}"])
         if isinstance(limit, int) and limit > 0:
-            argv.extend(["-t", str(limit)])
+            argv.extend(["-t", str(max(1, int(math.ceil(limit - beat_start))))])
         argv.extend(["-i", beat])
-        stems.append((0.85, 0.0))
+        stems.append((max(0.0, min(4.0, 0.85 * 10 ** (beat_gain_db / 20))), 0.0))
     for path, gain_db, pan in vocals:
         argv.extend(["-i", str(path)])
         stems.append((max(0.0, min(4.0, 10 ** (gain_db / 20))), pan))
@@ -627,6 +693,8 @@ def supabase_logout(url: str, anon_key: str, access_token: str) -> bool:
 
 
 class RecorderWindow:
+    # ---- window and screens -------------------------------------------------
+
     def __init__(self) -> None:
         load_user_fonts()
         windows_app_id()
@@ -642,6 +710,10 @@ class RecorderWindow:
         self._zoomed = False
         self._restore_geo = ""
         self._images: list[tk.PhotoImage] = []
+        self.ui = dpi_scale()
+        self.lane_h = int(96 * self.ui)
+        self.head_w = int(250 * self.ui)
+        self.clip_bar = int(17 * self.ui)
         self.shell = tk.Frame(self.root, bg=PAPER, highlightthickness=1, highlightbackground=LINE_STRONG)
         self.shell.pack(fill="both", expand=True)
         if self._borderless:
@@ -651,9 +723,11 @@ class RecorderWindow:
         else:
             self.root.geometry("480x740")
         self._apply_icon()
+        self._style_scroll()
         self.recording = False
         self._arming = False
         self._uploading = False
+        self._exporting = False
         self._pending: UploadState | None = load_pending()
         self._update: updater.Update | None = None
         self._update_ready: Path | None = None
@@ -667,22 +741,37 @@ class RecorderWindow:
         self._probe_after: str | None = None
         self._take_note = ""
         self._arm_token = 0
-        self._wave_cols: list[float] = []
-        self._wave_end = 0
-        self._wave_for: Path | None = None
-        self._beat_shown = 0.0
-        self.vocals: list[dict[str, object]] = []
+        self._play_token = 0
+        # Timeline state. Seconds everywhere; pixels only in painting.
+        self.tracks: list[Track] = []
+        self.rows: list[dict[str, object]] = []
         self.armed = 0
+        self.focus = 0
+        self.cursor = 0.0
+        self.sel: tuple[int, float, float] | None = None
+        self.pps = 14.0 * self.ui
+        self.view = 0.0
+        self.beat_muted = False
+        self.beat_gain_db = 0.0
+        self.undo_stack: list[tuple[list[Track], int]] = []
+        self.clipboard: list[Clip] = []
+        self._drag: dict[str, object] | None = None
+        self._audio: dict[str, array.array] = {}
+        self._peaks: dict[str, list[float]] = {}
+        self._listen_cache: tuple[str, float, tuple[str | None, int | None, str]] | None = None
+        self.playing = False
+        self._play_from = 0.0
+        self._play_t0 = 0.0
+        self._play_after: str | None = None
+        self.rec_track = 0
+        self.rec_start = 0.0
+        self._live_peaks: list[float] = []
+        self._live_off = 0
         self.capture: subprocess.Popen[bytes] | None = None
         self.monitor: subprocess.Popen[bytes] | None = None
         self.mix_feed: subprocess.Popen[bytes] | None = None
-        self._beat_ceiling: float | None = None
-        self._build_scroll()
-        self._build_update_bar()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
-        self.local_beat: Path | None = None
         self.wav_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-vocal.wav"
-        self.takes: list[Path] = []
         self.project_id = ""
         self._tick_id: str | None = None
         self.devices: list[str] = []
@@ -695,91 +784,1720 @@ class RecorderWindow:
         self.public_url = ""
         self.public_key = ""
         self.beats: list[tuple[str, str]] = []
+        self.beat_info: dict[str, tuple[str, int, float]] = {}
         self.tier = "FREE"
-        self.fx_vars: dict[str, tk.IntVar] = {}
         self.gate_status = tk.StringVar(value="Łączę ze stroną.")
         self.status = tk.StringVar(value="Ładuję listę bitów ze strony.")
-        self.plan_text = tk.StringVar(
-            value="Plan: zaloguj się. Do tego czasu 1 ścieżka wokalu, 4 efekty, nagranie do 30 s, bez ściszania pod bit."
-        )
-        self.clock = tk.StringVar(value="0.0 s / 30 s")
+        self.plan_text = tk.StringVar(value="Plan: zaloguj się.")
+        self.clock = tk.StringVar(value="0:00.00")
         self.device_var = tk.StringVar(value=self.devices[0] if self.devices else "Brak mikrofonu")
         self.beat_var = tk.StringVar()
+        self.title_var = tk.StringVar(value="Nagranie z komputera")
+        self.account_line = tk.StringVar(value="Konto")
         saved = load_session()
         if saved:
             self.public_url = saved.get("supabaseUrl", "")
             self.public_key = saved.get("anonKey", "")
             self.status.set("Jest zapisana sesja tego konta.")
+        self._build_update_bar()
         self._build_gate(saved if isinstance(saved, dict) else None)
         self._load_public()
-        self._build_deck()
-        self._build_account()
-        self._build_effects()
-        self._build_transport()
-        self.beat_var.trace_add("write", lambda *_args: self._sync_cassette())
-        self._sync_cassette()
-        self._paint_lamp()
-        self._draw_meter(-96.0)
+        self._build_studio()
+        self.beat_var.trace_add("write", lambda *_args: self._beat_changed())
         self._load_prefs()
-        self._load_saved_takes()
+        self._restore_desk()
         self._read_plan()
         if self.status_boot:
             self.status.set(self.status_boot)
             self.gate_status.set(self.status_boot)
-        self.root.bind("<Configure>", self._fit_copy)
         self.root.bind_all("<MouseWheel>", self._on_wheel)
+        for sequence, handler in (
+            ("<space>", lambda: self.toggle_play()),
+            ("<Delete>", lambda: self.edit("delete")),
+            ("<BackSpace>", lambda: self.edit("delete")),
+            ("<Control-z>", lambda: self.undo()),
+            ("<Control-x>", lambda: self.edit("cut")),
+            ("<Control-c>", lambda: self.edit("copy")),
+            ("<Control-v>", lambda: self.edit("paste")),
+            ("<Control-i>", lambda: self.edit("split")),
+            ("<Home>", lambda: self._set_cursor(0.0)),
+            ("<r>", lambda: self.record()),
+        ):
+            self.root.bind(sequence, lambda event, run=handler: self._key(event, run))
         self.show_gate()
+
+    def _key(self, event: tk.Event, run: Callable[[], object]) -> str | None:
+        """Shortcuts work on the timeline, not while typing in a text field."""
+        if not self.studio.winfo_manager() or isinstance(event.widget, (tk.Entry, tk.Listbox)):
+            return None
+        run()
+        return "break"
+
+    def _on_wheel(self, event: tk.Event) -> str | None:
+        if not self.studio.winfo_manager() or isinstance(event.widget, tk.Listbox):
+            return None
+        step = int(-event.delta / 120) or (-1 if event.delta < 0 else 1)
+        ctrl = bool(event.state & 0x4)
+        shift = bool(event.state & 0x1)
+        if ctrl:
+            self.zoom(1.25 if step < 0 else 0.8)
+        elif shift:
+            self._scroll_view(step * 60 / self.pps)
+        else:
+            self.track_canvas.yview_scroll(step, "units")
+        return "break"
+
+    def _fit_copy(self, event: tk.Event) -> None:
+        if event.widget is not self.root:
+            return
+        width = max(240, int(event.width) - 40)
+        for label in (getattr(self, "status_label", None),):
+            if label is not None:
+                label.configure(wraplength=width)
+
+    def show_gate(self) -> None:
+        self.studio.pack_forget()
+        self.gate.pack(fill="both", expand=True)
+        scale = dpi_scale()
+        self.root.minsize(int(420 * scale), int(640 * scale))
+        if self._borderless:
+            self._place_window(int(520 * scale), int(760 * scale))
+        elif self.root.winfo_width() > 640:
+            self.root.geometry("480x740")
+
+    def show_studio(self) -> None:
+        self.gate.pack_forget()
+        self.studio.pack(fill="both", expand=True)
+        scale = dpi_scale()
+        self.root.minsize(int(760 * scale), int(560 * scale))
+        self.root.update_idletasks()
+        width = min(self.root.winfo_screenwidth() - 20, int(1320 * scale))
+        height = min(self.root.winfo_screenheight() - 60, int(860 * scale))
+        if self._borderless:
+            self._place_window(width, height)
+        else:
+            self.root.geometry(f"{width}x{height}")
+        email = self.email.get().strip()
+        self.account_line.set(f"Konto: {email}" if email else "Konto")
+        if self._pending is not None:
+            self.status.set(
+                f"Poprzednia wysyłka nie skończyła się ({self._pending.summary()}). "
+                "Naciśnij Gotowe i Wrzuć do Studia, żeby ją dokończyć."
+            )
+        self.root.after(50, self._paint_all)
+
+    def _on_close(self) -> None:
+        if self._uploading and not messagebox.askyesno(
+            "BitRymDym",
+            "Wysyłka na konto jeszcze trwa. Jeśli zamkniesz program teraz, projekt na koncie może zostać niepełny. Zamknąć mimo to?",
+        ):
+            return
+        self._arm_token += 1
+        self._play_token += 1
+        self._cancel_tick()
+        self._stop_probe()
+        self._stop_monitor()
+        if self.capture:
+            stop_capture(self.capture)
+            self.capture = None
+            if self.recording:
+                self._keep_take()
+        self.recording = False
+        self._save_desk()
+        self.root.destroy()
+
+    # ---- layout ---------------------------------------------------------------
+
+    def _tool(self, parent: tk.Widget, text: str, command: object, fg: str = INK, bg: str = RACK, size: int = 12) -> tk.Button:
+        button = tk.Button(
+            parent,
+            text=text,
+            command=command,
+            bg=bg,
+            fg=fg,
+            activebackground=PANEL if bg == RACK else AMBER_SOFT,
+            activeforeground=fg,
+            disabledforeground=MUTE,
+            relief="flat",
+            bd=0,
+            padx=8,
+            pady=3,
+            font=(FONT_POSTER, size, "bold"),
+            cursor="hand2",
+            highlightthickness=1,
+            highlightbackground=LINE_STRONG,
+            takefocus=0,
+        )
+        return button
+
+    def _build_studio(self) -> None:
+        self.studio = tk.Frame(self.shell, bg=PAPER)
+        top = tk.Frame(self.studio, bg=PAPER)
+        top.pack(fill="x", padx=12, pady=(8, 0))
+        tk.Label(top, text="BitRymDym", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 20, "italic")).pack(side="left")
+        tk.Label(top, text="STUDIO NAGRAŃ", bg=PAPER, fg=AMBER, font=(FONT_META, 9)).pack(side="left", padx=(10, 0), pady=(8, 0))
+        self._tool(top, "WYLOGUJ", self.sign_out, SOFT).pack(side="right")
+        self._tool(top, "NOWY PROJEKT", self.new_project, SOFT).pack(side="right", padx=(0, 6))
+        tk.Label(top, textvariable=self.account_line, bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="right", padx=10)
+        rule = tk.Frame(self.studio, bg=AMBER, height=2)
+        rule.pack_propagate(False)
+        rule.pack(fill="x", padx=12, pady=(4, 6))
+
+        setup = tk.Frame(self.studio, bg=PAPER)
+        setup.pack(fill="x", padx=12)
+        tk.Label(setup, text="BIT", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
+        self.beat_button = self._tool(setup, "Wybierz bit z katalogu ▾", self.pick_beat, INK)
+        self.beat_button.configure(font=(FONT_UI, 10), anchor="w", width=34)
+        self.beat_button.pack(side="left", padx=(6, 14))
+        tk.Label(setup, text="MIKROFON", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
+        device_labels = self.devices or ["Brak mikrofonu"]
+        self.device_menu = tk.OptionMenu(setup, self.device_var, *device_labels)
+        self.device_menu.configure(
+            bg=RACK, fg=INK, activebackground=PANEL, activeforeground=INK, highlightthickness=1,
+            highlightbackground=LINE, font=(FONT_UI, 10), relief="flat", bd=0, anchor="w", width=22,
+        )
+        self.device_menu["menu"].configure(bg=RACK, fg=INK, activebackground=AMBER, activeforeground=ON_AMBER, font=(FONT_UI, 10))
+        self.device_menu.pack(side="left", padx=(6, 8))
+        self.probe_button = self._tool(setup, "PRÓBA MIKROFONU", self.toggle_mic_test, INK)
+        self.probe_button.pack(side="left")
+        self.probe_meter = tk.Canvas(setup, width=110, height=12, bg=RACK, highlightthickness=0, bd=0)
+        self.probe_meter.pack(side="left", padx=(8, 0))
+        self.probe_var = tk.StringVar(value="")
+        self.probe_label = tk.Label(setup, textvariable=self.probe_var, bg=PAPER, fg=SOFT, font=(FONT_UI, 9), anchor="w")
+        self.probe_label.pack(side="left", padx=8, fill="x", expand=True)
+
+        bar = tk.Frame(self.studio, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
+        bar.pack(fill="x", padx=12, pady=(8, 0))
+        self._tool(bar, "|◀", lambda: self._set_cursor(0.0), INK, size=13).pack(side="left", padx=(6, 2), pady=5)
+        self.play_button = self._tool(bar, "▶ GRAJ", self.play, ON_AMBER, AMBER, 13)
+        self.play_button.pack(side="left", padx=2, pady=5)
+        self._tool(bar, "■ STOP", self.stop, INK, size=13).pack(side="left", padx=2, pady=5)
+        self.rec_button = self._tool(bar, "● NAGRAJ", self.record, INK, REC, 13)
+        self.rec_button.pack(side="left", padx=2, pady=5)
+        clock = tk.Label(bar, textvariable=self.clock, bg="#0b0907", fg=AMBER, font=(FONT_META, 15), padx=10)
+        clock.pack(side="left", padx=(10, 4), pady=5)
+        self.lamp = tk.Canvas(bar, width=12, height=12, bg=PANEL, highlightthickness=0)
+        self.lamp.pack(side="left", padx=(4, 10))
+        tk.Frame(bar, bg=LINE_STRONG, width=1).pack(side="left", fill="y", padx=4, pady=6)
+        for text, mode in (("COFNIJ", "undo"), ("PODZIEL", "split"), ("WYTNIJ", "cut"), ("KOPIUJ", "copy"), ("WKLEJ", "paste"), ("USUŃ", "delete")):
+            command = self.undo if mode == "undo" else (lambda picked=mode: self.edit(picked))
+            self._tool(bar, text, command, REC if mode == "delete" else INK, size=11).pack(side="left", padx=2, pady=5)
+        self._tool(bar, "+", lambda: self.zoom(1.25), INK, size=13).pack(side="right", padx=(2, 6), pady=5)
+        self._tool(bar, "−", lambda: self.zoom(0.8), INK, size=13).pack(side="right", padx=2, pady=5)
+        tk.Label(bar, text="ZOOM", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="right", padx=(8, 2))
+
+        outer = tk.Frame(self.studio, bg=PAPER)
+        outer.pack(fill="both", expand=True, padx=12, pady=(6, 0))
+        lanes = tk.Frame(outer, bg=PAPER)
+        vscroll_host = tk.Frame(outer, bg=PAPER)
+        vscroll_host.pack(side="right", fill="y")
+        lanes.pack(side="left", fill="both", expand=True)
+        ruler_row = tk.Frame(lanes, bg=PAPER)
+        ruler_row.pack(fill="x")
+        spacer = tk.Frame(ruler_row, bg=PAPER, width=self.head_w + 1, height=1)
+        spacer.pack(side="left", fill="y")
+        spacer.pack_propagate(False)
+        tk.Label(spacer, text="ŚCIEŻKI", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left", padx=4)
+        self.ruler = tk.Canvas(ruler_row, height=int(24 * self.ui), bg="#0b0907", highlightthickness=0, bd=0, cursor="hand2")
+        self.ruler.pack(side="left", fill="x", expand=True)
+        self.ruler.bind("<Button-1>", lambda event: self._ruler_click(event))
+        self.ruler.bind("<B1-Motion>", lambda event: self._ruler_click(event))
+        body = tk.Frame(lanes, bg=PAPER)
+        body.pack(fill="both", expand=True)
+        self.track_canvas = tk.Canvas(body, bg=PAPER, highlightthickness=0, bd=0, yscrollincrement=int(24 * self.ui))
+        vscroll = ttk.Scrollbar(vscroll_host, command=self.track_canvas.yview, style="Brd.Vertical.TScrollbar")
+        self.track_canvas.configure(yscrollcommand=vscroll.set)
+        vscroll.pack(fill="y", expand=True, pady=(int(24 * self.ui), 16))
+        self.track_canvas.pack(side="left", fill="both", expand=True)
+        self.row_host = tk.Frame(self.track_canvas, bg=PAPER)
+        self._row_window = self.track_canvas.create_window((0, 0), window=self.row_host, anchor="nw")
+        self.row_host.bind("<Configure>", lambda _e: self.track_canvas.configure(scrollregion=self.track_canvas.bbox("all")))
+        self.track_canvas.bind("<Configure>", self._fit_rows)
+        self.hscroll = ttk.Scrollbar(lanes, orient="horizontal", command=self._hscroll, style="Brd.Horizontal.TScrollbar")
+        self.hscroll.pack(fill="x", padx=(self.head_w + 1, 0))
+        self._build_beat_row()
+        self.vocal_host = tk.Frame(self.row_host, bg=PAPER)
+        self.vocal_host.pack(fill="x")
+
+        foot = tk.Frame(self.studio, bg=PAPER)
+        foot.pack(fill="x", padx=12, pady=(8, 0))
+        self.add_button = self._tool(foot, "+ DODAJ ŚCIEŻKĘ", self.add_track, INK, size=12)
+        self.add_button.pack(side="left")
+        tk.Label(foot, textvariable=self.plan_text, bg=PAPER, fg=SOFT, font=(FONT_UI, 9)).pack(side="left", padx=12)
+        self.done_button = self._tool(foot, "GOTOWE  ✓", self.open_done, ON_AMBER, AMBER, 15)
+        self.done_button.configure(padx=22, pady=6)
+        self.done_button.pack(side="right")
+        self.status_label = tk.Label(
+            self.studio, textvariable=self.status, wraplength=900, justify="left", anchor="w", bg=PAPER, fg=INK, font=(FONT_UI, 10)
+        )
+        self.status_label.pack(fill="x", padx=12, pady=(8, 2))
+        self.foot_label = tk.Label(
+            self.studio,
+            text=(
+                "Klik: kursor. Przeciągnij po ścieżce: zaznaczenie. Pasek klipu: przesuń. Spacja: graj/stop, R: nagraj, "
+                f"Delete: usuń, Ctrl+X/C/V, Ctrl+I: podziel, Ctrl+Z: cofnij. Wersja {updater.APP_VERSION}."
+            ),
+            bg=PAPER, fg=MUTE, font=(FONT_UI, 8), anchor="w", justify="left",
+        )
+        self.foot_label.pack(fill="x", padx=12, pady=(0, 8))
+        self.root.bind("<Configure>", self._fit_copy)
+        self._paint_lamp()
+        self._sync_beat_button()
 
     def _style_scroll(self) -> None:
         style = ttk.Style(self.root)
         style.theme_use("clam")
-        style.configure(
-            "Brd.Vertical.TScrollbar",
-            background=LINE_STRONG,
-            troughcolor=PAPER,
-            bordercolor=PAPER,
-            arrowcolor=SOFT,
-            darkcolor=PAPER,
-            lightcolor=PAPER,
-            gripcount=0,
-            relief="flat",
-            arrowsize=12,
+        for name in ("Brd.Vertical.TScrollbar", "Brd.Horizontal.TScrollbar"):
+            style.configure(
+                name, background=LINE_STRONG, troughcolor=PAPER, bordercolor=PAPER, arrowcolor=SOFT,
+                darkcolor=PAPER, lightcolor=PAPER, gripcount=0, relief="flat", arrowsize=12,
+            )
+            style.map(name, background=[("active", AMBER_DEEP), ("pressed", AMBER)])
+
+    def _fit_rows(self, event: tk.Event) -> None:
+        self.track_canvas.itemconfigure(self._row_window, width=event.width)
+        self.root.after_idle(self._paint_all)
+
+    def _row_frame(self, parent: tk.Widget) -> tuple[tk.Frame, tk.Frame, tk.Canvas]:
+        row = tk.Frame(parent, bg=LINE, highlightthickness=0)
+        row.pack(fill="x", pady=(0, 3))
+        head = tk.Frame(
+            row, bg=PANEL, width=self.head_w, height=self.lane_h, highlightthickness=2, highlightbackground=PANEL, highlightcolor=PANEL
         )
-        style.map(
-            "Brd.Vertical.TScrollbar",
-            background=[("active", AMBER_DEEP), ("pressed", AMBER)],
+        head.pack(side="left", fill="y")
+        head.pack_propagate(False)
+        lane = tk.Canvas(row, height=self.lane_h, bg=LANE_BG, highlightthickness=0, bd=0, cursor="xterm")
+        lane.pack(side="left", fill="x", expand=True, padx=(1, 0))
+        return row, head, lane
+
+    def _gain_scale(self, parent: tk.Widget, value: float, command: Callable[[float], None]) -> tk.Scale:
+        scale = tk.Scale(
+            parent, from_=-24, to=12, resolution=1, orient="horizontal", showvalue=False, length=int(110 * self.ui),
+            bg=PANEL, fg=INK, troughcolor=RACK, highlightthickness=0, sliderlength=int(14 * self.ui), width=int(9 * self.ui),
+            bd=0, activebackground=AMBER, command=lambda raw: command(float(raw)),
+        )
+        scale.set(value)
+        return scale
+
+    def _build_beat_row(self) -> None:
+        row, head, lane = self._row_frame(self.row_host)
+        top = tk.Frame(head, bg=PANEL)
+        top.pack(fill="x", padx=8, pady=(6, 0))
+        tk.Label(top, text="BIT", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 14, "bold")).pack(side="left")
+        self.beat_mute = self._tool(top, "M", self.toggle_beat_mute, SOFT, size=11)
+        self.beat_mute.pack(side="right")
+        self.beat_name = tk.Label(head, text="—", bg=PANEL, fg=INK, font=(FONT_UI, 9), anchor="w")
+        self.beat_name.pack(fill="x", padx=8)
+        gain = tk.Frame(head, bg=PANEL)
+        gain.pack(fill="x", padx=8, pady=(4, 0))
+        tk.Label(gain, text="dB", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
+        self.beat_gain_label = tk.Label(gain, text="+0", bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=3)
+        self._gain_scale(gain, self.beat_gain_db, self._set_beat_gain).pack(side="left", padx=4)
+        self.beat_gain_label.pack(side="left")
+        self.beat_lane = lane
+        lane.bind("<Button-1>", lambda event: self._lane_click_plain(event))
+        lane.bind("<B1-Motion>", lambda event: self._lane_click_plain(event))
+
+    def _build_vocal_row(self, index: int) -> None:
+        track = self.tracks[index]
+        row, head, lane = self._row_frame(self.vocal_host)
+        top = tk.Frame(head, bg=PANEL)
+        top.pack(fill="x", padx=8, pady=(5, 0))
+        name = tk.Label(top, text=track.name, bg=PANEL, fg=INK, font=(FONT_POSTER, 13, "bold"), anchor="w", cursor="hand2")
+        name.pack(side="left", fill="x", expand=True)
+        self._tool(top, "✕", lambda slot=track: self.remove_track(slot), REC, size=10).pack(side="right")
+        buttons = tk.Frame(head, bg=PANEL)
+        buttons.pack(fill="x", padx=8, pady=(4, 0))
+        rec = tk.Button(
+            buttons, text="●", command=lambda slot=track: self.arm_track(slot), bg=RACK, fg=MUTE, activebackground=PANEL,
+            activeforeground=REC, relief="flat", bd=0, padx=8, pady=0, font=(FONT_UI, 13), cursor="hand2",
+            highlightthickness=1, highlightbackground=LINE_STRONG, takefocus=0,
+        )
+        rec.pack(side="left", padx=(0, 4))
+        mute = self._tool(buttons, "M", lambda slot=track: self.toggle_mute(slot), SOFT, size=11)
+        mute.pack(side="left", padx=(0, 4))
+        solo = self._tool(buttons, "S", lambda slot=track: self.toggle_solo(slot), SOFT, size=11)
+        solo.pack(side="left")
+        swatch = tk.Frame(buttons, bg=track.color, width=int(10 * self.ui), height=int(10 * self.ui))
+        swatch.pack(side="right", pady=4)
+        gain = tk.Frame(head, bg=PANEL)
+        gain.pack(fill="x", padx=8, pady=(4, 0))
+        tk.Label(gain, text="dB", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
+        gain_label = tk.Label(gain, text=f"{track.gain_db:+.0f}", bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=3)
+        self._gain_scale(gain, track.gain_db, lambda value, slot=track: self._set_gain(slot, value)).pack(side="left", padx=4)
+        gain_label.pack(side="left")
+        widgets: dict[str, object] = {
+            "row": row, "head": head, "lane": lane, "name": name, "rec": rec, "mute": mute, "solo": solo, "gain": gain_label,
+        }
+        self.rows.append(widgets)
+        name.bind("<Double-Button-1>", lambda _e, slot=track: self.rename_track(slot))
+        name.bind("<Button-1>", lambda _e, slot=track: self._focus_track(slot))
+        head.bind("<Button-1>", lambda _e, slot=track: self._focus_track(slot))
+        lane.bind("<ButtonPress-1>", lambda event, slot=track: self._lane_down(slot, event))
+        lane.bind("<B1-Motion>", lambda event: self._lane_drag(event))
+        lane.bind("<ButtonRelease-1>", lambda event: self._lane_up(event))
+        lane.bind("<Double-Button-1>", lambda event, slot=track: self._lane_double(slot, event))
+
+    def _rebuild_rows(self) -> None:
+        for widgets in self.rows:
+            row = widgets.get("row")
+            if isinstance(row, tk.Frame):
+                row.destroy()
+        self.rows = []
+        for index in range(len(self.tracks)):
+            self._build_vocal_row(index)
+        self.armed = max(0, min(self.armed, len(self.tracks) - 1))
+        self.focus = max(0, min(self.focus, len(self.tracks) - 1))
+        self._sync_track_buttons()
+        self._sync_add_button()
+        self.root.after_idle(self._paint_all)
+
+    def _sync_track_buttons(self) -> None:
+        any_solo = any(track.solo for track in self.tracks)
+        for index, (track, widgets) in enumerate(zip(self.tracks, self.rows)):
+            rec, mute, solo, name, head = widgets["rec"], widgets["mute"], widgets["solo"], widgets["name"], widgets["head"]
+            armed = index == self.armed
+            if isinstance(rec, tk.Button):
+                rec.configure(fg=REC if armed else MUTE, bg="#3a1410" if armed else RACK)
+            if isinstance(mute, tk.Button):
+                mute.configure(bg=AMBER if track.muted else RACK, fg=ON_AMBER if track.muted else SOFT)
+            if isinstance(solo, tk.Button):
+                solo.configure(bg="#3ddc97" if track.solo else RACK, fg=ON_AMBER if track.solo else SOFT)
+            heard = self._heard(track, any_solo)
+            if isinstance(name, tk.Label):
+                name.configure(text=track.name, fg=INK if heard else MUTE)
+            if isinstance(head, tk.Frame):
+                edge = AMBER if index == self.focus else PANEL
+                head.configure(highlightbackground=edge, highlightcolor=edge)
+        self.beat_mute.configure(bg=AMBER if self.beat_muted else RACK, fg=ON_AMBER if self.beat_muted else SOFT)
+
+    def _sync_add_button(self) -> None:
+        cap = self._track_cap()
+        have = len(self.tracks)
+        text = f"LIMIT ŚCIEŻEK {have}/{cap}" if have >= cap else f"+ DODAJ ŚCIEŻKĘ {have}/{cap}"
+        self.add_button.configure(text=text)
+
+    def _paint_lamp(self) -> None:
+        self.lamp.delete("all")
+        color = REC if self.recording else "#3ddc97" if self.playing else LINE_STRONG
+        self.lamp.create_oval(1, 1, 11, 11, fill=color, outline=color)
+
+    # ---- tracks -----------------------------------------------------------
+
+    def _new_track(self) -> Track:
+        index = len(self.tracks)
+        return Track(name=f"Wokal {index + 1}", color=TRACK_COLORS[index % len(TRACK_COLORS)])
+
+    def _heard(self, track: Track, any_solo: bool | None = None) -> bool:
+        if any_solo is None:
+            any_solo = any(item.solo for item in self.tracks)
+        if track.muted:
+            return False
+        return track.solo or not any_solo
+
+    def _busy(self, what: str = "") -> bool:
+        if self.recording or self._arming:
+            self.status.set("Najpierw Stop." + (f" {what}" if what else ""))
+            return True
+        return False
+
+    def add_track(self) -> None:
+        if self._busy():
+            return
+        cap = self._track_cap()
+        if len(self.tracks) >= cap:
+            self.status.set(f"Plan {display_tier(self.tier)} mieści {cap} ścieżek nagrania. Bit się nie liczy.")
+            return
+        self._push_undo()
+        self.tracks.append(self._new_track())
+        self.armed = len(self.tracks) - 1
+        self.focus = self.armed
+        self._rebuild_rows()
+        self._save_desk()
+        self.status.set(f"{self.tracks[self.armed].name} dodana i uzbrojona (●). Plan mieści {cap}.")
+
+    def remove_track(self, track: Track) -> None:
+        if self._busy() or track not in self.tracks:
+            return
+        if len(self.tracks) == 1 and not track.clips:
+            self.status.set("Jedna ścieżka zostaje zawsze.")
+            return
+        if track.clips and not messagebox.askyesno("BitRymDym", f"Usunąć ścieżkę {track.name} z nagraniem? Cofnij ją przywróci."):
+            return
+        self._push_undo()
+        index = self.tracks.index(track)
+        self.tracks.pop(index)
+        if not self.tracks:
+            self.tracks.append(self._new_track())
+        if self.sel and self.sel[0] == index:
+            self.sel = None
+        self._rebuild_rows()
+        self._save_desk()
+        self.status.set("Ścieżka usunięta. Cofnij (Ctrl+Z) ją przywraca.")
+
+    def rename_track(self, track: Track) -> None:
+        text = simpledialog.askstring("Nazwa ścieżki", "Nazwa:", initialvalue=track.name, parent=self.root)
+        if text and text.strip():
+            track.name = text.strip()[:40]
+            self._sync_track_buttons()
+            self._paint_all()
+            self._save_desk()
+
+    def arm_track(self, track: Track) -> None:
+        if track not in self.tracks:
+            return
+        if self.recording:
+            self.status.set("Najpierw Stop. Nagranie idzie na uzbrojoną ścieżkę.")
+            return
+        self.armed = self.tracks.index(track)
+        self.focus = self.armed
+        self._sync_track_buttons()
+        self.status.set(f"Nagranie pójdzie na: {track.name}. Pozostałe ścieżki słychać w trakcie, jeśli nie mają M.")
+
+    def _focus_track(self, track: Track) -> None:
+        if track in self.tracks:
+            self.focus = self.tracks.index(track)
+            self._sync_track_buttons()
+
+    def toggle_mute(self, track: Track) -> None:
+        track.muted = not track.muted
+        self._sync_track_buttons()
+        self._paint_all()
+        self._save_desk()
+
+    def toggle_solo(self, track: Track) -> None:
+        track.solo = not track.solo
+        self._sync_track_buttons()
+        self._paint_all()
+        self._save_desk()
+
+    def toggle_beat_mute(self) -> None:
+        self.beat_muted = not self.beat_muted
+        self._sync_track_buttons()
+        self._paint_all()
+        self.status.set("Bit wyciszony: nie gra przy nagrywaniu i odsłuchu." if self.beat_muted else "Bit gra.")
+
+    def _set_gain(self, track: Track, value: float) -> None:
+        track.gain_db = value
+        if track in self.tracks:
+            label = self.rows[self.tracks.index(track)].get("gain")
+            if isinstance(label, tk.Label):
+                label.configure(text=f"{value:+.0f}")
+
+    def _set_beat_gain(self, value: float) -> None:
+        self.beat_gain_db = value
+        self.beat_gain_label.configure(text=f"{value:+.0f}")
+
+    # ---- beat catalog ---------------------------------------------------------
+
+    def _beat_changed(self) -> None:
+        self._listen_cache = None
+        self._sync_beat_button()
+        self._paint_all()
+
+    def _beat_meta(self) -> tuple[str, int, float]:
+        try:
+            beat_id = self.selected_beat_id()
+        except RuntimeError:
+            return ("", 0, 0.0)
+        return self.beat_info.get(beat_id, (self.beat_var.get(), 0, 0.0))
+
+    def _sync_beat_button(self) -> None:
+        title, bpm, seconds = self._beat_meta()
+        if not title:
+            self.beat_button.configure(text="Wybierz bit z katalogu ▾")
+            self.beat_name.configure(text="Wybierz bit z katalogu")
+            return
+        short = title if len(title) <= 34 else title[:33] + "…"
+        self.beat_button.configure(text=f"{short} ▾")
+        parts = [f"{bpm} BPM" if bpm else "", f"{int(seconds // 60)}:{int(seconds % 60):02d}" if seconds else ""]
+        self.beat_name.configure(text="  ".join(part for part in [short, *parts] if part))
+
+    def pick_beat(self) -> None:
+        if self._busy():
+            return
+        box = tk.Toplevel(self.root)
+        box.title("Katalog bitów")
+        box.configure(bg=PANEL)
+        box.transient(self.root)
+        tk.Label(box, text="Katalog bitów BitRymDym", bg=PANEL, fg=INK, font=(FONT_DISPLAY, 15, "italic")).pack(anchor="w", padx=12, pady=(10, 4))
+        query = tk.StringVar()
+        search = tk.Entry(box, textvariable=query, bg=RACK, fg=INK, insertbackground=AMBER, relief="flat", font=(FONT_UI, 11))
+        search.pack(fill="x", padx=12, ipady=4)
+        listing = tk.Listbox(
+            box, height=14, width=46, bg=RACK, fg=INK, selectbackground=AMBER, selectforeground=ON_AMBER,
+            highlightthickness=0, relief="flat", font=(FONT_UI, 11), activestyle="none", exportselection=False,
+        )
+        listing.pack(fill="both", expand=True, padx=12, pady=8)
+        shown: list[str] = []
+
+        def fill(*_args: object) -> None:
+            needle = query.get().strip().lower()
+            shown[:] = [label for _id, label in self.beats if needle in label.lower()]
+            listing.delete(0, "end")
+            for label in shown:
+                listing.insert("end", label)
+            if self.beat_var.get() in shown:
+                listing.selection_set(shown.index(self.beat_var.get()))
+
+        def choose(_event: object = None) -> None:
+            picked = listing.curselection()
+            if not picked:
+                return
+            self.beat_var.set(shown[int(picked[0])])
+            self._save_prefs()
+            box.destroy()
+            self.status.set("Bit jest na ścieżce BIT. Program go nie zapisuje, tylko odtwarza ze strony.")
+
+        query.trace_add("write", fill)
+        listing.bind("<Double-Button-1>", choose)
+        listing.bind("<Return>", choose)
+        row = tk.Frame(box, bg=PANEL)
+        row.pack(fill="x", padx=12, pady=(0, 12))
+        self._tool(row, "WYBIERZ", choose, ON_AMBER, AMBER).pack(side="right")
+        self._tool(row, "ODŚWIEŻ LISTĘ", lambda: (self.reload_beats(), fill()), INK).pack(side="left")
+        fill()
+        search.focus_set()
+
+    def _load_public(self) -> None:
+        try:
+            payload = load_bootstrap()
+            self.public_url = str(payload["supabaseUrl"])
+            self.public_key = str(payload["anonKey"])
+            raw = payload.get("beats")
+            self.beats = []
+            self.beat_info = {}
+            if isinstance(raw, list):
+                for beat in raw:
+                    if not (isinstance(beat, dict) and beat.get("id") and beat.get("title")):
+                        continue
+                    bpm = beat.get("bpm")
+                    seconds = beat.get("durationSeconds")
+                    label = str(beat["title"])
+                    if isinstance(bpm, int) and bpm > 0:
+                        label = f"{label} ({bpm} BPM)"
+                    self.beats.append((str(beat["id"]), label))
+                    self.beat_info[str(beat["id"])] = (
+                        str(beat["title"]),
+                        bpm if isinstance(bpm, int) else 0,
+                        float(seconds) if isinstance(seconds, (int, float)) and seconds > 0 else 0.0,
+                    )
+            if self.beats and not self.beat_var.get():
+                self.beat_var.set(self.beats[0][1])
+            if self.beats:
+                self.status.set("Wybierz bit, uzbrój ścieżkę (●) i nagraj.")
+                if self.email.get().strip():
+                    self.gate_status.set("Jest zapisana sesja. Puste hasło wchodzi na to konto.")
+                else:
+                    self.gate_status.set("Wpisz konto ze strony.")
+        except Exception as error:
+            self.status.set(str(error))
+            self.gate_status.set(str(error))
+
+    def reload_beats(self) -> None:
+        current = self.beat_var.get()
+        self._load_public()
+        labels = [label for _beat_id, label in self.beats]
+        if current in labels:
+            self.beat_var.set(current)
+        self._sync_beat_button()
+        self.status.set(f"Lista bitów: {len(self.beats)}.")
+
+    def _beat_listen(self, beat_id: str) -> tuple[str | None, int | None, str]:
+        """Site playback only. Nothing is saved. Network: call it off the Tk thread."""
+        cached = self._listen_cache
+        if cached is not None and cached[0] == beat_id and time.monotonic() - cached[1] < 45:
+            return cached[2]
+        try:
+            if not beat_id:
+                raise RuntimeError("Najpierw wybierz bit.")
+            payload = self._client().playback(beat_id)
+            url, limit = playback_target(payload)
+            note = f"Podgląd strony: {limit} s. Program nie zapisuje bitu." if limit else "Bit gra ze strony. Program go nie zapisuje."
+            heard: tuple[str | None, int | None, str] = (url, limit, note)
+            self._listen_cache = (beat_id, time.monotonic(), heard)
+            return heard
+        except Exception as error:
+            return None, None, self._safe_listen_error(error)
+
+    # ---- time and painting -------------------------------------------------------
+
+    def _x(self, seconds: float) -> float:
+        return (seconds - self.view) * self.pps
+
+    def _t(self, x: float) -> float:
+        return max(0.0, self.view + x / self.pps)
+
+    def _length(self) -> float:
+        _title, _bpm, beat_seconds = self._beat_meta()
+        ends = [track_end(track.clips) for track in self.tracks]
+        return max([beat_seconds, float(max_take_seconds(self.tier)), self.cursor, *ends]) + 10.0
+
+    def _lane_width(self) -> int:
+        return max(self.beat_lane.winfo_width(), 50)
+
+    def zoom(self, factor: float) -> None:
+        width = self._lane_width()
+        anchor = self.cursor if 0 <= self._x(self.cursor) <= width else self.view + width / self.pps / 2
+        offset = (anchor - self.view) * self.pps
+        self.pps = max(2.0 * self.ui, min(400.0 * self.ui, self.pps * factor))
+        self.view = max(0.0, anchor - offset / self.pps)
+        self._paint_all()
+
+    def _scroll_view(self, delta: float) -> None:
+        span = self._lane_width() / self.pps
+        self.view = max(0.0, min(self._length() - span * 0.5, self.view + delta))
+        self._paint_all()
+
+    def _hscroll(self, *args: str) -> None:
+        total = self._length()
+        span = self._lane_width() / self.pps
+        if args and args[0] == "moveto":
+            self.view = max(0.0, float(args[1]) * total)
+        elif args and args[0] == "scroll":
+            amount = int(args[1])
+            self.view += amount * (span * 0.9 if args[2] == "pages" else span * 0.1)
+        self.view = max(0.0, min(self.view, max(0.0, total - span * 0.5)))
+        self._paint_all()
+
+    def _paint_all(self) -> None:
+        if not hasattr(self, "beat_lane"):
+            return
+        total = self._length()
+        span = self._lane_width() / self.pps
+        self.hscroll.set(self.view / total, min(1.0, (self.view + span) / total))
+        self._paint_ruler()
+        self._paint_beat()
+        for index in range(len(self.tracks)):
+            self._paint_track(index)
+        self._move_head(self._head_time())
+
+    def _head_time(self) -> float:
+        if self.recording:
+            return self.rec_start + file_seconds(self.wav_path)
+        if self.playing:
+            return self._play_from + (time.monotonic() - self._play_t0)
+        return self.cursor
+
+    def _paint_ruler(self) -> None:
+        canvas = self.ruler
+        canvas.delete("all")
+        width = canvas.winfo_width()
+        height = canvas.winfo_height()
+        step = next((value for value in (0.5, 1, 2, 5, 10, 15, 30, 60) if value * self.pps >= 64 * self.ui), 120)
+        first = math.floor(self.view / step) * step
+        mark = first
+        while self._x(mark) <= width:
+            x = self._x(mark)
+            if x >= 0:
+                canvas.create_line(x, height * 0.45, x, height, fill=SOFT)
+                label = f"{int(mark // 60)}:{mark % 60:04.1f}" if step < 1 else f"{int(mark // 60)}:{int(mark % 60):02d}"
+                canvas.create_text(x + 3, 1, text=label, fill=SOFT, anchor="nw", font=(FONT_META, 8))
+                minor = step / 5
+                for part in range(1, 5):
+                    mx = self._x(mark + part * minor)
+                    canvas.create_line(mx, height * 0.75, mx, height, fill=LINE_STRONG)
+            mark += step
+        if self.sel is not None:
+            canvas.create_rectangle(self._x(self.sel[1]), height - 4, self._x(self.sel[2]), height, fill=AMBER, outline="")
+
+    def _paint_beat(self) -> None:
+        canvas = self.beat_lane
+        canvas.delete("all")
+        width = canvas.winfo_width()
+        height = canvas.winfo_height()
+        title, bpm, seconds = self._beat_meta()
+        if not title:
+            canvas.create_text(12, height / 2, text="Wybierz bit z katalogu (przycisk BIT u góry).", fill=MUTE, anchor="w", font=(FONT_UI, 10))
+            return
+        end = seconds if seconds > 0 else self._length()
+        x1 = max(0.0, self._x(0.0))
+        x2 = min(float(width), self._x(end))
+        if x2 <= x1:
+            return
+        body = "#4a3417" if self.beat_muted else "#6b4a1c"
+        canvas.create_rectangle(x1, 2, x2, height - 2, fill=body, outline="")
+        canvas.create_rectangle(x1, 2, x2, 2 + self.clip_bar, fill=MUTE if self.beat_muted else AMBER, outline="")
+        canvas.create_text(x1 + 6, 2 + self.clip_bar / 2, text=f"BIT · {title}", fill=ON_AMBER, anchor="w", font=(FONT_UI, 9, "bold"))
+        if bpm > 0:
+            beat_len = 60.0 / bpm
+            bar_len = beat_len * 4
+            step = bar_len if bar_len * self.pps >= 8 else bar_len * 4
+            mark = math.floor(self.view / step) * step
+            while self._x(mark) <= x2:
+                x = self._x(mark)
+                if x >= x1:
+                    canvas.create_line(x, 3 + self.clip_bar, x, height - 3, fill="#8a6326")
+                mark += step
+        mid = (height + self.clip_bar) / 2
+        canvas.create_line(x1, mid, x2, mid, fill="#8a6326")
+        if self.beat_muted:
+            canvas.create_text((x1 + x2) / 2 if x2 - x1 < 400 else x1 + 200, mid, text="BIT WYCISZONY (M)", fill=SOFT, font=(FONT_META, 9))
+
+    def _peaks_of(self, path: str) -> list[float]:
+        found = self._peaks.get(path)
+        if found is None:
+            try:
+                found = block_peaks(self._load(path))
+            except Exception:
+                found = []
+            self._peaks[path] = found
+        return found
+
+    def _load(self, path: str) -> array.array:
+        found = self._audio.get(path)
+        if found is None:
+            rate, samples = read_mono16(Path(path))
+            if rate != RATE:
+                raise ValueError("rate")
+            if len(self._audio) > 24:
+                self._audio.clear()
+            self._audio[path] = samples
+            found = samples
+        return found
+
+    def _paint_track(self, index: int) -> None:
+        track = self.tracks[index]
+        canvas = self.rows[index]["lane"]
+        if not isinstance(canvas, tk.Canvas):
+            return
+        canvas.delete("all")
+        width = canvas.winfo_width()
+        height = canvas.winfo_height()
+        heard = self._heard(track)
+        if index == self.focus:
+            canvas.create_rectangle(0, 0, width, height, fill="#17120e", outline="")
+        sel = self.sel if self.sel is not None and self.sel[0] == index else None
+        if sel is not None:
+            canvas.create_rectangle(self._x(sel[1]), 0, self._x(sel[2]), height, fill=SEL_BG, outline="")
+        moving = self._drag if self._drag and self._drag.get("mode") == "move" else None
+        for number, clip in enumerate(track.clips):
+            if moving is not None and moving.get("clip") is clip and moving.get("moved"):
+                continue
+            self._paint_clip(canvas, clip, f"{track.name} #{number + 1}", track.color, heard, sel, height, width)
+        if moving is not None and moving.get("moved") and moving.get("target") == index:
+            clip = moving["clip"]
+            if isinstance(clip, Clip):
+                ghost = replace(clip, start=float(moving.get("to", clip.start)))
+                self._paint_clip(canvas, ghost, "przesuwam…", track.color, heard, None, height, width, ghost=True)
+        if self.recording and index == self.rec_track:
+            self._paint_live(canvas, height, width)
+        if not track.clips and not (self.recording and index == self.rec_track):
+            hint = "● uzbrojona: NAGRAJ zapisze tutaj" if index == self.armed else "pusta ścieżka"
+            canvas.create_text(12, height / 2, text=hint, fill=MUTE, anchor="w", font=(FONT_UI, 9))
+
+    def _paint_clip(
+        self, canvas: tk.Canvas, clip: Clip, label: str, color: str, heard: bool,
+        sel: tuple[int, float, float] | None, height: int, width: int, ghost: bool = False,
+    ) -> None:
+        x1 = self._x(clip.start)
+        x2 = self._x(clip.end)
+        if x2 < 0 or x1 > width:
+            return
+        body = shade(color, 0.55 if heard else 0.3)
+        head = color if heard else shade(color, 0.45)
+        top = 2 + self.clip_bar
+        canvas.create_rectangle(x1, 2, x2, height - 2, fill=body, outline=AMBER if ghost else shade(color, 0.8), width=2 if ghost else 1)
+        canvas.create_rectangle(x1, 2, x2, top, fill=head, outline="")
+        if x2 - x1 > 40:
+            canvas.create_text(max(x1, 0) + 5, 2 + self.clip_bar / 2, text=label, fill=ON_AMBER, anchor="w", font=(FONT_UI, 8, "bold"))
+        peaks = self._peaks_of(clip.path)
+        mid = (top + height - 2) / 2
+        half_max = (height - 2 - top) / 2 - 2
+        lo = int(max(0.0, x1))
+        hi = int(min(float(width), x2))
+        per = 100.0 / self.pps
+        wave = "#1a1006"
+        for x in range(lo, hi):
+            t = self._t(x)
+            s0 = clip.src_in + (t - clip.start)
+            i0 = int(s0 * 100)
+            i1 = max(i0 + 1, int((s0 + 1 / self.pps) * 100))
+            if i0 >= len(peaks) or i0 < 0:
+                continue
+            level = max(peaks[i0 : min(i1, len(peaks))]) if per > 1 else peaks[i0]
+            half = max(1.0, half_max * min(1.0, level * 1.4))
+            ink = wave
+            if sel is not None and sel[1] <= t <= sel[2]:
+                ink = INK
+            elif level >= 0.98:
+                ink = REC
+            canvas.create_line(x, mid - half, x, mid + half + 1, fill=ink)
+
+    def _paint_live(self, canvas: tk.Canvas, height: int, width: int) -> None:
+        seconds = len(self._live_peaks) / 100.0
+        x1 = self._x(self.rec_start)
+        x2 = self._x(self.rec_start + seconds)
+        top = 2 + self.clip_bar
+        canvas.create_rectangle(x1, 2, max(x2, x1 + 2), height - 2, fill="#5a1d14", outline=REC)
+        canvas.create_rectangle(x1, 2, max(x2, x1 + 2), top, fill=REC, outline="")
+        canvas.create_text(max(x1, 0) + 5, 2 + self.clip_bar / 2, text="NAGRYWAM", fill=INK, anchor="w", font=(FONT_UI, 8, "bold"))
+        mid = (top + height - 2) / 2
+        half_max = (height - 2 - top) / 2 - 2
+        peaks = self._live_peaks
+        for x in range(int(max(0.0, x1)), int(min(float(width), x2))):
+            i0 = int((self._t(x) - self.rec_start) * 100)
+            if 0 <= i0 < len(peaks):
+                i1 = max(i0 + 1, int((self._t(x) + 1 / self.pps - self.rec_start) * 100))
+                level = max(peaks[i0 : min(i1, len(peaks))])
+                half = max(1.0, half_max * min(1.0, level * 1.4))
+                canvas.create_line(x, mid - half, x, mid + half + 1, fill=REC if level >= 0.98 else INK)
+
+    def _move_head(self, seconds: float) -> None:
+        canvases = [self.ruler, self.beat_lane] + [row["lane"] for row in self.rows if isinstance(row.get("lane"), tk.Canvas)]
+        x = self._x(seconds)
+        for canvas in canvases:
+            if not isinstance(canvas, tk.Canvas):
+                continue
+            canvas.delete("head")
+            height = canvas.winfo_height()
+            canvas.create_line(x, 0, x, height, fill=INK if not self.recording else REC, width=2 if canvas is self.ruler else 1, tags="head")
+        if canvases and isinstance(self.ruler, tk.Canvas):
+            self.ruler.create_polygon(x - 6, 0, x + 6, 0, x, 9, fill=INK, outline="", tags="head")
+        self.clock.set(clock_text(seconds))
+
+    def _follow(self, seconds: float) -> None:
+        span = self._lane_width() / self.pps
+        if seconds > self.view + span * 0.92 or seconds < self.view:
+            self.view = max(0.0, seconds - span * 0.1)
+            self._paint_all()
+
+    # ---- mouse on lanes -----------------------------------------------------------
+
+    def _set_cursor(self, seconds: float) -> None:
+        if self.recording or self._arming:
+            return
+        if self.playing:
+            self.stop()
+        self.cursor = max(0.0, seconds)
+        self.sel = None
+        self._paint_all()
+
+    def _ruler_click(self, event: tk.Event) -> None:
+        self._set_cursor(self._t(event.x))
+
+    def _lane_click_plain(self, event: tk.Event) -> None:
+        self._set_cursor(self._t(event.x))
+
+    def _lane_down(self, track: Track, event: tk.Event) -> None:
+        if track not in self.tracks or self.recording or self._arming:
+            return
+        if self.playing:
+            self.stop()
+        index = self.tracks.index(track)
+        self.focus = index
+        t = self._t(event.x)
+        hit = clip_at(track.clips, t)
+        if hit is not None and event.y <= 2 + self.clip_bar + 2:
+            clip = track.clips[hit]
+            self._drag = {"mode": "move", "track": index, "clip": clip, "grab": t - clip.start, "x": event.x, "moved": False, "to": clip.start, "target": index}
+            self.status.set("Przeciągnij klip w lewo albo w prawo, także na inną ścieżkę wokalu.")
+        else:
+            self._drag = {"mode": "select", "track": index, "a": t, "x": event.x}
+            self.cursor = t
+            self.sel = None
+        self._sync_track_buttons()
+        self._paint_all()
+
+    def _lane_under(self, event: tk.Event) -> int | None:
+        widget = self.root.winfo_containing(event.x_root, event.y_root)
+        for index, row in enumerate(self.rows):
+            if widget is row.get("lane"):
+                return index
+        return None
+
+    def _lane_drag(self, event: tk.Event) -> None:
+        drag = self._drag
+        if drag is None:
+            return
+        t = self._t(event.x)
+        if drag["mode"] == "select":
+            a = float(drag["a"])
+            if abs(event.x - int(drag["x"])) >= 3:
+                self.sel = (int(drag["track"]), min(a, t), max(a, t))
+                self.cursor = min(a, t)
+                self._paint_track(int(drag["track"]))
+                self._paint_ruler()
+                self._move_head(self.cursor)
+                self.clock.set(f"{clock_text(self.sel[1])} – {clock_text(self.sel[2])}")
+            return
+        if abs(event.x - int(drag["x"])) >= 3:
+            drag["moved"] = True
+        target = self._lane_under(event)
+        old_target = int(drag.get("target", drag["track"]))
+        if target is not None:
+            drag["target"] = target
+        drag["to"] = max(0.0, t - float(drag["grab"]))
+        for index in {int(drag["track"]), old_target, int(drag["target"])}:
+            if 0 <= index < len(self.tracks):
+                self._paint_track(index)
+        self._move_head(float(drag["to"]))
+
+    def _lane_up(self, _event: tk.Event) -> None:
+        drag, self._drag = self._drag, None
+        if drag is None:
+            return
+        if drag["mode"] == "select":
+            if self.sel is None:
+                self.status.set(f"Kursor: {clock_text(self.cursor)}. NAGRAJ i GRAJ ruszą od tego miejsca.")
+            else:
+                self.status.set(
+                    f"Zaznaczenie {clock_text(self.sel[1])}–{clock_text(self.sel[2])} na {self.tracks[self.sel[0]].name}. "
+                    "Usuń, Wytnij, Kopiuj albo Graj. Nagraj ruszy od początku zaznaczenia."
+                )
+            self._paint_all()
+            return
+        clip = drag["clip"]
+        if not drag.get("moved") or not isinstance(clip, Clip):
+            self.sel = None
+            self.cursor = self._t(int(drag["x"]))
+            self._paint_all()
+            return
+        source = self.tracks[int(drag["track"])]
+        target = self.tracks[int(drag["target"])]
+        if clip not in source.clips:
+            self._paint_all()
+            return
+        self._push_undo()
+        source.clips = [item for item in source.clips if item is not clip]
+        moved = replace(clip, start=round(float(drag["to"]), 4))
+        target.clips = place(target.clips, [moved])
+        self.focus = int(drag["target"])
+        self.sel = None
+        self.cursor = moved.start
+        self._save_desk()
+        self._sync_track_buttons()
+        self._paint_all()
+        where = "" if source is target else f" na {target.name}"
+        self.status.set(f"Klip przesunięty{where}: start {clock_text(moved.start)}. Cofnij: Ctrl+Z.")
+
+    def _lane_double(self, track: Track, event: tk.Event) -> None:
+        if track not in self.tracks or self.recording:
+            return
+        hit = clip_at(track.clips, self._t(event.x))
+        if hit is None:
+            return
+        clip = track.clips[hit]
+        self.sel = (self.tracks.index(track), clip.start, clip.end)
+        self.cursor = clip.start
+        self._drag = None
+        self._paint_all()
+        self.status.set("Cały klip zaznaczony.")
+
+    # ---- editing ----------------------------------------------------------------
+
+    def _push_undo(self) -> None:
+        snapshot = [replace(track, clips=list(track.clips)) for track in self.tracks]
+        self.undo_stack.append((snapshot, self.armed))
+        del self.undo_stack[:-60]
+
+    def undo(self) -> None:
+        if self._busy() or not self.undo_stack:
+            if not self.undo_stack:
+                self.status.set("Nie ma czego cofnąć.")
+            return
+        snapshot, armed = self.undo_stack.pop()
+        same_shape = len(snapshot) == len(self.tracks)
+        self.tracks = snapshot
+        self.armed = armed
+        self.sel = None
+        if same_shape:
+            self._sync_track_buttons()
+            self._paint_all()
+        else:
+            self._rebuild_rows()
+        self._save_desk()
+        self.status.set("Cofnięte.")
+
+    def edit(self, mode: str) -> None:
+        if self._busy():
+            return
+        if self.playing:
+            self.stop()
+        if mode == "paste":
+            if not self.clipboard:
+                self.status.set("Schowek jest pusty. Najpierw Kopiuj albo Wytnij.")
+                return
+            track = self.tracks[self.focus]
+            self._push_undo()
+            pasted = shift(self.clipboard, self.cursor)
+            track.clips = place(track.clips, pasted)
+            end = max(clip.end for clip in pasted)
+            self.sel = (self.focus, self.cursor, end)
+            self._save_desk()
+            self._paint_all()
+            self.status.set(f"Wklejone na {track.name} od {clock_text(self.cursor)}.")
+            return
+        if mode == "split":
+            track = self.tracks[self.focus]
+            if clip_at(track.clips, self.cursor) is None:
+                self.status.set("Postaw kursor na klipie, który chcesz podzielić.")
+                return
+            self._push_undo()
+            track.clips = split_at(track.clips, self.cursor)
+            self._save_desk()
+            self._paint_all()
+            self.status.set(f"Klip podzielony w {clock_text(self.cursor)}. Każdą część przesuniesz osobno.")
+            return
+        if self.sel is None:
+            self.status.set("Najpierw zaznacz fragment: przeciągnij po ścieżce wokalu.")
+            return
+        index, a, b = self.sel
+        track = self.tracks[index]
+        pieces = extract(track.clips, a, b)
+        if mode in ("copy", "cut"):
+            if not pieces:
+                self.status.set("W zaznaczeniu nie ma nagrania.")
+                return
+            self.clipboard = pieces
+        if mode == "copy":
+            self.status.set(f"Skopiowane {b - a:.2f} s. Postaw kursor i Wklej (Ctrl+V).")
+            return
+        if not pieces:
+            self.status.set("W zaznaczeniu nie ma nagrania.")
+            return
+        self._push_undo()
+        track.clips = carve(track.clips, a, b)
+        self.sel = None
+        self.cursor = a
+        self._save_desk()
+        self._paint_all()
+        self.status.set(("Wycięte do schowka. " if mode == "cut" else "Usunięte. ") + "Cofnij: Ctrl+Z.")
+
+    # ---- desk autosave ------------------------------------------------------
+
+    def _save_desk(self) -> None:
+        data = {
+            "beat": self.beat_var.get(),
+            "title": self.title_var.get(),
+            "armed": self.armed,
+            "tracks": [
+                {
+                    "name": track.name,
+                    "muted": track.muted,
+                    "solo": track.solo,
+                    "gain_db": track.gain_db,
+                    "clips": [clip.to_json() for clip in track.clips],
+                }
+                for track in self.tracks
+            ],
+        }
+        try:
+            DESK.parent.mkdir(parents=True, exist_ok=True)
+            DESK.write_text(json.dumps(data), encoding="utf-8")
+        except OSError:
+            pass
+
+    def _restore_desk(self) -> None:
+        self.tracks = []
+        try:
+            raw = json.loads(DESK.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raw = {}
+        rows = raw.get("tracks") if isinstance(raw, dict) else None
+        lost = 0
+        if isinstance(rows, list):
+            for item in rows[:16]:
+                if not isinstance(item, dict):
+                    continue
+                track = self._new_track()
+                track.name = str(item.get("name") or track.name)[:40]
+                track.muted = bool(item.get("muted"))
+                track.solo = bool(item.get("solo"))
+                try:
+                    track.gain_db = max(-24.0, min(12.0, float(item.get("gain_db") or 0.0)))
+                except (TypeError, ValueError):
+                    track.gain_db = 0.0
+                for entry in item.get("clips") or []:
+                    clip = Clip.from_json(entry)
+                    if clip is None:
+                        continue
+                    if not Path(clip.path).is_file():
+                        lost += 1
+                        continue
+                    track.clips.append(clip)
+                track.clips = ordered(track.clips)
+                self.tracks.append(track)
+        if not self.tracks:
+            self.tracks = [self._new_track()]
+        if isinstance(raw, dict):
+            title = raw.get("title")
+            if isinstance(title, str) and title.strip():
+                self.title_var.set(title)
+            armed = raw.get("armed")
+            if isinstance(armed, int):
+                self.armed = armed
+        self._rebuild_rows()
+        clips = sum(len(track.clips) for track in self.tracks)
+        if clips:
+            self.status.set(
+                f"Wczytany ostatni projekt z tego komputera: {count_word(len(self.tracks), 'ścieżka', 'ścieżki', 'ścieżek')}, "
+                f"{count_word(clips, 'klip', 'klipy', 'klipów')}."
+            )
+        if lost:
+            self.status.set(self.status.get() + f" Brak {lost} plików nagrań na dysku, te klipy pominięte.")
+
+    def new_project(self) -> None:
+        if self._busy() or self._uploading:
+            return
+        clips = sum(len(track.clips) for track in self.tracks)
+        if clips and not messagebox.askyesno(
+            "BitRymDym", "Zacząć nowy projekt? Ścieżki z tego projektu znikną z programu i z dysku tego komputera."
+        ):
+            return
+        used = {clip.path for track in self.tracks for clip in track.clips}
+        used |= {clip.path for snapshot, _armed in self.undo_stack for track in snapshot for clip in track.clips}
+        for path in used:
+            if Path(path).parent == TAKES:
+                try:
+                    Path(path).unlink()
+                except OSError:
+                    pass
+        self.tracks = [self._new_track()]
+        self.undo_stack = []
+        self.clipboard = []
+        self.sel = None
+        self.cursor = 0.0
+        self.view = 0.0
+        self.armed = 0
+        self.focus = 0
+        self._audio.clear()
+        self._peaks.clear()
+        self._rebuild_rows()
+        self._save_desk()
+        self.status.set("Nowy projekt. Wybierz bit i nagraj.")
+
+    def _save_prefs(self) -> None:
+        try:
+            write_prefs(PREFS, {"device": self.device_var.get(), "title": self.title_var.get().strip(), "beat": self.beat_var.get()})
+        except OSError:
+            pass
+
+    def _load_prefs(self) -> None:
+        try:
+            prefs = read_prefs(PREFS)
+        except (OSError, json.JSONDecodeError):
+            return
+        title = prefs.get("title")
+        if isinstance(title, str) and title:
+            self.title_var.set(title)
+        device = prefs.get("device")
+        if isinstance(device, str) and device in self.devices:
+            self.device_var.set(device)
+        beat = prefs.get("beat")
+        if isinstance(beat, str) and beat in [label for _beat_id, label in self.beats]:
+            self.beat_var.set(beat)
+        self._sync_beat_button()
+
+    def _read_plan(self) -> None:
+        saved = load_session()
+        token = saved.get("accessToken") if saved else None
+        if not token:
+            self.tier = "FREE"
+            self.plan_text.set("Plan: zaloguj się.")
+            self._sync_add_button()
+            return
+        try:
+            payload = self._client().plan_usage()
+            tier, _cap, _side = limits_from_usage(payload)
+        except Exception as error:
+            self.tier = "FREE"
+            self.plan_text.set(str(error)[:120])
+            self._sync_add_button()
+            return
+        self.tier = tier
+        stems = "stemy: tak" if tier == "GOLD" else "stemy: od Gold"
+        self.plan_text.set(
+            f"Plan {display_tier(tier)}: {max_recording_tracks(tier)} ścieżek, ujęcie do {max_take_seconds(tier)} s, {stems}."
+        )
+        self._sync_add_button()
+        self._paint_all()
+
+    # ---- play and record -------------------------------------------------------
+
+    def _mix_plan(self, start: float, skip: int | None) -> list[tuple[list[Clip], float]]:
+        any_solo = any(track.solo for track in self.tracks)
+        found: list[tuple[list[Clip], float]] = []
+        for index, track in enumerate(self.tracks):
+            if index == skip or not self._heard(track, any_solo):
+                continue
+            if track_end(track.clips) > start + 0.01:
+                found.append((list(track.clips), track.gain_db))
+        return found
+
+    def _render_for_play(self, plan: list[tuple[list[Clip], float]], start: float) -> list[tuple[Path, float, float]]:
+        """Heard tracks from the cursor to their end, as temp WAVs for ffmpeg. Runs off the Tk thread."""
+        folder = Path(os.environ.get("TEMP", ".")) / "bitrymdym-play"
+        folder.mkdir(parents=True, exist_ok=True)
+        out: list[tuple[Path, float, float]] = []
+        for number, (clips, gain_db) in enumerate(plan):
+            samples = render(clips, start, track_end(clips), self._load)
+            if len(samples) < 2:
+                continue
+            path = folder / f"tor-{number}.wav"
+            replace_mono16(path, samples)
+            out.append((path, gain_db, 0.0))
+        return out
+
+    def toggle_play(self) -> None:
+        if self.recording:
+            self.stop()
+        elif self.playing or self._arming:
+            self.stop()
+        else:
+            self.play()
+
+    def play(self) -> None:
+        if self.recording or self._arming:
+            return
+        self._stop_probe()
+        self.stop()
+        start = self.sel[1] if self.sel is not None else self.cursor
+        plan = self._mix_plan(start, None)
+        beat_id = "" if self.beat_muted else self._beat_id_or_empty()
+        if not plan and not beat_id:
+            self.status.set("Nie ma czego grać od tego miejsca: bit wyciszony albo nie wybrany, ścieżki puste.")
+            return
+        self._play_token += 1
+        token = self._play_token
+        self._arming = True
+        self.status.set("Składam odsłuch od kursora…")
+        threading.Thread(target=self._prepare_play, args=(token, start, plan, beat_id, None), daemon=True).start()
+
+    def _prepare_play(
+        self, token: int, start: float, plan: list[tuple[list[Clip], float]], beat_id: str, record_to: Path | None
+    ) -> None:
+        heard: tuple[str | None, int | None, str] = (None, None, "")
+        vocals: list[tuple[Path, float, float]] = []
+        error = ""
+        try:
+            if beat_id:
+                heard = self._beat_listen(beat_id)
+            vocals = self._render_for_play(plan, start)
+        except Exception as problem:
+            error = str(problem) or "Nie dało się złożyć odsłuchu."
+        self.root.after(0, lambda: self._start_play(token, start, heard, vocals, record_to, error))
+
+    def _start_play(
+        self, token: int, start: float, heard: tuple[str | None, int | None, str],
+        vocals: list[tuple[Path, float, float]], record_to: Path | None, error: str,
+    ) -> None:
+        if token != self._play_token:
+            return
+        self._arming = False
+        if error and record_to is None:
+            self.status.set(error)
+            return
+        if error:
+            heard = (heard[0], heard[1], f"Pozostałych ścieżek nie słychać ({error[:60]}).")
+        target, limit, note = heard
+        beat = target
+        if beat is not None and limit and start >= limit:
+            beat = None
+            note = f"Podgląd bitu ma tylko {limit} s, dalej gra bez bitu."
+        try:
+            self._stop_monitor()
+            if record_to is not None:
+                self.capture = start_capture(record_to, self.selected_device())
+                self.wav_path = record_to
+                self.recording = True
+                self._live_peaks = []
+                self._live_off = 0
+            if beat is not None or vocals:
+                ffmpeg = ffmpeg_exe()
+                play = ffplay_exe()
+                if play is None:
+                    note = NO_FFPLAY
+                else:
+                    argv = mix_argv(ffmpeg, beat, vocals, limit, beat_start=start, beat_gain_db=self.beat_gain_db)
+                    self.mix_feed, self.monitor = start_mix(ffmpeg, play, argv)
+            elif record_to is None:
+                raise RuntimeError(note or "Nie ma czego grać.")
+        except Exception as problem:
+            self._stop_monitor()
+            if self.capture is not None:
+                stop_capture(self.capture)
+                self.capture = None
+            self.recording = False
+            self._paint_lamp()
+            self.status.set(self._safe_listen_error(problem))
+            return
+        self._play_from = start
+        self._play_t0 = time.monotonic()
+        if record_to is None and self.monitor is None:
+            self.status.set(note or NO_FFPLAY)
+            return
+        if record_to is None:
+            self.playing = True
+            self.play_button.configure(text="▶ GRA…")
+            self.status.set(f"Gra od {clock_text(start)}. {note}".strip())
+        else:
+            name = self.tracks[self.rec_track].name
+            extra = f" {heard[2]}" if heard[2] and not self.beat_muted else ""
+            if self.beat_muted:
+                extra = " Bit wyciszony (M)."
+            self.status.set(f"Nagrywam {name} od {clock_text(start)}.{extra}")
+            self.rec_button.configure(text="● NAGRYWA")
+        self._paint_lamp()
+        self._paint_all()
+        self._tick()
+
+    def record(self) -> None:
+        if self.recording or self._arming:
+            return
+        if self.playing:
+            self.stop()
+        self._stop_probe()
+        if not self.tracks:
+            return
+        if not self.devices:
+            self.status.set("Windows nie pokazał mikrofonu. Podłącz mikrofon i uruchom program jeszcze raz.")
+            return
+        self.rec_track = max(0, min(self.armed, len(self.tracks) - 1))
+        self.rec_start = self.sel[1] if self.sel is not None else self.cursor
+        self.sel = None
+        plan = self._mix_plan(self.rec_start, self.rec_track)
+        beat_id = "" if self.beat_muted else self._beat_id_or_empty()
+        TAKES.mkdir(parents=True, exist_ok=True)
+        path = TAKES / f"ujecie-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}.wav"
+        self._play_token += 1
+        token = self._play_token
+        self._arming = True
+        self.status.set("Przygotowuję nagranie: bit i pozostałe ścieżki…")
+        threading.Thread(target=self._prepare_play, args=(token, self.rec_start, plan, beat_id, path), daemon=True).start()
+
+    def stop(self) -> None:
+        if self._arming:
+            self._play_token += 1
+            self._arming = False
+            self.status.set("Przerwane.")
+        self._cancel_tick()
+        if self.recording:
+            self._stop_monitor()
+            if self.capture is not None:
+                stop_capture(self.capture)
+                self.capture = None
+            self._keep_take()
+            return
+        if self.playing:
+            self._stop_monitor()
+            self.playing = False
+            self.play_button.configure(text="▶ GRAJ")
+            self._paint_lamp()
+            self._move_head(self.cursor)
+            self.status.set("Stop.")
+
+    def _keep_take(self, died: str = "") -> None:
+        """The capture is closed: put the take on the armed track as one clip from the record start."""
+        self.recording = False
+        self.rec_button.configure(text="● NAGRAJ")
+        self._paint_lamp()
+        path = self.wav_path
+        if not path.exists() or path.stat().st_size < 2000:
+            read_capture_log(path)
+            self.status.set(died or "Nagranie jest puste.")
+            self._paint_all()
+            return
+        self._take_note = self._rate_take(path)
+        seconds = file_seconds(path)
+        cap = float(max_take_seconds(self.tier))
+        length = min(seconds, cap)
+        if length < 0.05:
+            self.status.set(died or "Nagranie jest za krótkie.")
+            self._paint_all()
+            return
+        self._push_undo()
+        clip = Clip(str(path), round(self.rec_start, 4), 0.0, round(length, 4))
+        track = self.tracks[self.rec_track]
+        track.clips = place(track.clips, [clip])
+        self._peaks.pop(str(path), None)
+        self._audio.pop(str(path), None)
+        self.focus = self.rec_track
+        self.cursor = self.rec_start
+        self._save_desk()
+        self._paint_all()
+        prefix = f"{died} " if died else ""
+        self.status.set(
+            f"{prefix}Ujęcie {length:.1f} s jest na {track.name} od {clock_text(self.rec_start)}. "
+            + (f"{self._take_note} " if self._take_note else "")
+            + "Przeciągnij pasek klipu, żeby go przesunąć."
         )
 
-    def _build_scroll(self) -> None:
-        self._style_scroll()
-        self.canvas = tk.Canvas(self.shell, bg=PAPER, highlightthickness=0, bd=0)
-        self.scrollbar = ttk.Scrollbar(
-            self.shell,
-            command=self.canvas.yview,
-            style="Brd.Vertical.TScrollbar",
-        )
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.page = tk.Frame(self.canvas, bg=PAPER)
-        self.page_id = self.canvas.create_window((0, 0), window=self.page, anchor="nw")
-        self.page.bind("<Configure>", self._sync_scroll)
-        self.canvas.bind("<Configure>", self._fit_page)
+    def _read_live(self) -> None:
+        path = self.wav_path
+        try:
+            size = path.stat().st_size
+        except OSError:
+            return
+        offset = wav_data_offset_of(path)
+        if offset is None:
+            return
+        start = max(self._live_off, offset)
+        usable = (size - start) // 960 * 960
+        if usable <= 0:
+            return
+        pcm = read_file_range(path, start, usable)
+        samples = array.array("h")
+        samples.frombytes(pcm[: len(pcm) // 2 * 2])
+        if sys.byteorder != "little":
+            samples.byteswap()
+        self._live_peaks.extend(block_peaks(samples))
+        self._live_off = start + len(pcm) // 960 * 960
 
-    def _sync_scroll(self, _event: object = None) -> None:
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+    def _tick(self) -> None:
+        self._tick_id = None
+        if self.recording:
+            if self.capture is not None and self.capture.poll() is not None:
+                self.capture = None
+                self._stop_monitor()
+                _drops, fatal = read_capture_log(self.wav_path, remove=False)
+                reason = "Mikrofon przestał oddawać dźwięk (odłączony albo zajęty)."
+                if fatal:
+                    reason += f" Windows: {fatal[:100]}"
+                self._keep_take(reason)
+                return
+            try:
+                self._read_live()
+            except Exception:
+                pass
+            elapsed = len(self._live_peaks) / 100.0
+            cap = max_take_seconds(self.tier)
+            head = self.rec_start + elapsed
+            self._follow(head)
+            self._paint_track(self.rec_track)
+            self._move_head(head)
+            self.clock.set(f"{clock_text(head)}  ● {elapsed:.1f}/{cap} s")
+            if elapsed >= cap:
+                self._stop_monitor()
+                if self.capture is not None:
+                    stop_capture(self.capture)
+                    self.capture = None
+                self._keep_take(f"Plan {display_tier(self.tier)} kończy ujęcie po {cap} s.")
+                return
+            self._tick_id = self.root.after(100, self._tick)
+            return
+        if self.playing:
+            ended = self.monitor is None or self.monitor.poll() is not None
+            head = self._play_from + (time.monotonic() - self._play_t0)
+            if ended:
+                self.stop()
+                return
+            self._follow(head)
+            self._move_head(head)
+            self._tick_id = self.root.after(60, self._tick)
 
-    def _fit_page(self, event: tk.Event) -> None:
-        self.canvas.itemconfigure(self.page_id, width=event.width)
+    # ---- done: studio or stems -----------------------------------------------
 
-    def _on_wheel(self, event: tk.Event) -> str:
-        if not self.canvas.winfo_ismapped():
-            return "break"
-        step = int(-event.delta / 120) or (-1 if event.delta < 0 else 1)
-        widget = event.widget
-        if widget in (getattr(self, "beat_box", None), getattr(self, "take_list", None)):
-            widget.yview_scroll(step, "units")
-            return "break"
-        self.canvas.yview_scroll(step, "units")
-        return "break"
+    def _send_list(self) -> tuple[list[tuple[int, Clip]], int, int]:
+        """(track slot, clip) for every clip on heard tracks, plus muted track count and empty count."""
+        any_solo = any(track.solo for track in self.tracks)
+        out: list[tuple[int, Clip]] = []
+        skipped = 0
+        slot = 0
+        for track in self.tracks:
+            if not track.clips:
+                continue
+            if not self._heard(track, any_solo):
+                skipped += 1
+                continue
+            out.extend((slot, clip) for clip in track.clips)
+            slot += 1
+        return out, skipped, slot
+
+    def open_done(self) -> None:
+        if self._busy():
+            return
+        if self.playing:
+            self.stop()
+        clips, skipped, used = self._send_list()
+        box = tk.Toplevel(self.root)
+        box.title("Gotowe")
+        box.configure(bg=PANEL)
+        box.transient(self.root)
+        box.resizable(False, False)
+        tk.Label(box, text="Gotowe", bg=PANEL, fg=INK, font=(FONT_DISPLAY, 20, "italic")).pack(anchor="w", padx=16, pady=(12, 2))
+        title, bpm, _seconds = self._beat_meta()
+        summary = f"Bit: {title or 'nie wybrany'}. Z nagraniem: {count_word(used, 'ścieżka', 'ścieżki', 'ścieżek')}, {count_word(len(clips), 'klip', 'klipy', 'klipów')}."
+        if skipped:
+            summary += f" Wyciszone (M albo bez S) nie jadą: {skipped}."
+        tk.Label(box, text=summary, bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=440, justify="left").pack(anchor="w", padx=16)
+        tk.Label(box, text="TYTUŁ", bg=PANEL, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", padx=16, pady=(10, 0))
+        tk.Entry(
+            box, textvariable=self.title_var, bg=RACK, fg=INK, insertbackground=AMBER, relief="flat", font=(FONT_UI, 11), width=44,
+        ).pack(fill="x", padx=16, ipady=4)
+
+        def send() -> None:
+            box.destroy()
+            self.send_to_studio()
+
+        def stems() -> None:
+            box.destroy()
+            self.export_stems()
+
+        studio = self._tool(box, "WRZUĆ NAGRANIE DO STUDIA", send, ON_AMBER, AMBER, 14)
+        studio.pack(fill="x", padx=16, pady=(14, 2))
+        tk.Label(
+            box, text="Tworzy projekt na koncie: bit i Twoje ścieżki w tych samych miejscach. Miks i mastering robisz w Studio na stronie.",
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 9), wraplength=440, justify="left",
+        ).pack(anchor="w", padx=16)
+        gold = self.tier == "GOLD"
+        stem_button = self._tool(box, "POBIERZ STEMY (WAV)", stems, INK, RACK, 13)
+        stem_button.pack(fill="x", padx=16, pady=(12, 2))
+        if not gold:
+            stem_button.configure(state="disabled", text="POBIERZ STEMY — TYLKO GOLD")
+        tk.Label(
+            box,
+            text=("Każda ścieżka wokalu jako osobny WAV od 0:00, gotowy do innego programu." if gold else f"Twój plan: {display_tier(self.tier)}. Stemy z programu są w Gold."),
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 9), wraplength=440, justify="left",
+        ).pack(anchor="w", padx=16)
+        self._tool(box, "WRÓĆ DO EDYCJI", box.destroy, SOFT).pack(anchor="e", padx=16, pady=14)
+        if not clips:
+            studio.configure(state="disabled")
+            stem_button.configure(state="disabled")
+        _ = bpm
+
+    def _render_clip_files(self, clips: list[tuple[int, Clip]]) -> list[Path]:
+        folder = TAKES / "wysylka"
+        folder.mkdir(parents=True, exist_ok=True)
+        paths: list[Path] = []
+        for _slot, clip in clips:
+            path = folder / f"klip-{clip_key(clip)}.wav"
+            if not path.is_file():
+                samples = clip_samples(clip, self._load)
+                if len(samples) < 2:
+                    raise RuntimeError("Jeden z klipów jest pusty.")
+                replace_mono16(path, samples)
+            paths.append(path)
+        return paths
+
+    def send_to_studio(self) -> None:
+        if self._uploading:
+            self.status.set("Wysyłka już trwa.")
+            return
+        try:
+            self.token()
+            beat_id = self.selected_beat_id()
+            title = self.title_var.get().strip()
+            if not title:
+                raise RuntimeError("Wpisz tytuł.")
+            clips, _skipped, used = self._send_list()
+            if not clips:
+                raise RuntimeError("Najpierw nagraj coś na ścieżce.")
+            cap = self._track_cap()
+            if used > cap:
+                raise RuntimeError(f"Plan {display_tier(self.tier)} mieści {cap} ścieżek, a z nagraniem jest {used}. Wycisz albo usuń nadmiar.")
+        except RuntimeError as error:
+            self.status.set(str(error))
+            return
+        self._save_prefs()
+        self._save_desk()
+        self._uploading = True
+        self.done_button.configure(state="disabled")
+        self.status.set("Przygotowuję klipy do wysyłki…")
+        threading.Thread(target=self._run_upload, args=(title, beat_id, clips), daemon=True).start()
+
+    def _remember_state(self, state: UploadState) -> None:
+        self._pending = state
+        save_pending(state)
+
+    def _upload_say(self, text: str) -> None:
+        self.root.after(0, lambda: self.status.set(text) if self._uploading else None)
+
+    def _run_upload(self, title: str, beat_id: str, clips: list[tuple[int, Clip]]) -> None:
+        try:
+            paths = self._render_clip_files(clips)
+            resume = self._pending if self._pending is not None and self._pending.wav_paths == [str(path) for path in paths] else None
+            if self._pending is not None and resume is None:
+                self._pending = None
+                clear_pending()
+            if resume is not None:
+                title, beat_id = resume.title, resume.beat_id
+            project = upload_vocals(
+                self._client(),
+                title=title,
+                beat_id=beat_id,
+                wav_paths=paths,
+                track_of=[slot for slot, _clip in clips],
+                starts_ms=[int(round(clip.start * 1000)) for _slot, clip in clips],
+                progress=self._upload_say,
+                resume=resume,
+                on_state=self._remember_state,
+            )
+        except Exception as error:
+            message = str(error)
+            self.root.after(0, lambda: self._upload_done(None, message))
+            return
+        self.root.after(0, lambda: self._upload_done(project, ""))
+
+    def _upload_done(self, project: str | None, error: str) -> None:
+        self._uploading = False
+        self.done_button.configure(state="normal")
+        if project is None:
+            hint = " Gotowe i Wrzuć do Studia dokończy wysyłkę." if self._pending is not None else ""
+            self.status.set(self._safe_listen_error(RuntimeError(error or "Wysyłka się nie udała.")) + hint)
+            return
+        self._pending = None
+        clear_pending()
+        self.project_id = project
+        self.status.set("Nagranie jest w Studio na koncie. Otwieram projekt w przeglądarce: tam miks i mastering.")
+        webbrowser.open(studio_url(SITE, project))
+
+    def export_stems(self) -> None:
+        if self.tier != "GOLD":
+            self.status.set("Stemy z programu są w planie Gold.")
+            return
+        if self._exporting:
+            return
+        folder = filedialog.askdirectory(title="Folder na stemy")
+        if not folder:
+            return
+        title = self.title_var.get().strip() or "nagranie"
+        jobs = [(track.name, list(track.clips)) for track in self.tracks if track.clips]
+        self._exporting = True
+        self.status.set("Zapisuję stemy…")
+        threading.Thread(target=self._run_stems, args=(Path(folder), title, jobs), daemon=True).start()
+
+    def _run_stems(self, folder: Path, title: str, jobs: list[tuple[str, list[Clip]]]) -> None:
+        written: list[str] = []
+        error = ""
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            for number, (name, clips) in enumerate(jobs, start=1):
+                samples = render(clips, 0.0, track_end(clips), self._load)
+                target = folder / f"{safe_name(title)}_{number:02d}_{safe_name(name)}.wav"
+                replace_mono16(target, samples)
+                written.append(target.name)
+        except Exception as problem:
+            error = str(problem) or "zapis"
+
+        def done() -> None:
+            self._exporting = False
+            if error:
+                self.status.set(f"Stemy: zapisane {len(written)}, potem błąd ({error[:80]}).")
+            else:
+                self.status.set(
+                    f"Stemy zapisane ({len(written)} plików WAV, 48 kHz mono, od 0:00) w {folder}. Bitu tu nie ma: jest w Studio w ZIP projektu."
+                )
+
+        self.root.after(0, done)
+
+    # ---- small shared bits ------------------------------------------------------
+
+    def _stop_monitor(self) -> None:
+        stop_monitor(self.monitor)
+        stop_monitor(self.mix_feed)
+        self.monitor = None
+        self.mix_feed = None
+
+    def _cancel_tick(self) -> None:
+        if self._tick_id:
+            self.root.after_cancel(self._tick_id)
+            self._tick_id = None
+
+    def _busy_for_update(self) -> bool:
+        return self.recording or self._arming or self._uploading or self._probing or self._exporting
+
+    # ---- kept: frame, sign-in, updates, mic check ----
 
     def _fit_image(self, name: str, max_width: int, max_height: int) -> tk.PhotoImage | None:
         path = brand_file(name)
@@ -923,52 +2641,6 @@ class RecorderWindow:
         y = max(0, (self.root.winfo_screenheight() - height) // 2 - 24)
         self.root.geometry(f"{width}x{height}+{x}+{y}")
 
-    def _fit_copy(self, event: tk.Event) -> None:
-        if event.widget is not self.root:
-            return
-        width = max(240, int(event.width) - 56)
-        for label in (getattr(self, "plan_label", None), getattr(self, "status_label", None), getattr(self, "foot_label", None)):
-            if label is not None:
-                label.configure(wraplength=width)
-        caption = getattr(self, "local_caption", None)
-        if caption is not None:
-            caption.configure(wraplength=max(160, width - 190))
-        probe_note = getattr(self, "probe_label", None)
-        if probe_note is not None:
-            probe_note.configure(wraplength=max(160, width - 330))
-        hint = getattr(self, "lane_hint", None)
-        if hint is not None:
-            hint.configure(wraplength=max(200, width - 70))
-
-    def show_gate(self) -> None:
-        self.scrollbar.pack_forget()
-        self.canvas.pack_forget()
-        self.gate.pack(fill="both", expand=True)
-        scale = dpi_scale()
-        self.root.minsize(int(420 * scale), int(640 * scale))
-        if self._borderless:
-            self._place_window(int(520 * scale), int(760 * scale))
-        elif self.root.winfo_width() > 640:
-            self.root.geometry("480x740")
-
-    def show_studio(self) -> None:
-        self.gate.pack_forget()
-        self.scrollbar.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
-        scale = dpi_scale()
-        self.root.minsize(int(720 * scale), int(640 * scale))
-        if self._borderless:
-            self._place_window(int(980 * scale), int(820 * scale))
-        else:
-            self.root.geometry("880x780")
-        email = self.email.get().strip()
-        self.account_line.set(f"Konto: {email}" if email else "Konto")
-        if self._pending is not None:
-            self.status.set(
-                f"Poprzednia wysyłka nie skończyła się ({self._pending.summary()}). "
-                "Naciśnij Wyślij, żeby ją dokończyć."
-            )
-
     def _open_site(self, path: str) -> None:
         webbrowser.open(f"{SITE}{path}")
 
@@ -1030,465 +2702,8 @@ class RecorderWindow:
             justify="left",
         ).pack(anchor="w", pady=(12, 0))
 
-    def _on_close(self) -> None:
-        if self._uploading and not messagebox.askyesno(
-            "BitRymDym",
-            "Wysyłka na konto jeszcze trwa. Jeśli zamkniesz program teraz, projekt na koncie może zostać niepełny. Zamknąć mimo to?",
-        ):
-            return
-        self._arm_token += 1
-        self._cancel_tick()
-        self._stop_probe()
-        self._stop_monitor()
-        if self.capture:
-            stop_capture(self.capture)
-            self.capture = None
-        self.recording = False
-        self.root.destroy()
-
-    def _build_deck(self) -> None:
-        tk.Label(
-            self.page,
-            text="NAGRYWARKA",
-            bg=PAPER,
-            fg=MUTE,
-            font=(FONT_META, 9),
-            anchor="w",
-        ).pack(fill="x", padx=18, pady=(12, 0))
-        tk.Label(
-            self.page,
-            text="BitRymDym",
-            bg=PAPER,
-            fg=INK,
-            font=(FONT_DISPLAY, 28, "italic"),
-            anchor="w",
-        ).pack(fill="x", padx=18)
-        rule = tk.Frame(self.page, bg=AMBER, height=3)
-        rule.pack_propagate(False)
-        rule.pack(fill="x", padx=18, pady=(2, 8))
-        deck = tk.Frame(
-            self.page,
-            bg=PANEL,
-            highlightbackground=LINE_STRONG,
-            highlightthickness=1,
-        )
-        deck.pack(fill="x", padx=18)
-        face = tk.Frame(deck, bg=PANEL)
-        face.pack(fill="x", padx=14, pady=(10, 6))
-        tk.Label(
-            face,
-            text="DECK A",
-            bg=PANEL,
-            fg=SOFT,
-            font=(FONT_POSTER, 14, "bold"),
-        ).pack(side="left")
-        side = tk.Frame(face, bg=PANEL)
-        side.pack(side="right")
-        lamp_row = tk.Frame(side, bg=PANEL)
-        lamp_row.pack(anchor="e")
-        self.lamp = tk.Canvas(lamp_row, width=12, height=12, bg=PANEL, highlightthickness=0)
-        self.lamp.pack(side="left", padx=(0, 6))
-        self.lamp_text = tk.Label(
-            lamp_row,
-            text="STOP",
-            bg=PANEL,
-            fg=MUTE,
-            font=(FONT_META, 9),
-        )
-        self.lamp_text.pack(side="left")
-        tk.Label(
-            side,
-            textvariable=self.clock,
-            bg=PANEL,
-            fg=INK,
-            font=(FONT_META, 12),
-        ).pack(anchor="e")
-        shell = tk.Frame(deck, bg="#2a221a", highlightbackground="#4a3d30", highlightthickness=1)
-        shell.pack(fill="x", padx=14, pady=(4, 8))
-        paper = tk.Frame(shell, bg=INK)
-        paper.pack(fill="x", padx=12, pady=12)
-        head = tk.Frame(paper, bg=INK)
-        head.pack(fill="x", padx=10, pady=(8, 0))
-        ink_rule = tk.Frame(paper, bg=ON_AMBER, height=2)
-        ink_rule.pack_propagate(False)
-        ink_rule.pack(fill="x", padx=10, pady=(4, 0))
-        tk.Label(
-            head,
-            text="STRONA A",
-            bg=INK,
-            fg=ON_AMBER,
-            font=(FONT_POSTER, 12, "bold"),
-        ).pack(side="left")
-        self.cassette_meta = tk.Label(
-            head,
-            text="—",
-            bg=INK,
-            fg=ON_AMBER,
-            font=(FONT_META, 9),
-        )
-        self.cassette_meta.pack(side="right")
-        self.cassette_title = tk.Label(
-            paper,
-            text="Katalog czeka",
-            bg=INK,
-            fg=ON_AMBER,
-            font=(FONT_DISPLAY, 18, "italic"),
-            anchor="w",
-        )
-        self.cassette_title.pack(fill="x", padx=10, pady=(4, 0))
-        tk.Label(
-            paper,
-            text="BITRYMDYM",
-            bg=INK,
-            fg=ON_AMBER,
-            font=(FONT_META, 9),
-            anchor="w",
-        ).pack(fill="x", padx=10)
-        self.tape_window = tk.Canvas(
-            paper,
-            width=10,
-            height=64,
-            bg="#17120d",
-            highlightthickness=2,
-            highlightbackground=ON_AMBER,
-        )
-        self.tape_window.pack(fill="x", padx=28, pady=(6, 12))
-        self.tape_window.bind("<Configure>", self._draw_reels)
-        paper.bind("<Configure>", lambda event: self.cassette_title.configure(wraplength=max(120, event.width - 36)))
-        self._build_tracks(deck)
-
-    def _lane(self, parent: tk.Widget) -> tk.Canvas:
-        canvas = tk.Canvas(
-            parent,
-            height=96,
-            bg="#120e0b",
-            highlightthickness=1,
-            highlightbackground=LINE,
-            bd=0,
-        )
-        canvas.pack(fill="x", expand=True, padx=(8, 0))
-        canvas.bind("<Configure>", lambda _event: self._paint_lanes())
-        return canvas
-
-    def _build_tracks(self, parent: tk.Widget) -> None:
-        stack = tk.Frame(parent, bg=PANEL)
-        stack.pack(fill="x", padx=14, pady=(0, 12))
-        self.ruler = tk.Canvas(stack, height=22, bg=PAPER, highlightthickness=0, bd=0)
-        self.ruler.pack(fill="x", padx=(210, 0))
-        self.ruler.bind("<Configure>", lambda _event: self._paint_lanes())
-
-        beat = tk.Frame(stack, bg=PANEL)
-        beat.pack(fill="x", pady=(4, 2))
-        beat_meta = tk.Frame(beat, bg=PANEL, width=210)
-        beat_meta.pack(side="left", fill="y")
-        beat_meta.pack_propagate(False)
-        tk.Label(beat_meta, text="BIT", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 13, "bold")).pack(anchor="w")
-        self._button(beat_meta, "Plik", self.pick_local, RACK, INK).pack(fill="x", pady=(4, 2))
-        self._button(beat_meta, "Graj", self.preview_beat, AMBER, ON_AMBER).pack(fill="x")
-        self.beat_lane = self._lane(beat)
-
-        self.vocal_host = tk.Frame(stack, bg=PANEL)
-        self.vocal_host.pack(fill="x")
-        self._add_vocal_lane()
-
-        bar = tk.Frame(stack, bg=PANEL)
-        bar.pack(fill="x", pady=(6, 0))
-        self._button(bar, "Nagraj", self.arm, REC, INK).pack(side="left", padx=(0, 6))
-        self._button(bar, "Stop", self.stop_take, RACK, INK).pack(side="left", padx=(0, 6))
-        self._button(bar, "Graj miks", self.preview_mix, AMBER, ON_AMBER).pack(side="left", padx=(0, 6))
-        add_shell = self._button(bar, "Dodaj ścieżkę", self._add_lane_clicked, RACK, INK)
-        add_shell.pack(side="left")
-        self.add_button = add_shell.winfo_children()[0]
-        self._build_vu(bar)
-        self._sync_add_button()
-        self.lane_hint = tk.Label(
-            stack,
-            text="Przeciągnij po fali i w ED wytnij, zostaw, wycisz albo zrób fade. ED ustawia dB i lewo albo prawo. M wycisza, S zostawia solo. Graj miks składa bit i słyszane ujęcia. Bit nie jest zapisywany. Czerwień: przester albo głośniej niż bit.",
-            bg=PANEL,
-            fg=SOFT,
-            font=(FONT_UI, 9),
-            anchor="w",
-            wraplength=900,
-            justify="left",
-        )
-        self.lane_hint.pack(fill="x", pady=(6, 0))
-
     def _track_cap(self) -> int:
         return max_recording_tracks(self.tier)
-
-    def _sync_add_button(self) -> None:
-        if not hasattr(self, "add_button"):
-            return
-        cap = self._track_cap()
-        have = len(self.vocals)
-        if have >= cap:
-            text = f"Limit {have}/{cap}"
-        else:
-            text = f"Dodaj ścieżkę {have}/{cap}"
-        self.add_button.configure(text=text.upper())
-
-    def _mark_armed(self) -> None:
-        for index, lane in enumerate(self.vocals):
-            armed = index == self.armed
-            label = lane["label"]
-            canvas = lane["canvas"]
-            if isinstance(label, tk.Label):
-                label.configure(fg=REC if armed else SOFT)
-            if isinstance(canvas, tk.Canvas):
-                canvas.configure(highlightbackground=AMBER if armed else LINE)
-
-    def _arm_lane(self, index: int) -> None:
-        if index < 0 or index >= len(self.vocals):
-            return
-        if self.recording and index != self.armed:
-            self.status.set("Najpierw Stop. Nagranie zostaje na uzbrojonej ścieżce.")
-            return
-        self.armed = index
-        self._mark_armed()
-        name = self.vocals[index]["name"]
-        self.status.set(f"Uzbrojona ścieżka: {name}.")
-
-    def _add_vocal_lane(self) -> None:
-        index = len(self.vocals)
-        name = "WOKAL" if index == 0 else f"WOKAL {index + 1}"
-        row = tk.Frame(self.vocal_host, bg=PANEL)
-        row.pack(fill="x", pady=(4, 4))
-        meta = tk.Frame(row, bg=PANEL, width=210)
-        meta.pack(side="left", fill="y")
-        meta.pack_propagate(False)
-        label = tk.Label(meta, text=name, bg=PANEL, fg=REC, font=(FONT_POSTER, 12, "bold"), anchor="w")
-        label.pack(anchor="w", fill="x")
-        tools = tk.Frame(meta, bg=PANEL)
-        tools.pack(fill="x", pady=(4, 0))
-        lane: dict[str, object] = {
-            "name": name,
-            "frame": row,
-            "label": label,
-            "canvas": None,
-            "path": None,
-            "muted": False,
-            "solo": False,
-            "gain_db": 0.0,
-            "pan": 0.0,
-            "sel": None,
-        }
-        mute = tk.Button(
-            tools,
-            text="M",
-            command=lambda slot=lane: self._toggle_mute(slot),
-            bg=RACK,
-            fg=SOFT,
-            relief="flat",
-            bd=0,
-            padx=6,
-            pady=2,
-            font=(FONT_POSTER, 11, "bold"),
-        )
-        mute.pack(side="left", padx=(0, 4))
-        solo = tk.Button(
-            tools,
-            text="S",
-            command=lambda slot=lane: self._toggle_solo(slot),
-            bg=RACK,
-            fg=SOFT,
-            relief="flat",
-            bd=0,
-            padx=6,
-            pady=2,
-            font=(FONT_POSTER, 11, "bold"),
-        )
-        solo.pack(side="left", padx=(0, 4))
-        lane["solo_button"] = solo
-        tk.Button(
-            tools,
-            text="ED",
-            command=lambda slot=lane: self._edit_lane(slot),
-            bg=RACK,
-            fg=INK,
-            relief="flat",
-            bd=0,
-            padx=6,
-            pady=2,
-            font=(FONT_POSTER, 11, "bold"),
-        ).pack(side="left", padx=(0, 4))
-        tk.Button(
-            tools,
-            text="X",
-            command=lambda slot=lane: self._remove_lane(slot),
-            bg=RACK,
-            fg=REC,
-            relief="flat",
-            bd=0,
-            padx=6,
-            pady=2,
-            font=(FONT_POSTER, 11, "bold"),
-        ).pack(side="left")
-        lane["mute_button"] = mute
-        canvas = self._lane(row)
-        lane["canvas"] = canvas
-        self.vocals.append(lane)
-        if index == 0:
-            self.vocal_lane = canvas
-        label.bind("<Button-1>", lambda _event, slot=lane: self._arm_lane(self.vocals.index(slot)))
-        canvas.bind("<ButtonPress-1>", lambda event, slot=lane: self._select_down(slot, event))
-        canvas.bind("<B1-Motion>", lambda event, slot=lane: self._select_drag(slot, event))
-        canvas.bind("<ButtonRelease-1>", lambda event, slot=lane: self._select_up(slot, event))
-        self._mark_armed()
-
-    def _add_lane_clicked(self) -> None:
-        if self.recording:
-            self.status.set("Najpierw Stop.")
-            return
-        cap = self._track_cap()
-        if len(self.vocals) >= cap:
-            self.status.set(
-                f"Plan {display_tier(self.tier)} mieści {cap} ścieżek wokalu. Bit się nie liczy."
-            )
-            self._sync_add_button()
-            return
-        self._add_vocal_lane()
-        self.armed = len(self.vocals) - 1
-        self._mark_armed()
-        self._sync_add_button()
-        self._paint_lanes()
-        self._sync_scroll()
-        self.status.set(f"Ścieżka {self.vocals[self.armed]['name']} jest uzbrojona. Plan mieści {cap}.")
-
-    def _heard(self, lane: dict[str, object]) -> bool:
-        if lane.get("muted"):
-            return False
-        if any(item.get("solo") for item in self.vocals) and not lane.get("solo"):
-            return False
-        return True
-
-    def _lane_paths(self) -> list[Path]:
-        paths: list[Path] = []
-        for lane in self.vocals:
-            if not self._heard(lane):
-                continue
-            path = lane.get("path")
-            if isinstance(path, Path) and path.exists() and path.stat().st_size >= 1000:
-                paths.append(path)
-        return paths
-
-    def _paint_lanes(self) -> None:
-        if not hasattr(self, "beat_lane"):
-            return
-        cap = max(1, max_take_seconds(self.tier))
-        playhead = 0.0
-        if self.recording and self.wav_path.exists():
-            playhead = file_seconds(self.wav_path)
-        self._paint_ruler(cap)
-        beat_on = self.recording and (self.monitor is not None or self.local_beat is not None)
-        if beat_on:
-            self._beat_shown = playhead
-        shown = self._beat_shown
-        self._paint_lane(self.beat_lane, cap, shown, AMBER, shown > 0, shown)
-        for index, lane in enumerate(self.vocals):
-            canvas = lane.get("canvas")
-            if not isinstance(canvas, tk.Canvas):
-                continue
-            path = lane.get("path")
-            seconds = file_seconds(path) if isinstance(path, Path) and path.exists() else 0.0
-            here = self.recording and index == self.armed
-            head = playhead if here else seconds
-            peaks = self._vocal_peaks(path, canvas.winfo_width(), cap) if isinstance(path, Path) and path.exists() else None
-            self._paint_lane(
-                canvas,
-                cap,
-                seconds if not here else playhead,
-                REC,
-                seconds > 0 or here,
-                head,
-                peaks,
-                bool(lane.get("muted")),
-                self._beat_ceiling,
-                lane.get("sel") if isinstance(lane.get("sel"), tuple) else None,
-            )
-
-    def _paint_ruler(self, cap: int) -> None:
-        canvas = self.ruler
-        canvas.delete("all")
-        width = canvas.winfo_width()
-        if width < 20:
-            return
-        step = 5 if cap > 40 else 2
-        mark = 0
-        while mark <= cap:
-            x = int(width * mark / cap)
-            canvas.create_line(x, 10, x, 18, fill=MUTE)
-            canvas.create_text(x + 2, 2, text=str(mark), fill=MUTE, anchor="nw", font=(FONT_META, 8))
-            mark += step
-
-    def _vocal_peaks(self, path: Path, width: int, cap: int) -> list[float]:
-        columns = max(width, 2)
-        if self._wave_for != path or len(self._wave_cols) != columns:
-            self._wave_for = path
-            self._wave_cols = [0.0] * columns
-            self._wave_end = 0
-        try:
-            size = path.stat().st_size
-        except OSError:
-            return self._wave_cols
-        offset = wav_data_offset_of(path)
-        if offset is None:
-            return self._wave_cols
-        start = max(self._wave_end, offset)
-        if size - start >= 2:
-            # Half a second per tick. A full 180 s scan in Python would freeze the window.
-            length = min(size - start, 48_000)
-            if not self.recording:
-                length = size - start
-            pcm = read_file_range(path, start, length)
-            fold_peaks(self._wave_cols, pcm, max(0, (start - offset) // 2), max(1, cap) * 48_000)
-            self._wave_end = start + (len(pcm) // 2) * 2
-        return self._wave_cols
-
-    def _paint_lane(
-        self,
-        canvas: tk.Canvas,
-        cap: int,
-        block_seconds: float,
-        color: str,
-        filled: bool,
-        head_seconds: float,
-        peaks: list[float] | None = None,
-        muted: bool = False,
-        beat_ceiling: float | None = None,
-        selection: tuple[float, float] | None = None,
-    ) -> None:
-        canvas.delete("all")
-        width = max(canvas.winfo_width(), 2)
-        height = max(canvas.winfo_height(), 2)
-        mid = height / 2
-        if filled and not peaks:
-            end = width if block_seconds <= 0 else max(8, int(width * min(block_seconds / cap, 1.0)))
-            canvas.create_rectangle(0, mid - 4, end, mid + 4, fill=color, outline="")
-        if peaks:
-            hot = beat_ceiling * 1.25 if beat_ceiling else None
-            for index, level in enumerate(peaks):
-                if level <= 0.02:
-                    continue
-                x = int(index * width / max(len(peaks), 1))
-                half = max(1, int((height / 2 - 4) * min(level, 1.0)))
-                if muted:
-                    ink = MUTE
-                elif level >= 0.98 or (hot is not None and level > hot):
-                    ink = REC
-                elif level >= 0.7:
-                    ink = AMBER
-                else:
-                    ink = "#3ddc97"
-                canvas.create_line(x, mid - half, x, mid + half, fill=ink, width=3)
-        if selection and cap > 0:
-            left, right = selection
-            x1 = int(width * max(0.0, min(left, cap)) / cap)
-            x2 = int(width * max(0.0, min(right, cap)) / cap)
-            if x2 < x1:
-                x1, x2 = x2, x1
-            canvas.create_rectangle(x1, 1, max(x2, x1 + 2), height - 1, outline=AMBER, width=2)
-        x = int(width * min(max(head_seconds, 0.0) / cap, 1.0))
-        canvas.create_line(x, 0, x, height, fill=INK, width=1)
 
     def _safe_listen_error(self, error: BaseException) -> str:
         text = str(error)
@@ -1504,688 +2719,6 @@ class RecorderWindow:
             return self.selected_beat_id()
         except RuntimeError:
             return ""
-
-    def _beat_listen(self, beat_id: str) -> tuple[str | None, int | None, str]:
-        """Site PLAYBACK first. A local file is only the fallback. Nothing is saved.
-
-        Network call: run it off the Tk thread. beat_id is read by the caller.
-        """
-        try:
-            if not beat_id:
-                raise RuntimeError("Najpierw wybierz bit.")
-            payload = self._client().playback(beat_id)
-            url, limit = playback_target(payload)
-            note = (
-                f"Podgląd strony: {limit} s. Program nie zapisuje bitu."
-                if limit
-                else "Bit ze strony gra w słuchawkach. Program go nie zapisuje."
-            )
-            return url, limit, note
-        except Exception as error:
-            if self.local_beat is not None:
-                return str(self.local_beat), None, "Odsłuch strony niedostępny. Gra plik z dysku."
-            return None, None, self._safe_listen_error(error)
-
-    def preview_beat(self) -> None:
-        try:
-            if self.recording:
-                raise RuntimeError("Najpierw Stop. Odsłuch bitu i tak leci w trakcie nagrania.")
-            self._stop_monitor()
-            self.status.set("Łączę odsłuch bitu. Okno zostaje.")
-            threading.Thread(target=self._prepare_preview, args=(self._beat_id_or_empty(),), daemon=True).start()
-        except Exception as error:
-            self.status.set(self._safe_listen_error(error))
-
-    def _prepare_preview(self, beat_id: str) -> None:
-        try:
-            heard = self._beat_listen(beat_id)
-        except Exception as error:
-            heard = (None, None, self._safe_listen_error(error))
-        self.root.after(0, lambda result=heard: self._start_preview(result))
-
-    def _start_preview(self, heard: tuple[str | None, int | None, str]) -> None:
-        try:
-            if self.recording:
-                return
-            target, limit, note = heard
-            if target is None:
-                raise RuntimeError(note)
-            self._stop_monitor()
-            self.monitor = start_monitor(target, limit)
-            if self.monitor is None:
-                raise RuntimeError(NO_FFPLAY)
-            self.status.set(note)
-        except Exception as error:
-            self.status.set(self._safe_listen_error(error))
-
-    def _armed_take(self) -> Path | None:
-        if not self.vocals:
-            return None
-        path = self.vocals[self.armed].get("path")
-        if isinstance(path, Path) and path.exists() and path.stat().st_size >= 1000:
-            return path
-        return None
-
-    def _seconds_at(self, canvas: tk.Canvas, x: int) -> float:
-        cap = max(1, max_take_seconds(self.tier))
-        width = max(canvas.winfo_width(), 2)
-        return max(0.0, min(float(cap), x / width * cap))
-
-    def _select_down(self, lane: dict[str, object], event: tk.Event) -> None:
-        if lane in self.vocals:
-            self._arm_lane(self.vocals.index(lane))
-        start = self._seconds_at(event.widget, event.x)
-        lane["sel"] = (start, start)
-        self._paint_lanes()
-
-    def _select_drag(self, lane: dict[str, object], event: tk.Event) -> None:
-        current = lane.get("sel")
-        if not isinstance(current, tuple) or not current:
-            return
-        lane["sel"] = (float(current[0]), self._seconds_at(event.widget, event.x))
-        self._paint_lanes()
-
-    def _select_up(self, lane: dict[str, object], event: tk.Event) -> None:
-        current = lane.get("sel")
-        if not isinstance(current, tuple) or not current:
-            return
-        start = float(current[0])
-        end = self._seconds_at(event.widget, event.x)
-        if abs(end - start) < 0.08:
-            lane["sel"] = None
-            self._paint_lanes()
-            return
-        lane["sel"] = (min(start, end), max(start, end))
-        self._paint_lanes()
-        self.status.set(f"Zaznaczenie {lane['sel'][0]:.2f}–{lane['sel'][1]:.2f} s. ED tnie ten fragment.")
-
-    def _toggle_mute(self, lane: dict[str, object]) -> None:
-        lane["muted"] = not bool(lane.get("muted"))
-        button = lane.get("mute_button")
-        if isinstance(button, tk.Button):
-            button.configure(fg=REC if lane["muted"] else SOFT, text="M·" if lane["muted"] else "M")
-        self._paint_lanes()
-        name = lane.get("name")
-        self.status.set(f"{name} wyciszona." if lane["muted"] else f"{name} wraca do miksu.")
-
-    def _toggle_solo(self, lane: dict[str, object]) -> None:
-        lane["solo"] = not bool(lane.get("solo"))
-        button = lane.get("solo_button")
-        if isinstance(button, tk.Button):
-            button.configure(fg=AMBER if lane["solo"] else SOFT, text="S·" if lane["solo"] else "S")
-        self._paint_lanes()
-        name = lane.get("name")
-        self.status.set(f"Solo: {name}." if lane["solo"] else f"{name} bez solo.")
-
-    def _span(self, lane: dict[str, object]) -> tuple[float, float]:
-        selection = lane.get("sel")
-        if not isinstance(selection, tuple) or len(selection) != 2:
-            raise RuntimeError("Przeciągnij po fali, żeby zaznaczyć fragment.")
-        start, end = float(selection[0]), float(selection[1])
-        if abs(end - start) < 0.08:
-            raise RuntimeError("Zaznaczenie jest za krótkie.")
-        return min(start, end), max(start, end)
-
-    def _rewrite_take(self, lane: dict[str, object], mode: str) -> None:
-        if self.recording:
-            raise RuntimeError("Najpierw Stop.")
-        path = lane.get("path")
-        if not isinstance(path, Path) or not path.exists():
-            raise RuntimeError("Najpierw nagraj ujęcie na tej ścieżce.")
-        start, end = self._span(lane)
-        rate, samples = read_mono16(path)
-        edited = edit_span(samples, rate, start, end, mode)
-        replace_mono16(path, edited, rate)
-        self._wave_for = None
-        lane["sel"] = None
-        self._paint_lanes()
-
-    def _edit_lane(self, lane: dict[str, object]) -> None:
-        if self.recording:
-            self.status.set("Najpierw Stop.")
-            return
-        box = tk.Toplevel(self.root)
-        box.title("Ścieżka")
-        box.configure(bg=PANEL)
-        box.resizable(False, False)
-        name = tk.StringVar(value=str(lane.get("name") or "Wokal"))
-        gain = tk.DoubleVar(value=float(lane.get("gain_db") or 0.0))
-        pan = tk.DoubleVar(value=float(lane.get("pan") or 0.0) * 100.0)
-        tk.Label(box, text="Nazwa", bg=PANEL, fg=SOFT, font=(FONT_UI, 9)).pack(anchor="w", padx=12, pady=(10, 0))
-        tk.Entry(
-            box,
-            textvariable=name,
-            bg=RACK,
-            fg=INK,
-            insertbackground=INK,
-            relief="flat",
-            font=(FONT_UI, 12),
-        ).pack(fill="x", padx=12, pady=4)
-        tk.Label(box, text="Głośność, dB", bg=PANEL, fg=SOFT, font=(FONT_UI, 9)).pack(anchor="w", padx=12)
-        tk.Scale(
-            box,
-            from_=-36,
-            to=12,
-            resolution=0.5,
-            orient="horizontal",
-            variable=gain,
-            bg=PANEL,
-            fg=INK,
-            highlightthickness=0,
-            troughcolor=RACK,
-        ).pack(fill="x", padx=12)
-        tk.Label(box, text="Kanał: lewo −100, środek 0, prawo +100", bg=PANEL, fg=SOFT, font=(FONT_UI, 9)).pack(
-            anchor="w", padx=12
-        )
-        tk.Scale(
-            box,
-            from_=-100,
-            to=100,
-            resolution=1,
-            orient="horizontal",
-            variable=pan,
-            bg=PANEL,
-            fg=INK,
-            highlightthickness=0,
-            troughcolor=RACK,
-        ).pack(fill="x", padx=12)
-        actions = tk.Frame(box, bg=PANEL)
-        actions.pack(fill="x", padx=12, pady=(4, 0))
-
-        def run(mode: str, label: str) -> None:
-            try:
-                self._rewrite_take(lane, mode)
-            except RuntimeError as error:
-                self.status.set(str(error))
-                return
-            except ValueError as error:
-                code = str(error)
-                if code in {"span", "short"}:
-                    self.status.set("Zaznaczenie jest poza ujęciem.")
-                elif code in {"mono16", "empty"}:
-                    self.status.set("Cięcie działa na mono 16-bit.")
-                else:
-                    self.status.set("Nie dało się zapisać cięcia.")
-                return
-            except OSError:
-                self.status.set("Nie dało się zapisać cięcia.")
-                return
-            self.status.set(f"{label}. Plik ujęcia jest już zmieniony.")
-
-        for mode, button_text, done in (
-            ("cut", "Wytnij", "Wycięte"),
-            ("trim", "Zostaw", "Zostawiony fragment"),
-            ("silence", "Wycisz", "Wyciszony fragment"),
-            ("fade-in", "Fade in", "Fade in"),
-            ("fade-out", "Fade out", "Fade out"),
-        ):
-            tk.Button(
-                actions,
-                text=button_text,
-                command=lambda picked=mode, word=done: run(picked, word),
-                bg=RACK,
-                fg=INK,
-                relief="flat",
-                bd=0,
-                padx=8,
-                pady=4,
-                font=(FONT_UI, 9),
-            ).pack(side="left", padx=(0, 4), pady=4)
-
-        def save() -> None:
-            text = name.get().strip() or str(lane.get("name") or "Wokal")
-            lane["name"] = text
-            lane["gain_db"] = float(gain.get())
-            lane["pan"] = max(-1.0, min(1.0, float(pan.get()) / 100.0))
-            label = lane.get("label")
-            if isinstance(label, tk.Label):
-                label.configure(text=text)
-            side = "lewo" if lane["pan"] < -0.05 else "prawo" if lane["pan"] > 0.05 else "środek"
-            box.destroy()
-            self._paint_lanes()
-            self.status.set(f"{text}: {float(lane['gain_db']):+.1f} dB, {side}.")
-
-        self._button(box, "Zapisz", save, AMBER, ON_AMBER).pack(fill="x", padx=12, pady=12)
-
-    def _remove_lane(self, lane: dict[str, object]) -> None:
-        if self.recording:
-            self.status.set("Najpierw Stop.")
-            return
-        if lane not in self.vocals:
-            return
-        if len(self.vocals) == 1:
-            lane["path"] = None
-            lane["muted"] = False
-            lane["solo"] = False
-            lane["gain_db"] = 0.0
-            lane["pan"] = 0.0
-            lane["sel"] = None
-            button = lane.get("mute_button")
-            if isinstance(button, tk.Button):
-                button.configure(fg=SOFT, text="M")
-            solo = lane.get("solo_button")
-            if isinstance(solo, tk.Button):
-                solo.configure(fg=SOFT, text="S")
-            self._paint_lanes()
-            self.status.set("Ujęcie zdjęte. Ścieżka zostaje, bo plan ma co najmniej jedną.")
-            return
-        index = self.vocals.index(lane)
-        frame = lane.get("frame")
-        if isinstance(frame, tk.Frame):
-            frame.destroy()
-        self.vocals.pop(index)
-        if self.armed >= len(self.vocals):
-            self.armed = len(self.vocals) - 1
-        self._mark_armed()
-        self._sync_add_button()
-        self._paint_lanes()
-        self.status.set("Ścieżka usunięta.")
-
-    def _mix_sources(self) -> list[tuple[Path, float, float]]:
-        found: list[tuple[Path, float, float]] = []
-        for lane in self.vocals:
-            if not self._heard(lane):
-                continue
-            path = lane.get("path")
-            if isinstance(path, Path) and path.exists() and path.stat().st_size >= 1000:
-                found.append(
-                    (path, float(lane.get("gain_db") or 0.0), float(lane.get("pan") or 0.0))
-                )
-        return found
-
-    def preview_mix(self) -> None:
-        try:
-            if self.recording or self._arming:
-                raise RuntimeError("Najpierw Stop.")
-            vocals = self._mix_sources()
-            has_beat = self.local_beat is not None
-            if not has_beat:
-                try:
-                    has_beat = bool(self.selected_beat_id())
-                except RuntimeError:
-                    has_beat = False
-            if not vocals and not has_beat:
-                raise RuntimeError("Najpierw nagraj wokal na ścieżkę.")
-            self._stop_monitor()
-            self.status.set("Składam miks. Bit ze strony nie jest zapisywany.")
-            threading.Thread(
-                target=self._play_mix, args=(vocals, self._beat_id_or_empty()), daemon=True
-            ).start()
-        except Exception as error:
-            self.status.set(self._safe_listen_error(error))
-
-    def _play_mix(self, vocals: list[tuple[Path, float, float]], beat_id: str) -> None:
-        beat: str | None = None
-        limit: int | None = None
-        note = "Miks gra na domyślnym wyjściu Windows."
-        try:
-            target, limit, heard = self._beat_listen(beat_id)
-            if target is not None:
-                beat = target
-                note = heard
-        except Exception as error:
-            if self.local_beat is not None:
-                beat = str(self.local_beat)
-                note = "Odsłuch strony niedostępny. Gra plik z dysku."
-            elif not vocals:
-                self.root.after(0, lambda: self.status.set(self._safe_listen_error(error)))
-                return
-        ffmpeg = ffmpeg_exe()
-        play = ffplay_exe()
-        if play is None:
-            self.root.after(0, lambda: self.status.set(NO_FFPLAY))
-            return
-        if beat is not None:
-            ceiling = beat_ceiling(ffmpeg, beat)
-            if ceiling is not None:
-                self._beat_ceiling = ceiling
-                self.root.after(0, self._paint_lanes)
-        try:
-            argv = mix_argv(ffmpeg, beat, vocals, limit)
-            feed, monitor = start_mix(ffmpeg, play, argv)
-        except Exception as error:
-            self.root.after(0, lambda: self.status.set(self._safe_listen_error(error)))
-            return
-        self.mix_feed = feed
-        self.monitor = monitor
-        self.root.after(0, lambda: self.status.set(note))
-
-    def preview_take(self) -> None:
-        try:
-            if self.recording:
-                raise RuntimeError("Najpierw Stop.")
-            path = self._armed_take() or self.selected_take()
-            self._stop_monitor()
-            self.monitor = start_monitor(path)
-            if self.monitor is None:
-                raise RuntimeError(NO_FFPLAY)
-            name = self.vocals[self.armed]["name"] if self._armed_take() else path.name
-            self.status.set(f"Ujęcie gra: {name}.")
-        except Exception as error:
-            self.status.set(str(error))
-
-    def _vu_point(self, level: float, radius: float) -> tuple[float, float]:
-        rad = math.radians(210 + max(0.0, min(1.0, level)) * 120)
-        return (120 + math.cos(rad) * radius, 66 + math.sin(rad) * radius)
-
-    def _build_vu(self, parent: tk.Widget) -> None:
-        self.meter = tk.Canvas(parent, width=84, height=12, bg="#2a1d10", highlightthickness=0, bd=0)
-        self.meter.pack(side="left", padx=(10, 0))
-
-    def _draw_reels(self, _event: object = None) -> None:
-        canvas = self.tape_window
-        canvas.delete("all")
-        width = canvas.winfo_width()
-        height = canvas.winfo_height()
-        if width < 40 or height < 20:
-            return
-        mid = height / 2
-        canvas.create_rectangle(width * 0.3, mid - 6, width * 0.7, mid + 6, fill="#3b2c1d", outline="")
-        radius = min(height * 0.38, width * 0.08)
-        for cx in (width * 0.22, width * 0.78):
-            canvas.create_oval(cx - radius, mid - radius, cx + radius, mid + radius, outline=INK, width=2)
-            hub = max(3, radius * 0.22)
-            canvas.create_oval(cx - hub, mid - hub, cx + hub, mid + hub, fill=INK, outline="")
-            for step in range(6):
-                rad = math.radians(step * 60)
-                canvas.create_line(
-                    cx + math.cos(rad) * radius * 0.28,
-                    mid + math.sin(rad) * radius * 0.28,
-                    cx + math.cos(rad) * radius * 0.78,
-                    mid + math.sin(rad) * radius * 0.78,
-                    fill=INK,
-                    width=2,
-                )
-
-    def _sync_cassette(self) -> None:
-        label = self.beat_var.get().strip() or "Katalog czeka"
-        title = label
-        meta = "—"
-        if label.endswith(")") and " (" in label:
-            title, meta = label.rsplit(" (", 1)
-            meta = meta[:-1]
-        self.cassette_title.configure(text=title)
-        self.cassette_meta.configure(text=meta)
-
-    def _paint_lamp(self) -> None:
-        self.lamp.delete("all")
-        color = REC if self.recording else LINE_STRONG
-        self.lamp.create_oval(1, 1, 11, 11, fill=color, outline=color)
-        self.lamp_text.configure(text="NAGRYWA" if self.recording else "STOP")
-
-    def _build_account(self) -> None:
-        block = tk.Frame(self.page, bg=PAPER)
-        block.pack(fill="x", padx=18, pady=(10, 0))
-        self.account_line = tk.StringVar(value="Konto")
-        tk.Label(
-            block,
-            textvariable=self.account_line,
-            bg=PAPER,
-            fg=MUTE,
-            font=(FONT_META, 9),
-            anchor="w",
-        ).pack(fill="x")
-        self.title_box = self._entry(self._row(block, "Tytuł"), "")
-        self.title_box.insert(0, "Nagranie z komputera")
-        labels = [label for _beat_id, label in self.beats] or ["Brak bitu"]
-        if not self.beat_var.get():
-            self.beat_var.set(labels[0])
-        self._build_beat_picker(block, labels)
-        device_labels = self.devices or ["Brak mikrofonu"]
-        self.device_menu = self._menu(self._row(block, "Mikrofon"), self.device_var, device_labels)
-        probe = tk.Frame(block, bg=PAPER)
-        probe.pack(fill="x", pady=(6, 0))
-        probe_shell = self._button(probe, "Próba mikrofonu", self.toggle_mic_test, RACK, INK)
-        probe_shell.pack(side="left")
-        self.probe_button = probe_shell.winfo_children()[0]
-        self.probe_meter = tk.Canvas(probe, width=120, height=12, bg=RACK, highlightthickness=0, bd=0)
-        self.probe_meter.pack(side="left", padx=(8, 0))
-        self.probe_var = tk.StringVar(value="Powiedz coś do mikrofonu. Pasek pokaże, czy poziom jest dobry.")
-        self.probe_label = tk.Label(
-            probe,
-            textvariable=self.probe_var,
-            bg=PAPER,
-            fg=SOFT,
-            font=(FONT_UI, 9),
-            anchor="w",
-            wraplength=300,
-            justify="left",
-        )
-        self.probe_label.pack(side="left", padx=8)
-        hear = tk.Frame(block, bg=PAPER)
-        hear.pack(fill="x", pady=(6, 0))
-        self._button(hear, "Odsłuch z dysku", self.pick_local, RACK, INK).pack(side="left")
-        self.local_label = tk.StringVar(value="Ścieżka BIT czeka na plik WAV albo MP3.")
-        self.local_caption = tk.Label(
-            hear,
-            textvariable=self.local_label,
-            bg=PAPER,
-            fg=SOFT,
-            font=(FONT_UI, 9),
-            anchor="w",
-            wraplength=360,
-            justify="left",
-        )
-        self.local_caption.pack(side="left", padx=8)
-
-    def _build_effects(self) -> None:
-        self.plan_label = tk.Label(
-            self.page,
-            textvariable=self.plan_text,
-            bg=PAPER,
-            fg=SOFT,
-            font=(FONT_UI, 10),
-            anchor="w",
-            wraplength=640,
-            justify="left",
-        )
-        self.plan_label.pack(fill="x", padx=18, pady=(8, 2))
-        self.fx_open = False
-        self.fx_toggle = tk.StringVar(value="Efekty")
-        self.fx_bar = tk.Button(
-            self.page,
-            textvariable=self.fx_toggle,
-            command=self._toggle_fx,
-            bg=PANEL,
-            fg=INK,
-            activebackground=RACK,
-            activeforeground=AMBER,
-            relief="flat",
-            bd=0,
-            highlightthickness=1,
-            highlightbackground=LINE,
-            highlightcolor=AMBER,
-            anchor="w",
-            padx=12,
-            pady=8,
-            font=(FONT_UI, 11),
-            cursor="hand2",
-        )
-        self.fx_bar.pack(fill="x", padx=18, pady=(4, 2))
-        rack = tk.Frame(self.page, bg=PANEL, highlightbackground=LINE, highlightthickness=1)
-        self.fx_rack = rack
-        columns = [tk.Frame(rack, bg=PANEL), tk.Frame(rack, bg=PANEL)]
-        columns[0].pack(side="left", fill="both", expand=True, padx=8, pady=6)
-        columns[1].pack(side="left", fill="both", expand=True, padx=8, pady=6)
-        for index, (fx_id, label) in enumerate(FX):
-            var = tk.IntVar(value=0)
-            self.fx_vars[fx_id] = var
-            tk.Checkbutton(
-                columns[0 if index < 8 else 1],
-                text=label,
-                variable=var,
-                command=lambda picked=fx_id: self._on_fx(picked),
-                bg=PANEL,
-                fg=INK,
-                selectcolor=RACK,
-                activebackground=PANEL,
-                activeforeground=AMBER,
-                font=(FONT_UI, 10),
-                anchor="w",
-            ).pack(fill="x", anchor="w")
-        self._sync_fx_button()
-
-    def _toggle_fx(self) -> None:
-        self.fx_open = not self.fx_open
-        if self.fx_open:
-            self.fx_rack.pack(fill="x", padx=18, pady=(0, 6), after=self.fx_bar)
-        else:
-            self.fx_rack.pack_forget()
-        self._sync_fx_button()
-        self._sync_scroll()
-
-    def _sync_fx_button(self) -> None:
-        count = len(self.selected_fx()) if self.fx_vars else 0
-        arrow = "▴" if self.fx_open else "▾"
-        self.fx_toggle.set(f"Efekty {count}  {arrow}    słychać je w studio, tu nie ma wtyczek VST")
-
-    def _build_beat_picker(self, parent: tk.Widget, labels: list[str]) -> None:
-        slot = self._row(parent, "Bit")
-        self.beat_button = tk.Button(
-            slot,
-            command=self._toggle_beats,
-            bg=RACK,
-            fg=INK,
-            activebackground=PANEL,
-            activeforeground=AMBER,
-            relief="flat",
-            bd=0,
-            highlightthickness=1,
-            highlightbackground=LINE,
-            highlightcolor=AMBER,
-            anchor="w",
-            padx=8,
-            pady=6,
-            font=(FONT_UI, 10),
-            cursor="hand2",
-        )
-        self.beat_button.pack(fill="x")
-        self.beat_panel = tk.Frame(parent, bg=PAPER)
-        self.beat_query = tk.StringVar()
-        search = tk.Entry(
-            self.beat_panel,
-            textvariable=self.beat_query,
-            bg=RACK,
-            fg=INK,
-            insertbackground=AMBER,
-            relief="flat",
-            highlightthickness=1,
-            highlightbackground=LINE,
-            highlightcolor=AMBER,
-            font=(FONT_UI, 10),
-        )
-        search.pack(fill="x", ipady=4, pady=(4, 2))
-        search.insert(0, "")
-        self.beat_box = tk.Listbox(
-            self.beat_panel,
-            height=6,
-            bg=RACK,
-            fg=INK,
-            selectbackground=AMBER,
-            selectforeground=ON_AMBER,
-            highlightthickness=1,
-            highlightbackground=LINE,
-            relief="flat",
-            font=(FONT_UI, 10),
-            activestyle="none",
-            exportselection=False,
-        )
-        self.beat_box.pack(fill="x")
-        self.beat_box.bind("<<ListboxSelect>>", self._pick_beat)
-        self.beat_query.trace_add("write", lambda *_args: self._filter_beats())
-        self._filter_beats()
-        self._sync_beat_button()
-
-    def _toggle_beats(self) -> None:
-        if self.beat_panel.winfo_manager():
-            self.beat_panel.pack_forget()
-        else:
-            self.beat_panel.pack(fill="x", padx=18, pady=(0, 4), after=self.beat_button.master.master)
-            self._filter_beats()
-        self._sync_beat_button()
-        self._sync_scroll()
-
-    def _filter_beats(self) -> None:
-        query = self.beat_query.get().strip().lower()
-        labels = [label for _beat_id, label in self.beats] or ["Brak bitu"]
-        shown = [label for label in labels if query in label.lower()]
-        self.beat_box.delete(0, "end")
-        for label in shown:
-            self.beat_box.insert("end", label)
-        self._sync_beat_button()
-
-    def _pick_beat(self, _event: object = None) -> None:
-        picked = self.beat_box.curselection()
-        if not picked:
-            return
-        self.beat_var.set(self.beat_box.get(picked[0]))
-        self.beat_panel.pack_forget()
-        self._sync_beat_button()
-        self._sync_scroll()
-
-    def _sync_beat_button(self) -> None:
-        label = self.beat_var.get().strip() or "Wybierz bit"
-        if len(label) > 48:
-            label = label[:47] + "…"
-        count = len(self.beats)
-        arrow = "▴" if self.beat_panel.winfo_manager() else "▾"
-        self.beat_button.configure(text=f"{label}   {arrow}   {count}")
-
-    def _build_transport(self) -> None:
-        items = (
-            ("Stop", self.stop_take, RACK, INK),
-            ("Wyślij", self.send_selected, AMBER, ON_AMBER),
-            ("Stop i wyślij", self.stop_and_send, AMBER, ON_AMBER),
-            ("Studio", self.open_studio, RACK, INK),
-            ("Odśwież bity", self.reload_beats, RACK, INK),
-            ("Wyloguj", self.sign_out, RACK, INK),
-        )
-        grid = tk.Frame(self.page, bg=PAPER)
-        grid.pack(fill="x", padx=14, pady=(8, 4))
-        self.send_buttons: list[tk.Widget] = []
-        for index, (text, command, bg, fg) in enumerate(items):
-            shell = self._button(grid, text, command, bg, fg)
-            shell.grid(row=index // 2, column=index % 2, sticky="ew", padx=4, pady=4)
-            if text == "Studio":
-                self.open_button = shell
-            if text in ("Wyślij", "Stop i wyślij"):
-                self.send_buttons.append(shell)
-        grid.columnconfigure(0, weight=1)
-        grid.columnconfigure(1, weight=1)
-        self.take_list = tk.Listbox(
-            self.page,
-            height=4,
-            bg=RACK,
-            fg=INK,
-            selectbackground=AMBER,
-            selectforeground=ON_AMBER,
-            highlightthickness=1,
-            highlightbackground=LINE,
-            relief="flat",
-            font=(FONT_UI, 10),
-        )
-        self.take_list.pack(fill="x", padx=18, pady=4)
-        self.status_label = tk.Label(
-            self.page,
-            textvariable=self.status,
-            wraplength=640,
-            justify="left",
-            bg=PAPER,
-            fg=INK,
-            font=(FONT_UI, 10),
-        )
-        self.status_label.pack(fill="x", padx=18, pady=8)
-        self.foot_label = tk.Label(
-            self.page,
-            text=f"Nuty zostają w studio na stronie. Miks i master też. Wersja {updater.APP_VERSION}.",
-            bg=PAPER,
-            fg=SOFT,
-            font=(FONT_UI, 9),
-            anchor="w",
-            wraplength=640,
-            justify="left",
-        )
-        self.foot_label.pack(fill="x", padx=18)
 
     def _entry(self, parent: tk.Widget, show: str) -> tk.Entry:
         box = tk.Entry(
@@ -2268,93 +2801,6 @@ class RecorderWindow:
         slot.pack(side="left", fill="x", expand=True)
         return slot
 
-    def _load_public(self) -> None:
-        try:
-            payload = load_bootstrap()
-            self.public_url = str(payload["supabaseUrl"])
-            self.public_key = str(payload["anonKey"])
-            raw = payload.get("beats")
-            self.beats = []
-            if isinstance(raw, list):
-                for beat in raw:
-                    if isinstance(beat, dict) and beat.get("id") and beat.get("title"):
-                        bpm = beat.get("bpm")
-                        label = str(beat["title"])
-                        if isinstance(bpm, int) and bpm > 0:
-                            label = f"{label} ({bpm} BPM)"
-                        self.beats.append((str(beat["id"]), label))
-            if self.beats:
-                self.beat_var.set(self.beats[0][1])
-                self.status.set("Wybierz bit, zaloguj się i nagraj.")
-                if self.email.get().strip():
-                    self.gate_status.set("Jest zapisana sesja. Puste hasło wchodzi na to konto.")
-                else:
-                    self.gate_status.set("Wpisz konto ze strony.")
-        except Exception as error:
-            self.status.set(str(error))
-            self.gate_status.set(str(error))
-
-    def selected_fx(self) -> list[str]:
-        return [fx_id for fx_id, _label in FX if self.fx_vars[fx_id].get()]
-
-    def _on_fx(self, picked: str) -> None:
-        try:
-            build_chain(self.selected_fx(), self.tier)
-        except ValueError as error:
-            text = str(error)
-            drop = "sidechain" if "Ściszanie pod bit" in text and self.fx_vars["sidechain"].get() else picked
-            if drop in self.fx_vars:
-                self.fx_vars[drop].set(0)
-            self.status.set(text)
-        self._sync_fx_button()
-
-    def _fit_plan(self) -> None:
-        for _ in range(len(FX)):
-            try:
-                build_chain(self.selected_fx(), self.tier)
-                self._sync_fx_button()
-                return
-            except ValueError as error:
-                selected = self.selected_fx()
-                if not selected:
-                    self.status.set(str(error))
-                    self._sync_fx_button()
-                    return
-                drop = "sidechain" if "Ściszanie pod bit" in str(error) else selected[-1]
-                self.fx_vars[drop].set(0)
-                self.status.set(str(error))
-        self._sync_fx_button()
-
-    def _read_plan(self) -> None:
-        saved = load_session()
-        token = saved.get("accessToken") if saved else None
-        if not token:
-            self.tier = "FREE"
-            self.plan_text.set(
-                "Plan: zaloguj się. Do tego czasu 1 ścieżka wokalu, 4 efekty, nagranie do 30 s, bez ściszania pod bit."
-            )
-            self.clock.set("0.0 s / 30 s")
-            self._sync_add_button()
-            return
-        try:
-            payload = self._client().plan_usage()
-            tier, cap, side = limits_from_usage(payload)
-        except Exception as error:
-            self.tier = "FREE"
-            self.plan_text.set(str(error))
-            self._sync_add_button()
-            return
-        self.tier = tier
-        side_note = "ściszanie pod bit jest w planie" if side else "ściszanie pod bit od Silver"
-        seconds = max_take_seconds(tier)
-        tracks = max_recording_tracks(tier)
-        self.plan_text.set(
-            f"Plan {display_tier(tier)}. Ścieżki wokalu: {tracks}. Efekty na ścieżce: {cap}. Nagranie do {seconds} s. {side_note}."
-        )
-        self.clock.set(f"0.0 s / {seconds} s")
-        self._sync_add_button()
-        self._fit_plan()
-
     def selected_beat_id(self) -> str:
         label = self.beat_var.get()
         for beat_id, beat_label in self.beats:
@@ -2389,25 +2835,6 @@ class RecorderWindow:
         save_session(saved["supabaseUrl"], saved["anonKey"], saved.get("email", ""), grant)
         return grant["access_token"]
 
-    def _fill_menu(self, menu: tk.OptionMenu, variable: tk.StringVar, labels: list[str]) -> None:
-        choices = menu["menu"]
-        choices.delete(0, "end")
-        for label in labels:
-            choices.add_command(label=label, command=lambda value=label: variable.set(value))
-        if variable.get() not in labels and labels:
-            variable.set(labels[0])
-
-    def reload_beats(self) -> None:
-        current = self.beat_var.get()
-        self._load_public()
-        labels = [label for _beat_id, label in self.beats] or ["Brak bitu"]
-        if current in labels:
-            self.beat_var.set(current)
-        self._filter_beats()
-        self._sync_beat_button()
-        self._sync_cassette()
-        self.status.set(f"Lista bitów: {len(self.beats)}.")
-
     def sign_out(self) -> None:
         if self._uploading:
             self.status.set("Wysyłka trwa. Wyloguj po jej końcu.")
@@ -2439,10 +2866,6 @@ class RecorderWindow:
         self.gate_status.set("Wylogowano na tym komputerze.")
         self.show_gate()
 
-    def _load_saved_takes(self) -> None:
-        for path in list_saved_takes(TAKES):
-            self._add_take(path)
-
     def sign_in(self) -> None:
         try:
             email = self.email.get().strip()
@@ -2470,24 +2893,6 @@ class RecorderWindow:
             self.status.set(str(error))
             self.gate_status.set(str(error))
 
-    def pick_local(self) -> None:
-        picked = filedialog.askopenfilename(
-            title="Bit do odsłuchu",
-            filetypes=[("Audio", "*.wav *.mp3"), ("Wszystkie", "*.*")],
-        )
-        if not picked:
-            return
-        self.local_beat = Path(picked)
-        self.local_label.set(self.local_beat.name)
-        self._paint_lanes()
-        self.status.set("Bit jest na ścieżce. Nagraj puści go w słuchawkach.")
-
-    def _stop_monitor(self) -> None:
-        stop_monitor(self.monitor)
-        stop_monitor(self.mix_feed)
-        self.monitor = None
-        self.mix_feed = None
-
     def selected_device(self) -> str:
         name = self.device_var.get()
         if name in self.devices:
@@ -2495,111 +2900,6 @@ class RecorderWindow:
         if self.devices:
             return self.devices[0]
         raise RuntimeError("Windows nie pokazał mikrofonu.")
-
-    def _cancel_tick(self) -> None:
-        if self._tick_id:
-            self.root.after_cancel(self._tick_id)
-            self._tick_id = None
-
-    def _draw_meter(self, db: float) -> None:
-        level = max(0.0, min(1.0, (db + 60.0) / 60.0))
-        self.meter.delete("needle")
-        color = REC if level > 0.85 else AMBER
-        self.meter.create_rectangle(0, 0, int(84 * level), 12, fill=color, outline="", tags="needle")
-        self._paint_lamp()
-
-    def _tick(self) -> None:
-        if not self.recording:
-            return
-        if self.capture is not None and self.capture.poll() is not None:
-            self._capture_died()
-            return
-        try:
-            seconds = file_seconds(self.wav_path) if self.wav_path.exists() else 0.0
-            cap = max_take_seconds(self.tier)
-            self.clock.set(f"{seconds:.1f} s / {cap} s")
-            self._draw_meter(tail_peak_db(self.wav_path))
-            self._paint_lanes()
-        except Exception:
-            seconds = 0.0
-            cap = max_take_seconds(self.tier)
-        if seconds >= cap:
-            try:
-                self._finish_take()
-            except Exception as error:
-                self.status.set(str(error))
-                return
-            self.status.set(
-                f"Plan {display_tier(self.tier)} kończy nagranie po {cap} s. Ujęcie jest na liście."
-                + (f" {self._take_note}" if self._take_note else "")
-            )
-            return
-        self._tick_id = self.root.after(200, self._tick)
-
-    def _add_take(self, path: Path) -> None:
-        if path in self.takes:
-            return
-        self.takes.append(path)
-        self.take_list.insert("end", path.name)
-        self.take_list.selection_clear(0, "end")
-        self.take_list.selection_set("end")
-
-    def selected_take(self) -> Path:
-        picked = self.take_list.curselection()
-        if not picked:
-            raise RuntimeError("Najpierw nagraj ujęcie.")
-        return self.takes[int(picked[0])]
-
-    def _save_prefs(self) -> None:
-        write_prefs(
-            PREFS,
-            {
-                "device": self.device_var.get(),
-                "title": self.title_box.get().strip(),
-                "effects": self.selected_fx(),
-                "beat": self.beat_var.get(),
-            },
-        )
-
-    def _load_prefs(self) -> None:
-        try:
-            prefs = read_prefs(PREFS)
-        except (OSError, json.JSONDecodeError):
-            return
-        title = prefs.get("title")
-        if isinstance(title, str) and title:
-            self.title_box.delete(0, "end")
-            self.title_box.insert(0, title)
-        device = prefs.get("device")
-        if isinstance(device, str) and device in self.devices:
-            self.device_var.set(device)
-        beat = prefs.get("beat")
-        labels = [label for _beat_id, label in self.beats]
-        if isinstance(beat, str) and beat in labels:
-            self.beat_var.set(beat)
-        effects = prefs.get("effects")
-        if isinstance(effects, list):
-            for fx_id, var in self.fx_vars.items():
-                var.set(1 if fx_id in effects else 0)
-            self._fit_plan()
-        self._sync_beat_button()
-        self._sync_fx_button()
-
-    def _finish_take(self) -> Path:
-        self._cancel_tick()
-        self._stop_monitor()
-        if self.capture:
-            stop_capture(self.capture)
-            self.capture = None
-        self.recording = False
-        self._paint_lamp()
-        if not self.wav_path.exists() or self.wav_path.stat().st_size < 1000:
-            raise RuntimeError("Nagranie jest puste.")
-        self._add_take(self.wav_path)
-        self._save_prefs()
-        self.clock.set(f"{file_seconds(self.wav_path):.1f} s / {max_take_seconds(self.tier)} s")
-        self._take_note = self._rate_take(self.wav_path)
-        return self.wav_path
 
     def _rate_take(self, path: Path) -> str:
         """One sentence on level, clipping, and mic drops. Never blocks sending."""
@@ -2609,119 +2909,6 @@ class RecorderWindow:
         except Exception:
             return ""
         return quality_note(db, clipped, drops)
-
-    def _capture_died(self) -> None:
-        """ffmpeg ended by itself: mic unplugged, taken by another program, or Windows closed it."""
-        path = self.wav_path
-        _drops, fatal = read_capture_log(path, remove=False)
-        self._cancel_tick()
-        self._stop_monitor()
-        self.capture = None
-        self.recording = False
-        self._paint_lamp()
-        reason = "Mikrofon przestał oddawać dźwięk (odłączony albo zajęty przez inny program)."
-        if path.exists() and path.stat().st_size >= 1000:
-            self._add_take(path)
-            self._paint_lanes()
-            reason += " Do tej chwili ujęcie jest zapisane na liście."
-        elif fatal:
-            reason += f" Windows: {fatal[:120]}"
-        read_capture_log(path)
-        self.status.set(reason)
-
-    def _upload(self, paths: list[Path]) -> None:
-        """Checks on the Tk thread, then the transfer runs in a worker so the window stays alive."""
-        if self._uploading:
-            raise RuntimeError("Wysyłka już trwa.")
-        resume: UploadState | None = None
-        dropped = ""
-        if self._pending is not None:
-            if [str(path) for path in paths] == self._pending.wav_paths:
-                resume = self._pending
-            else:
-                self._pending = None
-                clear_pending()
-                dropped = "Przerwana wcześniej wysyłka została porzucona (są inne ścieżki). "
-        picked = self.selected_fx()
-        chain = build_chain(picked, self.tier)
-        if resume is not None:
-            title, beat_id = resume.title, resume.beat_id
-        else:
-            title = self.title_box.get().strip()
-            if not title:
-                raise RuntimeError("Wpisz tytuł.")
-            cap = self._track_cap()
-            if len(paths) > cap:
-                raise RuntimeError(
-                    f"Plan {display_tier(self.tier)} mieści {cap} ścieżek wokalu, a nagrane są {len(paths)}."
-                )
-            beat_id = self.selected_beat_id()
-        self._uploading = True
-        self._sync_send_buttons()
-        self.status.set(
-            dropped + ("Dokańczam przerwaną wysyłkę. " if resume else "Wysyłam na konto. ")
-            + "Okno zostaje, nie zamykaj programu."
-        )
-        threading.Thread(
-            target=self._run_upload,
-            args=(title, beat_id, list(paths), chain, len(picked), resume),
-            daemon=True,
-        ).start()
-
-    def _remember_state(self, state: UploadState) -> None:
-        self._pending = state
-        save_pending(state)
-
-    def _upload_say(self, text: str) -> None:
-        self.root.after(0, lambda: self.status.set(text) if self._uploading else None)
-
-    def _run_upload(
-        self,
-        title: str,
-        beat_id: str,
-        paths: list[Path],
-        chain: dict[str, object],
-        fx_count: int,
-        resume: UploadState | None = None,
-    ) -> None:
-        try:
-            project = upload_vocals(
-                self._client(),
-                title=title,
-                beat_id=beat_id,
-                wav_paths=paths,
-                chain=chain,
-                progress=self._upload_say,
-                resume=resume,
-                on_state=self._remember_state,
-            )
-        except Exception as error:
-            message = str(error)
-            self.root.after(0, lambda: self._upload_done(None, len(paths), fx_count, message))
-            return
-        self.root.after(0, lambda: self._upload_done(project, len(paths), fx_count, ""))
-
-    def _upload_done(self, project: str | None, tracks: int, fx_count: int, error: str) -> None:
-        self._uploading = False
-        self._sync_send_buttons()
-        if project is None:
-            hint = " Naciśnij Wyślij, żeby dokończyć." if self._pending is not None else ""
-            self.status.set((error or "Wysyłka się nie udała.") + hint)
-            return
-        self._pending = None
-        clear_pending()
-        self.project_id = project
-        fx_note = f" Efekty: {fx_count}." if fx_count else ""
-        self.status.set(f"Projekt jest na koncie. Ścieżki wokalu: {tracks}.{fx_note} Id: {project}")
-
-    def _sync_send_buttons(self) -> None:
-        """Wyślij and Stop i wyślij stay greyed out until the transfer ends (no double project)."""
-        for shell in getattr(self, "send_buttons", []):
-            try:
-                inner = shell.winfo_children()[0]
-                inner.configure(state="disabled" if self._uploading else "normal")
-            except Exception:
-                pass
 
     def _build_update_bar(self) -> None:
         """Bottom strip, shown only when a newer signed build exists. Visible on every screen."""
@@ -2772,9 +2959,6 @@ class RecorderWindow:
             return
         self._update_dismissed = True
         self.update_bar.pack_forget()
-
-    def _busy_for_update(self) -> bool:
-        return self.recording or self._arming or self._uploading or self._probing
 
     def _apply_update(self) -> None:
         if self._update is None or self._update_busy:
@@ -2907,126 +3091,6 @@ class RecorderWindow:
         if message:
             self.probe_var.set(message)
 
-    def arm(self) -> None:
-        if self.recording or self._arming:
-            return
-        self._stop_probe()
-        if not self.vocals:
-            self.status.set("Brak ścieżki wokalu.")
-            return
-        self._arming = True
-        self._arm_token += 1
-        token = self._arm_token
-        self.status.set("Łączę odsłuch bitu. Okno zostaje.")
-        threading.Thread(
-            target=self._prepare_listen, args=(token, self._beat_id_or_empty()), daemon=True
-        ).start()
-
-    def _prepare_listen(self, token: int, beat_id: str) -> None:
-        try:
-            heard = self._beat_listen(beat_id)
-        except Exception as error:
-            heard = (None, None, self._safe_listen_error(error))
-        self.root.after(0, lambda result=heard, mark=token: self._begin_take(mark, result))
-
-    def _begin_take(self, token: int, heard: tuple[str | None, int | None, str]) -> None:
-        if token != self._arm_token:
-            self._arming = False
-            return
-        target, limit, note = heard
-        try:
-            if self.capture:
-                stop_capture(self.capture)
-            self._cancel_tick()
-            self._stop_monitor()
-            if not self.vocals:
-                raise RuntimeError("Brak ścieżki wokalu.")
-            TAKES.mkdir(parents=True, exist_ok=True)
-            stamp = datetime.now().strftime("%H%M%S%f")
-            path = TAKES / f"ujecie-{stamp}.wav"
-            self.capture = start_capture(path, self.selected_device())
-            self.wav_path = path
-            self._wave_for = None
-            self._beat_shown = 0.0
-            self.vocals[self.armed]["path"] = path
-            if target is not None:
-                self.monitor = start_monitor(target, limit)
-                if self.monitor is None:
-                    note = NO_FFPLAY + " Nagranie idzie bez odsłuchu."
-            self.recording = True
-            name = self.vocals[self.armed]["name"]
-            self.status.set(f"Nagrywam {name}. {note}")
-            self._paint_lanes()
-            self._tick()
-        except Exception as error:
-            self.recording = False
-            self.capture = None
-            self._cancel_tick()
-            self._stop_monitor()
-            self._paint_lamp()
-            self.status.set(self._safe_listen_error(error))
-        finally:
-            self._arming = False
-
-    def stop_take(self) -> None:
-        try:
-            if self._arming and not self.recording:
-                self._arm_token += 1
-                self._arming = False
-                self._stop_monitor()
-                self.status.set("Odsłuch przerwany.")
-                return
-            if not self.recording or not self.capture:
-                raise RuntimeError("Najpierw naciśnij Nagraj.")
-            self._finish_take()
-            self._paint_lanes()
-            self.status.set(
-                "Ujęcie jest na ścieżce. "
-                + (f"{self._take_note} " if self._take_note else "")
-                + "Wyślij wrzuca nagrane ścieżki na jedno konto."
-            )
-        except Exception as error:
-            self._cancel_tick()
-            self.recording = False
-            self._stop_monitor()
-            if self.capture:
-                stop_capture(self.capture)
-                self.capture = None
-            self._paint_lamp()
-            self.status.set(str(error))
-
-    def send_selected(self) -> None:
-        if self._uploading:
-            self.status.set("Wysyłka już trwa. Poczekaj na koniec.")
-            return
-        try:
-            if self.recording:
-                self._finish_take()
-            paths = self._lane_paths()
-            if not paths and self._pending is not None:
-                paths = [Path(item) for item in self._pending.wav_paths]
-            if not paths:
-                raise RuntimeError("Najpierw nagraj wokal na ścieżkę.")
-            self._upload(paths)
-        except Exception as error:
-            self._cancel_tick()
-            self.recording = False
-            self._stop_monitor()
-            if self.capture:
-                stop_capture(self.capture)
-                self.capture = None
-            self._paint_lamp()
-            self.status.set(str(error))
-
-    def stop_and_send(self) -> None:
-        self.send_selected()
-
-    def open_studio(self) -> None:
-        if not self.project_id:
-            self.status.set("Najpierw wyślij ujęcie.")
-            return
-        webbrowser.open(studio_url(SITE, self.project_id))
-
     def run(self) -> None:
         self.root.after(3000, self._start_update_check)
         self.root.mainloop()
@@ -3045,8 +3109,11 @@ if __name__ == "__main__":
 
         from desk import self_test as desk_self_test
 
+        from timeline import self_test as timeline_self_test
+
         desk_self_test()
         fx_self_test()
+        timeline_self_test()
         argv = monitor_argv("ffplay", Path("bit.wav"))
         if "-nodisp" not in argv or argv[-1] != "bit.wav" or "-t" in argv or "nobuffer" not in argv:
             raise SystemExit("odsłuch")
@@ -3081,6 +3148,11 @@ if __name__ == "__main__":
         graph = " ".join(mix_argv("ffmpeg", None, [(Path("wokal.wav"), 6.0, 1.0)], None))
         if "wokal.wav" not in graph or "volume=" not in graph or "pan=stereo" not in graph:
             raise SystemExit("miks")
+        seek = mix_argv("ffmpeg", "https://example.invalid/bit", [], 20, beat_start=12.5)
+        if seek[seek.index("-ss") + 1] != "12.500" or seek[seek.index("-t") + 1] != "8" or seek.index("-ss") > seek.index("-i"):
+            raise SystemExit("miks od kursora")
+        if clock_text(75.5) != "1:15.50" or shade("#ff8000", 0.5) != "#7f4000" or safe_name("a/b c") != "a-b-c" or count_word(22, "a", "b", "c") != "22 b":
+            raise SystemExit("pomocnicze")
         self_test_wav_roundtrip()
         target = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-selftest.wav"
         record_seconds(target, 0.4)
@@ -3102,12 +3174,13 @@ if __name__ == "__main__":
         words = labels(window.gate)
         cap = window._track_cap()
         for _extra in range(cap + 2):
-            window._add_lane_clicked()
+            window.add_track()
+        window.show_studio()
+        window.root.update_idletasks()
         note.write_text(
             "\n".join(
                 (
                     f"beats={len(window.beats)}",
-                    f"fx={len(window.fx_vars)}",
                     f"ffmpeg={ffmpeg_exe()}",
                     f"ffplay={ffplay_exe()}",
                     f"gate={window.gate.winfo_manager()}",
@@ -3115,15 +3188,11 @@ if __name__ == "__main__":
                     f"logo={1 if brand_file('logo-light.png') else 0}",
                     f"signup={int('Zarejestruj się' in words)}",
                     f"forgot={int('Nie pamiętam hasła' in words)}",
-                    f"fx_closed={int(not window.fx_rack.winfo_manager())}",
-                    f"beat_rows={window.beat_box.cget('height')}",
-                    f"beat_closed={int(not window.beat_panel.winfo_manager())}",
-                    f"scroll={window.scrollbar.cget('style')}",
                     f"beat_lane={int(window.beat_lane.winfo_exists())}",
-                    f"vocal_lane={int(window.vocal_lane.winfo_exists())}",
                     f"track_cap={cap}",
-                    f"vocal_count={len(window.vocals)}",
+                    f"vocal_count={len(window.tracks)}",
                     f"add_text={window.add_button.cget('text')}",
+                    f"done={window.done_button.cget('text')}",
                 )
             )
             + "\n",

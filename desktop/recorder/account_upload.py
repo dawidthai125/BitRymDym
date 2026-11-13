@@ -231,6 +231,9 @@ class UploadState:
     track_ids: list[str] = field(default_factory=list)
     placed: int = 0
     fx_done: int = 0
+    # Timeline mode: wav_paths are clips. track_of[i] is the vocal track, starts_ms[i] the place.
+    track_of: list[int] = field(default_factory=list)
+    starts_ms: list[int] = field(default_factory=list)
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -250,15 +253,20 @@ class UploadState:
                 track_ids=[str(item) for item in raw.get("track_ids", [])],
                 placed=int(raw.get("placed", 0)),
                 fx_done=int(raw.get("fx_done", 0)),
+                track_of=[int(item) for item in raw.get("track_of", [])],
+                starts_ms=[int(item) for item in raw.get("starts_ms", [])],
             )
         except (KeyError, TypeError, ValueError):
             return None
         if not state.project_id or not paths or state.placed > len(paths) or state.fx_done > len(paths):
             return None
+        if state.track_of and (len(state.track_of) != len(paths) or len(state.starts_ms) != len(paths)):
+            return None
         return state
 
     def summary(self) -> str:
-        return f"projekt {self.project_id}: {self.placed} z {len(self.wav_paths)} ścieżek"
+        noun = "klipów" if self.track_of else "ścieżek"
+        return f"projekt {self.project_id}: {self.placed} z {len(self.wav_paths)} {noun}"
 
 
 def upload_vocals(
@@ -272,8 +280,13 @@ def upload_vocals(
     progress: Callable[[str], None] | None = None,
     resume: UploadState | None = None,
     on_state: Callable[[UploadState], None] | None = None,
+    track_of: list[int] | None = None,
+    starts_ms: list[int] | None = None,
 ) -> str:
-    """One project. The site already creates Bit plus the first vocal track.
+    """One project.
+
+    Without track_of every WAV is its own vocal track at playhead_ms. With track_of (timeline
+    mode) every WAV is one clip: track_of[i] picks the vocal track, starts_ms[i] the place. The site already creates Bit plus the first vocal track.
 
     With resume the send continues the same project from the first track that is not placed yet
     (and the first effect not applied yet). No second project, no duplicate tracks.
@@ -297,6 +310,13 @@ def upload_vocals(
         blobs.append(wav)
     if resume is not None and [str(path) for path in wav_paths] != resume.wav_paths:
         raise ValueError("Ścieżki do wysłania nie zgadzają się z przerwaną wysyłką.")
+    lanes = list(track_of) if track_of is not None else list(range(len(wav_paths)))
+    starts = list(starts_ms) if starts_ms is not None else [playhead_ms] * len(wav_paths)
+    if len(lanes) != len(wav_paths) or len(starts) != len(wav_paths) or min(lanes) < 0:
+        raise ValueError("Klipy nie zgadzają się ze ścieżkami.")
+    track_count = max(lanes) + 1
+    clip_mode = track_of is not None
+    noun = "klip" if clip_mode else "ścieżkę"
     if resume is None:
         say("Tworzę projekt na koncie.")
         document = client.create_project(title, beat_id)
@@ -307,6 +327,8 @@ def upload_vocals(
             version=document_version(document),
             wav_paths=[str(path) for path in wav_paths],
             track_ids=[vocal_track_id(document)],
+            track_of=lanes if clip_mode else [],
+            starts_ms=starts if clip_mode else [],
         )
         saved(state)
     else:
@@ -314,14 +336,14 @@ def upload_vocals(
         state = resume
     pid = state.project_id
     try:
-        while len(state.track_ids) < len(blobs):
-            say(f"Dodaję ścieżkę wokalu {len(state.track_ids) + 1} z {len(blobs)}.")
+        while len(state.track_ids) < track_count:
+            say(f"Dodaję ścieżkę wokalu {len(state.track_ids) + 1} z {track_count}.")
             added_id, state.version = client.add_vocal_track(pid, state.version)
             state.track_ids.append(added_id)
             saved(state)
         for index in range(state.placed, len(blobs)):
             wav = blobs[index]
-            say(f"Wysyłam ścieżkę {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
+            say(f"Wysyłam {noun} {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
             session = client.open_take(state.beat_id, len(wav))
             client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
             take_id = str(session["takeId"])
@@ -329,9 +351,9 @@ def upload_vocals(
             placed = client.place(
                 pid,
                 {
-                    "trackId": state.track_ids[index],
+                    "trackId": state.track_ids[lanes[index]],
                     "takeId": take_id,
-                    "timelineStartMs": playhead_ms,
+                    "timelineStartMs": starts[index],
                     "sourceOffsetMs": 0,
                     "durationMs": wav_duration_ms(wav),
                     "expectedDocumentVersion": state.version,
@@ -342,15 +364,16 @@ def upload_vocals(
             saved(state)
         fx = _effect_chain(chain)
         if fx is not None:
-            if state.fx_done < len(blobs):
+            if state.fx_done < track_count:
                 say("Zapisuję efekty na ścieżkach.")
-            for index in range(state.fx_done, len(blobs)):
+            for index in range(state.fx_done, track_count):
                 patched = client.apply_track_fx(pid, state.track_ids[index], state.version, fx)
                 state.version = _version(patched)
                 state.fx_done = index + 1
                 saved(state)
     except RuntimeError as error:
-        raise RuntimeError(f"Projekt {pid} jest na koncie ({state.placed} z {len(blobs)} ścieżek). {error}") from None
+        unit = "klipów" if clip_mode else "ścieżek"
+        raise RuntimeError(f"Projekt {pid} jest na koncie ({state.placed} z {len(blobs)} {unit}). {error}") from None
     return pid
 
 
@@ -419,6 +442,7 @@ def self_test() -> None:
         raise SystemExit("czas WAV z nagłówkiem ffmpeg (78 B)")
     _self_test_two_vocals()
     _self_test_resume()
+    _self_test_clips()
     print("upload self-test ok")
 
 
@@ -453,7 +477,7 @@ class _FakeSite:
         self.calls.append(("fin", take_id))
 
     def place(self, project: str, body: dict[str, Any]) -> dict[str, Any]:
-        self.calls.append(("place", project, body["trackId"], body["expectedDocumentVersion"]))
+        self.calls.append(("place", project, body["trackId"], body["expectedDocumentVersion"], body["timelineStartMs"]))
         return {"documentVersion": int(body["expectedDocumentVersion"]) + 1}
 
     def apply_track_fx(self, project: str, track_id: str, version: int, chain: dict[str, Any]) -> dict[str, Any]:
@@ -565,6 +589,42 @@ def _self_test_resume() -> None:
         raise SystemExit("inne ścieżki nie mogą wznowić cudzej wysyłki")
     first.unlink(missing_ok=True)
     second.unlink(missing_ok=True)
+
+
+def _self_test_clips() -> None:
+    folder = Path(__import__("os").environ.get("TEMP", ".")) / "bitrymdym-upload-clips"
+    folder.mkdir(parents=True, exist_ok=True)
+    clips = [folder / f"k{index}.wav" for index in range(3)]
+    for clip in clips:
+        clip.write_bytes(b"R" * 48)
+    fake = _FakeSite()
+    last: list[UploadState] = []
+    upload_vocals(
+        fake,  # type: ignore[arg-type]
+        title="Klipy",
+        beat_id="b1",
+        wav_paths=clips,
+        track_of=[0, 0, 1],
+        starts_ms=[0, 4000, 1500],
+        on_state=last.append,
+    )
+    kinds = [item[0] for item in fake.calls if isinstance(item, tuple)]
+    if kinds.count("add") != 1 or kinds.count("place") != 3:
+        raise SystemExit(f"klipy: kroki {kinds}")
+    placed = [(item[2], item[4]) for item in fake.calls if isinstance(item, tuple) and item[0] == "place"]
+    if placed != [("v0", 0), ("v0", 4000), ("v1", 1500)]:
+        raise SystemExit(f"klipy: ułożenie {placed}")
+    restored = UploadState.from_json(json.loads(json.dumps(last[-1].to_json())))
+    if restored is None or restored.track_of != [0, 0, 1] or restored.starts_ms != [0, 4000, 1500]:
+        raise SystemExit("klipy: zapis stanu")
+    try:
+        upload_vocals(fake, title="x", beat_id="b", wav_paths=clips, track_of=[0], starts_ms=[0])  # type: ignore[arg-type]
+    except ValueError:
+        pass
+    else:
+        raise SystemExit("klipy: zła liczba")
+    for clip in clips:
+        clip.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

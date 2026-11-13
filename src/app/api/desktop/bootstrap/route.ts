@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { listPublishedBeats } from "@/lib/beats/service";
-import { desktopBootstrapBody } from "@/lib/recorder/desktop-bootstrap";
+import { desktopBootstrapBody, type DesktopBeatChoice } from "@/lib/recorder/desktop-bootstrap";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 export const runtime = "nodejs";
@@ -9,13 +9,14 @@ export const runtime = "nodejs";
 /** Public client for the Windows recorder. No service role and no audio file. */
 export async function GET() {
   const { url, anonKey } = getSupabasePublicEnv();
-  let beats: { id: string; title: string; bpm: number }[] = [];
+  let beats: DesktopBeatChoice[] = [];
   try {
     const rows = await listPublishedBeats();
     beats = rows.map((beat) => ({
       id: beat.id,
       title: beat.title,
       bpm: beat.bpm,
+      durationSeconds: beat.durationSeconds ?? 0,
     }));
   } catch {
     beats = [];
