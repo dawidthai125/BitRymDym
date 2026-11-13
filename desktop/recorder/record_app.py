@@ -2,7 +2,7 @@
 
 After login the account picks Studio Online (catalog beat, plan track cap, send to the site)
 or Studio Offline (Gold: own beat file, 16 vocal tracks + 6 doubles/adlibs, no upload).
-Offline writes dry stems and sesja.brd.json. Mix and master stay on the site. No VST.
+Offline writes a .brd1 project (session plus dry stems, never the beat) or a folder of stems and sesja.brd.json. Mix and master stay on the site. No VST.
 """
 
 from __future__ import annotations
@@ -10,6 +10,7 @@ from __future__ import annotations
 import array
 import ctypes
 import hashlib
+import io
 import json
 import math
 import os
@@ -19,6 +20,7 @@ import sys
 import threading
 import time
 import tkinter as tk
+import wave
 import tkinter.font as tkfont
 import tkinter.ttk as ttk
 import webbrowser
@@ -216,6 +218,24 @@ def shade(color: str, factor: float) -> str:
     raw = color.lstrip("#")
     parts = [int(raw[index : index + 2], 16) for index in (0, 2, 4)]
     return "#" + "".join(f"{max(0, min(255, int(part * factor))):02x}" for part in parts)
+
+
+def display_wave_half(level: float, half_max: float) -> float:
+    """Taller drawing for a quiet take. The WAV samples stay as recorded."""
+    if level <= 0.0015 or half_max <= 0:
+        return 1.0
+    shown = min(1.0, level ** 0.35)
+    return max(1.5, half_max * shown)
+
+
+def mono16_wav_bytes(samples: array.array) -> bytes:
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as handle:
+        handle.setnchannels(1)
+        handle.setsampwidth(2)
+        handle.setframerate(RATE)
+        handle.writeframes(samples.tobytes())
+    return buffer.getvalue()
 
 
 _INSTANCE_LOCK: object = None
@@ -985,6 +1005,12 @@ class RecorderWindow:
         self.rec_start = 0.0
         self._live_peaks: list[float] = []
         self._live_off = 0
+        self._live_rect: int | None = None
+        self._live_bar: int | None = None
+        self._live_canvas: tk.Canvas | None = None
+        self._live_wave_at = 0.0
+        self._beat_peaks: list[float] = []
+        self._beat_peak_path = ""
         self.capture: subprocess.Popen[bytes] | None = None
         self.monitor: subprocess.Popen[bytes] | None = None
         self.mix_feed: subprocess.Popen[bytes] | None = None
@@ -1132,12 +1158,28 @@ class RecorderWindow:
         self.modes_canvas.update_idletasks()
         self.modes_canvas.configure(scrollregion=self.modes_canvas.bbox("all"))
 
-    def _on_close(self) -> None:
+    def _on_close(self, ask_save: bool = True) -> None:
         if self._uploading and not messagebox.askyesno(
             "BitRymDym",
             "Wysyłka na konto jeszcze trwa. Jeśli zamkniesz program teraz, projekt na koncie może zostać niepełny. Zamknąć mimo to?",
         ):
             return
+        if self._exporting and not messagebox.askyesno(
+            "BitRymDym",
+            "Zapis jeszcze trwa. Zamknąć mimo to?",
+        ):
+            return
+        if ask_save and self.studio_mode == "offline" and self.tier == "GOLD" and self._project_worth_saving():
+            choice = messagebox.askyesnocancel(
+                "BitRymDym",
+                "Zapisać projekt (.brd1) przed zamknięciem?\n\n"
+                "W pliku są nagrane ścieżki. Bitu nie ma. "
+                "Program nie sprawdza, czy bit jest Twój — potwierdzenie jest przy zapisie.",
+            )
+            if choice is None:
+                return
+            if choice and not self.save_project():
+                return
         self._arm_token += 1
         self._play_token += 1
         self._cancel_tick()
@@ -1186,6 +1228,7 @@ class RecorderWindow:
         self._tool(top, "WYLOGUJ", self.sign_out, SOFT).pack(side="right")
         self._tool(top, "NOWY PROJEKT", self.new_project, SOFT).pack(side="right", padx=(0, 6))
         self._tool(top, "ZMIEŃ STUDIO", self.back_to_modes, SOFT).pack(side="right", padx=(0, 6))
+        self.save_project_button = self._tool(top, "ZAPISZ PROJEKT", self.save_project, SOFT)
         self.load_session_button = self._tool(top, "WCZYTAJ SESJĘ", self.load_offline_pack, SOFT)
         tk.Label(top, textvariable=self.account_line, bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="right", padx=10)
         rule = tk.Frame(self.studio, bg=AMBER, height=2)
@@ -1238,8 +1281,10 @@ class RecorderWindow:
         for text, mode in (("COFNIJ", "undo"), ("PODZIEL", "split"), ("WYTNIJ", "cut"), ("KOPIUJ", "copy"), ("WKLEJ", "paste"), ("USUŃ", "delete")):
             command = self.undo if mode == "undo" else (lambda picked=mode: self.edit(picked))
             self._tool(bar, text, command, REC if mode == "delete" else INK, size=11).pack(side="left", padx=2, pady=5)
-        self._tool(bar, "+", lambda: self.zoom(1.25), INK, size=13).pack(side="right", padx=(2, 6), pady=5)
+        self._tool(bar, "1 s", self.zoom_second, ON_AMBER, AMBER, 11).pack(side="right", padx=(2, 6), pady=5)
+        self._tool(bar, "+", lambda: self.zoom(1.25), INK, size=13).pack(side="right", padx=2, pady=5)
         self._tool(bar, "−", lambda: self.zoom(0.8), INK, size=13).pack(side="right", padx=2, pady=5)
+        self._tool(bar, "CAŁOŚĆ", self.zoom_fit, INK, size=11).pack(side="right", padx=2, pady=5)
         tk.Label(bar, text="ZOOM", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="right", padx=(8, 2))
 
         outer = tk.Frame(self.studio, bg=PAPER)
@@ -1290,7 +1335,8 @@ class RecorderWindow:
         self.foot_label = tk.Label(
             self.studio,
             text=(
-                "Klik: kursor. Przeciągnij: zaznaczenie. Pasek klipu: przesuń. Spacja: graj/stop, R: nagraj. "
+                "Klik: kursor. Przeciągnij: zaznaczenie, potem Wytnij, Usuń albo Podziel. Pasek klipu: przesuń. "
+                "1 s mocno przybliża, Ctrl+kółko też. Spacja: graj/stop, R: nagraj. "
                 f"M na bicie wycisza od razu. Panorama: L, C, R. Wersja {updater.APP_VERSION}."
             ),
             bg=PAPER, fg=MUTE, font=(FONT_UI, 8), anchor="w", justify="left",
@@ -1722,6 +1768,8 @@ class RecorderWindow:
             return
         self.local_beat_path = path
         self.local_beat_seconds = 0.0
+        self._beat_peaks = []
+        self._beat_peak_path = ""
         self.beat_var.set(offline_session.file_title(path))
         self._save_desk()
         self._sync_beat_button()
@@ -1731,15 +1779,22 @@ class RecorderWindow:
 
     def _probe_local_beat(self, path: str) -> None:
         seconds = 0.0
+        peaks: list[float] = []
         try:
             seconds = offline_session.probe_media_seconds(ffmpeg_exe(), Path(path))
         except Exception:
             seconds = 0.0
+        try:
+            peaks = self._decode_display_peaks(path)
+        except Exception:
+            peaks = []
 
         def apply() -> None:
             if self.local_beat_path != path:
                 return
             self.local_beat_seconds = seconds
+            self._beat_peaks = peaks
+            self._beat_peak_path = path
             self._save_desk()
             self._sync_beat_button()
             self._paint_all()
@@ -1747,6 +1802,27 @@ class RecorderWindow:
                 self.status.set(f"Bit z pliku: {offline_session.clock_text(seconds)}. Zostaje u Ciebie, nie jedzie na stronę.")
 
         self.root.after(0, apply)
+
+    def _decode_display_peaks(self, path: str) -> list[float]:
+        """10 ms peaks for the lane. The beat file is not copied into the project."""
+        ffmpeg = ffmpeg_exe()
+        proc = subprocess.run(
+            [ffmpeg, "-hide_banner", "-loglevel", "error", "-i", path, "-ac", "1", "-ar", "4800", "-f", "s16le", "pipe:1"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            **quiet_kwargs(),
+        )
+        raw = proc.stdout or b""
+        raw = raw[: len(raw) // 2 * 2]
+        if len(raw) < 4:
+            return []
+        samples = array.array("h")
+        samples.frombytes(raw)
+        if sys.byteorder != "little":
+            samples.byteswap()
+        return block_peaks(samples, 48)
 
     def _load_public(self) -> None:
         try:
@@ -1835,11 +1911,29 @@ class RecorderWindow:
         return max(self.beat_lane.winfo_width(), 50)
 
     def zoom(self, factor: float) -> None:
+        self._set_pps(self.pps * factor)
+
+    def zoom_second(self) -> None:
+        """One second becomes a wide block, wide enough to cut inside it."""
+        width = max(1, self._lane_width())
+        self._set_pps(min(960.0 * self.ui, max(180.0 * self.ui, width / 6.0)))
+        self.status.set(
+            "1 sekunda jest szeroka. Zaznacz przeciągnięciem, potem Wytnij, Usuń albo Podziel (Ctrl+I). "
+            "Ctrl+kółko zmienia przybliżenie."
+        )
+
+    def zoom_fit(self) -> None:
+        width = max(1, self._lane_width())
+        length = max(1.0, self._length() - 8.0)
+        self._set_pps(width / length)
+        self.status.set("Widać całość. Przycisk 1 s przybliża do cięcia.")
+
+    def _set_pps(self, pps: float) -> None:
         width = self._lane_width()
-        anchor = self.cursor if 0 <= self._x(self.cursor) <= width else self.view + width / self.pps / 2
+        anchor = self.cursor if 0 <= self._x(self.cursor) <= width else self.view + width / max(self.pps, 0.001) / 2
         offset = (anchor - self.view) * self.pps
-        self.pps = max(2.0 * self.ui, min(400.0 * self.ui, self.pps * factor))
-        self.view = max(0.0, anchor - offset / self.pps)
+        self.pps = max(2.0 * self.ui, min(960.0 * self.ui, pps))
+        self.view = max(0.0, anchor - offset / max(self.pps, 0.001))
         self._paint_all()
 
     def _scroll_view(self, delta: float) -> None:
@@ -1872,24 +1966,33 @@ class RecorderWindow:
 
     def _head_time(self) -> float:
         if self.recording:
-            return self.rec_start + file_seconds(self.wav_path)
+            return self.rec_start + self._rec_elapsed()
         if self.playing:
             return self._play_from + (time.monotonic() - self._play_t0)
         return self.cursor
+
+    def _rec_elapsed(self) -> float:
+        """Seconds since capture and the beat started together. Not the WAV size."""
+        return max(0.0, time.monotonic() - self._play_t0)
 
     def _paint_ruler(self) -> None:
         canvas = self.ruler
         canvas.delete("all")
         width = canvas.winfo_width()
         height = canvas.winfo_height()
-        step = next((value for value in (0.5, 1, 2, 5, 10, 15, 30, 60) if value * self.pps >= 64 * self.ui), 120)
+        step = next((value for value in (0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60) if value * self.pps >= 64 * self.ui), 120)
         first = math.floor(self.view / step) * step
         mark = first
         while self._x(mark) <= width:
             x = self._x(mark)
             if x >= 0:
                 canvas.create_line(x, height * 0.45, x, height, fill=SOFT)
-                label = f"{int(mark // 60)}:{mark % 60:04.1f}" if step < 1 else f"{int(mark // 60)}:{int(mark % 60):02d}"
+                if step < 0.2:
+                    label = f"{int(mark // 60)}:{mark % 60:05.2f}"
+                elif step < 1:
+                    label = f"{int(mark // 60)}:{mark % 60:04.1f}"
+                else:
+                    label = f"{int(mark // 60)}:{int(mark % 60):02d}"
                 canvas.create_text(x + 3, 1, text=label, fill=SOFT, anchor="nw", font=(FONT_META, 8))
                 minor = step / 5
                 for part in range(1, 5):
@@ -1933,7 +2036,14 @@ class RecorderWindow:
                     canvas.create_line(x, 3 + self.clip_bar, x, height - 3, fill="#8a6326")
                 mark += step
         mid = (height + self.clip_bar) / 2
-        canvas.create_line(x1, mid, x2, mid, fill="#8a6326")
+        half_max = max(4.0, (height - 4 - self.clip_bar) / 2)
+        if self._beat_peaks and self._beat_peak_path == self.local_beat_path:
+            self._stroke_wave(
+                canvas, max(0.0, x1), min(float(width), x2), mid, half_max, "#f3d7a1", "beatwave",
+                lambda t: self._level_at(self._beat_peaks, t),
+            )
+        else:
+            canvas.create_line(x1, mid, x2, mid, fill="#8a6326")
         if self.beat_muted:
             canvas.create_text((x1 + x2) / 2 if x2 - x1 < 400 else x1 + 200, mid, text="BIT WYCISZONY (M)", fill=SOFT, font=(FONT_META, 9))
 
@@ -1964,6 +2074,8 @@ class RecorderWindow:
         canvas = self.rows[index]["lane"]
         if not isinstance(canvas, tk.Canvas):
             return
+        if self.recording and index == self.rec_track:
+            self._drop_live_items()
         canvas.delete("all")
         width = canvas.winfo_width()
         height = canvas.winfo_height()
@@ -1984,7 +2096,8 @@ class RecorderWindow:
                 ghost = replace(clip, start=float(moving.get("to", clip.start)))
                 self._paint_clip(canvas, ghost, "przesuwam…", track.color, heard, None, height, width, ghost=True)
         if self.recording and index == self.rec_track:
-            self._paint_live(canvas, height, width)
+            self._grow_live()
+            self._paint_live_wave(canvas, height)
         if not track.clips and not (self.recording and index == self.rec_track):
             hint = "● uzbrojona: NAGRAJ zapisze tutaj" if index == self.armed else "pusta ścieżka"
             canvas.create_text(12, height / 2, text=hint, fill=MUTE, anchor="w", font=(FONT_UI, 9))
@@ -2006,45 +2119,104 @@ class RecorderWindow:
             canvas.create_text(max(x1, 0) + 5, 2 + self.clip_bar / 2, text=label, fill=ON_AMBER, anchor="w", font=(FONT_UI, 8, "bold"))
         peaks = self._peaks_of(clip.path)
         mid = (top + height - 2) / 2
-        half_max = (height - 2 - top) / 2 - 2
-        lo = int(max(0.0, x1))
-        hi = int(min(float(width), x2))
-        per = 100.0 / self.pps
-        wave = "#1a1006"
-        for x in range(lo, hi):
-            t = self._t(x)
-            s0 = clip.src_in + (t - clip.start)
-            i0 = int(s0 * 100)
-            i1 = max(i0 + 1, int((s0 + 1 / self.pps) * 100))
-            if i0 >= len(peaks) or i0 < 0:
-                continue
-            level = max(peaks[i0 : min(i1, len(peaks))]) if per > 1 else peaks[i0]
-            half = max(1.0, half_max * min(1.0, level * 1.4))
-            ink = wave
-            if sel is not None and sel[1] <= t <= sel[2]:
-                ink = INK
-            elif level >= 0.98:
-                ink = REC
-            canvas.create_line(x, mid - half, x, mid + half + 1, fill=ink)
+        half_max = max(4.0, (height - 2 - top) / 2 - 2)
+        lo = max(0.0, x1)
+        hi = min(float(width), x2)
+        if peaks and hi - lo >= 1:
+            def level_at(t: float) -> float:
+                return self._level_at(peaks, clip.src_in + (t - clip.start))
 
-    def _paint_live(self, canvas: tk.Canvas, height: int, width: int) -> None:
-        seconds = len(self._live_peaks) / 100.0
+            self._stroke_wave(canvas, lo, hi, mid, half_max, "#1a1006", "wave", level_at)
+            if sel is not None:
+                sx0 = max(lo, self._x(sel[1]))
+                sx1 = min(hi, self._x(sel[2]))
+                if sx1 - sx0 >= 1:
+                    self._stroke_wave(canvas, sx0, sx1, mid, half_max, INK, "wave", level_at)
+
+    def _drop_live_items(self) -> None:
+        self._live_rect = None
+        self._live_bar = None
+        self._live_canvas = None
+
+    def _level_at(self, peaks: list[float], source_time: float) -> float:
+        if source_time < 0 or not peaks:
+            return 0.0
+        i0 = int(source_time * 100)
+        if i0 < 0 or i0 >= len(peaks):
+            return 0.0
+        reach = max(1.0 / max(self.pps, 0.001), 0.01)
+        i1 = min(len(peaks), max(i0 + 1, int((source_time + reach) * 100) + 1))
+        return max(peaks[i0:i1])
+
+    def _stroke_wave(
+        self, canvas: tk.Canvas, x0: float, x1: float, mid: float, half_max: float,
+        fill: str, tag: str, level_at: Callable[[float], float],
+    ) -> None:
+        last = int(x1)
+        step = max(1, int((x1 - x0) / 480))
+        columns = list(range(int(x0), last + 1, step))
+        if not columns or columns[-1] != last:
+            columns.append(last)
+        upper: list[float] = []
+        lower: list[float] = []
+        for x in columns:
+            half = display_wave_half(level_at(self._t(x)), half_max)
+            upper.extend((x, mid - half))
+            lower.extend((x, mid + half))
+        if len(upper) < 4:
+            return
+        coords = upper
+        for index in range(len(lower) - 2, -1, -2):
+            coords.append(lower[index])
+            coords.append(lower[index + 1])
+        canvas.create_polygon(*coords, fill=fill, outline="", tags=tag)
+
+    def _grow_live(self) -> None:
+        """Move the red take with the clock. Does not redraw the whole lane."""
+        if not self.recording or not (0 <= self.rec_track < len(self.rows)):
+            return
+        canvas = self.rows[self.rec_track].get("lane")
+        if not isinstance(canvas, tk.Canvas):
+            return
+        height = max(canvas.winfo_height(), 4)
         x1 = self._x(self.rec_start)
-        x2 = self._x(self.rec_start + seconds)
+        x2 = max(x1 + 2.0, self._x(self.rec_start + self._rec_elapsed()))
         top = 2 + self.clip_bar
-        canvas.create_rectangle(x1, 2, max(x2, x1 + 2), height - 2, fill="#5a1d14", outline=REC)
-        canvas.create_rectangle(x1, 2, max(x2, x1 + 2), top, fill=REC, outline="")
-        canvas.create_text(max(x1, 0) + 5, 2 + self.clip_bar / 2, text="NAGRYWAM", fill=INK, anchor="w", font=(FONT_UI, 8, "bold"))
-        mid = (top + height - 2) / 2
-        half_max = (height - 2 - top) / 2 - 2
+        if self._live_canvas is not canvas or self._live_rect is None:
+            canvas.delete("livebox")
+            canvas.delete("livelabel")
+            self._live_canvas = canvas
+            self._live_rect = canvas.create_rectangle(x1, 2, x2, height - 2, fill="#5a1d14", outline=REC, tags="livebox")
+            self._live_bar = canvas.create_rectangle(x1, 2, x2, top, fill=REC, outline="", tags="livelabel")
+            canvas.create_text(
+                max(x1, 0) + 5, 2 + self.clip_bar / 2, text="NAGRYWAM", fill=INK, anchor="w",
+                font=(FONT_UI, 8, "bold"), tags="livelabel",
+            )
+            return
+        try:
+            canvas.coords(self._live_rect, x1, 2, x2, height - 2)
+            if self._live_bar is not None:
+                canvas.coords(self._live_bar, x1, 2, x2, top)
+        except tk.TclError:
+            self._drop_live_items()
+            self._grow_live()
+
+    def _paint_live_wave(self, canvas: tk.Canvas, height: int) -> None:
+        canvas.delete("livewave")
         peaks = self._live_peaks
-        for x in range(int(max(0.0, x1)), int(min(float(width), x2))):
-            i0 = int((self._t(x) - self.rec_start) * 100)
-            if 0 <= i0 < len(peaks):
-                i1 = max(i0 + 1, int((self._t(x) + 1 / self.pps - self.rec_start) * 100))
-                level = max(peaks[i0 : min(i1, len(peaks))])
-                half = max(1.0, half_max * min(1.0, level * 1.4))
-                canvas.create_line(x, mid - half, x, mid + half + 1, fill=REC if level >= 0.98 else INK)
+        if not peaks:
+            return
+        data_end = self.rec_start + len(peaks) / 100.0
+        lo = max(0.0, self._x(self.rec_start))
+        hi = min(float(canvas.winfo_width()), self._x(data_end))
+        if hi - lo < 1:
+            return
+        top = 2 + self.clip_bar
+        mid = (top + height - 2) / 2
+        half_max = max(4.0, (height - 2 - top) / 2 - 2)
+        self._stroke_wave(canvas, lo, hi, mid, half_max, INK, "livewave", lambda t: self._level_at(peaks, t - self.rec_start))
+        canvas.tag_raise("livelabel")
+        canvas.tag_raise("head")
 
     def _move_head(self, seconds: float) -> None:
         canvases = [self.ruler, self.beat_lane] + [row["lane"] for row in self.rows if isinstance(row.get("lane"), tk.Canvas)]
@@ -2060,10 +2232,19 @@ class RecorderWindow:
         self.clock.set(clock_text(seconds))
 
     def _follow(self, seconds: float) -> None:
-        span = self._lane_width() / self.pps
-        if seconds > self.view + span * 0.92 or seconds < self.view:
-            self.view = max(0.0, seconds - span * 0.1)
-            self._paint_all()
+        span = self._lane_width() / max(self.pps, 0.001)
+        if self.view <= seconds <= self.view + span * 0.82:
+            return
+        self.view = max(0.0, seconds - span * 0.25)
+        if self.recording:
+            total = max(self._length(), 0.001)
+            self.hscroll.set(self.view / total, min(1.0, (self.view + span) / total))
+            self._paint_ruler()
+            self._paint_beat()
+            if 0 <= self.rec_track < len(self.tracks):
+                self._paint_track(self.rec_track)
+            return
+        self._paint_all()
 
     # ---- mouse on lanes -----------------------------------------------------------
 
@@ -2591,6 +2772,8 @@ class RecorderWindow:
                 self.recording = True
                 self._live_peaks = []
                 self._live_off = 0
+                self._live_wave_at = 0.0
+                self._drop_live_items()
             if beat is not None or vocals:
                 ffmpeg = ffmpeg_exe()
                 play = ffplay_exe()
@@ -2682,6 +2865,7 @@ class RecorderWindow:
     def _keep_take(self, died: str = "") -> None:
         """The capture is closed: put the take on the armed track as one clip from the record start."""
         self.recording = False
+        self._drop_live_items()
         self.rec_button.configure(text="● NAGRAJ")
         self._paint_lamp()
         path = self.wav_path
@@ -2748,15 +2932,21 @@ class RecorderWindow:
                     reason += f" Windows: {fatal[:100]}"
                 self._keep_take(reason)
                 return
-            try:
-                self._read_live()
-            except Exception:
-                pass
-            elapsed = len(self._live_peaks) / 100.0
+            elapsed = self._rec_elapsed()
             cap = max_take_seconds(self.tier)
             head = self.rec_start + elapsed
             self._follow(head)
-            self._paint_track(self.rec_track)
+            now = time.monotonic()
+            if now - self._live_wave_at >= 0.2:
+                try:
+                    self._read_live()
+                except Exception:
+                    pass
+                lane = self.rows[self.rec_track].get("lane") if 0 <= self.rec_track < len(self.rows) else None
+                if isinstance(lane, tk.Canvas):
+                    self._paint_live_wave(lane, lane.winfo_height())
+                self._live_wave_at = now
+            self._grow_live()
             self._move_head(head)
             self.clock.set(f"{clock_text(head)}  ● {elapsed:.1f}/{cap} s")
             if elapsed >= cap:
@@ -2766,7 +2956,7 @@ class RecorderWindow:
                     self.capture = None
                 self._keep_take(f"Plan {display_tier(self.tier)} kończy ujęcie po {cap} s.")
                 return
-            self._tick_id = self.root.after(100, self._tick)
+            self._tick_id = self.root.after(40, self._tick)
             return
         if self.playing:
             ended = self.monitor is None or self.monitor.poll() is not None
@@ -2919,20 +3109,35 @@ class RecorderWindow:
             box, textvariable=self.title_var, bg=RACK, fg=INK, insertbackground=AMBER, relief="flat", font=(FONT_UI, 11), width=48,
         ).pack(fill="x", padx=16, ipady=4)
 
+        def save_brd() -> None:
+            box.destroy()
+            self.save_project()
+
         def save() -> None:
             box.destroy()
             self.save_offline_pack()
 
-        button = self._tool(box, "ZAPISZ STEMY I SESJĘ", save, ON_AMBER, AMBER, 14)
+        button = self._tool(box, "ZAPISZ PROJEKT .brd1", save_brd, ON_AMBER, AMBER, 14)
         button.pack(fill="x", padx=16, pady=(14, 2))
         if clips == 0:
             button.configure(state="disabled")
         tk.Label(
             box,
             text=(
-                "Stemy to osobne pliki WAV ścieżek, czysta nagrywka od 0:00, bez bitu i bez miksu. "
-                "Obok nich leży sesja.brd.json: kolejność, miejsce na osi, czas, głośność i balans lewo–prawo. "
-                "Na stronę stąd nic nie idzie."
+                "Jeden plik .brd1: sesja i ścieżki WAV, czysta nagrywka od 0:00, bez bitu. "
+                "Przed zapisem potwierdzasz, że bit i nagrania są Twoje albo masz zgodę. Program tego nie sprawdza."
+            ),
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 9), wraplength=460, justify="left",
+        ).pack(anchor="w", padx=16, pady=(4, 0))
+        stem_button = self._tool(box, "ZAPISZ STEMY I SESJĘ", save, INK, RACK, 13)
+        stem_button.pack(fill="x", padx=16, pady=(10, 2))
+        if clips == 0:
+            stem_button.configure(state="disabled")
+        tk.Label(
+            box,
+            text=(
+                "Albo folder: osobny WAV każdej ścieżki od 0:00 i sesja.brd.json. "
+                "Też bez bitu. To samo potwierdzenie praw."
             ),
             bg=PANEL, fg=SOFT, font=(FONT_UI, 9), wraplength=460, justify="left",
         ).pack(anchor="w", padx=16, pady=(4, 0))
@@ -2941,24 +3146,56 @@ class RecorderWindow:
         ).pack(anchor="w", padx=16, pady=(8, 0))
         self._tool(box, "WRÓĆ DO EDYCJI", box.destroy, SOFT).pack(anchor="e", padx=16, pady=14)
 
-    def save_offline_pack(self) -> None:
-        if self.studio_mode != "offline":
-            return
-        if self.tier != "GOLD":
-            self.status.set("Zapis sesji offline jest w planie Premium Gold.")
-            return
-        if self._exporting:
-            return
+    def _project_worth_saving(self) -> bool:
+        return self.recording or any(track.clips for track in self.tracks)
+
+    def _confirm_rights(self) -> bool:
+        """Checkbox. Saving without it would skip the only record that the user, not the service, is responsible."""
+        box = tk.Toplevel(self.root)
+        box.title("Prawa")
+        box.configure(bg=PANEL)
+        box.transient(self.root)
+        box.resizable(False, False)
+        box.grab_set()
+        accepted = tk.BooleanVar(value=False)
+        result = {"ok": False}
+        tk.Label(box, text="Prawa do bitu i nagrań", bg=PANEL, fg=INK, font=(FONT_DISPLAY, 18, "italic")).pack(anchor="w", padx=16, pady=(12, 6))
+        tk.Label(
+            box, text=offline_session.RIGHTS_ACCEPT, bg=PANEL, fg=INK, font=(FONT_UI, 10), wraplength=460, justify="left",
+        ).pack(anchor="w", padx=16)
+        tk.Checkbutton(
+            box, text="Zaznaczam to. Odpowiadam ja, nie serwis.", variable=accepted, bg=PANEL, fg=INK,
+            activebackground=PANEL, activeforeground=INK, selectcolor=RACK, font=(FONT_UI, 10), anchor="w",
+        ).pack(anchor="w", padx=16, pady=(10, 0))
+        warn = tk.StringVar(value="")
+        tk.Label(box, textvariable=warn, bg=PANEL, fg=REC, font=(FONT_UI, 9), wraplength=460, justify="left").pack(anchor="w", padx=16, pady=(6, 0))
+
+        def go() -> None:
+            if not accepted.get():
+                warn.set("Bez zaznaczenia nie zapisuję. Program i strona nie sprawdzają pliku.")
+                return
+            result["ok"] = True
+            box.destroy()
+
+        def cancel() -> None:
+            box.destroy()
+
+        row = tk.Frame(box, bg=PANEL)
+        row.pack(fill="x", padx=16, pady=14)
+        self._tool(row, "ZAPISZ", go, ON_AMBER, AMBER, 13).pack(side="right")
+        self._tool(row, "WRÓĆ", cancel, SOFT).pack(side="right", padx=(0, 8))
+        box.protocol("WM_DELETE_WINDOW", cancel)
+        self.root.wait_window(box)
+        return result["ok"]
+
+    def _offline_bundle(self) -> tuple[dict[str, object], list[tuple[str, list[Clip], float]]] | None:
         used = [track for track in self.tracks if track.clips]
         if not used:
             self.status.set("Najpierw nagraj ścieżkę.")
-            return
-        folder = filedialog.askdirectory(title="Folder na stemy i sesję")
-        if not folder:
-            return
+            return None
         title = self.title_var.get().strip() or "Nagranie"
         end = max((track_end(track.clips) for track in used), default=0.0)
-        end = max(end, self.local_beat_seconds)
+        end = max(end, self.local_beat_seconds, 0.05)
         rows: list[dict[str, object]] = []
         for track in used:
             rows.append(
@@ -2985,13 +3222,91 @@ class RecorderWindow:
         built = document.get("tracks")
         if not isinstance(built, list) or len(built) != len(used):
             self.status.set("Nie dało się złożyć pliku sesji.")
-            return
+            return None
         jobs: list[tuple[str, list[Clip], float]] = []
         for item, track in zip(built, used):
             if not isinstance(item, dict) or not item.get("stem"):
                 self.status.set("Nie dało się złożyć pliku sesji.")
-                return
+                return None
             jobs.append((str(item["stem"]), list(track.clips), end))
+        return document, jobs
+
+    def save_project(self) -> bool:
+        """Write one .brd1. False means the window should stay (cancelled or failed)."""
+        if self.studio_mode != "offline":
+            return False
+        if self.tier != "GOLD":
+            self.status.set("Zapis projektu jest w planie Premium Gold.")
+            return False
+        if self._arming:
+            self.status.set("Najpierw Stop.")
+            return False
+        if self._exporting:
+            self.status.set("Zapis już trwa.")
+            return False
+        if self.playing or self.recording:
+            self.stop()
+        bundled = self._offline_bundle()
+        if bundled is None:
+            return False
+        if not self._confirm_rights():
+            return False
+        document, jobs = bundled
+        path = filedialog.asksaveasfilename(
+            title="Zapisz projekt",
+            defaultextension=offline_session.PROJECT_SUFFIX,
+            filetypes=[("Projekt BitRymDym", f"*{offline_session.PROJECT_SUFFIX}")],
+            initialfile=safe_name(self.title_var.get().strip() or "projekt") + offline_session.PROJECT_SUFFIX,
+        )
+        if not path:
+            return False
+        if not str(path).lower().endswith(offline_session.PROJECT_SUFFIX):
+            path = str(path) + offline_session.PROJECT_SUFFIX
+        self._exporting = True
+        self.status.set("Zapisuję projekt…")
+        self.root.update_idletasks()
+        error = ""
+        try:
+            stems: dict[str, bytes] = {}
+            for stem, clips, end in jobs:
+                samples = render(clips, 0.0, end, self._load)
+                if len(samples) < 2:
+                    raise RuntimeError("pusta ścieżka")
+                stems[stem] = mono16_wav_bytes(samples)
+            offline_session.write_project(Path(path), document, stems)
+        except Exception as problem:
+            error = str(problem) or "zapis"
+        self._exporting = False
+        if error:
+            self.status.set(f"Projekt się nie zapisał ({error[:80]}).")
+            return False
+        self._save_desk()
+        self.status.set(f"Projekt zapisany: {path}. Bitu w pliku nie ma. Na stronę stąd nic nie poszło.")
+        return True
+
+    def save_offline_pack(self) -> None:
+        if self.studio_mode != "offline":
+            return
+        if self.tier != "GOLD":
+            self.status.set("Zapis sesji offline jest w planie Premium Gold.")
+            return
+        if self._exporting:
+            return
+        if self._arming:
+            self.status.set("Najpierw Stop.")
+            return
+        if self.playing or self.recording:
+            self.stop()
+        bundled = self._offline_bundle()
+        if bundled is None:
+            return
+        if not self._confirm_rights():
+            return
+        document, jobs = bundled
+        folder = filedialog.askdirectory(title="Folder na stemy i sesję")
+        if not folder:
+            return
+        document = offline_session.accept_rights(document)
         self._exporting = True
         self._save_desk()
         self.status.set("Zapisuję stemy i sesję…")
@@ -3027,13 +3342,39 @@ class RecorderWindow:
         if self.studio_mode != "offline" or self._busy() or self._exporting:
             return
         path = filedialog.askopenfilename(
-            title="Sesja z programu",
-            filetypes=[("Sesja BitRymDym", "*.json"), ("Wszystkie pliki", "*.*")],
+            title="Projekt albo sesja",
+            filetypes=[
+                ("Projekt lub sesja BitRymDym", "*.brd1 *.json"),
+                ("Projekt BitRymDym", "*.brd1"),
+                ("Sesja BitRymDym", "*.json"),
+                ("Wszystkie pliki", "*.*"),
+            ],
         )
         if not path:
             return
+        target = Path(path)
+        if target.suffix.lower() == offline_session.PROJECT_SUFFIX:
+            opened = offline_session.read_project(target)
+            if opened is None:
+                self.status.set("To nie jest projekt BitRymDym (.brd1). Plik z bitem w środku jest odrzucany.")
+                return
+            document, stems = opened
+            digest = hashlib.sha1(str(target.resolve()).encode("utf-8")).hexdigest()[:12]
+            folder = TAKES / "projekty" / digest
+            try:
+                folder.mkdir(parents=True, exist_ok=True)
+                for name, data in stems.items():
+                    piece = Path(name).name
+                    if piece != name or not piece.endswith(".wav") or not data.startswith(b"RIFF"):
+                        raise ValueError("stem")
+                    (folder / piece).write_bytes(data)
+            except (OSError, ValueError):
+                self.status.set("Nie dało się rozpakować projektu.")
+                return
+            self._install_offline_session(document, folder)
+            return
         try:
-            raw = json.loads(Path(path).read_text(encoding="utf-8"))
+            raw = json.loads(target.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             self.status.set("Nie dało się odczytać pliku sesji.")
             return
@@ -3041,6 +3382,9 @@ class RecorderWindow:
         if document is None:
             self.status.set("To nie jest sesja BitRymDym (sesja.brd.json).")
             return
+        self._install_offline_session(document, target.parent)
+
+    def _install_offline_session(self, document: dict[str, object], folder: Path) -> None:
         tracks = document.get("tracks")
         if not isinstance(tracks, list) or not tracks:
             self.status.set("W sesji nie ma ścieżek z nagraniem.")
@@ -3048,7 +3392,6 @@ class RecorderWindow:
         have = sum(len(track.clips) for track in self.tracks)
         if have and not messagebox.askyesno("BitRymDym", "Wczytać sesję? Ścieżki teraz na ekranie zejdą z programu (pliki nagrań na dysku zostają)."):
             return
-        folder = Path(path).parent
         loaded: list[Track] = []
         missing = 0
         for item in tracks:
@@ -3075,7 +3418,7 @@ class RecorderWindow:
             )
             loaded.append(track)
         if not loaded:
-            self.status.set("Obok pliku sesji nie ma stemów WAV. Trzymaj je w jednym folderze.")
+            self.status.set("Nie ma stemów WAV do wczytania. Przy sesji trzymaj je w jednym folderze z plikiem json.")
             return
         self._push_undo()
         self.tracks = loaded
@@ -3097,6 +3440,8 @@ class RecorderWindow:
             if isinstance(beat.get("durationSeconds"), (int, float)):
                 self.local_beat_seconds = max(0.0, float(beat["durationSeconds"]))
         self.local_beat_path = ""
+        self._beat_peaks = []
+        self._beat_peak_path = ""
         self.beat_var.set("")
         if hasattr(self, "beat_gain_scale"):
             self.beat_gain_scale.set(self.beat_gain_db)
@@ -3112,7 +3457,7 @@ class RecorderWindow:
 
     def send_to_studio(self) -> None:
         if self.studio_mode == "offline":
-            self.status.set("Studio Offline nie wysyła na stronę. Zapisz stemy i sesję, potem wrzuć je w Studio na www.bitrymdym.pl.")
+            self.status.set("Studio Offline nie wysyła na stronę. Zapisz projekt .brd1 albo stemy, potem wrzuć je ręcznie w Studio na www.bitrymdym.pl.")
             return
         if self._uploading:
             self.status.set("Wysyłka już trwa.")
@@ -3559,8 +3904,11 @@ class RecorderWindow:
             self.plan_text.set(self._offline_plan_line())
             if not self.load_session_button.winfo_manager():
                 self.load_session_button.pack(side="right", padx=(0, 6))
+            if not self.save_project_button.winfo_manager():
+                self.save_project_button.pack(side="right", padx=(0, 6))
         else:
             self.studio_kicker.set("STUDIO ONLINE")
+            self.save_project_button.pack_forget()
             self.load_session_button.pack_forget()
             self._read_plan()
         self._sync_beat_button()
@@ -4097,7 +4445,7 @@ class RecorderWindow:
 
         threading.Thread(target=_die, daemon=True, name="bitrymdym-exit").start()
         try:
-            self._on_close()
+            self._on_close(ask_save=False)
         except Exception:
             pass
         os._exit(0)
@@ -4243,6 +4591,14 @@ if __name__ == "__main__":
             raise SystemExit("miks od kursora")
         if clock_text(75.5) != "1:15.50" or shade("#ff8000", 0.5) != "#7f4000" or safe_name("a/b c") != "a-b-c" or count_word(22, "a", "b", "c") != "22 b":
             raise SystemExit("pomocnicze")
+        quiet = 10 ** (-26 / 20.0)
+        shown = display_wave_half(quiet, 80.0)
+        if shown < 20.0 or display_wave_half(0.0, 80.0) != 1.0 or display_wave_half(1.0, 80.0) < 79.0:
+            raise SystemExit(f"fala na ekranie {shown}")
+        sample = array.array("h", [0, 1000])
+        blob = mono16_wav_bytes(sample)
+        if not blob.startswith(b"RIFF") or b"WAVE" not in blob[:16]:
+            raise SystemExit("wav projektu")
         from datetime import timezone
 
         joined = group_for_takes([Clip("a", 0, 0, 10), Clip("a", 20, 10, 15), Clip("b", 175, 0, 10)], 180.0)

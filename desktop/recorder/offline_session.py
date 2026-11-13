@@ -12,11 +12,15 @@ import json
 import os
 import re
 import subprocess
+import zipfile
 from pathlib import Path
 
 FORMAT = "bitrymdym.sesja"
 VERSION = 1
 FILE_NAME = "sesja.brd.json"
+PROJECT_SUFFIX = ".brd1"
+PROJECT_SESSION = "sesja.brd.json"
+PROJECT_STEM_DIR = "stemy"
 OFFLINE_VOCALS = 16
 OFFLINE_EXTRAS = 6
 # Gold on the site still places up to 16 recording tracks. The extra 6 stay in the pack.
@@ -29,6 +33,12 @@ RIGHTS_NOTE = (
     "a potem wrzucasz je ręcznie: www.bitrymdym.pl → Studio → Utwórz projekt. "
     "W sesji studia plan Gold układa ścieżki. "
     "Plik sesji zapisuje kolejność, miejsce na osi, czas, głośność i balans lewo–prawo."
+)
+
+RIGHTS_ACCEPT = (
+    "Potwierdzam, że bit jest mój albo mam zgodę i legalne źródło, żeby z niego korzystać. "
+    "To samo dotyczy wokalu, podbić i adlibów. Program i strona tego nie sprawdzają. "
+    "Jak wrzucę na serwer BitRymDym cudzy bit, którego zabezpieczenie nie wyłapało, odpowiadam za to ja, nie serwis."
 )
 
 _DURATION = re.compile(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)")
@@ -251,7 +261,95 @@ def parse_session(raw: object) -> dict[str, object] | None:
         rights = built["rights"]
         if isinstance(rights, dict):
             rights["note"] = note["note"].strip()
+            if note.get("beatChecked") is True:
+                rights["beatChecked"] = True
+            if note.get("vocalsChecked") is True:
+                rights["vocalsChecked"] = True
     return built
+
+
+def accept_rights(document: dict[str, object]) -> dict[str, object]:
+    """Copy with the user's confirmation stored. The beat file is still not inside."""
+    copy = json.loads(json.dumps(document))
+    rights = copy.get("rights")
+    if not isinstance(rights, dict):
+        raise ValueError("prawa")
+    rights["beatChecked"] = True
+    rights["vocalsChecked"] = True
+    rights["note"] = RIGHTS_ACCEPT
+    beat = copy.get("beat")
+    if isinstance(beat, dict):
+        beat["included"] = False
+    return copy
+
+
+def _stem_member(name: str) -> str:
+    piece = Path(name).name
+    if piece != name or not piece.endswith(".wav") or piece.startswith("."):
+        raise ValueError("stem")
+    return f"{PROJECT_STEM_DIR}/{piece}"
+
+
+def write_project(path: Path, document: dict[str, object], stems: dict[str, bytes]) -> None:
+    """One .brd1 file: the session plus dry vocal WAVs. Never the beat."""
+    packed = accept_rights(document)
+    tracks = packed.get("tracks")
+    if not isinstance(tracks, list) or not tracks:
+        raise ValueError("ścieżki")
+    expected = [str(item.get("stem") or "") for item in tracks if isinstance(item, dict)]
+    if any(not name for name in expected) or set(expected) != set(stems):
+        raise ValueError("stemy")
+    for name, data in stems.items():
+        _stem_member(name)
+        if not data.startswith(b"RIFF"):
+            raise ValueError("wav")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(PROJECT_SESSION, json.dumps(packed, ensure_ascii=False, indent=2))
+        for name in expected:
+            archive.writestr(_stem_member(name), stems[name])
+
+
+def read_project(path: Path) -> tuple[dict[str, object], dict[str, bytes]] | None:
+    """Session and stem WAVs from a .brd1 file, or None when it is not ours."""
+    try:
+        archive = zipfile.ZipFile(path)
+    except (OSError, zipfile.BadZipFile):
+        return None
+    with archive:
+        names = [name for name in archive.namelist() if not name.endswith("/")]
+        if PROJECT_SESSION not in names:
+            return None
+        for name in names:
+            if ".." in name.split("/"):
+                return None
+            if name == PROJECT_SESSION:
+                continue
+            if not (name.startswith(PROJECT_STEM_DIR + "/") and name.count("/") == 1 and name.endswith(".wav")):
+                return None
+        try:
+            raw = json.loads(archive.read(PROJECT_SESSION).decode("utf-8"))
+        except (UnicodeError, json.JSONDecodeError):
+            return None
+        document = parse_session(raw)
+        if document is None:
+            return None
+        tracks = document.get("tracks")
+        if not isinstance(tracks, list):
+            return None
+        stems: dict[str, bytes] = {}
+        for item in tracks:
+            if not isinstance(item, dict):
+                continue
+            stem = str(item.get("stem") or "")
+            member = f"{PROJECT_STEM_DIR}/{stem}"
+            if member not in names:
+                continue
+            data = archive.read(member)
+            if not data.startswith(b"RIFF"):
+                return None
+            stems[stem] = data
+        return document, stems
 
 
 def write_session(folder: Path, document: dict[str, object]) -> Path:
@@ -355,6 +453,38 @@ def self_test() -> None:
     lines = checklist_lines(document)
     if len(lines) != 3 or "L 40" not in lines[1] or "R 100" not in lines[2] or "C" not in lines[0]:
         raise SystemExit(f"ściąga {lines}")
+    tone = b"RIFF" + b"\x00" * 8
+    try:
+        write_project(Path("x.brd1"), document, {"a-b-Test_01_Wokal-1.wav": tone})
+    except ValueError:
+        pass
+    else:
+        raise SystemExit("projekt przyjął urwany wav")
+    wav = b"RIFF$\x00\x00\x00WAVEfmt " + b"\x00" * 16 + b"data\x04\x00\x00\x00\x00\x00\x01\x00"
+    stems = {str(tracks[0]["stem"]): wav, str(tracks[1]["stem"]): wav}
+    from tempfile import TemporaryDirectory
+
+    with TemporaryDirectory() as raw_dir:
+        project = Path(raw_dir) / "utwor.brd1"
+        write_project(project, document, stems)
+        opened = read_project(project)
+        if opened is None:
+            raise SystemExit("odczyt brd1")
+        back, files = opened
+        rights = back.get("rights")
+        beat_back = back.get("beat")
+        if not isinstance(rights, dict) or rights.get("beatChecked") is not True or rights.get("note") != RIGHTS_ACCEPT:
+            raise SystemExit("potwierdzenie praw")
+        if not isinstance(beat_back, dict) or beat_back.get("included") is not False:
+            raise SystemExit("bit w brd1")
+        if set(files) != set(stems) or files[str(tracks[0]["stem"])] != wav:
+            raise SystemExit("stemy brd1")
+        dirty = Path(raw_dir) / "obce.brd1"
+        with zipfile.ZipFile(dirty, "w") as archive:
+            archive.writestr(PROJECT_SESSION, json.dumps(document))
+            archive.writestr("bit.wav", wav)
+        if read_project(dirty) is not None:
+            raise SystemExit("brd1 wpuścił bit")
     print("offline session self-test ok")
 
 
