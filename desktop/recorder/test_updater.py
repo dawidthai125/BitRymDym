@@ -76,6 +76,10 @@ def main() -> None:
     # check_for_update: newer yes, same/older no, errors -> None
     if u.check_for_update(lambda: good, "2026.11.12.2", public) is None:
         raise SystemExit("nowsza wersja nie wykryta")
+    # Several builds behind still gets this one manifest, not the next number.
+    jumped = u.check_for_update(lambda: good, "2026.11.12.1", public)
+    if jumped is None or jumped.version != "2026.12.1":
+        raise SystemExit("przeskok kilku wersji ma dać od razu najnowszy manifest")
     if u.check_for_update(lambda: good, "2026.12.1", public) is not None or u.check_for_update(lambda: good, "2027.1", public) is not None:
         raise SystemExit("ta sama lub starsza wersja nie może proponować aktualizacji")
     if u.check_for_update(lambda: (_ for _ in ()).throw(OSError("sieć")), "2026.11.12.2", public) is not None:

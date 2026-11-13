@@ -3059,7 +3059,9 @@ class RecorderWindow:
             return
         self._update = update
         notes = f" {update.notes}" if update.notes else ""
-        self.update_var.set(f"Jest nowa wersja {update.version} (masz {updater.APP_VERSION}).{notes}")
+        self.update_var.set(
+            f"Jest najnowsza wersja {update.version} (masz {updater.APP_VERSION}). Jedno pobranie, cały program.{notes}"
+        )
         self.update_now.configure(state="normal")
         if not self.update_bar.winfo_manager():
             self.update_bar.pack(side="bottom", fill="x", before=self.shell)

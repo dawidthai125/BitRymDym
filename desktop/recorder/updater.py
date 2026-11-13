@@ -1,6 +1,9 @@
 """Self-update for the Windows recorder.
 
-The program asks one public file (latest.json on R2) whether a newer build exists. The file is signed
+The program asks one public file (latest.json on R2) whether a newer build exists. That file is always
+the single newest installer, never the next number in line. A machine several builds behind downloads
+that one file. The installer then replaces the whole program folder, so skipped builds are not applied
+one by one. The file is signed
 with an Ed25519 key. The public half sits below, the private half stays in the OpenBot Vault. A new
 build is installed only when ALL of these hold:
 
@@ -27,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.13.5"
+APP_VERSION = "2026.11.13.6"
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
 MANIFEST_URL = R2_BASE + "latest.json"
