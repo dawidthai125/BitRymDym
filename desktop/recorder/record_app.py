@@ -219,23 +219,161 @@ def shade(color: str, factor: float) -> str:
 
 
 _INSTANCE_LOCK: object = None
+_INSTANCE_NAME = "Local\\BitRymDym.Nagrywarka"
 
 
-def single_instance() -> bool:
-    """One recorder per Windows user. A second window would overwrite the first one's tracks on close."""
-    global _INSTANCE_LOCK
+def _pids_named(exe: str) -> set[int] | None:
+    """Process ids whose exe name matches. None when Windows will not list processes."""
     if os.name != "nt":
+        return set()
+    try:
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.CreateToolhelp32Snapshot.restype = ctypes.c_void_p
+        kernel.CreateToolhelp32Snapshot.argtypes = [ctypes.c_ulong, ctypes.c_ulong]
+        kernel.Process32FirstW.restype = ctypes.c_int
+        kernel.Process32NextW.restype = ctypes.c_int
+        kernel.Process32FirstW.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        kernel.Process32NextW.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+
+        class PROCESSENTRY32W(ctypes.Structure):
+            _fields_ = [
+                ("dwSize", ctypes.c_ulong),
+                ("cntUsage", ctypes.c_ulong),
+                ("th32ProcessID", ctypes.c_ulong),
+                ("th32DefaultHeapID", ctypes.c_void_p),
+                ("th32ModuleID", ctypes.c_ulong),
+                ("cntThreads", ctypes.c_ulong),
+                ("th32ParentProcessID", ctypes.c_ulong),
+                ("pcPriClassBase", ctypes.c_long),
+                ("dwFlags", ctypes.c_ulong),
+                ("szExeFile", ctypes.c_wchar * 260),
+            ]
+
+        snap = kernel.CreateToolhelp32Snapshot(0x00000002, 0)
+        if not snap or snap == ctypes.c_void_p(-1).value:
+            return None
+        entry = PROCESSENTRY32W()
+        entry.dwSize = ctypes.sizeof(entry)
+        found: set[int] = set()
+        try:
+            if not kernel.Process32FirstW(snap, ctypes.byref(entry)):
+                return found
+            while True:
+                if entry.szExeFile.lower() == exe.lower():
+                    found.add(int(entry.th32ProcessID))
+                if not kernel.Process32NextW(snap, ctypes.byref(entry)):
+                    break
+        finally:
+            kernel.CloseHandle(snap)
+        return found
+    except Exception:
+        return None
+
+
+def _recorder_hwnds() -> list[int] | None:
+    """Visible or minimized windows of another BitRymDym.exe. None if the list cannot be read."""
+    pids = _pids_named("BitRymDym.exe")
+    if pids is None:
+        return None
+    others = pids - {os.getpid()}
+    user32 = ctypes.windll.user32
+    user32.GetWindowThreadProcessId.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
+    user32.IsWindowVisible.argtypes = [ctypes.c_void_p]
+    user32.IsIconic.argtypes = [ctypes.c_void_p]
+    found: list[int] = []
+
+    @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+    def visit(hwnd: int, _lparam: int) -> bool:
+        pid = ctypes.c_ulong()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if int(pid.value) in others and (user32.IsWindowVisible(hwnd) or user32.IsIconic(hwnd)):
+            found.append(int(hwnd))
         return True
+
+    user32.EnumWindows.argtypes = [type(visit), ctypes.c_void_p]
+    if not user32.EnumWindows(visit, 0) and not found:
+        return None
+    return found
+
+
+def _reveal_recorder_window() -> bool:
+    hwnds = _recorder_hwnds()
+    if not hwnds:
+        return False
+    user32 = ctypes.windll.user32
+    user32.ShowWindow.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    user32.SetForegroundWindow.argtypes = [ctypes.c_void_p]
+    user32.ShowWindow(hwnds[0], 9)  # SW_RESTORE
+    user32.SetForegroundWindow(hwnds[0])
+    return True
+
+
+def _stop_windowless_recorder() -> None:
+    """End a BitRymDym.exe that kept the lock after its window was already gone."""
+    pids = _pids_named("BitRymDym.exe")
+    if not pids:
+        return
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.restype = ctypes.c_void_p
+    kernel.OpenProcess.argtypes = [ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
+    kernel.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+    kernel.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+    kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+    for pid in pids - {os.getpid()}:
+        handle = kernel.OpenProcess(0x0001 | 0x00100000, False, pid)
+        if not handle:
+            continue
+        kernel.TerminateProcess(handle, 0)
+        kernel.WaitForSingleObject(handle, 3000)
+        kernel.CloseHandle(handle)
+
+
+def _create_instance_lock():
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel.CreateMutexW.restype = ctypes.c_void_p
     kernel.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_wchar_p]
-    _INSTANCE_LOCK = kernel.CreateMutexW(None, False, "Local\\BitRymDym.Nagrywarka")
-    if ctypes.get_last_error() != 183:  # ERROR_ALREADY_EXISTS
+    ctypes.set_last_error(0)
+    handle = kernel.CreateMutexW(None, False, _INSTANCE_NAME)
+    return handle, ctypes.get_last_error()
+
+
+def single_instance() -> bool:
+    """One recorder per Windows user. A second click shows the window that is already open.
+
+    An update can close the window and leave the process. That copy has no window, so this
+    start ends it and opens. A visible window is only brought forward.
+    """
+    global _INSTANCE_LOCK
+    if os.name != "nt":
         return True
-    ctypes.windll.user32.MessageBoxW(
-        None, "Program BitRymDym jest już otwarty. Przełącz się na jego okno na pasku zadań.", "BitRymDym", 0x40
-    )
-    return False
+    handle, error = _create_instance_lock()
+    _INSTANCE_LOCK = handle
+    if error != 183:  # ERROR_ALREADY_EXISTS
+        return True
+    if _reveal_recorder_window():
+        return False
+    time.sleep(0.8)
+    if _reveal_recorder_window():
+        return False
+    if _recorder_hwnds() is None:
+        ctypes.windll.user32.MessageBoxW(
+            None, "Program BitRymDym jest już otwarty. Przełącz się na jego okno na pasku zadań.", "BitRymDym", 0x40
+        )
+        return False
+    _stop_windowless_recorder()
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+    if handle:
+        kernel.CloseHandle(handle)
+    handle, error = _create_instance_lock()
+    _INSTANCE_LOCK = handle
+    if error == 183:
+        ctypes.windll.user32.MessageBoxW(
+            None, "Program BitRymDym jest już otwarty. Przełącz się na jego okno na pasku zadań.", "BitRymDym", 0x40
+        )
+        return False
+    return True
 
 
 def count_word(count: int, one: str, few: str, many: str) -> str:
@@ -3950,8 +4088,18 @@ class RecorderWindow:
         self.root.after(100, self._exit_for_update)
 
     def _exit_for_update(self) -> None:
-        """Leave for real, so the installer is not deleting files the old process still holds."""
-        self._on_close()
+        """Close the window and kill this process. Destroying the window alone leaves it running,
+        the installer waits, and the new program never opens.
+        """
+        def _die() -> None:
+            time.sleep(0.6)
+            os._exit(0)
+
+        threading.Thread(target=_die, daemon=True, name="bitrymdym-exit").start()
+        try:
+            self._on_close()
+        except Exception:
+            pass
         os._exit(0)
 
     def toggle_mic_test(self) -> None:

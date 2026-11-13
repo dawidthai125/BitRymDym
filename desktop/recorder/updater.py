@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.13.9"
+APP_VERSION = "2026.11.13.10"
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
 MANIFEST_URL = R2_BASE + "latest.json"
@@ -244,18 +244,23 @@ def start_installer(path: Path) -> subprocess.Popen[bytes]:
 
 
 def installer_after_exit_command(path: Path) -> str:
-    """PowerShell: wait until BitRymDym.exe is gone, then run the installer.
+    """PowerShell: let BitRymDym.exe leave, then install, then open the new program.
 
-    Deleting the program folder while that exe is still open makes Windows drop the new
-    copy when the old process finally quits. The update bar then comes back, and another
-    try can leave no program at all.
+    The window can close at 100% while the process stays. Waiting forever then never
+    installs. After a short wait the helper ends that process itself. Deleting the
+    program folder while the exe is still open makes Windows drop the new copy.
     """
     quoted = "'" + str(path).replace("'", "''") + "'"
     return (
-        "while (Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue) "
+        "$deadline = (Get-Date).AddSeconds(12); "
+        "while ((Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue) -and ((Get-Date) -lt $deadline)) "
         "{ Start-Sleep -Milliseconds 300 }; "
-        f"Start-Process -FilePath {quoted} "
-        "-ArgumentList '/SILENT','/SUPPRESSMSGBOXES','/NORESTART','/UPDATE=1'"
+        "Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue | Stop-Process -Force; "
+        "Start-Sleep -Milliseconds 800; "
+        f"Start-Process -FilePath {quoted} -ArgumentList '/SILENT','/SUPPRESSMSGBOXES','/NORESTART','/UPDATE=1' -Wait; "
+        "$exe = Join-Path $env:LOCALAPPDATA 'BitRymDym\\Nagrywarka\\BitRymDym.exe'; "
+        "if ((-not (Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue)) -and (Test-Path -LiteralPath $exe)) "
+        "{ Start-Process -FilePath $exe }"
     )
 
 
@@ -263,15 +268,23 @@ def schedule_installer(path: Path) -> subprocess.Popen[bytes]:
     """On Windows, install only after this process has exited. Elsewhere, start it now."""
     if os.name != "nt":
         return start_installer(path)
-    flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
-    return subprocess.Popen(
-        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", installer_after_exit_command(path)],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=flags,
-        close_fds=True,
-    )
+    command = [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-WindowStyle",
+        "Hidden",
+        "-Command",
+        installer_after_exit_command(path),
+    ]
+    quiet = dict(stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
+    detached = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+    # Break away so this helper is not killed when the recorder process finally exits.
+    try:
+        return subprocess.Popen(command, creationflags=detached | 0x01000000, **quiet)
+    except OSError:
+        return subprocess.Popen(command, creationflags=detached, **quiet)
 
 
 def sign_manifest(
@@ -314,6 +327,8 @@ def self_test() -> None:
     waited = installer_after_exit_command(Path(r"C:\Temp\BitRymDym-Setup-2026.11.13.7.exe"))
     if "Get-Process -Name 'BitRymDym'" not in waited or "/UPDATE=1" not in waited or "BitRymDym-Setup-2026.11.13.7.exe" not in waited:
         raise SystemExit("instalator ma ruszyć dopiero po zejściu procesu")
+    if "Stop-Process -Force" not in waited or "-Wait" not in waited or "BitRymDym\\Nagrywarka\\BitRymDym.exe" not in waited:
+        raise SystemExit("po instalacji program ma wstać sam")
     print("updater self-test ok")
 
 
