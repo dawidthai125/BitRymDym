@@ -18,8 +18,8 @@ FORMAT = "bitrymdym.sesja"
 VERSION = 1
 FILE_NAME = "sesja.brd.json"
 OFFLINE_VOCALS = 16
-OFFLINE_EXTRAS = 8
-# Gold on the site still places up to 16 recording tracks. The extra 8 stay in the pack.
+OFFLINE_EXTRAS = 6
+# Gold on the site still places up to 16 recording tracks. The extra 6 stay in the pack.
 SITE_GOLD_TRACKS = 16
 
 RIGHTS_NOTE = (
@@ -56,12 +56,14 @@ def clamp_pan(value: object) -> float:
 
 
 def pan_text(pan: float) -> str:
+    """Console panorama: C, or L/R and 0–100 away from center. That is the fader unit."""
     bounded = clamp_pan(pan)
-    if bounded <= -0.05:
-        return f"lewo {int(round(abs(bounded) * 100))}"
-    if bounded >= 0.05:
-        return f"prawo {int(round(bounded * 100))}"
-    return "środek"
+    steps = int(round(abs(bounded) * 100))
+    if steps < 5:
+        return "C"
+    if bounded < 0:
+        return f"L {steps}"
+    return f"R {steps}"
 
 
 def clock_text(seconds: float) -> str:
@@ -171,6 +173,7 @@ def build_session(
     beat_muted: bool,
     tracks: list[dict[str, object]],
     saved_at: str,
+    beat_pan: float = 0.0,
 ) -> dict[str, object]:
     """Portable document. Beat audio is never copied in. Stem names are files beside this JSON."""
     beat_name = file_title(beat_file_name) if beat_file_name else ""
@@ -210,6 +213,7 @@ def build_session(
             "fileName": beat_name,
             "durationSeconds": round(max(0.0, float(beat_seconds or 0.0)), 3),
             "gainDb": round(clamp_gain(beat_gain_db), 2),
+            "pan": round(clamp_pan(beat_pan), 3),
             "muted": bool(beat_muted),
             "included": False,
         },
@@ -239,6 +243,7 @@ def parse_session(raw: object) -> dict[str, object] | None:
         beat_gain_db=clamp_gain(beat.get("gainDb")),
         beat_muted=bool(beat.get("muted")),
         tracks=[item for item in tracks if isinstance(item, dict)],
+        beat_pan=clamp_pan(beat.get("pan")),
         saved_at=str(raw.get("savedAt") or ""),
     )
     note = raw.get("rights")
@@ -262,9 +267,10 @@ def checklist_lines(document: dict[str, object]) -> list[str]:
     beat = document.get("beat")
     if isinstance(beat, dict):
         name = beat.get("fileName") or "niepodany"
+        muted = ", wyciszony" if beat.get("muted") else ""
         lines.append(
             f"Bit (zostaje u Ciebie, nie jedzie na stronę): {name}, {clock_text(float(beat.get('durationSeconds') or 0))} , "
-            f"{float(beat.get('gainDb') or 0):+.0f} dB."
+            f"{float(beat.get('gainDb') or 0):+.0f} dB, {pan_text(float(beat.get('pan') or 0))}{muted}."
         )
     tracks = document.get("tracks")
     if not isinstance(tracks, list):
@@ -291,9 +297,9 @@ def checklist_lines(document: dict[str, object]) -> list[str]:
 
 
 def self_test() -> None:
-    if offline_track_cap() != 24 or OFFLINE_VOCALS != 16 or OFFLINE_EXTRAS != 8 or SITE_GOLD_TRACKS != 16:
+    if offline_track_cap() != 22 or OFFLINE_VOCALS != 16 or OFFLINE_EXTRAS != 6 or SITE_GOLD_TRACKS != 16:
         raise SystemExit("limit offline")
-    if pan_text(0) != "środek" or pan_text(-1) != "lewo 100" or pan_text(0.5) != "prawo 50":
+    if pan_text(0) != "C" or pan_text(-1) != "L 100" or pan_text(0.5) != "R 50":
         raise SystemExit("balans")
     if abs(seconds_from_ffmpeg_banner("Duration: 00:01:02.50, start") - 62.5) > 0.001:
         raise SystemExit("czas bitu")
@@ -347,7 +353,7 @@ def self_test() -> None:
     if parse_session({"format": "inne", "version": 1}) is not None:
         raise SystemExit("obcy plik")
     lines = checklist_lines(document)
-    if len(lines) != 3 or "lewo 40" not in lines[1] or "prawo 100" not in lines[2]:
+    if len(lines) != 3 or "L 40" not in lines[1] or "R 100" not in lines[2] or "C" not in lines[0]:
         raise SystemExit(f"ściąga {lines}")
     print("offline session self-test ok")
 

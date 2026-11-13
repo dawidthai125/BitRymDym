@@ -1,7 +1,7 @@
 """Windows recording studio. Audacity-style tracks.
 
 After login the account picks Studio Online (catalog beat, plan track cap, send to the site)
-or Studio Offline (Gold: own beat file, 16 vocal tracks + 8 doubles/adlibs, no upload).
+or Studio Offline (Gold: own beat file, 16 vocal tracks + 6 doubles/adlibs, no upload).
 Offline writes dry stems and sesja.brd.json. Mix and master stay on the site. No VST.
 """
 
@@ -32,6 +32,7 @@ from pathlib import Path
 
 import updater
 import offline_session
+import win_output
 from account_upload import (
     NETWORK_ERRORS,
     SITE,
@@ -357,8 +358,10 @@ def quiet_kwargs() -> dict[str, object]:
     return {"creationflags": subprocess.CREATE_NO_WINDOW, "startupinfo": info}
 
 
-def start_mix(ffmpeg: str, ffplay: str, argv: list[str]) -> tuple[subprocess.Popen[bytes], subprocess.Popen[bytes]]:
-    """One mix to the default Windows output. The beat URL is not written to disk."""
+def start_mix(
+    ffmpeg: str, ffplay: str, argv: list[str], output_index: int | None = None
+) -> tuple[subprocess.Popen[bytes], object]:
+    """One mix. The beat URL is not written to disk. A chosen output uses waveOut; default stays on ffplay."""
     feed = subprocess.Popen(
         argv,
         stdin=subprocess.DEVNULL,
@@ -366,6 +369,15 @@ def start_mix(ffmpeg: str, ffplay: str, argv: list[str]) -> tuple[subprocess.Pop
         stderr=subprocess.DEVNULL,
         **quiet_kwargs(),
     )
+    if output_index is not None and feed.stdout is not None:
+        fd = os.dup(feed.stdout.fileno())
+        feed.stdout.close()
+        player = win_output.WavePlayer(os.fdopen(fd, "rb"), output_index)
+        player.start()
+        return feed, player
+    if not ffplay:
+        feed.kill()
+        raise RuntimeError(NO_FFPLAY)
     play = subprocess.Popen(
         monitor_argv(ffplay, "pipe:0"),
         stdin=feed.stdout,
@@ -417,6 +429,7 @@ def mix_argv(
     limit: int | None,
     beat_start: float = 0.0,
     beat_gain_db: float = 0.0,
+    beat_pan: float = 0.0,
 ) -> list[str]:
     """Beat from beat_start (the cursor) plus vocal tracks already rendered from the same point."""
     argv = [ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin"]
@@ -427,7 +440,7 @@ def mix_argv(
         if isinstance(limit, int) and limit > 0:
             argv.extend(["-t", str(max(1, int(math.ceil(limit - beat_start))))])
         argv.extend(["-i", beat])
-        stems.append((max(0.0, min(4.0, 0.85 * 10 ** (beat_gain_db / 20))), 0.0))
+        stems.append((max(0.0, min(4.0, 0.85 * 10 ** (beat_gain_db / 20))), beat_pan))
     for path, gain_db, pan in vocals:
         argv.extend(["-i", str(path)])
         stems.append((max(0.0, min(4.0, 10 ** (gain_db / 20))), pan))
@@ -495,8 +508,12 @@ def audio_devices(exe: str) -> list[str]:
         end = line.rfind('"')
         if start >= 0 and end > start:
             names.append(line[start + 1 : end])
-    mics = [name for name in names if "microphone" in name.lower() or "mikrofon" in name.lower()]
-    ordered = mics + [name for name in names if name not in mics]
+    def preferred(name: str) -> int:
+        low = name.lower()
+        words = ("microphone", "mikrofon", "mic", "headset", "iphone", "bluetooth", "słuchaw")
+        return 0 if any(word in low for word in words) else 1
+
+    ordered = sorted(names, key=preferred)
     if not ordered:
         raise RuntimeError("Windows nie pokazał mikrofonu.")
     return ordered
@@ -758,7 +775,7 @@ class RecorderWindow:
         self._restore_geo = ""
         self._images: list[tk.PhotoImage] = []
         self.ui = dpi_scale()
-        self.lane_h = int(152 * self.ui)
+        self.lane_h = int(188 * self.ui)
         self.head_w = int(250 * self.ui)
         self.clip_bar = int(17 * self.ui)
         self.shell = tk.Frame(self.root, bg=PAPER, highlightthickness=1, highlightbackground=LINE_STRONG)
@@ -800,6 +817,15 @@ class RecorderWindow:
         self.view = 0.0
         self.beat_muted = False
         self.beat_gain_db = 0.0
+        self.beat_pan = 0.0
+        self._remix_token = 0
+        self._remix_after: str | None = None
+        self._gear_scanning = False
+        self._output_testing = False
+        self._pref_device = ""
+        self._pref_output = ""
+        self._pref_beat = ""
+        self._desk_beat = ""
         self.studio_mode = "online"
         self.local_beat_path = ""
         self.local_beat_seconds = 0.0
@@ -829,12 +855,8 @@ class RecorderWindow:
         self.project_id = ""
         self._tick_id: str | None = None
         self.devices: list[str] = []
-        try:
-            self.devices = audio_devices(ffmpeg_exe())
-        except Exception as error:
-            self.status_boot = str(error)
-        else:
-            self.status_boot = ""
+        self.outputs: list[tuple[str, int]] = [("Domyślne", -1)]
+        self.status_boot = ""
         self.public_url = ""
         self.public_key = ""
         self.beats: list[tuple[str, str]] = []
@@ -844,7 +866,8 @@ class RecorderWindow:
         self.status = tk.StringVar(value="Ładuję listę bitów ze strony.")
         self.plan_text = tk.StringVar(value="Plan: zaloguj się.")
         self.clock = tk.StringVar(value="0:00.00")
-        self.device_var = tk.StringVar(value=self.devices[0] if self.devices else "Brak mikrofonu")
+        self.device_var = tk.StringVar(value="Szukam mikrofonów…")
+        self.output_var = tk.StringVar(value="Domyślne")
         self.beat_var = tk.StringVar()
         self.title_var = tk.StringVar(value="Nagranie z komputera")
         self.account_line = tk.StringVar(value="Konto")
@@ -856,12 +879,10 @@ class RecorderWindow:
         self._build_update_bar()
         self._build_gate(saved if isinstance(saved, dict) else None)
         self._build_modes()
-        self._load_public()
         self._build_studio()
         self.beat_var.trace_add("write", lambda *_args: self._beat_changed())
         self._load_prefs()
         self._restore_desk()
-        self._read_plan()
         if self.status_boot:
             self.status.set(self.status_boot)
             self.gate_status.set(self.status_boot)
@@ -880,6 +901,8 @@ class RecorderWindow:
         ):
             self.root.bind(sequence, lambda event, run=handler: self._key(event, run))
         self.show_gate()
+        # Device list and the beat catalog both block. The login window is up first.
+        self.root.after(60, self._boot_background)
 
     def _key(self, event: tk.Event, run: Callable[[], object]) -> str | None:
         """Shortcuts work on the timeline, not while typing in a text field."""
@@ -919,11 +942,13 @@ class RecorderWindow:
         self.modes.pack_forget()
         self.gate.pack(fill="both", expand=True)
         scale = dpi_scale()
-        self.root.minsize(int(420 * scale), int(640 * scale))
+        width = int(760 * scale)
+        height = int(720 * scale)
+        self.root.minsize(int(640 * scale), int(600 * scale))
         if self._borderless:
-            self._place_window(int(520 * scale), int(760 * scale))
-        elif self.root.winfo_width() > 640:
-            self.root.geometry("480x740")
+            self._place_window(width, height)
+        else:
+            self.root.geometry(f"{width}x{height}")
 
     def show_studio(self) -> None:
         self.gate.pack_forget()
@@ -953,13 +978,13 @@ class RecorderWindow:
         self.studio.pack_forget()
         self.modes.pack(fill="both", expand=True)
         scale = dpi_scale()
-        self.root.minsize(int(420 * scale), int(640 * scale))
-        width = int(560 * scale)
-        height = min(self.root.winfo_screenheight() - 40, int(920 * scale))
+        width = int(1080 * scale)
+        height = min(self.root.winfo_screenheight() - 40, int(760 * scale))
+        self.root.minsize(int(920 * scale), int(620 * scale))
         if self._borderless:
-            self._place_window(width, max(int(640 * scale), height))
+            self._place_window(width, height)
         else:
-            self.root.geometry(f"{width}x{max(640, height)}")
+            self.root.geometry(f"{width}x{height}")
         email = self.email.get().strip()
         self.mode_account.set(email or "Konto")
         if self.tier == "GOLD":
@@ -1035,22 +1060,29 @@ class RecorderWindow:
         self.beat_button = self._tool(setup, "Wybierz bit z katalogu ▾", self.pick_beat, INK)
         self.beat_button.configure(font=(FONT_UI, 10), anchor="w", width=34)
         self.beat_button.pack(side="left", padx=(6, 14))
-        tk.Label(setup, text="MIKROFON", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
-        device_labels = self.devices or ["Brak mikrofonu"]
-        self.device_menu = tk.OptionMenu(setup, self.device_var, *device_labels)
-        self.device_menu.configure(
-            bg=RACK, fg=INK, activebackground=PANEL, activeforeground=INK, highlightthickness=1,
-            highlightbackground=LINE, font=(FONT_UI, 10), relief="flat", bd=0, anchor="w", width=22,
-        )
-        self.device_menu["menu"].configure(bg=RACK, fg=INK, activebackground=AMBER, activeforeground=ON_AMBER, font=(FONT_UI, 10))
+
+        gear = tk.Frame(self.studio, bg=PAPER)
+        gear.pack(fill="x", padx=12, pady=(6, 0))
+        tk.Label(gear, text="MIKROFON", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
+        self.device_menu = tk.OptionMenu(gear, self.device_var, "Szukam mikrofonów…")
+        self._style_option(self.device_menu, 24)
         self.device_menu.pack(side="left", padx=(6, 8))
-        self.probe_button = self._tool(setup, "PRÓBA MIKROFONU", self.toggle_mic_test, INK)
+        self.probe_button = self._tool(gear, "TEST MIKROFONU", self.toggle_mic_test, INK)
         self.probe_button.pack(side="left")
-        self.probe_meter = tk.Canvas(setup, width=110, height=12, bg=RACK, highlightthickness=0, bd=0)
-        self.probe_meter.pack(side="left", padx=(8, 0))
-        self.probe_var = tk.StringVar(value="")
-        self.probe_label = tk.Label(setup, textvariable=self.probe_var, bg=PAPER, fg=SOFT, font=(FONT_UI, 9), anchor="w")
-        self.probe_label.pack(side="left", padx=8, fill="x", expand=True)
+        self.probe_meter = tk.Canvas(gear, width=90, height=12, bg=RACK, highlightthickness=0, bd=0)
+        self.probe_meter.pack(side="left", padx=(8, 8))
+        tk.Label(gear, text="ODSŁUCH", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
+        self.output_menu = tk.OptionMenu(gear, self.output_var, "Domyślne")
+        self._style_option(self.output_menu, 18)
+        self.output_menu.pack(side="left", padx=(6, 8))
+        self.output_test_button = self._tool(gear, "TEST ODSŁUCHU", self.test_output, INK)
+        self.output_test_button.pack(side="left")
+        self._tool(gear, "ODŚWIEŻ", self.refresh_gear, SOFT, size=11).pack(side="left", padx=(8, 0))
+        self.probe_var = tk.StringVar(value="Mikrofon i słuchawki mogą być z różnych urządzeń, też Bluetooth.")
+        self.probe_label = tk.Label(
+            self.studio, textvariable=self.probe_var, bg=PAPER, fg=SOFT, font=(FONT_UI, 9), anchor="w", justify="left"
+        )
+        self.probe_label.pack(fill="x", padx=12, pady=(4, 0))
 
         bar = tk.Frame(self.studio, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
         bar.pack(fill="x", padx=12, pady=(8, 0))
@@ -1120,8 +1152,8 @@ class RecorderWindow:
         self.foot_label = tk.Label(
             self.studio,
             text=(
-                "Klik: kursor. Przeciągnij po ścieżce: zaznaczenie. Pasek klipu: przesuń. Spacja: graj/stop, R: nagraj, "
-                f"Delete: usuń, Ctrl+X/C/V, Ctrl+I: podziel, Ctrl+Z: cofnij. Wersja {updater.APP_VERSION}."
+                "Klik: kursor. Przeciągnij: zaznaczenie. Pasek klipu: przesuń. Spacja: graj/stop, R: nagraj. "
+                f"M na bicie wycisza od razu. Panorama: L, C, R. Wersja {updater.APP_VERSION}."
             ),
             bg=PAPER, fg=MUTE, font=(FONT_UI, 8), anchor="w", justify="left",
         )
@@ -1187,10 +1219,19 @@ class RecorderWindow:
         gain = tk.Frame(head, bg=PANEL)
         gain.pack(fill="x", padx=8, pady=(4, 0))
         tk.Label(gain, text="dB", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
-        self.beat_gain_label = tk.Label(gain, text="+0", bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=3)
+        self.beat_gain_label = tk.Label(gain, text="+0", bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=4)
         self.beat_gain_scale = self._gain_scale(gain, self.beat_gain_db, self._set_beat_gain)
         self.beat_gain_scale.pack(side="left", padx=4)
         self.beat_gain_label.pack(side="left")
+        balance = tk.Frame(head, bg=PANEL)
+        balance.pack(fill="x", padx=8, pady=(2, 0))
+        tk.Label(balance, text="PAN", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
+        self.beat_pan_label = tk.Label(
+            balance, text=offline_session.pan_text(self.beat_pan), bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=6, anchor="w"
+        )
+        self.beat_pan_scale = self._pan_scale(balance, self.beat_pan, self._set_beat_pan)
+        self.beat_pan_scale.pack(side="left", padx=4)
+        self.beat_pan_label.pack(side="left")
         self.beat_lane = lane
         lane.bind("<Button-1>", lambda event: self._lane_click_plain(event))
         lane.bind("<B1-Motion>", lambda event: self._lane_click_plain(event))
@@ -1225,8 +1266,8 @@ class RecorderWindow:
         gain_label.pack(side="left")
         balance = tk.Frame(head, bg=PANEL)
         balance.pack(fill="x", padx=8, pady=(2, 0))
-        tk.Label(balance, text="L R", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
-        pan_label = tk.Label(balance, text=offline_session.pan_text(track.pan), bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=9, anchor="w")
+        tk.Label(balance, text="PAN", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
+        pan_label = tk.Label(balance, text=offline_session.pan_text(track.pan), bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=6, anchor="w")
         self._pan_scale(balance, track.pan, lambda value, slot=track: self._set_pan(slot, value)).pack(side="left", padx=4)
         pan_label.pack(side="left")
         widgets: dict[str, object] = {
@@ -1283,7 +1324,7 @@ class RecorderWindow:
             elif extras < offline_session.OFFLINE_EXTRAS:
                 text = f"+ PODBICIE {extras}/{offline_session.OFFLINE_EXTRAS}"
             else:
-                text = "LIMIT 16 WOKALI + 8 PODBIĆ"
+                text = "LIMIT 16 WOKALI + 6 PODBIĆ"
         else:
             cap = self._track_cap()
             have = len(self.tracks)
@@ -1330,7 +1371,7 @@ class RecorderWindow:
         cap = self._track_cap()
         if len(self.tracks) >= cap:
             if self.studio_mode == "offline":
-                self.status.set("Studio Offline mieści 16 wokali i 8 podbić albo adlibów. Bit się nie liczy.")
+                self.status.set("Studio Offline mieści 16 wokali i 6 podbić albo adlibów. Bit się nie liczy.")
             else:
                 self.status.set(f"Plan {display_tier(self.tier)} mieści {cap} ścieżek nagrania. Bit się nie liczy.")
             return
@@ -1390,18 +1431,22 @@ class RecorderWindow:
         self._sync_track_buttons()
         self._paint_all()
         self._save_desk()
+        self._schedule_remix(40)
 
     def toggle_solo(self, track: Track) -> None:
         track.solo = not track.solo
         self._sync_track_buttons()
         self._paint_all()
         self._save_desk()
+        self._schedule_remix(40)
 
     def toggle_beat_mute(self) -> None:
         self.beat_muted = not self.beat_muted
         self._sync_track_buttons()
         self._paint_all()
+        self._save_desk()
         self.status.set("Bit wyciszony: nie gra przy nagrywaniu i odsłuchu." if self.beat_muted else "Bit gra.")
+        self._schedule_remix(40)
 
     def _set_gain(self, track: Track, value: float) -> None:
         if abs(track.gain_db - value) > 1e-9:
@@ -1411,6 +1456,7 @@ class RecorderWindow:
             label = self.rows[self.tracks.index(track)].get("gain")
             if isinstance(label, tk.Label):
                 label.configure(text=f"{value:+.0f}")
+        self._schedule_remix()
 
     def _set_pan(self, track: Track, slider: float) -> None:
         value = offline_session.clamp_pan(slider / 100.0)
@@ -1421,12 +1467,23 @@ class RecorderWindow:
             label = self.rows[self.tracks.index(track)].get("pan")
             if isinstance(label, tk.Label):
                 label.configure(text=offline_session.pan_text(value))
+        self._schedule_remix()
 
     def _set_beat_gain(self, value: float) -> None:
         if abs(self.beat_gain_db - value) > 1e-9:
             self._touched = True
         self.beat_gain_db = value
         self.beat_gain_label.configure(text=f"{value:+.0f}")
+        self._schedule_remix()
+
+    def _set_beat_pan(self, slider: float) -> None:
+        value = offline_session.clamp_pan(slider / 100.0)
+        if abs(self.beat_pan - value) > 1e-9:
+            self._touched = True
+        self.beat_pan = value
+        if hasattr(self, "beat_pan_label"):
+            self.beat_pan_label.configure(text=offline_session.pan_text(value))
+        self._schedule_remix()
 
     # ---- beat catalog ---------------------------------------------------------
 
@@ -1556,6 +1613,14 @@ class RecorderWindow:
     def _load_public(self) -> None:
         try:
             payload = load_bootstrap()
+        except Exception as error:
+            self.status.set(str(error))
+            self.gate_status.set(str(error))
+            return
+        self._apply_public(payload)
+
+    def _apply_public(self, payload: dict[str, object]) -> None:
+        try:
             self.public_url = str(payload["supabaseUrl"])
             self.public_key = str(payload["anonKey"])
             raw = payload.get("beats")
@@ -1578,7 +1643,7 @@ class RecorderWindow:
                     )
             if self.beats and not self.beat_var.get():
                 self.beat_var.set(self.beats[0][1])
-            if self.beats:
+            if self.beats and not self.studio.winfo_manager():
                 self.status.set("Wybierz bit, uzbrój ścieżkę (●) i nagraj.")
                 if self.email.get().strip():
                     self.gate_status.set("Jest zapisana sesja. Puste hasło wchodzi na to konto.")
@@ -2077,6 +2142,7 @@ class RecorderWindow:
             "armed": self.armed,
             "beatMuted": self.beat_muted,
             "beatGainDb": self.beat_gain_db,
+            "beatPan": self.beat_pan,
             "tracks": [
                 {
                     "name": track.name,
@@ -2144,6 +2210,7 @@ class RecorderWindow:
             if isinstance(raw.get("beatMuted"), bool):
                 self.beat_muted = bool(raw["beatMuted"])
             self.beat_gain_db = offline_session.clamp_gain(raw.get("beatGainDb"))
+            self.beat_pan = offline_session.clamp_pan(raw.get("beatPan"))
             if self.studio_mode == "offline":
                 local = raw.get("localBeat")
                 if isinstance(local, str):
@@ -2154,11 +2221,16 @@ class RecorderWindow:
                     self.local_beat_seconds = max(0.0, float(seconds))
             else:
                 beat = raw.get("beat")
-                if isinstance(beat, str) and beat in [label for _beat_id, label in self.beats]:
-                    self.beat_var.set(beat)
+                if isinstance(beat, str):
+                    self._desk_beat = beat
+                    if beat in [label for _beat_id, label in self.beats]:
+                        self.beat_var.set(beat)
         if hasattr(self, "beat_gain_scale"):
             self.beat_gain_scale.set(self.beat_gain_db)
             self.beat_gain_label.configure(text=f"{self.beat_gain_db:+.0f}")
+        if hasattr(self, "beat_pan_scale"):
+            self.beat_pan_scale.set(max(-100.0, min(100.0, self.beat_pan * 100)))
+            self.beat_pan_label.configure(text=offline_session.pan_text(self.beat_pan))
         self._rebuild_rows()
         self._sync_beat_button()
         self._touched = False
@@ -2210,7 +2282,15 @@ class RecorderWindow:
 
     def _save_prefs(self) -> None:
         try:
-            write_prefs(PREFS, {"device": self.device_var.get(), "title": self.title_var.get().strip(), "beat": self.beat_var.get()})
+            write_prefs(
+                PREFS,
+                {
+                    "device": self.device_var.get(),
+                    "output": self.output_var.get(),
+                    "title": self.title_var.get().strip(),
+                    "beat": self.beat_var.get(),
+                },
+            )
         except OSError:
             pass
 
@@ -2223,11 +2303,20 @@ class RecorderWindow:
         if isinstance(title, str) and title:
             self.title_var.set(title)
         device = prefs.get("device")
-        if isinstance(device, str) and device in self.devices:
-            self.device_var.set(device)
+        if isinstance(device, str):
+            self._pref_device = device
+            if device in self.devices:
+                self.device_var.set(device)
+        output = prefs.get("output")
+        if isinstance(output, str):
+            self._pref_output = output
+            if any(label == output for label, _index in self.outputs):
+                self.output_var.set(output)
         beat = prefs.get("beat")
-        if isinstance(beat, str) and beat in [label for _beat_id, label in self.beats]:
-            self.beat_var.set(beat)
+        if isinstance(beat, str):
+            self._pref_beat = beat
+            if beat in [label for _beat_id, label in self.beats]:
+                self.beat_var.set(beat)
         self._sync_beat_button()
 
     def _read_plan(self) -> None:
@@ -2248,7 +2337,7 @@ class RecorderWindow:
             return
         self.tier = tier
         if self.studio_mode == "offline":
-            self.plan_text.set("Gold · 16 wokali + 8 podbić i adlibów. Czysta nagrywka, bez miksu i masteringu.")
+            self.plan_text.set(self._offline_plan_line())
         else:
             stems = "stemy: tak" if tier == "GOLD" else "stemy: od Gold"
             self.plan_text.set(
@@ -2350,6 +2439,9 @@ class RecorderWindow:
             heard = (heard[0], heard[1], f"Pozostałych ścieżek nie słychać ({error[:60]}).")
         target, limit, note = heard
         beat = target
+        if self.beat_muted:
+            beat = None
+            note = "Bit wyciszony (M)."
         if beat is not None and limit and start >= limit:
             beat = None
             note = f"Podgląd bitu ma tylko {limit} s, dalej gra bez bitu."
@@ -2364,11 +2456,15 @@ class RecorderWindow:
             if beat is not None or vocals:
                 ffmpeg = ffmpeg_exe()
                 play = ffplay_exe()
-                if play is None:
+                output_index = self.selected_output_index()
+                if play is None and output_index is None:
                     note = NO_FFPLAY
                 else:
-                    argv = mix_argv(ffmpeg, beat, vocals, limit, beat_start=start, beat_gain_db=self.beat_gain_db)
-                    self.mix_feed, self.monitor = start_mix(ffmpeg, play, argv)
+                    argv = mix_argv(
+                        ffmpeg, beat, vocals, limit, beat_start=start,
+                        beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan,
+                    )
+                    self.mix_feed, self.monitor = start_mix(ffmpeg, play or "", argv, output_index)
             elif record_to is None:
                 raise RuntimeError(note or "Nie ma czego grać.")
         except Exception as problem:
@@ -2538,7 +2634,10 @@ class RecorderWindow:
             ended = self.monitor is None or self.monitor.poll() is not None
             head = self._play_from + (time.monotonic() - self._play_t0)
             if ended:
+                note = str(getattr(self.monitor, "note", "") or "")
                 self.stop()
+                if note:
+                    self.status.set(note)
                 return
             self._follow(head)
             self._move_head(head)
@@ -2742,6 +2841,7 @@ class RecorderWindow:
             beat_gain_db=self.beat_gain_db,
             beat_muted=self.beat_muted,
             tracks=rows,
+            beat_pan=self.beat_pan,
             saved_at=datetime.now().astimezone().isoformat(timespec="seconds"),
         )
         built = document.get("tracks")
@@ -2854,6 +2954,7 @@ class RecorderWindow:
         if isinstance(beat, dict):
             beat_name = str(beat.get("fileName") or "")
             self.beat_gain_db = offline_session.clamp_gain(beat.get("gainDb"))
+            self.beat_pan = offline_session.clamp_pan(beat.get("pan"))
             self.beat_muted = bool(beat.get("muted"))
             if isinstance(beat.get("durationSeconds"), (int, float)):
                 self.local_beat_seconds = max(0.0, float(beat["durationSeconds"]))
@@ -2862,6 +2963,9 @@ class RecorderWindow:
         if hasattr(self, "beat_gain_scale"):
             self.beat_gain_scale.set(self.beat_gain_db)
             self.beat_gain_label.configure(text=f"{self.beat_gain_db:+.0f}")
+        if hasattr(self, "beat_pan_scale"):
+            self.beat_pan_scale.set(max(-100.0, min(100.0, self.beat_pan * 100)))
+            self.beat_pan_label.configure(text=offline_session.pan_text(self.beat_pan))
         self._rebuild_rows()
         self._save_desk()
         extra = f" Brak {missing} plików obok sesji." if missing else ""
@@ -3171,8 +3275,10 @@ class RecorderWindow:
 
     def _build_gate(self, saved: dict[str, str] | None) -> None:
         self.gate = tk.Frame(self.shell, bg=PAPER)
-        card = tk.Frame(self.gate, bg=PAPER)
-        card.pack(expand=True, fill="x", padx=36, pady=24)
+        stage = tk.Frame(self.gate, bg=PAPER)
+        stage.pack(expand=True)
+        card = tk.Frame(stage, bg=PAPER)
+        card.pack(padx=36, pady=24)
         logo = self._fit_image("logo-light.png", 320, 92)
         if logo is not None:
             tk.Label(card, image=logo, bg=PAPER).pack(pady=(0, 6))
@@ -3226,53 +3332,65 @@ class RecorderWindow:
         window = self.modes_canvas.create_window((0, 0), window=inner, anchor="nw")
         inner.bind("<Configure>", lambda _event: self.modes_canvas.configure(scrollregion=self.modes_canvas.bbox("all")))
         self.modes_canvas.bind("<Configure>", lambda event: self.modes_canvas.itemconfigure(window, width=event.width))
-        card = tk.Frame(inner, bg=PAPER)
-        card.pack(fill="x", padx=28, pady=18)
-        tk.Label(card, text="Gdzie nagrywasz?", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 22, "italic")).pack(anchor="w")
+        head = tk.Frame(inner, bg=PAPER)
+        head.pack(fill="x", padx=28, pady=(16, 4))
+        tk.Label(head, text="Gdzie nagrywasz?", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 22, "italic")).pack(anchor="w")
         self.mode_account = tk.StringVar(value="")
-        tk.Label(card, textvariable=self.mode_account, bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", pady=(2, 10))
+        tk.Label(head, textvariable=self.mode_account, bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", pady=(2, 6))
 
-        online = tk.Frame(card, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
-        online.pack(fill="x", pady=(0, 10))
+        row = tk.Frame(inner, bg=PAPER)
+        row.pack(anchor="center", pady=(4, 8))
+        online = tk.Frame(row, bg=PANEL, highlightthickness=1, highlightbackground=LINE, width=440)
+        online.pack(side="left", anchor="n", padx=10, ipadx=4)
         tk.Label(online, text="STUDIO ONLINE", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 16, "bold")).pack(anchor="w", padx=14, pady=(12, 2))
         tk.Label(
             online,
-            text="Bit z katalogu strony. Ścieżki według planu. Na końcu możesz wrzucić nagranie do Studia. Miks i mastering są na stronie.",
-            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=460, justify="left",
+            text=(
+                "Gotowe darmowe bity.\n"
+                "Katalog bitów, które sam wgrałeś.\n"
+                "Wykupione płatne bity.\n"
+                "Jedna lista, szukasz po nazwie. Ścieżki według planu. "
+                "Na końcu możesz wrzucić nagranie do Studia. Miks i mastering są na stronie."
+            ),
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=400, justify="left",
         ).pack(anchor="w", padx=14, pady=(0, 8))
-        self._tool(online, "WEJDŹ", lambda: self.choose_mode("online"), ON_AMBER, AMBER, 14).pack(anchor="w", padx=14, pady=(0, 12))
+        self._tool(online, "WEJDŹ", lambda: self.choose_mode("online"), ON_AMBER, AMBER, 14).pack(anchor="w", padx=14, pady=(0, 14))
 
-        offline = tk.Frame(card, bg=PANEL, highlightthickness=1, highlightbackground=AMBER_DEEP)
-        offline.pack(fill="x", pady=(0, 10))
+        offline = tk.Frame(row, bg=PANEL, highlightthickness=1, highlightbackground=AMBER_DEEP, width=440)
+        offline.pack(side="left", anchor="n", padx=10, ipadx=4)
         tk.Label(offline, text="STUDIO OFFLINE", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 16, "bold")).pack(anchor="w", padx=14, pady=(12, 0))
         tk.Label(offline, text="PREMIUM GOLD", bg=PANEL, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", padx=14)
         tk.Label(
             offline,
             text=(
-                "Własny bit z pliku. 16 ścieżek wokalu i 8 na podbicia i adliby. "
-                "Czysta nagrywka i prosta edycja ścieżek. Bez automatycznego miksu i masteringu. "
-                "Program nie wysyła nagrania na stronę. Zapisujesz u siebie stemy (osobne WAV-y ścieżek) i plik sesji."
+                "Tylko swój bit z pliku, na tym komputerze.\n"
+                "16 ścieżek wokalu i 6 na podbicia i adliby.\n"
+                "Mikrofon i odsłuch osobno: też Bluetooth, na przykład iPhone, "
+                "i słuchawki albo głośniki z innego urządzenia.\n"
+                "Czysta nagrywka i prosta edycja. Bez automatycznego miksu, masteringu i bez wysyłki na stronę."
             ),
-            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=460, justify="left",
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=400, justify="left",
         ).pack(anchor="w", padx=14, pady=(6, 8))
         self.offline_enter = tk.Button(
             offline, text="WEJDŹ", command=lambda: self.choose_mode("offline"),
             bg=AMBER, fg=ON_AMBER, activebackground=AMBER_SOFT, activeforeground=ON_AMBER,
             relief="flat", bd=0, padx=12, pady=6, font=(FONT_POSTER, 14, "bold"), cursor="hand2",
         )
-        self.offline_enter.pack(anchor="w", padx=14, pady=(0, 12))
+        self.offline_enter.pack(anchor="w", padx=14, pady=(0, 14))
 
-        tk.Label(card, text="PRAWA", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", pady=(6, 2))
+        foot = tk.Frame(inner, bg=PAPER)
+        foot.pack(fill="x", padx=36, pady=(4, 16))
+        tk.Label(foot, text="PRAWA", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", pady=(6, 2))
         tk.Label(
-            card, text=offline_session.RIGHTS_NOTE, bg=PAPER, fg=SOFT, font=(FONT_UI, 10), wraplength=480, justify="left",
+            foot, text=offline_session.RIGHTS_NOTE, bg=PAPER, fg=SOFT, font=(FONT_UI, 10), wraplength=920, justify="left",
         ).pack(anchor="w")
-        links = tk.Frame(card, bg=PAPER)
+        links = tk.Frame(foot, bg=PAPER)
         links.pack(anchor="w", pady=(10, 4))
         self._link(links, "Studio na stronie", "/studio").pack(side="left")
         self._link(links, "Premium", "/premium").pack(side="left", padx=(14, 0))
         self.mode_status = tk.StringVar(value="")
-        tk.Label(card, textvariable=self.mode_status, bg=PAPER, fg=INK, font=(FONT_UI, 10), wraplength=480, justify="left").pack(anchor="w", pady=(8, 0))
-        self._tool(card, "WYLOGUJ", self.sign_out, SOFT).pack(anchor="w", pady=(12, 0))
+        tk.Label(foot, textvariable=self.mode_status, bg=PAPER, fg=INK, font=(FONT_UI, 10), wraplength=920, justify="left").pack(anchor="w", pady=(8, 0))
+        self._tool(foot, "WYLOGUJ", self.sign_out, SOFT).pack(anchor="w", pady=(12, 0))
 
     def choose_mode(self, mode: str) -> None:
         if mode == "offline" and self.tier != "GOLD":
@@ -3300,7 +3418,7 @@ class RecorderWindow:
     def _apply_mode_chrome(self) -> None:
         if self.studio_mode == "offline":
             self.studio_kicker.set("STUDIO OFFLINE")
-            self.plan_text.set("Gold · 16 wokali + 8 podbić i adlibów. Czysta nagrywka, bez miksu i masteringu.")
+            self.plan_text.set(self._offline_plan_line())
             if not self.load_session_button.winfo_manager():
                 self.load_session_button.pack(side="right", padx=(0, 6))
         else:
@@ -3310,6 +3428,200 @@ class RecorderWindow:
         self._sync_beat_button()
         self._sync_add_button()
         self._paint_all()
+
+    def _offline_plan_line(self) -> str:
+        return "Gold · 16 wokali + 6 podbić i adlibów. Czysta nagrywka, bez miksu i masteringu."
+
+    def _style_option(self, menu: tk.OptionMenu, width: int) -> None:
+        menu.configure(
+            bg=RACK, fg=INK, activebackground=PANEL, activeforeground=INK, highlightthickness=1,
+            highlightbackground=LINE, font=(FONT_UI, 10), relief="flat", bd=0, anchor="w", width=width,
+        )
+        menu["menu"].configure(bg=RACK, fg=INK, activebackground=AMBER, activeforeground=ON_AMBER, font=(FONT_UI, 10))
+
+    def _fill_option(self, menu: tk.OptionMenu, variable: tk.StringVar, labels: list[str], preferred: str) -> None:
+        choices = labels or ["Brak"]
+        widget = menu["menu"]
+        widget.delete(0, "end")
+        for label in choices:
+            widget.add_command(label=label, command=lambda value=label: variable.set(value))
+        variable.set(preferred if preferred in choices else choices[0])
+
+    def _boot_background(self) -> None:
+        if os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
+            return
+        threading.Thread(target=self._boot_worker, daemon=True).start()
+
+    def _boot_worker(self) -> None:
+        devices: list[str] = []
+        device_error = ""
+        try:
+            devices = audio_devices(ffmpeg_exe())
+        except Exception as error:
+            device_error = str(error)
+        outputs = [("Domyślne", -1), *win_output.output_devices()]
+        payload: dict[str, object] | None = None
+        net_error = ""
+        try:
+            loaded = load_bootstrap()
+            if isinstance(loaded, dict):
+                payload = loaded
+        except Exception as error:
+            net_error = str(error)
+        self.root.after(0, lambda: self._apply_boot(devices, device_error, outputs, payload, net_error))
+
+    def _apply_boot(
+        self,
+        devices: list[str],
+        device_error: str,
+        outputs: list[tuple[str, int]],
+        payload: dict[str, object] | None,
+        net_error: str,
+    ) -> None:
+        self.devices = devices
+        self.outputs = outputs or [("Domyślne", -1)]
+        self._fill_option(self.device_menu, self.device_var, self.devices or ["Brak mikrofonu"], self._pref_device)
+        self._fill_option(
+            self.output_menu, self.output_var, [name for name, _index in self.outputs], self._pref_output or "Domyślne"
+        )
+        if payload is not None:
+            self._apply_public(payload)
+            self._restore_catalog_beat()
+        elif net_error:
+            self.gate_status.set(net_error)
+            self.status.set(net_error)
+        if device_error and not self.devices:
+            self.probe_var.set(device_error)
+        elif not self.probe_var.get().startswith("Poziom"):
+            self.probe_var.set("Mikrofon i słuchawki mogą być z różnych urządzeń, też Bluetooth.")
+        self._gear_scanning = False
+        self._read_plan()
+
+    def _restore_catalog_beat(self) -> None:
+        if self.studio_mode != "online":
+            return
+        labels = [label for _beat_id, label in self.beats]
+        if self.beat_var.get() in labels:
+            self._sync_beat_button()
+            return
+        for candidate in (self._desk_beat, self._pref_beat):
+            if candidate and candidate in labels:
+                self.beat_var.set(candidate)
+                break
+        self._sync_beat_button()
+
+    def refresh_gear(self) -> None:
+        if self._gear_scanning or self._busy():
+            return
+        self._gear_scanning = True
+        self._pref_device = self.device_var.get()
+        self._pref_output = self.output_var.get()
+        self.probe_var.set("Szukam mikrofonów i wyjść…")
+        threading.Thread(target=self._boot_worker, daemon=True).start()
+
+    def selected_output_index(self) -> int | None:
+        name = self.output_var.get()
+        for label, index in self.outputs:
+            if label == name:
+                return None if index < 0 else index
+        return None
+
+    def test_output(self) -> None:
+        """A short tone on the chosen speakers or headphones. It is not recorded."""
+        if self._output_testing:
+            return
+        index = self.selected_output_index()
+        device = -1 if index is None else index
+        self._output_testing = True
+        self.output_test_button.configure(text="SŁUCHAJ…")
+        during = self.recording
+
+        def run() -> None:
+            note = win_output.play_tone(device, 0.45)
+            self.root.after(0, lambda: self._output_test_done(note, during))
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _output_test_done(self, note: str, during: bool) -> None:
+        self._output_testing = False
+        if hasattr(self, "output_test_button"):
+            self.output_test_button.configure(text="TEST ODSŁUCHU")
+        if note:
+            self.probe_var.set(note)
+            return
+        if during or self.recording:
+            self.probe_var.set("Ton testowy w odsłuchu. Do nagrania ten ton nie wchodzi.")
+        else:
+            self.probe_var.set("Ton testowy na wybranym odsłuchu. Jeśli go nie słyszysz, wybierz inne wyjście.")
+
+    def _schedule_remix(self, delay: int = 280) -> None:
+        """Mute, level and panorama apply to the sound that is already playing, not only the next take."""
+        if self._arming or not (self.playing or self.recording):
+            return
+        self._remix_token += 1
+        token = self._remix_token
+        if self._remix_after:
+            self.root.after_cancel(self._remix_after)
+        self._remix_after = self.root.after(delay, lambda: self._kick_remix(token))
+
+    def _kick_remix(self, token: int) -> None:
+        self._remix_after = None
+        if token != self._remix_token or self._arming or not (self.playing or self.recording):
+            return
+        head = max(0.0, self._play_from + (time.monotonic() - self._play_t0))
+        skip = self.rec_track if self.recording else None
+        plan = self._mix_plan(head, skip)
+        beat_id, local = self._play_beat()
+        threading.Thread(target=self._prepare_remix, args=(token, head, plan, beat_id, local), daemon=True).start()
+
+    def _prepare_remix(
+        self, token: int, head: float, plan: list[tuple[list[Clip], float, float]], beat_id: str, local: str
+    ) -> None:
+        heard: tuple[str | None, int | None, str] = (None, None, "")
+        vocals: list[tuple[Path, float, float]] = []
+        error = ""
+        try:
+            if local and Path(local).is_file():
+                heard = (local, None, "")
+            elif beat_id:
+                heard = self._beat_listen(beat_id)
+            vocals = self._render_for_play(plan, head)
+        except Exception as problem:
+            error = str(problem) or "Nie dało się złożyć odsłuchu."
+        self.root.after(0, lambda: self._swap_monitor(token, head, heard, vocals, error))
+
+    def _swap_monitor(
+        self, token: int, head: float, heard: tuple[str | None, int | None, str],
+        vocals: list[tuple[Path, float, float]], error: str,
+    ) -> None:
+        if token != self._remix_token or not (self.playing or self.recording):
+            return
+        target, limit, _note = heard
+        beat = None if self.beat_muted else target
+        if beat is not None and limit and head >= limit:
+            beat = None
+        self._stop_monitor()
+        if error and beat is None and not vocals:
+            self.status.set(error)
+            return
+        try:
+            if beat is not None or vocals:
+                ffmpeg = ffmpeg_exe()
+                play = ffplay_exe()
+                output_index = self.selected_output_index()
+                if play is None and output_index is None:
+                    raise RuntimeError(NO_FFPLAY)
+                argv = mix_argv(
+                    ffmpeg, beat, vocals, limit, beat_start=head,
+                    beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan,
+                )
+                self.mix_feed, self.monitor = start_mix(ffmpeg, play or "", argv, output_index)
+            if self.playing:
+                self._play_from = head
+                self._play_t0 = time.monotonic()
+        except Exception as problem:
+            self._stop_monitor()
+            self.status.set(self._safe_listen_error(problem))
 
     def _track_cap(self) -> int:
         if self.studio_mode == "offline":
@@ -3659,7 +3971,7 @@ class RecorderWindow:
         self._probing = True
         self._probe_started = time.monotonic()
         self._probe_hist = []
-        self.probe_button.configure(text="STOP PRÓBY")
+        self.probe_button.configure(text="STOP TESTU")
         self.probe_var.set("Słucham mikrofonu. Powiedz coś albo zaśpiewaj.")
         self._probe_tick()
 
@@ -3713,7 +4025,7 @@ class RecorderWindow:
         was = self._probing
         self._probing = False
         if was:
-            self.probe_button.configure(text="PRÓBA MIKROFONU")
+            self.probe_button.configure(text="TEST MIKROFONU")
             self.probe_meter.delete("all")
         if message:
             self.probe_var.set(message)

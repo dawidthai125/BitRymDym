@@ -2,7 +2,7 @@
 ; ffmpeg is the GPL full shared build from GyanD/codexffmpeg (see the workflow). Its LICENSE is copied beside the exe
 ; as FFMPEG-LICENSE.txt. The program prefers these copies over anything on PATH.
 
-#define AppVersion "2026.11.13.8"
+#define AppVersion "2026.11.13.9"
 
 [Setup]
 AppId={{7C2E9A41-6B18-4E5D-9F03-1A8D4C6E2B70}

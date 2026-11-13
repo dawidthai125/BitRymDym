@@ -75,11 +75,11 @@ describe("parseRecorderSession", () => {
     expect(session).not.toBeNull();
     const lines = sessionChecklist(session!);
     expect(lines[0]).toContain("moj bit.mp3");
-    expect(lines[1]).toContain("lewo 40");
-    expect(lines[2]).toContain("prawo 100");
-    expect(panText(0)).toBe("środek");
+    expect(lines[1]).toContain("L 40");
+    expect(lines[2]).toContain("R 100");
+    expect(panText(0)).toBe("C");
     expect(clockText(62.5)).toBe("1:02.50");
-    expect(OFFLINE_VOCALS + OFFLINE_EXTRAS).toBe(24);
+    expect(OFFLINE_VOCALS + OFFLINE_EXTRAS).toBe(22);
     expect(SITE_GOLD_TRACKS).toBe(16);
   });
 });

@@ -6,7 +6,7 @@
 export const RECORDER_SESSION_FORMAT = "bitrymdym.sesja";
 export const RECORDER_SESSION_VERSION = 1;
 export const OFFLINE_VOCALS = 16;
-export const OFFLINE_EXTRAS = 8;
+export const OFFLINE_EXTRAS = 6;
 export const SITE_GOLD_TRACKS = 16;
 
 export const RECORDER_RIGHTS_NOTE =
@@ -43,6 +43,7 @@ export type RecorderSession = {
   beatFileName: string;
   beatSeconds: number;
   beatGainDb: number;
+  beatPan: number;
   beatMuted: boolean;
   tracks: RecorderSessionTrack[];
 };
@@ -61,9 +62,10 @@ function clampPan(value: unknown): number {
 
 export function panText(pan: number): string {
   const bounded = clampPan(pan);
-  if (bounded <= -0.05) return `lewo ${Math.round(Math.abs(bounded) * 100)}`;
-  if (bounded >= 0.05) return `prawo ${Math.round(bounded * 100)}`;
-  return "środek";
+  const steps = Math.round(Math.abs(bounded) * 100);
+  if (steps < 5) return "C";
+  if (bounded < 0) return `L ${steps}`;
+  return `R ${steps}`;
 }
 
 export function clockText(seconds: number): string {
@@ -137,6 +139,7 @@ export function parseRecorderSession(raw: unknown): RecorderSession | null {
     beatFileName: fileTitle(typeof beat.fileName === "string" ? beat.fileName : ""),
     beatSeconds: Math.round(beatSeconds * 1000) / 1000,
     beatGainDb: Math.round(clampGain(beat.gainDb) * 100) / 100,
+    beatPan: Math.round(clampPan(beat.pan) * 1000) / 1000,
     beatMuted: Boolean(beat.muted),
     tracks,
   };
@@ -152,7 +155,7 @@ export function sessionSpanSeconds(session: RecorderSession): number {
 
 export function sessionChecklist(session: RecorderSession): string[] {
   const lines = [
-    `Bit (zostaje u Ciebie, nie jedzie na stronę): ${session.beatFileName || "niepodany"}, ${clockText(session.beatSeconds)}, ${session.beatGainDb >= 0 ? "+" : ""}${Math.round(session.beatGainDb)} dB.`,
+    `Bit (zostaje u Ciebie, nie jedzie na stronę): ${session.beatFileName || "niepodany"}, ${clockText(session.beatSeconds)}, ${session.beatGainDb >= 0 ? "+" : ""}${Math.round(session.beatGainDb)} dB, ${panText(session.beatPan)}${session.beatMuted ? ", wyciszony" : ""}.`,
   ];
   for (const track of session.tracks) {
     const start = track.clips[0]?.start ?? 0;
