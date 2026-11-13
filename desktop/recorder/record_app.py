@@ -222,6 +222,18 @@ def count_word(count: int, one: str, few: str, many: str) -> str:
     return f"{count} {many}"
 
 
+def listen_valid_for(expires_at: object, now: datetime | None = None) -> float:
+    """Seconds to keep a listen address: until 30 s before the site says it ends. 45 s when unknown."""
+    if not isinstance(expires_at, str) or not expires_at:
+        return 45.0
+    try:
+        end = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+    except ValueError:
+        return 45.0
+    current = now or datetime.now(end.tzinfo)
+    return max(0.0, min(3600.0, (end - current).total_seconds() - 30.0))
+
+
 def safe_name(text: str) -> str:
     cleaned = "".join(char if char.isalnum() or char in "-_ " else "-" for char in text).strip().replace(" ", "-")
     return cleaned[:60] or "nagranie"
@@ -711,7 +723,7 @@ class RecorderWindow:
         self._restore_geo = ""
         self._images: list[tk.PhotoImage] = []
         self.ui = dpi_scale()
-        self.lane_h = int(96 * self.ui)
+        self.lane_h = int(118 * self.ui)
         self.head_w = int(250 * self.ui)
         self.clip_bar = int(17 * self.ui)
         self.shell = tk.Frame(self.root, bg=PAPER, highlightthickness=1, highlightbackground=LINE_STRONG)
@@ -759,6 +771,7 @@ class RecorderWindow:
         self._audio: dict[str, array.array] = {}
         self._peaks: dict[str, list[float]] = {}
         self._listen_cache: tuple[str, float, tuple[str | None, int | None, str]] | None = None
+        self._client_cache: tuple[SiteClient, float] | None = None
         self.playing = False
         self._play_from = 0.0
         self._play_t0 = 0.0
@@ -885,6 +898,7 @@ class RecorderWindow:
                 "Naciśnij Gotowe i Wrzuć do Studia, żeby ją dokończyć."
             )
         self.root.after(50, self._paint_all)
+        self.root.after(300, self._warm_listen)
 
     def _on_close(self) -> None:
         if self._uploading and not messagebox.askyesno(
@@ -974,7 +988,7 @@ class RecorderWindow:
         self._tool(bar, "■ STOP", self.stop, INK, size=13).pack(side="left", padx=2, pady=5)
         self.rec_button = self._tool(bar, "● NAGRAJ", self.record, INK, REC, 13)
         self.rec_button.pack(side="left", padx=2, pady=5)
-        clock = tk.Label(bar, textvariable=self.clock, bg="#0b0907", fg=AMBER, font=(FONT_META, 15), padx=10)
+        clock = tk.Label(bar, textvariable=self.clock, bg="#0b0907", fg=AMBER, font=(FONT_META, 15), padx=10, width=21, anchor="w")
         clock.pack(side="left", padx=(10, 4), pady=5)
         self.lamp = tk.Canvas(bar, width=12, height=12, bg=PANEL, highlightthickness=0)
         self.lamp.pack(side="left", padx=(4, 10))
@@ -1294,6 +1308,15 @@ class RecorderWindow:
         self._listen_cache = None
         self._sync_beat_button()
         self._paint_all()
+        self._warm_listen()
+
+    def _warm_listen(self) -> None:
+        """Fetch the beat listen address ahead, so NAGRAJ and GRAJ start without the network wait."""
+        if not self.studio.winfo_manager() or self.beat_muted:
+            return
+        beat_id = self._beat_id_or_empty()
+        if beat_id:
+            threading.Thread(target=self._beat_listen, args=(beat_id,), daemon=True).start()
 
     def _beat_meta(self) -> tuple[str, int, float]:
         try:
@@ -1406,16 +1429,17 @@ class RecorderWindow:
     def _beat_listen(self, beat_id: str) -> tuple[str | None, int | None, str]:
         """Site playback only. Nothing is saved. Network: call it off the Tk thread."""
         cached = self._listen_cache
-        if cached is not None and cached[0] == beat_id and time.monotonic() - cached[1] < 45:
+        if cached is not None and cached[0] == beat_id and time.monotonic() < cached[1]:
             return cached[2]
         try:
             if not beat_id:
                 raise RuntimeError("Najpierw wybierz bit.")
             payload = self._client().playback(beat_id)
             url, limit = playback_target(payload)
+            valid = listen_valid_for(payload.get("expiresAt"))
             note = f"Podgląd strony: {limit} s. Program nie zapisuje bitu." if limit else "Bit gra ze strony. Program go nie zapisuje."
             heard: tuple[str | None, int | None, str] = (url, limit, note)
-            self._listen_cache = (beat_id, time.monotonic(), heard)
+            self._listen_cache = (beat_id, time.monotonic() + valid, heard)
             return heard
         except Exception as error:
             return None, None, self._safe_listen_error(error)
@@ -2816,7 +2840,16 @@ class RecorderWindow:
         return token
 
     def _client(self) -> SiteClient:
-        client = SiteClient(SITE, self.token())
+        cached = getattr(self, "_client_cache", None)
+        token = self.token()
+        if cached is not None and cached[0].access_token == token and time.monotonic() < cached[1]:
+            return cached[0]
+        client = self._fresh_client(token)
+        self._client_cache = (client, time.monotonic() + 300)
+        return client
+
+    def _fresh_client(self, token: str) -> SiteClient:
+        client = SiteClient(SITE, token)
         try:
             client.plan_usage()
         except RuntimeError as error:
@@ -2874,7 +2907,7 @@ class RecorderWindow:
             same_account = bool(saved and saved.get("accessToken") and saved.get("email") == email)
             if password == "" and same_account:
                 self._read_plan()
-                self.status.set("Zalogowano. Nagraj wokal, potem wyślij na konto.")
+                self.status.set("Zalogowano. Wybierz bit, uzbrój ścieżkę (●) i NAGRAJ. Na końcu GOTOWE.")
                 self.gate_status.set("")
                 self.show_studio()
                 return
@@ -2886,7 +2919,7 @@ class RecorderWindow:
             save_session(self.public_url, self.public_key, email, grant)
             self.password.delete(0, "end")
             self._read_plan()
-            self.status.set("Zalogowano. Nagraj wokal, potem wyślij na konto.")
+            self.status.set("Zalogowano. Wybierz bit, uzbrój ścieżkę (●) i NAGRAJ. Na końcu GOTOWE.")
             self.gate_status.set("")
             self.show_studio()
         except Exception as error:
@@ -3152,6 +3185,11 @@ if __name__ == "__main__":
         if seek[seek.index("-ss") + 1] != "12.500" or seek[seek.index("-t") + 1] != "8" or seek.index("-ss") > seek.index("-i"):
             raise SystemExit("miks od kursora")
         if clock_text(75.5) != "1:15.50" or shade("#ff8000", 0.5) != "#7f4000" or safe_name("a/b c") != "a-b-c" or count_word(22, "a", "b", "c") != "22 b":
+            raise SystemExit("pomocnicze")
+        from datetime import timezone
+
+        moment = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+        if listen_valid_for("2026-01-01T12:05:00Z", moment) != 270.0 or listen_valid_for(None) != 45.0 or listen_valid_for("x") != 45.0:
             raise SystemExit("pomocnicze")
         self_test_wav_roundtrip()
         target = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-selftest.wav"
