@@ -262,6 +262,14 @@ def about_copy_ok() -> bool:
     return paths == needed and "8952035524" in ABOUT_OPERATOR and "dawid.thai@int.pl" in ABOUT_OPERATOR and "Poświęcka" in ABOUT_OPERATOR
 
 
+# Thin strip under every screen. Legal pages stay in O programie, so this line does not repeat them.
+FOOTER_CREDIT = "© D.T.T (TajskiProjects.pl). Wszystkie prawa zastrzeżone."
+
+
+def footer_copy_ok() -> bool:
+    return FOOTER_CREDIT == "© D.T.T (TajskiProjects.pl). Wszystkie prawa zastrzeżone."
+
+
 _INSTANCE_LOCK: object = None
 _INSTANCE_NAME = "Local\\BitRymDym.Nagrywarka"
 
@@ -993,6 +1001,7 @@ class RecorderWindow:
                 self.root.attributes("-alpha", 0)
         else:
             self.root.geometry("480x740")
+        self._build_footer()
         self._apply_icon()
         self._style_scroll()
         self.recording = False
@@ -1385,7 +1394,7 @@ class RecorderWindow:
             text=(
                 "Klik: kursor. Przeciągnij: zaznaczenie, potem Wytnij, Usuń albo Podziel. Pasek klipu: przesuń. "
                 "1 s mocno przybliża, Ctrl+kółko też. Spacja: graj/stop, R: nagraj. "
-                f"M na bicie wycisza od razu. Panorama: L, C, R. Wersja {updater.APP_VERSION}."
+                "M na bicie wycisza od razu. Panorama: L, C, R."
             ),
             bg=PAPER, fg=MUTE, font=(FONT_UI, 8), anchor="w", justify="left",
         )
@@ -3696,11 +3705,25 @@ class RecorderWindow:
         rule.pack(side="top", fill="x")
         rule.pack_propagate(False)
         grip = tk.Frame(self.shell, bg=AMBER_DEEP, cursor="size_nw_se", width=14, height=14)
+        self._resize_grip = grip
         grip.place(relx=1.0, rely=1.0, anchor="se")
         grip.bind("<Button-1>", self._resize_start)
         grip.bind("<B1-Motion>", self._resize_move)
         self.root.bind("<Map>", self._on_map)
         self.root.after(50, self._own_taskbar)
+
+    def _build_footer(self) -> None:
+        """Version at the bottom left, credit beside it. A strip, not a label on the lanes."""
+        bar = tk.Frame(self.shell, bg=PAPER)
+        bar.pack(side="bottom", fill="x")
+        tk.Frame(bar, bg=LINE, height=1).pack(fill="x")
+        row = tk.Frame(bar, bg=PAPER)
+        row.pack(fill="x", padx=(10, 18), pady=(3, 4))
+        tk.Label(row, text=updater.APP_VERSION, bg=PAPER, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
+        tk.Label(row, text=FOOTER_CREDIT, bg=PAPER, fg=MUTE, font=(FONT_META, 8)).pack(side="left", padx=(12, 0))
+        grip = getattr(self, "_resize_grip", None)
+        if grip is not None:
+            grip.lift()
 
     def _chrome_button(self, parent: tk.Widget, text: str, command: object, hover: str) -> None:
         label = tk.Label(parent, text=text, bg=PAPER, fg=INK, width=3, font=(FONT_UI, 13), cursor="hand2")
@@ -4754,6 +4777,8 @@ if __name__ == "__main__":
             raise SystemExit("pomocnicze")
         if not about_copy_ok():
             raise SystemExit("o programie")
+        if not footer_copy_ok():
+            raise SystemExit("stopka")
         quiet = 10 ** (-26 / 20.0)
         shown = display_wave_half(quiet, 80.0)
         if shown < 20.0 or display_wave_half(0.0, 80.0) != 1.0 or display_wave_half(1.0, 80.0) < 79.0:
