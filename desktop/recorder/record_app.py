@@ -4972,16 +4972,8 @@ class RecorderWindow:
         update = self._update
         if update is None:
             return
-        notes = f"\n\n{update.notes}" if update.notes else ""
-        self.update_gate_text.set(
-            f"Jest nowa wersja {update.version}. Masz {updater.APP_VERSION}.\n"
-            "Bez aktualizacji program nie puszcza dalej."
-            f"{notes}\n\n"
-            "Zaktualizuj albo wyłącz."
-        )
-        self.update_var.set(
-            f"Jest najnowsza wersja {update.version} (masz {updater.APP_VERSION}). Trzeba zaktualizować albo wyłączyć."
-        )
+        self.update_gate_text.set(f"Jest nowa wersja {update.version}.")
+        self.update_var.set(f"Jest nowa wersja {update.version}.")
         self.gate.pack_forget()
         self.modes.pack_forget()
         self.studio.pack_forget()
@@ -4997,8 +4989,7 @@ class RecorderWindow:
         update = self._update
         if update is None or self._update_busy or self._busy_for_update():
             return
-        notes = f" {update.notes}" if update.notes else ""
-        self.update_var.set(f"Jest nowa wersja {update.version}. Masz {updater.APP_VERSION}.{notes}")
+        self.update_var.set(f"Jest nowa wersja {update.version}.")
         self.update_now.configure(state="normal")
 
     def _quit_from_update(self) -> None:
@@ -5017,11 +5008,10 @@ class RecorderWindow:
             return
         self._update = update
         self._update_abort = False
-        notes = f" {update.notes}" if update.notes else ""
         if self._busy_for_update():
-            self.update_var.set("Jest nowa wersja. Dokończ nagranie albo wysyłkę, potem naciśnij Zaktualizuj.")
+            self.update_var.set("Jest nowa wersja. Dokończ nagranie, potem Zaktualizuj.")
         else:
-            self.update_var.set(f"Jest nowa wersja {update.version}. Masz {updater.APP_VERSION}.{notes}")
+            self.update_var.set(f"Jest nowa wersja {update.version}.")
         if not self.update_bar.winfo_manager():
             self.update_bar.pack(side="bottom", fill="x", before=self.shell)
         self.update_now.configure(state="normal")
@@ -5036,7 +5026,7 @@ class RecorderWindow:
         if self._update is None or self._update_busy:
             return
         if self._busy_for_update():
-            self.update_var.set("Najpierw skończ nagranie, próbę mikrofonu albo wysyłkę, potem naciśnij Zaktualizuj.")
+            self.update_var.set("Najpierw skończ nagranie, potem Zaktualizuj.")
             return
         if self._update_ready is not None and self._update_ready.is_file():
             self._launch_update(self._update_ready)
@@ -5044,8 +5034,8 @@ class RecorderWindow:
         self._update_busy = True
         self.update_now.configure(state="disabled")
         self._gate_button_state(getattr(self, "update_go", None), False)
-        self.update_var.set("Pobieram nową wersję: 0%")
-        self.update_gate_text.set("Pobieram nową wersję: 0%.")
+        self.update_var.set("Pobieram: 0%")
+        self.update_gate_text.set("Pobieram: 0%")
         threading.Thread(target=self._download_update, args=(self._update,), daemon=True).start()
 
     def _download_update(self, update: updater.Update) -> None:
@@ -5068,15 +5058,15 @@ class RecorderWindow:
         self.root.after(0, lambda: self._update_failed(message))
 
     def _set_download_progress(self, percent: int) -> None:
-        self.update_var.set(f"Pobieram nową wersję: {percent}%")
-        self.update_gate_text.set(f"Pobieram nową wersję: {percent}%.")
+        self.update_var.set(f"Pobieram: {percent}%")
+        self.update_gate_text.set(f"Pobieram: {percent}%")
 
     def _update_failed(self, message: str) -> None:
         self._update_busy = False
         self.update_now.configure(state="normal")
         self._gate_button_state(getattr(self, "update_go", None), True)
-        self.update_var.set(f"{message} Instalator jest też na stronie /nagrywarka.")
-        self.update_gate_text.set(f"{message}\n\nInstalator jest też na stronie /nagrywarka.\nMożesz spróbować jeszcze raz albo wyłączyć program.")
+        self.update_var.set(message)
+        self.update_gate_text.set(message)
 
     def _launch_update(self, path: Path) -> None:
         if self._busy_for_update():
@@ -5084,15 +5074,15 @@ class RecorderWindow:
             self._update_busy = False
             self.update_now.configure(state="normal")
             self._gate_button_state(getattr(self, "update_go", None), True)
-            self.update_var.set("Aktualizacja jest pobrana. Skończ nagranie albo wysyłkę i naciśnij Zaktualizuj.")
-            self.update_gate_text.set("Aktualizacja jest pobrana. Skończ nagranie albo wysyłkę i naciśnij Zaktualizuj.")
+            self.update_var.set("Pobrane. Dokończ nagranie, potem Zaktualizuj.")
+            self.update_gate_text.set("Pobrane. Dokończ nagranie, potem Zaktualizuj.")
             return
         self._update_ready = path
         self._update_busy = True
         self._update_abort = False
         self._gate_button_state(getattr(self, "update_go", None), False)
         self.update_now.configure(state="disabled")
-        self.update_var.set("Zamykam. Update.exe wgra paczkę i sam otworzy program.")
+        self.update_var.set("Zamykam.")
         try:
             updater.schedule_installer(path)
         except OSError:

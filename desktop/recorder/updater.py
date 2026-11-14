@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.20"
+APP_VERSION = "2026.11.21"
 PACK_ID = "BitRymDym.Nagrywarka"
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
