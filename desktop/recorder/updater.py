@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.26"
+APP_VERSION = "2026.11.27"
 PACK_ID = "BitRymDym.Nagrywarka"
 
 # Velopack runs the main exe with one of these and waits. The process must exit
@@ -303,6 +303,46 @@ def start_installer(path: Path) -> subprocess.Popen[bytes]:
     )
 
 
+def leave_install_dir() -> None:
+    """On a Windows Velopack install, stop using the folder named current as the working directory.
+
+    Update.exe renames that folder. It does not stop a program whose exe lives elsewhere,
+    and that program blocks the rename when it inherited this directory. A source run and
+    every other system stay where they are.
+    """
+    if os.name != "nt" or not getattr(sys, "frozen", False):
+        return
+    try:
+        exe = Path(sys.executable).resolve()
+    except OSError:
+        return
+    if exe.parent.name.lower() != "current":
+        return
+    dest = os.environ.get("TEMP") or os.environ.get("TMP")
+    if not dest:
+        return
+    try:
+        os.chdir(dest)
+    except OSError:
+        return
+
+
+def outside_cwd() -> str | None:
+    """Working directory for ffmpeg and ffplay. Never the Velopack folder named current."""
+    if os.name != "nt":
+        return None
+    dest = os.environ.get("TEMP") or os.environ.get("TMP")
+    if not dest:
+        return None
+    try:
+        folder = Path(dest)
+    except OSError:
+        return None
+    if not folder.is_dir() or folder.name.lower() == "current":
+        return None
+    return str(folder)
+
+
 def velopack_hook(argv: list[str] | None = None) -> str | None:
     """The Velopack flag on this command line, or None for a normal start.
 
@@ -352,6 +392,7 @@ def update_exe_args(update_exe: Path, package: Path, root: Path, packages: Path,
 
 def schedule_installer(path: Path) -> subprocess.Popen[bytes] | None:
     """Start the Update.exe that Setup already installed, then return. The caller exits without waiting."""
+    leave_install_dir()
     root = installed_root()
     if root is None:
         raise OSError("brak Update.exe")
@@ -448,6 +489,16 @@ def self_test() -> None:
         raise SystemExit("feed")
     if parse_feed(feed.encode(), "2026.11.19") is not None:
         raise SystemExit("feed nie może cofać wersji")
+    before = os.getcwd()
+    leave_install_dir()
+    if os.getcwd() != before:
+        raise SystemExit("leave_install_dir ruszył katalog poza zainstalowanym programem")
+    out = outside_cwd()
+    if os.name != "nt":
+        if out is not None:
+            raise SystemExit("poza Windows katalog dzieci ma zostać pusty")
+    elif not out or Path(out).name.lower() == "current":
+        raise SystemExit("dzieci nie mogą startować w folderze current")
     print("updater self-test ok")
 
 

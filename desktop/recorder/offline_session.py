@@ -120,9 +120,12 @@ def seconds_from_ffmpeg_banner(text: str) -> float:
 
 def probe_media_seconds(ffmpeg: str, path: Path) -> float:
     """Length of a local beat file. Header only. 0 when the tool cannot say."""
-    flags: dict[str, int] = {}
+    flags: dict[str, object] = {}
     if os.name == "nt":
         flags["creationflags"] = subprocess.CREATE_NO_WINDOW
+        folder = os.environ.get("TEMP") or os.environ.get("TMP")
+        if folder and Path(folder).name.lower() != "current":
+            flags["cwd"] = folder
     probe = Path(ffmpeg).with_name("ffprobe.exe" if ffmpeg.lower().endswith(".exe") else "ffprobe")
     if probe.is_file():
         try:
@@ -164,9 +167,12 @@ def probe_media_seconds(ffmpeg: str, path: Path) -> float:
 
 def probe_media_channels(ffmpeg: str, path: Path) -> int:
     """1 or 2. Exactly two channels draws as stereo. Anything else stays one channel."""
-    flags: dict[str, int] = {}
+    flags: dict[str, object] = {}
     if os.name == "nt":
         flags["creationflags"] = subprocess.CREATE_NO_WINDOW
+        folder = os.environ.get("TEMP") or os.environ.get("TMP")
+        if folder and Path(folder).name.lower() != "current":
+            flags["cwd"] = folder
     probe = Path(ffmpeg).with_name("ffprobe.exe" if ffmpeg.lower().endswith(".exe") else "ffprobe")
     if probe.is_file():
         try:

@@ -7,16 +7,26 @@ Offline writes a .brd1 project (session plus dry stems, never the beat) or a fol
 
 from __future__ import annotations
 
+import os
+import sys
+
+import updater
+
+# Velopack runs this exe as a hook with the working directory inside the install
+# folder named current. Leave that folder, then exit, before tk and the rest load.
+# A normal start leaves it too, so ffmpeg, ffplay and the browser do not inherit it.
+updater.leave_install_dir()
+if updater.velopack_hook():
+    raise SystemExit(0)
+
 import array
 import ctypes
 import hashlib
 import io
 import json
 import math
-import os
 import shutil
 import subprocess
-import sys
 import threading
 import time
 import tkinter as tk
@@ -32,7 +42,6 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-import updater
 import offline_session
 import win_output
 from account_upload import (
@@ -621,13 +630,23 @@ def monitor_argv(exe: str, target: str | Path, limit_seconds: int | None = None)
 
 
 def quiet_kwargs() -> dict[str, object]:
-    """ffmpeg and ffplay are console programs. A windowed app otherwise pops a black console."""
+    """ffmpeg and ffplay are console programs. A windowed app otherwise pops a black console.
+
+    Their working directory stays outside Velopack's current folder, so a live play
+    cannot block the rename that applies an update.
+    """
+    flags: dict[str, object] = {}
+    folder = updater.outside_cwd()
+    if folder:
+        flags["cwd"] = folder
     if os.name != "nt":
-        return {}
+        return flags
     info = subprocess.STARTUPINFO()
     info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     info.wShowWindow = subprocess.SW_HIDE
-    return {"creationflags": subprocess.CREATE_NO_WINDOW, "startupinfo": info}
+    flags["creationflags"] = subprocess.CREATE_NO_WINDOW
+    flags["startupinfo"] = info
+    return flags
 
 
 def start_mix(
@@ -5343,6 +5362,11 @@ class RecorderWindow:
         self._gate_button_state(getattr(self, "update_go", None), False)
         self.update_now.configure(state="disabled")
         self.update_var.set("Zamykam.")
+        try:
+            self._halt_audio()
+        except Exception:
+            pass
+        updater.leave_install_dir()
         try:
             updater.schedule_installer(path)
         except OSError:
