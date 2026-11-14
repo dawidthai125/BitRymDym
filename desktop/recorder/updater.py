@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.13.10"
+APP_VERSION = "2026.11.13.11"
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
 MANIFEST_URL = R2_BASE + "latest.json"
@@ -225,8 +225,12 @@ def download(
 
 
 def installer_argv(path: Path) -> list[str]:
-    """Visible progress, no prompts, no reboot, and the new build starts itself afterwards (UPDATE=1)."""
-    return [str(path), "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/UPDATE=1"]
+    """Show the installer window. It draws its own progress and then opens the program.
+
+    No /SILENT: a hidden setup looked like the program had died at 100%.
+    Builds before 2026.11.13.11 still pass /SILENT. The setup script opens a visible copy.
+    """
+    return [str(path), "/UPDATE=1", "/NORESTART"]
 
 
 def start_installer(path: Path) -> subprocess.Popen[bytes]:
@@ -244,23 +248,39 @@ def start_installer(path: Path) -> subprocess.Popen[bytes]:
 
 
 def installer_after_exit_command(path: Path) -> str:
-    """PowerShell: let BitRymDym.exe leave, then install, then open the new program.
+    """PowerShell: end BitRymDym, show the installer, then open the program if setup did not.
 
     The window can close at 100% while the process stays. Waiting forever then never
-    installs. After a short wait the helper ends that process itself. Deleting the
-    program folder while the exe is still open makes Windows drop the new copy.
+    installs. After a short wait the helper ends that process itself. The installer is a
+    normal window on top, not a silent setup. A failed setup opens a message box.
+    The log line is in %TEMP%\\BitRymDym-update\\update.log. Deleting the program folder
+    while the exe is still open makes Windows drop the new copy.
     """
     quoted = "'" + str(path).replace("'", "''") + "'"
     return (
-        "$deadline = (Get-Date).AddSeconds(12); "
+        "$ErrorActionPreference = 'Stop'; "
+        "$log = Join-Path $env:TEMP 'BitRymDym-update\\update.log'; "
+        "New-Item -ItemType Directory -Force (Split-Path $log) | Out-Null; "
+        "function Note([string]$m) { Add-Content -LiteralPath $log -Value ((Get-Date -Format o) + ' ' + $m) }; "
+        "try { "
+        "Note 'start'; "
+        "$deadline = (Get-Date).AddSeconds(8); "
         "while ((Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue) -and ((Get-Date) -lt $deadline)) "
         "{ Start-Sleep -Milliseconds 300 }; "
         "Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue | Stop-Process -Force; "
         "Start-Sleep -Milliseconds 800; "
-        f"Start-Process -FilePath {quoted} -ArgumentList '/SILENT','/SUPPRESSMSGBOXES','/NORESTART','/UPDATE=1' -Wait; "
+        f"$proc = Start-Process -FilePath {quoted} -ArgumentList '/UPDATE=1','/NORESTART' -PassThru -Wait; "
+        "Note ('exit ' + $proc.ExitCode); "
+        "if ($proc.ExitCode -ne 0) { throw ('Instalacja nie doszła do końca. Kod ' + $proc.ExitCode) }; "
+        "Start-Sleep -Seconds 2; "
         "$exe = Join-Path $env:LOCALAPPDATA 'BitRymDym\\Nagrywarka\\BitRymDym.exe'; "
         "if ((-not (Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue)) -and (Test-Path -LiteralPath $exe)) "
-        "{ Start-Process -FilePath $exe }"
+        "{ Start-Process -FilePath $exe; Note 'opened' } "
+        "} catch { "
+        "Note $_.Exception.Message; "
+        "Add-Type -AssemblyName System.Windows.Forms; "
+        "[System.Windows.Forms.MessageBox]::Show($_.Exception.Message, 'BitRymDym') "
+        "}"
     )
 
 
@@ -322,13 +342,18 @@ def self_test() -> None:
         except ValueError:
             continue
         raise SystemExit(f"zła wersja przyjęta {bad!r}")
-    if installer_argv(Path("a.exe"))[-1] != "/UPDATE=1" or "/SILENT" not in installer_argv(Path("a.exe")):
+    argv = installer_argv(Path("a.exe"))
+    if "/UPDATE=1" not in argv or "/NORESTART" not in argv or "/SILENT" in argv or "/SUPPRESSMSGBOXES" in argv:
         raise SystemExit("argumenty instalatora")
     waited = installer_after_exit_command(Path(r"C:\Temp\BitRymDym-Setup-2026.11.13.7.exe"))
     if "Get-Process -Name 'BitRymDym'" not in waited or "/UPDATE=1" not in waited or "BitRymDym-Setup-2026.11.13.7.exe" not in waited:
         raise SystemExit("instalator ma ruszyć dopiero po zejściu procesu")
+    if "/SILENT" in waited or "/SUPPRESSMSGBOXES" in waited:
+        raise SystemExit("instalator aktualizacji ma być widoczny")
     if "Stop-Process -Force" not in waited or "-Wait" not in waited or "BitRymDym\\Nagrywarka\\BitRymDym.exe" not in waited:
         raise SystemExit("po instalacji program ma wstać sam")
+    if "MessageBox" not in waited or "update.log" not in waited:
+        raise SystemExit("błąd instalacji ma być widoczny")
     print("updater self-test ok")
 
 

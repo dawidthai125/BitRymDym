@@ -2,7 +2,7 @@
 ; ffmpeg is the GPL full shared build from GyanD/codexffmpeg (see the workflow). Its LICENSE is copied beside the exe
 ; as FFMPEG-LICENSE.txt. The program prefers these copies over anything on PATH.
 
-#define AppVersion "2026.11.13.10"
+#define AppVersion "2026.11.13.11"
 
 [Setup]
 AppId={{7C2E9A41-6B18-4E5D-9F03-1A8D4C6E2B70}
@@ -18,6 +18,11 @@ OutputBaseFilename=BitRymDym-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+; Progress is the whole wizard: no extra clicks, the bar stays on screen.
+DisableStartupPrompt=yes
+DisableWelcomePage=yes
+DisableDirPage=yes
+DisableReadyPage=yes
 CloseApplications=yes
 RestartApplications=no
 SetupIconFile=..\assets\cassette.ico
@@ -42,31 +47,73 @@ Name: "{autodesktop}\BitRymDym"; Filename: "{app}\BitRymDym.exe"; IconFilename: 
 Name: "{userstartmenu}\BitRymDym"; Filename: "{app}\BitRymDym.exe"; IconFilename: "{app}\brd-cassette.ico"
 
 [Run]
-Filename: "{app}\BitRymDym.exe"; Description: "Otwórz BitRymDym"; Flags: nowait postinstall skipifsilent
-; Self-update (updater.py runs this setup with /SILENT /UPDATE=1): start the new build when the setup ends.
+Filename: "{app}\BitRymDym.exe"; Description: "Otwórz BitRymDym"; Flags: nowait postinstall skipifsilent; Check: not IsUpdate
+; Self-update: start the new build when the setup ends. Visible and silent both pass /UPDATE=1.
 Filename: "{app}\BitRymDym.exe"; Flags: nowait runasoriginaluser; Check: IsUpdate
 
 [Code]
+const
+  HWND_TOPMOST = -1;
+  HWND_NOTOPMOST = -2;
+  SWP_NOSIZE = $0001;
+  SWP_NOMOVE = $0002;
+  SWP_SHOWWINDOW = $0040;
+
+function SetWindowPos(hWnd: HWND; hWndInsertAfter: HWND; X, Y, cx, cy: Integer; uFlags: UINT): BOOL;
+  external 'SetWindowPos@user32.dll stdcall';
+
 function IsUpdate: Boolean;
 begin
   Result := ExpandConstant('{param:UPDATE|0}') = '1';
 end;
 
-{ The app starts setup and then exits. Do not delete its files until that process is gone. }
+{ .9 and .10 launch this file with /SILENT, so the program just disappears.
+  A real update has no /DIR. Open one visible copy and leave the hidden one.
+  CI passes /DIR and must stay silent, install, and exit 0. }
+function WantsVisibleUpdate: Boolean;
+begin
+  Result := WizardSilent and IsUpdate and (ExpandConstant('{param:DIR|}') = '') and (ExpandConstant('{param:VISIBLE|0}') <> '1');
+end;
+
 function InitializeSetup(): Boolean;
 var
+  ResultCode: Integer;
   I: Integer;
+  Command: String;
 begin
   Result := True;
-  for I := 1 to 40 do
+  if WantsVisibleUpdate then
+  begin
+    Command := '/c ping 127.0.0.1 -n 5 >nul & start "" "' + ExpandConstant('{srcexe}') + '" /UPDATE=1 /VISIBLE=1 /NORESTART';
+    Exec(ExpandConstant('{cmd}'), Command, '', SW_HIDE, ewNoWait, ResultCode);
+    Result := False;
+    Exit;
+  end;
+  for I := 1 to 6 do
   begin
     if not CheckForMutexes('Local\BitRymDym.Nagrywarka') then
-    begin
-      Sleep(1000);
-      Exit;
-    end;
+      Break;
     Sleep(500);
   end;
-  SuppressibleMsgBox('BitRymDym nadal jest włączony. Zamknij BitRymDym.exe w Menedżerze zadań i uruchom instalator jeszcze raz.', mbError, MB_OK, IDOK);
-  Result := False;
+  if CheckForMutexes('Local\BitRymDym.Nagrywarka') then
+  begin
+    Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /T /IM BitRymDym.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Sleep(1000);
+  end;
+  if CheckForMutexes('Local\BitRymDym.Nagrywarka') then
+  begin
+    MsgBox('BitRymDym nadal jest włączony. Zamknij BitRymDym.exe w Menedżerze zadań i uruchom instalator jeszcze raz.', mbError, MB_OK);
+    Result := False;
+  end;
+end;
+
+procedure InitializeWizard();
+begin
+  SetWindowPos(WizardForm.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE or SWP_SHOWWINDOW);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if (CurStep = ssPostInstall) and (not WizardSilent) then
+    SetWindowPos(WizardForm.Handle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE);
 end;

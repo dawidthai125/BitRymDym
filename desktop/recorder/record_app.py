@@ -238,6 +238,30 @@ def mono16_wav_bytes(samples: array.array) -> bytes:
     return buffer.getvalue()
 
 
+# Same paths and operator as src/lib/legal/legal-config.ts. The app links out. It does not copy the documents.
+ABOUT_LINKS = (
+    ("Regulamin", "/regulamin"),
+    ("Polityka prywatności", "/polityka-prywatnosci"),
+    ("Cookies", "/cookies"),
+    ("O stronie", "/about"),
+    ("Jak nagrać", "/jak-nagrac"),
+    ("Nagrywarka", "/nagrywarka"),
+)
+ABOUT_OPERATOR = (
+    "D&P Dawid Thai Thanh\n"
+    "osoba fizyczna prowadząca jednoosobową działalność gospodarczą wpisaną do CEIDG\n"
+    "ul. Poświęcka 17C/26, 51-128 Wrocław\n"
+    "NIP 8952035524\n"
+    "dawid.thai@int.pl"
+)
+
+
+def about_copy_ok() -> bool:
+    paths = {path for _label, path in ABOUT_LINKS}
+    needed = {"/regulamin", "/polityka-prywatnosci", "/cookies", "/about", "/jak-nagrac", "/nagrywarka"}
+    return paths == needed and "8952035524" in ABOUT_OPERATOR and "dawid.thai@int.pl" in ABOUT_OPERATOR and "Poświęcka" in ABOUT_OPERATOR
+
+
 _INSTANCE_LOCK: object = None
 _INSTANCE_NAME = "Local\\BitRymDym.Nagrywarka"
 
@@ -3639,6 +3663,11 @@ class RecorderWindow:
         self._chrome_button(bar, "×", self._on_close, REC)
         self._chrome_button(bar, "□", self._toggle_zoom, RACK)
         self._chrome_button(bar, "–", self._minimize, RACK)
+        about = tk.Label(bar, text="O programie", bg=PAPER, fg=SOFT, font=(FONT_UI, 10), cursor="hand2")
+        about.pack(side="right", padx=(0, 6))
+        about.bind("<Enter>", lambda _event: about.configure(fg=AMBER))
+        about.bind("<Leave>", lambda _event: about.configure(fg=SOFT))
+        about.bind("<Button-1>", lambda _event: self.show_about())
         for widget in (bar, title):
             widget.bind("<Button-1>", self._drag_start)
             widget.bind("<B1-Motion>", self._drag_move)
@@ -3744,6 +3773,64 @@ class RecorderWindow:
     def _open_site(self, path: str) -> None:
         webbrowser.open(f"{SITE}{path}")
 
+    def show_about(self) -> None:
+        """Who runs the service, how the two studios work, and the legal pages. One box, no second mode."""
+        existing = getattr(self, "_about_box", None)
+        if existing is not None:
+            try:
+                if int(existing.winfo_exists()):
+                    existing.lift()
+                    existing.focus_force()
+                    return
+            except tk.TclError:
+                pass
+        box = tk.Toplevel(self.root)
+        self._about_box = box
+        box.title("O programie")
+        box.configure(bg=PAPER)
+        box.transient(self.root)
+        box.resizable(False, False)
+        head = tk.Frame(box, bg=PAPER)
+        head.pack(fill="x", padx=18, pady=(14, 4))
+        tk.Label(head, text="O programie", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 18, "italic")).pack(anchor="w")
+        tk.Label(head, text=f"Wersja {updater.APP_VERSION}", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w")
+        body = tk.Frame(box, bg=PAPER)
+        body.pack(fill="both", expand=True, padx=18, pady=(6, 4))
+        tk.Label(body, text="JAK DZIAŁA", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w")
+        tk.Label(
+            body,
+            text=(
+                "Studio Online: jedna lista bitów na koncie (darmowe, własne i kupione). "
+                "Szukasz po nazwie. Liczba ścieżek zależy od planu. Nagranie można wrzucić do Studia na stronie. "
+                "Miks i mastering są na stronie.\n\n"
+                "Studio Offline: tylko Premium Gold. Bit zostaje plikiem na tym komputerze, program go nie wysyła. "
+                "16 ścieżek wokalu i 6 na podbicia i adliby. Projekt zapisujesz jako .brd1 albo jako stemy. "
+                "Program nie sprawdza, czy bit i wokal są Twoje. Jak wrzucisz na serwis cudzy bit, odpowiadasz za to Ty."
+            ),
+            bg=PAPER, fg=SOFT, font=(FONT_UI, 10), wraplength=480, justify="left",
+        ).pack(anchor="w", pady=(2, 10))
+        tk.Label(body, text="KTO PROWADZI SERWIS", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w")
+        tk.Label(body, text=ABOUT_OPERATOR, bg=PAPER, fg=INK, font=(FONT_UI, 10), wraplength=480, justify="left").pack(anchor="w", pady=(2, 10))
+        tk.Label(body, text="DOKUMENTY", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w")
+        for label, path in ABOUT_LINKS:
+            link = tk.Label(
+                body, text=label, bg=PAPER, fg=AMBER, cursor="hand2",
+                font=tkfont.Font(box, family=FONT_UI, size=11, underline=True),
+            )
+            link.pack(anchor="w", pady=1)
+            link.bind("<Button-1>", lambda _event, target=path: self._open_site(target))
+        self._tool(box, "ZAMKNIJ", box.destroy, INK).pack(anchor="e", padx=18, pady=(8, 14))
+        box.update_idletasks()
+        box.geometry(f"+{self.root.winfo_rootx() + 36}+{self.root.winfo_rooty() + 48}")
+
+    def _about_chip(self, parent: tk.Widget) -> tk.Label:
+        label = tk.Label(
+            parent, text="O programie", bg=PAPER, fg=AMBER, cursor="hand2",
+            font=tkfont.Font(self.root, family=FONT_UI, size=11, underline=True),
+        )
+        label.bind("<Button-1>", lambda _event: self.show_about())
+        return label
+
     def _link(self, parent: tk.Widget, text: str, path: str) -> tk.Label:
         label = tk.Label(
             parent,
@@ -3794,6 +3881,7 @@ class RecorderWindow:
         bottom.pack(anchor="w")
         tk.Label(bottom, text="Nie masz konta?", bg=PAPER, fg=SOFT, font=(FONT_UI, 11)).pack(side="left")
         self._link(bottom, "Zarejestruj się", "/sign-up").pack(side="left", padx=(6, 0))
+        self._about_chip(card).pack(anchor="w", pady=(10, 0))
         tk.Label(
             card,
             textvariable=self.gate_status,
@@ -3871,6 +3959,7 @@ class RecorderWindow:
         links.pack(anchor="w", pady=(10, 4))
         self._link(links, "Studio na stronie", "/studio").pack(side="left")
         self._link(links, "Premium", "/premium").pack(side="left", padx=(14, 0))
+        self._about_chip(links).pack(side="left", padx=(14, 0))
         self.mode_status = tk.StringVar(value="")
         tk.Label(foot, textvariable=self.mode_status, bg=PAPER, fg=INK, font=(FONT_UI, 10), wraplength=920, justify="left").pack(anchor="w", pady=(8, 0))
         self._tool(foot, "WYLOGUJ", self.sign_out, SOFT).pack(anchor="w", pady=(12, 0))
@@ -4432,7 +4521,7 @@ class RecorderWindow:
             self._update_failed("Nie udało się uruchomić instalatora.")
             return
         self._update_busy = True
-        self.update_var.set("Instaluję nową wersję. Program zamknie się i uruchomi sam.")
+        self.update_var.set("Pobrane. Za kilka sekund na wierzchu będzie okno instalacji. Jak pasek dojdzie do końca, program sam się otworzy.")
         self.root.after(100, self._exit_for_update)
 
     def _exit_for_update(self) -> None:
@@ -4591,6 +4680,8 @@ if __name__ == "__main__":
             raise SystemExit("miks od kursora")
         if clock_text(75.5) != "1:15.50" or shade("#ff8000", 0.5) != "#7f4000" or safe_name("a/b c") != "a-b-c" or count_word(22, "a", "b", "c") != "22 b":
             raise SystemExit("pomocnicze")
+        if not about_copy_ok():
+            raise SystemExit("o programie")
         quiet = 10 ** (-26 / 20.0)
         shown = display_wave_half(quiet, 80.0)
         if shown < 20.0 or display_wave_half(0.0, 80.0) != 1.0 or display_wave_half(1.0, 80.0) < 79.0:
