@@ -41,6 +41,7 @@ jobs:
           $env:TEMP = $env:RUNNER_TEMP
           python record_wav.py "$env:RUNNER_TEMP\t.wav"; if ($LASTEXITCODE) { throw "record_wav" }
           python desk.py;            if ($LASTEXITCODE) { throw "desk" }
+          python -c "import record_app; record_app.password_keep_self_test()"; if ($LASTEXITCODE) { throw "haslo" }
           python account_upload.py;  if ($LASTEXITCODE) { throw "account_upload" }
           python own_fx.py;          if ($LASTEXITCODE) { throw "own_fx" }
           python offline_session.py; if ($LASTEXITCODE) { throw "offline_session" }

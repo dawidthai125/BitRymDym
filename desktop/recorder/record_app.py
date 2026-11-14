@@ -297,6 +297,45 @@ def wants_remember(value: object) -> bool:
     return str(value or "") != "0"
 
 
+# Hidden password on this PC. The field stays empty. Zaloguj uses it until this window ends.
+PASSWORD_KEEP_SECONDS = 48 * 60 * 60
+REMEMBER_LABEL = "Zapamiętaj hasło na 48 godzin"
+LOGIN_HINT_READY = "Hasło jest zapisane i ukryte. Naciśnij Zaloguj. Po 48 godzinach wpiszesz je jeszcze raz."
+LOGIN_HINT_FRESH = "Program sam nie wchodzi. Wpisz hasło i naciśnij Zaloguj. Zaznaczone pole trzyma je ukryte przez 48 godzin."
+LOGIN_HINT_EXPIRED = "Zapisane hasło wygasło po 48 godzinach. Wpisz je jeszcze raz."
+
+
+def password_deadline(now: float) -> str:
+    return str(int(now) + PASSWORD_KEEP_SECONDS)
+
+
+def saved_password_state(session: dict | None, now: float, email: str = "") -> str:
+    """ready, expired, or none. Does not return the password."""
+    if not isinstance(session, dict):
+        return "none"
+    if str(session.get("remember") or "") == "0":
+        return "none"
+    if email and str(session.get("email") or "").strip().lower() != email.strip().lower():
+        return "none"
+    if not str(session.get("password") or ""):
+        return "none"
+    try:
+        until = int(float(session.get("passwordUntil") or "0"))
+    except (TypeError, ValueError):
+        return "expired"
+    if now < until:
+        return "ready"
+    return "expired"
+
+
+def login_hint(state: str) -> str:
+    if state == "ready":
+        return LOGIN_HINT_READY
+    if state == "expired":
+        return LOGIN_HINT_EXPIRED
+    return LOGIN_HINT_FRESH
+
+
 _INSTANCE_LOCK: object = None
 _INSTANCE_NAME = "Local\\BitRymDym.Nagrywarka"
 
@@ -926,8 +965,19 @@ def supabase_password_grant(url: str, anon_key: str, email: str, password: str) 
     return {"access_token": token, "refresh_token": str(payload.get("refresh_token") or "")}
 
 
-def save_session(url: str, anon_key: str, email: str, grant: dict[str, str], remember: bool = True) -> None:
-    """Tokens are sealed with Windows DPAPI (only this Windows user can read them)."""
+def save_session(
+    url: str,
+    anon_key: str,
+    email: str,
+    grant: dict[str, str],
+    remember: bool = True,
+    password: str | None = None,
+    password_until: str | None = None,
+) -> None:
+    """Tokens and a remembered password are sealed with Windows DPAPI (only this Windows user can read them).
+
+    password None keeps a hidden password already on disk. An empty string drops it.
+    """
     SESSION.parent.mkdir(parents=True, exist_ok=True)
     session = {
         "supabaseUrl": url,
@@ -937,6 +987,14 @@ def save_session(url: str, anon_key: str, email: str, grant: dict[str, str], rem
         "refreshToken": grant["refresh_token"],
         "remember": "1" if remember else "0",
     }
+    if remember and password:
+        session["password"] = password
+        session["passwordUntil"] = password_until or ""
+    elif remember and password is None:
+        previous = load_session()
+        if previous and saved_password_state(previous, time.time(), email) == "ready":
+            session["password"] = str(previous["password"])
+            session["passwordUntil"] = str(previous.get("passwordUntil") or "")
     SESSION.write_text(json.dumps(seal_session(session)), encoding="utf-8")
 
 
@@ -961,8 +1019,11 @@ def load_session() -> dict[str, str] | None:
     return session
 
 
-def forget_tokens(saved: dict[str, str] | None = None, remember: str | None = None) -> None:
-    """Drop the login tokens and keep the e-mail. A dead session must not enter by itself."""
+def forget_tokens(saved: dict[str, str] | None = None, remember: str | None = None, now: float | None = None) -> None:
+    """Drop the login tokens and keep the e-mail. A dead session must not enter by itself.
+
+    A hidden password still inside 48 hours stays sealed, so Zaloguj can use it.
+    """
     current = saved
     if current is None and SESSION.exists():
         try:
@@ -974,7 +1035,7 @@ def forget_tokens(saved: dict[str, str] | None = None, remember: str | None = No
             current = opened
     if not current:
         return
-    kept = {
+    kept: dict[str, str] = {
         key: current.get(key, "")
         for key in ("supabaseUrl", "anonKey", "email")
         if current.get(key)
@@ -982,9 +1043,28 @@ def forget_tokens(saved: dict[str, str] | None = None, remember: str | None = No
     flag = remember if remember is not None else str(current.get("remember") or "")
     if flag in ("0", "1"):
         kept["remember"] = flag
+    moment = time.time() if now is None else now
+    if flag != "0" and saved_password_state(current, moment) == "ready":
+        kept["password"] = str(current.get("password") or "")
+        kept["passwordUntil"] = str(current.get("passwordUntil") or "")
     try:
         SESSION.parent.mkdir(parents=True, exist_ok=True)
-        SESSION.write_text(json.dumps(kept), encoding="utf-8")
+        SESSION.write_text(json.dumps(seal_session(kept)), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def drop_saved_password(saved: dict[str, str] | None = None) -> None:
+    """Remove only the hidden password. Tokens and e-mail stay."""
+    current = saved
+    if current is None:
+        current = load_session()
+    if not current or not current.get("password"):
+        return
+    kept = {key: str(value) for key, value in current.items() if key not in ("password", "passwordUntil", "sealed", "format")}
+    try:
+        SESSION.parent.mkdir(parents=True, exist_ok=True)
+        SESSION.write_text(json.dumps(seal_session(kept)), encoding="utf-8")
     except OSError:
         pass
 
@@ -4339,9 +4419,12 @@ class RecorderWindow:
         self.email.bind("<Return>", lambda _event: self.password.focus_set())
         self._button(card, "Zaloguj się", self.sign_in, AMBER, ON_AMBER).pack(fill="x", pady=(4, 8))
         self.remember_login = tk.IntVar(value=0 if saved and saved.get("remember") == "0" else 1)
+        login_state = saved_password_state(saved, time.time(), self.email.get().strip())
+        if login_state == "expired":
+            drop_saved_password(saved)
         tk.Checkbutton(
             card,
-            text="Zapamiętaj e-mail na tym komputerze",
+            text=REMEMBER_LABEL,
             variable=self.remember_login,
             bg=PAPER,
             fg=INK,
@@ -4355,7 +4438,7 @@ class RecorderWindow:
         ).pack(anchor="w", pady=(0, 2))
         tk.Label(
             card,
-            text="Program sam nie loguje. Hasło wpisujesz za każdym razem i naciskasz Zaloguj.",
+            text=login_hint(login_state),
             bg=PAPER,
             fg=MUTE,
             font=(FONT_UI, 9),
@@ -4978,17 +5061,34 @@ class RecorderWindow:
         self.show_gate()
 
     def sign_in(self) -> None:
+        used_saved = False
         try:
             email = self.email.get().strip()
-            password = self.password.get()
-            if not email or not password:
+            typed = self.password.get()
+            if not email:
                 raise RuntimeError("Wpisz e-mail i hasło.")
+            remember = self.remember_login.get() == 1
+            saved = load_session()
+            now = time.time()
+            password = typed
+            if not password:
+                state = saved_password_state(saved, now, email) if remember else "none"
+                if state == "ready" and saved is not None:
+                    password = str(saved.get("password") or "")
+                    used_saved = True
+                elif state == "expired":
+                    drop_saved_password(saved)
+                    raise RuntimeError(LOGIN_HINT_EXPIRED)
+                else:
+                    raise RuntimeError("Wpisz e-mail i hasło.")
             if not self.public_url or not self.public_key:
                 self._load_public()
             grant = supabase_password_grant(self.public_url, self.public_key, email, password)
             save_session(
                 self.public_url, self.public_key, email, grant,
-                remember=self.remember_login.get() == 1,
+                remember=remember,
+                password=password if remember else "",
+                password_until=password_deadline(now) if remember else None,
             )
             self._signed_in = True
             self.password.delete(0, "end")
@@ -4997,6 +5097,9 @@ class RecorderWindow:
             self.gate_status.set("")
             self.show_modes()
         except Exception as error:
+            if used_saved and "Logowanie nie weszło" in str(error):
+                drop_saved_password()
+                error = RuntimeError("Zapisane hasło nie weszło. Wpisz je jeszcze raz.")
             self.status.set(str(error))
             self.gate_status.set(str(error))
 
@@ -5308,6 +5411,75 @@ class RecorderWindow:
         self.root.mainloop()
 
 
+def password_keep_self_test() -> None:
+    """48-hour hidden password. The sample secret is fake and stays in a temp file."""
+    global SESSION
+    if wants_remember(None) is not True or wants_remember("1") is not True or wants_remember("0") is not False:
+        raise SystemExit("pamięć logowania")
+    moment = 1_700_000_000.9
+    deadline = password_deadline(moment)
+    if deadline != str(1_700_000_000 + PASSWORD_KEEP_SECONDS) or PASSWORD_KEEP_SECONDS != 48 * 60 * 60:
+        raise SystemExit("hasło: 48 godzin")
+    held = {"email": "a@b.pl", "remember": "1", "password": "haslo-testowe", "passwordUntil": deadline}
+    if saved_password_state(held, moment, "a@b.pl") != "ready":
+        raise SystemExit("hasło: świeży zapis")
+    if saved_password_state(held, int(deadline), "a@b.pl") != "expired":
+        raise SystemExit("hasło: koniec 48 godzin")
+    if saved_password_state(held, moment, "inny@b.pl") != "none":
+        raise SystemExit("hasło: inny e-mail")
+    if saved_password_state({"email": "a@b.pl", "remember": "0", "password": "haslo-testowe", "passwordUntil": deadline}, moment) != "none":
+        raise SystemExit("hasło: odznaczony zapis")
+    if saved_password_state({"email": "a@b.pl", "remember": "1"}, moment) != "none":
+        raise SystemExit("hasło: brak zapisu")
+    if login_hint("ready") != LOGIN_HINT_READY or "każdym razem" in login_hint("none") or "48" not in login_hint("expired"):
+        raise SystemExit("hasło: tekst logowania")
+    if REMEMBER_LABEL != "Zapamiętaj hasło na 48 godzin":
+        raise SystemExit("hasło: pole")
+    old_session = SESSION
+    session_dir = Path(__import__("tempfile").mkdtemp())
+    live = time.time()
+    live_deadline = password_deadline(live)
+    try:
+        SESSION = session_dir / "desktop-session.json"
+        grant = {"access_token": "aaa.bbb.ccc", "refresh_token": "refresh-secret"}
+        save_session(
+            "https://s.example", "anon", "a@b.pl", grant, remember=True,
+            password="haslo-testowe", password_until=live_deadline,
+        )
+        if os.name == "nt" and "haslo-testowe" in SESSION.read_text(encoding="utf-8"):
+            raise SystemExit("hasło: plik jawny")
+        loaded = load_session()
+        if not loaded or loaded.get("password") != "haslo-testowe" or loaded.get("passwordUntil") != live_deadline:
+            raise SystemExit("hasło: zapis")
+        save_session(
+            "https://s.example", "anon", "a@b.pl",
+            {"access_token": "ddd.eee.fff", "refresh_token": "refresh-2"}, remember=True,
+        )
+        kept_login = load_session()
+        if not kept_login or kept_login.get("password") != "haslo-testowe" or kept_login.get("accessToken") != "ddd.eee.fff":
+            raise SystemExit("hasło: odświeżenie tokenu")
+        if kept_login.get("passwordUntil") != live_deadline:
+            raise SystemExit("hasło: odświeżenie nie przedłuża 48 godzin")
+        forget_tokens(kept_login, now=live)
+        after_tokens = load_session()
+        if not after_tokens or after_tokens.get("accessToken") or after_tokens.get("password") != "haslo-testowe":
+            raise SystemExit("hasło: samo zdjęcie tokenu")
+        forget_tokens(after_tokens, now=float(live_deadline))
+        after_window = load_session()
+        if after_window and after_window.get("password"):
+            raise SystemExit("hasło: po 48 godzinach")
+        save_session(
+            "https://s.example", "anon", "a@b.pl", grant, remember=False,
+            password="haslo-testowe", password_until=live_deadline,
+        )
+        unchecked = load_session()
+        if unchecked and unchecked.get("password"):
+            raise SystemExit("hasło: odznaczone")
+    finally:
+        SESSION = old_session
+        shutil.rmtree(session_dir, ignore_errors=True)
+
+
 def self_test_wav_roundtrip() -> None:
     """Header check. Uses a generated tone, not the microphone."""
     from record_wav import self_test
@@ -5400,8 +5572,7 @@ if __name__ == "__main__":
             raise SystemExit("o programie")
         if not footer_copy_ok():
             raise SystemExit("stopka")
-        if wants_remember(None) is not True or wants_remember("1") is not True or wants_remember("0") is not False:
-            raise SystemExit("pamięć logowania")
+        password_keep_self_test()
         quiet = 10 ** (-26 / 20.0)
         shown = display_wave_half(quiet, 80.0)
         if shown < 20.0 or display_wave_half(0.0, 80.0) != 1.0 or display_wave_half(1.0, 80.0) < 79.0:

@@ -268,7 +268,7 @@ def quality_note(peak_db_value: float, clipped: int, drops: int = 0) -> str:
 
 
 SESSION_ENTROPY = b"BitRymDym.desktop-session.v2"
-SECRET_KEYS = ("accessToken", "refreshToken")
+SECRET_KEYS = ("accessToken", "refreshToken", "password")
 
 
 class _Blob(ctypes.Structure):
@@ -463,6 +463,14 @@ def self_test() -> None:
         raise SystemExit("sesja: inny użytkownik Windows")
     if seal_session({"email": "x"}, xor) != {"email": "x"}:
         raise SystemExit("sesja: bez tokenów nic się nie zmienia")
+    hidden = dict(plain_session, password="haslo-testowe", passwordUntil="1700172800")
+    sealed_pw = seal_session(hidden, xor)
+    sealed_text = json.dumps(sealed_pw)
+    if "haslo-testowe" in sealed_text or sealed_pw.get("passwordUntil") != "1700172800":
+        raise SystemExit("sesja: hasło ma być ukryte, a termin jawny")
+    opened_pw, _again_pw = open_session(sealed_pw, unxor)
+    if opened_pw is None or opened_pw.get("password") != "haslo-testowe" or opened_pw.get("email") != "a@b.pl":
+        raise SystemExit("sesja: odczyt ukrytego hasła")
     if seal_session(plain_session, lambda data, entropy: (_ for _ in ()).throw(OSError("x")))["accessToken"] != "aaa.bbb.ccc":
         raise SystemExit("sesja: awaria DPAPI ma zostawić jawny zapis, nie gubić sesji")
     if level_text(-0.2) != "0 dB" or level_text(-12.4) != "−12 dB":
@@ -471,6 +479,9 @@ def self_test() -> None:
         raise SystemExit("próba mikrofonu: cisza")
     if not probe_hint(-1).startswith("Za głośno") or not probe_hint(-12).startswith("Dobrze"):
         raise SystemExit("próba mikrofonu: głośno")
+    import record_app
+
+    record_app.password_keep_self_test()
     if os.name == "nt":
         sample = b"token-" + os.urandom(8)
         if dpapi_unprotect(dpapi_protect(sample, SESSION_ENTROPY), SESSION_ENTROPY) != sample:
