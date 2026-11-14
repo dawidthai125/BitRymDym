@@ -1304,9 +1304,15 @@ class RecorderWindow:
         email = self.email.get().strip()
         self.mode_account.set(email or "Konto")
         if self.tier == "GOLD":
-            self.offline_enter.configure(text="WEJDŹ", bg=AMBER, fg=ON_AMBER)
+            self.offline_enter.configure(
+                text="WEJDŹ", command=lambda: self.choose_mode("offline"),
+                bg=AMBER, fg=ON_AMBER, activebackground=AMBER_SOFT, activeforeground=ON_AMBER,
+            )
         else:
-            self.offline_enter.configure(text="TO JEST PREMIUM GOLD", bg=RACK, fg=SOFT)
+            self.offline_enter.configure(
+                text="ZWIĘKSZ PAKIET LUB KUP", command=self._open_upgrade,
+                bg=RACK, fg=SOFT, activebackground=PANEL, activeforeground=INK,
+            )
         self.modes_canvas.update_idletasks()
         self.modes_canvas.configure(scrollregion=self.modes_canvas.bbox("all"))
 
@@ -4335,44 +4341,73 @@ class RecorderWindow:
         tk.Label(head, textvariable=self.mode_account, bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", pady=(2, 6))
 
         row = tk.Frame(inner, bg=PAPER)
-        row.pack(anchor="center", pady=(4, 8))
-        online = tk.Frame(row, bg=PANEL, highlightthickness=1, highlightbackground=LINE, width=440)
-        online.pack(side="left", anchor="n", padx=10, ipadx=4)
+        row.pack(fill="x", padx=28, pady=(8, 8))
+        row.columnconfigure(0, weight=1, uniform="studio")
+        row.columnconfigure(1, weight=1, uniform="studio")
+        row.rowconfigure(0, weight=1)
+
+        def card(column: int, edge: str) -> tuple[tk.Frame, tk.Frame]:
+            box = tk.Frame(row, bg=PANEL, highlightthickness=1, highlightbackground=edge)
+            box.grid(row=0, column=column, sticky="nsew", padx=8)
+            box.grid_columnconfigure(0, weight=1)
+            box.grid_rowconfigure(0, weight=1)
+            body = tk.Frame(box, bg=PANEL)
+            body.grid(row=0, column=0, sticky="nsew")
+            actions = tk.Frame(box, bg=PANEL)
+            actions.grid(row=1, column=0, sticky="ew")
+            return body, actions
+
+        online, online_actions = card(0, LINE)
         tk.Label(online, text="STUDIO ONLINE", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 16, "bold")).pack(anchor="w", padx=14, pady=(12, 2))
-        tk.Label(
+        online_copy = tk.Label(
             online,
             text=(
-                "Gotowe darmowe bity.\n"
-                "Katalog bitów, które sam wgrałeś.\n"
-                "Wykupione płatne bity.\n"
+                "Gotowe darmowe bity. Katalog bitów, które sam wgrałeś. Wykupione płatne bity. "
                 "Jedna lista, szukasz po nazwie. Ścieżki według planu. "
                 "Na końcu możesz wrzucić nagranie do Studia. Miks i mastering są na stronie."
             ),
-            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=400, justify="left",
-        ).pack(anchor="w", padx=14, pady=(0, 8))
-        self._tool(online, "WEJDŹ", lambda: self.choose_mode("online"), ON_AMBER, AMBER, 14).pack(anchor="w", padx=14, pady=(0, 14))
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=420, justify="left",
+        )
+        online_copy.pack(anchor="w", padx=14, pady=(0, 8))
+        self._tool(online_actions, "WEJDŹ", lambda: self.choose_mode("online"), ON_AMBER, AMBER, 14).pack(anchor="w", padx=14, pady=(0, 14))
 
-        offline = tk.Frame(row, bg=PANEL, highlightthickness=1, highlightbackground=AMBER_DEEP, width=440)
-        offline.pack(side="left", anchor="n", padx=10, ipadx=4)
-        tk.Label(offline, text="STUDIO OFFLINE", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 16, "bold")).pack(anchor="w", padx=14, pady=(12, 0))
-        tk.Label(offline, text="PREMIUM GOLD", bg=PANEL, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", padx=14)
-        tk.Label(
+        offline, offline_actions = card(1, AMBER_DEEP)
+        title = tk.Frame(offline, bg=PANEL)
+        title.pack(fill="x", padx=14, pady=(12, 0))
+        tk.Label(title, text="STUDIO OFFLINE", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 16, "bold")).pack(side="left")
+        self._lock_mark(title).pack(side="left", padx=(8, 4), pady=(2, 0))
+        tk.Label(title, text="TYLKO PREMIUM GOLD", bg=PANEL, fg=MUTE, font=(FONT_META, 9)).pack(side="left", pady=(4, 0))
+        offline_copy = tk.Label(
             offline,
             text=(
-                "Tylko swój bit z pliku, na tym komputerze.\n"
-                "16 ścieżek wokalu i 6 na podbicia i adliby.\n"
-                "Mikrofon i odsłuch osobno: też Bluetooth, na przykład iPhone, "
-                "i słuchawki albo głośniki z innego urządzenia.\n"
+                "Tylko swój bit z pliku, na tym komputerze. "
+                "16 ścieżek wokalu i 6 na podbicia i adliby. "
+                "Mikrofon i odsłuch osobno, także Bluetooth. "
                 "Czysta nagrywka i prosta edycja. Bez automatycznego miksu, masteringu i bez wysyłki na stronę."
             ),
-            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=400, justify="left",
-        ).pack(anchor="w", padx=14, pady=(6, 8))
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=420, justify="left",
+        )
+        offline_copy.pack(anchor="w", padx=14, pady=(6, 8))
         self.offline_enter = tk.Button(
-            offline, text="WEJDŹ", command=lambda: self.choose_mode("offline"),
+            offline_actions, text="WEJDŹ", command=lambda: self.choose_mode("offline"),
             bg=AMBER, fg=ON_AMBER, activebackground=AMBER_SOFT, activeforeground=ON_AMBER,
             relief="flat", bd=0, padx=12, pady=6, font=(FONT_POSTER, 14, "bold"), cursor="hand2",
         )
-        self.offline_enter.pack(anchor="w", padx=14, pady=(0, 14))
+        self.offline_enter.pack(anchor="w", padx=14, pady=(0, 4))
+        upgrade = tk.Label(
+            offline_actions, text="Zwiększ pakiet lub kup na stronie",
+            bg=PANEL, fg=AMBER, cursor="hand2",
+            font=tkfont.Font(self.root, family=FONT_UI, size=11, underline=True),
+        )
+        upgrade.pack(anchor="w", padx=14, pady=(0, 14))
+        upgrade.bind("<Button-1>", lambda _event: self._open_upgrade())
+
+        def fit_copy(event: tk.Event, labels: tuple[tk.Label, tk.Label] = (online_copy, offline_copy)) -> None:
+            wrap = max(220, event.width - 36)
+            for label in labels:
+                label.configure(wraplength=wrap)
+
+        online.bind("<Configure>", fit_copy)
 
         foot = tk.Frame(inner, bg=PAPER)
         foot.pack(fill="x", padx=36, pady=(4, 16))
@@ -4389,9 +4424,20 @@ class RecorderWindow:
         tk.Label(foot, textvariable=self.mode_status, bg=PAPER, fg=INK, font=(FONT_UI, 10), wraplength=920, justify="left").pack(anchor="w", pady=(8, 0))
         self._tool(foot, "WYLOGUJ", self.sign_out, SOFT).pack(anchor="w", pady=(12, 0))
 
+    def _lock_mark(self, parent: tk.Widget) -> tk.Canvas:
+        """Small padlock drawn in the theme colors. No icon font."""
+        mark = tk.Canvas(parent, width=16, height=16, bg=PANEL, highlightthickness=0, bd=0)
+        mark.create_arc(4, 1, 12, 10, start=0, extent=180, style="arc", outline=AMBER, width=2)
+        mark.create_rectangle(3, 7, 13, 15, outline=AMBER, fill=RACK, width=1)
+        return mark
+
+    def _open_upgrade(self) -> None:
+        self.mode_status.set("Studio Offline jest tylko w Premium Gold. Otwieram stronę, żeby zwiększyć pakiet albo kupić.")
+        self._open_site("/premium")
+
     def choose_mode(self, mode: str) -> None:
         if mode == "offline" and self.tier != "GOLD":
-            self.mode_status.set("Studio Offline jest w planie Premium Gold.")
+            self._open_upgrade()
             return
         if mode not in ("online", "offline"):
             return
