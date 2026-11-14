@@ -124,7 +124,7 @@ jobs:
           $out = "installer\velopack"
           New-Item -ItemType Directory -Force $out | Out-Null
           $notes = Join-Path $env:RUNNER_TEMP "brd-notes.md"
-          Set-Content -Path $notes -Encoding utf8NoBOM -Value "Update.exe czeka na zamknięcie, wgrywa paczkę i sam otwiera program. Ten Setup otwórz raz ręcznie."
+          Set-Content -Path $notes -Encoding utf8NoBOM -Value "Baner na dole: Zaktualizuj, bez odliczania. Start: logo i pasek, potem logowanie. Nowe włączenie to pusty projekt."
           vpk pack --packId BitRymDym.Nagrywarka --packVersion $ver --packDir dist\BitRymDym --mainExe BitRymDym.exe --packTitle BitRymDym --icon assets\cassette.ico --outputDir $out --channel win --runtime win-x64 --shortcuts Desktop,StartMenuRoot --releaseNotes $notes
           if ($LASTEXITCODE) { throw "vpk pack" }
           Remove-Item "$out\*Portable.zip" -ErrorAction SilentlyContinue

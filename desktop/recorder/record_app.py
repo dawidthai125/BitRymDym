@@ -1117,6 +1117,8 @@ class RecorderWindow:
         self._pref_beat = ""
         self._desk_beat = ""
         self.studio_mode = "online"
+        self._desk_live: set[str] = set()
+        self._signed_in = False
         self.local_beat_path = ""
         self.local_beat_seconds = 0.0
         self.studio_kicker = tk.StringVar(value="STUDIO ONLINE")
@@ -1175,9 +1177,10 @@ class RecorderWindow:
         self._build_gate(saved if isinstance(saved, dict) else None)
         self._build_modes()
         self._build_studio()
+        self._build_splash()
         self.beat_var.trace_add("write", lambda *_args: self._beat_changed())
         self._load_prefs()
-        self._restore_desk()
+        self._blank_project()
         if self.status_boot:
             self.status.set(self.status_boot)
             self.gate_status.set(self.status_boot)
@@ -1195,8 +1198,8 @@ class RecorderWindow:
             ("<r>", lambda: self.record()),
         ):
             self.root.bind(sequence, lambda event, run=handler: self._key(event, run))
-        self.show_gate()
-        # Device list and the beat catalog both block. The login window is up first.
+        self.show_splash()
+        # Devices and the site both block. The login window opens after this splash.
         self.root.after(60, self._boot_background)
 
     def _key(self, event: tk.Event, run: Callable[[], object]) -> str | None:
@@ -1244,6 +1247,7 @@ class RecorderWindow:
     def show_gate(self) -> None:
         if self._update_blocks():
             return
+        self._hide_splash()
         self.studio.pack_forget()
         self.modes.pack_forget()
         self.gate.pack(fill="both", expand=True)
@@ -1259,6 +1263,7 @@ class RecorderWindow:
     def show_studio(self) -> None:
         if self._update_blocks():
             return
+        self._hide_splash()
         self.gate.pack_forget()
         self.modes.pack_forget()
         self.studio.pack(fill="both", expand=True)
@@ -1284,6 +1289,7 @@ class RecorderWindow:
     def show_modes(self) -> None:
         if self._update_blocks():
             return
+        self._hide_splash()
         self.gate.pack_forget()
         self.studio.pack_forget()
         self.modes.pack(fill="both", expand=True)
@@ -1315,17 +1321,8 @@ class RecorderWindow:
             "Zapis jeszcze trwa. Zamknąć mimo to?",
         ):
             return
-        if ask_save and self.studio_mode == "offline" and self.tier == "GOLD" and self._project_worth_saving():
-            choice = messagebox.askyesnocancel(
-                "BitRymDym",
-                "Zapisać projekt (.brd1) przed zamknięciem?\n\n"
-                "W pliku są nagrane ścieżki. Bitu nie ma. "
-                "Program nie sprawdza, czy bit jest Twój — potwierdzenie jest przy zapisie.",
-            )
-            if choice is None:
-                return
-            if choice and not self.save_project():
-                return
+        if ask_save and not self._confirm_close_save():
+            return
         self._arm_token += 1
         self._play_token += 1
         self._cancel_tick()
@@ -1337,11 +1334,20 @@ class RecorderWindow:
             if self.recording:
                 self._keep_take()
         self.recording = False
-        if self._touched:
-            self._save_desk()
+        self.playing = False
+        self._discard_desks()
+        self._touched = False
         box = getattr(self, "remember_login", None)
-        if box is not None and box.get() != 1:
-            forget_tokens(remember="0")
+        keep_email = box is None or box.get() == 1
+        forget_tokens(remember="1" if keep_email else "0")
+        if not keep_email:
+            try:
+                raw = json.loads(SESSION.read_text(encoding="utf-8"))
+                if isinstance(raw, dict) and "email" in raw:
+                    raw.pop("email", None)
+                    SESSION.write_text(json.dumps(raw), encoding="utf-8")
+            except (OSError, json.JSONDecodeError):
+                pass
         self.root.destroy()
 
     # ---- layout ---------------------------------------------------------------
@@ -2105,7 +2111,7 @@ class RecorderWindow:
         self.hscroll.set(self.view / total, min(1.0, (self.view + span) / total))
         self._paint_ruler()
         self._paint_beat()
-        for index in range(len(self.tracks)):
+        for index in range(min(len(self.tracks), len(self.rows))):
             self._paint_track(index)
         self._move_head(self._head_time())
 
@@ -2773,11 +2779,99 @@ class RecorderWindow:
         clips = sum(len(track.clips) for track in self.tracks)
         if clips:
             self.status.set(
-                f"Wczytany ostatni projekt z tego komputera: {count_word(len(self.tracks), 'ścieżka', 'ścieżki', 'ścieżek')}, "
+                f"Projekt z tej sesji: {count_word(len(self.tracks), 'ścieżka', 'ścieżki', 'ścieżek')}, "
                 f"{count_word(clips, 'klip', 'klipy', 'klipów')}."
             )
         if lost:
             self.status.set(self.status.get() + f" Brak {lost} plików nagrań na dysku, te klipy pominięte.")
+
+    def _blank_project(self, announce: bool = False) -> None:
+        """Empty studio. A new launch does not open the project from the previous run."""
+        self.tracks = [self._new_track()]
+        self.undo_stack = []
+        self.clipboard = []
+        self.sel = None
+        self.cursor = 0.0
+        self.view = 0.0
+        self.armed = 0
+        self.focus = 0
+        self._audio.clear()
+        self._peaks.clear()
+        self.local_beat_path = ""
+        self.local_beat_seconds = 0.0
+        self._desk_beat = ""
+        self.beat_muted = False
+        self.beat_gain_db = 0.0
+        self.beat_pan = 0.0
+        self.title_var.set("Nagranie z komputera")
+        if hasattr(self, "beat_gain_scale"):
+            self.beat_gain_scale.set(0)
+            self.beat_gain_label.configure(text="+0")
+        if hasattr(self, "beat_pan_scale"):
+            self.beat_pan_scale.set(0)
+            self.beat_pan_label.configure(text=offline_session.pan_text(0))
+        self._rebuild_rows()
+        self.beat_var.set("")
+        self._sync_beat_button()
+        self._touched = False
+        if announce:
+            if self.studio_mode == "offline":
+                self.status.set("Pusty projekt. Wybierz własny bit z pliku i nagraj.")
+            else:
+                self.status.set("Pusty projekt. Wybierz bit i nagraj.")
+
+    def _discard_desks(self) -> None:
+        for path in (DESK, DESK_OFFLINE):
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+    def _wipe_project_files(self) -> None:
+        used = {clip.path for track in self.tracks for clip in track.clips}
+        used |= {clip.path for snapshot, _armed in self.undo_stack for track in snapshot for clip in track.clips}
+        for path in used:
+            if Path(path).parent == TAKES:
+                try:
+                    Path(path).unlink()
+                except OSError:
+                    pass
+
+    def _project_dirty(self) -> bool:
+        if self.recording or self._arming:
+            return True
+        return any(track.clips for track in self.tracks)
+
+    def _confirm_close_save(self) -> bool:
+        """False leaves the window open. No throws the project away. Yes saves when Offline can."""
+        if self.recording or self._arming or self.playing or self._probing:
+            self._halt_audio()
+        if not self._project_dirty():
+            return True
+        if self.studio_mode == "offline":
+            text = (
+                "Chcesz zapisać projekt?\n\n"
+                "Tak — zapis pliku .brd1. Bitu w pliku nie ma.\n"
+                "Nie — ten projekt przepada.\n"
+                "Anuluj — zostajesz w programie."
+            )
+        else:
+            text = (
+                "Chcesz zapisać projekt?\n\n"
+                "Tak — nagrania zostają na tym komputerze. Na konto same nie wchodzą. "
+                "Następne włączenie i tak zaczyna pusty projekt.\n"
+                "Nie — ten projekt przepada.\n"
+                "Anuluj — zostajesz w programie."
+            )
+        choice = messagebox.askyesnocancel("BitRymDym", text)
+        if choice is None:
+            return False
+        if not choice:
+            self._wipe_project_files()
+            return True
+        if self.studio_mode == "offline":
+            return self.save_project()
+        return True
 
     def new_project(self) -> None:
         if self._busy() or self._uploading:
@@ -3819,6 +3913,29 @@ class RecorderWindow:
         self.monitor = None
         self.mix_feed = None
 
+    def _halt_audio(self) -> None:
+        """Stop the mic, playback and the mic test. Logout and close must not leave them running."""
+        self._play_token += 1
+        self._arm_token += 1
+        self._stop_probe()
+        if self.recording or self._arming or self.playing:
+            self.stop()
+        self._cancel_tick()
+        self._stop_monitor()
+        self.playing = False
+        self.recording = False
+        self._arming = False
+        for button, label in (
+            (getattr(self, "play_button", None), "▶ GRAJ"),
+            (getattr(self, "rec_button", None), "● NAGRAJ"),
+        ):
+            if button is None:
+                continue
+            try:
+                button.configure(text=label)
+            except tk.TclError:
+                pass
+
     def _cancel_tick(self) -> None:
         if self._tick_id:
             self.root.after_cancel(self._tick_id)
@@ -4063,6 +4180,70 @@ class RecorderWindow:
         label.bind("<Button-1>", lambda _event: self._open_site(path))
         return label
 
+    def _build_splash(self) -> None:
+        """Logo and a bar while devices and the site answer. The login form stays hidden until then."""
+        self.splash = tk.Frame(self.shell, bg=PAPER)
+        stage = tk.Frame(self.splash, bg=PAPER)
+        stage.pack(expand=True)
+        logo = self._fit_image("logo-light.png", 420, 140)
+        if logo is not None:
+            tk.Label(stage, image=logo, bg=PAPER).pack(pady=(0, 8))
+        else:
+            tk.Label(stage, text="BitRymDym", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 28, "italic")).pack(pady=(0, 8))
+        self.splash_status = tk.StringVar(value="Łączenie ze stroną…")
+        tk.Label(
+            stage, textvariable=self.splash_status, bg=PAPER, fg=SOFT, font=(FONT_UI, 11),
+        ).pack(pady=(8, 10))
+        self.splash_bar = ttk.Progressbar(stage, mode="indeterminate", length=320)
+        self.splash_bar.pack(pady=(0, 6))
+
+    def show_splash(self) -> None:
+        self.studio.pack_forget()
+        self.modes.pack_forget()
+        self.gate.pack_forget()
+        self.splash.pack(fill="both", expand=True)
+        try:
+            self.splash_bar.start(16)
+        except tk.TclError:
+            pass
+        scale = dpi_scale()
+        width = int(760 * scale)
+        height = int(520 * scale)
+        self.root.minsize(int(640 * scale), int(480 * scale))
+        if self._borderless:
+            self._place_window(width, height)
+        else:
+            self.root.geometry(f"{width}x{height}")
+
+    def _hide_splash(self) -> None:
+        splash = getattr(self, "splash", None)
+        if splash is None:
+            return
+        bar = getattr(self, "splash_bar", None)
+        if bar is not None:
+            try:
+                bar.stop()
+            except tk.TclError:
+                pass
+        try:
+            if splash.winfo_manager():
+                splash.pack_forget()
+        except tk.TclError:
+            pass
+
+    def _finish_splash(self) -> None:
+        """Login only after the first load. A later device refresh must not send the user back here."""
+        splash = getattr(self, "splash", None)
+        if splash is None:
+            return
+        try:
+            showing = bool(splash.winfo_manager())
+        except tk.TclError:
+            return
+        if not showing:
+            return
+        self.show_gate()
+
     def _build_gate(self, saved: dict[str, str] | None) -> None:
         self.gate = tk.Frame(self.shell, bg=PAPER)
         stage = tk.Frame(self.gate, bg=PAPER)
@@ -4099,7 +4280,7 @@ class RecorderWindow:
         self.remember_login = tk.IntVar(value=0 if saved and saved.get("remember") == "0" else 1)
         tk.Checkbutton(
             card,
-            text="Zapamiętaj logowanie na tym komputerze",
+            text="Zapamiętaj e-mail na tym komputerze",
             variable=self.remember_login,
             bg=PAPER,
             fg=INK,
@@ -4113,7 +4294,7 @@ class RecorderWindow:
         ).pack(anchor="w", pady=(0, 2))
         tk.Label(
             card,
-            text="Bez zaznaczenia po zamknięciu programu trzeba wpisać hasło jeszcze raz.",
+            text="Program sam nie loguje. Hasło wpisujesz za każdym razem i naciskasz Zaloguj.",
             bg=PAPER,
             fg=MUTE,
             font=(FONT_UI, 9),
@@ -4214,21 +4395,33 @@ class RecorderWindow:
             return
         if mode not in ("online", "offline"):
             return
+        fresh = mode not in self._desk_live
         if mode != self.studio_mode:
             if self._touched:
                 self._save_desk()
+                self._desk_live.add(self.studio_mode)
+            fresh = mode not in self._desk_live
             self.studio_mode = mode
-            self._restore_desk()
+            if mode in self._desk_live:
+                self._restore_desk()
+            else:
+                self._blank_project()
         self._apply_mode_chrome()
         self.show_studio()
+        if fresh and self._pending is None:
+            if mode == "offline":
+                self.status.set("Pusty projekt. Wybierz własny bit z pliku i nagraj.")
+            else:
+                self.status.set("Pusty projekt. Wybierz bit i nagraj.")
 
     def back_to_modes(self) -> None:
         if self._busy() or self._uploading or self._exporting:
             return
-        if self.playing:
-            self.stop()
+        if self.playing or self.recording or self._arming:
+            self._halt_audio()
         if self._touched:
             self._save_desk()
+            self._desk_live.add(self.studio_mode)
         self.show_modes()
 
     def _apply_mode_chrome(self) -> None:
@@ -4287,8 +4480,7 @@ class RecorderWindow:
                 payload = loaded
         except Exception as error:
             net_error = str(error)
-        resume, resume_error = self._resume_saved_session()
-        self.root.after(0, lambda: self._apply_boot(devices, device_error, outputs, payload, net_error, resume, resume_error))
+        self.root.after(0, lambda: self._apply_boot(devices, device_error, outputs, payload, net_error, "", ""))
 
     def _apply_boot(
         self,
@@ -4308,7 +4500,6 @@ class RecorderWindow:
         )
         if payload is not None:
             self._apply_public(payload)
-            self._restore_catalog_beat()
         elif net_error:
             self.gate_status.set(net_error)
             self.status.set(net_error)
@@ -4317,20 +4508,20 @@ class RecorderWindow:
         elif not self.probe_var.get().startswith("Poziom"):
             self.probe_var.set("Mikrofon i słuchawki mogą być z różnych urządzeń, też Bluetooth.")
         self._gear_scanning = False
-        if resume == "ok" and self.gate.winfo_manager():
-            self.password.delete(0, "end")
-            self.gate_status.set("")
-            self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
-            self.show_modes()
-        elif resume == "dead":
+        if resume == "dead":
             self.gate_status.set(resume_error)
             self.status.set(resume_error)
         elif resume == "net":
             self.gate_status.set(resume_error)
             self.status.set(resume_error)
-        elif self.gate.winfo_manager() and self.gate_status.get() == "Łączę ze stroną.":
+        elif self.gate_status.get() == "Łączę ze stroną.":
             self.gate_status.set("")
-        self._read_plan()
+        if self._signed_in:
+            self._read_plan()
+        splash_label = getattr(self, "splash_status", None)
+        if splash_label is not None and not net_error:
+            splash_label.set("Gotowe.")
+        self._finish_splash()
 
     def _resume_saved_session(self) -> tuple[str, str]:
         """Check the saved login before the window asks for a password. Network only, no Tk."""
@@ -4656,6 +4847,8 @@ class RecorderWindow:
         if self._uploading:
             self.status.set("Wysyłka trwa. Wyloguj po jej końcu.")
             return
+        self._halt_audio()
+        self._signed_in = False
         email = self.email.get().strip()
         old = load_session()
         if old and old.get("accessToken"):
@@ -4696,6 +4889,7 @@ class RecorderWindow:
                 self.public_url, self.public_key, email, grant,
                 remember=self.remember_login.get() == 1,
             )
+            self._signed_in = True
             self.password.delete(0, "end")
             self._read_plan()
             self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
@@ -4799,15 +4993,13 @@ class RecorderWindow:
         self._gate_button_state(self.update_go, True)
 
     def _force_update_when_idle(self) -> None:
-        if self._update is None or self._update_blocks() or self._update_busy:
-            if self._update is not None and not self._update_blocks() and self._update_busy:
-                return
-            if self._update is None or self._update_blocks():
-                return
-        if self._busy_for_update():
-            self.root.after(1000, self._force_update_when_idle)
+        """Kept so an older call cannot open the full-screen gate. The banner is the only prompt."""
+        update = self._update
+        if update is None or self._update_busy or self._busy_for_update():
             return
-        self._show_update_gate()
+        notes = f" {update.notes}" if update.notes else ""
+        self.update_var.set(f"Jest nowa wersja {update.version}. Masz {updater.APP_VERSION}.{notes}")
+        self.update_now.configure(state="normal")
 
     def _quit_from_update(self) -> None:
         self._update_abort = True
@@ -4820,17 +5012,19 @@ class RecorderWindow:
             self._update_abort = False
 
     def _offer_update(self, update: updater.Update) -> None:
+        """Bottom banner only. The user clicks Zaktualizuj. No countdown and no full-screen gate."""
         if self._update_dismissed or self._update_busy:
             return
         self._update = update
         self._update_abort = False
+        notes = f" {update.notes}" if update.notes else ""
         if self._busy_for_update():
-            self.update_var.set("Jest nowa wersja. Dokończ nagranie albo wysyłkę. Potem trzeba zaktualizować albo wyłączyć program.")
-            if not self.update_bar.winfo_manager():
-                self.update_bar.pack(side="bottom", fill="x", before=self.shell)
-            self.root.after(1000, self._force_update_when_idle)
-            return
-        self._show_update_gate()
+            self.update_var.set("Jest nowa wersja. Dokończ nagranie albo wysyłkę, potem naciśnij Zaktualizuj.")
+        else:
+            self.update_var.set(f"Jest nowa wersja {update.version}. Masz {updater.APP_VERSION}.{notes}")
+        if not self.update_bar.winfo_manager():
+            self.update_bar.pack(side="bottom", fill="x", before=self.shell)
+        self.update_now.configure(state="normal")
 
     def _dismiss_update(self) -> None:
         if self._update_busy:
@@ -4851,7 +5045,7 @@ class RecorderWindow:
         self.update_now.configure(state="disabled")
         self._gate_button_state(getattr(self, "update_go", None), False)
         self.update_var.set("Pobieram nową wersję: 0%")
-        self.update_gate_text.set("Pobieram nową wersję: 0%.\nJak dojdzie do 100%, program odliczy i dopiero wtedy się zamknie.")
+        self.update_gate_text.set("Pobieram nową wersję: 0%.")
         threading.Thread(target=self._download_update, args=(self._update,), daemon=True).start()
 
     def _download_update(self, update: updater.Update) -> None:
@@ -4875,11 +5069,7 @@ class RecorderWindow:
 
     def _set_download_progress(self, percent: int) -> None:
         self.update_var.set(f"Pobieram nową wersję: {percent}%")
-        self.update_gate_text.set(
-            f"Pobieram nową wersję: {percent}%.\n"
-            "Jak dojdzie do 100%, program odliczy kilka sekund.\n"
-            "Potem zobaczysz okno instalacji z paskiem. Zostaw je."
-        )
+        self.update_gate_text.set(f"Pobieram nową wersję: {percent}%.")
 
     def _update_failed(self, message: str) -> None:
         self._update_busy = False
@@ -4896,34 +5086,17 @@ class RecorderWindow:
             self._gate_button_state(getattr(self, "update_go", None), True)
             self.update_var.set("Aktualizacja jest pobrana. Skończ nagranie albo wysyłkę i naciśnij Zaktualizuj.")
             self.update_gate_text.set("Aktualizacja jest pobrana. Skończ nagranie albo wysyłkę i naciśnij Zaktualizuj.")
-            self.root.after(1000, self._force_update_when_idle)
             return
         self._update_ready = path
         self._update_busy = True
         self._update_abort = False
-        self._update_left = 8
         self._gate_button_state(getattr(self, "update_go", None), False)
-        self._count_update()
-
-    def _count_update(self) -> None:
-        if self._update_abort:
-            return
-        path = self._update_ready
-        if path is None:
-            return
-        if self._update_left > 0:
-            self.update_var.set(f"Zamykam za {self._update_left} s. Update.exe wgra i otworzy program.")
-            self.update_gate_text.set(
-                f"Pobrane. Program zamknie się za {self._update_left} s.\n\n"
-                "Update.exe poczeka, aż ten proces zejdzie, wgra paczkę i sam otworzy BitRymDym."
-            )
-            self._update_left -= 1
-            self.root.after(1000, self._count_update)
-            return
+        self.update_now.configure(state="disabled")
+        self.update_var.set("Zamykam. Update.exe wgra paczkę i sam otworzy program.")
         try:
             updater.schedule_installer(path)
         except OSError:
-            self._update_failed("Nie udało się uruchomić instalatora.")
+            self._update_failed("Nie udało się uruchomić aktualizacji.")
             return
         self._exit_for_update()
 
