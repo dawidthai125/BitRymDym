@@ -228,6 +228,12 @@ def display_wave_half(level: float, half_max: float) -> float:
     return max(1.5, half_max * shown)
 
 
+def live_wave_span(elapsed: float, peak_count: int) -> tuple[float, float]:
+    """Seconds of real mic peaks, then how far the drawing reaches (the play line)."""
+    known = max(0.0, peak_count / 100.0)
+    return known, max(known, max(0.0, elapsed))
+
+
 def mono16_wav_bytes(samples: array.array) -> bytes:
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as handle:
@@ -736,10 +742,62 @@ def capture_argv(exe: str, device: str, path: Path, seconds: float | None = None
         "-c:a",
         "pcm_s16le",
     ]
-    if seconds is not None:
-        argv.extend(["-t", str(seconds)])
-    argv.append(str(path))
+    # WAV is the take. Raw frames on stdout are only for the live drawing.
+    # -t has to limit both outputs, or a timed capture would never finish.
+    limit = ["-t", str(seconds)] if seconds is not None else []
+    argv.extend(limit)
+    argv.extend(["-fflags", "+flush_packets", "-flush_packets", "1", str(path)])
+    argv.extend(limit)
+    argv.extend([
+        "-f", "s16le", "-ac", "1", "-ar", "48000",
+        "-fflags", "+flush_packets", "-flush_packets", "1",
+        "pipe:1",
+    ])
     return argv
+
+
+def peaks_from_pcm(blob: bytes) -> list[float]:
+    """10 ms peaks from little-endian 16-bit mono at 48 kHz. Short tails are kept for the next read."""
+    frame = 960
+    usable = len(blob) - (len(blob) % frame)
+    if usable <= 0:
+        return []
+    samples = array.array("h")
+    samples.frombytes(blob[:usable])
+    if sys.byteorder != "little":
+        samples.byteswap()
+    return block_peaks(samples)
+
+
+def _capture_peak_reader(proc: subprocess.Popen[bytes]) -> None:
+    """Drain ffmpeg stdout so the pipe never fills, and keep peaks for the lane."""
+    stream = proc.stdout
+    peaks: list[float] = getattr(proc, "live_peaks", [])
+    if stream is None:
+        return
+    pending = b""
+    frame = 960
+    try:
+        while True:
+            chunk = stream.read(frame * 4)
+            if not chunk:
+                break
+            pending += chunk
+            usable = len(pending) - (len(pending) % frame)
+            if usable <= 0:
+                continue
+            block = pending[:usable]
+            pending = pending[usable:]
+            try:
+                peaks.extend(peaks_from_pcm(block))
+            except Exception:
+                continue
+    except Exception:
+        try:
+            while stream.read(frame * 4):
+                pass
+        except Exception:
+            return
 
 
 def capture_log_path(path: Path) -> Path:
@@ -750,13 +808,18 @@ def start_capture(path: Path, device: str) -> subprocess.Popen[bytes]:
     path.parent.mkdir(parents=True, exist_ok=True)
     # ffmpeg errors go to a file: dropped mic frames and a dead device are visible afterwards.
     with capture_log_path(path).open("wb") as log:
-        return subprocess.Popen(
+        proc = subprocess.Popen(
             capture_argv(ffmpeg_exe(), device, path),
             stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
             stderr=log,
+            bufsize=0,
             **quiet_kwargs(),
         )
+    # The reader starts before return so the stdout pipe cannot fill and stall the take.
+    setattr(proc, "live_peaks", [])
+    threading.Thread(target=_capture_peak_reader, args=(proc,), daemon=True, name="brd-live-peaks").start()
+    return proc
 
 
 def read_capture_log(path: Path, remove: bool = True) -> tuple[int, str]:
@@ -2049,6 +2112,8 @@ class RecorderWindow:
     def _head_time(self) -> float:
         if self.recording:
             return self.rec_start + self._rec_elapsed()
+        if self._arming:
+            return self.rec_start
         if self.playing:
             return self._play_from + (time.monotonic() - self._play_t0)
         return self.cursor
@@ -2156,7 +2221,7 @@ class RecorderWindow:
         canvas = self.rows[index]["lane"]
         if not isinstance(canvas, tk.Canvas):
             return
-        if self.recording and index == self.rec_track:
+        if (self.recording or self._arming) and index == self.rec_track:
             self._drop_live_items()
         canvas.delete("all")
         width = canvas.winfo_width()
@@ -2180,7 +2245,9 @@ class RecorderWindow:
         if self.recording and index == self.rec_track:
             self._grow_live()
             self._paint_live_wave(canvas, height)
-        if not track.clips and not (self.recording and index == self.rec_track):
+        elif self._arming and index == self.rec_track:
+            self._mark_record_armed()
+        if not track.clips and not (self.recording and index == self.rec_track) and not (self._arming and index == self.rec_track):
             hint = "● uzbrojona: NAGRAJ zapisze tutaj" if index == self.armed else "pusta ścieżka"
             canvas.create_text(12, height / 2, text=hint, fill=MUTE, anchor="w", font=(FONT_UI, 9))
 
@@ -2286,32 +2353,100 @@ class RecorderWindow:
     def _paint_live_wave(self, canvas: tk.Canvas, height: int) -> None:
         canvas.delete("livewave")
         peaks = self._live_peaks
-        if not peaks:
+        elapsed = self._rec_elapsed() if self.recording else 0.0
+        known, drawn = live_wave_span(elapsed, len(peaks))
+        if drawn <= 0.0:
+            canvas.tag_raise("livelabel")
+            canvas.tag_raise("head")
             return
-        data_end = self.rec_start + len(peaks) / 100.0
         lo = max(0.0, self._x(self.rec_start))
-        hi = min(float(canvas.winfo_width()), self._x(data_end))
+        hi = min(float(canvas.winfo_width() or 0), self._x(self.rec_start + drawn))
         if hi - lo < 1:
+            canvas.tag_raise("livelabel")
+            canvas.tag_raise("head")
             return
         top = 2 + self.clip_bar
         mid = (top + height - 2) / 2
         half_max = max(4.0, (height - 2 - top) / 2 - 2)
-        self._stroke_wave(canvas, lo, hi, mid, half_max, INK, "livewave", lambda t: self._level_at(peaks, t - self.rec_start))
+
+        def level_at(t: float) -> float:
+            local = t - self.rec_start
+            if not peaks:
+                return 0.2
+            if local >= known:
+                return peaks[-1]
+            return self._level_at(peaks, local)
+
+        self._stroke_wave(canvas, lo, hi, mid, half_max, INK, "livewave", level_at)
         canvas.tag_raise("livelabel")
+        canvas.tag_raise("headline")
         canvas.tag_raise("head")
 
     def _move_head(self, seconds: float) -> None:
         canvases = [self.ruler, self.beat_lane] + [row["lane"] for row in self.rows if isinstance(row.get("lane"), tk.Canvas)]
         x = self._x(seconds)
+        color = REC if self.recording or self._arming else INK
         for canvas in canvases:
             if not isinstance(canvas, tk.Canvas):
                 continue
-            canvas.delete("head")
-            height = canvas.winfo_height()
-            canvas.create_line(x, 0, x, height, fill=INK if not self.recording else REC, width=2 if canvas is self.ruler else 1, tags="head")
-        if canvases and isinstance(self.ruler, tk.Canvas):
-            self.ruler.create_polygon(x - 6, 0, x + 6, 0, x, 9, fill=INK, outline="", tags="head")
+            height = max(canvas.winfo_height(), 1)
+            width = 2 if canvas is self.ruler else 1
+            lines = canvas.find_withtag("headline")
+            if lines:
+                try:
+                    canvas.coords(lines[0], x, 0, x, height)
+                    canvas.itemconfigure(lines[0], fill=color, width=width)
+                    canvas.tag_raise(lines[0])
+                except tk.TclError:
+                    canvas.delete("headline")
+                    lines = ()
+            if not lines:
+                canvas.create_line(x, 0, x, height, fill=color, width=width, tags=("head", "headline"))
+        if isinstance(self.ruler, tk.Canvas):
+            caps = self.ruler.find_withtag("headcap")
+            if caps:
+                try:
+                    self.ruler.coords(caps[0], x - 6, 0, x + 6, 0, x, 9)
+                    self.ruler.tag_raise(caps[0])
+                except tk.TclError:
+                    self.ruler.delete("headcap")
+                    caps = ()
+            if not caps:
+                self.ruler.create_polygon(x - 6, 0, x + 6, 0, x, 9, fill=INK, outline="", tags=("head", "headcap"))
         self.clock.set(clock_text(seconds))
+
+    def _clear_record_mark(self) -> None:
+        self._drop_live_items()
+        if not (0 <= self.rec_track < len(self.rows)):
+            return
+        canvas = self.rows[self.rec_track].get("lane")
+        if isinstance(canvas, tk.Canvas):
+            canvas.delete("livebox")
+            canvas.delete("livelabel")
+            canvas.delete("livewave")
+
+    def _mark_record_armed(self) -> None:
+        """Red take the moment Record is pressed, before the mix and the mic are ready."""
+        if not (0 <= self.rec_track < len(self.rows)):
+            return
+        canvas = self.rows[self.rec_track].get("lane")
+        if not isinstance(canvas, tk.Canvas):
+            return
+        height = max(canvas.winfo_height(), 4)
+        x1 = self._x(self.rec_start)
+        x2 = x1 + max(8.0, 0.15 * self.pps)
+        top = 2 + self.clip_bar
+        self._live_canvas = canvas
+        canvas.delete("livebox")
+        canvas.delete("livelabel")
+        self._live_rect = canvas.create_rectangle(x1, 2, x2, height - 2, fill="#5a1d14", outline=REC, tags="livebox")
+        self._live_bar = canvas.create_rectangle(x1, 2, x2, top, fill=REC, outline="", tags="livelabel")
+        canvas.create_text(
+            max(x1, 0) + 5, 2 + self.clip_bar / 2, text="NAGRYWAM", fill=INK, anchor="w",
+            font=(FONT_UI, 8, "bold"), tags="livelabel",
+        )
+        canvas.tag_raise("livelabel")
+        self._move_head(self.rec_start)
 
     def _follow(self, seconds: float) -> None:
         span = self._lane_width() / max(self.pps, 0.001)
@@ -2876,6 +3011,8 @@ class RecorderWindow:
                 stop_capture(self.capture)
                 self.capture = None
             self.recording = False
+            self._clear_record_mark()
+            self.rec_button.configure(text="● NAGRAJ")
             self._paint_lamp()
             self.status.set(self._safe_listen_error(problem))
             return
@@ -2920,13 +3057,17 @@ class RecorderWindow:
         self._play_token += 1
         token = self._play_token
         self._arming = True
+        self.rec_button.configure(text="● NAGRYWA")
         self.status.set("Przygotowuję nagranie: bit i pozostałe ścieżki…")
+        self._mark_record_armed()
         threading.Thread(target=self._prepare_play, args=(token, self.rec_start, plan, beat_id, local, path), daemon=True).start()
 
     def stop(self) -> None:
         if self._arming:
             self._play_token += 1
             self._arming = False
+            self._clear_record_mark()
+            self.rec_button.configure(text="● NAGRAJ")
             self.status.set("Przerwane.")
         self._cancel_tick()
         if self.recording:
@@ -3002,6 +3143,19 @@ class RecorderWindow:
         self._live_peaks.extend(block_peaks(samples))
         self._live_off = start + len(pcm) // 960 * 960
 
+    def _pull_live_peaks(self) -> None:
+        """Prefer mic frames from ffmpeg's stdout. The WAV file is the fallback when that pipe is empty."""
+        proc = self.capture
+        live = getattr(proc, "live_peaks", None) if proc is not None else None
+        if isinstance(live, list) and live:
+            count = len(live)
+            self._live_peaks = live[:count]
+            return
+        try:
+            self._read_live()
+        except Exception:
+            pass
+
     def _tick(self) -> None:
         self._tick_id = None
         if self.recording:
@@ -3017,17 +3171,11 @@ class RecorderWindow:
             elapsed = self._rec_elapsed()
             cap = max_take_seconds(self.tier)
             head = self.rec_start + elapsed
+            self._pull_live_peaks()
             self._follow(head)
-            now = time.monotonic()
-            if now - self._live_wave_at >= 0.2:
-                try:
-                    self._read_live()
-                except Exception:
-                    pass
-                lane = self.rows[self.rec_track].get("lane") if 0 <= self.rec_track < len(self.rows) else None
-                if isinstance(lane, tk.Canvas):
-                    self._paint_live_wave(lane, lane.winfo_height())
-                self._live_wave_at = now
+            lane = self.rows[self.rec_track].get("lane") if 0 <= self.rec_track < len(self.rows) else None
+            if isinstance(lane, tk.Canvas):
+                self._paint_live_wave(lane, max(lane.winfo_height(), 4))
             self._grow_live()
             self._move_head(head)
             self.clock.set(f"{clock_text(head)}  ● {elapsed:.1f}/{cap} s")
@@ -4907,6 +5055,22 @@ if __name__ == "__main__":
             raise SystemExit("bufor mikrofonu")
         if mic[mic.index("-rtbufsize") + 1] != MIC_RTBUF:
             raise SystemExit("bufor czasu rzeczywistego")
+        if not any("flush_packets" in part for part in mic) or "pipe:1" not in mic:
+            raise SystemExit("fala na żywo")
+        if mic.index(str(Path("a.wav"))) > mic.index("pipe:1"):
+            raise SystemExit("wav przed podglądem")
+        timed = capture_argv("ffmpeg", "Mic", Path("a.wav"), 0.4)
+        if timed.count("-t") != 2 or timed.count("0.4") != 2:
+            raise SystemExit("czas nagrania")
+        known, drawn = live_wave_span(1.5, 10)
+        if abs(known - 0.1) > 1e-9 or abs(drawn - 1.5) > 1e-9 or live_wave_span(0.4, 0) != (0.0, 0.4):
+            raise SystemExit(f"zasięg fali {known} {drawn}")
+        loud = array.array("h", [16000] * 480)
+        if sys.byteorder != "little":
+            loud.byteswap()
+        got = peaks_from_pcm(loud.tobytes())
+        if len(got) != 1 or abs(got[0] - (16000 / 32768)) > 0.001 or peaks_from_pcm(b"\x00\x01") != []:
+            raise SystemExit(f"szczyty na żywo {got}")
         if capture_log_path(Path("x/ujecie-1.wav")) != Path("x/ujecie-1.log"):
             raise SystemExit("log mikrofonu")
         with __import__("tempfile").TemporaryDirectory() as raw_dir:
