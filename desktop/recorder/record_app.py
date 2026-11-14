@@ -336,6 +336,22 @@ def login_hint(state: str) -> str:
     return LOGIN_HINT_FRESH
 
 
+def gold_offer(tier: object) -> str:
+    """Link under Studio Offline. Gold already has it, so the link is empty."""
+    name = str(tier or "").upper()
+    if name == "GOLD":
+        return ""
+    if name in ("BRONZE", "SILVER"):
+        return "Ulepsz plan do Gold"
+    return "Kup Premium Gold"
+
+
+def gold_offer_status(tier: object) -> str:
+    if str(tier or "").upper() in ("BRONZE", "SILVER"):
+        return "Studio Offline jest w Gold. Otwieram ulepszenie planu."
+    return "Studio Offline jest w Premium Gold. Otwieram zakup."
+
+
 _INSTANCE_LOCK: object = None
 _INSTANCE_NAME = "Local\\BitRymDym.Nagrywarka"
 
@@ -1402,16 +1418,7 @@ class RecorderWindow:
             self.root.geometry(f"{width}x{height}")
         email = self.email.get().strip()
         self.mode_account.set(email or "Konto")
-        if self.tier == "GOLD":
-            self.offline_enter.configure(
-                text="WEJDŹ", command=lambda: self.choose_mode("offline"),
-                bg=AMBER, fg=ON_AMBER, activebackground=AMBER_SOFT, activeforeground=ON_AMBER,
-            )
-        else:
-            self.offline_enter.configure(
-                text="ZWIĘKSZ PAKIET LUB KUP", command=self._open_upgrade,
-                bg=RACK, fg=SOFT, activebackground=PANEL, activeforeground=INK,
-            )
+        self._sync_gold_offer()
         self.modes_canvas.update_idletasks()
         self.modes_canvas.configure(scrollregion=self.modes_canvas.bbox("all"))
 
@@ -3097,6 +3104,7 @@ class RecorderWindow:
             self.tier = "FREE"
             self.plan_text.set("Plan: zaloguj się.")
             self._sync_add_button()
+            self._sync_gold_offer()
             return
         try:
             payload = self._client().plan_usage()
@@ -3105,8 +3113,10 @@ class RecorderWindow:
             self.tier = "FREE"
             self.plan_text.set(str(error)[:120])
             self._sync_add_button()
+            self._sync_gold_offer()
             return
         self.tier = tier
+        self._sync_gold_offer()
         if self.studio_mode == "offline":
             self.plan_text.set(self._offline_plan_line())
         else:
@@ -4533,12 +4543,13 @@ class RecorderWindow:
         )
         self.offline_enter.pack(anchor="w", padx=14, pady=(0, 4))
         upgrade = tk.Label(
-            offline_actions, text="Zwiększ pakiet lub kup na stronie",
+            offline_actions, text=gold_offer("FREE"),
             bg=PANEL, fg=AMBER, cursor="hand2",
             font=tkfont.Font(self.root, family=FONT_UI, size=11, underline=True),
         )
         upgrade.pack(anchor="w", padx=14, pady=(0, 14))
         upgrade.bind("<Button-1>", lambda _event: self._open_upgrade())
+        self.offline_upgrade = upgrade
 
         def fit_copy(event: tk.Event, labels: tuple[tk.Label, tk.Label] = (online_copy, offline_copy)) -> None:
             wrap = max(220, event.width - 36)
@@ -4569,8 +4580,32 @@ class RecorderWindow:
         mark.create_rectangle(3, 7, 13, 15, outline=AMBER, fill=RACK, width=1)
         return mark
 
+    def _sync_gold_offer(self) -> None:
+        offer = gold_offer(self.tier)
+        link = getattr(self, "offline_upgrade", None)
+        if link is not None:
+            if offer:
+                link.configure(text=offer)
+                if not link.winfo_manager():
+                    link.pack(anchor="w", padx=14, pady=(0, 14))
+            elif link.winfo_manager():
+                link.pack_forget()
+        button = getattr(self, "offline_enter", None)
+        if button is None:
+            return
+        if self.tier == "GOLD":
+            button.configure(
+                text="WEJDŹ", command=lambda: self.choose_mode("offline"),
+                bg=AMBER, fg=ON_AMBER, activebackground=AMBER_SOFT, activeforeground=ON_AMBER,
+            )
+            return
+        button.configure(
+            text=offer, command=self._open_upgrade,
+            bg=RACK, fg=SOFT, activebackground=PANEL, activeforeground=INK,
+        )
+
     def _open_upgrade(self) -> None:
-        self.mode_status.set("Studio Offline jest tylko w Premium Gold. Otwieram stronę, żeby zwiększyć pakiet albo kupić.")
+        self.mode_status.set(gold_offer_status(self.tier))
         self._open_site("/premium")
 
     def choose_mode(self, mode: str) -> None:
@@ -5435,6 +5470,12 @@ def password_keep_self_test() -> None:
         raise SystemExit("hasło: tekst logowania")
     if REMEMBER_LABEL != "Zapamiętaj hasło na 48 godzin":
         raise SystemExit("hasło: pole")
+    if gold_offer("FREE") != "Kup Premium Gold" or gold_offer("") != "Kup Premium Gold" or gold_offer(None) != "Kup Premium Gold":
+        raise SystemExit("oferta: brak premium")
+    if gold_offer("BRONZE") != "Ulepsz plan do Gold" or gold_offer("silver") != "Ulepsz plan do Gold":
+        raise SystemExit("oferta: bronze albo silver")
+    if gold_offer("GOLD") != "" or "kup" not in gold_offer_status("FREE").lower() or "ulepszenie" not in gold_offer_status("SILVER"):
+        raise SystemExit("oferta: gold")
     old_session = SESSION
     session_dir = Path(__import__("tempfile").mkdtemp())
     live = time.time()
