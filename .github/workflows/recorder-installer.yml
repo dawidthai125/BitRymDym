@@ -13,7 +13,7 @@ on:
     inputs:
       base_installer_url:
         description: "Poprzedni instalator (źródło czcionek)"
-        default: "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup.exe"
+        default: "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup-2026.11.13.17.exe"
       ffmpeg_tag:
         description: "Wersja ffmpeg (GyanD/codexffmpeg, build full shared z ffplay)"
         default: "9.0.2"
@@ -53,7 +53,7 @@ jobs:
 
       - name: Czcionki i ffmpeg z poprzedniego instalatora
         env:
-          BASE_URL: ${{ inputs.base_installer_url || 'https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup.exe' }}
+          BASE_URL: ${{ inputs.base_installer_url || 'https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup-2026.11.13.17.exe' }}
         run: |
           $base = Join-Path $env:RUNNER_TEMP "base"
           Invoke-WebRequest -Uri $env:BASE_URL -OutFile (Join-Path $env:RUNNER_TEMP "base.exe")
@@ -113,55 +113,62 @@ jobs:
           if ($text -notmatch "ffmpeg=") { throw "smoke: brak ffmpeg w wyniku" }
           if ($text -notmatch "ffplay=" -or $text -match "ffplay=None") { throw "smoke: program nie widzi ffplay" }
 
-      - name: Inno Setup
+      - name: Velopack 1.2.161
         working-directory: desktop/recorder
         run: |
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
-          & $iscc "installer\BitRymDym.iss"
-          if ($LASTEXITCODE) { throw "iscc" }
-          $exe = "installer\output\BitRymDym-Setup.exe"
-          (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower() + "  BitRymDym-Setup.exe" | Out-File "installer\output\BitRymDym-Setup.exe.sha256" -Encoding ascii
-          Get-ChildItem installer\output | Select-Object Name, Length | Format-Table -AutoSize | Out-String | Write-Host
+          dotnet tool install -g vpk --version 1.2.161
+          if ($LASTEXITCODE) { throw "vpk install" }
+          $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
+          $ver = (Select-String -Path updater.py -Pattern 'APP_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          if ($ver -notmatch '^\d+\.\d+\.\d+$') { throw "vpk chce wersję z trzech liczb, jest $ver" }
+          $out = "installer\velopack"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $notes = Join-Path $env:RUNNER_TEMP "brd-notes.md"
+          Set-Content -Path $notes -Encoding utf8NoBOM -Value "Update.exe czeka na zamknięcie, wgrywa paczkę i sam otwiera program. Ten Setup otwórz raz ręcznie."
+          vpk pack --packId BitRymDym.Nagrywarka --packVersion $ver --packDir dist\BitRymDym --mainExe BitRymDym.exe --packTitle BitRymDym --icon assets\cassette.ico --outputDir $out --channel win --runtime win-x64 --shortcuts Desktop,StartMenuRoot --releaseNotes $notes
+          if ($LASTEXITCODE) { throw "vpk pack" }
+          Remove-Item "$out\*Portable.zip" -ErrorAction SilentlyContinue
+          $setup = Get-ChildItem $out -Filter *Setup.exe | Select-Object -First 1
+          if (-not $setup) { throw "brak Setup.exe" }
+          Copy-Item $setup.FullName "$out\BitRymDym-Setup.exe" -Force
+          (Get-FileHash "$out\BitRymDym-Setup.exe" -Algorithm SHA256).Hash.ToLower() + "  BitRymDym-Setup.exe" | Out-File "$out\BitRymDym-Setup.exe.sha256" -Encoding ascii
+          if (-not (Test-Path "$out\releases.win.json")) { throw "brak releases.win.json" }
+          $nupkg = Get-ChildItem $out -Filter *full.nupkg | Select-Object -First 1
+          if (-not $nupkg) { throw "brak pelnej paczki" }
+          Get-ChildItem $out | Select-Object Name, Length | Format-Table -AutoSize | Out-String | Write-Host
 
-      - name: Cicha instalacja nowego instalatora i smoke zainstalowanej wersji
+      - name: Cicha instalacja Velopack i smoke
         working-directory: desktop/recorder
         run: |
-          $dir = Join-Path $env:RUNNER_TEMP "new"
-          $p = Start-Process "installer\output\BitRymDym-Setup.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$dir" -Wait -PassThru
-          if ($p.ExitCode -ne 0) { throw "nowy instalator: kod $($p.ExitCode)" }
-          foreach ($need in "BitRymDym.exe","ffmpeg.exe","ffplay.exe","FFMPEG-LICENSE.txt","fonts") { if (-not (Test-Path (Join-Path $dir $need))) { throw "po instalacji brak: $need" } }
-          & (Join-Path $dir "ffplay.exe") -hide_banner -version | Select-Object -First 1 | Write-Host
-          & (Join-Path $dir "ffmpeg.exe") -hide_banner -version | Select-Object -First 1 | Write-Host
+          Get-Process BitRymDym -ErrorAction SilentlyContinue | Stop-Process -Force
+          $setup = "installer\velopack\BitRymDym-Setup.exe"
+          $p = Start-Process $setup -ArgumentList "--silent" -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); throw "Setup: czas" }
+          if ($p.ExitCode -ne 0) { throw "Setup: kod $($p.ExitCode)" }
+          $root = Join-Path $env:LOCALAPPDATA "BitRymDym.Nagrywarka"
+          foreach ($need in @("Update.exe","current\BitRymDym.exe","current\ffmpeg.exe","current\ffplay.exe","current\fonts")) {
+            if (-not (Test-Path (Join-Path $root $need))) { throw "po instalacji brak: $need" }
+          }
+          "Update.exe jest poziom wyżej niż current" | Write-Host
+          Get-Process BitRymDym -ErrorAction SilentlyContinue | Stop-Process -Force
           $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
           Remove-Item $note -ErrorAction SilentlyContinue
           $env:BITRYMDYM_UI_SMOKE = "1"
-          $q = Start-Process (Join-Path $dir "BitRymDym.exe") -PassThru
+          $q = Start-Process (Join-Path $root "current\BitRymDym.exe") -PassThru
           if (-not $q.WaitForExit(90000)) { $q.Kill(); throw "smoke po instalacji: czas" }
           if (-not (Test-Path $note)) { throw "smoke po instalacji: brak wyniku" }
           $installed = Get-Content $note -Raw
           $installed | Write-Host
           if ($installed -notmatch "ffplay=" -or $installed -match "ffplay=None") { throw "po instalacji program nie widzi ffplay" }
-          if ($installed -notmatch "\\new\\ffmpeg\.exe" -or $installed -notmatch "\\new\\ffplay\.exe") { throw "po instalacji program nie używa dołączonego ffmpeg/ffplay" }
-          # Ścieżka samoaktualizacji: instalator z tymi samymi argumentami co updater.py (/UPDATE=1) ma uruchomić program.
-          # Plik, którego nowa budowa nie zawiera, ma zniknąć (przeskok wersji nie zostawia plików pośrednich).
-          Remove-Item $note -ErrorAction SilentlyContinue
-          $env:BITRYMDYM_UI_SMOKE = "1"
-          $junk = Join-Path $dir "stary-plik-posredniej-wersji.txt"
-          Set-Content -Path $junk -Value "stary" -Encoding ascii
-          $u = Start-Process "installer\output\BitRymDym-Setup.exe" -ArgumentList "/SILENT","/SUPPRESSMSGBOXES","/NORESTART","/UPDATE=1","/DIR=$dir" -Wait -PassThru
-          if ($u.ExitCode -ne 0) { throw "aktualizacja: kod $($u.ExitCode)" }
-          if (Test-Path $junk) { throw "aktualizacja zostawiła plik, którego nie ma w nowej wersji" }
-          foreach ($need in "BitRymDym.exe","ffmpeg.exe","ffplay.exe","fonts") { if (-not (Test-Path (Join-Path $dir $need))) { throw "po aktualizacji brak: $need" } }
-          for ($i = 0; $i -lt 40 -and -not (Test-Path $note); $i++) { Start-Sleep -Seconds 2 }
-          if (-not (Test-Path $note)) { throw "aktualizacja (/UPDATE=1) nie uruchomiła programu po instalacji" }
-          "aktualizacja /UPDATE=1: program uruchomiony po instalacji" | Write-Host
+          if ($installed -notmatch "ffmpeg\.exe") { throw "po instalacji program nie widzi ffmpeg" }
 
       - uses: actions/upload-artifact@v4
         with:
           name: BitRymDym-Setup
           path: |
-            desktop/recorder/installer/output/BitRymDym-Setup.exe
-            desktop/recorder/installer/output/BitRymDym-Setup.exe.sha256
+            desktop/recorder/installer/velopack/BitRymDym-Setup.exe
+            desktop/recorder/installer/velopack/BitRymDym-Setup.exe.sha256
+            desktop/recorder/installer/velopack/releases.win.json
+            desktop/recorder/installer/velopack/*full.nupkg
           retention-days: 7
           if-no-files-found: error

@@ -30,9 +30,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.13.17"
+APP_VERSION = "2026.11.18"
+PACK_ID = "BitRymDym.Nagrywarka"
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
+FEED_URL = R2_BASE + "feed/"
 MANIFEST_URL = R2_BASE + "latest.json"
 INSTALLER_PREFIX = R2_BASE
 UPDATE_PUBLIC_KEY = bytes.fromhex("6155276db02091971473e8d771a6670221d2b9a2c31786dffb9c592cca0ddbe9")
@@ -173,16 +175,59 @@ def fetch_manifest(timeout: float = 8.0) -> bytes:
         return response.read(65_536)
 
 
+def fetch_feed(timeout: float = 8.0) -> bytes:
+    request = urllib.request.Request(
+        f"{FEED_URL}releases.win.json?t={int(time.time())}",
+        headers={"Cache-Control": "no-cache", "User-Agent": "BitRymDymRecorder"},
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return response.read(1_000_000)
+
+
+def parse_feed(raw: bytes, current: str = APP_VERSION, feed: str = FEED_URL) -> Update | None:
+    """Newest full package in a Velopack releases.win.json, or None when nothing is newer."""
+    data = json.loads(raw.decode("utf-8"))
+    best: Update | None = None
+    base = feed if feed.endswith("/") else feed + "/"
+    if not base.startswith("https://") or not base.startswith(R2_BASE):
+        raise ValueError("adres")
+    for asset in data.get("Assets") or []:
+        if str(asset.get("Type")) != "Full":
+            continue
+        version = str(asset["Version"])
+        version_key(version)
+        if not is_newer(version, current):
+            continue
+        name = str(asset["FileName"])
+        if not name.endswith(".nupkg") or "/" in name or "\\" in name or ".." in name:
+            raise ValueError("plik")
+        sha256 = str(asset["SHA256"]).lower()
+        size = int(asset["Size"])
+        if len(sha256) != 64 or any(ch not in "0123456789abcdef" for ch in sha256):
+            raise ValueError("suma")
+        if not 1_000_000 <= size <= MAX_INSTALLER_BYTES:
+            raise ValueError("rozmiar")
+        notes = str(asset.get("NotesMarkdown") or "")[:400]
+        candidate = Update(version=version, url=base + name, sha256=sha256, size=size, notes=notes)
+        if best is None or version_key(candidate.version) > version_key(best.version):
+            best = candidate
+    return best
+
+
 def check_for_update(
     fetch: Callable[[], bytes] | None = None,
     current: str = APP_VERSION,
     public: bytes = UPDATE_PUBLIC_KEY,
     prefix: str = INSTALLER_PREFIX,
 ) -> Update | None:
-    """A newer, correctly signed build, or None. Network and format problems return None, not an error."""
+    """A newer Velopack package, or None. Network and format problems return None, not an error.
+
+    public and prefix stay in the signature so older callers still import. The feed check uses SHA-256
+    from releases.win.json. latest.json remains the signed file for the manual Setup.exe link.
+    """
+    del public, prefix
     try:
-        update = parse_manifest((fetch or fetch_manifest)(), public, prefix)
-        return update if is_newer(update.version, current) else None
+        return parse_feed((fetch or fetch_feed)(), current)
     except Exception:
         return None
 
@@ -195,7 +240,8 @@ def download(
 ) -> Path:
     """Installer into dest_dir, accepted only with the signed size and SHA-256."""
     dest_dir.mkdir(parents=True, exist_ok=True)
-    final = dest_dir / f"BitRymDym-Setup-{update.version}.exe"
+    name = Path(update.url.split("?", 1)[0]).name
+    final = dest_dir / (name if name.endswith(".nupkg") else f"BitRymDym-Setup-{update.version}.exe")
     part = final.with_suffix(".part")
     request = urllib.request.Request(update.url, headers={"User-Agent": "BitRymDymRecorder"})
     digest = hashlib.sha256()
@@ -247,160 +293,65 @@ def start_installer(path: Path) -> subprocess.Popen[bytes]:
     )
 
 
-TASK_NAME = "BitRymDymUpdate"
+def installed_root() -> Path | None:
+    """Velopack layout: Update.exe sits above current\\BitRymDym.exe, next to packages."""
+    if os.name != "nt":
+        return None
+    exe = Path(sys.executable).resolve()
+    if exe.parent.name.lower() != "current":
+        return None
+    root = exe.parent.parent
+    if not (root / "Update.exe").is_file():
+        return None
+    return root
 
 
-def _xml_text(value: str) -> str:
-    return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+def packages_dir() -> Path | None:
+    root = installed_root()
+    return None if root is None else root / "packages"
 
 
-def installer_after_exit_command(path: Path) -> str:
-    """Cmd helper, no PowerShell. First line writes the log, then it waits, installs, and opens the app.
-
-    Task Scheduler starts this file, so it is not a child of the recorder. The old helper was a
-    hidden PowerShell child. It died with the recorder, update.log was never created, and nothing
-    opened the program again. ASCII only.
-    """
-    setup = str(path).replace('"', "").replace("&", "").replace("^", "")
-    lines = [
-        "@echo off",
-        "setlocal",
-        'set "LOG=%TEMP%\\BitRymDym-update\\update.log"',
-        'if not exist "%TEMP%\\BitRymDym-update" mkdir "%TEMP%\\BitRymDym-update"',
-        '>>"%LOG%" echo start',
-        "set /a N=0",
-        ":waitloop",
-        'tasklist /FI "PID eq %1" 2>nul | find "%1" >nul',
-        "if errorlevel 1 goto gone",
-        "set /a N+=1",
-        "if %N% GEQ 60 goto gone",
-        "ping 127.0.0.1 -n 2 >nul",
-        "goto waitloop",
-        ":gone",
-        '>>"%LOG%" echo waited',
-        f'start "BitRymDym" /WAIT "{setup}" /UPDATE=1 /NORESTART',
-        'set "CODE=%ERRORLEVEL%"',
-        '>>"%LOG%" echo exit %CODE%',
-        'set "EXE=%LOCALAPPDATA%\\BitRymDym\\Nagrywarka\\BitRymDym.exe"',
-        'if exist "%EXE%" (',
-        '  tasklist /FI "IMAGENAME eq BitRymDym.exe" | find /I "BitRymDym.exe" >nul',
-        '  if errorlevel 1 start "" "%EXE%"',
-        '  >>"%LOG%" echo opened',
-        ")",
-        f'schtasks /Delete /F /TN "{TASK_NAME}" >nul 2>&1',
-        "exit /b %CODE%",
-        "",
+def update_exe_args(update_exe: Path, package: Path, root: Path, packages: Path, pid: int) -> list[str]:
+    """Same command Kosztowny Tajski runs. No --silent and no --norestart, so Update.exe restarts the app."""
+    return [
+        str(update_exe),
+        "apply",
+        "--package",
+        str(package),
+        "--waitPid",
+        str(int(pid)),
+        "--rootDir",
+        str(root),
+        "--packageDir",
+        str(packages),
     ]
-    return "\r\n".join(lines)
-
-
-def task_xml(script: Path, pid: int) -> str:
-    """Task Scheduler runs cmd. The service is the parent, not the recorder, so exiting cannot kill it."""
-    root = os.environ.get("SystemRoot", r"C:\Windows")
-    cmd = str(Path(root) / "System32" / "cmd.exe")
-    # /s strips one outer pair, so the inner quotes survive when the path has spaces.
-    args = f'/d /s /c " "{script}" {int(pid)}"'
-    return f"""<?xml version="1.0" encoding="UTF-16"?>
-<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <RegistrationInfo>
-    <Description>BitRymDym update</Description>
-  </RegistrationInfo>
-  <Triggers>
-    <TimeTrigger>
-      <StartBoundary>2020-01-01T00:00:00</StartBoundary>
-      <Enabled>true</Enabled>
-    </TimeTrigger>
-  </Triggers>
-  <Principals>
-    <Principal id="Author">
-      <LogonType>InteractiveToken</LogonType>
-      <RunLevel>LeastPrivilege</RunLevel>
-    </Principal>
-  </Principals>
-  <Settings>
-    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
-    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
-    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
-    <AllowHardTerminate>true</AllowHardTerminate>
-    <StartWhenAvailable>true</StartWhenAvailable>
-    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
-    <AllowStartOnDemand>true</AllowStartOnDemand>
-    <Enabled>true</Enabled>
-    <Hidden>true</Hidden>
-    <RunOnlyIfIdle>false</RunOnlyIfIdle>
-    <WakeToRun>false</WakeToRun>
-    <ExecutionTimeLimit>PT4H</ExecutionTimeLimit>
-    <Priority>7</Priority>
-  </Settings>
-  <Actions Context="Author">
-    <Exec>
-      <Command>{_xml_text(cmd)}</Command>
-      <Arguments>{_xml_text(args)}</Arguments>
-    </Exec>
-  </Actions>
-</Task>
-"""
-
-
-def _wait_for_helper_log(log: Path, timeout: float = 8.0) -> None:
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        try:
-            text = log.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            text = ""
-        if "start" in text:
-            return
-        time.sleep(0.2)
-    raise OSError("pomocnik aktualizacji nie wstał")
-
-
-def _run_schtasks(args: list[str]) -> int:
-    schtasks = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "schtasks.exe"
-    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-    try:
-        done = subprocess.run(
-            [str(schtasks), *args],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=20,
-            creationflags=flags,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise OSError("harmonogram zadań nie odpowiedział") from error
-    return done.returncode
 
 
 def schedule_installer(path: Path) -> subprocess.Popen[bytes] | None:
-    """On Windows, ask Task Scheduler to start the helper and return only after it has logged that it is alive."""
-    if os.name != "nt":
-        return start_installer(path)
-    folder = Path(os.environ.get("TEMP", ".")) / "BitRymDym-update"
-    folder.mkdir(parents=True, exist_ok=True)
-    script = folder / "apply-update.cmd"
-    log = folder / "update.log"
-    xml_path = folder / "apply-update.xml"
-    try:
-        log.unlink()
-    except OSError:
-        pass
-    try:
-        script.write_bytes(installer_after_exit_command(path).encode("ascii"))
-    except UnicodeEncodeError as error:
-        raise OSError("ścieżka instalatora nie jest ASCII") from error
-    xml_path.write_bytes(task_xml(script, os.getpid()).encode("utf-16"))
-    if _run_schtasks(["/Create", "/F", "/TN", TASK_NAME, "/XML", str(xml_path)]) != 0:
-        raise OSError("nie udało się zapisać zadania aktualizacji")
-    if _run_schtasks(["/Run", "/TN", TASK_NAME]) != 0:
-        _run_schtasks(["/Delete", "/F", "/TN", TASK_NAME])
-        raise OSError("nie udało się wystartować zadania aktualizacji")
-    try:
-        _wait_for_helper_log(log)
-    except OSError:
-        _run_schtasks(["/Delete", "/F", "/TN", TASK_NAME])
-        raise
+    """Start the Update.exe that Setup already installed, then return. The caller exits without waiting."""
+    root = installed_root()
+    if root is None:
+        raise OSError("brak Update.exe")
+    update_exe = root / "Update.exe"
+    packages = root / "packages"
+    packages.mkdir(parents=True, exist_ok=True)
+    target = packages / path.name
+    if path.resolve() != target.resolve():
+        import shutil
+        shutil.copy2(path, target)
+    args = update_exe_args(update_exe, target, root, packages, os.getpid())
+    if "--silent" in args or "--norestart" in args:
+        raise OSError("zła komenda Update.exe")
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    subprocess.Popen(
+        args,
+        cwd=str(root),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        close_fds=True,
+        creationflags=flags,
+    )
     return None
 
 
@@ -439,27 +390,32 @@ def self_test() -> None:
         except ValueError:
             continue
         raise SystemExit(f"zła wersja przyjęta {bad!r}")
-    argv = installer_argv(Path("a.exe"))
-    if "/UPDATE=1" not in argv or "/NORESTART" not in argv or "/SILENT" in argv or "/SUPPRESSMSGBOXES" in argv:
-        raise SystemExit("argumenty instalatora")
-    waited = installer_after_exit_command(Path(r"C:\Temp\BitRymDym-Setup-2026.11.13.7.exe"))
-    start_at = waited.find("echo start")
-    wait_at = waited.find(":waitloop")
-    if start_at < 0 or wait_at < 0 or start_at > wait_at or "/UPDATE=1" not in waited or "BitRymDym-Setup-2026.11.13.7.exe" not in waited:
-        raise SystemExit("instalator ma ruszyć dopiero po zejściu procesu")
-    if "/SILENT" in waited or "/SUPPRESSMSGBOXES" in waited or "powershell" in waited.lower():
-        raise SystemExit("instalator aktualizacji ma być widoczny")
-    if "/WAIT" not in waited or "BitRymDym\\Nagrywarka\\BitRymDym.exe" not in waited or "if errorlevel 1 start" not in waited:
-        raise SystemExit("po instalacji program ma wstać sam")
-    if "update.log" not in waited or "echo opened" not in waited or TASK_NAME not in waited or "schtasks /Delete" not in waited:
-        raise SystemExit("błąd instalacji ma być widoczny")
-    waited.encode("ascii")
-    xml = task_xml(Path(r"C:\Temp\apply-update.cmd"), 4242)
-    if "powershell" in xml.lower() or "InteractiveToken" not in xml or "LeastPrivilege" not in xml or "HighestAvailable" in xml:
-        raise SystemExit("pomocnik ma iść przez Harmonogram, bez administratora")
-    if "4242" not in xml or "apply-update.cmd" not in xml or "cmd.exe" not in xml or "AllowStartOnDemand" not in xml:
-        raise SystemExit("zadanie ma odpalić cmd z numerem procesu")
-    xml.encode("utf-16")
+    args = update_exe_args(
+        Path(r"C:\App\Update.exe"),
+        Path(r"C:\App\packages\BitRymDym.Nagrywarka-2026.11.18-full.nupkg"),
+        Path(r"C:\App"),
+        Path(r"C:\App\packages"),
+        4242,
+    )
+    if args[1] != "apply" or "--silent" in args or "--norestart" in args or "4242" not in args:
+        raise SystemExit("Update.exe ma czekać na proces i sam otworzyć program")
+    if "--package" not in args or "--waitPid" not in args or "--rootDir" not in args or "--packageDir" not in args:
+        raise SystemExit("komenda Update.exe")
+    if "powershell" in " ".join(args).lower() or "cmd.exe" in " ".join(args).lower():
+        raise SystemExit("aktualizacja nie może iść przez skrypt")
+    feed = (
+        '{"Assets":['
+        '{"PackageId":"BitRymDym.Nagrywarka","Version":"2026.11.17","Type":"Full",'
+        '"FileName":"old-full.nupkg","SHA256":"' + ("ab" * 32) + '","Size":2000000},'
+        '{"PackageId":"BitRymDym.Nagrywarka","Version":"2026.11.19","Type":"Full",'
+        '"FileName":"new-full.nupkg","SHA256":"' + ("cd" * 32) + '","Size":2000000,"NotesMarkdown":"wraca"}'
+        "]}"
+    )
+    got = parse_feed(feed.encode(), "2026.11.18")
+    if got is None or got.version != "2026.11.19" or not got.url.endswith("/feed/new-full.nupkg") or got.notes != "wraca":
+        raise SystemExit("feed")
+    if parse_feed(feed.encode(), "2026.11.19") is not None:
+        raise SystemExit("feed nie może cofać wersji")
     print("updater self-test ok")
 
 

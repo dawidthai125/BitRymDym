@@ -4860,7 +4860,8 @@ class RecorderWindow:
             self.root.after(0, lambda: self._set_download_progress(percent))
 
         try:
-            path = updater.download(update, Path(os.environ.get("TEMP", ".")) / "BitRymDym-update", progress)
+            folder = updater.packages_dir() or Path(os.environ.get("TEMP", ".")) / "BitRymDym-update"
+            path = updater.download(update, folder, progress)
         except NETWORK_ERRORS as error:
             message = network_message(error)
         except ValueError:
@@ -4911,11 +4912,10 @@ class RecorderWindow:
         if path is None:
             return
         if self._update_left > 0:
-            self.update_var.set(f"Zamykam za {self._update_left} s. Potem okno instalacji.")
+            self.update_var.set(f"Zamykam za {self._update_left} s. Update.exe wgra i otworzy program.")
             self.update_gate_text.set(
                 f"Pobrane. Program zamknie się za {self._update_left} s.\n\n"
-                "Potem na wierzchu będzie okno instalacji z paskiem. Zostaw je.\n"
-                "Jak pasek dojdzie do końca, program sam się otworzy."
+                "Update.exe poczeka, aż ten proces zejdzie, wgra paczkę i sam otworzy BitRymDym."
             )
             self._update_left -= 1
             self.root.after(1000, self._count_update)
