@@ -270,6 +270,11 @@ def footer_copy_ok() -> bool:
     return FOOTER_CREDIT == "© D.T.T (TajskiProjects.pl). Wszystkie prawa zastrzeżone."
 
 
+def wants_remember(value: object) -> bool:
+    """Missing flag keeps the saved login. Only an explicit 0 drops it on exit."""
+    return str(value or "") != "0"
+
+
 _INSTANCE_LOCK: object = None
 _INSTANCE_NAME = "Local\\BitRymDym.Nagrywarka"
 
@@ -842,7 +847,7 @@ def supabase_password_grant(url: str, anon_key: str, email: str, password: str) 
     return {"access_token": token, "refresh_token": str(payload.get("refresh_token") or "")}
 
 
-def save_session(url: str, anon_key: str, email: str, grant: dict[str, str]) -> None:
+def save_session(url: str, anon_key: str, email: str, grant: dict[str, str], remember: bool = True) -> None:
     """Tokens are sealed with Windows DPAPI (only this Windows user can read them)."""
     SESSION.parent.mkdir(parents=True, exist_ok=True)
     session = {
@@ -851,6 +856,7 @@ def save_session(url: str, anon_key: str, email: str, grant: dict[str, str]) -> 
         "email": email,
         "accessToken": grant["access_token"],
         "refreshToken": grant["refresh_token"],
+        "remember": "1" if remember else "0",
     }
     SESSION.write_text(json.dumps(seal_session(session)), encoding="utf-8")
 
@@ -865,7 +871,7 @@ def load_session() -> dict[str, str] | None:
     if not isinstance(raw, dict):
         return None
     session, reseal = open_session(raw)
-    if session is None or not session.get("accessToken"):
+    if session is None or not any(session.get(key) for key in ("accessToken", "email", "supabaseUrl")):
         return None
     if reseal and os.name == "nt":
         # An older plain file: seal it now so the tokens stop sitting in the clear.
@@ -876,7 +882,7 @@ def load_session() -> dict[str, str] | None:
     return session
 
 
-def forget_tokens(saved: dict[str, str] | None = None) -> None:
+def forget_tokens(saved: dict[str, str] | None = None, remember: str | None = None) -> None:
     """Drop the login tokens and keep the e-mail. A dead session must not enter by itself."""
     current = saved
     if current is None and SESSION.exists():
@@ -894,6 +900,9 @@ def forget_tokens(saved: dict[str, str] | None = None) -> None:
         for key in ("supabaseUrl", "anonKey", "email")
         if current.get(key)
     }
+    flag = remember if remember is not None else str(current.get("remember") or "")
+    if flag in ("0", "1"):
+        kept["remember"] = flag
     try:
         SESSION.parent.mkdir(parents=True, exist_ok=True)
         SESSION.write_text(json.dumps(kept), encoding="utf-8")
@@ -1013,6 +1022,8 @@ class RecorderWindow:
         self._update_ready: Path | None = None
         self._update_busy = False
         self._update_dismissed = False
+        self._update_abort = False
+        self._update_left = 0
         self._probing = False
         self._probe_proc: subprocess.Popen[bytes] | None = None
         self._probe_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-probe.wav"
@@ -1158,7 +1169,18 @@ class RecorderWindow:
             if label is not None:
                 label.configure(wraplength=width)
 
+    def _update_blocks(self) -> bool:
+        gate = getattr(self, "update_gate", None)
+        if gate is None:
+            return False
+        try:
+            return bool(gate.winfo_manager())
+        except tk.TclError:
+            return False
+
     def show_gate(self) -> None:
+        if self._update_blocks():
+            return
         self.studio.pack_forget()
         self.modes.pack_forget()
         self.gate.pack(fill="both", expand=True)
@@ -1172,6 +1194,8 @@ class RecorderWindow:
             self.root.geometry(f"{width}x{height}")
 
     def show_studio(self) -> None:
+        if self._update_blocks():
+            return
         self.gate.pack_forget()
         self.modes.pack_forget()
         self.studio.pack(fill="both", expand=True)
@@ -1195,6 +1219,8 @@ class RecorderWindow:
         self.root.after(300, self._warm_listen)
 
     def show_modes(self) -> None:
+        if self._update_blocks():
+            return
         self.gate.pack_forget()
         self.studio.pack_forget()
         self.modes.pack(fill="both", expand=True)
@@ -1250,6 +1276,9 @@ class RecorderWindow:
         self.recording = False
         if self._touched:
             self._save_desk()
+        box = getattr(self, "remember_login", None)
+        if box is not None and box.get() != 1:
+            forget_tokens(remember="0")
         self.root.destroy()
 
     # ---- layout ---------------------------------------------------------------
@@ -3919,6 +3948,30 @@ class RecorderWindow:
         self.password.bind("<Return>", lambda _event: self.sign_in())
         self.email.bind("<Return>", lambda _event: self.password.focus_set())
         self._button(card, "Zaloguj się", self.sign_in, AMBER, ON_AMBER).pack(fill="x", pady=(4, 8))
+        self.remember_login = tk.IntVar(value=0 if saved and saved.get("remember") == "0" else 1)
+        tk.Checkbutton(
+            card,
+            text="Zapamiętaj logowanie na tym komputerze",
+            variable=self.remember_login,
+            bg=PAPER,
+            fg=INK,
+            selectcolor=RACK,
+            activebackground=PAPER,
+            activeforeground=INK,
+            font=(FONT_UI, 10),
+            anchor="w",
+            highlightthickness=0,
+            bd=0,
+        ).pack(anchor="w", pady=(0, 2))
+        tk.Label(
+            card,
+            text="Bez zaznaczenia po zamknięciu programu trzeba wpisać hasło jeszcze raz.",
+            bg=PAPER,
+            fg=MUTE,
+            font=(FONT_UI, 9),
+            wraplength=380,
+            justify="left",
+        ).pack(anchor="w", pady=(0, 8))
         self._link(card, "Nie pamiętam hasła", "/forgot-password").pack(anchor="w", pady=(2, 10))
         bottom = tk.Frame(card, bg=PAPER)
         bottom.pack(anchor="w")
@@ -4136,6 +4189,9 @@ class RecorderWindow:
         saved = load_session()
         if not saved or not saved.get("refreshToken") or not saved.get("supabaseUrl") or not saved.get("anonKey"):
             return "", ""
+        if not wants_remember(saved.get("remember")):
+            forget_tokens(saved, remember="0")
+            return "", ""
         try:
             grant = supabase_refresh_grant(saved["supabaseUrl"], saved["anonKey"], saved["refreshToken"])
         except RuntimeError as error:
@@ -4144,7 +4200,7 @@ class RecorderWindow:
                 forget_tokens(saved)
                 return "dead", "Hasło albo sesja na stronie się zmieniły. Zaloguj się jeszcze raz."
             return "net", text
-        save_session(saved["supabaseUrl"], saved["anonKey"], saved.get("email", ""), grant)
+        save_session(saved["supabaseUrl"], saved["anonKey"], saved.get("email", ""), grant, remember=True)
         return "ok", ""
 
     def _restore_catalog_beat(self) -> None:
@@ -4420,7 +4476,10 @@ class RecorderWindow:
             if "wygasła" in str(error):
                 self._reject_session("Hasło albo sesja na stronie się zmieniły. Zaloguj się jeszcze raz.")
             raise
-        save_session(saved["supabaseUrl"], saved["anonKey"], saved.get("email", ""), grant)
+        save_session(
+            saved["supabaseUrl"], saved["anonKey"], saved.get("email", ""), grant,
+            remember=wants_remember(saved.get("remember")),
+        )
         return grant["access_token"]
 
     def _reject_session(self, message: str) -> None:
@@ -4485,7 +4544,10 @@ class RecorderWindow:
             if not self.public_url or not self.public_key:
                 self._load_public()
             grant = supabase_password_grant(self.public_url, self.public_key, email, password)
-            save_session(self.public_url, self.public_key, email, grant)
+            save_session(
+                self.public_url, self.public_key, email, grant,
+                remember=self.remember_login.get() == 1,
+            )
             self.password.delete(0, "end")
             self._read_plan()
             self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
@@ -4521,11 +4583,6 @@ class RecorderWindow:
             bar, textvariable=self.update_var, bg=RACK, fg=INK, font=(FONT_UI, 10), anchor="w", justify="left", wraplength=520
         )
         self.update_label.pack(side="left", fill="x", expand=True, padx=12, pady=8)
-        self.update_later = tk.Button(
-            bar, text="Później", command=self._dismiss_update, bg=RACK, fg=SOFT, activebackground=RACK,
-            activeforeground=INK, relief="flat", bd=0, padx=10, pady=4, font=(FONT_UI, 10), cursor="hand2",
-        )
-        self.update_later.pack(side="right", padx=(0, 10))
         self.update_now = tk.Button(
             bar, text="ZAKTUALIZUJ", command=self._apply_update, bg=AMBER, fg=ON_AMBER, activebackground=AMBER_SOFT,
             activeforeground=ON_AMBER, disabledforeground=MUTE, relief="flat", bd=0, padx=14, pady=4,
@@ -4533,6 +4590,7 @@ class RecorderWindow:
         )
         self.update_now.pack(side="right", padx=8)
         bar.bind("<Configure>", lambda event: self.update_label.configure(wraplength=max(200, event.width - 230)))
+        self._build_update_gate()
 
     def _start_update_check(self) -> None:
         """Quiet check in the background: at start and every 6 hours. Failures are ignored."""
@@ -4546,17 +4604,85 @@ class RecorderWindow:
         if update is not None:
             self.root.after(0, lambda: self._offer_update(update))
 
+    def _build_update_gate(self) -> None:
+        """A newer build blocks the studio. Update, or leave. There is no Później."""
+        self.update_gate = tk.Frame(self.shell, bg=PAPER)
+        self.update_gate_text = tk.StringVar(value="")
+        card = tk.Frame(self.update_gate, bg=PAPER)
+        card.pack(expand=True, padx=36)
+        tk.Label(card, text="Aktualizacja", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 22, "italic")).pack(anchor="w")
+        tk.Label(
+            card, textvariable=self.update_gate_text, bg=PAPER, fg=INK, font=(FONT_UI, 12),
+            wraplength=460, justify="left",
+        ).pack(anchor="w", pady=(10, 16))
+        self.update_go = self._button(card, "Zaktualizuj", self._apply_update, AMBER, ON_AMBER)
+        self.update_go.pack(fill="x", pady=(0, 8))
+        self._button(card, "Wyłącz", self._quit_from_update, RACK, INK).pack(fill="x")
+
+    def _gate_button_state(self, shell: tk.Widget | None, enabled: bool) -> None:
+        if shell is None:
+            return
+        for child in shell.winfo_children():
+            if isinstance(child, tk.Button):
+                child.configure(state="normal" if enabled else "disabled")
+
+    def _show_update_gate(self) -> None:
+        update = self._update
+        if update is None:
+            return
+        notes = f"\n\n{update.notes}" if update.notes else ""
+        self.update_gate_text.set(
+            f"Jest nowa wersja {update.version}. Masz {updater.APP_VERSION}.\n"
+            "Bez aktualizacji program nie puszcza dalej."
+            f"{notes}\n\n"
+            "Zaktualizuj albo wyłącz."
+        )
+        self.update_var.set(
+            f"Jest najnowsza wersja {update.version} (masz {updater.APP_VERSION}). Trzeba zaktualizować albo wyłączyć."
+        )
+        self.gate.pack_forget()
+        self.modes.pack_forget()
+        self.studio.pack_forget()
+        if not self.update_gate.winfo_manager():
+            self.update_gate.pack(fill="both", expand=True)
+        if not self.update_bar.winfo_manager():
+            self.update_bar.pack(side="bottom", fill="x", before=self.shell)
+        self.update_now.configure(state="normal")
+        self._gate_button_state(self.update_go, True)
+
+    def _force_update_when_idle(self) -> None:
+        if self._update is None or self._update_blocks() or self._update_busy:
+            if self._update is not None and not self._update_blocks() and self._update_busy:
+                return
+            if self._update is None or self._update_blocks():
+                return
+        if self._busy_for_update():
+            self.root.after(1000, self._force_update_when_idle)
+            return
+        self._show_update_gate()
+
+    def _quit_from_update(self) -> None:
+        self._update_abort = True
+        self._on_close(ask_save=True)
+        try:
+            alive = bool(self.root.winfo_exists())
+        except tk.TclError:
+            alive = False
+        if alive:
+            self._update_abort = False
+
     def _offer_update(self, update: updater.Update) -> None:
         if self._update_dismissed or self._update_busy:
             return
         self._update = update
-        notes = f" {update.notes}" if update.notes else ""
-        self.update_var.set(
-            f"Jest najnowsza wersja {update.version} (masz {updater.APP_VERSION}). Jedno pobranie, cały program.{notes}"
-        )
-        self.update_now.configure(state="normal")
-        if not self.update_bar.winfo_manager():
-            self.update_bar.pack(side="bottom", fill="x", before=self.shell)
+        self._update_abort = False
+        if self._busy_for_update():
+            self.update_var.set("Jest nowa wersja. Dokończ nagranie albo wysyłkę. Potem trzeba zaktualizować albo wyłączyć program.")
+            if not self.update_bar.winfo_manager():
+                self.update_bar.pack(side="bottom", fill="x", before=self.shell)
+            self.root.after(1000, self._force_update_when_idle)
+            return
+        self._show_update_gate()
 
     def _dismiss_update(self) -> None:
         if self._update_busy:
@@ -4575,49 +4701,83 @@ class RecorderWindow:
             return
         self._update_busy = True
         self.update_now.configure(state="disabled")
-        self.update_later.configure(state="disabled")
+        self._gate_button_state(getattr(self, "update_go", None), False)
         self.update_var.set("Pobieram nową wersję: 0%")
+        self.update_gate_text.set("Pobieram nową wersję: 0%.\nJak dojdzie do 100%, program odliczy i dopiero wtedy się zamknie.")
         threading.Thread(target=self._download_update, args=(self._update,), daemon=True).start()
 
     def _download_update(self, update: updater.Update) -> None:
         def progress(done: int, total: int) -> None:
-            self.root.after(0, lambda: self.update_var.set(f"Pobieram nową wersję: {done * 100 // max(1, total)}%"))
+            percent = done * 100 // max(1, total)
+            self.root.after(0, lambda: self._set_download_progress(percent))
 
         try:
             path = updater.download(update, Path(os.environ.get("TEMP", ".")) / "BitRymDym-update", progress)
         except NETWORK_ERRORS as error:
             message = network_message(error)
         except ValueError:
-            message = "Pobrany plik nie przeszedł sprawdzenia (rozmiar lub suma). Nie instaluję. Spróbuj później."
+            message = "Pobrany plik nie przeszedł sprawdzenia (rozmiar lub suma). Nie instaluję."
         except Exception:
-            message = "Nie udało się pobrać aktualizacji. Spróbuj później."
+            message = "Nie udało się pobrać aktualizacji."
         else:
             self.root.after(0, lambda: self._launch_update(path))
             return
         self.root.after(0, lambda: self._update_failed(message))
 
+    def _set_download_progress(self, percent: int) -> None:
+        self.update_var.set(f"Pobieram nową wersję: {percent}%")
+        self.update_gate_text.set(
+            f"Pobieram nową wersję: {percent}%.\n"
+            "Jak dojdzie do 100%, program odliczy kilka sekund.\n"
+            "Potem zobaczysz okno instalacji z paskiem. Zostaw je."
+        )
+
     def _update_failed(self, message: str) -> None:
         self._update_busy = False
         self.update_now.configure(state="normal")
-        self.update_later.configure(state="normal")
+        self._gate_button_state(getattr(self, "update_go", None), True)
         self.update_var.set(f"{message} Instalator jest też na stronie /nagrywarka.")
+        self.update_gate_text.set(f"{message}\n\nInstalator jest też na stronie /nagrywarka.\nMożesz spróbować jeszcze raz albo wyłączyć program.")
 
     def _launch_update(self, path: Path) -> None:
         if self._busy_for_update():
             self._update_ready = path
             self._update_busy = False
             self.update_now.configure(state="normal")
-            self.update_later.configure(state="normal")
+            self._gate_button_state(getattr(self, "update_go", None), True)
             self.update_var.set("Aktualizacja jest pobrana. Skończ nagranie albo wysyłkę i naciśnij Zaktualizuj.")
+            self.update_gate_text.set("Aktualizacja jest pobrana. Skończ nagranie albo wysyłkę i naciśnij Zaktualizuj.")
+            self.root.after(1000, self._force_update_when_idle)
+            return
+        self._update_ready = path
+        self._update_busy = True
+        self._update_abort = False
+        self._update_left = 8
+        self._gate_button_state(getattr(self, "update_go", None), False)
+        self._count_update()
+
+    def _count_update(self) -> None:
+        if self._update_abort:
+            return
+        path = self._update_ready
+        if path is None:
+            return
+        if self._update_left > 0:
+            self.update_var.set(f"Zamykam za {self._update_left} s. Potem okno instalacji.")
+            self.update_gate_text.set(
+                f"Pobrane. Program zamknie się za {self._update_left} s.\n\n"
+                "Potem na wierzchu będzie okno instalacji z paskiem. Zostaw je.\n"
+                "Jak pasek dojdzie do końca, program sam się otworzy."
+            )
+            self._update_left -= 1
+            self.root.after(1000, self._count_update)
             return
         try:
             updater.schedule_installer(path)
         except OSError:
             self._update_failed("Nie udało się uruchomić instalatora.")
             return
-        self._update_busy = True
-        self.update_var.set("Pobrane. Za kilka sekund na wierzchu będzie okno instalacji. Jak pasek dojdzie do końca, program sam się otworzy.")
-        self.root.after(100, self._exit_for_update)
+        self._exit_for_update()
 
     def _exit_for_update(self) -> None:
         """Close the window and kill this process. Destroying the window alone leaves it running,
@@ -4779,6 +4939,8 @@ if __name__ == "__main__":
             raise SystemExit("o programie")
         if not footer_copy_ok():
             raise SystemExit("stopka")
+        if wants_remember(None) is not True or wants_remember("1") is not True or wants_remember("0") is not False:
+            raise SystemExit("pamięć logowania")
         quiet = 10 ** (-26 / 20.0)
         shown = display_wave_half(quiet, 80.0)
         if shown < 20.0 or display_wave_half(0.0, 80.0) != 1.0 or display_wave_half(1.0, 80.0) < 79.0:

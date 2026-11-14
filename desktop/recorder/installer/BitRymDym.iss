@@ -2,7 +2,7 @@
 ; ffmpeg is the GPL full shared build from GyanD/codexffmpeg (see the workflow). Its LICENSE is copied beside the exe
 ; as FFMPEG-LICENSE.txt. The program prefers these copies over anything on PATH.
 
-#define AppVersion "2026.11.13.13"
+#define AppVersion "2026.11.13.14"
 
 [Setup]
 AppId={{7C2E9A41-6B18-4E5D-9F03-1A8D4C6E2B70}
@@ -75,17 +75,34 @@ begin
   Result := WizardSilent and IsUpdate and (ExpandConstant('{param:DIR|}') = '') and (ExpandConstant('{param:VISIBLE|0}') <> '1');
 end;
 
+{ A child of this setup dies when InitializeSetup returns False.
+  start detaches a bat first, then the bat waits and opens the visible copy. }
+procedure QueueVisibleSetup();
+var
+  Dir, Bat, Command: String;
+  ResultCode: Integer;
+begin
+  Dir := ExpandConstant('{%TEMP}\BitRymDym-update');
+  ForceDirectories(Dir);
+  Bat := Dir + '\show-setup.bat';
+  SaveStringToFile(Bat,
+    '@echo off' + #13#10 +
+    'ping 127.0.0.1 -n 4 >nul' + #13#10 +
+    'start "" "' + ExpandConstant('{srcexe}') + '" /UPDATE=1 /VISIBLE=1 /NORESTART' + #13#10,
+    False);
+  Command := '/c start "" /MIN "' + Bat + '"';
+  Exec(ExpandConstant('{cmd}'), Command, '', SW_HIDE, ewNoWait, ResultCode);
+end;
+
 function InitializeSetup(): Boolean;
 var
   ResultCode: Integer;
   I: Integer;
-  Command: String;
 begin
   Result := True;
   if WantsVisibleUpdate then
   begin
-    Command := '/c ping 127.0.0.1 -n 5 >nul & start "" "' + ExpandConstant('{srcexe}') + '" /UPDATE=1 /VISIBLE=1 /NORESTART';
-    Exec(ExpandConstant('{cmd}'), Command, '', SW_HIDE, ewNoWait, ResultCode);
+    QueueVisibleSetup();
     Result := False;
     Exit;
   end;
@@ -110,6 +127,13 @@ end;
 procedure InitializeWizard();
 begin
   SetWindowPos(WizardForm.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE or SWP_SHOWWINDOW);
+  WizardForm.StatusLabel.Caption := 'Instaluję BitRymDym. Zostaw to okno. Jak pasek dojdzie do końca, program sam się otworzy.';
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID = wpInstalling then
+    WizardForm.StatusLabel.Caption := 'Instaluję BitRymDym. Zostaw to okno. Jak pasek dojdzie do końca, program sam się otworzy.';
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
