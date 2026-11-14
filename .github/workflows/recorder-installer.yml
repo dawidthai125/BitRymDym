@@ -44,6 +44,7 @@ jobs:
           python account_upload.py;  if ($LASTEXITCODE) { throw "account_upload" }
           python own_fx.py;          if ($LASTEXITCODE) { throw "own_fx" }
           python offline_session.py; if ($LASTEXITCODE) { throw "offline_session" }
+          python timeline.py;        if ($LASTEXITCODE) { throw "timeline" }
           python win_output.py;      if ($LASTEXITCODE) { throw "win_output" }
           python test_updater.py;    if ($LASTEXITCODE) { throw "updater" }
           $app = (Select-String -Path updater.py -Pattern 'APP_VERSION = "([^"]+)"').Matches[0].Groups[1].Value

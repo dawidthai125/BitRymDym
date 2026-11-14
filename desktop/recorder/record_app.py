@@ -47,8 +47,8 @@ from account_upload import (
     upload_vocals,
 )
 from desk import (
-    quality_note,
     scan_capture_log,
+    take_level_note,
     level_text,
     max_recording_tracks,
     max_take_seconds,
@@ -64,11 +64,13 @@ from desk import (
     write_prefs,
 )
 from own_fx import display_tier, limits_from_usage
-from record_wav import read_mono16, replace_mono16, take_stats, write_pcm16_wav
+from record_wav import apply_gain_int16, raise_db_for_peak, read_mono16, replace_mono16, take_stats, write_pcm16_wav
 from timeline import (
     RATE,
     Clip,
     block_peaks,
+    drawn_channels,
+    peaks_by_channel,
     carve,
     clip_at,
     clip_key,
@@ -211,6 +213,20 @@ class Track:
 def clock_text(seconds: float) -> str:
     seconds = max(0.0, seconds)
     return f"{int(seconds // 60)}:{seconds % 60:05.2f}"
+
+
+# Height of the strip you grab to move a clip. The old 17 px strip was hard to hit.
+GRAB_BAR_PX = 32
+
+
+def selection_readout(start: float | None, end: float | None) -> tuple[str, str, str]:
+    """Start, end and length for a selection. A click with no span shows dashes."""
+    if start is None or end is None:
+        return "—", "—", "—"
+    lo, hi = (start, end) if end >= start else (end, start)
+    if hi - lo < 0.005:
+        return "—", "—", "—"
+    return clock_text(lo), clock_text(hi), clock_text(hi - lo)
 
 
 def shade(color: str, factor: float) -> str:
@@ -1064,7 +1080,7 @@ class RecorderWindow:
         self.ui = dpi_scale()
         self.lane_h = int(188 * self.ui)
         self.head_w = int(250 * self.ui)
-        self.clip_bar = int(17 * self.ui)
+        self.clip_bar = int(GRAB_BAR_PX * self.ui)
         self.shell = tk.Frame(self.root, bg=PAPER, highlightthickness=1, highlightbackground=LINE_STRONG)
         self.shell.pack(fill="both", expand=True)
         if self._borderless:
@@ -1143,7 +1159,7 @@ class RecorderWindow:
         self._live_bar: int | None = None
         self._live_canvas: tk.Canvas | None = None
         self._live_wave_at = 0.0
-        self._beat_peaks: list[float] = []
+        self._beat_peaks: list[list[float]] = []
         self._beat_peak_path = ""
         self.capture: subprocess.Popen[bytes] | None = None
         self.monitor: subprocess.Popen[bytes] | None = None
@@ -1164,6 +1180,9 @@ class RecorderWindow:
         self.status = tk.StringVar(value="Ładuję listę bitów ze strony.")
         self.plan_text = tk.StringVar(value="Plan: zaloguj się.")
         self.clock = tk.StringVar(value="0:00.00")
+        self.sel_start = tk.StringVar(value="—")
+        self.sel_end = tk.StringVar(value="—")
+        self.sel_len = tk.StringVar(value="—")
         self.device_var = tk.StringVar(value="Szukam mikrofonów…")
         self.output_var = tk.StringVar(value="Domyślne")
         self.beat_var = tk.StringVar()
@@ -1447,6 +1466,16 @@ class RecorderWindow:
         self._tool(bar, "−", lambda: self.zoom(0.8), INK, size=13).pack(side="right", padx=2, pady=5)
         self._tool(bar, "CAŁOŚĆ", self.zoom_fit, INK, size=11).pack(side="right", padx=2, pady=5)
         tk.Label(bar, text="ZOOM", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="right", padx=(8, 2))
+
+        sel_row = tk.Frame(self.studio, bg=PAPER)
+        sel_row.pack(fill="x", padx=12, pady=(6, 0))
+        for caption, var in (("POCZĄTEK", self.sel_start), ("KONIEC", self.sel_end), ("DŁUGOŚĆ", self.sel_len)):
+            cell = tk.Frame(sel_row, bg="#0b0907", highlightthickness=1, highlightbackground=LINE)
+            cell.pack(side="left", padx=(0, 8))
+            tk.Label(cell, text=caption, bg="#0b0907", fg=MUTE, font=(FONT_META, 8)).pack(side="left", padx=(8, 4), pady=3)
+            tk.Label(
+                cell, textvariable=var, bg="#0b0907", fg=AMBER, font=(FONT_META, 12), width=9, anchor="w"
+            ).pack(side="left", padx=(0, 8), pady=3)
 
         outer = tk.Frame(self.studio, bg=PAPER)
         outer.pack(fill="both", expand=True, padx=12, pady=(6, 0))
@@ -1940,7 +1969,7 @@ class RecorderWindow:
 
     def _probe_local_beat(self, path: str) -> None:
         seconds = 0.0
-        peaks: list[float] = []
+        peaks: list[list[float]] = []
         try:
             seconds = offline_session.probe_media_seconds(ffmpeg_exe(), Path(path))
         except Exception:
@@ -1964,11 +1993,16 @@ class RecorderWindow:
 
         self.root.after(0, apply)
 
-    def _decode_display_peaks(self, path: str) -> list[float]:
-        """10 ms peaks for the lane. The beat file is not copied into the project."""
+    def _decode_display_peaks(self, path: str) -> list[list[float]]:
+        """10 ms peaks per channel. A mono beat is one list. Stereo is two. The file is not copied."""
         ffmpeg = ffmpeg_exe()
+        try:
+            found = offline_session.probe_media_channels(ffmpeg, Path(path))
+        except Exception:
+            found = 1
+        channels = drawn_channels(found, vocal=False)
         proc = subprocess.run(
-            [ffmpeg, "-hide_banner", "-loglevel", "error", "-i", path, "-ac", "1", "-ar", "4800", "-f", "s16le", "pipe:1"],
+            [ffmpeg, "-hide_banner", "-loglevel", "error", "-i", path, "-ac", str(channels), "-ar", "4800", "-f", "s16le", "pipe:1"],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
@@ -1983,7 +2017,7 @@ class RecorderWindow:
         samples.frombytes(raw)
         if sys.byteorder != "little":
             samples.byteswap()
-        return block_peaks(samples, 48)
+        return peaks_by_channel(samples, channels, 48)
 
     def _load_public(self) -> None:
         try:
@@ -2120,6 +2154,7 @@ class RecorderWindow:
         for index in range(min(len(self.tracks), len(self.rows))):
             self._paint_track(index)
         self._move_head(self._head_time())
+        self._sync_selection()
 
     def _head_time(self) -> float:
         if self.recording:
@@ -2194,12 +2229,14 @@ class RecorderWindow:
                 if x >= x1:
                     canvas.create_line(x, 3 + self.clip_bar, x, height - 3, fill="#8a6326")
                 mark += step
-        mid = (height + self.clip_bar) / 2
-        half_max = max(4.0, (height - 4 - self.clip_bar) / 2)
-        if self._beat_peaks and self._beat_peak_path == self.local_beat_path:
-            self._stroke_wave(
-                canvas, max(0.0, x1), min(float(width), x2), mid, half_max, "#f3d7a1", "beatwave",
-                lambda t: self._level_at(self._beat_peaks, t),
+        wave_top = 4 + self.clip_bar
+        wave_bottom = height - 4
+        mid = (wave_top + wave_bottom) / 2
+        series = [row for row in self._beat_peaks if row] if self._beat_peak_path == self.local_beat_path else []
+        if series:
+            self._stroke_channels(
+                canvas, max(0.0, x1), min(float(width), x2), wave_top, wave_bottom, "#f3d7a1", "beatwave",
+                [(lambda t, row=row: self._level_at(row, t)) for row in series],
             )
         else:
             canvas.create_line(x1, mid, x2, mid, fill="#8a6326")
@@ -2331,6 +2368,22 @@ class RecorderWindow:
             coords.append(lower[index])
             coords.append(lower[index + 1])
         canvas.create_polygon(*coords, fill=fill, outline="", tags=tag)
+
+    def _stroke_channels(
+        self, canvas: tk.Canvas, x0: float, x1: float, top: float, bottom: float,
+        fill: str, tag: str, levels: list[Callable[[float], float]],
+    ) -> None:
+        """One wave, or two stacked waves when the beat file is stereo. A vocal never comes here."""
+        count = max(1, len(levels))
+        span = max(4.0, bottom - top)
+        band = span / count
+        for index, level_at in enumerate(levels):
+            mid = top + band * index + band / 2
+            half_max = max(2.0, band / 2 - 1.5)
+            self._stroke_wave(canvas, x0, x1, mid, half_max, fill, tag, level_at)
+            if index:
+                split = top + band * index
+                canvas.create_line(x0, split, x1, split, fill="#8a6326", tags=tag)
 
     def _grow_live(self) -> None:
         """Move the red take with the clock. Does not redraw the whole lane."""
@@ -2529,10 +2582,10 @@ class RecorderWindow:
             if abs(event.x - int(drag["x"])) >= 3:
                 self.sel = (int(drag["track"]), min(a, t), max(a, t))
                 self.cursor = min(a, t)
+                self._sync_selection()
                 self._paint_track(int(drag["track"]))
                 self._paint_ruler()
                 self._move_head(self.cursor)
-                self.clock.set(f"{clock_text(self.sel[1])} – {clock_text(self.sel[2])}")
             return
         if abs(event.x - int(drag["x"])) >= 3:
             drag["moved"] = True
@@ -2554,8 +2607,9 @@ class RecorderWindow:
             if self.sel is None:
                 self.status.set(f"Kursor: {clock_text(self.cursor)}. NAGRAJ i GRAJ ruszą od tego miejsca.")
             else:
+                start, end, length = selection_readout(self.sel[1], self.sel[2])
                 self.status.set(
-                    f"Zaznaczenie {clock_text(self.sel[1])}–{clock_text(self.sel[2])} na {self.tracks[self.sel[0]].name}. "
+                    f"Zaznaczenie na {self.tracks[self.sel[0]].name}. Początek {start}, koniec {end}, długość {length}. "
                     "Usuń, Wytnij, Kopiuj albo Graj. Nagraj ruszy od początku zaznaczenia."
                 )
             self._paint_all()
@@ -2595,7 +2649,8 @@ class RecorderWindow:
         self.cursor = clip.start
         self._drag = None
         self._paint_all()
-        self.status.set("Cały klip zaznaczony.")
+        start, end, length = selection_readout(clip.start, clip.end)
+        self.status.set(f"Cały klip. Początek {start}, koniec {end}, długość {length}.")
 
     # ---- editing ----------------------------------------------------------------
 
@@ -4953,14 +5008,35 @@ class RecorderWindow:
             return self.devices[0]
         raise RuntimeError("Windows nie pokazał mikrofonu.")
 
+    def _sync_selection(self) -> None:
+        if not hasattr(self, "sel_start"):
+            return
+        if self.sel is None:
+            start, end, length = selection_readout(None, None)
+        else:
+            start, end, length = selection_readout(float(self.sel[1]), float(self.sel[2]))
+        self.sel_start.set(start)
+        self.sel_end.set(end)
+        self.sel_len.set(length)
+
     def _rate_take(self, path: Path) -> str:
-        """One sentence on level, clipping, and mic drops. Never blocks sending."""
+        """Level sentence. A quiet take is written louder. Digital silence is left as recorded."""
         drops, _fatal = read_capture_log(path)
         try:
-            db, clipped, _seconds = take_stats(path)
+            before, clipped, _seconds = take_stats(path)
         except Exception:
             return ""
-        return quality_note(db, clipped, drops)
+        gain = raise_db_for_peak(before, clipped)
+        after = before
+        if gain >= 0.5:
+            try:
+                rate, samples = read_mono16(path)
+                replace_mono16(path, apply_gain_int16(samples, gain), rate)
+                after, clipped, _seconds = take_stats(path)
+            except Exception:
+                gain = 0.0
+                after = before
+        return take_level_note(before, after, gain, clipped, drops)
 
     def _build_update_bar(self) -> None:
         """Bottom strip, shown only when a newer signed build exists. Visible on every screen."""
@@ -5311,6 +5387,15 @@ if __name__ == "__main__":
             raise SystemExit("miks od kursora")
         if clock_text(75.5) != "1:15.50" or shade("#ff8000", 0.5) != "#7f4000" or safe_name("a/b c") != "a-b-c" or count_word(22, "a", "b", "c") != "22 b":
             raise SystemExit("pomocnicze")
+        if GRAB_BAR_PX < 28:
+            raise SystemExit("pasek klipu")
+        marked = selection_readout(32.62, 34.16)
+        if marked != (clock_text(32.62), clock_text(34.16), clock_text(34.16 - 32.62)):
+            raise SystemExit(f"zaznaczenie {marked}")
+        if selection_readout(None, 1.0) != ("—", "—", "—") or selection_readout(1.0, 1.0) != ("—", "—", "—"):
+            raise SystemExit("zaznaczenie puste")
+        if drawn_channels(2, True) != 1 or drawn_channels(2, False) != 2:
+            raise SystemExit("kanały wokalu i bitu")
         if not about_copy_ok():
             raise SystemExit("o programie")
         if not footer_copy_ok():

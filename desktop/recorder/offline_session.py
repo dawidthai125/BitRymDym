@@ -98,6 +98,18 @@ def stem_filename(title: str, number: int, name: str) -> str:
     return f"{safe_stem_piece(title)}_{number:02d}_{safe_stem_piece(name)}.wav"
 
 
+def channels_from_ffmpeg_banner(text: str) -> int:
+    """2 only when an audio line says stereo or 2 channels. Mono, 5.1 and a missing line stay 1."""
+    for line in text.splitlines():
+        if "audio:" not in line.lower():
+            continue
+        low = line.lower()
+        if "stereo" in low or re.search(r"\b2 channels\b", low):
+            return 2
+        return 1
+    return 1
+
+
 def seconds_from_ffmpeg_banner(text: str) -> float:
     match = _DURATION.search(text)
     if match is None:
@@ -148,6 +160,54 @@ def probe_media_seconds(ffmpeg: str, path: Path) -> float:
     except (OSError, subprocess.TimeoutExpired):
         return 0.0
     return seconds_from_ffmpeg_banner(f"{done.stderr or ''}\n{done.stdout or ''}")
+
+
+def probe_media_channels(ffmpeg: str, path: Path) -> int:
+    """1 or 2. Exactly two channels draws as stereo. Anything else stays one channel."""
+    flags: dict[str, int] = {}
+    if os.name == "nt":
+        flags["creationflags"] = subprocess.CREATE_NO_WINDOW
+    probe = Path(ffmpeg).with_name("ffprobe.exe" if ffmpeg.lower().endswith(".exe") else "ffprobe")
+    if probe.is_file():
+        try:
+            done = subprocess.run(
+                [
+                    str(probe),
+                    "-v",
+                    "error",
+                    "-select_streams",
+                    "a:0",
+                    "-show_entries",
+                    "stream=channels",
+                    "-of",
+                    "csv=p=0",
+                    str(path),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=20,
+                check=False,
+                **flags,
+            )
+            value = int(float((done.stdout or "").strip() or "0"))
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            value = 0
+        if value == 2:
+            return 2
+        if value >= 1:
+            return 1
+    try:
+        done = subprocess.run(
+            [ffmpeg, "-hide_banner", "-i", str(path)],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+            **flags,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return 1
+    return channels_from_ffmpeg_banner(f"{done.stderr or ''}\n{done.stdout or ''}")
 
 
 def _clip_row(raw: object) -> dict[str, float] | None:
@@ -403,6 +463,14 @@ def self_test() -> None:
         raise SystemExit("czas bitu")
     if seconds_from_ffmpeg_banner("brak") != 0.0:
         raise SystemExit("czas bitu pusty")
+    stereo = "Stream #0:0: Audio: pcm_s16le, 44100 Hz, stereo, s16, 1411 kb/s"
+    mono = "Stream #0:0: Audio: pcm_s16le, 48000 Hz, mono, s16, 768 kb/s"
+    surround = "Stream #0:0: Audio: aac, 48000 Hz, 5.1, fltp"
+    numbered = "Stream #0:0: Audio: pcm_s16le, 48000 Hz, 2 channels, s16"
+    if channels_from_ffmpeg_banner(stereo) != 2 or channels_from_ffmpeg_banner(numbered) != 2:
+        raise SystemExit("kanały: stereo")
+    if channels_from_ffmpeg_banner(mono) != 1 or channels_from_ffmpeg_banner(surround) != 1 or channels_from_ffmpeg_banner("brak") != 1:
+        raise SystemExit("kanały: mono")
     document = build_session(
         title="a/b Test",
         beat_file_name=r"C:\Users\ktoś\Pulpit\moj bit.mp3",

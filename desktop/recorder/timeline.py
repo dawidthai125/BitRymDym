@@ -157,6 +157,26 @@ def clip_key(clip: Clip) -> str:
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
 
 
+def drawn_channels(file_channels: int, vocal: bool) -> int:
+    """One drawn channel for a mic vocal. Two only when the file itself is stereo."""
+    if vocal or file_channels != 2:
+        return 1
+    return 2
+
+
+def peaks_by_channel(samples: array.array, channels: int, block: int = 480) -> list[list[float]]:
+    """One peak list per channel. Interleaved stereo stays two lists, never a mix."""
+    count = drawn_channels(channels, vocal=False)
+    if count == 1:
+        if channels > 1:
+            mixed = array.array("h", (samples[index] for index in range(0, len(samples) - (len(samples) % channels), channels)))
+            return [block_peaks(mixed, block)]
+        return [block_peaks(samples, block)]
+    frames = len(samples) // count
+    body = samples[: frames * count]
+    return [block_peaks(array.array("h", body[channel::count]), block) for channel in range(count)]
+
+
 def block_peaks(samples: array.array, block: int = 480) -> list[float]:
     """Peak per block (10 ms at 48 kHz), 0..1. max/min run in C, fine for 180 s."""
     out: list[float] = []
@@ -215,6 +235,16 @@ def self_test() -> None:
     peaks = block_peaks(array.array("h", [0] * 480 + [16384] * 10), 480)
     if peaks != [0.0, 0.5]:
         raise SystemExit(f"szczyty {peaks}")
+    if drawn_channels(2, vocal=True) != 1 or drawn_channels(1, vocal=False) != 1 or drawn_channels(6, vocal=False) != 1:
+        raise SystemExit("kanały rysunku")
+    if drawn_channels(2, vocal=False) != 2:
+        raise SystemExit("stereo bitu")
+    stereo = peaks_by_channel(array.array("h", [32767, 0] * 480), 2, 480)
+    if len(stereo) != 2 or abs(stereo[0][0] - 1.0) > 0.001 or stereo[1][0] != 0.0:
+        raise SystemExit(f"dwa kanały {stereo}")
+    mono = peaks_by_channel(array.array("h", [16384] * 480), 1, 480)
+    if len(mono) != 1 or abs(mono[0][0] - 0.5) > 0.001:
+        raise SystemExit(f"jeden kanał {mono}")
     if Clip.from_json(a.to_json()) != a or Clip.from_json({"path": "x"}) is not None:
         raise SystemExit("zapis klipu")
     print("timeline self-test ok")

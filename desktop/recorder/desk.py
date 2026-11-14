@@ -229,6 +229,20 @@ def level_text(db: float) -> str:
     return f"{rounded} dB".replace("-", "−") if rounded else "0 dB"
 
 
+def take_level_note(before_db: float, after_db: float, gain_db: float, clipped: int, drops: int = 0) -> str:
+    """Sentence after a take. A real lift says by how much. Silence is not described as a raised voice."""
+    body = quality_note(after_db, clipped, drops)
+    if gain_db < 0.5:
+        return body
+    line = (
+        f"Podniosłem ciche ujęcie o {round(gain_db)} dB "
+        f"(szczyt był {level_text(before_db)}, jest {level_text(after_db)})."
+    )
+    if before_db < -45:
+        line += " Sprawdź mikrofon, jeśli to nie Twój głos."
+    return f"{line} {body}"
+
+
 def quality_note(peak_db_value: float, clipped: int, drops: int = 0) -> str:
     """One plain sentence about the take, from the peak, clipped samples, and mic drops."""
     parts: list[str] = []
@@ -414,6 +428,13 @@ def self_test() -> None:
         raise SystemExit("ocena: środek")
     if "zgubił próbki (2 razy)" not in quality_note(-12, 0, drops=2):
         raise SystemExit("ocena: próbki")
+    raised = take_level_note(-71.2, -12.0, 59.2, 0)
+    if "Podniosłem ciche ujęcie o 59 dB" not in raised or "−71 dB" not in raised or "jeśli to nie Twój głos" not in raised:
+        raise SystemExit(f"ocena: podbicie {raised}")
+    if "jeśli to nie Twój głos" in take_level_note(-30.0, -12.0, 18.0, 0):
+        raise SystemExit("ocena: zwykłe cicho bez ostrzeżenia o głosie")
+    if take_level_note(-96.0, -96.0, 0.0, 0) != quality_note(-96.0, 0):
+        raise SystemExit("ocena: cyfrowa cisza bez podbicia")
     xor = lambda data, entropy: bytes(b ^ 0x5A for b in data) + entropy[:1]  # noqa: E731
     unxor = lambda blob, entropy: bytes(b ^ 0x5A for b in blob[:-1])  # noqa: E731
     plain_session = {

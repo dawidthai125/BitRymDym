@@ -80,6 +80,39 @@ def take_stats(path: Path) -> tuple[float, int, float]:
     return db, clipped, len(samples) / rate
 
 
+# A quiet mic (the PC take peaked near −71 dB) is raised toward a normal vocal peak.
+# Digital silence stays silence: boosting zeros would not become a voice.
+LIFT_TARGET_DB = -12.0
+LIFT_WHEN_BELOW_DB = -24.0
+LIFT_SILENCE_DB = -90.0
+LIFT_MAX_DB = 60.0
+
+
+def raise_db_for_peak(peak_db: float, clipped: int = 0) -> float:
+    """dB to add so a quiet take peaks near −12 dB. Zero when the file is silence, clipped, or already usable."""
+    if clipped >= 3 or peak_db >= -0.3:
+        return 0.0
+    if peak_db <= LIFT_SILENCE_DB or peak_db >= LIFT_WHEN_BELOW_DB:
+        return 0.0
+    return min(LIFT_MAX_DB, LIFT_TARGET_DB - peak_db)
+
+
+def apply_gain_int16(samples: array.array, gain_db: float) -> array.array:
+    """Multiply mono samples. Values that would pass full scale are held at the int16 ends."""
+    if gain_db < 0.05 or len(samples) == 0:
+        return array.array("h", samples)
+    factor = 10 ** (gain_db / 20.0)
+    out = array.array("h", samples)
+    for index in range(len(out)):
+        value = int(round(out[index] * factor))
+        if value > 32767:
+            value = 32767
+        elif value < -32768:
+            value = -32768
+        out[index] = value
+    return out
+
+
 def replace_mono16(path: Path, samples: array.array, rate: int = RATE) -> None:
     if len(samples) < 2:
         raise ValueError("short")
@@ -160,6 +193,20 @@ def self_test(path: Path) -> None:
     replace_mono16(path, array.array("h", [0] * 100))
     if take_stats(path)[0] != -96.0:
         raise SystemExit("take_stats cisza")
+    if raise_db_for_peak(-96.0, 0) != 0.0 or raise_db_for_peak(-12.0, 0) != 0.0 or raise_db_for_peak(-0.1, 5) != 0.0:
+        raise SystemExit("podbicie: cisza, głośne i przester zostają")
+    quiet_db = 20.0 * math.log10(9 / 32768.0)
+    gain = raise_db_for_peak(quiet_db, 0)
+    if not 58.0 <= gain <= 60.0:
+        raise SystemExit(f"podbicie: ciche ujęcie {quiet_db} {gain}")
+    lifted = apply_gain_int16(array.array("h", [9] * 960), gain)
+    replace_mono16(path, lifted)
+    after, clipped_after, _seconds = take_stats(path)
+    if clipped_after != 0 or not -13.5 <= after <= -10.5:
+        raise SystemExit(f"podbicie: wynik {after} {clipped_after}")
+    mild = raise_db_for_peak(-30.0, 0)
+    if not 17.0 <= mild <= 19.0:
+        raise SystemExit(f"podbicie: cicho {mild}")
     path.unlink(missing_ok=True)
 
 

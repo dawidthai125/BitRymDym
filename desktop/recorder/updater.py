@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.23"
+APP_VERSION = "2026.11.24"
 PACK_ID = "BitRymDym.Nagrywarka"
 
 # Velopack runs the main exe with one of these and waits. The process must exit
