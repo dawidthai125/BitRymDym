@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.13.15"
+APP_VERSION = "2026.11.13.16"
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
 MANIFEST_URL = R2_BASE + "latest.json"
@@ -248,59 +248,62 @@ def start_installer(path: Path) -> subprocess.Popen[bytes]:
 
 
 def installer_after_exit_command(path: Path) -> str:
-    """PowerShell: end BitRymDym, show the installer, then open the program if setup did not.
+    """Cmd helper. It is started before we exit, waits for this process, then shows setup.
 
-    The window can close at 100% while the process stays. Waiting forever then never
-    installs. After a short wait the helper ends that process itself. The installer is a
-    normal window on top, not a silent setup. A failed setup opens a message box.
-    The log line is in %TEMP%\\BitRymDym-update\\update.log. Deleting the program folder
-    while the exe is still open makes Windows drop the new copy.
+    A hidden PowerShell child died with the recorder, so the installer never opened and
+    nothing wrote update.log. This file is launched with `start`, waits on our pid for
+    up to 60 s, runs the visible installer, and opens the program again even if setup fails.
+    ASCII only: cmd.exe on a Polish Windows misreads a UTF-8 batch file.
     """
-    quoted = "'" + str(path).replace("'", "''") + "'"
-    return (
-        "$ErrorActionPreference = 'Stop'; "
-        "$log = Join-Path $env:TEMP 'BitRymDym-update\\update.log'; "
-        "New-Item -ItemType Directory -Force (Split-Path $log) | Out-Null; "
-        "function Note([string]$m) { Add-Content -LiteralPath $log -Value ((Get-Date -Format o) + ' ' + $m) }; "
-        "try { "
-        "Note 'start'; "
-        "$deadline = (Get-Date).AddSeconds(8); "
-        "while ((Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue) -and ((Get-Date) -lt $deadline)) "
-        "{ Start-Sleep -Milliseconds 300 }; "
-        "Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue | Stop-Process -Force; "
-        "Start-Sleep -Milliseconds 800; "
-        f"$proc = Start-Process -FilePath {quoted} -ArgumentList '/UPDATE=1','/NORESTART' -PassThru -Wait; "
-        "Note ('exit ' + $proc.ExitCode); "
-        "if ($proc.ExitCode -ne 0) { throw ('Instalacja nie doszła do końca. Kod ' + $proc.ExitCode) }; "
-        "Start-Sleep -Seconds 2; "
-        "$exe = Join-Path $env:LOCALAPPDATA 'BitRymDym\\Nagrywarka\\BitRymDym.exe'; "
-        "if ((-not (Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue)) -and (Test-Path -LiteralPath $exe)) "
-        "{ Start-Process -FilePath $exe; Note 'opened' } "
-        "} catch { "
-        "Note $_.Exception.Message; "
-        "Add-Type -AssemblyName System.Windows.Forms; "
-        "[System.Windows.Forms.MessageBox]::Show($_.Exception.Message, 'BitRymDym') "
-        "}"
-    )
+    setup = str(path).replace('"', "")
+    lines = [
+        "@echo off",
+        "setlocal",
+        'set "LOG=%TEMP%\\BitRymDym-update\\update.log"',
+        'if not exist "%TEMP%\\BitRymDym-update" mkdir "%TEMP%\\BitRymDym-update"',
+        '>>"%LOG%" echo start',
+        'powershell -NoProfile -ExecutionPolicy Bypass -Command "Wait-Process -Id %1 -Timeout 60 -ErrorAction SilentlyContinue"',
+        '>>"%LOG%" echo waited',
+        f'start "BitRymDym" /WAIT "{setup}" /UPDATE=1 /NORESTART',
+        'set "CODE=%ERRORLEVEL%"',
+        '>>"%LOG%" echo exit %CODE%',
+        'set "EXE=%LOCALAPPDATA%\\BitRymDym\\Nagrywarka\\BitRymDym.exe"',
+        'if exist "%EXE%" (',
+        '  tasklist /FI "IMAGENAME eq BitRymDym.exe" | find /I "BitRymDym.exe" >nul',
+        '  if errorlevel 1 start "" "%EXE%"',
+        '  >>"%LOG%" echo opened',
+        ")",
+        'if not "%CODE%"=="0" powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show(\'Instalacja nie doszla do konca. Kod %CODE%\', \'BitRymDym\')"',
+        "exit /b %CODE%",
+        "",
+    ]
+    return "\r\n".join(lines)
 
 
 def schedule_installer(path: Path) -> subprocess.Popen[bytes]:
-    """On Windows, install only after this process has exited. Elsewhere, start it now."""
+    """On Windows, start a helper that outlives us, then the caller exits. Elsewhere, start setup now."""
     if os.name != "nt":
         return start_installer(path)
+    folder = Path(os.environ.get("TEMP", ".")) / "BitRymDym-update"
+    folder.mkdir(parents=True, exist_ok=True)
+    script = folder / "apply-update.cmd"
+    script.write_bytes(installer_after_exit_command(path).encode("ascii"))
+    # `start` returns at once and the second cmd is not tied to this process.
     command = [
-        "powershell",
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-WindowStyle",
-        "Hidden",
-        "-Command",
-        installer_after_exit_command(path),
+        "cmd",
+        "/d",
+        "/c",
+        "start",
+        "BitRymDym update",
+        "/MIN",
+        "cmd",
+        "/d",
+        "/c",
+        str(script),
+        str(os.getpid()),
     ]
     quiet = dict(stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
     detached = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
-    # Break away so this helper is not killed when the recorder process finally exits.
     try:
         return subprocess.Popen(command, creationflags=detached | 0x01000000, **quiet)
     except OSError:
@@ -346,14 +349,15 @@ def self_test() -> None:
     if "/UPDATE=1" not in argv or "/NORESTART" not in argv or "/SILENT" in argv or "/SUPPRESSMSGBOXES" in argv:
         raise SystemExit("argumenty instalatora")
     waited = installer_after_exit_command(Path(r"C:\Temp\BitRymDym-Setup-2026.11.13.7.exe"))
-    if "Get-Process -Name 'BitRymDym'" not in waited or "/UPDATE=1" not in waited or "BitRymDym-Setup-2026.11.13.7.exe" not in waited:
+    if "Wait-Process -Id %1" not in waited or "/UPDATE=1" not in waited or "BitRymDym-Setup-2026.11.13.7.exe" not in waited:
         raise SystemExit("instalator ma ruszyć dopiero po zejściu procesu")
     if "/SILENT" in waited or "/SUPPRESSMSGBOXES" in waited:
         raise SystemExit("instalator aktualizacji ma być widoczny")
-    if "Stop-Process -Force" not in waited or "-Wait" not in waited or "BitRymDym\\Nagrywarka\\BitRymDym.exe" not in waited:
+    if "/WAIT" not in waited or "BitRymDym\\Nagrywarka\\BitRymDym.exe" not in waited or "if errorlevel 1 start" not in waited:
         raise SystemExit("po instalacji program ma wstać sam")
     if "MessageBox" not in waited or "update.log" not in waited:
         raise SystemExit("błąd instalacji ma być widoczny")
+    waited.encode("ascii")
     print("updater self-test ok")
 
 
