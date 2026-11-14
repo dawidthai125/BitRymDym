@@ -824,7 +824,7 @@ def supabase_password_grant(url: str, anon_key: str, email: str, password: str) 
         if error.code == 429:
             raise RuntimeError("Za dużo prób logowania. Poczekaj minutę i spróbuj jeszcze raz.") from None
         if error.code in (400, 401, 403, 422):
-            raise RuntimeError("Logowanie nie weszło. Sprawdź e-mail i hasło.") from None
+            raise RuntimeError("Logowanie nie weszło. Sprawdź e-mail i hasło. Jak zmieniłeś hasło na stronie, wpisz nowe.") from None
         raise RuntimeError(f"Serwer logowania nie odpowiada (kod {error.code}). Spróbuj za chwilę.") from None
     except NETWORK_ERRORS as error:
         raise RuntimeError(network_message(error)) from None
@@ -866,6 +866,31 @@ def load_session() -> dict[str, str] | None:
         except OSError:
             pass
     return session
+
+
+def forget_tokens(saved: dict[str, str] | None = None) -> None:
+    """Drop the login tokens and keep the e-mail. A dead session must not enter by itself."""
+    current = saved
+    if current is None and SESSION.exists():
+        try:
+            raw = json.loads(SESSION.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return
+        if isinstance(raw, dict):
+            opened, _reseal = open_session(raw)
+            current = opened
+    if not current:
+        return
+    kept = {
+        key: current.get(key, "")
+        for key in ("supabaseUrl", "anonKey", "email")
+        if current.get(key)
+    }
+    try:
+        SESSION.parent.mkdir(parents=True, exist_ok=True)
+        SESSION.write_text(json.dumps(kept), encoding="utf-8")
+    except OSError:
+        pass
 
 
 def load_pending() -> UploadState | None:
@@ -1063,7 +1088,6 @@ class RecorderWindow:
         if saved:
             self.public_url = saved.get("supabaseUrl", "")
             self.public_key = saved.get("anonKey", "")
-            self.status.set("Jest zapisana sesja tego konta.")
         self._build_update_bar()
         self._build_gate(saved if isinstance(saved, dict) else None)
         self._build_modes()
@@ -1883,10 +1907,6 @@ class RecorderWindow:
                 self.beat_var.set(self.beats[0][1])
             if self.beats and not self.studio.winfo_manager():
                 self.status.set("Wybierz bit, uzbrój ścieżkę (●) i nagraj.")
-                if self.email.get().strip():
-                    self.gate_status.set("Jest zapisana sesja. Puste hasło wchodzi na to konto.")
-                else:
-                    self.gate_status.set("Wpisz konto ze strony.")
         except Exception as error:
             self.status.set(str(error))
             self.gate_status.set(str(error))
@@ -4043,7 +4063,8 @@ class RecorderWindow:
                 payload = loaded
         except Exception as error:
             net_error = str(error)
-        self.root.after(0, lambda: self._apply_boot(devices, device_error, outputs, payload, net_error))
+        resume, resume_error = self._resume_saved_session()
+        self.root.after(0, lambda: self._apply_boot(devices, device_error, outputs, payload, net_error, resume, resume_error))
 
     def _apply_boot(
         self,
@@ -4052,6 +4073,8 @@ class RecorderWindow:
         outputs: list[tuple[str, int]],
         payload: dict[str, object] | None,
         net_error: str,
+        resume: str = "",
+        resume_error: str = "",
     ) -> None:
         self.devices = devices
         self.outputs = outputs or [("Domyślne", -1)]
@@ -4070,7 +4093,36 @@ class RecorderWindow:
         elif not self.probe_var.get().startswith("Poziom"):
             self.probe_var.set("Mikrofon i słuchawki mogą być z różnych urządzeń, też Bluetooth.")
         self._gear_scanning = False
+        if resume == "ok" and self.gate.winfo_manager():
+            self.password.delete(0, "end")
+            self.gate_status.set("")
+            self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
+            self.show_modes()
+        elif resume == "dead":
+            self.gate_status.set(resume_error)
+            self.status.set(resume_error)
+        elif resume == "net":
+            self.gate_status.set(resume_error)
+            self.status.set(resume_error)
+        elif self.gate.winfo_manager() and self.gate_status.get() == "Łączę ze stroną.":
+            self.gate_status.set("")
         self._read_plan()
+
+    def _resume_saved_session(self) -> tuple[str, str]:
+        """Check the saved login before the window asks for a password. Network only, no Tk."""
+        saved = load_session()
+        if not saved or not saved.get("refreshToken") or not saved.get("supabaseUrl") or not saved.get("anonKey"):
+            return "", ""
+        try:
+            grant = supabase_refresh_grant(saved["supabaseUrl"], saved["anonKey"], saved["refreshToken"])
+        except RuntimeError as error:
+            text = str(error)
+            if "wygasła" in text:
+                forget_tokens(saved)
+                return "dead", "Hasło albo sesja na stronie się zmieniły. Zaloguj się jeszcze raz."
+            return "net", text
+        save_session(saved["supabaseUrl"], saved["anonKey"], saved.get("email", ""), grant)
+        return "ok", ""
 
     def _restore_catalog_beat(self) -> None:
         if self.studio_mode != "online":
@@ -4337,10 +4389,38 @@ class RecorderWindow:
         saved = load_session()
         refresh = saved.get("refreshToken") if saved else ""
         if not saved or not refresh or not saved.get("supabaseUrl") or not saved.get("anonKey"):
+            self._reject_session("Hasło albo sesja na stronie się zmieniły. Zaloguj się jeszcze raz.")
             raise RuntimeError("Sesja wygasła. Zaloguj się jeszcze raz.")
-        grant = supabase_refresh_grant(saved["supabaseUrl"], saved["anonKey"], refresh)
+        try:
+            grant = supabase_refresh_grant(saved["supabaseUrl"], saved["anonKey"], refresh)
+        except RuntimeError as error:
+            if "wygasła" in str(error):
+                self._reject_session("Hasło albo sesja na stronie się zmieniły. Zaloguj się jeszcze raz.")
+            raise
         save_session(saved["supabaseUrl"], saved["anonKey"], saved.get("email", ""), grant)
         return grant["access_token"]
+
+    def _reject_session(self, message: str) -> None:
+        """A saved login the site no longer accepts. Back to the form, tokens gone."""
+        forget_tokens()
+        self._client_cache = None
+
+        def apply() -> None:
+            self.tier = "FREE"
+            self.plan_text.set("Plan: zaloguj się.")
+            try:
+                self.password.delete(0, "end")
+            except tk.TclError:
+                return
+            self.gate_status.set(message)
+            self.status.set(message)
+            if not self.gate.winfo_manager():
+                self.show_gate()
+
+        try:
+            self.root.after(0, apply)
+        except tk.TclError:
+            pass
 
     def sign_out(self) -> None:
         if self._uploading:
@@ -4377,14 +4457,6 @@ class RecorderWindow:
         try:
             email = self.email.get().strip()
             password = self.password.get()
-            saved = load_session()
-            same_account = bool(saved and saved.get("accessToken") and saved.get("email") == email)
-            if password == "" and same_account:
-                self._read_plan()
-                self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
-                self.gate_status.set("")
-                self.show_modes()
-                return
             if not email or not password:
                 raise RuntimeError("Wpisz e-mail i hasło.")
             if not self.public_url or not self.public_key:
