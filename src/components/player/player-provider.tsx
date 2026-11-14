@@ -37,6 +37,11 @@ export type PlayerTrack = {
   durationSeconds: number;
   artworkVariant: number;
   coverUrl?: string | null;
+  /**
+   * Admin listen of a draft that has no 20 s preview. Public catalog stays
+   * on the short preview. The server still refuses a full file to guests.
+   */
+  master?: boolean;
 };
 
 type PlayerPhase = "idle" | "loading" | "playing" | "paused" | "error";
@@ -103,6 +108,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const t = useTranslations("common.playerProvider");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const expiresAtRef = useRef<string | null>(null);
+  const listenMasterRef = useRef(false);
   /** Session cache key for the current blob:/bytes (WAVE 1-A). */
   const sessionKeyRef = useRef<string | null>(null);
   const durationRef = useRef(0);
@@ -217,7 +223,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const atPreviewCap =
       previewLimitRef.current !== null &&
       audio.currentTime >= previewLimitRef.current - 0.25;
-    if (audio.dataset.beatId === beatId && audio.src && !atPreviewCap) {
+    const listen = listenMasterRef.current ? "master" : "preview";
+    if (
+      audio.dataset.beatId === beatId &&
+      audio.dataset.listen === listen &&
+      audio.src &&
+      !atPreviewCap
+    ) {
       const usingBlob = audio.src.startsWith("blob:");
       if (!expired || (dedup && usingBlob && sessionKeyRef.current)) {
         return audio.src;
@@ -227,7 +239,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const result = await requestBeatAudioAccessAction({
       beatId,
       purpose: PUBLIC_PLAYBACK_PURPOSE,
-      previewOnly: true,
+      previewOnly: !listenMasterRef.current,
     });
     if (!result.success && result.code === "PREVIEW_UNAVAILABLE") {
       throw new GuestPreviewUnavailableError();
@@ -239,6 +251,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     expiresAtRef.current = result.expiresAt ?? null;
     audio.dataset.beatId = beatId;
+    audio.dataset.listen = listen;
     const limit =
       typeof result.previewLimitSeconds === "number" && result.previewLimitSeconds > 0
         ? result.previewLimitSeconds
@@ -317,6 +330,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setPreviewEnded(false);
       setPreviewUnavailable(false);
       setPhase("loading");
+      listenMasterRef.current = next.master === true;
 
       try {
         if (audio.dataset.beatId !== next.beatId) {
@@ -416,7 +430,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.removeAttribute("src");
       audio.load();
       delete audio.dataset.beatId;
+      delete audio.dataset.listen;
     }
+    listenMasterRef.current = false;
     if (sessionKeyRef.current) {
       invalidateSessionAudio(sessionKeyRef.current);
       sessionKeyRef.current = null;

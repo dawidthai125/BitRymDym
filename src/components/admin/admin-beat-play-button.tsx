@@ -42,6 +42,7 @@ export function AdminBeatPlayButton({
           producer,
           durationSeconds,
           artworkVariant: artworkVariantForId(beatId),
+          master: true,
         });
       }}
     />
