@@ -73,14 +73,19 @@ def main() -> None:
     expect_reject(b"not json", public, why="śmieci")
     expect_reject(good[:-5], public, why="ucięty")
     expect_reject(json.dumps(dict(data, signature="@@@")).encode(), public, why="zły base64")
-    # check_for_update: newer yes, same/older no, errors -> None
-    if u.check_for_update(lambda: good, "2026.11.12.2", public) is None:
+    def feed(version="2026.12.1", name="app-full.nupkg"):
+        return json.dumps({"Assets": [{
+            "PackageId": u.PACK_ID, "Version": version, "Type": "Full", "FileName": name,
+            "SHA256": "a" * 64, "Size": 2_000_000, "NotesMarkdown": "n",
+        }]}).encode()
+
+    # check_for_update reads the Velopack feed: newer yes, same/older no, errors -> None
+    if u.check_for_update(lambda: feed(), "2026.11.12.2", public) is None:
         raise SystemExit("nowsza wersja nie wykryta")
-    # Several builds behind still gets this one manifest, not the next number.
-    jumped = u.check_for_update(lambda: good, "2026.11.12.1", public)
-    if jumped is None or jumped.version != "2026.12.1":
-        raise SystemExit("przeskok kilku wersji ma dać od razu najnowszy manifest")
-    if u.check_for_update(lambda: good, "2026.12.1", public) is not None or u.check_for_update(lambda: good, "2027.1", public) is not None:
+    jumped = u.check_for_update(lambda: feed(), "2026.11.12.1", public)
+    if jumped is None or jumped.version != "2026.12.1" or not jumped.url.endswith("/feed/app-full.nupkg"):
+        raise SystemExit("przeskok kilku wersji ma dać od razu najnowszą paczkę")
+    if u.check_for_update(lambda: feed(), "2026.12.1", public) is not None or u.check_for_update(lambda: feed(), "2027.1", public) is not None:
         raise SystemExit("ta sama lub starsza wersja nie może proponować aktualizacji")
     if u.check_for_update(lambda: (_ for _ in ()).throw(OSError("sieć")), "2026.11.12.2", public) is not None:
         raise SystemExit("błąd sieci ma dać None")
