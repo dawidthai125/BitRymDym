@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.13.16"
+APP_VERSION = "2026.11.13.17"
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
 MANIFEST_URL = R2_BASE + "latest.json"
@@ -247,22 +247,36 @@ def start_installer(path: Path) -> subprocess.Popen[bytes]:
     )
 
 
-def installer_after_exit_command(path: Path) -> str:
-    """Cmd helper. It is started before we exit, waits for this process, then shows setup.
+TASK_NAME = "BitRymDymUpdate"
 
-    A hidden PowerShell child died with the recorder, so the installer never opened and
-    nothing wrote update.log. This file is launched with `start`, waits on our pid for
-    up to 60 s, runs the visible installer, and opens the program again even if setup fails.
-    ASCII only: cmd.exe on a Polish Windows misreads a UTF-8 batch file.
+
+def _xml_text(value: str) -> str:
+    return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
+def installer_after_exit_command(path: Path) -> str:
+    """Cmd helper, no PowerShell. First line writes the log, then it waits, installs, and opens the app.
+
+    Task Scheduler starts this file, so it is not a child of the recorder. The old helper was a
+    hidden PowerShell child. It died with the recorder, update.log was never created, and nothing
+    opened the program again. ASCII only.
     """
-    setup = str(path).replace('"', "")
+    setup = str(path).replace('"', "").replace("&", "").replace("^", "")
     lines = [
         "@echo off",
         "setlocal",
         'set "LOG=%TEMP%\\BitRymDym-update\\update.log"',
         'if not exist "%TEMP%\\BitRymDym-update" mkdir "%TEMP%\\BitRymDym-update"',
         '>>"%LOG%" echo start',
-        'powershell -NoProfile -ExecutionPolicy Bypass -Command "Wait-Process -Id %1 -Timeout 60 -ErrorAction SilentlyContinue"',
+        "set /a N=0",
+        ":waitloop",
+        'tasklist /FI "PID eq %1" 2>nul | find "%1" >nul',
+        "if errorlevel 1 goto gone",
+        "set /a N+=1",
+        "if %N% GEQ 60 goto gone",
+        "ping 127.0.0.1 -n 2 >nul",
+        "goto waitloop",
+        ":gone",
         '>>"%LOG%" echo waited',
         f'start "BitRymDym" /WAIT "{setup}" /UPDATE=1 /NORESTART',
         'set "CODE=%ERRORLEVEL%"',
@@ -273,41 +287,121 @@ def installer_after_exit_command(path: Path) -> str:
         '  if errorlevel 1 start "" "%EXE%"',
         '  >>"%LOG%" echo opened',
         ")",
-        'if not "%CODE%"=="0" powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show(\'Instalacja nie doszla do konca. Kod %CODE%\', \'BitRymDym\')"',
+        f'schtasks /Delete /F /TN "{TASK_NAME}" >nul 2>&1',
         "exit /b %CODE%",
         "",
     ]
     return "\r\n".join(lines)
 
 
-def schedule_installer(path: Path) -> subprocess.Popen[bytes]:
-    """On Windows, start a helper that outlives us, then the caller exits. Elsewhere, start setup now."""
+def task_xml(script: Path, pid: int) -> str:
+    """Task Scheduler runs cmd. The service is the parent, not the recorder, so exiting cannot kill it."""
+    root = os.environ.get("SystemRoot", r"C:\Windows")
+    cmd = str(Path(root) / "System32" / "cmd.exe")
+    # /s strips one outer pair, so the inner quotes survive when the path has spaces.
+    args = f'/d /s /c " "{script}" {int(pid)}"'
+    return f"""<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>BitRymDym update</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <TimeTrigger>
+      <StartBoundary>2020-01-01T00:00:00</StartBoundary>
+      <Enabled>true</Enabled>
+    </TimeTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>true</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT4H</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>{_xml_text(cmd)}</Command>
+      <Arguments>{_xml_text(args)}</Arguments>
+    </Exec>
+  </Actions>
+</Task>
+"""
+
+
+def _wait_for_helper_log(log: Path, timeout: float = 8.0) -> None:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            text = log.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            text = ""
+        if "start" in text:
+            return
+        time.sleep(0.2)
+    raise OSError("pomocnik aktualizacji nie wstał")
+
+
+def _run_schtasks(args: list[str]) -> int:
+    schtasks = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "schtasks.exe"
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+    try:
+        done = subprocess.run(
+            [str(schtasks), *args],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=20,
+            creationflags=flags,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise OSError("harmonogram zadań nie odpowiedział") from error
+    return done.returncode
+
+
+def schedule_installer(path: Path) -> subprocess.Popen[bytes] | None:
+    """On Windows, ask Task Scheduler to start the helper and return only after it has logged that it is alive."""
     if os.name != "nt":
         return start_installer(path)
     folder = Path(os.environ.get("TEMP", ".")) / "BitRymDym-update"
     folder.mkdir(parents=True, exist_ok=True)
     script = folder / "apply-update.cmd"
-    script.write_bytes(installer_after_exit_command(path).encode("ascii"))
-    # `start` returns at once and the second cmd is not tied to this process.
-    command = [
-        "cmd",
-        "/d",
-        "/c",
-        "start",
-        "BitRymDym update",
-        "/MIN",
-        "cmd",
-        "/d",
-        "/c",
-        str(script),
-        str(os.getpid()),
-    ]
-    quiet = dict(stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
-    detached = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+    log = folder / "update.log"
+    xml_path = folder / "apply-update.xml"
     try:
-        return subprocess.Popen(command, creationflags=detached | 0x01000000, **quiet)
+        log.unlink()
     except OSError:
-        return subprocess.Popen(command, creationflags=detached, **quiet)
+        pass
+    try:
+        script.write_bytes(installer_after_exit_command(path).encode("ascii"))
+    except UnicodeEncodeError as error:
+        raise OSError("ścieżka instalatora nie jest ASCII") from error
+    xml_path.write_bytes(task_xml(script, os.getpid()).encode("utf-16"))
+    if _run_schtasks(["/Create", "/F", "/TN", TASK_NAME, "/XML", str(xml_path)]) != 0:
+        raise OSError("nie udało się zapisać zadania aktualizacji")
+    if _run_schtasks(["/Run", "/TN", TASK_NAME]) != 0:
+        _run_schtasks(["/Delete", "/F", "/TN", TASK_NAME])
+        raise OSError("nie udało się wystartować zadania aktualizacji")
+    try:
+        _wait_for_helper_log(log)
+    except OSError:
+        _run_schtasks(["/Delete", "/F", "/TN", TASK_NAME])
+        raise
+    return None
 
 
 def sign_manifest(
@@ -349,15 +443,23 @@ def self_test() -> None:
     if "/UPDATE=1" not in argv or "/NORESTART" not in argv or "/SILENT" in argv or "/SUPPRESSMSGBOXES" in argv:
         raise SystemExit("argumenty instalatora")
     waited = installer_after_exit_command(Path(r"C:\Temp\BitRymDym-Setup-2026.11.13.7.exe"))
-    if "Wait-Process -Id %1" not in waited or "/UPDATE=1" not in waited or "BitRymDym-Setup-2026.11.13.7.exe" not in waited:
+    start_at = waited.find("echo start")
+    wait_at = waited.find(":waitloop")
+    if start_at < 0 or wait_at < 0 or start_at > wait_at or "/UPDATE=1" not in waited or "BitRymDym-Setup-2026.11.13.7.exe" not in waited:
         raise SystemExit("instalator ma ruszyć dopiero po zejściu procesu")
-    if "/SILENT" in waited or "/SUPPRESSMSGBOXES" in waited:
+    if "/SILENT" in waited or "/SUPPRESSMSGBOXES" in waited or "powershell" in waited.lower():
         raise SystemExit("instalator aktualizacji ma być widoczny")
     if "/WAIT" not in waited or "BitRymDym\\Nagrywarka\\BitRymDym.exe" not in waited or "if errorlevel 1 start" not in waited:
         raise SystemExit("po instalacji program ma wstać sam")
-    if "MessageBox" not in waited or "update.log" not in waited:
+    if "update.log" not in waited or "echo opened" not in waited or TASK_NAME not in waited or "schtasks /Delete" not in waited:
         raise SystemExit("błąd instalacji ma być widoczny")
     waited.encode("ascii")
+    xml = task_xml(Path(r"C:\Temp\apply-update.cmd"), 4242)
+    if "powershell" in xml.lower() or "InteractiveToken" not in xml or "LeastPrivilege" not in xml or "HighestAvailable" in xml:
+        raise SystemExit("pomocnik ma iść przez Harmonogram, bez administratora")
+    if "4242" not in xml or "apply-update.cmd" not in xml or "cmd.exe" not in xml or "AllowStartOnDemand" not in xml:
+        raise SystemExit("zadanie ma odpalić cmd z numerem procesu")
+    xml.encode("utf-16")
     print("updater self-test ok")
 
 
