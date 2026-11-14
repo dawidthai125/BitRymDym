@@ -84,4 +84,16 @@ describe("beat usage policy (user beats 2026-10-30)", () => {
     expect(canUseBeatInStudio(p, { userId: OTHER }).allowed).toBe(true);
     expect(canAnonUseBeat(p).allowed).toBe(true);
   });
+
+  it("a published paid platform beat is denied in Studio and for anonymous use", () => {
+    const p = beat({ ownershipType: "PLATFORM", ownerId: null, catalogLane: "paid" });
+    expect(canUseBeatInStudio(p, { userId: OTHER })).toEqual({
+      allowed: false,
+      reason: "STUDIO_USE_DISABLED",
+    });
+    expect(canAnonUseBeat(p)).toEqual({
+      allowed: false,
+      reason: "STUDIO_USE_DISABLED",
+    });
+  });
 });

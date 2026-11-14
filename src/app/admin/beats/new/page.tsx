@@ -18,6 +18,12 @@ export default function AdminNewBeatPage() {
         <p className="text-sm text-muted-foreground">
           {t("tworzyWersjeRoboczaBitu")}
         </p>
+        <Link
+          href="/admin/beats/generate"
+          className="inline-block text-sm underline underline-offset-4"
+        >
+          {t("generatorLink")}
+        </Link>
       </header>
       <AdminCreateBeatForm />
     </main>

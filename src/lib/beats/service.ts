@@ -40,6 +40,7 @@ import {
   adminBeatsRange,
   type AdminBeatsQuery,
 } from "@/lib/beats/admin-catalogue-query";
+import { GENERATED_BEAT_TAG, catalogLaneOf } from "@/lib/beats/catalog-lane";
 import { BeatRequestError } from "@/lib/beats/request-error";
 import {
   isOwnerEditAudited,
@@ -729,6 +730,16 @@ export async function transitionBeatStatus(
   }
 
   if (to === "PUBLISHED") {
+    if (
+      current.ownershipType === "PLATFORM" &&
+      current.tags.includes(GENERATED_BEAT_TAG) &&
+      current.coverStatus !== "approved"
+    ) {
+      throw new AuthError(
+        "FORBIDDEN",
+        "Najpierw okładka. Bez niej bit nie wchodzi do katalogu.",
+      );
+    }
     await assertActiveMasterReadyForPublish(current);
     if (current.ownershipType === "PLATFORM") {
       if (!options?.licenseAcknowledged) {
@@ -1098,7 +1109,11 @@ export async function deleteBeat(beatId: string): Promise<void> {
   if (beat.error) throw new Error(beat.error.message);
 }
 
-export async function listPublishedBeats(): Promise<Beat[]> {
+export async function listPublishedBeats(options?: {
+  /** Default free: paid beats stay off the home page, Studio picker, and the Windows list. */
+  catalogLane?: "free" | "paid" | "all";
+}): Promise<Beat[]> {
+  const lane = options?.catalogLane ?? "free";
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
@@ -1113,7 +1128,9 @@ export async function listPublishedBeats(): Promise<Beat[]> {
     throw new Error(error.message);
   }
 
-  const beats = (data as BeatRow[] | null)?.map(mapPublicBeatRow) ?? [];
+  const beats = ((data as BeatRow[] | null)?.map(mapPublicBeatRow) ?? []).filter((beat) =>
+    lane === "all" ? true : catalogLaneOf(beat.catalogLane) === lane,
+  );
   return withPublicAuthors(beats);
 }
 

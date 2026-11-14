@@ -29,6 +29,7 @@ export type BeatRow = {
   visibility?: BeatVisibility | null;
   allow_download?: boolean | null;
   allow_studio_use?: boolean | null;
+  catalog_lane?: string | null;
   cover_status?: BeatCoverStatus | null;
   cover_updated_at?: string | null;
   cover_rejection_reason?: string | null;
@@ -38,7 +39,7 @@ export type BeatRow = {
 
 /** Public catalog / detail — never select rejection_reason or last_submitted_at. */
 export const BEAT_SELECT_PUBLIC =
-  "id, owner_id, ownership_type, title, producer, description, genre, style, bpm, key, scale, duration_seconds, tags, cover_ref, status, created_at, updated_at, visibility, allow_download, allow_studio_use, cover_status, cover_updated_at";
+  "id, owner_id, ownership_type, title, producer, description, genre, style, bpm, key, scale, duration_seconds, tags, cover_ref, status, created_at, updated_at, visibility, allow_download, allow_studio_use, cover_status, cover_updated_at, catalog_lane";
 
 /** Owner / staff — includes rejection_reason + submit cooldown cursor. */
 export const BEAT_SELECT_FULL = `${BEAT_SELECT_PUBLIC}, rejection_reason, last_submitted_at, cover_rejection_reason, key_detected, key_confidence`;
@@ -74,6 +75,9 @@ export function mapBeatRow(
     visibility: row.visibility === "private" ? "private" : "public",
     allowDownload: row.allow_download !== false,
     allowStudioUse: row.allow_studio_use !== false,
+    ...(row.catalog_lane === "paid" || row.catalog_lane === "free"
+      ? { catalogLane: row.catalog_lane }
+      : {}),
     coverStatus: row.cover_status ?? "none",
     coverUpdatedAt: row.cover_updated_at ?? null,
     coverRejectionReason: include ? (row.cover_rejection_reason ?? null) : null,

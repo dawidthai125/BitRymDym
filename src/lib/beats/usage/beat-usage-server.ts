@@ -11,7 +11,7 @@ import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
 
 /** Columns every server-side usage check needs (append to an existing select). */
 export const BEAT_USAGE_COLUMNS =
-  "status, ownership_type, owner_id, visibility, allow_studio_use, allow_download";
+  "status, ownership_type, owner_id, visibility, allow_studio_use, allow_download, catalog_lane";
 
 export function beatUsageSubjectFromRow(
   row: Record<string, unknown>,
@@ -23,6 +23,12 @@ export function beatUsageSubjectFromRow(
     visibility: (row.visibility as string | null) ?? null,
     allowDownload: (row.allow_download as boolean | null) ?? null,
     allowStudioUse: (row.allow_studio_use as boolean | null) ?? null,
+    catalogLane:
+      row.catalog_lane === "paid"
+        ? "paid"
+        : row.catalog_lane === "free"
+          ? "free"
+          : undefined,
   };
 }
 

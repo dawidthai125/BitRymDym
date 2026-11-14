@@ -145,6 +145,22 @@ export default async function AdminLayout({
               {t("nowyBit")}
             </Link>
           ) : null}
+          {showPlatform ? (
+            <Link
+              href="/admin/beats/generate"
+              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
+            >
+              {t("generator")}
+            </Link>
+          ) : null}
+          {showPlatform ? (
+            <Link
+              href="/admin/beats/waiting"
+              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
+            >
+              {t("oczekujace")}
+            </Link>
+          ) : null}
           <Link
             href="/beats"
             className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"

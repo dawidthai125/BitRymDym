@@ -135,9 +135,17 @@ export default async function AdminBeatsListPage({ searchParams }: PageProps) {
             {tc("opis")}
           </p>
         </div>
-        <Link href="/admin/beats/new" className={cn(buttonVariants())}>
-          {t("nowyBit")}
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/beats/generate" className={cn(buttonVariants({ variant: "outline" }))}>
+            {t("generator")}
+          </Link>
+          <Link href="/admin/beats/waiting" className={cn(buttonVariants({ variant: "outline" }))}>
+            {t("oczekujace")}
+          </Link>
+          <Link href="/admin/beats/new" className={cn(buttonVariants())}>
+            {t("nowyBit")}
+          </Link>
+        </div>
       </header>
 
       <form

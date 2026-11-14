@@ -1,0 +1,271 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useState, type FormEvent } from "react";
+
+import { BrdButton } from "@/components/brand/brd-button";
+import {
+  BEAT_DURATION_CHOICES,
+  DEFAULT_BEAT_DURATION,
+  type BeatDuration,
+} from "@/lib/beats/ai-beat/prompt";
+
+const fieldClass =
+  "rounded-lg border border-border bg-background px-3 py-2 text-sm";
+
+function formatLength(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+type Phase = "idle" | "describing" | "starting" | "waiting" | "saving" | "ready";
+
+export function AdminGenerateBeatForm() {
+  const t = useTranslations("admin.adminBeatsGeneratePage");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [duration, setDuration] = useState<BeatDuration>(DEFAULT_BEAT_DURATION);
+  const [bpm, setBpm] = useState("");
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [beatId, setBeatId] = useState<string | null>(null);
+  const [styleLabel, setStyleLabel] = useState<string | null>(null);
+  const [bpmHint, setBpmHint] = useState<number | null>(null);
+
+  const generating = phase === "starting" || phase === "waiting" || phase === "saving";
+  const busy = generating || phase === "describing";
+
+  async function onDescribe() {
+    if (busy) return;
+    setError(null);
+    setBeatId(null);
+    setStyleLabel(null);
+    setBpmHint(null);
+    const url = youtubeUrl.trim();
+    if (!url) {
+      setError(t("linkWymagany"));
+      return;
+    }
+    setPhase("describing");
+    try {
+      const res = await fetch("/api/admin/beats/generate/style", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        error?: string;
+        opis?: string;
+        style?: string;
+        bpmHint?: number | null;
+      };
+      if (!res.ok || !json.success || typeof json.opis !== "string") {
+        setPhase("idle");
+        setError(json.error || t("blad"));
+        return;
+      }
+      setDescription(json.opis);
+      const hinted =
+        typeof json.bpmHint === "number" && Number.isFinite(json.bpmHint)
+          ? Math.round(json.bpmHint)
+          : null;
+      setBpmHint(hinted != null && hinted >= 60 && hinted <= 180 ? hinted : null);
+      const style = typeof json.style === "string" ? json.style.trim() : "";
+      setStyleLabel(style || null);
+      setPhase("idle");
+    } catch {
+      setPhase("idle");
+      setError(t("blad"));
+    }
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    setError(null);
+    setBeatId(null);
+    setPhase("starting");
+
+    const payload = {
+      description,
+      durationSeconds: duration,
+      bpm: bpm.trim() === "" ? null : Number(bpm),
+    };
+
+    try {
+      const startRes = await fetch("/api/admin/beats/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const startJson = (await startRes.json()) as {
+        success?: boolean;
+        error?: string;
+        generationId?: string;
+        title?: string;
+        style?: string | null;
+        opis?: string | null;
+      };
+      if (!startRes.ok || !startJson.success || !startJson.generationId) {
+        setPhase("idle");
+        setError(startJson.error || t("blad"));
+        return;
+      }
+
+      setPhase("waiting");
+      const deadline = Date.now() + 4 * 60 * 1000;
+      while (Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+        const resultRes = await fetch("/api/admin/beats/generate/result", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            generationId: startJson.generationId,
+            title: startJson.title,
+            description,
+            bpm: payload.bpm,
+            style: startJson.style ?? null,
+            opis: startJson.opis ?? null,
+          }),
+        });
+        const resultJson = (await resultRes.json()) as {
+          success?: boolean;
+          status?: string;
+          error?: string;
+          beatId?: string;
+        };
+        if (!resultRes.ok || !resultJson.success) {
+          setPhase("idle");
+          setError(resultJson.error || t("blad"));
+          return;
+        }
+        if (resultJson.status === "pending") {
+          setPhase("waiting");
+          continue;
+        }
+        if (resultJson.status === "ready" && resultJson.beatId) {
+          setBeatId(resultJson.beatId);
+          setPhase("ready");
+          return;
+        }
+      }
+      setPhase("idle");
+      setError(t("czasMinal"));
+    } catch {
+      setPhase("idle");
+      setError(t("blad"));
+    }
+  }
+
+  const status =
+    phase === "describing"
+      ? t("opisujeStyl")
+      : phase === "starting"
+        ? t("przygotowuje")
+        : phase === "waiting"
+          ? t("czekam")
+          : phase === "saving"
+            ? t("wgrywam")
+            : null;
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      <div className="flex flex-col gap-2 text-sm">
+        <label className="flex flex-col gap-2">
+          <span className="font-medium">{t("linkPola")}</span>
+          <input
+            className={fieldClass}
+            type="text"
+            inputMode="url"
+            autoComplete="off"
+            value={youtubeUrl}
+            onChange={(event) => setYoutubeUrl(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void onDescribe();
+              }
+            }}
+            placeholder={t("linkPlaceholder")}
+            disabled={busy}
+          />
+        </label>
+        <p className="text-muted-foreground">{t("linkPomoc")}</p>
+        <div>
+          <BrdButton type="button" variant="secondary" disabled={busy} onClick={() => void onDescribe()}>
+            {t("opiszStyl")}
+          </BrdButton>
+        </div>
+      </div>
+
+      <label className="flex flex-col gap-2 text-sm">
+        <span className="font-medium">{t("opisPola")}</span>
+        <textarea
+          className={`${fieldClass} min-h-32`}
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder={t("opisPlaceholder")}
+          maxLength={800}
+          required
+          disabled={busy}
+        />
+      </label>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-2 text-sm">
+          <span className="font-medium">{t("czas")}</span>
+          <select
+            className={fieldClass}
+            value={duration}
+            onChange={(event) => setDuration(Number(event.target.value) as BeatDuration)}
+            disabled={busy}
+          >
+            {BEAT_DURATION_CHOICES.map((seconds) => (
+              <option key={seconds} value={seconds}>
+                {formatLength(seconds)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-2 text-sm">
+          <span className="font-medium">{t("bpm")}</span>
+          <input
+            className={fieldClass}
+            inputMode="numeric"
+            value={bpm}
+            onChange={(event) => setBpm(event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
+            placeholder={t("bpmPuste")}
+            disabled={busy}
+          />
+        </label>
+      </div>
+
+      <p className="text-sm text-muted-foreground">{t("bezArtystow")}</p>
+
+      <div>
+        <BrdButton type="submit" disabled={busy}>
+          {generating ? t("generuje") : t("generuj")}
+        </BrdButton>
+      </div>
+
+      <p className="min-h-6 text-sm" aria-live="polite">
+        {error ? <span className="text-destructive">{error}</span> : null}
+        {!error && status ? <span className="text-muted-foreground">{status}</span> : null}
+        {!error && !status && phase !== "ready" && styleLabel ? (
+          <span className="text-muted-foreground">
+            {t("stylZLinku", { style: styleLabel })}
+            {bpmHint != null ? ` ${t("tempoPodpowiedz", { bpm: bpmHint })}` : null}
+          </span>
+        ) : null}
+        {!error && phase === "ready" && beatId ? (
+          <Link className="underline underline-offset-4" href="/admin/beats/waiting">
+            {t("gotowe")}
+          </Link>
+        ) : null}
+      </p>
+    </form>
+  );
+}

@@ -64,6 +64,12 @@ export default async function AdminIndexPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <BrdLink href="/admin/beats/new">{t("nowyBit")}</BrdLink>
+            <BrdLink href="/admin/beats/generate" variant="secondary">
+              {t("generator")}
+            </BrdLink>
+            <BrdLink href="/admin/beats/waiting" variant="secondary">
+              {t("oczekujace")}
+            </BrdLink>
             <BrdLink href="/admin/moderation" variant="secondary">
               {t("moderacja")}
             </BrdLink>

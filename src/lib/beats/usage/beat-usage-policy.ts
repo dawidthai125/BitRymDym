@@ -27,6 +27,8 @@ export type BeatUsageSubject = {
   visibility?: BeatVisibility | string | null;
   allowDownload?: boolean | null;
   allowStudioUse?: boolean | null;
+  /** Paid platform beats are catalogue-only. Unset or free keeps the old allow. */
+  catalogLane?: "free" | "paid" | null;
 };
 
 export type BeatUsageViewer = {
@@ -92,6 +94,9 @@ export function canUseBeatInStudio(
 ): BeatUsageDecision {
   if (isBeatOwner(beat, viewer.userId)) return ALLOW;
   if (beat.status !== "PUBLISHED") return { allowed: false, reason: "NOT_PUBLISHED" };
+  if (beat.ownershipType !== "USER" && beat.catalogLane === "paid") {
+    return { allowed: false, reason: "STUDIO_USE_DISABLED" };
+  }
   if (beat.ownershipType !== "USER") return ALLOW;
   if (viewer.userId && viewer.hasActiveGrant) return ALLOW;
   if (normalizeBeatVisibility(beat.visibility) === "private") {
@@ -103,7 +108,7 @@ export function canUseBeatInStudio(
   return ALLOW;
 }
 
-/** Anonymous recording: public USER beats with Studio use ON, or PLATFORM. */
+/** Anonymous recording: public USER beats with Studio use ON, or free PLATFORM beats. */
 export function canAnonUseBeat(beat: BeatUsageSubject): BeatUsageDecision {
   return canUseBeatInStudio(beat, { userId: null });
 }

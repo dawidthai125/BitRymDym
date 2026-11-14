@@ -5,6 +5,7 @@ import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
 import { AppShell } from "@/components/site/app-shell";
+import { catalogLaneOf } from "@/lib/beats/catalog-lane";
 import { listFavoriteBeatIds } from "@/lib/beats/favorites";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
@@ -30,8 +31,9 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const params = searchParams ? await searchParams : {};
   const source = params.zrodlo === "user" ? "USER" : "PLATFORM";
   const paid = params.katalog === "platny";
-  const raw = (await listPublishedBeats())
+  const raw = (await listPublishedBeats({ catalogLane: paid ? "paid" : "free" }))
     .filter((beat) => beat.ownershipType === source)
+    .filter((beat) => catalogLaneOf(beat.catalogLane) === (paid ? "paid" : "free"))
     .map(toPublicCatalogItem);
   const session = await getCurrentProfile();
   const favoriteIds = session ? await listFavoriteBeatIds(session.userId) : [];
@@ -80,10 +82,21 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
           </nav>
 
           {paid ? (
-            <div className="border border-[var(--brd-line)] px-5 py-12 text-center" data-testid="beats-paid-catalog">
-              <p className="brd-display text-xl font-semibold">{t("platnyTytul")}</p>
-              <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--brd-mute)]">{t("platnyOpis")}</p>
-              <p className="mt-3 text-sm font-semibold">{t("platnyWkrotce")}</p>
+            <div className="space-y-6">
+              <div className="border border-[var(--brd-line)] px-5 py-12 text-center" data-testid="beats-paid-catalog">
+                <p className="brd-display text-xl font-semibold">{t("platnyTytul")}</p>
+                <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--brd-mute)]">{t("platnyOpis")}</p>
+                <p className="mt-3 text-sm font-semibold">{t("platnyWkrotce")}</p>
+                <p className="mt-3 text-sm text-[var(--brd-mute)]">{t("platnyZakup")}</p>
+              </div>
+              {beats.length > 0 ? (
+                <BeatsCatalogClient
+                  beats={beats}
+                  initialQuery={initialQuery}
+                  favoriteIds={favoriteIds}
+                  signedIn={session != null}
+                />
+              ) : null}
             </div>
           ) : beats.length === 0 ? (
             <div className="border border-[var(--brd-line)] px-5 py-12 text-center">

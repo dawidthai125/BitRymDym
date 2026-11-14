@@ -83,6 +83,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     visibility: beat.visibility,
     allowDownload: beat.allowDownload,
     allowStudioUse: beat.allowStudioUse,
+    catalogLane: beat.catalogLane,
   };
   const restricted =
     beat.ownershipType === "USER" &&

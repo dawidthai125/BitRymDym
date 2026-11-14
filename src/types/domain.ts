@@ -85,6 +85,8 @@ export type Beat = {
   visibility?: BeatVisibility;
   allowDownload?: boolean;
   allowStudioUse?: boolean;
+  /** Present only when the row has catalog_lane free or paid. Unset stays on the free catalogue. */
+  catalogLane?: "free" | "paid";
   coverStatus?: BeatCoverStatus;
   coverUpdatedAt?: string | null;
   /** Own / staff only. */
