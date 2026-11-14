@@ -5194,6 +5194,9 @@ def self_test_wav_roundtrip() -> None:
 
 
 if __name__ == "__main__":
+    # Velopack install, update and uninstall. Exit before any window or network.
+    if updater.velopack_hook():
+        raise SystemExit(0)
     if "--self-test" in sys.argv:
         from own_fx import self_test as fx_self_test
 

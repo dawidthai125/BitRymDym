@@ -30,8 +30,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.21"
+APP_VERSION = "2026.11.22"
 PACK_ID = "BitRymDym.Nagrywarka"
+
+# Velopack runs the main exe with one of these and waits. The process must exit
+# in a few seconds and must not open a window. Otherwise Setup stays on
+# "Configuring… please wait", and uninstall closes without deleting files.
+VELOPACK_HOOKS = (
+    "--veloapp-install",
+    "--veloapp-obsolete",
+    "--veloapp-updated",
+    "--veloapp-uninstall",
+)
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
 FEED_URL = R2_BASE + "feed/"
@@ -293,6 +303,19 @@ def start_installer(path: Path) -> subprocess.Popen[bytes]:
     )
 
 
+def velopack_hook(argv: list[str] | None = None) -> str | None:
+    """The Velopack flag on this command line, or None for a normal start.
+
+    The caller exits 0 immediately. No window, no network, no second-copy check.
+    """
+    args = sys.argv if argv is None else argv
+    for arg in args[1:]:
+        name = arg.split("=", 1)[0]
+        if name in VELOPACK_HOOKS:
+            return name
+    return None
+
+
 def installed_root() -> Path | None:
     """Velopack layout: Update.exe sits above current\\BitRymDym.exe, next to packages."""
     if os.name != "nt":
@@ -403,6 +426,15 @@ def self_test() -> None:
         raise SystemExit("komenda Update.exe")
     if "powershell" in " ".join(args).lower() or "cmd.exe" in " ".join(args).lower():
         raise SystemExit("aktualizacja nie może iść przez skrypt")
+    if velopack_hook(["BitRymDym.exe"]) is not None:
+        raise SystemExit("zwykły start nie jest haczykiem Velopack")
+    for flag in VELOPACK_HOOKS:
+        if velopack_hook(["BitRymDym.exe", flag, "2026.11.22"]) != flag:
+            raise SystemExit(f"haczyk {flag}")
+        if velopack_hook(["BitRymDym.exe", f"{flag}=2026.11.22"]) != flag:
+            raise SystemExit(f"haczyk {flag} ze znakiem równości")
+    if velopack_hook(["BitRymDym.exe", "--self-test"]) is not None:
+        raise SystemExit("samotest nie jest haczykiem")
     feed = (
         '{"Assets":['
         '{"PackageId":"BitRymDym.Nagrywarka","Version":"2026.11.17","Type":"Full",'
