@@ -43,14 +43,32 @@ export function BrdButton({
 
 type BrdLinkProps = ComponentProps<typeof Link> & {
   variant?: Variant;
+  /** Full page load. The Studio project card must open even if the client router drops the tap. */
+  native?: boolean;
 };
 
 export function BrdLink({
   className,
   variant = "primary",
+  native = false,
+  href,
   ...props
 }: BrdLinkProps) {
-  return (
-    <Link className={cn(base, variants[variant], className)} {...props} />
-  );
+  const classes = cn(base, variants[variant], className);
+  if (native) {
+    const {
+      prefetch: _prefetch,
+      replace: _replace,
+      scroll: _scroll,
+      ...anchorProps
+    } = props;
+    return (
+      <a
+        className={classes}
+        href={typeof href === "string" ? href : undefined}
+        {...anchorProps}
+      />
+    );
+  }
+  return <Link className={classes} href={href} {...props} />;
 }

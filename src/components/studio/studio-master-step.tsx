@@ -20,6 +20,7 @@ import type { BitekMasterStyle, BitekMasterTarget } from "@/lib/studio/bitek/cha
 import { watchMasterManual, type ManualIssue } from "@/lib/studio/bitek/manual-watch";
 import { LockedAction } from "@/components/plans/locked-action";
 import { FREE_WATERMARK_PER_DAY, minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
+import { referenceEditInvalidatesMaster } from "@/lib/studio/master/reference-invalidation";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
 import { joinParts, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer } from "@/lib/studio/master/client";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
@@ -129,6 +130,8 @@ export function StudioMasterStep({
   const [style, setStyle] = useState<MasterStyleId | null>(initialState?.style ?? null);
   const [styleIntensity, setStyleIntensity] = useState(DEFAULT_MASTER_INTENSITY);
   const [refState, setRefState] = useState<MasterReferenceState>({ loaded: false, available: true, gate: null, reference: null });
+  const refStateRef = useRef(refState);
+  refStateRef.current = refState;
   const [refIntensity, setRefIntensity] = useState(DEFAULT_REFERENCE_INTENSITY);
   const effective = useMemo(() => applyMasterStyle(settings, style, styleIntensity), [settings, style, styleIntensity]);
   const [preview, setPreview] = useState<{ stereo: Stereo; metrics: MasterMetrics; key: string } | null>(null);
@@ -291,6 +294,17 @@ export function StudioMasterStep({
   const invalidate = () => {
     if (sm.phase === "done") setSm({ phase: "idle" });
     setApproved(false);
+  };
+  const onReferenceState = (next: MasterReferenceState) => {
+    const prev = refStateRef.current;
+    refStateRef.current = next;
+    setRefState(next);
+    if (referenceEditInvalidatesMaster(
+      { loaded: prev.loaded, referenceId: prev.reference?.id ?? null },
+      next.reference?.id ?? null,
+    )) {
+      invalidate();
+    }
   };
   const sessionLive = useRef<MasterSessionSnap>({
     settings: { ...DEFAULT_MASTER_SETTINGS },
@@ -725,7 +739,7 @@ export function StudioMasterStep({
   return (
     <div data-testid="studio-master-step" className="flex flex-col gap-3 pb-64 lg:pb-48">
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" variant="outline" className="min-h-9" onClick={onBackToMix} data-testid="studio-master-back" aria-describedby="studio-master-back-hint">
+        <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={onBackToMix} data-testid="studio-master-back" aria-describedby="studio-master-back-hint">
           ← {t("wrocDoMixu")}
         </Button>
         <h2 className="brd-display text-2xl leading-none tracking-tight">{t("tytul")}</h2>
@@ -763,7 +777,7 @@ export function StudioMasterStep({
           <section aria-labelledby="studio-master-settings-title" className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <h3 id="studio-master-settings-title" className="brd-display text-base">{t("ustawieniaTytul")}</h3>
-              <Button type="button" size="sm" variant="ghost" className="min-h-9" onClick={() => replaceSettings(DEFAULT_MASTER_SETTINGS)}>{t("reset")}</Button>
+              <Button type="button" size="sm" variant="ghost" className="min-h-11" onClick={() => replaceSettings(DEFAULT_MASTER_SETTINGS)}>{t("reset")}</Button>
             </div>
             <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-5">
               {MASTER_SETTING_KEYS.map((k) => {
@@ -772,9 +786,9 @@ export function StudioMasterStep({
                   <li key={k} data-testid={`studio-master-setting-${k}`} className="flex items-center justify-between gap-1 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-1.5">
                     <span className="text-sm">{name}</span>
                     <span className="flex items-center gap-1">
-                      <Button type="button" size="sm" variant="outline" className="min-h-9 min-w-9" aria-label={t("mniej", { name })} disabled={settings[k] <= -3} onClick={() => step(k, settings[k] - 0.5)}>−</Button>
+                      <Button type="button" size="sm" variant="outline" className="min-h-11 min-w-11" aria-label={t("mniej", { name })} disabled={settings[k] <= -3} onClick={() => step(k, settings[k] - 0.5)}>−</Button>
                       <output className="w-9 text-center font-mono text-sm" aria-live="polite">{signed(settings[k])}</output>
-                      <Button type="button" size="sm" variant="outline" className="min-h-9 min-w-9" aria-label={t("wiecej", { name })} disabled={settings[k] >= 3} onClick={() => step(k, settings[k] + 0.5)}>+</Button>
+                      <Button type="button" size="sm" variant="outline" className="min-h-11 min-w-11" aria-label={t("wiecej", { name })} disabled={settings[k] >= 3} onClick={() => step(k, settings[k] + 0.5)}>+</Button>
                     </span>
                   </li>
                 );
@@ -790,7 +804,7 @@ export function StudioMasterStep({
             onStyleIntensity={onIntensity}
             onStyleIntensityPhase={onIntensityPhase}
             refState={refState}
-            onRefState={(v) => { setRefState(v); invalidate(); }}
+            onRefState={onReferenceState}
             refIntensity={refIntensity}
             onRefIntensity={(v) => { setRefIntensity(v); invalidate(); }}
             disabled={sm.phase === "working"}
@@ -798,11 +812,11 @@ export function StudioMasterStep({
 
           <section aria-labelledby="studio-master-ab-title" data-testid="studio-master-ab" className="flex flex-wrap items-center gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2">
             <h3 id="studio-master-ab-title" className="text-sm font-semibold">{t("abTytul")}</h3>
-            <Button type="button" size="sm" className="min-h-9" disabled={!previewFresh} onClick={() => (playing ? stop() : play(ab))} data-testid="studio-master-play">
+            <Button type="button" size="sm" className="min-h-11" disabled={!previewFresh} onClick={() => (playing ? stop() : play(ab))} data-testid="studio-master-play">
               {playing ? `■ ${t("stop")}` : `▶ ${t("graj")}`}
             </Button>
             {(["mix", "master"] as const).map((m) => (
-              <Button key={m} type="button" size="sm" variant={ab === m ? "default" : "outline"} aria-pressed={ab === m} className="min-h-9" onClick={() => switchAb(m)} data-testid={`studio-master-ab-${m}`}>
+              <Button key={m} type="button" size="sm" variant={ab === m ? "default" : "outline"} aria-pressed={ab === m} className="min-h-11" onClick={() => switchAb(m)} data-testid={`studio-master-ab-${m}`}>
                 {m === "mix" ? t("abMix") : t("abMaster")}
               </Button>
             ))}
@@ -939,7 +953,7 @@ export function StudioMasterStep({
                                 );
                               }
                               return (
-                                <Button key={format} type="button" size="sm" variant={enabled ? "default" : "outline"} className="min-h-9" disabled={!enabled || dl?.status === "working"} title={lockedLabel ?? undefined} aria-label={`${t("formatAria", { kind: t(`pobierz.${kind}`), format: t(`format.${format}`) })}${lockedLabel ? ` — ${lockedLabel}` : ""}`} data-testid={`studio-master-dl-${key}`} data-enabled={enabled} onClick={() => void deliver(kind, format)}>
+                                <Button key={format} type="button" size="sm" variant={enabled ? "default" : "outline"} className="min-h-11 min-w-11" disabled={!enabled || dl?.status === "working"} title={lockedLabel ?? undefined} aria-label={`${t("formatAria", { kind: t(`pobierz.${kind}`), format: t(`format.${format}`) })}${lockedLabel ? ` — ${lockedLabel}` : ""}`} data-testid={`studio-master-dl-${key}`} data-enabled={enabled} onClick={() => void deliver(kind, format)}>
                                   {!opt?.enabled ? "🔒 " : ""}
                                   {dl?.key === key && dl.status === "working" ? t("przygotowuje") : opt?.watermark ? `${t(`format.${format}`)} · ${t("zeZnakiem")}` : t(`format.${format}`)}
                                 </Button>

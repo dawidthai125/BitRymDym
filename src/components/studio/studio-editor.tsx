@@ -3848,10 +3848,10 @@ function StudioEditorInner({
                 >
                   <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
                   {/*
-                    Mobile: 220px header cannot fit name + M/S/R + ↑↓⋮ (6×44).
-                    Row1 = name (tooltip) + M/S/R; row2 = role chip (merges the
-                    old type label) + reorder/menu; row3 = Vol / Pan, value on
-                    the label row so the two never overlap.
+                    Phone header is full width, so row 2 can be 44px.
+                    Do not put name + M/S/R + ↑↓⋮ on one row (6×44).
+                    Row1 = name + M/S/R; row2 = role + reorder/menu;
+                    row3 = Vol / Pan, value on the label row.
                   */}
                   <div className="flex min-h-11 items-center gap-0.5">
                     <button
@@ -3911,16 +3911,16 @@ function StudioEditorInner({
                   </div>
                   {!recordSimple ? (
                   <>
-                  <div className="flex min-h-9 min-w-0 items-center gap-0.5 sm:min-h-11">
+                  <div className="flex min-h-11 min-w-0 items-center gap-0.5">
                     <label
-                      className="studio-track-role relative flex h-7 min-w-0 flex-1 items-center"
+                      className="studio-track-role relative flex h-11 min-w-0 flex-1 items-center"
                       title={`${typeLabel} · ${trRole(track.trackRole)}`}
                     >
                       <span className="sr-only">
                         {tr("rolaSciezki", { v0: track.name })}
                       </span>
                       <select
-                        className="studio-track-role-select h-7 w-full min-w-0 max-w-[9.5rem] cursor-pointer truncate rounded-sm font-mono text-[10px] uppercase tracking-[0.08em]"
+                        className="studio-track-role-select h-11 w-full min-w-0 max-w-[9.5rem] cursor-pointer truncate rounded-sm font-mono text-[10px] uppercase tracking-[0.08em]"
                         value={track.trackRole}
                         disabled={pending || recordingLocked}
                         data-testid="studio-track-role"
@@ -3943,7 +3943,7 @@ function StudioEditorInner({
                       type="button"
                       size="xs"
                       variant="ghost"
-                      className="h-9 min-h-9 min-w-9 shrink-0 px-0 sm:h-11 sm:min-h-11 sm:min-w-11"
+                      className="h-11 min-h-11 min-w-11 shrink-0 px-0"
                       disabled={pending || index === 0}
                       title={tr("przeniesWGore")}
                       aria-label={tr("przeniesSciezkeWGore")}
@@ -3957,7 +3957,7 @@ function StudioEditorInner({
                       type="button"
                       size="xs"
                       variant="ghost"
-                      className="h-9 min-h-9 min-w-9 shrink-0 px-0 sm:h-11 sm:min-h-11 sm:min-w-11"
+                      className="h-11 min-h-11 min-w-11 shrink-0 px-0"
                       disabled={pending || index === doc.tracks.length - 1}
                       title={tr("przeniesWDol")}
                       aria-label={tr("przeniesSciezkeWDol")}
@@ -3972,7 +3972,7 @@ function StudioEditorInner({
                         type="button"
                         size="xs"
                         variant="ghost"
-                        className="h-9 min-h-9 min-w-9 shrink-0 px-0 sm:h-11 sm:min-h-11 sm:min-w-11"
+                        className="h-11 min-h-11 min-w-11 shrink-0 px-0"
                         data-testid="studio-track-menu"
                         data-track-id={track.id}
                         disabled={recordingLocked || pending}
@@ -4794,7 +4794,7 @@ function StudioTransportBar({
     audioState === "loading"
       ? tr("ladowanieBitu")
       : audioState === "idle"
-        ? tr("bitOczekujeNaZaladowanie")
+        ? tr("bitWProjekcie")
         : audioState === "no_beat"
           ? tr("nieMaszJeszczeWybranego")
           : audioState === "error"

@@ -68,7 +68,7 @@ export function BeatRecordingSurface({
         <p className="text-sm font-medium text-[var(--brd-ink)]">{tg("tytul")}</p>
         <p className="text-sm text-[var(--brd-ink-soft)]">{tg("opis")}</p>
         <p className="text-sm">
-          <Link href="/nagrywarka" className="underline underline-offset-4">{tg("program")}</Link>
+          <Link href="/nagrywarka" className="inline-flex min-h-11 items-center underline underline-offset-4">{tg("program")}</Link>
         </p>
         <div className="flex flex-wrap gap-3 pt-1">
           <Link
@@ -91,7 +91,7 @@ export function BeatRecordingSurface({
   return (
     <div className="min-w-0 space-y-4">
       <p className="text-sm text-[var(--brd-ink-soft)]">
-        <Link href="/nagrywarka" className="underline underline-offset-4">{tg("programZalogowany")}</Link>
+        <Link href="/nagrywarka" className="inline-flex min-h-11 items-center underline underline-offset-4">{tg("programZalogowany")}</Link>
       </p>
       <PlaybackShell
         ref={playbackRef}

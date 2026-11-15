@@ -801,7 +801,7 @@ export function StudioMixStep({
   return (
     <div data-testid="studio-mix-step" className="flex flex-col gap-3 pb-64 lg:pb-48">
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" variant="outline" className="min-h-9" onClick={onBack} data-testid="studio-mix-back">
+        <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={onBack} data-testid="studio-mix-back">
           ← {t("wrocDoNagrania")}
         </Button>
         <h2 className="brd-display text-2xl leading-none tracking-tight">{t("tytul")}</h2>
@@ -861,7 +861,7 @@ export function StudioMixStep({
                 <span className="font-mono text-xs" aria-live="polite">
                   {t("analizaTrwa", { pct: Math.round(progress * 100) })}
                 </span>
-                <Button type="button" size="sm" variant="ghost" className="min-h-9" onClick={() => abortRef.current?.abort()}>
+                <Button type="button" size="sm" variant="ghost" className="min-h-11" onClick={() => abortRef.current?.abort()}>
                   {t("anuluj")}
                 </Button>
               </>
@@ -890,7 +890,7 @@ export function StudioMixStep({
               type="button"
               size="sm"
               variant="outline"
-              className="min-h-9"
+              className="min-h-11"
               disabled={midiBusy}
               data-testid="studio-mix-midi"
               onClick={() => void notesFromVocal()}
@@ -916,7 +916,7 @@ export function StudioMixStep({
                 <Button
                   type="button"
                   size="sm"
-                  className="min-h-9 w-full sm:w-auto"
+                  className="min-h-11 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-pocket-hint"
                   data-testid="studio-mix-pocket"
@@ -929,7 +929,7 @@ export function StudioMixStep({
                 <Button
                   type="button"
                   size="sm"
-                  className="min-h-9 w-full sm:w-auto"
+                  className="min-h-11 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-harmony-hint"
                   data-testid="studio-mix-harmony"
@@ -942,7 +942,7 @@ export function StudioMixStep({
                 <Button
                   type="button"
                   size="sm"
-                  className="min-h-9 w-full sm:w-auto"
+                  className="min-h-11 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-rider-hint"
                   data-testid="studio-mix-rider"
@@ -955,7 +955,7 @@ export function StudioMixStep({
                 <Button
                   type="button"
                   size="sm"
-                  className="min-h-9 w-full sm:w-auto"
+                  className="min-h-11 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-space-hint"
                   data-testid="studio-mix-space"
@@ -968,7 +968,7 @@ export function StudioMixStep({
                 <Button
                   type="button"
                   size="sm"
-                  className="min-h-9 w-full sm:w-auto"
+                  className="min-h-11 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-voice-hint"
                   data-testid="studio-mix-voice"
@@ -981,7 +981,7 @@ export function StudioMixStep({
                 <Button
                   type="button"
                   size="sm"
-                  className="min-h-9 w-full sm:w-auto"
+                  className="min-h-11 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-nova-hint"
                   data-testid="studio-mix-nova"
@@ -994,7 +994,7 @@ export function StudioMixStep({
                 <Button
                   type="button"
                   size="sm"
-                  className="min-h-9 w-full sm:w-auto"
+                  className="min-h-11 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-fix-all-hint"
                   data-testid="studio-mix-fix-all"
@@ -1027,7 +1027,7 @@ export function StudioMixStep({
                   size="sm"
                   variant={listenMode === mode ? "default" : "outline"}
                   aria-pressed={listenMode === mode}
-                  className="min-h-9"
+                  className="min-h-11"
                   disabled={mode === "master"}
                   data-testid={`studio-mix-listen-${mode}`}
                   onClick={() => setLevelListen(mode)}
@@ -1054,7 +1054,7 @@ export function StudioMixStep({
                   size="sm"
                   variant={abMode === mode ? "default" : "outline"}
                   aria-pressed={abMode === mode}
-                  className="min-h-9"
+                  className="min-h-11"
                   data-testid={`studio-mix-ab-${mode}`}
                   onClick={() => setAbListen(mode)}
                 >
@@ -1204,7 +1204,7 @@ function MixCardItem({
               variant="outline"
               disabled={!canFix}
               aria-label={t("poprawAria", { title: t(`cards.${card.id}.title`) })}
-              className="min-h-9"
+              className="min-h-11"
               data-testid="studio-mix-card-fix"
               onClick={onFix}
             >

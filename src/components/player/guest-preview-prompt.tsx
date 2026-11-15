@@ -27,7 +27,7 @@ export function GuestPreviewPrompt({
       role="status"
       data-testid="guest-preview-prompt"
       data-variant={variant}
-      className="fixed inset-x-3 bottom-24 z-[60] mx-auto max-w-md rounded-md border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4 text-[var(--brd-ink)] shadow-xl sm:bottom-28"
+      className="fixed inset-x-3 bottom-[calc(3.75rem+env(safe-area-inset-bottom)+10.5rem)] z-[35] mx-auto max-w-md rounded-md border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4 text-[var(--brd-ink)] shadow-xl lg:bottom-44"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">

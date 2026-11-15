@@ -156,7 +156,7 @@ export function StudioMasterStyleReference({
         {style ? (
           <label className="flex items-center gap-2 text-sm" htmlFor={`${ids}-si`}>
             <span className="shrink-0">{t("styl.intensywnosc")}</span>
-            <input id={`${ids}-si`} type="range" min={0} max={100} step={5} value={styleIntensity} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); onStyleIntensityPhase?.("start"); }} onPointerUp={() => onStyleIntensityPhase?.("end")} onPointerCancel={() => onStyleIntensityPhase?.("end")} onChange={(e) => onStyleIntensity(Number(e.target.value))} className="min-h-9 flex-1 accent-[var(--brd-amber)]" data-testid="studio-master-style-intensity" aria-valuetext={`${styleIntensity}%`} />
+            <input id={`${ids}-si`} type="range" min={0} max={100} step={5} value={styleIntensity} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); onStyleIntensityPhase?.("start"); }} onPointerUp={() => onStyleIntensityPhase?.("end")} onPointerCancel={() => onStyleIntensityPhase?.("end")} onChange={(e) => onStyleIntensity(Number(e.target.value))} className="min-h-11 flex-1 accent-[var(--brd-amber)]" data-testid="studio-master-style-intensity" aria-valuetext={`${styleIntensity}%`} />
             <output className="w-11 text-right font-mono">{styleIntensity}%</output>
           </label>
         ) : null}
@@ -192,11 +192,11 @@ export function StudioMasterStyleReference({
           <>
             <div data-testid="studio-master-reference-file" className="flex flex-wrap items-center justify-between gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-recess)] px-2 py-1.5 text-sm">
               <span className="flex min-w-0 flex-1 items-baseline gap-1"><span className="min-w-0 truncate">🎧 <span className="font-semibold">{refState.reference.fileName}</span></span><span className="shrink-0 font-mono">· {fmtDur(refState.reference.durationMs)}</span></span>
-              <Button type="button" size="sm" variant="ghost" className="min-h-9" onClick={() => void remove()} data-testid="studio-master-reference-delete">{t("referencja.usun")}</Button>
+              <Button type="button" size="sm" variant="ghost" className="min-h-11" onClick={() => void remove()} data-testid="studio-master-reference-delete">{t("referencja.usun")}</Button>
             </div>
             <label className="flex items-center gap-2 text-sm" htmlFor={`${ids}-ri`}>
               <span className="shrink-0">{t("referencja.intensywnosc")}</span>
-              <input id={`${ids}-ri`} type="range" min={0} max={100} step={5} value={refIntensity} onChange={(e) => onRefIntensity(Number(e.target.value))} className="min-h-9 flex-1 accent-[var(--brd-amber)]" data-testid="studio-master-reference-intensity" aria-valuetext={`${refIntensity}%`} />
+              <input id={`${ids}-ri`} type="range" min={0} max={100} step={5} value={refIntensity} onChange={(e) => onRefIntensity(Number(e.target.value))} className="min-h-11 flex-1 accent-[var(--brd-amber)]" data-testid="studio-master-reference-intensity" aria-valuetext={`${refIntensity}%`} />
               <output className="w-11 text-right font-mono">{refIntensity}%</output>
             </label>
             <p className="text-xs text-[var(--brd-mute)]">{t("referencja.podglad")}</p>

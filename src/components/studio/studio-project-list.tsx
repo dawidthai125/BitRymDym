@@ -203,6 +203,7 @@ function ProjectRow({
             <BrdLink
               href={`/studio/p/${project.id}`}
               variant="secondary"
+              native
               aria-label={t("otworzProjekt", { v0: project.title })}
             >
               {t("otworz")}

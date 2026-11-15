@@ -239,7 +239,7 @@ export function BeatsCatalogClient({
               aria-haspopup="dialog"
               aria-controls={filtersDialogId}
               onClick={() => setFiltersOpen(true)}
-              className="inline-flex min-h-11 items-center border-b border-[var(--brd-line)] px-0.5 text-sm text-[var(--brd-ink)]"
+              className="inline-flex min-h-11 min-w-11 items-center border-b border-[var(--brd-line)] px-3 text-sm text-[var(--brd-ink)]"
             >
               {t("filtry")}{tl(activeFilterCount ? ` (${activeFilterCount})` : "")}
             </button>
@@ -331,7 +331,7 @@ export function BeatsCatalogClient({
                 aria-modal="true"
                 aria-label={t("filtryKatalogu")}
                 tabIndex={-1}
-                className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 outline-none"
+                className="absolute inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] max-h-[min(85dvh,calc(100dvh-3.75rem-env(safe-area-inset-bottom)))] overflow-y-auto border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 pb-5 pt-4 outline-none"
               >
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-xs font-medium text-[var(--brd-mute)]">
@@ -470,7 +470,7 @@ function FilterPanel({
               onChange={(e) =>
                 onBpmMin(Math.min(Number(e.target.value), bpmMax))
               }
-              className="brd-scrub w-full"
+              className="brd-scrub h-11 w-full"
             />
           </label>
           <label className="block">
@@ -483,7 +483,7 @@ function FilterPanel({
               onChange={(e) =>
                 onBpmMax(Math.max(Number(e.target.value), bpmMin))
               }
-              className="brd-scrub w-full"
+              className="brd-scrub h-11 w-full"
             />
           </label>
         </div>

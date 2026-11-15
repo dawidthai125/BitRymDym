@@ -27,12 +27,15 @@ describe("STU-07-A — track header hit targets on narrow chrome", () => {
     expect(window).toMatch(/min-w-\[4\.5rem\]/);
   });
 
-  it("moves reorder controls to a denser second row (not 6×44 on row 1)", () => {
+  it("keeps reorder and the track menu at 44px on a second row", () => {
     expect(editor).toMatch(
-      /h-9 min-h-9 min-w-9[\s\S]{0,220}?Przenieś ścieżkę w górę/,
+      /h-11 min-h-11 min-w-11 shrink-0 px-0[\s\S]{0,220}?Przenieś ścieżkę w górę/,
     );
     expect(editor).toMatch(
-      /220px header cannot fit name \+ M\/S\/R \+ ↑↓⋮/,
+      /Phone header is full width, so row 2 can be 44px/,
+    );
+    expect(editor).toMatch(
+      /Do not put name \+ M\/S\/R \+ ↑↓⋮ on one row \(6×44\)/,
     );
   });
 

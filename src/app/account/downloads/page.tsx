@@ -49,7 +49,7 @@ export default async function MyDownloadsPage() {
         <div className="space-y-2">
           <Link
             href="/account"
-            className="w-fit text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            className="inline-flex min-h-11 w-fit items-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             {t("konto")}
           </Link>
