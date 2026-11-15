@@ -1,5 +1,7 @@
 name: recorder-installer
 
+# Jednorazowy build 2026.11.28. Gałąź tylko startuje ten workflow.
+
 # Buduje instalator Windows nagrywarki (PyInstaller + Inno Setup). Uruchamiany ręcznie albo tagiem recorder-v*.
 # Czcionki nie leżą w repo: bierze je z poprzedniego instalatora (cicha instalacja na runnerze).
 # ffmpeg i ffplay (GPL, build full shared) pobiera z GyanD/codexffmpeg w przypiętej wersji.
