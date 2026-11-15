@@ -18,6 +18,7 @@ import { checkPromptRules } from "@/lib/studio/video/ai-cover/prompt-rules";
 import {
   AiImageError,
   aiImageProvidersFromEnv,
+  cloudflareCredentialShape,
 } from "@/lib/studio/video/ai-cover/providers";
 
 const NOT_WAITING = "Tego bitu nie ma w katalogu oczekujących.";
@@ -67,6 +68,7 @@ function polishCoverImageError(error: unknown): BeatRequestError {
       kind: error.kind,
       status: error.status ?? null,
       codes: error.codes,
+      shape: error.codes.includes(7003) ? cloudflareCredentialShape(process.env) : undefined,
     });
     if (error.kind === "limit") {
       return new BeatRequestError("Dzienny limit obrazów jest wyczerpany.");
@@ -82,6 +84,9 @@ function polishCoverImageError(error: unknown): BeatRequestError {
     }
     if (error.kind === "server") {
       return new BeatRequestError("Generator okładek jest chwilowo niedostępny. Spróbuj za chwilę.");
+    }
+    if (error.codes.includes(7003)) {
+      return new BeatRequestError("Identyfikator konta obrazów na serwerze jest nieprawidłowy.");
     }
     if (error.codes.includes(5007)) {
       return new BeatRequestError("Model okładek nie jest dostępny.");

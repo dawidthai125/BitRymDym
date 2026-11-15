@@ -4,7 +4,7 @@ import { memoryProviderState, runAiImageChain } from "./chain";
 import { aiCoverEnabled, aiCoverPerDay } from "./config";
 import { MOOD_COVERS } from "./moods";
 import { checkPromptRules, matchPromptRule } from "./prompt-rules";
-import { AiImageError, aiImageProvidersFromEnv, cloudflareProvider, nextUtcMidnight, retryAfterMs, type AiImageProvider } from "./providers";
+import { AiImageError, aiImageProvidersFromEnv, cloudflareCredentials, cloudflareProvider, nextUtcMidnight, retryAfterMs, type AiImageProvider } from "./providers";
 import { screenAiCoverPrompt } from "./screen";
 
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2000, 1)]);
@@ -107,6 +107,24 @@ describe("AI cover providers", () => {
     const raw = vi.fn(async () => new Response(JPEG, { headers: { "content-type": "image/jpeg" } }));
     const fromRaw = await cloudflareProvider({ accountId: "acc", token: "t", fetchFn: raw as unknown as typeof fetch }).generate(input, signal);
     expect(fromRaw.equals(JPEG)).toBe(true);
+  });
+
+  it("puts a 32-hex account id in the path even if the fields were swapped or wrapped", async () => {
+    const id = "ab".repeat(16);
+    const f = vi.fn(async () => new Response(JSON.stringify({ success: true, result: { image: JPEG.toString("base64") } })));
+    const swapped = aiImageProvidersFromEnv(
+      { CLOUDFLARE_ACCOUNT_ID: "cfut_not_an_account", CLOUDFLARE_AI_TOKEN: id },
+      f as unknown as typeof fetch,
+    );
+    await swapped[0].generate(input, signal);
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toContain(`/accounts/${id}/`);
+    expect(url).not.toContain("cfut_not_an_account");
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer cfut_not_an_account");
+    expect(cloudflareCredentials({
+      CLOUDFLARE_ACCOUNT_ID: `Account ID: ${id}`,
+      CLOUDFLARE_AI_TOKEN: "real-token",
+    })).toEqual({ accountId: id, token: "real-token" });
   });
 
   it("retryAfterMs handles seconds, dates and garbage", () => {

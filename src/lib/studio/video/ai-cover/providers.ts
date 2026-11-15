@@ -153,12 +153,43 @@ export function cloudflareProvider(opts: { accountId: string; token: string; fet
   };
 }
 
+const ACCOUNT_HEX = /^[a-f0-9]{32}$/i;
+
+/**
+ * Account id is 32 hex characters. A pasted dashboard line may wrap it.
+ * If the fields were swapped, the token field is the 32-hex id.
+ */
+export function cloudflareCredentials(
+  env: Env,
+): { accountId: string; token: string } | null {
+  const accountRaw = env.CLOUDFLARE_ACCOUNT_ID?.trim() ?? "";
+  const tokenRaw = env.CLOUDFLARE_AI_TOKEN?.trim() ?? "";
+  if (!accountRaw || !tokenRaw) return null;
+  if (ACCOUNT_HEX.test(accountRaw)) return { accountId: accountRaw, token: tokenRaw };
+  const embedded = accountRaw.match(/[a-f0-9]{32}/i)?.[0];
+  if (embedded) return { accountId: embedded, token: tokenRaw };
+  if (ACCOUNT_HEX.test(tokenRaw)) return { accountId: tokenRaw, token: accountRaw };
+  return { accountId: accountRaw, token: tokenRaw };
+}
+
+/** Lengths only. Never the id or the token. */
+export function cloudflareCredentialShape(env: Env): {
+  accountLen: number;
+  accountHex32: boolean;
+  tokenLen: number;
+} | null {
+  const creds = cloudflareCredentials(env);
+  if (!creds) return null;
+  return {
+    accountLen: creds.accountId.length,
+    accountHex32: ACCOUNT_HEX.test(creds.accountId),
+    tokenLen: creds.token.length,
+  };
+}
+
 /** Cloudflare only (no external fallback). No Cloudflare → no providers (generator off). */
 export function aiImageProvidersFromEnv(env: Env, fetchFn?: FetchFn): AiImageProvider[] {
-  const out: AiImageProvider[] = [];
-  const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim();
-  const token = env.CLOUDFLARE_AI_TOKEN?.trim();
-  if (!accountId || !token) return out;
-  out.push(cloudflareProvider({ accountId, token, fetchFn }));
-  return out;
+  const creds = cloudflareCredentials(env);
+  if (!creds) return [];
+  return [cloudflareProvider({ accountId: creds.accountId, token: creds.token, fetchFn })];
 }
