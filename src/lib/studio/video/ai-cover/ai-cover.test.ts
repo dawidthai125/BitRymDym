@@ -79,6 +79,36 @@ describe("AI cover providers", () => {
     expect(img.equals(JPEG)).toBe(true);
   });
 
+  it("Cloudflare: 4006 is the daily cap only when the text says so, otherwise an outage", async () => {
+    const now = Date.UTC(2026, 9, 30, 22, 0);
+    const quota = vi.fn(async () => new Response(JSON.stringify({
+      success: false,
+      errors: [{ code: 4006, message: "you have used up your daily free allocation of 10,000 neurons" }],
+    }), { status: 400 }));
+    const limited = cloudflareProvider({ accountId: "acc", token: "t", fetchFn: quota as unknown as typeof fetch, now: () => now });
+    await expect(limited.generate(input, signal)).rejects.toMatchObject({
+      kind: "limit",
+      codes: [4006],
+      blockedUntil: Date.UTC(2026, 9, 31),
+    });
+    const down = vi.fn(async () => new Response(JSON.stringify({
+      success: false,
+      errors: [{ code: 4006, message: "Service temporarily unavailable" }],
+    }), { status: 400 }));
+    const outage = cloudflareProvider({ accountId: "acc", token: "t", fetchFn: down as unknown as typeof fetch, now: () => now });
+    await expect(outage.generate(input, signal)).rejects.toMatchObject({ kind: "server", codes: [4006] });
+  });
+
+  it("Cloudflare: accepts a data URL and a raw JPEG body", async () => {
+    const dataUrl = `data:image/jpeg;base64,${JPEG.toString("base64")}`;
+    const asUrl = vi.fn(async () => new Response(JSON.stringify({ success: true, result: { image: dataUrl } })));
+    const fromUrl = await cloudflareProvider({ accountId: "acc", token: "t", fetchFn: asUrl as unknown as typeof fetch }).generate(input, signal);
+    expect(fromUrl.equals(JPEG)).toBe(true);
+    const raw = vi.fn(async () => new Response(JPEG, { headers: { "content-type": "image/jpeg" } }));
+    const fromRaw = await cloudflareProvider({ accountId: "acc", token: "t", fetchFn: raw as unknown as typeof fetch }).generate(input, signal);
+    expect(fromRaw.equals(JPEG)).toBe(true);
+  });
+
   it("retryAfterMs handles seconds, dates and garbage", () => {
     expect(retryAfterMs("10", 0, 5)).toBe(10_000);
     expect(retryAfterMs(null, 100, 5)).toBe(105);

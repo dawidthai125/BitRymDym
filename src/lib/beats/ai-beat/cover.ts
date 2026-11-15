@@ -63,6 +63,11 @@ function coverPromptFromStyle(style: string | null): string {
 function polishCoverImageError(error: unknown): BeatRequestError {
   if (error instanceof BeatRequestError) return error;
   if (error instanceof AiImageError) {
+    console.error("[beat-cover] image failed", {
+      kind: error.kind,
+      status: error.status ?? null,
+      codes: error.codes,
+    });
     if (error.kind === "limit") {
       return new BeatRequestError("Dzienny limit obrazów jest wyczerpany.");
     }
@@ -72,7 +77,23 @@ function polishCoverImageError(error: unknown): BeatRequestError {
     if (error.kind === "network" || error.kind === "timeout") {
       return new BeatRequestError("Nie udało się połączyć z generatorem okładek.");
     }
-    return new BeatRequestError("Nie udało się wygenerować okładki.");
+    if (error.kind === "rate") {
+      return new BeatRequestError("Generator okładek jest chwilowo zajęty. Spróbuj za minutę.");
+    }
+    if (error.kind === "server") {
+      return new BeatRequestError("Generator okładek jest chwilowo niedostępny. Spróbuj za chwilę.");
+    }
+    if (error.codes.includes(5007)) {
+      return new BeatRequestError("Model okładek nie jest dostępny.");
+    }
+    if (error.codes.includes(5006)) {
+      return new BeatRequestError("Generator odrzucił opis okładki.");
+    }
+  } else {
+    console.error(
+      "[beat-cover] image failed",
+      error instanceof Error ? error.name : "unknown",
+    );
   }
   return new BeatRequestError("Nie udało się wygenerować okładki.");
 }

@@ -21,8 +21,12 @@ export class AiImageError extends Error {
     /** Absolute epoch ms until which the provider should be skipped (limit / rate). */
     readonly blockedUntil?: number,
     readonly status?: number,
+    /** Cloudflare error codes, numbers only. Never the provider message. */
+    readonly codes: readonly number[] = [],
   ) {
-    super(`ai image ${kind}${status ? ` ${status}` : ""}`);
+    super(
+      `ai image ${kind}${status ? ` ${status}` : ""}${codes.length ? ` ${codes.join(",")}` : ""}`,
+    );
   }
 }
 
@@ -64,6 +68,42 @@ async function call(f: FetchFn, url: string, init: RequestInit, signal: AbortSig
 const isImage = (b: Buffer) =>
   b.length > 1000 && ((b[0] === 0xff && b[1] === 0xd8) || (b[0] === 0x89 && b[1] === 0x50) || b.subarray(8, 12).toString("latin1") === "WEBP");
 
+function decodeImageString(value: string): Buffer {
+  const dataUrl = value.match(/^data:image\/[a-z0-9.+-]+;base64,([\s\S]+)$/i);
+  return Buffer.from((dataUrl ? dataUrl[1] : value).replace(/\s+/g, ""), "base64");
+}
+
+type CfError = { code?: number; message?: string };
+type CfBody = { success?: boolean; result?: { image?: unknown } | string; errors?: CfError[] };
+
+/** 3036 is the documented daily cap. 4006 is the same cap when the text says so, otherwise an outage. */
+function cloudflareFailure(
+  errors: CfError[],
+  status: number,
+  nowMs: number,
+  retryAfter: string | null,
+): AiImageError | null {
+  const codes = errors
+    .map((error) => error?.code)
+    .filter((code): code is number => typeof code === "number");
+  const quota = errors.some((error) =>
+    /neuron|free allocation|paid plan/i.test(error?.message ?? ""),
+  );
+  const fail = (kind: AiImageErrorKind, blockedUntil?: number) =>
+    new AiImageError(kind, blockedUntil, status, codes);
+  if (codes.includes(3036) || (codes.includes(4006) && quota)) {
+    return fail("limit", nextUtcMidnight(nowMs));
+  }
+  if (codes.includes(4006)) return fail("server");
+  if (codes.includes(3040) || status === 429) {
+    return fail("rate", retryAfterMs(retryAfter, nowMs, 60_000));
+  }
+  if (status === 401 || status === 403) return fail("auth");
+  if (status >= 500) return fail("server");
+  if (status >= 400) return fail(codes.length ? "refused" : "bad_response");
+  return null;
+}
+
 export const CLOUDFLARE_FLUX_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 
 export function cloudflareProvider(opts: { accountId: string; token: string; fetchFn?: FetchFn; now?: () => number }): AiImageProvider {
@@ -80,24 +120,33 @@ export function cloudflareProvider(opts: { accountId: string; token: string; fet
         // rejects any other property (live: `seed` → 400 code 5006), so only prompt + steps.
         body: JSON.stringify({ prompt: input.prompt, steps: 4 }),
       }, signal);
-      type CfBody = { success?: boolean; result?: { image?: unknown }; errors?: { code?: number }[] };
+      const raw = Buffer.from(await res.arrayBuffer());
+      const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
       let json: CfBody | null = null;
-      try {
-        json = (await res.json()) as CfBody;
-      } catch {
-        if (signal.aborted) throw new AiImageError("timeout");
-        json = null;
+      if (!contentType.startsWith("image/")) {
+        try {
+          json = JSON.parse(raw.toString("utf8")) as CfBody;
+        } catch {
+          if (signal.aborted) throw new AiImageError("timeout");
+          json = null;
+        }
       }
-      const codes = (json?.errors ?? []).map((e: { code?: number }) => e?.code);
-      // 3036 = daily free allocation used up → skip until the 00:00 UTC reset.
-      if (codes.includes(3036)) throw new AiImageError("limit", nextUtcMidnight(now()), res.status);
-      if (res.status === 429) throw new AiImageError("rate", retryAfterMs(res.headers.get("retry-after"), now(), 60_000), 429);
-      if (res.status === 401 || res.status === 403) throw new AiImageError("auth", undefined, res.status);
-      if (res.status >= 500) throw new AiImageError("server", undefined, res.status);
-      if (!res.ok) throw new AiImageError(codes.length ? "refused" : "bad_response", undefined, res.status);
-      const b64 = json?.result?.image;
-      if (typeof b64 !== "string" || !b64) throw new AiImageError("bad_response", undefined, res.status);
-      const img = Buffer.from(b64, "base64");
+      const failure = cloudflareFailure(
+        json?.errors ?? [],
+        res.status,
+        now(),
+        res.headers.get("retry-after"),
+      );
+      if (failure) throw failure;
+      if (contentType.startsWith("image/") && isImage(raw)) return raw;
+      const encoded =
+        typeof json?.result === "string"
+          ? json.result
+          : json?.result && typeof json.result.image === "string"
+            ? json.result.image
+            : "";
+      if (!encoded) throw new AiImageError("bad_response", undefined, res.status);
+      const img = decodeImageString(encoded);
       if (!isImage(img)) throw new AiImageError("bad_response", undefined, res.status);
       return img;
     },
