@@ -32,11 +32,14 @@ export function PurchaseConsent({
   value,
   onChange,
   startsLater = false,
+  product = "plan",
 }: {
   value: { acceptTerms: boolean; immediatePerformance: boolean };
   onChange: (v: { acceptTerms: boolean; immediatePerformance: boolean }) => void;
   /** Cheaper plan that starts when the current one ends. Immediate performance is not asked. */
   startsLater?: boolean;
+  /** Beat wav uses the one-off file sentence. Plans keep the period sentence. */
+  product?: "plan" | "beat";
 }) {
   const t = useTranslations("common.legal");
   const ready = value.acceptTerms && (startsLater || value.immediatePerformance);
@@ -44,7 +47,7 @@ export function PurchaseConsent({
     <fieldset className="flex flex-col gap-1 text-sm" data-testid="purchase-consent">
       <label className="flex min-h-11 items-center gap-1">
         <BrdCheckbox name="acceptTerms" checked={value.acceptTerms} onChange={(e) => onChange({ ...value, acceptTerms: e.target.checked })} data-testid="purchase-accept-terms" />
-        <span>{t.rich("zakupRegulamin", { regulamin: (c) => <Link href={LEGAL_PATHS.terms} target="_blank" className={linkCls}>{c}</Link> })}</span>
+        <span>{t.rich(product === "beat" ? "zakupRegulaminBit" : "zakupRegulamin", { regulamin: (c) => <Link href={LEGAL_PATHS.terms} target="_blank" className={linkCls}>{c}</Link> })}</span>
       </label>
       {startsLater ? (
         <p className="text-[var(--brd-ink-soft)]">{t("zakupPozniej")}</p>

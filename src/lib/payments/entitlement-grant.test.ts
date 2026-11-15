@@ -11,7 +11,7 @@ import {
   type OrderLedger,
   type PlanSnapshot,
 } from "@/lib/payments/entitlement-grant";
-import { parseCheckoutProduct, priceGrosz } from "@/lib/payments/money";
+import { checkoutProductFromOrderRow, parseCheckoutProduct, priceGrosz } from "@/lib/payments/money";
 import { isP24Configured } from "@/lib/payments/p24-config";
 
 const NOW = new Date("2026-06-15T12:00:00.000Z");
@@ -218,6 +218,51 @@ describe("catalog amounts", () => {
     const parsed = parseCheckoutProduct({ kind: "plan", tier: "GOLD", period: "year", amount: 1, currency: "EUR" });
     expect(parsed).toEqual({ kind: "plan", tier: "GOLD", period: "year" });
     expect(parsed ? priceGrosz(parsed) : 0).toBe(39900);
+  });
+
+  it("sells a paid-catalog beat wav at 1999 grosz and does not touch the plan", () => {
+    const beatId = "11111111-1111-4111-8111-111111111111";
+    const product = { kind: "beat" as const, beatId };
+    const plan: PlanSnapshot = { tier: "GOLD", active: true, expiresAt: null };
+    expect(priceGrosz(product, "FREE")).toBe(1999);
+    expect(priceGrosz(product, "GOLD")).toBe(1999);
+    expect(parseCheckoutProduct({ kind: "beat", beatId, amount: 1, currency: "EUR" })).toEqual(product);
+    expect(parseCheckoutProduct({ kind: "beat", beatId: "not-a-uuid" })).toBeNull();
+    expect(checkoutProductFromOrderRow({
+      product_kind: "beat",
+      plan_tier: null,
+      addon: null,
+      pack: null,
+      period: "once",
+      beat_id: beatId,
+    })).toEqual(product);
+    expect(checkoutBlock(product, null, null, NOW)).toBeNull();
+    expect(checkoutBlock(product, plan, null, NOW)).toBeNull();
+    expect(grantWrite(product, plan, null, NOW, 1999)).toEqual({ action: "beat", beatId });
+    const settled = settleVerifiedNotification({
+      order: order({ amountGrosz: 1999, product }),
+      notification: { amountGrosz: 1999, currency: "PLN", merchantId: 1, posId: 1 },
+      merchantId: 1,
+      posId: 1,
+      plan,
+      addon: null,
+      now: NOW,
+    });
+    expect(settled.kind).toBe("granted");
+    if (settled.kind === "granted") {
+      expect(settled.write).toEqual({ action: "beat", beatId });
+      expect(settled.nextPlan).toEqual(plan);
+    }
+    const wrong = settleVerifiedNotification({
+      order: order({ amountGrosz: 1999, product }),
+      notification: { amountGrosz: 1000, currency: "PLN", merchantId: 1, posId: 1 },
+      merchantId: 1,
+      posId: 1,
+      plan,
+      addon: null,
+      now: NOW,
+    });
+    expect(wrong).toEqual({ kind: "rejected", code: "amount" });
   });
 
   it("treats P24 as configured only when every value, including sandbox, is set", () => {

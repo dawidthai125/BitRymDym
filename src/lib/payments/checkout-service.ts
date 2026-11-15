@@ -6,6 +6,7 @@ import { PRIVACY_VERSION, TERMS_VERSION, purchaseConsentCovers, type PurchaseCon
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+import { loadBeatSale } from "@/lib/payments/beat-sale";
 import { checkoutBlock, isLivePaid, planStartsLater, type AddonSnapshot, type CheckoutBlock, type PlanSnapshot } from "@/lib/payments/entitlement-grant";
 import { parseCheckoutProduct, priceGrosz, type CheckoutProduct } from "@/lib/payments/money";
 import { registerP24Transaction } from "@/lib/payments/p24-client";
@@ -22,6 +23,8 @@ export type CheckoutCode =
   | "INVALID"
   | "RATE"
   | "PROVIDER"
+  | "OWNED"
+  | "OPEN"
   | CheckoutBlock;
 
 export type CheckoutResult =
@@ -31,7 +34,12 @@ export type CheckoutResult =
 const HOUR_MS = 60 * 60 * 1000;
 const PENDING_LIMIT = 5;
 
-export function p24Description(product: CheckoutProduct, locale: "pl" | "en"): string {
+export function p24Description(product: CheckoutProduct, locale: "pl" | "en", beatTitle?: string): string {
+  if (product.kind === "beat") {
+    const title = (beatTitle ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+    const base = locale === "en" ? "BitRymDym beat, wav file" : "BitRymDym bit, plik wav";
+    return title ? `${base}: ${title}` : base;
+  }
   if (product.kind === "pack") {
     if (product.pack === "youtube") {
       return locale === "en" ? "BitRymDym pack, YouTube MP4" : "BitRymDym pakiet, wideo MP4 pod YouTube";
@@ -95,6 +103,15 @@ export async function startCheckout(input: {
   const block = checkoutBlock(product, plan, addon, now);
   if (block) return { ok: false, code: block };
 
+  let beatTitle = "";
+  if (product.kind === "beat") {
+    const sale = await loadBeatSale(product.beatId, input.context.userId, now);
+    if (!sale?.fileReady) return { ok: false, code: "INVALID" };
+    if (sale.owned) return { ok: false, code: "OWNED" };
+    if (sale.open) return { ok: false, code: "OPEN" };
+    beatTitle = sale.title;
+  }
+
   const buyerTier = isLivePaid(plan, now) ? plan.tier : "FREE";
   const amountGrosz = priceGrosz(product, buyerTier);
   const admin = createSupabaseAdminClient();
@@ -117,7 +134,11 @@ export async function startCheckout(input: {
     product_kind: product.kind,
     plan_tier: product.kind === "plan" ? product.tier : null,
     addon: product.kind === "addon" ? product.addon : null,
-    ...(product.kind === "pack" ? { pack: product.pack, period: "once" } : { period: product.period }),
+    ...(product.kind === "beat"
+      ? { beat_id: product.beatId, pack: null, period: "once" }
+      : product.kind === "pack"
+        ? { pack: product.pack, period: "once" }
+        : { period: product.period }),
     amount_grosz: amountGrosz,
     currency: "PLN",
     buyer_email: email,
@@ -129,7 +150,7 @@ export async function startCheckout(input: {
   }).select("id").maybeSingle();
   if (inserted.error || !inserted.data) return { ok: false, code: "PROVIDER" };
 
-  const description = p24Description(product, input.locale);
+  const description = p24Description(product, input.locale, beatTitle);
   const registered = payu
     ? await registerPayuOrder(payu, {
         sessionId,

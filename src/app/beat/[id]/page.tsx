@@ -1,5 +1,5 @@
 import { getLibText } from "@/i18n/get-lib-text";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -35,6 +35,12 @@ import {
   canUseBeatInStudio,
 } from "@/lib/beats/usage/beat-usage-policy";
 import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
+import { catalogLaneOf } from "@/lib/beats/catalog-lane";
+import { signInPathWithNext } from "@/lib/auth/next-path";
+import { loadBeatSale } from "@/lib/payments/beat-sale";
+import { formatBeatWavPrice } from "@/lib/payments/money";
+import { isPayuConfigured } from "@/lib/payments/payu-config";
+import { readPlanPaymentsAvailable } from "@/config/plan-policy";
 
 type BeatDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -152,6 +158,20 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     }
   }
 
+  const locale = await getLocale();
+  const paidLane = beat.ownershipType === "PLATFORM" && catalogLaneOf(beat.catalogLane) === "paid";
+  const sale = paidLane ? await loadBeatSale(beat.id, viewerId).catch(() => null) : null;
+  const wavSale = sale
+    ? {
+        price: formatBeatWavPrice(locale),
+        owned: sale.owned,
+        paymentsOn: readPlanPaymentsAvailable() && isPayuConfigured(),
+        fileReady: sale.fileReady,
+        signInHref: signInPathWithNext(`/beat/${beat.id}#zakup`),
+        locale: locale === "en" ? ("en" as const) : ("pl" as const),
+      }
+    : null;
+
   const thread = await loadThread("beat", beat.id, viewerId).catch(() => null);
   const related = presentBeats(
     (await relatedPromise).map(toPublicCatalogItem).slice(0, 6),
@@ -175,6 +195,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               hasAudio={audioInfo.hasAudio}
               isAuthenticated={Boolean(session)}
               originalMasterDownloadAllowed={beat.ownershipType === "USER"}
+              wavSale={wavSale}
               downloadLock={
                 beat.ownershipType === "USER" && !downloadByOwner
                   ? "owner"

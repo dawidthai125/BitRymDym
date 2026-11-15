@@ -105,7 +105,9 @@ export default async function AdminPaymentsPage({
                             ? t("dodatek")
                             : product.kind === "pack"
                               ? t(`pakiet.${product.pack}`)
-                              : t("nieznane")}
+                              : product.kind === "beat"
+                                ? t("bitWav")
+                                : t("nieznane")}
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatGroszPln(row.amount_grosz, locale)}</td>
                       <td className="px-3 py-3">{period ? t(`okresy.${period}`) : t("nieznane")}</td>

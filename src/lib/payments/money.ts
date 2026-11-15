@@ -14,14 +14,28 @@ import {
   type PlanAddon,
   type PlanPack,
 } from "@/config/plan-policy";
+import { isUuid } from "@/lib/beats/audio-validation";
 import type { PremiumTier } from "@/types/premium";
 
 export type BillingPeriod = "month" | "year";
 
+/** Paid-catalog wav. Server price only. 19.99 * 100 is not an integer; plnToGrosz rounds to 1999. */
+export const BEAT_WAV_PRICE_PLN = 19.99;
+
 export type CheckoutProduct =
   | { kind: "plan"; tier: PaidTier; period: BillingPeriod }
   | { kind: "addon"; addon: PlanAddon; period: "month" }
-  | { kind: "pack"; pack: PlanPack };
+  | { kind: "pack"; pack: PlanPack }
+  | { kind: "beat"; beatId: string };
+
+export function formatBeatWavPrice(locale: string): string {
+  return new Intl.NumberFormat(locale === "en" ? "en-GB" : "pl-PL", {
+    style: "currency",
+    currency: "PLN",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(BEAT_WAV_PRICE_PLN);
+}
 
 /** IEEE-safe: 14.99 * 100 is not an integer, Math.round yields 1499. */
 export function plnToGrosz(pln: number): number {
@@ -36,6 +50,9 @@ export function plnToGrosz(pln: number): number {
 }
 
 export function priceGrosz(product: CheckoutProduct, buyerTier?: PremiumTier | null): number {
+  if (product.kind === "beat") {
+    return plnToGrosz(BEAT_WAV_PRICE_PLN);
+  }
   if (product.kind === "pack") {
     if (product.pack === "youtube") {
       const offer = youtubePackOffer(buyerTier ?? null);
@@ -73,5 +90,29 @@ export function parseCheckoutProduct(input: unknown): CheckoutProduct | null {
   if (row.kind === "pack" && isPlanPack(row.pack)) {
     return { kind: "pack", pack: row.pack };
   }
+  if (row.kind === "beat" && isUuid(row.beatId)) {
+    return { kind: "beat", beatId: row.beatId };
+  }
   return null;
+}
+
+/** Rebuilds the product from a payment_orders row. A beat row without a uuid is refused. */
+export function checkoutProductFromOrderRow(row: {
+  product_kind: string;
+  plan_tier: string | null;
+  addon: string | null;
+  pack: string | null;
+  period: string;
+  beat_id?: string | null;
+}): CheckoutProduct | null {
+  if (row.product_kind === "beat") {
+    return parseCheckoutProduct({ kind: "beat", beatId: row.beat_id });
+  }
+  if (row.product_kind === "plan") {
+    return parseCheckoutProduct({ kind: "plan", tier: row.plan_tier, period: row.period });
+  }
+  if (row.product_kind === "pack") {
+    return parseCheckoutProduct({ kind: "pack", pack: row.pack });
+  }
+  return parseCheckoutProduct({ kind: "addon", addon: row.addon, period: row.period });
 }

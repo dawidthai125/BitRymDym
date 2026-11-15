@@ -10,13 +10,22 @@ export type ReturnState =
   | { status: "paid"; product: string; until: string | null; scheduled?: boolean }
   | { status: "skipped"; reason: "perpetual" | "downgrade" | "pending_plan" | "addon_perpetual" }
   | { status: "failed" }
-  | { status: "missing" };
+  | { status: "missing" }
+  | { status: "beat_pending"; href: string }
+  | { status: "beat_paid"; href: string }
+  | { status: "beat_skipped"; href: string }
+  | { status: "beat_failed"; href: string };
 
 export function PremiumReturnView({ state }: { state: ReturnState }) {
   const t = useTranslations("account.premiumPage.returnPage");
-  const pending = state.status === "pending";
+  const pending = state.status === "pending" || state.status === "beat_pending";
+  const beatHref = state.status === "beat_pending" || state.status === "beat_paid" || state.status === "beat_skipped" || state.status === "beat_failed" ? state.href : null;
   let body = t("brak");
   if (state.status === "pending") body = t("czekam");
+  if (state.status === "beat_pending") body = t("bitCzekam");
+  if (state.status === "beat_paid") body = t("bitGotowy");
+  if (state.status === "beat_skipped") body = t("bitJuz");
+  if (state.status === "beat_failed") body = t("bitNieudane");
   if (state.status === "paid") {
     body = state.until
       ? t(state.scheduled ? "zaplanowane" : "gotowe", { co: state.product, data: state.until })
@@ -35,7 +44,8 @@ export function PremiumReturnView({ state }: { state: ReturnState }) {
             {body}
           </p>
           {pending ? <ReturnRefresh /> : null}
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap gap-3">
+            {beatHref ? <BrdLink href={beatHref}>{state.status === "beat_paid" ? t("pobierzWav") : t("otworzBit")}</BrdLink> : null}
             <BrdLink href="/premium">{t("wroc")}</BrdLink>
           </div>
         </PageFrame>

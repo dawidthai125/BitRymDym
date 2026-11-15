@@ -20,6 +20,7 @@ export type PaymentHistoryProduct =
   | { kind: "plan"; tier: PaymentHistoryTier }
   | { kind: "addon" }
   | { kind: "pack"; pack: PaymentHistoryPack }
+  | { kind: "beat" }
   | { kind: "unknown" };
 
 export type PaymentHistoryOrderInput = {
@@ -67,6 +68,7 @@ export function paymentHistoryProduct(row: PaymentHistoryOrderInput): PaymentHis
     const pack = oneOf(row.pack, PACKS);
     return pack ? { kind: "pack", pack } : { kind: "unknown" };
   }
+  if (row.product_kind === "beat") return { kind: "beat" };
   return { kind: "unknown" };
 }
 

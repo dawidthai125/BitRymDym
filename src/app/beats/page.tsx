@@ -87,7 +87,7 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
 
           {paid ? (
             <div className="space-y-6">
-              <div className="border border-[var(--brd-line)] px-5 py-12 text-center" data-testid="beats-paid-catalog">
+              <div className="border border-[var(--brd-line)] px-5 py-5" data-testid="beats-paid-catalog">
                 <p className="brd-display text-xl font-semibold">{t("platnyTytul")}</p>
                 <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--brd-mute)]">{t("platnyOpis")}</p>
                 <p className="mt-3 text-sm font-semibold">{t("platnyWkrotce")}</p>

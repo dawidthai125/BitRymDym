@@ -80,6 +80,7 @@ export type GrantWrite =
       expectedEndsAt: string | null;
     }
   | { action: "pack"; pack: PlanPack; units: number }
+  | { action: "beat"; beatId: string }
   | { action: "skip"; note: "perpetual" | "downgrade" | "pending_plan" | "addon_perpetual" | "pack_amount" };
 
 export function addDays(from: Date, days: number): Date {
@@ -174,6 +175,7 @@ function laterInstant(now: Date, iso: string | null): Date {
 }
 
 export function checkoutBlock(product: CheckoutProduct, plan: PlanSnapshot, addon: AddonSnapshot, now: Date): CheckoutBlock | null {
+  if (product.kind === "beat") return null;
   const current = withDuePlan(plan, now);
   if (product.kind === "pack") {
     if (product.pack !== "youtube") return null;
@@ -256,6 +258,9 @@ export function grantPlanFor(
 }
 
 export function grantWrite(product: CheckoutProduct, plan: PlanSnapshot, addon: AddonSnapshot, now: Date, amountGrosz?: number): GrantWrite {
+  if (product.kind === "beat") {
+    return { action: "beat", beatId: product.beatId };
+  }
   if (product.kind === "pack") {
     if (product.pack === "youtube") {
       const units = youtubeUnitsForGrosz(amountGrosz ?? 0);
@@ -299,7 +304,7 @@ export type SettleResult =
   | { kind: "granted" | "skipped"; write: GrantWrite; nextPlan: PlanSnapshot; nextAddon: AddonSnapshot };
 
 function applyWrite(plan: PlanSnapshot, addon: AddonSnapshot, write: GrantWrite): { plan: PlanSnapshot; addon: AddonSnapshot } {
-  if (write.action === "skip" || write.action === "pack") return { plan, addon };
+  if (write.action === "skip" || write.action === "pack" || write.action === "beat") return { plan, addon };
   if (write.action === "schedule") {
     return {
       plan: plan

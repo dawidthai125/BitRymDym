@@ -11,6 +11,7 @@ import { BeatArtwork } from "@/components/brand/beat-artwork";
 import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
 import { BrdAudioTime } from "@/components/brand/brd-audio-meta";
 import { Waveform } from "@/components/brand/waveform";
+import { BeatWavPurchase } from "@/components/beats/beat-wav-purchase";
 import { DownloadButton } from "@/components/beats/download-button";
 import { LockedAction, type LockReason } from "@/components/plans/locked-action";
 import { usePlayer } from "@/components/player/player-provider";
@@ -29,6 +30,15 @@ type BeatDetailClientProps = {
   isAuthenticated: boolean;
   /** P0 — false for PLATFORM masters (server-computed). */
   originalMasterDownloadAllowed: boolean;
+  /** Paid-catalog wav. Separate from the original-master download. */
+  wavSale?: {
+    price: string;
+    owned: boolean;
+    paymentsOn: boolean;
+    fileReady: boolean;
+    signInHref: string;
+    locale: "pl" | "en";
+  } | null;
   /** Server-resolved: guest → sign in, plan → Free (listen only), owner → author disabled downloads. */
   downloadLock?: LockReason | null;
   /** Author allows Studio use / recording for this viewer (default true). */
@@ -51,6 +61,7 @@ export function BeatDetailClient({
   hasAudio,
   isAuthenticated,
   originalMasterDownloadAllowed,
+  wavSale = null,
   downloadLock = null,
   studioUseAllowed = true,
   maxRecordingSeconds,
@@ -347,7 +358,7 @@ export function BeatDetailClient({
                 title={tl(beat.title)}
                 isAuthenticated={isAuthenticated}
               />
-            ) : hasAudio ? (
+            ) : hasAudio && !wavSale ? (
               // PLATFORM original: "Pobieranie oryginalnego bitu jest niedostępne."
               // Locked button + tooltip, same pattern as guest/Free locks.
               <LockedAction
@@ -358,6 +369,21 @@ export function BeatDetailClient({
               </LockedAction>
             ) : null}
           </div>
+          {wavSale ? (
+            <div className="mt-4">
+              <BeatWavPurchase
+                beatId={beat.id}
+                title={tl(beat.title)}
+                price={wavSale.price}
+                owned={wavSale.owned}
+                paymentsOn={wavSale.paymentsOn}
+                fileReady={wavSale.fileReady}
+                signedIn={isAuthenticated}
+                signInHref={wavSale.signInHref}
+                locale={wavSale.locale}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 

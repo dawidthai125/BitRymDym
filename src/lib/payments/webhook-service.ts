@@ -8,7 +8,7 @@ import {
   type GrantWrite,
   type OrderLedger,
 } from "@/lib/payments/entitlement-grant";
-import { parseCheckoutProduct } from "@/lib/payments/money";
+import { checkoutProductFromOrderRow } from "@/lib/payments/money";
 import { verifyP24Transaction } from "@/lib/payments/p24-client";
 import { readP24Config } from "@/lib/payments/p24-config";
 import { notificationSignValid, parseP24Notification } from "@/lib/payments/p24-notification";
@@ -31,6 +31,7 @@ type OrderRow = {
   plan_tier: string | null;
   addon: string | null;
   pack: string | null;
+  beat_id: string | null;
   period: string;
   amount_grosz: number;
   currency: string;
@@ -39,13 +40,7 @@ type OrderRow = {
 };
 
 function orderLedger(row: OrderRow): OrderLedger | null {
-  const product = parseCheckoutProduct(
-    row.product_kind === "plan"
-      ? { kind: "plan", tier: row.plan_tier, period: row.period }
-      : row.product_kind === "pack"
-        ? { kind: "pack", pack: row.pack }
-        : { kind: "addon", addon: row.addon, period: row.period },
-  );
+  const product = checkoutProductFromOrderRow(row);
   if (!product) return null;
   if (row.status !== "pending" && row.status !== "paid" && row.status !== "failed") return null;
   if (row.grant_status !== "pending" && row.grant_status !== "granted" && row.grant_status !== "skipped") return null;
@@ -75,10 +70,18 @@ function receiptLine(write: GrantWrite): string {
     const what = write.pack === "take" ? "nagrań" : write.pack === "youtube" ? "wideo MP4" : "masterów";
     return `Tu BITEK. Dodałem ${write.units} ${what}. Zostają, aż je wykorzystasz.`;
   }
+  if (write.action === "beat") return "Tu BITEK. Wpłata doszła. Plik wav tego bitu jest do pobrania na jego stronie.";
   if (write.note === "downgrade") return "Tu BITEK. Wpłata doszła, ale niższego planu nie włączam, dopóki wyższy trwa.";
   if (write.note === "pending_plan") return "Tu BITEK. Wpłata doszła, ale inny niższy plan jest już zaplanowany. Napisz na dawid.thai@int.pl, to oddam tę wpłatę przez PayU.";
   if (write.note === "addon_perpetual") return "Tu BITEK. Wpłata doszła, ale bezterminowego dodatku nie skracam.";
   return "Tu BITEK. Wpłata doszła, ale bezterminowego planu nie skracam.";
+}
+
+function receiptFor(write: GrantWrite, result: string): string {
+  if (write.action === "beat" && result === "skipped") {
+    return "Tu BITEK. Wpłata doszła, ale ten wav już masz. Napisz na dawid.thai@int.pl, to oddam tę wpłatę przez PayU.";
+  }
+  return receiptLine(write);
 }
 
 export async function handleP24Webhook(body: unknown, now = new Date()): Promise<WebhookOutcome> {
@@ -103,14 +106,17 @@ export async function handleP24Webhook(body: unknown, now = new Date()): Promise
   if (loaded.error) return { status: 503, body: { ok: false } };
   if (!loaded.data) return { status: 200, body: { ok: true, result: "ignored" } };
 
-  const row = loaded.data as Omit<OrderRow, "pack"> & { pack?: string | null };
+  const row = loaded.data as Omit<OrderRow, "pack" | "beat_id"> & { pack?: string | null; beat_id?: string | null };
   let pack: string | null = null;
-  if (row.product_kind === "pack") {
-    const extra = await admin.from("payment_orders").select("pack").eq("session_id", note.sessionId).maybeSingle();
+  let beatId: string | null = null;
+  if (row.product_kind === "pack" || row.product_kind === "beat") {
+    const extra = await admin.from("payment_orders").select("pack, beat_id").eq("session_id", note.sessionId).maybeSingle();
     if (extra.error || !extra.data) return { status: 503, body: { ok: false } };
-    pack = (extra.data as { pack?: string | null }).pack ?? null;
+    const extraRow = extra.data as { pack?: string | null; beat_id?: string | null };
+    pack = extraRow.pack ?? null;
+    beatId = extraRow.beat_id ?? null;
   }
-  const order = orderLedger({ ...row, pack });
+  const order = orderLedger({ ...row, pack, beat_id: beatId });
   if (!order) return { status: 503, body: { ok: false } };
 
   const userId = (loaded.data as OrderRow).user_id;
@@ -146,7 +152,20 @@ export async function handleP24Webhook(body: unknown, now = new Date()): Promise
   });
   if (!verified) return { status: 503, body: { ok: false } };
 
-  const applied = settled.write.action === "pack"
+  if (order.product.kind === "beat" && settled.write.action !== "beat") {
+    console.error("[p24] beat grant refused", { sessionId: note.sessionId });
+    return { status: 503, body: { ok: false } };
+  }
+
+  const applied = settled.write.action === "beat"
+    ? await admin.rpc("grant_payu_beat_wav", {
+        p_session_id: note.sessionId,
+        p_amount: order.amountGrosz,
+        p_currency: "PLN",
+        p_payu_order_id: String(note.orderId),
+        p_statement: note.statement,
+      })
+    : settled.write.action === "pack"
     ? await admin.rpc("grant_p24_quota_pack", {
         p_session_id: note.sessionId,
         p_amount: order.amountGrosz,
@@ -174,7 +193,7 @@ export async function handleP24Webhook(body: unknown, now = new Date()): Promise
     await sendNotification({
       userId,
       kind: "purchase_confirmed",
-      data: { detail: receiptLine(settled.write) },
+      data: { detail: receiptFor(settled.write, result) },
     });
     return { status: 200, body: { ok: true, result } };
   }
@@ -192,14 +211,17 @@ async function loadOrder(sessionId: string): Promise<{ userId: string; order: Or
     .maybeSingle();
   if (loaded.error) return "error";
   if (!loaded.data) return "missing";
-  const row = loaded.data as Omit<OrderRow, "pack"> & { pack?: string | null };
+  const row = loaded.data as Omit<OrderRow, "pack" | "beat_id"> & { pack?: string | null; beat_id?: string | null };
   let pack: string | null = null;
-  if (row.product_kind === "pack") {
-    const extra = await admin.from("payment_orders").select("pack").eq("session_id", sessionId).maybeSingle();
+  let beatId: string | null = null;
+  if (row.product_kind === "pack" || row.product_kind === "beat") {
+    const extra = await admin.from("payment_orders").select("pack, beat_id").eq("session_id", sessionId).maybeSingle();
     if (extra.error || !extra.data) return "error";
-    pack = (extra.data as { pack?: string | null }).pack ?? null;
+    const extraRow = extra.data as { pack?: string | null; beat_id?: string | null };
+    pack = extraRow.pack ?? null;
+    beatId = extraRow.beat_id ?? null;
   }
-  const order = orderLedger({ ...row, pack });
+  const order = orderLedger({ ...row, pack, beat_id: beatId });
   if (!order) return "error";
   return { userId: row.user_id, order };
 }
@@ -267,7 +289,20 @@ export async function handlePayuWebhook(rawBody: string, signatureHeader: string
   });
   if (!verified) return { status: 503, body: { ok: false } };
 
-  const applied = settled.write.action === "pack"
+  if (loaded.order.product.kind === "beat" && settled.write.action !== "beat") {
+    console.error("[payu] beat grant refused", { sessionId: note.extOrderId });
+    return { status: 503, body: { ok: false } };
+  }
+
+  const applied = settled.write.action === "beat"
+    ? await admin.rpc("grant_payu_beat_wav", {
+        p_session_id: note.extOrderId,
+        p_amount: loaded.order.amountGrosz,
+        p_currency: "PLN",
+        p_payu_order_id: note.orderId,
+        p_statement: "payu",
+      })
+    : settled.write.action === "pack"
     ? await admin.rpc("grant_p24_quota_pack", {
         p_session_id: note.extOrderId,
         p_amount: loaded.order.amountGrosz,
@@ -295,7 +330,7 @@ export async function handlePayuWebhook(rawBody: string, signatureHeader: string
     await sendNotification({
       userId: loaded.userId,
       kind: "purchase_confirmed",
-      data: { detail: receiptLine(settled.write) },
+      data: { detail: receiptFor(settled.write, result) },
     });
     return { status: 200, body: { ok: true, result } };
   }

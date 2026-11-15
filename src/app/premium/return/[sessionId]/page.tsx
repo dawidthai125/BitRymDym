@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { PLAN_PACK_CATALOG, youtubeUnitsForGrosz } from "@/config/plan-policy";
+import { isUuid } from "@/lib/beats/audio-validation";
 import { PremiumReturnView, type ReturnState } from "@/components/premium/premium-return-view";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -69,7 +70,15 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
         amountGrosz = extra.error || !extra.data ? null : ((extra.data as { amount_grosz?: number | null }).amount_grosz ?? null);
       }
       const full = { ...row, pack };
-      if (row.status === "failed") state = { status: "failed" };
+      if (row.product_kind === "beat") {
+        const extra = await admin.from("payment_orders").select("beat_id").eq("session_id", sessionId).eq("user_id", context.userId).maybeSingle();
+        const beatId = extra.error || !extra.data ? null : ((extra.data as { beat_id?: string | null }).beat_id ?? null);
+        const href = isUuid(beatId) ? `/beat/${beatId}` : "/beats?katalog=platny";
+        if (row.status === "failed") state = { status: "beat_failed", href };
+        else if (row.status === "paid" && row.grant_status === "skipped") state = { status: "beat_skipped", href };
+        else if (row.status === "paid" && row.grant_status === "granted") state = { status: "beat_paid", href };
+        else state = { status: "beat_pending", href };
+      } else if (row.status === "failed") state = { status: "failed" };
       else if (row.status === "pending") state = { status: "pending" };
       else if (row.status === "paid" && row.grant_status === "skipped") {
         const reason = row.grant_note === "downgrade" || row.grant_note === "pending_plan" || row.grant_note === "addon_perpetual" || row.grant_note === "perpetual"
