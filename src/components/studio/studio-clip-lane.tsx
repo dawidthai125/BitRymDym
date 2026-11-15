@@ -268,6 +268,7 @@ export function StudioClipLaneItem({
       data-timeline-start-ms={clip.timelineStartMs}
       data-source-offset-ms={clip.sourceOffsetMs}
       data-duration-ms={clip.durationMs}
+      data-source-kind={clip.sourceKind}
       className={`absolute bottom-1 top-1 flex overflow-visible rounded ${
         selected
           ? "z-[2] bg-[var(--brd-ink)]/20 ring-2 ring-[var(--brd-ink)]"

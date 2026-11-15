@@ -199,7 +199,9 @@ export type StudioTrackCapacityProps = {
  * Visual Parity V2 — denser DAW lanes (header vol/pan + M/S/R keep min-h-11).
  * Clip geometry SSOT unchanged; height is presentation only.
  */
-const STUDIO_DAW_LANE_HEIGHT_PX = 144;
+const STUDIO_DAW_LANE_HEIGHT_PX = 168;
+/** Same vocal edge colors as the Windows recorder lanes. */
+const STUDIO_TRACK_EDGE = ["#e8735a", "#f2a93b", "#d9c45a", "#7cc68d", "#5fb6c9", "#9b8be0", "#d27fc0", "#e0937a"] as const;
 /** Phone: list above the lane so the lane keeps the full width. From sm, a side column. */
 const STUDIO_DAW_HEADER_WIDTH_CLASS =
   "h-1/2 w-full max-h-[50%] border-b sm:h-auto sm:max-h-none sm:w-[272px] sm:border-b-0 sm:border-r";
@@ -3153,16 +3155,28 @@ function StudioEditorInner({
       data-studio-visual-parity="v2"
       data-record-view={studioStep === "record" ? (recordSimple ? "simple" : "full") : undefined}
       data-studio-tab={onSampleTab ? "samples" : studioStep}
-      className="flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-hidden max-lg:pb-[var(--bitek-dock-h,0px)]"
+      className="studio-desk flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-hidden max-lg:pb-[var(--bitek-dock-h,0px)]"
     >
       <header
         data-testid="studio-header"
-        className="flex min-h-10 items-center border-b border-[var(--brd-line)] pb-0.5"
+        className="studio-brand-bar flex min-h-11 flex-wrap items-end gap-x-3 gap-y-1 pb-1"
       >
-        <h1 className="brd-display truncate text-xl leading-none tracking-tight sm:text-2xl">
+        <span className="studio-brand">BitRymDym</span>
+        <span className="studio-kicker">{tr("studioOnline")}</span>
+        <h1 className="min-w-0 flex-1 truncate text-sm leading-none text-[var(--brd-mute)]">
           {tl(doc.project.title)}
         </h1>
       </header>
+      <div className="flex flex-wrap items-center gap-2 px-0.5 py-1">
+        <span className="studio-gear-label">BIT</span>
+        <button
+          type="button"
+          className="studio-bit-picker min-h-11 truncate px-2 text-sm"
+          onClick={() => setBeatPickerOpen(true)}
+        >
+          {tl(doc.tracks.find((t) => t.trackType === "BEAT")?.name || tr("wybierzBit"))} ▾
+        </button>
+      </div>
 
       <nav
         aria-label={tMix("krokiAria")}
@@ -3368,6 +3382,10 @@ function StudioEditorInner({
         onFragmentCancelDelete={() => setFragmentConfirmDelete(false)}
         onUndo={undoStudioEdit}
         onRedo={redoStudioEdit}
+        selectionStartMs={selectedClip ? selectedClip.timelineStartMs : null}
+        selectionEndMs={
+          selectedClip ? selectedClip.timelineStartMs + selectedClip.durationMs : null
+        }
       />
 
       {selectedClip ? (
@@ -3843,8 +3861,11 @@ function StudioEditorInner({
                   data-track-type={track.trackType}
                   data-track-role={track.trackRole}
                   data-selected={isSelected ? "true" : "false"}
-                  className="studio-track-strip flex items-stretch gap-1 border-b border-[var(--brd-line)] py-1 pl-1.5 pr-1"
-                  style={{ height: STUDIO_DAW_LANE_HEIGHT_PX }}
+                  className="studio-track-strip flex items-stretch gap-1 border py-1 pl-1.5 pr-1"
+                  style={{
+                    height: STUDIO_DAW_LANE_HEIGHT_PX,
+                    borderColor: isBeat ? "#b9761e" : STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
+                  }}
                 >
                   <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
                   {/*
@@ -3873,7 +3894,7 @@ function StudioEditorInner({
                         className="studio-track-name block truncate text-[13px] font-medium leading-tight text-[var(--brd-ink)]"
                         data-testid="studio-track-name"
                       >
-                        {tl(track.name)}
+                        {isBeat ? "BIT" : tl(track.name)}
                       </span>
                     </button>
                     <StudioToggleChip
@@ -3908,7 +3929,21 @@ function StudioEditorInner({
                         });
                       }}
                     />
+                    {!isBeat ? (
+                      <span
+                        aria-hidden
+                        className="studio-track-swatch"
+                        style={{
+                          background: STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
+                        }}
+                      />
+                    ) : null}
                   </div>
+                  {isBeat ? (
+                    <p className="truncate px-1 text-[11px] leading-tight text-[var(--brd-ink-soft)]">
+                      {tl(track.name)} · {doc.project.tempoBpm} BPM · {tl(formatStudioTimeMs(length))}
+                    </p>
+                  ) : null}
                   {!recordSimple ? (
                   <>
                   <div className="flex min-h-11 min-w-0 items-center gap-0.5">
@@ -3995,7 +4030,7 @@ function StudioEditorInner({
                       data-testid="studio-track-header-mix"
                     >
                     <StudioMixControl
-                      label={tr("poziomKrotko")}
+                      label={tr("dbEtykieta")}
                       ariaLabel={tr("glosnoscSciezki", { v0: track.name })}
                       value={track.gainDb}
                       display={`${track.gainDb > 0 ? "+" : ""}${track.gainDb.toFixed(1)} dB`}
@@ -4017,7 +4052,7 @@ function StudioEditorInner({
                       }}
                     />
                     <StudioMixControl
-                      label={tr("panoramaKrotko")}
+                      label={tr("panEtykieta")}
                       ariaLabel={tr("panoramaSciezki", { v0: track.name })}
                       value={track.pan}
                       display={formatStudioPanShort(track.pan, { center: tr("panSrodekKrotko"), left: tr("panLewoKrotko"), right: tr("panPrawoKrotko") })}
@@ -4729,6 +4764,8 @@ function StudioTransportBar({
   onFragmentCancelDelete,
   onUndo,
   onRedo,
+  selectionStartMs,
+  selectionEndMs,
 }: {
   projectId: string;
   tipDocumentVersion: number;
@@ -4769,6 +4806,8 @@ function StudioTransportBar({
   onFragmentCancelDelete: () => void;
   onUndo: () => void;
   onRedo: () => void;
+  selectionStartMs: number | null;
+  selectionEndMs: number | null;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
@@ -4777,6 +4816,7 @@ function StudioTransportBar({
     play,
     pause,
     stop,
+    seek,
     audioState,
     error,
     hasBeat,
@@ -4827,25 +4867,30 @@ function StudioTransportBar({
           <Button
             type="button"
             size="sm"
+            variant="outline"
+            className="studio-key min-h-11 min-w-11 px-2"
+            onClick={() => seek(0)}
+            disabled={noBeat}
+            title={tr("poczatek")}
+            aria-label={tr("poczatek")}
+          >
+            <span className="font-mono text-[13px] font-semibold">|◀</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
             className="studio-key studio-key-play min-h-11 min-w-11 px-2"
             onClick={play}
             disabled={beatControlsDisabled || phase === "playing"}
             title={tl(noBeat ? tr("odtworzNajpierwWybierzBit") : tr("odtworz"))}
             aria-label={tl(noBeat ? tr("odtworzWymagaBitu") : tr("odtworz"))}
           >
-            {busy ? "…" : <StudioGlyph name="play" />}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-key min-h-11 min-w-11 px-2"
-            onClick={pause}
-            disabled={noBeat || phase !== "playing"}
-            title={tr("pauza")}
-            aria-label={tr("pauza")}
-          >
-            <StudioGlyph name="pause" />
+            {busy ? "…" : (
+              <>
+                <StudioGlyph name="play" />
+                <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("graj")}</span>
+              </>
+            )}
           </Button>
           <Button
             type="button"
@@ -4858,32 +4903,7 @@ function StudioTransportBar({
             aria-label={tr("stop")}
           >
             <StudioGlyph name="stop" />
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-key min-h-11 min-w-11 px-2"
-            onClick={onUndo}
-            disabled={!canUndo || pending}
-            title={tr("cofnijSkrot")}
-            aria-label={tr("cofnij")}
-            data-testid="studio-transport-undo"
-          >
-            <StudioGlyph name="undo" />
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-key min-h-11 min-w-11 px-2"
-            onClick={onRedo}
-            disabled={!canRedo || pending}
-            title={tr("ponowSkrot")}
-            aria-label={tr("ponow")}
-            data-testid="studio-transport-redo"
-          >
-            <StudioGlyph name="redo" />
+            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("stop")}</span>
           </Button>
           <Button
             type="button"
@@ -4905,7 +4925,45 @@ function StudioTransportBar({
             data-testid="studio-transport-record"
           >
             <StudioRecLamp />
-            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("rec")}</span>
+            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("nagraj")}</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="studio-key min-h-11 min-w-11 px-2"
+            onClick={onUndo}
+            disabled={!canUndo || pending}
+            title={tr("cofnijSkrot")}
+            aria-label={tr("cofnij")}
+            data-testid="studio-transport-undo"
+          >
+            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("cofnij")}</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="studio-key min-h-11 min-w-11 px-2"
+            onClick={onRedo}
+            disabled={!canRedo || pending}
+            title={tr("ponowSkrot")}
+            aria-label={tr("ponow")}
+            data-testid="studio-transport-redo"
+          >
+            <StudioGlyph name="redo" />
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="studio-key min-h-11 min-w-11 px-2"
+            onClick={pause}
+            disabled={noBeat || phase !== "playing"}
+            title={tr("pauza")}
+            aria-label={tr("pauza")}
+          >
+            <StudioGlyph name="pause" />
           </Button>
           <Button
             type="button"
@@ -5056,6 +5114,27 @@ function StudioTransportBar({
           projectId={projectId}
           getExpectedDocumentVersion={getExpectedDocumentVersion}
         />
+      </div>
+      <div className="mt-1 flex flex-wrap gap-2" data-testid="studio-selection-readout">
+        {(
+          [
+            ["poczatek", selectionStartMs],
+            ["koniec", selectionEndMs],
+            [
+              "dlugoscKrotko",
+              selectionStartMs != null && selectionEndMs != null
+                ? Math.max(0, selectionEndMs - selectionStartMs)
+                : null,
+            ],
+          ] as const
+        ).map(([key, ms]) => (
+          <span key={key} className="studio-sel-cell">
+            <span className="studio-sel-caption">{tr(key)}</span>
+            <span className="studio-sel-value">
+              {ms == null ? "—" : tl(formatStudioTimeMs(ms))}
+            </span>
+          </span>
+        ))}
       </div>
       {showFragmentTools ? (
         <StudioFragmentTools
@@ -5309,18 +5388,30 @@ function StudioTimeline({
                   </span>
                 ))}
               </div>
-              {tracks.map((track) => {
+              {tracks.map((track, index) => {
                 const trackClips = clips.filter((c) => c.trackId === track.id);
                 return (
                   <div
                     key={track.id}
-                    className="relative border-b border-[var(--brd-line)]/60 bg-[var(--brd-paper-deep)]/30"
+                    className="studio-lane relative border-b border-[var(--brd-line)]/60"
                     data-studio-clip-lane={track.id}
+                    data-track-type={track.trackType}
                     style={{
                       width: widthPx,
                       height: STUDIO_DAW_LANE_HEIGHT_PX,
+                      ["--studio-lane-edge" as string]: STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
                     }}
                   >
+                    {track.trackType === "BEAT" ? (
+                      <span className="studio-lane-title pointer-events-none sticky left-2 top-1 z-[3]">
+                        BIT · {tl(track.name)}
+                      </span>
+                    ) : null}
+                    {trackClips.length === 0 && track.trackType !== "BEAT" ? (
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--brd-mute)]">
+                        {tr("pustaSciezka")}
+                      </span>
+                    ) : null}
                     {trackClips.map((clip) => (
                       <StudioClipLaneItem
                         key={clip.id}

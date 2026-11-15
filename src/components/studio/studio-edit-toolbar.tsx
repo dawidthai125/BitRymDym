@@ -124,7 +124,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         type="button"
         size="sm"
         variant="outline"
-        className="min-h-11 min-w-11"
+        className="min-h-11 min-w-11 studio-tool-danger"
         disabled={props.recordingLocked || !props.hasSelectedClip}
         title={t("usunKlip")}
         onClick={props.onDeleteClip}

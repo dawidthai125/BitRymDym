@@ -2305,6 +2305,7 @@ export function StudioRecordingPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simple, samplesMode, simpleTakeSig, projectId]);
   const setupOpen = !simple && !samplesMode && visiblePane === "setup";
+  const gearOutputOpen = setupOpen || (simple && !samplesMode);
   const lanesOpen = !simple && !samplesMode && visiblePane === "lanes";
   const scratchOpen = !simple && !samplesMode && visiblePane === "scratch";
   const takeOpen = !samplesMode && (simple || visiblePane === "take");
@@ -2804,8 +2805,8 @@ export function StudioRecordingPanel({
       ) : null}
 
       {takeOpen ? (
-      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
-        <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("mikrofon")}</p>
+      <div className="studio-gear">
+        <p className="studio-gear-label text-xs font-medium text-[var(--brd-ink)]">{tr("mikrofon")}</p>
         <p className="text-xs text-[var(--brd-mute)]">{tr("zrodloNagrywania")}</p>
         <label className="block w-full text-xs text-[var(--brd-mute)]">
           <span className="sr-only">{tr("mikrofon")}</span>
@@ -2874,7 +2875,7 @@ export function StudioRecordingPanel({
         ) : null}
 
         <div className="w-full space-y-1 pt-1">
-          <p className="text-xs text-[var(--brd-mute)]">{tr("testMikrofonu")}</p>
+          <p className="studio-gear-label text-xs text-[var(--brd-mute)]">{tr("testMikrofonu")}</p>
           {testerError ? (
             <p className="text-xs text-destructive" role="alert">
               {tl(testerError)}
@@ -2914,9 +2915,9 @@ export function StudioRecordingPanel({
       </div>
       ) : null}
 
-      {setupOpen ? (
-      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
-        <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("odsluch")}</p>
+      {gearOutputOpen ? (
+      <div className="studio-gear">
+        <p className="studio-gear-label text-xs font-medium text-[var(--brd-ink)]">{tr("odsluch")}</p>
         {outputDevices.pickerEnabled ? (
           <label className="block w-full text-xs text-[var(--brd-mute)]">
             {tr("urzadzenie")}
@@ -2948,6 +2949,18 @@ export function StudioRecordingPanel({
             {tl(outputDevices.softNotice)}
           </p>
         ) : null}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11"
+          onClick={() => {
+            void inputDevices.refreshInputs();
+            void outputDevices.refreshOutputs();
+          }}
+        >
+          {tr("odswiezUrzadzenia")}
+        </Button>
       </div>
       ) : null}
 
@@ -2970,7 +2983,7 @@ export function StudioRecordingPanel({
           <Button
             type="button"
             size="sm"
-            className="w-full sm:w-auto"
+            className="studio-rec-button w-full sm:w-auto"
             variant={state.phase === "RECORDING" ? "destructive" : "default"}
             disabled={primaryDisabled}
             onClick={() => {

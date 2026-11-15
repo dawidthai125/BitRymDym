@@ -436,6 +436,243 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   color: var(--tape-mute);
 }
 
+/* Studio on the site uses the Windows recorder desk.
+   Extra site tools stay. They sit on this desk, not the old page chrome. */
+.studio-desk {
+  --brd-paper: #0e0c0a;
+  --brd-paper-deep: #120e0b;
+  --brd-bg: #0e0c0a;
+  --brd-ink: #f1e7d3;
+  --brd-ink-soft: #cdbfa6;
+  --brd-mute: #9e8f78;
+  --brd-line: #3a3028;
+  --brd-green: #f2a93b;
+  --brd-green-soft: #f7bb5c;
+  --brd-green-wash: #3a2a14;
+  --brd-green-muted: #b9761e;
+  --brd-green-deep: #b9761e;
+  --brd-amber: #f2a93b;
+  --brd-amber-soft: #f7bb5c;
+  --brd-rec: #ff4b36;
+  --brd-on-media: #1a1006;
+  --brd-audio-playhead: #f1e7d3;
+  --tape-amber: #f2a93b;
+  --tape-amber-deep: #b9761e;
+  --tape-rec: #ff4b36;
+  --tape-cream: #f1e7d3;
+  --tape-cream-soft: #cdbfa6;
+  --tape-soot: #0e0c0a;
+  --tape-deck: #17130f;
+  --tape-panel: #211b15;
+  --tape-line: #3a3028;
+  --tape-line-strong: #5c4c3c;
+  --tape-mute: #9e8f78;
+  --tape-on-amber: #1a1006;
+  background: #0e0c0a;
+  color: #f1e7d3;
+}
+.studio-desk .studio-brand-bar {
+  border-bottom: 2px solid #f2a93b;
+}
+.studio-desk .studio-brand {
+  font-style: italic;
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: #f1e7d3;
+}
+.studio-desk .studio-kicker {
+  margin-top: 0.35rem;
+  color: #f2a93b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.studio-desk .studio-gear-label {
+  color: #9e8f78;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.studio-desk .studio-bit-picker {
+  min-width: min(100%, 16rem);
+  border: 1px solid #5c4c3c;
+  background: #17130f;
+  color: #f1e7d3;
+  text-align: left;
+}
+.studio-desk [data-testid="studio-step-nav"] [aria-current="step"],
+.studio-desk [data-testid="studio-step-nav"] li[aria-current="step"] {
+  background: #f2a93b;
+  color: #1a1006;
+}
+.studio-desk [data-testid="studio-go-mix"] {
+  background: #f2a93b !important;
+  border-color: #f2a93b !important;
+  color: #1a1006 !important;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.studio-desk .studio-transport {
+  background: #17130f;
+  border: 1px solid #3a3028;
+  border-top: 1px solid #3a3028;
+  box-shadow: none;
+}
+.studio-desk [data-testid="studio-transport-ops"] .studio-key,
+.studio-desk [data-testid="studio-transport-ops"] .studio-rec-button,
+.studio-desk [data-testid="studio-edit-toolbar"] button,
+.studio-desk [data-testid="studio-fragment-tools"] button {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  border-radius: 2px !important;
+}
+.studio-desk .studio-key {
+  background: #17130f !important;
+  border-color: #5c4c3c !important;
+  color: #f1e7d3 !important;
+  box-shadow: none;
+}
+.studio-desk .studio-key-play {
+  background: #f2a93b !important;
+  border-color: #f2a93b !important;
+  color: #1a1006 !important;
+}
+.studio-desk .studio-key-on {
+  background: #3a2a14 !important;
+  border-color: #f2a93b !important;
+  color: #f2a93b !important;
+}
+.studio-desk .studio-rec-button {
+  background: #ff4b36 !important;
+  border-color: #ff4b36 !important;
+  color: #1a1006 !important;
+}
+.studio-desk .studio-rec-button .studio-rec-lamp {
+  background: #1a1006;
+  box-shadow: none;
+}
+.studio-desk .studio-tool-danger {
+  color: #ff4b36 !important;
+}
+.studio-desk .studio-counter {
+  background: #0b0907;
+  border-color: #5c4c3c;
+  box-shadow: none;
+}
+.studio-desk .studio-counter-time {
+  font-size: 1.25rem;
+  color: #f2a93b;
+}
+.studio-desk .studio-sel-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0 0.6rem;
+  background: #0b0907;
+  border: 1px solid #3a3028;
+}
+.studio-desk .studio-sel-caption {
+  color: #9e8f78;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.studio-desk .studio-sel-value {
+  color: #f2a93b;
+  font-family: ui-monospace, monospace;
+  font-size: 0.95rem;
+}
+.studio-desk .studio-gear {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+.studio-desk .studio-gear select {
+  min-height: 2.75rem;
+  max-width: 16rem;
+  border-radius: 2px;
+  border-color: #5c4c3c;
+  background: #17130f;
+  color: #f1e7d3;
+}
+.studio-desk select,
+.studio-desk input[type="text"],
+.studio-desk input[type="number"] {
+  background: #17130f;
+  color: #f1e7d3;
+  border-color: #5c4c3c;
+}
+.studio-desk [data-testid="studio-timeline"] .sticky,
+.studio-desk [data-testid="studio-track-list"] > div:first-child {
+  background: #0b0907 !important;
+}
+.studio-desk .studio-track-strip {
+  margin: 4px;
+  background: #17130f;
+  border-width: 2px;
+}
+.studio-desk [data-track-type="BEAT"] .studio-track-name {
+  color: #f2a93b;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.studio-desk [data-track-type]:not([data-track-type="BEAT"]) .studio-track-name {
+  font-size: 15px;
+  font-weight: 800;
+}
+.studio-desk .studio-track-swatch {
+  width: 10px;
+  height: 10px;
+  flex: none;
+}
+.studio-desk [data-studio-clip-lane] {
+  background: #120e0b;
+}
+.studio-desk [data-studio-clip-lane][data-track-type="BEAT"] {
+  background-color: #6b4a1c;
+  background-image:
+    linear-gradient(#f2a93b, #f2a93b),
+    repeating-linear-gradient(90deg, transparent 0, transparent 63px, #8a6326 63px, #8a6326 64px),
+    repeating-linear-gradient(#8a6326 0 1px, transparent 1px 32px);
+  background-size: 100% 26px, auto, auto;
+  background-repeat: no-repeat, repeat, repeat;
+  background-position: top, 0 26px, 0 26px;
+}
+.studio-desk [data-studio-clip-lane][data-track-type="BEAT"] [data-studio-clip] {
+  top: 28px;
+  bottom: 2px;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+.studio-desk [data-studio-clip-lane]:not([data-track-type="BEAT"]) [data-studio-clip] {
+  background: color-mix(in srgb, var(--studio-lane-edge, #e8735a) 82%, #1a1006) !important;
+  border-radius: 2px;
+}
+.studio-desk .studio-lane-title {
+  color: #1a1006;
+  font-size: 12px;
+  font-weight: 800;
+  z-index: 3;
+  width: fit-content;
+}
+.studio-desk [data-testid="studio-inspector-desktop"],
+.studio-desk [data-testid="studio-mixer-drawer"] {
+  background: #17130f;
+  border-color: #3a3028;
+  color: #f1e7d3;
+}
+
 /* Channel strip header (left of every lane). */
 .studio-track-strip {
   background: var(--tape-deck);

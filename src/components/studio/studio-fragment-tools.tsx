@@ -88,7 +88,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="destructive"
-            className="min-h-11 px-3"
+            className="min-h-11 px-3 studio-tool-danger"
             data-testid="studio-fragment-delete"
             disabled={locked}
             onClick={onDelete}
@@ -262,13 +262,13 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 px-3"
+            className="min-h-11 px-3 studio-tool-danger"
             data-testid="studio-fragment-delete"
             disabled={locked}
             title={t("usunFragmentOpis")}
             onClick={onAskDelete}
           >
-            {t("usunFragment")}
+            {t("usun")}
           </Button>
           <p className="px-1 text-xs text-[var(--brd-mute)]" data-testid="studio-fragment-hint">
             {enabled ? t("fragmentEdycja") : t("zaznaczFragment")}
