@@ -470,7 +470,7 @@ function FilterPanel({
               onChange={(e) =>
                 onBpmMin(Math.min(Number(e.target.value), bpmMax))
               }
-              className="brd-scrub h-11 w-full"
+              className="brd-scrub brd-scrub-touch w-full"
             />
           </label>
           <label className="block">
@@ -483,7 +483,7 @@ function FilterPanel({
               onChange={(e) =>
                 onBpmMax(Math.max(Number(e.target.value), bpmMin))
               }
-              className="brd-scrub h-11 w-full"
+              className="brd-scrub brd-scrub-touch w-full"
             />
           </label>
         </div>

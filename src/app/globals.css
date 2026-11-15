@@ -218,6 +218,14 @@ html[data-theme="dark"] .brd-logo-img {
   border: 1px solid var(--brd-paper);
 }
 
+/* h-11 loses to the 2px height above. Padding keeps the line thin and the finger target 44px. */
+.brd-scrub.brd-scrub-touch {
+  box-sizing: border-box;
+  height: 2.75rem;
+  padding-block: 21px;
+  background-clip: content-box;
+}
+
 /*
   data-brd-surface="control-room" is historical markup on Studio/takes mains.
   Global html[data-theme="dark"] now owns the graphite palette — do not stack
