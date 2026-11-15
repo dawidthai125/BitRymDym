@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { BEAT_COVER_BUCKET } from "@/config/beat-covers";
+import { coverBriefPrompt } from "@/lib/beats/ai-beat/cover-brief";
 import { requireAdminGenerator } from "@/lib/beats/ai-beat/generate";
 import { sanitizeBeatStyle } from "@/lib/beats/ai-beat/prompt";
 import { isUuid } from "@/lib/beats/audio-validation";
@@ -59,6 +60,16 @@ function coverPromptFromStyle(style: string | null): string {
     throw new BeatRequestError("Nie udało się przygotować opisu okładki.");
   }
   return fallback.prompt;
+}
+
+function promptForCover(style: string | null, lettering: unknown, colors: unknown): string {
+  const brief = coverBriefPrompt({ style, lettering, colors });
+  if (brief.ok) return brief.prompt;
+  const asked =
+    (typeof lettering === "string" && lettering.trim().length > 0) ||
+    (typeof colors === "string" && colors.trim().length > 0);
+  if (asked) throw new BeatRequestError(brief.message);
+  return coverPromptFromStyle(style);
 }
 
 function polishCoverImageError(error: unknown): BeatRequestError {
@@ -129,6 +140,7 @@ async function removeCoverObjects(paths: Array<string | null>): Promise<void> {
 /** Admin generates a square cover and stores it as approved. */
 export async function generateWaitingBeatCover(
   beatId: string,
+  brief: { lettering?: unknown; colors?: unknown } = {},
 ): Promise<{ coverStatus: "approved" }> {
   await requireAdminGenerator();
   if (!isUuid(beatId)) throw new BeatRequestError(NOT_WAITING);
@@ -165,7 +177,7 @@ export async function generateWaitingBeatCover(
   let image: Buffer;
   try {
     image = await provider.generate(
-      { prompt: coverPromptFromStyle(row.style), aspect: "1:1", seed: 1 },
+      { prompt: promptForCover(row.style, brief.lettering, brief.colors), aspect: "1:1", seed: 1 },
       controller.signal,
     );
   } catch (generateError) {

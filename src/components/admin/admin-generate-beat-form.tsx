@@ -4,7 +4,9 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
+import { AdminBeatBitek } from "@/components/admin/admin-beat-bitek";
 import { BrdButton } from "@/components/brand/brd-button";
+import { beatGenerationPercent } from "@/lib/beats/ai-beat/generation-progress";
 import {
   BEAT_DURATION_CHOICES,
   DEFAULT_BEAT_DURATION,
@@ -29,8 +31,10 @@ export function AdminGenerateBeatForm() {
   const [duration, setDuration] = useState<BeatDuration>(DEFAULT_BEAT_DURATION);
   const [bpm, setBpm] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
+  const [pendingPolls, setPendingPolls] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [beatId, setBeatId] = useState<string | null>(null);
+  const [revised, setRevised] = useState(false);
   const [styleLabel, setStyleLabel] = useState<string | null>(null);
   const [bpmHint, setBpmHint] = useState<number | null>(null);
 
@@ -87,6 +91,8 @@ export function AdminGenerateBeatForm() {
     if (busy) return;
     setError(null);
     setBeatId(null);
+    setRevised(false);
+    setPendingPolls(0);
     setPhase("starting");
 
     const payload = {
@@ -143,6 +149,7 @@ export function AdminGenerateBeatForm() {
           return;
         }
         if (resultJson.status === "pending") {
+          setPendingPolls((count) => count + 1);
           setPhase("waiting");
           continue;
         }
@@ -170,6 +177,12 @@ export function AdminGenerateBeatForm() {
           : phase === "saving"
             ? t("wgrywam")
             : null;
+  const percent = generating
+    ? beatGenerationPercent(
+        phase === "saving" ? "saving" : phase === "waiting" ? "waiting" : "starting",
+        pendingPolls,
+      )
+    : null;
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5">
@@ -251,6 +264,10 @@ export function AdminGenerateBeatForm() {
         </BrdButton>
       </div>
 
+      {percent !== null ? (
+        <GenerationMeter percent={percent} label={t("postep")} text={t("procent", { percent })} />
+      ) : null}
+
       <p className="min-h-6 text-sm" aria-live="polite">
         {error ? <span className="text-destructive">{error}</span> : null}
         {!error && status ? <span className="text-muted-foreground">{status}</span> : null}
@@ -266,6 +283,44 @@ export function AdminGenerateBeatForm() {
           </Link>
         ) : null}
       </p>
+      {revised ? <p className="text-sm text-muted-foreground">{t("bitekNowa")}</p> : null}
+      {!error && phase === "ready" && beatId ? (
+        <AdminBeatBitek
+          key={beatId}
+          beatId={beatId}
+          autoReview
+          onRevised={(nextId) => {
+            setBeatId(nextId);
+            setRevised(true);
+          }}
+        />
+      ) : null}
     </form>
+  );
+}
+
+function GenerationMeter({
+  percent,
+  label,
+  text,
+}: {
+  percent: number;
+  label: string;
+  text: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div
+        className="h-2 overflow-hidden rounded-full border border-border bg-muted"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        aria-label={label}
+      >
+        <div className="h-full bg-foreground" style={{ width: `${percent}%` }} />
+      </div>
+      <p className="text-sm text-muted-foreground tabular-nums">{text}</p>
+    </div>
   );
 }

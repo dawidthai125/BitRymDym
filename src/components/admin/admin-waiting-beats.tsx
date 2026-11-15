@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { AdminBeatBitek } from "@/components/admin/admin-beat-bitek";
 import { AdminBeatPlayButton } from "@/components/admin/admin-beat-play-button";
 import { Button } from "@/components/ui/button";
 import { beatCoverUrl } from "@/lib/beats/cover/cover-url";
@@ -56,6 +57,8 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
   const router = useRouter();
   const lock = useRef(false);
   const [busy, setBusy] = useState<BusyKind | null>(null);
+  const [lettering, setLettering] = useState("");
+  const [colors, setColors] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [released, setReleased] = useState(false);
   const approved = beat.coverStatus === "approved";
@@ -88,7 +91,7 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(
             kind === "cover"
-              ? { beatId: beat.id }
+              ? { beatId: beat.id, lettering, colors }
               : { beatId: beat.id, lane: kind },
           ),
         },
@@ -165,16 +168,42 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
           {beat.description?.trim() || "—"}
         </p>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            disabled={busy !== null}
-            onClick={() => void run("cover")}
-          >
-            {busy === "cover" ? t("generujeOkladke") : t("generujOkladke")}
-          </Button>
+        <AdminBeatBitek beatId={beat.id} onRevised={() => router.refresh()} />
+
+        <div className="flex flex-col gap-2">
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">{t("napisOkladki")}</span>
+            <input
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              value={lettering}
+              maxLength={24}
+              disabled={busy !== null}
+              placeholder={t("napisPlaceholder")}
+              onChange={(event) => setLettering(event.target.value)}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">{t("koloryOkladki")}</span>
+            <input
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              value={colors}
+              maxLength={60}
+              disabled={busy !== null}
+              placeholder={t("koloryPlaceholder")}
+              onChange={(event) => setColors(event.target.value)}
+            />
+          </label>
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              disabled={busy !== null}
+              onClick={() => void run("cover")}
+            >
+              {busy === "cover" ? t("generujeOkladke") : t("generujOkladke")}
+            </Button>
+          </div>
         </div>
 
         {approved ? null : (
