@@ -1145,6 +1145,49 @@ export async function listPublishedBeats(options?: {
   return withPublicAuthors(beats);
 }
 
+/**
+ * Free published beats for the ranking board: id, title, owner, producer.
+ * Same lane rules as listPublishedBeats() with no limit. No cover columns and no author RPC.
+ */
+export async function listPublishedBeatBoardKeys(): Promise<
+  Array<{
+    id: string;
+    title: string;
+    ownerId: string | null;
+    ownershipType: "USER" | "PLATFORM";
+    producer: string | null;
+  }>
+> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beats")
+    .select("id, title, owner_id, ownership_type, producer, catalog_lane")
+    .eq("status", "PUBLISHED")
+    .eq("visibility", "public")
+    .or("catalog_lane.is.null,catalog_lane.neq.paid");
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as Array<{
+    id: string;
+    title: string;
+    owner_id: string | null;
+    ownership_type: string;
+    producer: string | null;
+    catalog_lane?: string | null;
+  }>;
+  return rows.flatMap((row) => {
+    if (catalogLaneOf(row.catalog_lane) !== "free") return [];
+    return [
+      {
+        id: row.id,
+        title: row.title,
+        ownerId: row.owner_id,
+        ownershipType: row.ownership_type === "USER" ? ("USER" as const) : ("PLATFORM" as const),
+        producer: row.producer,
+      },
+    ];
+  });
+}
+
 export async function getPublishedBeat(beatId: string): Promise<Beat | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase

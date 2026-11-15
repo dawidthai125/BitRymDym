@@ -12,9 +12,12 @@ export async function RankingView({
   kind: TargetKind;
   period: PeriodKind;
 }) {
-  const t = await getTranslations("community");
-  const rank = await getTranslations("community.rank");
-  const board = await readBoard(kind, period).catch(() => null);
+  const boardPromise = readBoard(kind, period).catch(() => null);
+  const [t, rank, board] = await Promise.all([
+    getTranslations("community"),
+    getTranslations("community.rank"),
+    boardPromise,
+  ]);
   const base = kind === "beat" ? "/ranking" : "/ranking/sampel";
   const championLabel = kind === "beat"
     ? (period === "week" ? rank("bitWeek") : rank("bitMonth"))

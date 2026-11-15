@@ -200,7 +200,9 @@ export type StudioTrackCapacityProps = {
  * Clip geometry SSOT unchanged; height is presentation only.
  */
 const STUDIO_DAW_LANE_HEIGHT_PX = 144;
-const STUDIO_DAW_HEADER_WIDTH_CLASS = "w-[232px] sm:w-[272px]";
+/** Phone: list above the lane so the lane keeps the full width. From sm, a side column. */
+const STUDIO_DAW_HEADER_WIDTH_CLASS =
+  "h-1/2 w-full max-h-[50%] border-b sm:h-auto sm:max-h-none sm:w-[272px] sm:border-b-0 sm:border-r";
 /** Phase 7.1.1 — primary track chips ≥44px hit area (visual stays compact). */
 /** Track header pan readout: C, L 35, R 100 (mono, fixed width). */
 function formatStudioPanShort(
@@ -5235,15 +5237,15 @@ function StudioTimeline({
 
   return (
     <div
-      className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_3%)]"
+      className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_3%)] max-sm:h-[min(28rem,calc(100dvh-18rem))] max-sm:min-h-[20rem] max-sm:flex-none"
       role="region"
       aria-label={tr("osCzasuProjektu")}
       data-testid="studio-timeline"
     >
-      <div className="flex min-h-0 min-w-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col sm:flex-row">
         {hasHeaders ? (
           <div
-            className={`${STUDIO_DAW_HEADER_WIDTH_CLASS} flex shrink-0 flex-col border-r border-[var(--brd-line)]`}
+            className={`${STUDIO_DAW_HEADER_WIDTH_CLASS} flex min-h-0 shrink-0 flex-col border-[var(--brd-line)]`}
             data-testid="studio-track-list"
           >
             <div
@@ -5263,7 +5265,7 @@ function StudioTimeline({
           </div>
         ) : null}
 
-        <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
           <div
             ref={assignLaneScrollEl}
             className="min-h-0 min-w-0 flex-1 overflow-auto touch-pan-x"

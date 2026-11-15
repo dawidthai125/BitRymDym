@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { RankingView } from "@/components/community/ranking-view";
+import { readBoard } from "@/lib/community/community-service";
 import { AppShell } from "@/components/site/app-shell";
 
 export async function generateMetadata() {
@@ -16,6 +17,7 @@ export default async function SampleRankingPage({
 }) {
   const params = searchParams ? await searchParams : {};
   const period = params.okres === "miesiac" ? "month" : "week";
+  void readBoard("sample", period).catch(() => null);
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">

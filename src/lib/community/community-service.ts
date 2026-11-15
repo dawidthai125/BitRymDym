@@ -1,9 +1,11 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { isUuid } from "@/lib/beats/audio-validation";
 import { loadPublicAuthorDisplayNames } from "@/lib/beats/public-author";
 import { resolvePublicAuthor } from "@/lib/beats/public-author-resolve";
-import { getPublishedBeat, listPublishedBeats } from "@/lib/beats/service";
+import { getPublishedBeat, listPublishedBeatBoardKeys, listPublishedBeats } from "@/lib/beats/service";
 import {
   aggregateRatings,
   cleanComment,
@@ -15,6 +17,7 @@ import {
   warsawPeriod,
   type PeriodKind,
   type PeriodWindow,
+  type RatingInput,
   type TargetKind,
 } from "@/lib/community/ranking-policy";
 import { findLiveCatalogWork } from "@/lib/catalog/catalog-service";
@@ -163,6 +166,43 @@ async function beatCommentFlags(ids: string[]): Promise<Map<string, boolean> | n
   return flags;
 }
 
+type SampleRow = {
+  id: string;
+  owner_id: string;
+  title: string;
+  kind: string;
+  instrument: string | null;
+  duration_ms: number;
+  public_listing?: boolean;
+  allow_comments?: boolean;
+};
+
+async function loadPublishedSampleRows(): Promise<SampleRow[]> {
+  const admin = adminOrNull();
+  if (!admin) return [];
+  const flagged = await admin
+    .from("studio_samples")
+    .select("id, owner_id, title, kind, instrument, duration_ms, public_listing, allow_comments")
+    .eq("status", "PUBLISHED")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  const flagsMissing = shareColumnMissing(flagged.error, "public_listing") || shareColumnMissing(flagged.error, "allow_comments");
+  const loaded = flagsMissing
+    ? await admin
+        .from("studio_samples")
+        .select("id, owner_id, title, kind, instrument, duration_ms")
+        .eq("status", "PUBLISHED")
+        .order("created_at", { ascending: false })
+        .limit(200)
+    : flagged;
+  if (loaded.error) return [];
+  const rows = (loaded.data ?? []) as SampleRow[];
+  return rows.filter((row) => (flagsMissing ? true : row.public_listing === true)).map((row) => ({
+    ...row,
+    allow_comments: flagsMissing ? true : row.allow_comments !== false,
+  }));
+}
+
 async function publishedWorks(kind: TargetKind | "work"): Promise<Work[]> {
   if (kind === "work") return [];
   if (kind === "beat") {
@@ -185,50 +225,19 @@ async function publishedWorks(kind: TargetKind | "work"): Promise<Work[]> {
       }),
     }));
   }
-  const admin = adminOrNull();
-  if (!admin) return [];
-  const flagged = await admin
-    .from("studio_samples")
-    .select("id, owner_id, title, kind, instrument, duration_ms, public_listing, allow_comments")
-    .eq("status", "PUBLISHED")
-    .order("created_at", { ascending: false })
-    .limit(200);
-  const flagsMissing = shareColumnMissing(flagged.error, "public_listing") || shareColumnMissing(flagged.error, "allow_comments");
-  const loaded = flagsMissing
-    ? await admin
-        .from("studio_samples")
-        .select("id, owner_id, title, kind, instrument, duration_ms")
-        .eq("status", "PUBLISHED")
-        .order("created_at", { ascending: false })
-        .limit(200)
-    : flagged;
-  if (loaded.error) return [];
-  const rows = (loaded.data ?? []) as Array<{
-    id: string;
-    owner_id: string;
-    title: string;
-    kind: string;
-    instrument: string | null;
-    duration_ms: number;
-    public_listing?: boolean;
-    allow_comments?: boolean;
-  }>;
+  const rows = await loadPublishedSampleRows();
   const names = await authorNames(rows.map((row) => row.owner_id));
-  return rows.flatMap((row) => {
-    const listed = flagsMissing ? true : row.public_listing === true;
-    if (!listed) return [];
-    return [{
-      id: row.id,
-      title: row.title,
-      ownerId: row.owner_id,
-      ownership: "USER" as const,
-      allowComments: flagsMissing ? true : row.allow_comments !== false,
-      author: publicAuthorName({ ownership: "USER", displayName: names.get(row.owner_id) }),
-      kind: row.kind,
-      instrument: row.instrument,
-      durationMs: Number(row.duration_ms),
-    }];
-  });
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    ownerId: row.owner_id,
+    ownership: "USER" as const,
+    allowComments: row.allow_comments !== false,
+    author: publicAuthorName({ ownership: "USER", displayName: names.get(row.owner_id) }),
+    kind: row.kind,
+    instrument: row.instrument,
+    durationMs: Number(row.duration_ms),
+  }));
 }
 
 export async function listPublicSamples(source: CatalogSource): Promise<PublicSampleCard[]> {
@@ -248,8 +257,12 @@ function prizeLabel(prize: { place: number; tier: string; days: number; mode: st
   return prize ?? null;
 }
 
-async function settlePeriod(admin: Admin, kind: TargetKind, period: PeriodWindow, works: Map<string, Work>): Promise<boolean> {
-  if (!period.closed) return true;
+type StoredRating = { target_id: string; user_id: string; stars: number; created_at: string };
+type RatingLoad = { state: "missing" | "error" | "ok"; rows: StoredRating[] };
+
+type BoardWork = Work & { producer: string | null; source: "beat" | "sample" };
+
+async function loadRatingWindow(admin: Admin, kind: TargetKind, period: PeriodWindow): Promise<RatingLoad> {
   const loaded = await admin
     .from(RATINGS)
     .select("target_id, user_id, stars, created_at")
@@ -257,22 +270,42 @@ async function settlePeriod(admin: Admin, kind: TargetKind, period: PeriodWindow
     .gte("created_at", period.start.toISOString())
     .lt("created_at", period.end.toISOString())
     .limit(5000);
-  if (missingCommunity(loaded.error)) return false;
-  if (loaded.error) return true;
-  const ratings = ((loaded.data ?? []) as Array<{ target_id: string; user_id: string; stars: number; created_at: string }>)
-    .map((row) => {
-      const work = works.get(row.target_id);
-      if (!work) return null;
-      return {
-        targetId: row.target_id,
-        ownerId: work.ownerId,
-        userId: row.user_id,
-        stars: Number(row.stars),
-        at: row.created_at,
-      };
-    })
-    .filter((row): row is NonNullable<typeof row> => row !== null);
-  const prizes = prizesFor(period.kind, rankTargets(aggregateRatings(ratings, period.start, period.end)));
+  if (missingCommunity(loaded.error)) return { state: "missing", rows: [] };
+  if (loaded.error) return { state: "error", rows: [] };
+  return { state: "ok", rows: (loaded.data ?? []) as StoredRating[] };
+}
+
+function storedToInputs(rows: readonly StoredRating[], works: Map<string, Work>): RatingInput[] {
+  return rows.flatMap((row) => {
+    const work = works.get(row.target_id);
+    if (!work) return [];
+    return [{
+      targetId: row.target_id,
+      ownerId: work.ownerId,
+      userId: row.user_id,
+      stars: Number(row.stars),
+      at: row.created_at,
+    }];
+  });
+}
+
+function scoreLoaded(load: RatingLoad, works: Map<string, Work>, period: PeriodWindow) {
+  if (load.state === "missing") return null;
+  if (load.state === "error") return [];
+  return rankTargets(aggregateRatings(storedToInputs(load.rows, works), period.start, period.end));
+}
+
+async function settleLoaded(
+  admin: Admin,
+  kind: TargetKind,
+  period: PeriodWindow,
+  works: Map<string, Work>,
+  load: RatingLoad,
+): Promise<boolean> {
+  if (!period.closed) return true;
+  if (load.state === "missing") return false;
+  if (load.state === "error") return true;
+  const prizes = prizesFor(period.kind, rankTargets(aggregateRatings(storedToInputs(load.rows, works), period.start, period.end)));
   if (prizes.length === 0) return true;
   const saved = await admin.from(REWARDS).upsert(
     prizes.map((prize) => ({
@@ -291,48 +324,88 @@ async function settlePeriod(admin: Admin, kind: TargetKind, period: PeriodWindow
   return !missingCommunity(saved.error);
 }
 
-async function scorePeriod(admin: Admin, kind: TargetKind, period: PeriodWindow, works: Map<string, Work>) {
-  const loaded = await admin
-    .from(RATINGS)
-    .select("target_id, user_id, stars, created_at")
-    .eq("target_kind", kind)
-    .gte("created_at", period.start.toISOString())
-    .lt("created_at", period.end.toISOString())
-    .limit(5000);
-  if (missingCommunity(loaded.error)) return null;
-  if (loaded.error) return [];
-  const ratings = ((loaded.data ?? []) as Array<{ target_id: string; user_id: string; stars: number; created_at: string }>)
-    .flatMap((row) => {
-      const work = works.get(row.target_id);
-      if (!work) return [];
-      return [{
-        targetId: row.target_id,
-        ownerId: work.ownerId,
-        userId: row.user_id,
-        stars: Number(row.stars),
-        at: row.created_at,
-      }];
-    });
-  return rankTargets(aggregateRatings(ratings, period.start, period.end));
+async function settlePeriod(admin: Admin, kind: TargetKind, period: PeriodWindow, works: Map<string, Work>): Promise<boolean> {
+  return settleLoaded(admin, kind, period, works, await loadRatingWindow(admin, kind, period));
 }
 
-export async function readBoard(kind: TargetKind, periodKind: PeriodKind, now = new Date()): Promise<Board> {
+async function loadBoardWorks(kind: TargetKind): Promise<BoardWork[]> {
+  if (kind === "beat") {
+    const beats = await listPublishedBeatBoardKeys();
+    return beats.map((beat) => ({
+      id: beat.id,
+      title: beat.title,
+      ownerId: beat.ownerId,
+      ownership: beat.ownershipType,
+      allowComments: true,
+      author: "",
+      producer: beat.producer,
+      source: "beat" as const,
+    }));
+  }
+  const rows = await loadPublishedSampleRows();
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    ownerId: row.owner_id,
+    ownership: "USER" as const,
+    allowComments: row.allow_comments !== false,
+    author: "",
+    producer: null,
+    source: "sample" as const,
+    kind: row.kind,
+    instrument: row.instrument,
+    durationMs: Number(row.duration_ms),
+  }));
+}
+
+function boardAuthor(work: BoardWork, names: Map<string, string | null>): string {
+  const displayName = work.ownerId ? (names.get(work.ownerId) ?? null) : null;
+  if (work.source === "sample") {
+    return publicAuthorName({ ownership: "USER", displayName });
+  }
+  return resolvePublicAuthor({
+    ownershipType: work.ownership === "USER" ? "USER" : "PLATFORM",
+    ownerId: work.ownerId,
+    producer: work.producer,
+    ownerDisplayName: displayName,
+  });
+}
+
+async function readBoardAt(kind: TargetKind, periodKind: PeriodKind, now: Date): Promise<Board> {
   const period = warsawPeriod(now, periodKind);
   const empty: Board = { enabled: false, periodKey: period.key, closed: period.closed, rows: [], champion: null };
   const admin = adminOrNull();
   if (!admin) return empty;
-  const works = new Map((await publishedWorks(kind)).map((work) => [work.id, work]));
-  const ranked = await scorePeriod(admin, kind, period, works);
-  if (!ranked) return empty;
-  const settled = await settlePeriod(admin, kind, period, works);
-  if (!settled) return empty;
   const previous = previousPeriod(period, now);
-  await settlePeriod(admin, kind, previous, works);
+  const [listed, currentLoad, previousLoad] = await Promise.all([
+    loadBoardWorks(kind),
+    loadRatingWindow(admin, kind, period),
+    loadRatingWindow(admin, kind, previous),
+  ]);
+  const works = new Map(listed.map((work) => [work.id, work]));
+  const ranked = scoreLoaded(currentLoad, works, period);
+  if (!ranked) return empty;
+  // A missing previous window hides the champion only. The open board stays.
+  const previousRanked = scoreLoaded(previousLoad, works, previous) ?? [];
+  const leader = previousRanked[0];
+  const shownOwnerIds: string[] = [];
+  for (const row of ranked.slice(0, 20)) {
+    const work = works.get(row.targetId);
+    if (work?.ownership === "USER" && work.ownerId) shownOwnerIds.push(work.ownerId);
+  }
+  if (leader) {
+    const work = works.get(leader.targetId);
+    if (work?.ownership === "USER" && work.ownerId) shownOwnerIds.push(work.ownerId);
+  }
+  const [settled, names] = await Promise.all([
+    settleLoaded(admin, kind, period, works, currentLoad),
+    authorNames(shownOwnerIds),
+    settleLoaded(admin, kind, previous, works, previousLoad),
+  ]);
+  if (!settled) return empty;
   const prizes = new Map(
     (period.closed ? prizesFor(period.kind, ranked) : []).map((prize) => [prize.targetId, prize]),
   );
-  const previousRanked = await scorePeriod(admin, kind, previous, works);
-  const leader = previousRanked?.[0];
   const leaderWork = leader ? works.get(leader.targetId) : undefined;
   return {
     enabled: true,
@@ -345,17 +418,22 @@ export async function readBoard(kind: TargetKind, periodKind: PeriodKind, now = 
         place: row.place,
         targetId: row.targetId,
         title: work?.title ?? "—",
-        author: work?.author ?? ANONYMIZED_PUBLIC_AUTHOR,
+        author: work ? boardAuthor(work, names) : ANONYMIZED_PUBLIC_AUTHOR,
         score: row.score,
         count: row.count,
         prize: prizeLabel(prize ? { place: prize.place, tier: prize.tier, days: prize.days, mode: prize.mode } : undefined),
       };
     }),
     champion: leader && leaderWork
-      ? { targetId: leader.targetId, title: leaderWork.title, author: leaderWork.author }
+      ? { targetId: leader.targetId, title: leaderWork.title, author: boardAuthor(leaderWork, names) }
       : null,
   };
 }
+
+/** One board per request. The page starts it before the shell waits on the profile. */
+export const readBoard = cache(function readBoard(kind: TargetKind, periodKind: PeriodKind): Promise<Board> {
+  return readBoardAt(kind, periodKind, new Date());
+});
 
 async function findPublishedBeat(id: string): Promise<Work | null> {
   if (!isUuid(id)) return null;

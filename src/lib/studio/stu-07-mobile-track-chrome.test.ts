@@ -36,6 +36,15 @@ describe("STU-07-A — track header hit targets on narrow chrome", () => {
     );
   });
 
+  it("stacks the track list above a full-width lane on a phone", () => {
+    expect(editor).toMatch(/flex-col sm:flex-row/);
+    expect(editor).toMatch(
+      /h-1\/2 w-full max-h-\[50%\] border-b sm:h-auto sm:max-h-none sm:w-\[272px\]/,
+    );
+    expect(editor).toMatch(/max-sm:h-\[min\(28rem,calc\(100dvh-18rem\)\)\]/);
+    expect(editor).toMatch(/syncVerticalScroll/);
+  });
+
   it("auto-fits overflowing timeline when the user has not zoomed", () => {
     expect(editor).toMatch(/userAdjustedZoomRef/);
     expect(editor).toMatch(/timelineContentOverflowsViewport/);
