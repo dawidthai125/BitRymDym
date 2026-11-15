@@ -33,6 +33,7 @@ export default async function LibraryPage() {
               title={t("ulubione")}
               meta={t("zapisaneBity")}
             />
+            <LibLink href="/beats?katalog=moj" title={t("kupione")} meta={t("kupioneBity")} />
             <LibLink href="/account/shared" title={t("udostepnione")} meta={t("bityOdInnych")} />
           </ul>
         </PageFrame>

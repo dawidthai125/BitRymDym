@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { OwnTakesList } from "@/components/takes/own-takes-list";
 import { AuthError, requireUser } from "@/lib/auth/session";
+import { listPurchasedBeatIds } from "@/lib/beats/purchased-catalog";
 import { listOwnTakes } from "@/lib/takes/list-own-takes";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -16,8 +17,9 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 
 export default async function AccountTakesPage() {
   const t = await getTranslations("account.accountTakesPage");
+  let userId: string;
   try {
-    await requireUser();
+    userId = (await requireUser()).userId;
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
       redirect("/sign-in");
@@ -25,7 +27,10 @@ export default async function AccountTakesPage() {
     redirect("/account");
   }
 
-  const takes = await listOwnTakes();
+  const [takes, purchasedBeatIds] = await Promise.all([
+    listOwnTakes(),
+    listPurchasedBeatIds(userId),
+  ]);
 
   return (
       <main
@@ -45,7 +50,7 @@ export default async function AccountTakesPage() {
             </p>
           </header>
 
-          <OwnTakesList items={takes} />
+          <OwnTakesList items={takes} purchasedBeatIds={purchasedBeatIds} />
 
           <div className="flex flex-wrap gap-4 text-sm">
             <Link

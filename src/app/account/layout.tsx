@@ -25,6 +25,7 @@ export default async function AccountLayout({
             { href: "/account", label: tr("pulpit") },
             { href: "/account/takes", label: tr("mojeNagrania") },
             { href: "/account/beats", label: tr("mojeBity") },
+            { href: "/beats?katalog=moj", label: tr("kupione") },
             { href: "/account/downloads", label: tr("eksportyIPobrania") },
             { href: "/account/shared", label: tr("udostepnione") },
             { href: "/account/favorites", label: tr("ulubione") },

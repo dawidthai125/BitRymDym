@@ -24,6 +24,7 @@ import { DEFAULT_PREFERENCES, readPreferences } from "@/lib/email/notify/server"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { OwnTakesList } from "@/components/takes/own-takes-list";
 import { listFavoriteBeatIds } from "@/lib/beats/favorites";
+import { listPurchasedBeatIds } from "@/lib/beats/purchased-catalog";
 import { formatAccountPlanDisplay } from "@/lib/account/account-plan-display";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { ConsumeEmailChangeNotice } from "@/components/auth/consume-email-change-notice";
@@ -103,10 +104,15 @@ export default async function AccountPage({
   }
   const recentTakes = takeRecentNonDeletedTakes(takes, 5);
   let favoriteCount = 0;
+  let purchasedBeatIds: string[] = [];
   try {
-    favoriteCount = (await listFavoriteBeatIds(context.userId)).length;
+    [favoriteCount, purchasedBeatIds] = await Promise.all([
+      listFavoriteBeatIds(context.userId).then((ids) => ids.length),
+      listPurchasedBeatIds(context.userId),
+    ]);
   } catch {
     favoriteCount = 0;
+    purchasedBeatIds = [];
   }
   const readyCount = takeCounts.ready;
   const displayName =
@@ -219,7 +225,7 @@ export default async function AccountPage({
                   </div>
                 </div>
               ) : (
-                <OwnTakesList items={recentTakes} variant="dashboard" />
+                <OwnTakesList items={recentTakes} variant="dashboard" purchasedBeatIds={purchasedBeatIds} />
               )}
 
               <section className="pt-8">
@@ -239,6 +245,11 @@ export default async function AccountPage({
                     href="/account/favorites"
                     title={tr("ulubione")}
                     meta={tr("zapisanych", { v0: favoriteCount })}
+                  />
+                  <LibraryRow
+                    href="/beats?katalog=moj"
+                    title={tr("kupione")}
+                    meta={tr("kupioneBity")}
                   />
                   <LibraryRow
                     href="/account/beats"

@@ -100,10 +100,13 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     restricted && viewerId
       ? await hasActiveRecordGrant({ beatId: beat.id, granteeUserId: viewerId })
       : false;
+  const paidLane = beat.ownershipType === "PLATFORM" && catalogLaneOf(beat.catalogLane) === "paid";
+  const sale = paidLane ? await loadBeatSale(beat.id, viewerId).catch(() => null) : null;
   const studioUseAllowed = canUseBeatInStudio(usageSubject, {
     userId: viewerId,
     isStaff: viewerIsStaff,
     hasActiveGrant: viewerHasGrant,
+    hasPurchasedWav: Boolean(sale?.owned),
   }).allowed;
   const downloadByOwner = canDownloadBeatByOwnerChoice(usageSubject, {
     userId: viewerId,
@@ -159,8 +162,6 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   }
 
   const locale = await getLocale();
-  const paidLane = beat.ownershipType === "PLATFORM" && catalogLaneOf(beat.catalogLane) === "paid";
-  const sale = paidLane ? await loadBeatSale(beat.id, viewerId).catch(() => null) : null;
   const wavSale = sale
     ? {
         price: formatBeatWavPrice(locale),

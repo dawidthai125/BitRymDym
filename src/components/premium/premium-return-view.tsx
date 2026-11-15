@@ -45,7 +45,7 @@ export function PremiumReturnView({ state }: { state: ReturnState }) {
           </p>
           {pending ? <ReturnRefresh /> : null}
           <div className="mt-6 flex flex-wrap gap-3">
-            {beatHref ? <BrdLink href={beatHref}>{state.status === "beat_paid" ? t("pobierzWav") : t("otworzBit")}</BrdLink> : null}
+            {beatHref ? <BrdLink href={beatHref}>{state.status === "beat_paid" ? t("mojKatalog") : t("otworzBit")}</BrdLink> : null}
             <BrdLink href="/premium">{t("wroc")}</BrdLink>
           </div>
         </PageFrame>

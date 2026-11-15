@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
+import Link from "next/link";
 import { PurchaseConsent } from "@/components/legal/consent-checkbox";
 import { requestPurchasedBeatWavAction } from "@/lib/beats/purchased-wav-action";
 import { isPayuRedirect } from "@/lib/payments/payu-url";
@@ -98,9 +99,17 @@ export function BeatWavPurchase({
       {owned ? (
         <div className="space-y-2">
           <p className="text-sm text-[var(--brd-ink)]">{t("masz")}</p>
-          <BrdButton type="button" variant="primary" disabled={pending === "file"} onClick={() => void download()} data-testid="beat-wav-download">
-            {pending === "file" ? t("pobieranie") : t("pobierz")}
-          </BrdButton>
+          <div className="flex flex-wrap items-center gap-3">
+            <BrdButton type="button" variant="primary" disabled={pending === "file"} onClick={() => void download()} data-testid="beat-wav-download">
+              {pending === "file" ? t("pobieranie") : t("pobierz")}
+            </BrdButton>
+            <Link href="/beats?katalog=moj" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+              {t("katalog")}
+            </Link>
+            <Link href={`/studio?beatId=${encodeURIComponent(beatId)}`} className="inline-flex min-h-11 items-center text-sm font-medium text-[var(--brd-green)] underline underline-offset-4">
+              {t("nagraj")}
+            </Link>
+          </div>
         </div>
       ) : !fileReady ? (
         <p className="text-sm text-[var(--brd-mute)]">{t("brakPliku")}</p>

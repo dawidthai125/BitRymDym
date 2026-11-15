@@ -35,6 +35,8 @@ export type BeatUsageViewer = {
   userId: string | null;
   isStaff?: boolean;
   hasActiveGrant?: boolean;
+  /** This signed-in user bought the wav of this paid-catalog beat. */
+  hasPurchasedWav?: boolean;
 };
 
 export type BeatUsageDenyReason =
@@ -95,6 +97,7 @@ export function canUseBeatInStudio(
   if (isBeatOwner(beat, viewer.userId)) return ALLOW;
   if (beat.status !== "PUBLISHED") return { allowed: false, reason: "NOT_PUBLISHED" };
   if (beat.ownershipType !== "USER" && beat.catalogLane === "paid") {
+    if (viewer.userId && viewer.hasPurchasedWav) return ALLOW;
     return { allowed: false, reason: "STUDIO_USE_DISABLED" };
   }
   if (beat.ownershipType !== "USER") return ALLOW;

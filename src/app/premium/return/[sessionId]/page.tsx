@@ -74,9 +74,10 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
         const extra = await admin.from("payment_orders").select("beat_id").eq("session_id", sessionId).eq("user_id", context.userId).maybeSingle();
         const beatId = extra.error || !extra.data ? null : ((extra.data as { beat_id?: string | null }).beat_id ?? null);
         const href = isUuid(beatId) ? `/beat/${beatId}` : "/beats?katalog=platny";
+        const catalogHref = "/beats?katalog=moj";
         if (row.status === "failed") state = { status: "beat_failed", href };
         else if (row.status === "paid" && row.grant_status === "skipped") state = { status: "beat_skipped", href };
-        else if (row.status === "paid" && row.grant_status === "granted") state = { status: "beat_paid", href };
+        else if (row.status === "paid" && row.grant_status === "granted") state = { status: "beat_paid", href: catalogHref };
         else state = { status: "beat_pending", href };
       } else if (row.status === "failed") state = { status: "failed" };
       else if (row.status === "pending") state = { status: "pending" };

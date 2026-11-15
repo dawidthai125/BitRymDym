@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { PurchasedWavButton } from "@/components/beats/purchased-wav-button";
 import { StatusPill } from "@/components/brand/chrome";
 import { Button } from "@/components/ui/button";
 import { TakeDownloadMenu } from "@/components/takes/take-download-menu";
@@ -52,10 +53,13 @@ async function fetchSignedUrl(
 export function OwnTakesList({
   items,
   variant = "archive",
+  purchasedBeatIds = [],
 }: {
   items: OwnTakeListItem[];
   /** Dashboard rows keep the status visible and play in place. */
   variant?: "archive" | "dashboard";
+  /** Paid-catalog beats this user bought, so the wav can be downloaded from the recording. */
+  purchasedBeatIds?: readonly string[];
 }) {
   const tl = useLibText();
   const t = useTranslations("studio.ownTakesList");
@@ -67,6 +71,7 @@ export function OwnTakesList({
   const [titleDraft, setTitleDraft] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [playUrl, setPlayUrl] = useState<string | null>(null);
+  const purchased = new Set(purchasedBeatIds);
 
   async function onPreview(take: OwnTakeListItem) {
     setError(null);
@@ -263,6 +268,9 @@ export function OwnTakesList({
                     ? ` · ${formatDurationSeconds(take.durationSeconds)}`
                     : ""}
                 </p>
+                {purchased.has(take.beatId) && take.beatTitle ? (
+                  <PurchasedWavButton beatId={take.beatId} title={take.beatTitle} />
+                ) : null}
                 {variant === "archive" ? (
                   <>
                     <p className="brd-meta text-[11px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">

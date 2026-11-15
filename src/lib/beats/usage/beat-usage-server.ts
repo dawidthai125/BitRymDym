@@ -1,6 +1,7 @@
 import "server-only";
 
 import { AuthError } from "@/lib/auth/session";
+import { isUuid } from "@/lib/beats/audio-validation";
 import {
   canUseBeatInStudio,
   isBeatOwner,
@@ -8,6 +9,7 @@ import {
   type BeatUsageSubject,
 } from "@/lib/beats/usage/beat-usage-policy";
 import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 /** Columns every server-side usage check needs (append to an existing select). */
 export const BEAT_USAGE_COLUMNS =
@@ -49,6 +51,25 @@ async function grantMatters(
   return hasActiveRecordGrant({ beatId, granteeUserId: userId });
 }
 
+/** True only when this signed-in user has a beat_purchases row for a paid platform beat. */
+export async function viewerPurchasedPaidBeat(
+  beatId: string,
+  beat: BeatUsageSubject,
+  userId: string | null,
+): Promise<boolean> {
+  if (!userId || !isUuid(userId) || !isUuid(beatId)) return false;
+  if (beat.ownershipType === "USER" || beat.catalogLane !== "paid") return false;
+  const admin = createSupabaseAdminClient();
+  const purchase = await admin
+    .from("beat_purchases")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("beat_id", beatId)
+    .maybeSingle();
+  if (purchase.error || !purchase.data) return false;
+  return true;
+}
+
 /** Take recording denied by owner settings (mapped to user copy in lib-text). */
 export const BEAT_RECORD_NOT_ALLOWED = "Recording is not allowed on this beat.";
 
@@ -68,9 +89,11 @@ export async function assertBeatStudioUse(params: {
 }): Promise<void> {
   const beat = beatUsageSubjectFromRow(params.row);
   const hasActiveGrant = await grantMatters(params.beatId, beat, params.userId);
+  const hasPurchasedWav = await viewerPurchasedPaidBeat(params.beatId, beat, params.userId);
   const decision = canUseBeatInStudio(beat, {
     userId: params.userId,
     hasActiveGrant,
+    hasPurchasedWav,
   });
   if (!decision.allowed) {
     throw new AuthError(

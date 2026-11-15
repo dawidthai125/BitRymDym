@@ -16,7 +16,7 @@ import {
 } from "@/lib/studio/studio-persist-orchestrator";
 import type { StudioProjectDocument } from "@/lib/studio/studio-types";
 
-type PickerTab = "catalog" | "mine" | "downloads";
+type PickerTab = "catalog" | "mine" | "downloads" | "purchased";
 
 type PickerBeat = {
   id: string;
@@ -29,6 +29,7 @@ const TABS: Array<{ id: PickerTab; label: string }> = [
   { id: "catalog", label: "Katalog" },
   { id: "mine", label: "Moje" },
   { id: "downloads", label: "Pobrane" },
+  { id: "purchased", label: "Kupione" },
 ];
 
 /**

@@ -1,12 +1,16 @@
 import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
+import { PurchasedCatalogList } from "@/components/beats/purchased-catalog-list";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
 import { AppShell } from "@/components/site/app-shell";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { catalogLaneOf } from "@/lib/beats/catalog-lane";
 import { listFavoriteBeatIds } from "@/lib/beats/favorites";
+import { listPurchasedCatalog } from "@/lib/beats/purchased-catalog";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -30,11 +34,14 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const catalog = await getTranslations("community.catalog");
   const params = searchParams ? await searchParams : {};
   const source = params.zrodlo === "user" ? "USER" : "PLATFORM";
-  const paid = params.katalog === "platny";
+  const mine = params.katalog === "moj";
+  const paid = !mine && params.katalog === "platny";
   const lane = paid ? "paid" : "free";
-  const [listed, session] = await Promise.all([
-    listPublishedBeats({ catalogLane: lane, ownershipType: source }),
-    getCurrentProfile(),
+  const session = await getCurrentProfile();
+  if (mine && !session) redirect(signInPathWithNext("/beats?katalog=moj"));
+  const [listed, purchased] = await Promise.all([
+    mine ? Promise.resolve([]) : listPublishedBeats({ catalogLane: lane, ownershipType: source }),
+    mine && session ? listPurchasedCatalog(session.userId) : Promise.resolve([]),
   ]);
   const raw = listed
     .filter((beat) => beat.ownershipType === source)
@@ -71,8 +78,8 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
           <nav aria-label={t("katalogiAria")} className="mb-5 flex flex-wrap gap-2" data-testid="beats-catalog-tabs">
             <Link
               href="/beats"
-              aria-current={paid ? undefined : "page"}
-              className={`border-2 border-[var(--brd-ink)] px-4 py-2 text-sm font-semibold ${paid ? "" : "bg-[var(--brd-ink)] text-[var(--brd-paper)]"}`}
+              aria-current={!paid && !mine ? "page" : undefined}
+              className={`border-2 border-[var(--brd-ink)] px-4 py-2 text-sm font-semibold ${!paid && !mine ? "bg-[var(--brd-ink)] text-[var(--brd-paper)]" : ""}`}
             >
               {t("darmowyKatalog")}
             </Link>
@@ -83,9 +90,26 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
             >
               {t("platnyKatalog")}
             </Link>
+            {session ? (
+              <Link
+                href="/beats?katalog=moj"
+                aria-current={mine ? "page" : undefined}
+                className={`border-2 border-[var(--brd-ink)] px-4 py-2 text-sm font-semibold ${mine ? "bg-[var(--brd-ink)] text-[var(--brd-paper)]" : ""}`}
+              >
+                {t("mojKatalog")}
+              </Link>
+            ) : null}
           </nav>
 
-          {paid ? (
+          {mine ? (
+            <div className="space-y-6">
+              <div className="border border-[var(--brd-line)] px-5 py-5" data-testid="beats-my-catalog">
+                <p className="brd-display text-xl font-semibold">{t("mojKatalog")}</p>
+                <p className="mt-2 max-w-xl text-sm text-[var(--brd-mute)]">{t("mojOpis")}</p>
+              </div>
+              <PurchasedCatalogList beats={purchased} />
+            </div>
+          ) : paid ? (
             <div className="space-y-6">
               <div className="border border-[var(--brd-line)] px-5 py-5" data-testid="beats-paid-catalog">
                 <p className="brd-display text-xl font-semibold">{t("platnyTytul")}</p>

@@ -4,6 +4,7 @@ import {
   BEAT_RECORD_NOT_ALLOWED,
   BEAT_USAGE_COLUMNS,
   beatUsageSubjectFromRow,
+  viewerPurchasedPaidBeat,
 } from "@/lib/beats/usage/beat-usage-server";
 import { canUseBeatInStudio } from "@/lib/beats/usage/beat-usage-policy";
 import { randomUUID } from "crypto";
@@ -190,10 +191,14 @@ export async function createTakeRecordingSessionFor(
   });
 
   // User beats 2026-10-30: owner / public + Studio use ON / active grant.
+  // A paid-catalog beat opens only for the buyer of that wav.
+  const beatSubject = beatUsageSubjectFromRow(beat);
+  const hasPurchasedWav = await viewerPurchasedPaidBeat(params.beatId, beatSubject, context.userId);
   if (
-    !canUseBeatInStudio(beatUsageSubjectFromRow(beat), {
+    !canUseBeatInStudio(beatSubject, {
       userId: context.userId,
       hasActiveGrant: activeRecordGrant,
+      hasPurchasedWav,
     }).allowed
   ) {
     throw new AuthError("FORBIDDEN", BEAT_RECORD_NOT_ALLOWED);
@@ -541,10 +546,13 @@ export async function createStemUploadSessionFor(
 
   const beat = await loadBeatOrThrow(beatId);
   const activeRecordGrant = await hasActiveRecordGrant({ beatId, granteeUserId: context.userId });
+  const beatSubject = beatUsageSubjectFromRow(beat);
+  const hasPurchasedWav = await viewerPurchasedPaidBeat(beatId, beatSubject, context.userId);
   if (
-    !canUseBeatInStudio(beatUsageSubjectFromRow(beat), {
+    !canUseBeatInStudio(beatSubject, {
       userId: context.userId,
       hasActiveGrant: activeRecordGrant,
+      hasPurchasedWav,
     }).allowed
   ) {
     throw new AuthError("FORBIDDEN", BEAT_RECORD_NOT_ALLOWED);

@@ -85,9 +85,17 @@ describe("beat usage policy (user beats 2026-10-30)", () => {
     expect(canAnonUseBeat(p).allowed).toBe(true);
   });
 
-  it("a published paid platform beat is denied in Studio and for anonymous use", () => {
+  it("a published paid platform beat opens in Studio only for the buyer", () => {
     const p = beat({ ownershipType: "PLATFORM", ownerId: null, catalogLane: "paid" });
     expect(canUseBeatInStudio(p, { userId: OTHER })).toEqual({
+      allowed: false,
+      reason: "STUDIO_USE_DISABLED",
+    });
+    expect(canUseBeatInStudio(p, { userId: null, hasPurchasedWav: true })).toEqual({
+      allowed: false,
+      reason: "STUDIO_USE_DISABLED",
+    });
+    expect(canUseBeatInStudio(p, { userId: OTHER, isStaff: true })).toEqual({
       allowed: false,
       reason: "STUDIO_USE_DISABLED",
     });
@@ -95,5 +103,6 @@ describe("beat usage policy (user beats 2026-10-30)", () => {
       allowed: false,
       reason: "STUDIO_USE_DISABLED",
     });
+    expect(canUseBeatInStudio(p, { userId: OTHER, hasPurchasedWav: true }).allowed).toBe(true);
   });
 });
