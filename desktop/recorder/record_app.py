@@ -253,6 +253,71 @@ def display_wave_half(level: float, half_max: float) -> float:
     return max(1.5, half_max * shown)
 
 
+def beat_wave_rows(peaks: list[list[float]], peak_key: str, wanted: str) -> list[list[float]]:
+    """Draw the beat wave only for the beat that is on the lane now. Empty rows are skipped."""
+    if not wanted or peak_key != wanted:
+        return []
+    return [row for row in peaks if row]
+
+
+def remote_audio_channels(ffmpeg: str, url: str) -> int:
+    """1 or 2 from the file header. The beat is not saved."""
+    if not url.startswith("https://"):
+        return 1
+    try:
+        done = subprocess.run(
+            [ffmpeg, "-hide_banner", "-i", url],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=20,
+            check=False,
+            **quiet_kwargs(),
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return 1
+    return offline_session.channels_from_ffmpeg_banner(f"{done.stderr or ''}\n{done.stdout or ''}")
+
+
+def display_peaks_from_source(ffmpeg: str, source: str) -> list[list[float]]:
+    """10 ms peaks per channel. A catalog URL is read and not written to disk."""
+    remote = source.startswith("https://")
+    if remote:
+        found = remote_audio_channels(ffmpeg, source)
+    else:
+        try:
+            found = offline_session.probe_media_channels(ffmpeg, Path(source))
+        except Exception:
+            found = 1
+    channels = drawn_channels(found, vocal=False)
+    argv = [ffmpeg, "-hide_banner", "-loglevel", "error"]
+    if remote:
+        argv.extend(("-user_agent", "BitRymDymRecorder"))
+    argv.extend(("-i", source, "-ac", str(channels), "-ar", "4800", "-f", "s16le", "pipe:1"))
+    try:
+        proc = subprocess.run(
+            argv,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=90,
+            **quiet_kwargs(),
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    raw = proc.stdout or b""
+    raw = raw[: len(raw) // 2 * 2]
+    if len(raw) < 4:
+        return []
+    samples = array.array("h")
+    samples.frombytes(raw)
+    if sys.byteorder != "little":
+        samples.byteswap()
+    return peaks_by_channel(samples, channels, 48)
+
+
 def live_wave_span(elapsed: float, peak_count: int) -> tuple[float, float]:
     """Seconds of real mic peaks, then how far the drawing reaches (the play line)."""
     known = max(0.0, peak_count / 100.0)
@@ -294,11 +359,11 @@ def about_copy_ok() -> bool:
 
 
 # Thin strip under every screen. Legal pages stay in O programie, so this line does not repeat them.
-FOOTER_CREDIT = "© D.T.T (TajskiProjects.pl). Wszystkie prawa zastrzeżone."
+FOOTER_CREDIT = "BitRymDym.pl, TajskiProjects.pl. © D.T.T. Wszystkie prawa zastrzeżone."
 
 
 def footer_copy_ok() -> bool:
-    return FOOTER_CREDIT == "© D.T.T (TajskiProjects.pl). Wszystkie prawa zastrzeżone."
+    return FOOTER_CREDIT == "BitRymDym.pl, TajskiProjects.pl. © D.T.T. Wszystkie prawa zastrzeżone."
 
 
 def wants_remember(value: object) -> bool:
@@ -1276,6 +1341,7 @@ class RecorderWindow:
         self._live_wave_at = 0.0
         self._beat_peaks: list[list[float]] = []
         self._beat_peak_path = ""
+        self._beat_wave_token = 0
         self.capture: subprocess.Popen[bytes] | None = None
         self.monitor: subprocess.Popen[bytes] | None = None
         self.mix_feed: subprocess.Popen[bytes] | None = None
@@ -1969,17 +2035,43 @@ class RecorderWindow:
 
     def _beat_changed(self) -> None:
         self._listen_cache = None
+        if self.studio_mode != "offline":
+            self._beat_peaks = []
+            self._beat_peak_path = ""
+            self._beat_wave_token += 1
         self._sync_beat_button()
         self._paint_all()
         self._warm_listen()
 
     def _warm_listen(self) -> None:
-        """Fetch the beat listen address ahead, so NAGRAJ and GRAJ start without the network wait."""
-        if self.studio_mode == "offline" or not self.studio.winfo_manager() or self.beat_muted:
+        """Fetch the listen address and the draw peaks. The beat file is not saved."""
+        if self.studio_mode == "offline" or not self.studio.winfo_manager():
             return
         beat_id = self._beat_id_or_empty()
         if beat_id:
-            threading.Thread(target=self._beat_listen, args=(beat_id,), daemon=True).start()
+            token = self._beat_wave_token
+            threading.Thread(target=self._warm_beat_view, args=(beat_id, token), daemon=True).start()
+
+    def _warm_beat_view(self, beat_id: str, token: int) -> None:
+        heard = self._beat_listen(beat_id)
+        url = heard[0] if heard else None
+        peaks: list[list[float]] = []
+        if url:
+            try:
+                peaks = display_peaks_from_source(ffmpeg_exe(), url)
+            except Exception:
+                peaks = []
+
+        def apply() -> None:
+            if token != self._beat_wave_token or self.studio_mode == "offline":
+                return
+            if self._beat_id_or_empty() != beat_id:
+                return
+            self._beat_peaks = peaks
+            self._beat_peak_path = beat_id
+            self._paint_all()
+
+        self.root.after(0, apply)
 
     def _beat_meta(self) -> tuple[str, int, float]:
         if self.studio_mode == "offline":
@@ -2101,29 +2193,7 @@ class RecorderWindow:
 
     def _decode_display_peaks(self, path: str) -> list[list[float]]:
         """10 ms peaks per channel. A mono beat is one list. Stereo is two. The file is not copied."""
-        ffmpeg = ffmpeg_exe()
-        try:
-            found = offline_session.probe_media_channels(ffmpeg, Path(path))
-        except Exception:
-            found = 1
-        channels = drawn_channels(found, vocal=False)
-        proc = subprocess.run(
-            [ffmpeg, "-hide_banner", "-loglevel", "error", "-i", path, "-ac", str(channels), "-ar", "4800", "-f", "s16le", "pipe:1"],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            check=False,
-            **quiet_kwargs(),
-        )
-        raw = proc.stdout or b""
-        raw = raw[: len(raw) // 2 * 2]
-        if len(raw) < 4:
-            return []
-        samples = array.array("h")
-        samples.frombytes(raw)
-        if sys.byteorder != "little":
-            samples.byteswap()
-        return peaks_by_channel(samples, channels, 48)
+        return display_peaks_from_source(ffmpeg_exe(), path)
 
     def _load_public(self) -> None:
         try:
@@ -2338,7 +2408,8 @@ class RecorderWindow:
         wave_top = 4 + self.clip_bar
         wave_bottom = height - 4
         mid = (wave_top + wave_bottom) / 2
-        series = [row for row in self._beat_peaks if row] if self._beat_peak_path == self.local_beat_path else []
+        wanted = self.local_beat_path if self.studio_mode == "offline" else self._beat_id_or_empty()
+        series = beat_wave_rows(self._beat_peaks, self._beat_peak_path, wanted)
         if series:
             self._stroke_channels(
                 canvas, max(0.0, x1), min(float(width), x2), wave_top, wave_bottom, "#f3d7a1", "beatwave",
@@ -2943,6 +3014,8 @@ class RecorderWindow:
         self._rebuild_rows()
         self._sync_beat_button()
         self._touched = False
+        if self.studio_mode == "offline" and self.local_beat_path and Path(self.local_beat_path).is_file():
+            threading.Thread(target=self._probe_local_beat, args=(self.local_beat_path,), daemon=True).start()
         clips = sum(len(track.clips) for track in self.tracks)
         if clips:
             self.status.set(
@@ -2966,6 +3039,9 @@ class RecorderWindow:
         self._peaks.clear()
         self.local_beat_path = ""
         self.local_beat_seconds = 0.0
+        self._beat_peaks = []
+        self._beat_peak_path = ""
+        self._beat_wave_token += 1
         self._desk_beat = ""
         self.beat_muted = False
         self.beat_gain_db = 0.0
@@ -3069,6 +3145,8 @@ class RecorderWindow:
         if self.studio_mode == "offline":
             self.local_beat_path = ""
             self.local_beat_seconds = 0.0
+            self._beat_peaks = []
+            self._beat_peak_path = ""
             self.beat_var.set("")
         self._rebuild_rows()
         self._save_desk()
@@ -5637,6 +5715,13 @@ if __name__ == "__main__":
             raise SystemExit("o programie")
         if not footer_copy_ok():
             raise SystemExit("stopka")
+        if not FOOTER_CREDIT.startswith("BitRymDym.pl, TajskiProjects.pl"):
+            raise SystemExit("kolejność stopki")
+        rows = beat_wave_rows([[0.2, 0.4], [], [0.1]], "beat-1", "beat-1")
+        if rows != [[0.2, 0.4], [0.1]]:
+            raise SystemExit(f"fala bitu {rows}")
+        if beat_wave_rows([[0.2]], r"C:\bit.wav", "") or beat_wave_rows([[0.2]], "online-id", r"C:\bit.wav"):
+            raise SystemExit("fala obcego bitu")
         password_keep_self_test()
         quiet = 10 ** (-26 / 20.0)
         shown = display_wave_half(quiet, 80.0)
@@ -5656,6 +5741,17 @@ if __name__ == "__main__":
         if listen_valid_for("2026-01-01T12:05:00Z", moment) != 270.0 or listen_valid_for(None) != 45.0 or listen_valid_for("x") != 45.0:
             raise SystemExit("pomocnicze")
         self_test_wav_roundtrip()
+        try:
+            tone_exe = ffmpeg_exe()
+        except RuntimeError:
+            tone_exe = ""
+        if tone_exe:
+            tone = Path(os.environ.get("TEMP", ".")) / "bitrymdym-wave-selftest.wav"
+            tone.write_bytes(mono16_wav_bytes(array.array("h", [0] * 4800 + [20000] * 4800)))
+            drawn = display_peaks_from_source(tone_exe, str(tone))
+            tone.unlink(missing_ok=True)
+            if len(drawn) != 1 or len(drawn[0]) < 16 or max(drawn[0][:4]) > 0.05 or max(drawn[0][-4:]) < 0.4:
+                raise SystemExit(f"fala z pliku {drawn}")
         target = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-selftest.wav"
         record_seconds(target, 0.4)
         target.unlink(missing_ok=True)

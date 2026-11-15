@@ -126,7 +126,7 @@ jobs:
           $out = "installer\velopack"
           New-Item -ItemType Directory -Force $out | Out-Null
           $notes = Join-Path $env:RUNNER_TEMP "brd-notes.md"
-          Set-Content -Path $notes -Encoding utf8NoBOM -Value "Jest nowa wersja."
+          Set-Content -Path $notes -Encoding utf8NoBOM -Value "Fala bitu w Studio Online i Offline. Stopka: BitRymDym.pl, TajskiProjects.pl."
           vpk pack --packId BitRymDym.Nagrywarka --packVersion $ver --packDir dist\BitRymDym --mainExe BitRymDym.exe --packTitle BitRymDym --icon assets\cassette.ico --outputDir $out --channel win --runtime win-x64 --shortcuts Desktop,StartMenuRoot --releaseNotes $notes
           if ($LASTEXITCODE) { throw "vpk pack" }
           Remove-Item "$out\*Portable.zip" -ErrorAction SilentlyContinue
