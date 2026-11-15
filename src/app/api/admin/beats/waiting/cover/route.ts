@@ -8,7 +8,8 @@ import {
 } from "@/lib/beats/beat-operation-error";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+/** xAI still plus moderation. */
+export const maxDuration = 90;
 
 /** POST JSON { beatId } → { success, coverStatus: "approved" }. */
 export async function POST(request: Request) {

@@ -1,10 +1,8 @@
 /**
- * AI image provider for the cover generator: Cloudflare Workers AI FLUX.1 schnell only
- * (env CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_AI_TOKEN; 10k neurons/day ≈ 57 images, reset
- * 00:00 UTC, exhausted → HTTP 429 / code 3036). When it fails the user gets the friendly
- * "allFailed" message — there is deliberately NO third-party fallback (the former
- * Pollinations failover was removed 2026-10-31: no DPA, processing outside the EEA).
- * Keys come from server env only and are sent as headers, never in URLs or logs.
+ * AI image providers for covers.
+ * Primary: xAI Grok Imagine (env XAI_API_KEY, model grok-imagine-image-2.0).
+ * Fallback: Cloudflare Workers AI FLUX.1 schnell (CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_AI_TOKEN).
+ * Pollinations stays removed (no DPA). Keys are server env only, sent as headers, never logged.
  */
 import type { AiCoverAspect } from "./config";
 
@@ -12,7 +10,7 @@ import type { AiCoverAspect } from "./config";
  * "pollinations" is a legacy id only: historical rows in studio_ai_cover_generations /
  * studio_ai_provider_state may carry it. No Pollinations provider exists anymore.
  */
-export type AiProviderId = "cloudflare" | "pollinations";
+export type AiProviderId = "xai" | "cloudflare" | "pollinations";
 export type AiImageErrorKind = "limit" | "rate" | "timeout" | "server" | "network" | "auth" | "bad_response" | "refused";
 
 export class AiImageError extends Error {
@@ -104,6 +102,81 @@ function cloudflareFailure(
   return null;
 }
 
+export const XAI_IMAGE_MODEL = "grok-imagine-image-2.0";
+const XAI_IMAGE_URL = "https://api.x.ai/v1/images/generations";
+
+type XaiImage = { b64_json?: unknown; url?: unknown };
+type XaiBody = { data?: XaiImage[]; error?: { message?: string; code?: string | number } };
+
+function xaiImageHost(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return new URL(url).protocol === "https:" && (host === "imgen.x.ai" || host.endsWith(".x.ai"));
+  } catch {
+    return false;
+  }
+}
+
+function xaiFailure(status: number, body: XaiBody | null, retryAfter: string | null, nowMs: number): AiImageError | null {
+  if (status === 401 || status === 403) return new AiImageError("auth", undefined, status);
+  if (status === 429) return new AiImageError("rate", retryAfterMs(retryAfter, nowMs, 60_000), status);
+  if (status === 402) return new AiImageError("limit", undefined, status);
+  if (status >= 500) return new AiImageError("server", undefined, status);
+  if (status >= 400) {
+    const message = body?.error?.message ?? "";
+    return new AiImageError(/moderat|safety|violat|content policy/i.test(message) ? "refused" : "bad_response", undefined, status);
+  }
+  return null;
+}
+
+/** Square or 16:9 still from Grok Imagine. Bytes only; the temporary URL is downloaded when base64 is absent. */
+export function xaiProvider(opts: { apiKey: string; model?: string; fetchFn?: FetchFn; now?: () => number }): AiImageProvider {
+  const f = opts.fetchFn ?? fetch;
+  const now = opts.now ?? Date.now;
+  const model = opts.model?.trim() || XAI_IMAGE_MODEL;
+  return {
+    id: "xai",
+    async generate(input, signal) {
+      const res = await call(f, XAI_IMAGE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${opts.apiKey}` },
+        body: JSON.stringify({
+          model,
+          prompt: input.prompt,
+          n: 1,
+          aspect_ratio: input.aspect,
+          resolution: "1k",
+          ...(model.startsWith("grok-imagine-image-2") ? { quality: "low" } : {}),
+          response_format: "b64_json",
+        }),
+      }, signal);
+      const raw = Buffer.from(await res.arrayBuffer());
+      let json: XaiBody | null = null;
+      try {
+        json = JSON.parse(raw.toString("utf8")) as XaiBody;
+      } catch {
+        if (signal.aborted) throw new AiImageError("timeout");
+        json = null;
+      }
+      const failure = xaiFailure(res.status, json, res.headers.get("retry-after"), now());
+      if (failure) throw failure;
+      const item = json?.data?.[0];
+      if (typeof item?.b64_json === "string" && item.b64_json) {
+        const img = decodeImageString(item.b64_json);
+        if (!isImage(img)) throw new AiImageError("bad_response", undefined, res.status);
+        return img;
+      }
+      if (typeof item?.url === "string" && xaiImageHost(item.url)) {
+        const file = await call(f, item.url, { method: "GET" }, signal);
+        const bytes = Buffer.from(await file.arrayBuffer());
+        if (!file.ok || !isImage(bytes)) throw new AiImageError("bad_response", undefined, file.status);
+        return bytes;
+      }
+      throw new AiImageError("bad_response", undefined, res.status);
+    },
+  };
+}
+
 export const CLOUDFLARE_FLUX_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 
 export function cloudflareProvider(opts: { accountId: string; token: string; fetchFn?: FetchFn; now?: () => number }): AiImageProvider {
@@ -187,9 +260,18 @@ export function cloudflareCredentialShape(env: Env): {
   };
 }
 
-/** Cloudflare only (no external fallback). No Cloudflare → no providers (generator off). */
+/** xAI first when XAI_API_KEY is set, then Cloudflare. No Pollinations. */
 export function aiImageProvidersFromEnv(env: Env, fetchFn?: FetchFn): AiImageProvider[] {
+  const providers: AiImageProvider[] = [];
+  const xaiKey = env.XAI_API_KEY?.trim();
+  if (xaiKey) {
+    providers.push(xaiProvider({
+      apiKey: xaiKey,
+      model: env.XAI_IMAGE_MODEL,
+      fetchFn,
+    }));
+  }
   const creds = cloudflareCredentials(env);
-  if (!creds) return [];
-  return [cloudflareProvider({ accountId: creds.accountId, token: creds.token, fetchFn })];
+  if (creds) providers.push(cloudflareProvider({ accountId: creds.accountId, token: creds.token, fetchFn }));
+  return providers;
 }

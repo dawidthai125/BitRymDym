@@ -8,16 +8,13 @@ export const isAiCoverAspect = (v: unknown): v is AiCoverAspect => v === "16:9" 
 
 export const AI_COVER_PROMPT_MIN = 3;
 export const AI_COVER_PROMPT_MAX = 300;
-/** Provider call timeout — slower than this = friendly "allFailed" error. */
-export const AI_COVER_PROVIDER_TIMEOUT_MS = 25_000;
+/** Provider call timeout — slower than this = friendly "allFailed" error. xAI stills need the longer budget. */
+export const AI_COVER_PROVIDER_TIMEOUT_MS = 45_000;
 export const AI_COVER_PER_DAY_DEFAULT = 10;
 
-/**
- * The whole generator is OFF until Cloudflare Workers AI is configured (both env vars).
- * Cloudflare is the only image provider (no external fallback).
- */
+/** On when xAI or Cloudflare Workers AI is configured. xAI is the primary image provider. */
 export function aiCoverEnabled(env: Record<string, string | undefined> = process.env): boolean {
-  return !!env.CLOUDFLARE_ACCOUNT_ID?.trim() && !!env.CLOUDFLARE_AI_TOKEN?.trim();
+  return !!env.XAI_API_KEY?.trim() || (!!env.CLOUDFLARE_ACCOUNT_ID?.trim() && !!env.CLOUDFLARE_AI_TOKEN?.trim());
 }
 
 /** Daily cap per user; env STUDIO_AI_COVER_PER_DAY (1–100), default 10. */

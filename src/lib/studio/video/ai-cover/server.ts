@@ -1,8 +1,8 @@
 import "server-only";
 
 /**
- * Gold — AI cover generator: prompt → rules + Groq safeguard → free image provider chain
- * (Cloudflare FLUX schnell only, 25 s, remembered limits; no third-party fallback) →
+ * Gold — AI cover generator: prompt → rules + Groq safeguard → image provider chain
+ * (xAI Grok Imagine, then Cloudflare FLUX schnell, 45 s, remembered limits) →
  * crop to 16:9 / 1:1 → the same Gemini filter as own video graphics (approve only) →
  * stored as the project's own video image (usable as `source: "upload"` imageId) and,
  * for the owner's own USER beat, settable as the beat cover (beat-cover pipeline again).

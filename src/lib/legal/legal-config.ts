@@ -5,7 +5,7 @@
  * Bump a version whenever the text changes materially (stored with each consent).
  */
 export const TERMS_VERSION = "2026-11-12.1";
-export const PRIVACY_VERSION = "2026-11-07.2";
+export const PRIVACY_VERSION = "2026-11-15.1";
 
 /** Effective date shown in the documents (matches the versions above). */
 export const LEGAL_EFFECTIVE_DATE = "7 listopada 2026 r.";

@@ -7,7 +7,7 @@ import { generateAiCover } from "@/lib/studio/video/ai-cover/server";
 import { DENY_STATUS, masterErrorResponse, readJson, tierOf } from "../../master/_shared";
 
 export const runtime = "nodejs";
-/** Groq screening + up to 2 providers × 25 s + Gemini filter. */
+/** Groq screening + up to 2 providers × 45 s + Gemini filter. */
 export const maxDuration = 90;
 type RouteContext = { params: Promise<{ projectId: string }> };
 

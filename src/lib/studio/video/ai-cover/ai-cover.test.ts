@@ -4,7 +4,7 @@ import { memoryProviderState, runAiImageChain } from "./chain";
 import { aiCoverEnabled, aiCoverPerDay } from "./config";
 import { MOOD_COVERS } from "./moods";
 import { checkPromptRules, matchPromptRule } from "./prompt-rules";
-import { AiImageError, aiImageProvidersFromEnv, cloudflareCredentials, cloudflareProvider, nextUtcMidnight, retryAfterMs, type AiImageProvider } from "./providers";
+import { AiImageError, aiImageProvidersFromEnv, cloudflareCredentials, cloudflareProvider, xaiProvider, nextUtcMidnight, retryAfterMs, type AiImageProvider } from "./providers";
 import { screenAiCoverPrompt } from "./screen";
 
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2000, 1)]);
@@ -53,13 +53,15 @@ describe("AI cover provider chain", () => {
     expect(state.snapshot().pollinations).toBeGreaterThan(Date.now());
   });
 
-  it("is off without Cloudflare; Cloudflare is the only provider (no Pollinations fallback)", () => {
+  it("is off without a key; xAI is first and Pollinations stays out", () => {
     expect(aiImageProvidersFromEnv({})).toEqual([]);
     expect(aiImageProvidersFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a" })).toEqual([]);
     expect(aiCoverEnabled({})).toBe(false);
     expect(aiCoverEnabled({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: " " })).toBe(false);
+    expect(aiCoverEnabled({ XAI_API_KEY: "x" })).toBe(true);
     expect(aiCoverEnabled({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: "t" })).toBe(true);
     expect(aiImageProvidersFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: "t", POLLINATIONS_API_KEY: "k" }).map((p) => p.id)).toEqual(["cloudflare"]);
+    expect(aiImageProvidersFromEnv({ XAI_API_KEY: "x", CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: "t", POLLINATIONS_API_KEY: "k" }).map((p) => p.id)).toEqual(["xai", "cloudflare"]);
   });
 });
 
@@ -125,6 +127,39 @@ describe("AI cover providers", () => {
       CLOUDFLARE_ACCOUNT_ID: `Account ID: ${id}`,
       CLOUDFLARE_AI_TOKEN: "real-token",
     })).toEqual({ accountId: id, token: "real-token" });
+  });
+
+  it("xAI: square JPEG from base64, key only in the header, 401 is auth", async () => {
+    const f = vi.fn(async () => new Response(JSON.stringify({ data: [{ b64_json: JPEG.toString("base64"), mime_type: "image/jpeg" }] })));
+    const img = await xaiProvider({ apiKey: "xai-secret", fetchFn: f as unknown as typeof fetch }).generate({ ...input, aspect: "1:1" }, signal);
+    expect(img.equals(JPEG)).toBe(true);
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.x.ai/v1/images/generations");
+    expect(url).not.toContain("xai-secret");
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer xai-secret");
+    expect(JSON.parse(String(init.body))).toEqual({
+      model: "grok-imagine-image-2.0",
+      prompt: "neon city",
+      n: 1,
+      aspect_ratio: "1:1",
+      resolution: "1k",
+      quality: "low",
+      response_format: "b64_json",
+    });
+    const denied = vi.fn(async () => new Response(JSON.stringify({ error: { message: "invalid key" } }), { status: 401 }));
+    await expect(xaiProvider({ apiKey: "x", fetchFn: denied as unknown as typeof fetch }).generate(input, signal)).rejects.toMatchObject({ kind: "auth", status: 401 });
+  });
+
+  it("xAI: downloads a temporary x.ai URL and ignores any other host", async () => {
+    const f = vi.fn(async (url: string) => url.includes("/images/generations")
+      ? new Response(JSON.stringify({ data: [{ url: "https://imgen.x.ai/xai-tmp/a.jpeg" }] }))
+      : new Response(JPEG, { headers: { "content-type": "image/jpeg" } }));
+    const img = await xaiProvider({ apiKey: "x", fetchFn: f as unknown as typeof fetch }).generate(input, signal);
+    expect(img.equals(JPEG)).toBe(true);
+    expect(f).toHaveBeenCalledTimes(2);
+    const foreign = vi.fn(async () => new Response(JSON.stringify({ data: [{ url: "https://evil.example/a.jpeg" }] })));
+    await expect(xaiProvider({ apiKey: "x", fetchFn: foreign as unknown as typeof fetch }).generate(input, signal)).rejects.toMatchObject({ kind: "bad_response" });
+    expect(foreign).toHaveBeenCalledTimes(1);
   });
 
   it("retryAfterMs handles seconds, dates and garbage", () => {

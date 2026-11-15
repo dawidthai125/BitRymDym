@@ -91,7 +91,7 @@ function polishCoverImageError(error: unknown): BeatRequestError {
     if (error.codes.includes(5007)) {
       return new BeatRequestError("Model okładek nie jest dostępny.");
     }
-    if (error.codes.includes(5006)) {
+    if (error.codes.includes(5006) || error.kind === "refused") {
       return new BeatRequestError("Generator odrzucił opis okładki.");
     }
   } else {
@@ -155,7 +155,7 @@ export async function generateWaitingBeatCover(
   }
 
   const providers = aiImageProvidersFromEnv(process.env);
-  const provider = providers[0];
+  const provider = providers.find((item) => item.id === "xai") ?? providers[0];
   if (!provider) {
     throw new BeatRequestError("Brak klucza obrazu na serwerze.");
   }
