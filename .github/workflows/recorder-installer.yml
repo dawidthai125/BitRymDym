@@ -9,6 +9,8 @@ on:
   push:
     tags:
       - "recorder-v*"
+    branches:
+      - "build/recorder-2026.11.28"
   workflow_dispatch:
     inputs:
       base_installer_url:
