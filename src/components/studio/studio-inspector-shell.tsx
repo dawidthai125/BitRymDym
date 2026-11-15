@@ -137,7 +137,7 @@ export function StudioInspectorOverlay({
         data-testid="studio-inspector-mobile"
         className={`pointer-events-auto relative flex w-full flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-lg outline-none max-md:mt-auto ${
           capturing ? "max-md:max-h-[34vh]" : "max-md:max-h-[70vh]"
-        } max-md:rounded-t-lg max-md:pb-[env(safe-area-inset-bottom)] md:ml-auto md:h-full md:w-[min(22rem,92vw)] md:border-l md:pb-0`}
+        } max-md:rounded-t-lg max-md:pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:ml-auto md:h-full md:w-[min(22rem,92vw)] md:border-l md:pb-0`}
       >
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-2 py-1.5">
           <p

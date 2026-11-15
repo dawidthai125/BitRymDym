@@ -74,6 +74,13 @@ function forwardWithMaintenanceHeaders(
   return next;
 }
 
+/** A Supabase session cookie, including the chunked `.0` form. No cookie means a guest. */
+function hasAuthSessionCookie(request: NextRequest): boolean {
+  return request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.includes("-auth-token"));
+}
+
 /** Guests have no Studio (Owner 2026-10-29): pages → sign-in, APIs → 401. */
 export function isGuestBlockedPath(pathname: string): "page" | "api" | null {
   if (pathname === "/studio" || pathname.startsWith("/studio/")) return "page";
@@ -123,9 +130,18 @@ export async function middleware(request: NextRequest) {
   });
 
   const bearer = userAccessBearer(request.headers.get("authorization"));
-  const { data, error } = bearer
-    ? await supabase.auth.getUser(bearer)
-    : await supabase.auth.getUser();
+  // Guests have no session to refresh. Skipping getUser keeps every public
+  // document, cover, and tab reload off an auth round-trip.
+  const shouldReadUser = Boolean(bearer) || hasAuthSessionCookie(request);
+  let user: { id: string } | null = null;
+  let error: { name?: string; status?: number } | null = null;
+  if (shouldReadUser) {
+    const result = bearer
+      ? await supabase.auth.getUser(bearer)
+      : await supabase.auth.getUser();
+    user = result.data.user ?? null;
+    error = result.error;
+  }
 
   // ── Maintenance mode ("Trwają prace") — admin toggle in /admin/site ──────
   const state: MaintenanceState = await maintenanceCache.get(async () => {
@@ -134,7 +150,7 @@ export async function middleware(request: NextRequest) {
   });
   if (state.enabled) {
     let isAdmin = false;
-    if (data?.user) {
+    if (user) {
       try {
         isAdmin = (await readMaintenance(supabase)).viewerIsAdmin;
       } catch (roleError) {
@@ -192,7 +208,7 @@ export async function middleware(request: NextRequest) {
   // Only a definite "no session" blocks; an auth outage falls through to the
   // page/API checks instead of locking signed-in users out.
   const noSession =
-    !data?.user && (!error || error.name === "AuthSessionMissingError" || error.status === 401 || error.status === 403);
+    !user && (!error || error.name === "AuthSessionMissingError" || error.status === 401 || error.status === 403);
   if (blocked && noSession) {
     if (blocked === "api") {
       return NextResponse.json(
@@ -211,6 +227,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|workers/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|workers/|favicon.ico|api/beats/[^/]+/cover$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|wav|ogg|m4a)$).*)",
   ],
 };

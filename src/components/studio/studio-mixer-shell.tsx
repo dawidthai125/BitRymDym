@@ -115,7 +115,7 @@ export function StudioMixerOverlay({
         aria-labelledby={titleId}
         tabIndex={-1}
         data-testid="studio-mixer-sheet"
-        className="relative mt-auto flex max-h-[min(70vh,28rem)] w-full flex-col rounded-t-lg border border-[var(--brd-line)] bg-[var(--brd-bg)] shadow-lg outline-none pb-[env(safe-area-inset-bottom)] md:max-h-[min(75vh,30rem)]"
+        className="relative mt-auto flex max-h-[min(70vh,28rem)] w-full flex-col rounded-t-lg border border-[var(--brd-line)] bg-[var(--brd-bg)] shadow-lg outline-none pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:max-h-[min(75vh,30rem)] md:pb-[env(safe-area-inset-bottom)]"
       >
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-3 py-2">
           <p

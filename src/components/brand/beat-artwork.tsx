@@ -55,6 +55,16 @@ export function BeatArtwork({
           decoding="async"
           className="absolute inset-0 size-full object-cover"
         />
+      ) : size === "xs" || size === "sm" ? (
+      <Image
+        src={visual.src}
+        alt=""
+        width={size === "xs" ? 88 : 152}
+        height={size === "xs" ? 88 : 152}
+        sizes={size === "xs" ? "44px" : "76px"}
+        className="absolute inset-0 size-full object-cover"
+        style={{ objectPosition: visual.focus }}
+      />
       ) : (
       <Image
         src={visual.src}
@@ -63,11 +73,7 @@ export function BeatArtwork({
         sizes={
           size === "xl" || size === "lg"
             ? "(max-width: 768px) 80vw, 28rem"
-            : size === "md"
-              ? "7rem"
-              : size === "xs"
-                ? "2.75rem"
-                : "5rem"
+            : "7rem"
         }
         className="object-cover"
         style={{ objectPosition: visual.focus }}

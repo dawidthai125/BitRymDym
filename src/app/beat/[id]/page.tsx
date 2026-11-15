@@ -65,6 +65,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   const { id } = await params;
   const beat = await getPublishedBeat(id);
   if (!beat) notFound();
+  const relatedPromise = listPublishedBeats({ limit: 8, excludeId: beat.id });
 
   const detail = toPublicBeatDetail(beat);
   const presented = presentBeat(detail);
@@ -153,10 +154,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
 
   const thread = await loadThread("beat", beat.id, viewerId).catch(() => null);
   const related = presentBeats(
-    (await listPublishedBeats())
-      .map(toPublicCatalogItem)
-      .filter((b) => b.id !== detail.id)
-      .slice(0, 6),
+    (await relatedPromise).map(toPublicCatalogItem).slice(0, 6),
   );
 
   return (

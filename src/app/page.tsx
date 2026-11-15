@@ -87,6 +87,7 @@ export default async function HomePage() {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
+  const publishedPromise = listPublishedBeats({ limit: 8 });
   const session = await getCurrentProfile();
   const steps = [
     { title: tc("wybierzBit"), body: t("krokBit", { s: GUEST_POLICY.previewSeconds }) },
@@ -263,7 +264,7 @@ export default async function HomePage() {
   ];
   const community = await getTranslations("community");
   const beats = presentBeats(
-    (await listPublishedBeats()).map(toPublicCatalogItem),
+    (await publishedPromise).map(toPublicCatalogItem),
   );
   const featured = beats[0] ?? null;
   const strip = beats.slice(0, 6);

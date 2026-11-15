@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { AccountSectionNav } from "@/components/account/account-section-nav";
+import { FullClientMessages } from "@/i18n/client-messages";
 import { PageFrame } from "@/components/brand/chrome";
 import { AppShell } from "@/components/site/app-shell";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -15,6 +16,7 @@ export default async function AccountLayout({
   if (!context) redirect("/sign-in");
   const tr = await getTranslations("account.accountPage");
   return (
+    <FullClientMessages>
     <AppShell tone="studio">
       <PageFrame className="pt-8">
         <AccountSectionNav
@@ -31,5 +33,6 @@ export default async function AccountLayout({
       </PageFrame>
       {children}
     </AppShell>
+    </FullClientMessages>
   );
 }

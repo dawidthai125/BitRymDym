@@ -281,7 +281,7 @@ export function StudioClipLaneItem({
         <button
           type="button"
           data-studio-trim-left={clip.id}
-          className="absolute inset-y-0 left-0 z-[3] w-3 min-w-3 -translate-x-1/2 cursor-ew-resize touch-none max-sm:min-h-11 max-sm:w-11 max-sm:min-w-11 sm:w-4"
+          className="absolute inset-y-0 left-0 z-[3] w-3 min-w-3 -translate-x-1/2 cursor-ew-resize touch-none before:absolute before:inset-y-0 before:left-1/2 before:w-11 before:-translate-x-1/2 before:content-[''] sm:w-4"
           aria-label={t("przytnijLewaKrawedz")}
           title={t("przytnijLewaKrawedz")}
           onPointerDown={(e) => {
@@ -310,7 +310,7 @@ export function StudioClipLaneItem({
         <button
           type="button"
           data-studio-clip-drag={clip.id}
-          className="relative z-[2] h-full w-2 min-w-2 shrink-0 cursor-grab touch-none border-r border-[var(--brd-line)]/40 bg-[var(--brd-ink)]/10 max-sm:min-h-11 max-sm:w-11 max-sm:min-w-11"
+          className="relative z-[2] h-full w-2 min-w-2 shrink-0 cursor-grab touch-none border-r border-[var(--brd-line)]/40 bg-[var(--brd-ink)]/10 before:absolute before:inset-y-0 before:left-1/2 before:w-11 before:-translate-x-1/2 before:content-['']"
           aria-label={t("przeciagnijKlip")}
           title={t("przeciagnijKlip")}
           onPointerDown={(e) => {
@@ -365,7 +365,7 @@ export function StudioClipLaneItem({
         <button
           type="button"
           data-studio-trim-right={clip.id}
-          className="absolute inset-y-0 right-0 z-[3] w-3 min-w-3 translate-x-1/2 cursor-ew-resize touch-none max-sm:min-h-11 max-sm:w-11 max-sm:min-w-11 sm:w-4"
+          className="absolute inset-y-0 right-0 z-[3] w-3 min-w-3 translate-x-1/2 cursor-ew-resize touch-none before:absolute before:inset-y-0 before:left-1/2 before:w-11 before:-translate-x-1/2 before:content-[''] sm:w-4"
           aria-label={t("przytnijPrawaKrawedz")}
           title={t("przytnijPrawaKrawedz")}
           onPointerDown={(e) => {

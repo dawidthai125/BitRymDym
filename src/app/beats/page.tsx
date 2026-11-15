@@ -31,11 +31,15 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const params = searchParams ? await searchParams : {};
   const source = params.zrodlo === "user" ? "USER" : "PLATFORM";
   const paid = params.katalog === "platny";
-  const raw = (await listPublishedBeats({ catalogLane: paid ? "paid" : "free" }))
+  const lane = paid ? "paid" : "free";
+  const [listed, session] = await Promise.all([
+    listPublishedBeats({ catalogLane: lane, ownershipType: source }),
+    getCurrentProfile(),
+  ]);
+  const raw = listed
     .filter((beat) => beat.ownershipType === source)
-    .filter((beat) => catalogLaneOf(beat.catalogLane) === (paid ? "paid" : "free"))
+    .filter((beat) => catalogLaneOf(beat.catalogLane) === lane)
     .map(toPublicCatalogItem);
-  const session = await getCurrentProfile();
   const favoriteIds = session ? await listFavoriteBeatIds(session.userId) : [];
   const beats = presentBeats(raw);
   const initialQuery =

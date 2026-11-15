@@ -3,7 +3,7 @@ import "server-only";
 import { isUuid } from "@/lib/beats/audio-validation";
 import { loadPublicAuthorDisplayNames } from "@/lib/beats/public-author";
 import { resolvePublicAuthor } from "@/lib/beats/public-author-resolve";
-import { listPublishedBeats } from "@/lib/beats/service";
+import { getPublishedBeat, listPublishedBeats } from "@/lib/beats/service";
 import {
   aggregateRatings,
   cleanComment,
@@ -357,6 +357,30 @@ export async function readBoard(kind: TargetKind, periodKind: PeriodKind, now = 
   };
 }
 
+async function findPublishedBeat(id: string): Promise<Work | null> {
+  if (!isUuid(id)) return null;
+  const beat = await getPublishedBeat(id);
+  if (!beat || beat.visibility === "private") return null;
+  const names =
+    beat.ownershipType === "USER" && beat.ownerId
+      ? await authorNames([beat.ownerId])
+      : new Map<string, string | null>();
+  const flags = await beatCommentFlags([beat.id]);
+  return {
+    id: beat.id,
+    title: beat.title,
+    ownerId: beat.ownerId,
+    ownership: beat.ownershipType === "USER" ? "USER" : "PLATFORM",
+    allowComments: flags?.get(beat.id) ?? true,
+    author: resolvePublicAuthor({
+      ownershipType: beat.ownershipType,
+      ownerId: beat.ownerId,
+      producer: beat.producer,
+      ownerDisplayName: beat.ownerId ? (names.get(beat.ownerId) ?? null) : null,
+    }),
+  };
+}
+
 async function findWork(kind: TargetKind | "work", id: string): Promise<Work | null> {
   if (kind === "work") {
     const card = await findLiveCatalogWork(id);
@@ -371,6 +395,7 @@ async function findWork(kind: TargetKind | "work", id: string): Promise<Work | n
       allowRatings: card.allowRatings,
     };
   }
+  if (kind === "beat") return findPublishedBeat(id);
   const works = await publishedWorks(kind);
   return works.find((work) => work.id === id) ?? null;
 }

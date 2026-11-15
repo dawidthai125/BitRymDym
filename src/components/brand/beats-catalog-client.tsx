@@ -554,7 +554,7 @@ function CheckRow({
     <label
       className={cn(
         "flex cursor-pointer items-center gap-2 text-[13px] transition-colors",
-        compact ? "min-h-8" : "min-h-8",
+        compact ? "min-h-11" : "min-h-11",
         checked
           ? "text-[var(--brd-ink)]"
           : "text-[var(--brd-ink-soft)] hover:text-[var(--brd-ink)]",
@@ -564,7 +564,7 @@ function CheckRow({
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="size-3.5 shrink-0 accent-[var(--brd-green)]"
+        className="size-5 shrink-0 accent-[var(--brd-green)]"
       />
       <span className="truncate">{tl(label)}</span>
     </label>

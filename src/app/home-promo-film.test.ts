@@ -25,7 +25,7 @@ describe("homepage Jak to działa promo film", () => {
     expect(film).toContain('type="video/mp4"');
     expect(film).toContain("controls");
     expect(film).toContain("playsInline");
-    expect(film).toContain('preload="metadata"');
+    expect(film).toContain('preload="none"');
     expect(film).toContain('poster="/promo/jak-to-dziala-poster.jpg"');
     // Source reads are resolved by src/test/intl-test-mocks.ts: t("key") may arrive as the pl copy.
     const copy = JSON.parse(

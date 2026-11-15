@@ -18,8 +18,13 @@ const SITE = "https://www.bitrymdym.pl";
 const ADMIN = { id: "a-1" };
 const USER = { id: "u-1" };
 
-function req(path: string, init: { method?: string; headers?: Record<string, string> } = {}) {
-  return new NextRequest(new URL(path, SITE), { method: init.method ?? "GET", headers: init.headers });
+function req(
+  path: string,
+  init: { method?: string; headers?: Record<string, string>; authCookie?: boolean } = {},
+) {
+  const headers = new Headers(init.headers);
+  if (init.authCookie) headers.set("cookie", "sb-bitrymdym-auth-token=session");
+  return new NextRequest(new URL(path, SITE), { method: init.method ?? "GET", headers });
 }
 
 function signedIn(user: { id: string } | null) {
@@ -122,19 +127,19 @@ describe("middleware — maintenance ON", () => {
   it("signed-in non-admin sees the maintenance page and API 503", async () => {
     signedIn(USER);
     maintenance(true, false);
-    expect(new URL(rewriteOf(await middleware(req("/account")))!).pathname).toBe("/maintenance");
-    expect((await middleware(req("/api/takes/session", { method: "POST" }))).status).toBe(503);
+    expect(new URL(rewriteOf(await middleware(req("/account", { authCookie: true })))!).pathname).toBe("/maintenance");
+    expect((await middleware(req("/api/takes/session", { method: "POST", authCookie: true }))).status).toBe(503);
   });
 
   it("admin browses normally with the banner header", async () => {
     signedIn(ADMIN);
     maintenance(true, true);
-    const res = await middleware(req("/beats"));
+    const res = await middleware(req("/beats", { authCookie: true }));
     expect(rewriteOf(res)).toBeNull();
     expect(res.status).toBe(200);
     expect(forwarded(res, "x-brd-maintenance")).toBe("1");
     expect(forwarded(res, "x-brd-maintenance-admin")).toBe("1");
-    const api = await middleware(req("/api/studio/projects", { method: "POST" }));
+    const api = await middleware(req("/api/studio/projects", { method: "POST", authCookie: true }));
     expect(api.status).toBe(200);
   });
 
@@ -199,7 +204,7 @@ describe("middleware — cache and fail-open", () => {
     rpc
       .mockResolvedValueOnce({ data: { enabled: true }, error: null })
       .mockRejectedValueOnce(new Error("timeout"));
-    const res = await middleware(req("/beats"));
+    const res = await middleware(req("/beats", { authCookie: true }));
     expect(rewriteOf(res)).toBeNull();
   });
 });

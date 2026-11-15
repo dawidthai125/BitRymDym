@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 import {
@@ -57,7 +59,7 @@ async function loadPermissionsForRole(
   return filterPermissionKeys(keys);
 }
 
-export async function getSessionUser() {
+export const getSessionUser = cache(async function getSessionUser() {
   if (!getSupabasePublicEnv().isConfigured) {
     return null;
   }
@@ -71,9 +73,9 @@ export async function getSessionUser() {
     return null;
   }
   return data.user;
-}
+});
 
-export async function getCurrentProfile(): Promise<AuthContext | null> {
+export const getCurrentProfile = cache(async function getCurrentProfile(): Promise<AuthContext | null> {
   const user = await getSessionUser();
   if (!user) return null;
 
@@ -100,7 +102,7 @@ export async function getCurrentProfile(): Promise<AuthContext | null> {
     profile,
     permissions,
   };
-}
+});
 
 export async function requireUser(): Promise<AuthContext> {
   const context = await getCurrentProfile();

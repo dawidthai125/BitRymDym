@@ -3246,7 +3246,7 @@ function StudioEditorInner({
                 {tMix("widokUproszczonyPlan")}
               </span>
             )}
-            <span id="studio-go-mix-hint" className="hidden text-xs text-[var(--brd-mute)] sm:inline">
+            <span id="studio-go-mix-hint" className="basis-full text-xs text-[var(--brd-mute)] sm:basis-auto">
               {autoMixMasterMaterial({
                 beatId: doc.project.beatId,
                 tracks: doc.tracks,
@@ -3258,7 +3258,7 @@ function StudioEditorInner({
             <Button
               type="button"
               size="sm"
-              className="min-h-9 px-3"
+              className="min-h-11 px-3"
               data-testid="studio-go-mix"
               aria-describedby="studio-go-mix-hint"
               disabled={!canGoMix}
@@ -5275,11 +5275,7 @@ function StudioTimeline({
           >
             <div
               className={`relative ${
-                seekEnabled
-                  ? "cursor-pointer"
-                  : interactionLocked
-                    ? "touch-pan-x"
-                    : "touch-none"
+                seekEnabled ? "cursor-pointer" : "touch-pan-x"
               }`}
               style={{ width: widthPx, minWidth: "100%" }}
               onClick={seekFromPointer}

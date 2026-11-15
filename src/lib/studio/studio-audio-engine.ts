@@ -463,11 +463,6 @@ export class StudioAudioEngine {
     this.registry = params.registry;
     this.listener = params.listener;
     this.host = params.host ?? createBrowserStudioAudioEngineHost();
-    if (typeof window !== "undefined") {
-      void preloadAcousticBank().then(() => {
-        this.midiSig = "";
-      });
-    }
   }
 
   /**
@@ -2743,6 +2738,11 @@ export class StudioAudioEngine {
     if (!shouldPlay || this.lifecycle !== "playing" || !ctx || !document || !this.epoch) {
       this.haltMidiSources();
       return;
+    }
+    if (typeof window !== "undefined" && !peekAcousticBank()) {
+      void preloadAcousticBank().then(() => {
+        this.midiSig = "";
+      });
     }
     const sr = ctx.sampleRate && ctx.sampleRate > 0 ? ctx.sampleRate : MASTER_RENDER_SAMPLE_RATE;
     const body = document.tracks

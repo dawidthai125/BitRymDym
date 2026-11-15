@@ -9,6 +9,7 @@ import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 
+import { publicClientMessages } from "@/i18n/client-messages";
 import { ClientProviders } from "@/components/site/client-providers";
 import { MaintenanceAdminBanner } from "@/components/site/maintenance-admin-banner";
 import { getSiteMetadata } from "@/config/site";
@@ -29,6 +30,7 @@ const fontDisplay = Source_Serif_4({
   weight: "variable",
   variable: "--font-brd-display",
   display: "swap",
+  preload: false,
 });
 
 const fontUi = Schibsted_Grotesk({
@@ -43,6 +45,7 @@ const fontMeta = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   variable: "--font-brd-meta",
   display: "swap",
+  preload: false,
 });
 
 /** Design v3 "Nocna sesja" — condensed poster face (homepage prototype first). */
@@ -74,6 +77,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  const messages = await publicClientMessages();
   return (
     <html
       lang={locale}
@@ -93,7 +97,7 @@ export default async function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: BRD_THEME_BOOT_SCRIPT }}
         />
-        <NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
           <ClientProviders>
             <MaintenanceAdminBanner />
             {children}

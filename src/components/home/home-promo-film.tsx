@@ -53,7 +53,7 @@ export function HomePromoFilm() {
         ref={videoRef}
         controls
         playsInline
-        preload="metadata"
+        preload="none"
         poster="/promo/jak-to-dziala-poster.jpg"
         aria-label={t("promoFilm")}
         className="tape-focus aspect-video w-full rounded-[var(--tape-r-panel)] border border-tape-line-strong bg-tape-soot"

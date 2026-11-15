@@ -232,6 +232,7 @@ export function BeatCatalogRow({
               bpm={beat.bpm}
               keyLabel={beat.key}
               genre={beat.genre}
+              mood={beat.mood}
             />
           </Link>
           <BrdAudioPlayButton

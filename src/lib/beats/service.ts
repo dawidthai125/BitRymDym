@@ -1112,10 +1112,14 @@ export async function deleteBeat(beatId: string): Promise<void> {
 export async function listPublishedBeats(options?: {
   /** Default free: paid beats stay off the home page, Studio picker, and the Windows list. */
   catalogLane?: "free" | "paid" | "all";
+  ownershipType?: "USER" | "PLATFORM";
+  /** Newest first. Home and related beats pass a small cap; the catalog page does not. */
+  limit?: number;
+  excludeId?: string;
 }): Promise<Beat[]> {
   const lane = options?.catalogLane ?? "free";
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("beats")
     .select(BEAT_SELECT_PUBLIC)
     .eq("status", "PUBLISHED")
@@ -1123,6 +1127,13 @@ export async function listPublishedBeats(options?: {
     // (RLS also hides them; the owner-select policy would otherwise list them).
     .eq("visibility", "public")
     .order("created_at", { ascending: false });
+  // catalogLaneOf treats only the string "paid" as paid. Null and anything else stay free.
+  if (lane === "paid") query = query.eq("catalog_lane", "paid");
+  else if (lane === "free") query = query.or("catalog_lane.is.null,catalog_lane.neq.paid");
+  if (options?.ownershipType) query = query.eq("ownership_type", options.ownershipType);
+  if (options?.excludeId) query = query.neq("id", options.excludeId);
+  if (options?.limit && options.limit > 0) query = query.limit(options.limit);
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);

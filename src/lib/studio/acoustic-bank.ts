@@ -209,20 +209,34 @@ export async function loadAcousticBank(
   const rows = parseAcousticCatalog(catalogBytes);
   if (rows.length === 0) return null;
   const bank = emptyBank();
-  for (const row of rows) {
-    const bytes = await read(row.file);
-    if (!bytes) continue;
-    const wav = parseWavPcm16(bytes);
-    if (!wav) continue;
-    const loopOk =
-      row.loopStart != null && row.loopEnd != null &&
-      row.loopEnd <= wav.pcm.length;
-    bank[row.instrument].push({
-      root: row.root,
-      rate: wav.rate,
-      pcm: wav.pcm,
-      loopStart: loopOk ? row.loopStart : null,
-      loopEnd: loopOk ? row.loopEnd : null,
+  const notes = await Promise.all(
+    rows.map(async (row) => {
+      const bytes = await read(row.file);
+      if (!bytes) return null;
+      const wav = parseWavPcm16(bytes);
+      if (!wav) return null;
+      const loopOk =
+        row.loopStart != null &&
+        row.loopEnd != null &&
+        row.loopEnd <= wav.pcm.length;
+      return {
+        instrument: row.instrument,
+        root: row.root,
+        rate: wav.rate,
+        pcm: wav.pcm,
+        loopStart: loopOk ? row.loopStart : null,
+        loopEnd: loopOk ? row.loopEnd : null,
+      };
+    }),
+  );
+  for (const note of notes) {
+    if (!note) continue;
+    bank[note.instrument].push({
+      root: note.root,
+      rate: note.rate,
+      pcm: note.pcm,
+      loopStart: note.loopStart,
+      loopEnd: note.loopEnd,
     });
   }
   if (bank.piano.length + bank.guitar.length + bank.bass.length === 0) return null;

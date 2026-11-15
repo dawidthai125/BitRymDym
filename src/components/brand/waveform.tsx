@@ -5,6 +5,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import {
+  useMemo,
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
@@ -66,6 +67,26 @@ export const STICKY_SEEK_VISUAL_CLASS = "h-5";
 
 const SEEK_KEYBOARD_STEP = 0.03;
 
+/** One path for every bar. Catalog rows were thousands of styled spans. */
+function waveformBarsPath(peaks: number[]): string {
+  const count = peaks.length;
+  if (count === 0) return "";
+  const parts: string[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const slot = 100 / count;
+    const width = Math.max(0.35, slot * 0.72);
+    const x = index * slot + (slot - width) / 2;
+    const height = Math.round(
+      Math.min(1, Math.max(0.18, peaks[index] ?? 0)) * 100,
+    );
+    const y = (100 - height) / 2;
+    parts.push(
+      `M${x.toFixed(2)} ${y.toFixed(2)}h${width.toFixed(2)}v${height}h${(-width).toFixed(2)}z`,
+    );
+  }
+  return parts.join("");
+}
+
 type WaveformProps = {
   seed: string;
   progress?: number;
@@ -113,10 +134,14 @@ export function Waveform({
   const catalogSeekHit = density === "catalog" && interactive;
   const expandedSeekHit = stickySeekHit || catalogSeekHit;
   const catalogVisualHeight = heightClassName ?? preset.heightClassName;
-  const peaks =
-    peaksProp && peaksProp.length > 0
-      ? peaksProp
-      : peaksFromSeed(seed, barCount);
+  const peaks = useMemo(
+    () =>
+      peaksProp && peaksProp.length > 0
+        ? peaksProp
+        : peaksFromSeed(seed, barCount),
+    [peaksProp, seed, barCount],
+  );
+  const barsPath = useMemo(() => waveformBarsPath(peaks), [peaks]);
   const clamped = Math.max(0, Math.min(1, progress));
   const playheadVisible =
     showPlayhead ?? (interactive || clamped > 0.02);
@@ -247,21 +272,21 @@ export function Waveform({
         )}
         aria-hidden={expandedSeekHit ? true : undefined}
       >
-        {peaks.map((peak, index) => {
-          const ratio = (index + 0.5) / peaks.length;
-          const active = ratio <= clamped;
-          return (
-            <span
-              key={`${seed}-${index}`}
-              className="block min-w-px flex-1 self-center"
-              style={{
-                height: `${Math.round(Math.min(1, Math.max(0.08, peak)) * 100)}%`,
-                minHeight: 4,
-                backgroundColor: active ? activeColor : idleColor,
-              }}
-            />
-          );
-        })}
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="h-full w-full"
+          aria-hidden
+        >
+          <path d={barsPath} style={{ fill: idleColor }} />
+          <path
+            d={barsPath}
+            style={{
+              fill: activeColor,
+              clipPath: `inset(0 ${((1 - clamped) * 100).toFixed(2)}% 0 0)`,
+            }}
+          />
+        </svg>
         {playheadVisible && expandedSeekHit ? (
           <span
             aria-hidden

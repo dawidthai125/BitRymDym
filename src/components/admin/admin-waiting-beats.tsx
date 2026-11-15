@@ -169,6 +169,7 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
           <Button
             type="button"
             variant="outline"
+            className="min-h-11"
             disabled={busy !== null}
             onClick={() => void run("cover")}
           >
@@ -183,6 +184,7 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
+            className="min-h-11"
             disabled={releaseDisabled}
             onClick={() => void run("free")}
           >
@@ -191,6 +193,7 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
           <Button
             type="button"
             variant="secondary"
+            className="min-h-11"
             disabled={releaseDisabled}
             onClick={() => void run("paid")}
           >

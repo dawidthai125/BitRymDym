@@ -44,7 +44,7 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
       <ul
         className={cn(
           "mx-auto grid max-w-lg",
-          isAuthenticated ? "grid-cols-4" : "grid-cols-3",
+          "grid-cols-4",
         )}
       >
         {items.map((item) => {
