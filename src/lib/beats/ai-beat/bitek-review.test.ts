@@ -25,6 +25,8 @@ describe("Bitek review facts", () => {
       "Opis: Wolny bit.",
       "Tempo: 86 BPM.",
       "Długość: 151 s.",
+      "Głośność: niezmierzona.",
+      "Nagranie: nie sprawdzono, czy jest puste.",
     ]);
   });
 
@@ -40,6 +42,7 @@ describe("Bitek review facts", () => {
     expect(lines[1]).toContain("brak zapisanego stylu");
     expect(lines[3]).toContain("niezmierzony");
     expect(lines[4]).toContain("nieznana");
+    expect(lines[5]).toContain("niezmierzona");
   });
 
   it("keeps the last eight turns and drops empty ones", () => {

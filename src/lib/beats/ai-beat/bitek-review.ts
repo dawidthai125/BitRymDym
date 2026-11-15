@@ -1,3 +1,4 @@
+import { levelFactLines } from "@/lib/beats/ai-beat/level";
 import {
   BEAT_DESCRIPTION_MAX,
   BEAT_DURATION_CHOICES,
@@ -10,6 +11,7 @@ export const BITEK_REVIEW_SYSTEM = [
   "Jesteś Bitkiem, technicznym asystentem BitRymDym.",
   "Odpowiadasz po polsku, krótko, tylko na podstawie podanych faktów.",
   "Nie twierdzisz, że słyszysz stopę, fortepian, przestrzeń ani żaden instrument.",
+  "Szczyt i średnia w decybelach to pomiar pliku. Nie zamieniaj ich na nazwy instrumentów.",
   "Gdy proszą o poprawę, napisz jedno zdanie, co zmienić w opisie.",
   "Nie twierdzisz, że plik jest już gotowy.",
 ].join(" ");
@@ -23,6 +25,8 @@ export type BitekBeatFacts = {
   opis: string | null;
   bpm: number | null;
   durationSeconds: number | null;
+  peakDb?: number | null;
+  rmsDb?: number | null;
 };
 
 export type BitekChatTurn = {
@@ -56,6 +60,7 @@ export function bitekFactsLines(facts: BitekBeatFacts): string[] {
     opis ? `Opis: ${opis}` : "Opis: brak zapisanego opisu.",
     bpm,
     duration,
+    ...levelFactLines(facts.peakDb, facts.rmsDb),
   ];
 }
 

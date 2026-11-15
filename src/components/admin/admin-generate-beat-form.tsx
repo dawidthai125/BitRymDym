@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import { AdminBeatBitek } from "@/components/admin/admin-beat-bitek";
+import { AdminBeatPlayButton } from "@/components/admin/admin-beat-play-button";
 import { BrdButton } from "@/components/brand/brd-button";
 import { beatGenerationPercent } from "@/lib/beats/ai-beat/generation-progress";
 import {
@@ -34,6 +35,7 @@ export function AdminGenerateBeatForm() {
   const [pendingPolls, setPendingPolls] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [beatId, setBeatId] = useState<string | null>(null);
+  const [readyTitle, setReadyTitle] = useState("Bit BitRymDym");
   const [revised, setRevised] = useState(false);
   const [styleLabel, setStyleLabel] = useState<string | null>(null);
   const [bpmHint, setBpmHint] = useState<number | null>(null);
@@ -121,6 +123,8 @@ export function AdminGenerateBeatForm() {
         return;
       }
 
+      const title = typeof startJson.title === "string" ? startJson.title.trim() : "";
+      setReadyTitle(title || "Bit BitRymDym");
       setPhase("waiting");
       const deadline = Date.now() + 4 * 60 * 1000;
       while (Date.now() < deadline) {
@@ -265,7 +269,15 @@ export function AdminGenerateBeatForm() {
       </div>
 
       {percent !== null ? (
-        <GenerationMeter percent={percent} label={t("postep")} text={t("procent", { percent })} />
+        <GenerationMeter
+          percent={percent}
+          label={t("postep")}
+          text={
+            percent === 92
+              ? `${t("procent", { percent })} ${t("czekamNaPlik")}`
+              : t("procent", { percent })
+          }
+        />
       ) : null}
 
       <p className="min-h-6 text-sm" aria-live="polite">
@@ -277,20 +289,29 @@ export function AdminGenerateBeatForm() {
             {bpmHint != null ? ` ${t("tempoPodpowiedz", { bpm: bpmHint })}` : null}
           </span>
         ) : null}
-        {!error && phase === "ready" && beatId ? (
+      </p>
+      {!error && phase === "ready" && beatId ? (
+        <div className="flex items-center gap-3">
+          <AdminBeatPlayButton
+            beatId={beatId}
+            title={readyTitle}
+            producer="BitRymDym"
+            durationSeconds={duration}
+          />
           <Link className="underline underline-offset-4" href="/admin/beats/waiting">
             {t("gotowe")}
           </Link>
-        ) : null}
-      </p>
+        </div>
+      ) : null}
       {revised ? <p className="text-sm text-muted-foreground">{t("bitekNowa")}</p> : null}
       {!error && phase === "ready" && beatId ? (
         <AdminBeatBitek
           key={beatId}
           beatId={beatId}
           autoReview
-          onRevised={(nextId) => {
+          onRevised={(nextId, title) => {
             setBeatId(nextId);
+            if (title) setReadyTitle(title);
             setRevised(true);
           }}
         />

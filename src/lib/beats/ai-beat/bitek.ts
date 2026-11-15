@@ -1,6 +1,9 @@
 import "server-only";
 
+import { measurePcmLevel } from "@/lib/beats/ai-beat/level";
 import { GENERATED_BEAT_TAG } from "@/lib/beats/catalog-lane";
+import { decodeAudioToMonoPcm } from "@/lib/beats/audio-pcm-decode";
+import { downloadBeatAudioObjectBytes } from "@/lib/beats/audio-transport";
 import { isUuid } from "@/lib/beats/audio-validation";
 import { BeatRequestError } from "@/lib/beats/request-error";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -24,13 +27,65 @@ type WaitingFactRow = {
   style: string | null;
   bpm: number | null;
   duration_seconds: number | null;
+  generator_peak_db: number | string | null;
+  generator_rms_db: number | string | null;
   ownership_type: string;
   status: string;
   tags: string[] | null;
 };
 
 function factsOnlyReply(facts: string): string {
-  return `Sprawdzam tylko zapisane fakty, bez odsłuchu pliku. ${facts.replace(/\n/g, " ")}`;
+  return `Sprawdzam tylko zapisane fakty i pomiar głośności, bez nazw instrumentów. ${facts.replace(/\n/g, " ")}`;
+}
+
+function dbOf(value: number | string | null | undefined): number | null {
+  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Older drafts have no stored level. Measure the master once and keep it. */
+async function ensureStoredLevel(row: WaitingFactRow): Promise<{ peakDb: number | null; rmsDb: number | null }> {
+  const storedPeak = dbOf(row.generator_peak_db);
+  const storedRms = dbOf(row.generator_rms_db);
+  if (storedPeak != null && storedRms != null) {
+    return { peakDb: storedPeak, rmsDb: storedRms };
+  }
+  try {
+    const admin = createSupabaseAdminClient();
+    const asset = await admin
+      .from("beat_audio_assets")
+      .select("object_key, content_type")
+      .eq("beat_id", row.id)
+      .eq("purpose", "MASTER")
+      .eq("is_active", true)
+      .maybeSingle();
+    const objectKey =
+      asset.data && typeof asset.data.object_key === "string" ? asset.data.object_key : "";
+    if (asset.error || !objectKey) return { peakDb: storedPeak, rmsDb: storedRms };
+    const bytes = await downloadBeatAudioObjectBytes(objectKey);
+    const contentType =
+      asset.data && typeof asset.data.content_type === "string"
+        ? asset.data.content_type
+        : "audio/wav";
+    const decoded = await decodeAudioToMonoPcm({ bytes, contentType });
+    if (!decoded.ok) return { peakDb: storedPeak, rmsDb: storedRms };
+    const level = measurePcmLevel(decoded.samples);
+    const saved = await admin
+      .from("beats")
+      .update({
+        generator_peak_db: level.peakDb,
+        generator_rms_db: level.rmsDb,
+      })
+      .eq("id", row.id);
+    if (saved.error) console.error("[ai-beat] level not stored", saved.error.message);
+    return { peakDb: level.peakDb, rmsDb: level.rmsDb };
+  } catch (error) {
+    console.error(
+      "[ai-beat] level unread",
+      error instanceof Error ? error.name : "unknown",
+    );
+    return { peakDb: storedPeak, rmsDb: storedRms };
+  }
 }
 
 async function loadWaitingGeneratedBeat(beatId: string): Promise<WaitingFactRow> {
@@ -40,7 +95,7 @@ async function loadWaitingGeneratedBeat(beatId: string): Promise<WaitingFactRow>
   const { data, error } = await createSupabaseAdminClient()
     .from("beats")
     .select(
-      "id, title, description, style, bpm, duration_seconds, ownership_type, status, tags",
+      "id, title, description, style, bpm, duration_seconds, generator_peak_db, generator_rms_db, ownership_type, status, tags",
     )
     .eq("id", beatId)
     .maybeSingle();
@@ -59,18 +114,21 @@ async function loadWaitingGeneratedBeat(beatId: string): Promise<WaitingFactRow>
   return row;
 }
 
-/** Polish reply grounded in the stored draft. No audio is decoded. */
+/** Polish reply from stored facts plus peak and average level. No instrument names. */
 export async function talkAboutWaitingBeat(
   beatId: string,
   messages: readonly BitekChatTurn[],
 ): Promise<string> {
   const row = await loadWaitingGeneratedBeat(beatId);
+  const level = await ensureStoredLevel(row);
   const facts = bitekFactsLines({
     title: row.title,
     style: row.style,
     opis: row.description,
     bpm: row.bpm,
     durationSeconds: row.duration_seconds,
+    peakDb: level.peakDb,
+    rmsDb: level.rmsDb,
   }).join("\n");
   if (messages.length === 0) {
     throw new BeatRequestError("Napisz pytanie do Bitka.");

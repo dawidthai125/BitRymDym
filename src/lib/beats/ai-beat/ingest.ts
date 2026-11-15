@@ -1,5 +1,7 @@
 import "server-only";
 
+import { decodeAudioToMonoPcm } from "@/lib/beats/audio-pcm-decode";
+import { measurePcmLevel } from "@/lib/beats/ai-beat/level";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   analyzePlatformBeatPendingUpload,
@@ -86,10 +88,37 @@ export async function ingestGeneratedBeat(params: {
       tags: ["hip-hop", "instrumental", GENERATED_BEAT_TAG],
     });
 
+    await storeGeneratedLevel(session.beatId, params.bytes, params.contentType);
     return { beatId: session.beatId, bpm: picked.bpm };
   } catch (error) {
     await deleteBeat(session.beatId).catch(() => undefined);
     if (error instanceof BeatRequestError) throw error;
     throw new BeatRequestError("Nie udało się zapisać bitu. Spróbuj jeszcze raz.");
+  }
+}
+
+/** Best effort. A failed level read must not delete the draft. */
+async function storeGeneratedLevel(
+  beatId: string,
+  bytes: Uint8Array,
+  contentType: string,
+): Promise<void> {
+  try {
+    const decoded = await decodeAudioToMonoPcm({ bytes, contentType });
+    if (!decoded.ok) return;
+    const level = measurePcmLevel(decoded.samples);
+    const { error } = await createSupabaseAdminClient()
+      .from("beats")
+      .update({
+        generator_peak_db: level.peakDb,
+        generator_rms_db: level.rmsDb,
+      })
+      .eq("id", beatId);
+    if (error) console.error("[ai-beat] level not stored", error.message);
+  } catch (error) {
+    console.error(
+      "[ai-beat] level not stored",
+      error instanceof Error ? error.name : "unknown",
+    );
   }
 }

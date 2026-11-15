@@ -168,7 +168,7 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
           {beat.description?.trim() || "—"}
         </p>
 
-        <AdminBeatBitek beatId={beat.id} onRevised={() => router.refresh()} />
+        <AdminBeatBitek beatId={beat.id} startClosed onRevised={() => router.refresh()} />
 
         <div className="flex flex-col gap-2">
           <label className="flex flex-col gap-1 text-sm">
@@ -201,9 +201,16 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
               disabled={busy !== null}
               onClick={() => void run("cover")}
             >
-              {busy === "cover" ? t("generujeOkladke") : t("generujOkladke")}
+              {busy === "cover"
+                ? t("generujeOkladke")
+                : approved
+                  ? t("generujPonownie")
+                  : t("generujOkladke")}
             </Button>
           </div>
+          {approved ? (
+            <p className="text-xs text-[var(--brd-mute)]">{t("okladkaJeszczeRaz")}</p>
+          ) : null}
         </div>
 
         {approved ? null : (

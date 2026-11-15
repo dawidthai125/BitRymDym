@@ -40,11 +40,13 @@ function textOf(value: unknown): string {
 export function AdminBeatBitek({
   beatId,
   autoReview = false,
+  startClosed = false,
   onRevised,
 }: {
   beatId: string;
   autoReview?: boolean;
-  onRevised?: (beatId: string) => void;
+  startClosed?: boolean;
+  onRevised?: (beatId: string, title?: string) => void;
 }) {
   const t = useTranslations("admin.adminBeatsGeneratePage");
   const [chat, setChat] = useState<ChatItem[]>([]);
@@ -55,6 +57,7 @@ export function AdminBeatBitek({
   const [talking, setTalking] = useState(false);
   const [revisionPhase, setRevisionPhase] = useState<"starting" | "waiting" | null>(null);
   const [revisionPolls, setRevisionPolls] = useState(0);
+  const [open, setOpen] = useState(!startClosed);
   const live = useRef(true);
   const reviewed = useRef<string | null>(null);
   const lock = useRef(false);
@@ -166,7 +169,7 @@ export function AdminBeatBitek({
           setRevisionPhase(null);
           setNote("");
           setNotice(t("bitekGotowa"));
-          onRevised?.(textOf(resultJson.beatId));
+          onRevised?.(textOf(resultJson.beatId), pollBody.title || undefined);
           return;
         }
       }
@@ -185,6 +188,17 @@ export function AdminBeatBitek({
   const percent =
     revisionPhase === null ? null : beatGenerationPercent(revisionPhase, revisionPolls);
   const visible = chat.filter((item) => !item.hidden);
+  const lastAdvice = [...visible].reverse().find((item) => item.role === "assistant")?.content ?? "";
+
+  if (!open) {
+    return (
+      <div>
+        <Button type="button" variant="outline" className="min-h-11" onClick={() => setOpen(true)}>
+          {t("bitekOtworz")}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-border p-3">
@@ -209,6 +223,18 @@ export function AdminBeatBitek({
         </ul>
       ) : null}
 
+      <div>
+        <Button
+          type="button"
+          variant="secondary"
+          className="min-h-11"
+          disabled={busy || lastAdvice === ""}
+          onClick={() => setNote(lastAdvice.slice(0, 400))}
+        >
+          {t("bitekWezUwagi")}
+        </Button>
+      </div>
+
       {talking ? (
         <p className="text-sm text-muted-foreground" role="status">
           {t("bitekMysli")}
@@ -229,6 +255,7 @@ export function AdminBeatBitek({
           </div>
           <p className="text-sm text-muted-foreground tabular-nums">
             {t("procent", { percent })}
+            {percent === 92 ? ` ${t("czekamNaPlik")}` : ""}
           </p>
         </div>
       ) : null}
