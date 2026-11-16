@@ -53,6 +53,11 @@ export type StudioEditToolbarProps = {
   onEditMode: () => void;
   onSplit: () => void;
   onDeleteClip: () => void;
+  /**
+   * When false, hide Podziel/Usuń here — record step already has them on the fragment strip.
+   * Mix/Master keep them (default true).
+   */
+  showClipMutations?: boolean;
   onAddTrack: () => void;
   onToggleInspector: () => void;
   onToggleMixer: () => void;
@@ -107,30 +112,34 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
       >
         {t("edycja")}
       </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="min-h-11 min-w-11"
-        disabled={
-          props.recordingLocked || props.pending || !props.hasSelectedClip
-        }
-        title={t("podzielWPlayhead")}
-        onClick={props.onSplit}
-      >
-        {t("podziel")}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="min-h-11 min-w-11 studio-tool-danger"
-        disabled={props.recordingLocked || !props.hasSelectedClip}
-        title={t("usunKlip")}
-        onClick={props.onDeleteClip}
-      >
-        {t("usun")}
-      </Button>
+      {props.showClipMutations !== false ? (
+        <>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 min-w-11"
+            disabled={
+              props.recordingLocked || props.pending || !props.hasSelectedClip
+            }
+            title={t("podzielWPlayhead")}
+            onClick={props.onSplit}
+          >
+            {t("podziel")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 min-w-11 studio-tool-danger"
+            disabled={props.recordingLocked || !props.hasSelectedClip}
+            title={t("usunKlip")}
+            onClick={props.onDeleteClip}
+          >
+            {t("usun")}
+          </Button>
+        </>
+      ) : null}
       {props.atTrackCapacity && props.premiumTier !== "GOLD" ? (
         // Plan lock with a bubble (hover/focus/tap) → plans; server enforces too.
         <LockedAction

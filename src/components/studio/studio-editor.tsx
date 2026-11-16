@@ -3781,6 +3781,7 @@ function StudioEditorInner({
         mixerOpen={mixerOpen}
         mixerPanelId={mixerPanelId}
         snapPreset={snapPreset}
+        showClipMutations={studioStep !== "record"}
         onSeekMode={() => setMode("seek")}
         onEditMode={() => setMode("edit")}
         onSplit={() => {
