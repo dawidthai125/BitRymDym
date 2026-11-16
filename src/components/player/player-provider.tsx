@@ -518,11 +518,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         <GuestPreviewPrompt
           variant="unavailable"
           seconds={GUEST_POLICY.previewSeconds}
+          beatId={track?.beatId}
           onClose={dismissPreviewPrompt}
         />
       ) : previewEnded && previewLimitSeconds !== null ? (
         <GuestPreviewPrompt
           seconds={previewLimitSeconds}
+          beatId={track?.beatId}
           onClose={dismissPreviewPrompt}
         />
       ) : null}

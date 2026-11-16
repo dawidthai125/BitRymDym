@@ -32,7 +32,10 @@ import {
   throwLimitReached,
 } from "@/lib/downloads/slots";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import { catalogLaneOf } from "@/lib/beats/catalog-lane";
+import { isGuestShortPreviewFilename } from "@/lib/beats/preview/beat-preview";
 import { canDownloadBeatByOwnerChoice } from "@/lib/beats/usage/beat-usage-policy";
+import { viewerPurchasedPaidBeat } from "@/lib/beats/usage/beat-usage-server";
 import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
 import { checkFullPlaybackAllowed, logFullPlayback } from "@/lib/beats/playback-guard";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -46,9 +49,9 @@ export type BeatAudioAccessResult = {
   assetId: string;
   remainingToday?: number;
   /**
-   * 20 s PREVIEW asset (GUEST_POLICY.previewSeconds). Set for guests and for
-   * catalog or take-rail listen (`previewOnly`). Studio, the recording page,
-   * and the Windows program leave this empty and may use the full MASTER.
+   * Client stop at N seconds. Set for free-lane short PREVIEW (guests and
+   * catalog `previewOnly`). Paid-lane watermarked full PREVIEW and buyer
+   * MASTER leave this empty. Studio / recording / Windows omit previewOnly.
    */
   previewLimitSeconds?: number;
 };
@@ -147,10 +150,11 @@ type BeatAccessRow = {
   ownerId: string | null;
   visibility: string | null;
   allowDownload: boolean | null;
+  catalogLane: "free" | "paid";
 };
 
 const BEAT_ACCESS_SELECT =
-  "id, status, ownership_type, owner_id, visibility, allow_download";
+  "id, status, ownership_type, owner_id, visibility, allow_download, catalog_lane";
 
 function mapBeatAccessRow(row: Record<string, unknown>): BeatAccessRow {
   return {
@@ -159,6 +163,7 @@ function mapBeatAccessRow(row: Record<string, unknown>): BeatAccessRow {
     ownerId: (row.owner_id as string | null) ?? null,
     visibility: (row.visibility as string | null) ?? null,
     allowDownload: (row.allow_download as boolean | null) ?? null,
+    catalogLane: catalogLaneOf(row.catalog_lane),
   };
 }
 
@@ -291,15 +296,35 @@ export async function requestBeatAudioAccess(params: {
     }
   }
 
-  // Guests never receive the full file. Catalog and the take-preview rail
-  // pass previewOnly and stay on the 20 s PREVIEW. Studio, the recording
-  // page, and the Windows program omit it and may fall back to MASTER.
+  // Guests never receive the clean full file. Catalog / take-rail pass
+  // previewOnly. Free lane → short PREVIEW + client cap. Paid lane →
+  // watermarked full PREVIEW for everyone until purchase; buyers get MASTER.
+  // Studio, recording, and the Windows program omit previewOnly.
   if (params.previewOnly === true && params.purpose !== "PLAYBACK") {
     throw new AuthError("FORBIDDEN", "Invalid access purpose.");
   }
   const guestPreview =
     params.purpose === "PLAYBACK" && (actor === "ANON" || !profileContext);
-  const shortListen = guestPreview || params.previewOnly === true;
+  const catalogOrGuestPreview =
+    params.purpose === "PLAYBACK" &&
+    (guestPreview || params.previewOnly === true);
+  const purchasedPaid =
+    catalogOrGuestPreview &&
+    beat.catalogLane === "paid" &&
+    profileContext
+      ? await viewerPurchasedPaidBeat(
+          params.beatId,
+          {
+            status: beat.status,
+            ownershipType: beat.ownershipType,
+            ownerId: beat.ownerId,
+            catalogLane: beat.catalogLane,
+          },
+          profileContext.userId,
+        )
+      : false;
+  // Serve PREVIEW (not MASTER) whenever catalog/guest listen is unpaid.
+  const shortListen = catalogOrGuestPreview && !purchasedPaid;
   let asset: BeatAudioAssetRow;
   if (shortListen) {
     try {
@@ -326,6 +351,11 @@ export async function requestBeatAudioAccess(params: {
       profileContext ? "Short preview is not ready." : BEAT_PREVIEW_LOGIN_REQUIRED,
     );
   }
+  // Free lane always caps. Paid WM full has no cap; stale paid 20 s cut still caps.
+  const clientPreviewCap =
+    shortListen &&
+    (beat.catalogLane !== "paid" ||
+      isGuestShortPreviewFilename(asset.original_filename));
 
   let reservationId: string | null = null;
   let remainingToday: number | undefined;
@@ -425,7 +455,7 @@ export async function requestBeatAudioAccess(params: {
     beatId: params.beatId,
     assetId: asset.id,
     remainingToday,
-    ...(shortListen
+    ...(clientPreviewCap
       ? { previewLimitSeconds: GUEST_POLICY.previewSeconds }
       : {}),
   };

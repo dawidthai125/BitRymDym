@@ -3,7 +3,10 @@ import { writeFile } from "node:fs/promises";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
-import { previewSourceMarker } from "@/lib/beats/preview/beat-preview";
+import {
+  paidWatermarkPreviewSourceMarker,
+  previewSourceMarker,
+} from "@/lib/beats/preview/beat-preview";
 import {
   ensureBeatPreviewAsset,
   listBeatsNeedingPreview,
@@ -99,5 +102,42 @@ describe("ensureBeatPreviewAsset", () => {
       assets: [master("m1"), preview("p1", "m1"), { ...master("m9"), beat_id: B2 }],
     });
     expect(await listBeatsNeedingPreview(f.admin as unknown as SupabaseClient)).toEqual([B2]);
+  });
+
+  it("paid lane: short guest marker is stale; WM marker is fresh", async () => {
+    const f = createFakeAdmin({
+      beats: [
+        {
+          id: BEAT,
+          ownership_type: "PLATFORM",
+          owner_id: null,
+          status: "PUBLISHED",
+          catalog_lane: "paid",
+        },
+      ],
+      assets: [master("m1"), preview("p1", "m1")],
+      objects: { [MKEY]: Buffer.from("wav") },
+    });
+    expect(await listBeatsNeedingPreview(f.admin as unknown as SupabaseClient)).toEqual([
+      BEAT,
+    ]);
+    const ffmpegCalls: string[][] = [];
+    const r = await ensureBeatPreviewAsset(
+      {
+        ...deps(f.admin),
+        runFfmpeg: async (args) => {
+          ffmpegCalls.push(args);
+          await fakeFfmpeg(args);
+        },
+      },
+      { beatId: BEAT },
+    );
+    expect(r.outcome).toBe("replaced");
+    expect(ffmpegCalls.length).toBeGreaterThanOrEqual(2);
+    const row = f.assets.find((a) => a.purpose === "PREVIEW" && a.is_active)!;
+    expect(row.original_filename).toBe(paidWatermarkPreviewSourceMarker("m1"));
+    expect(
+      (await ensureBeatPreviewAsset(deps(f.admin), { beatId: BEAT })).outcome,
+    ).toBe("skipped_fresh");
   });
 });

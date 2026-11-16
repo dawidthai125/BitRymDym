@@ -1,10 +1,10 @@
 /**
- * Guest 20 s beat preview asset (pure helpers, no IO).
+ * Catalog PREVIEW assets (pure helpers, no IO).
  *
- * Guests must never get a signed URL to the full beat file. Each published
- * beat gets a short MP3 rendered from its active MASTER and stored as a
- * `beat_audio_assets` row with purpose PREVIEW, under the canonical private
- * key layout (platform/... or user/{ownerId}/...; `.bin`, bucket beat-audio).
+ * Free lane / guests: short 20 s MP3 from MASTER — never a signed URL to the
+ * full clean file. Paid lane (non-buyers): full-length MP3 with the voice
+ * watermark mixed in; buyers get MASTER / purchased wav elsewhere.
+ * Stored as purpose PREVIEW under the canonical private key layout.
  */
 import { GUEST_POLICY } from "@/config/plan-policy";
 import {
@@ -26,16 +26,40 @@ export function previewSourceMarker(masterAssetId: string): string {
   return `preview-${BEAT_PREVIEW_SECONDS}s-of-${masterAssetId}.mp3`;
 }
 
+/** Paid-catalog full listen with voice watermark (non-buyers). */
+export function paidWatermarkPreviewSourceMarker(masterAssetId: string): string {
+  return `preview-wm-full-of-${masterAssetId}.mp3`;
+}
+
+export function isGuestShortPreviewFilename(
+  originalFilename: string | null | undefined,
+): boolean {
+  return Boolean(
+    originalFilename && /^preview-\d+s-of-.+\.mp3$/i.test(originalFilename),
+  );
+}
+
+export function isPaidWatermarkPreviewFilename(
+  originalFilename: string | null | undefined,
+): boolean {
+  return Boolean(
+    originalFilename && /^preview-wm-full-of-.+\.mp3$/i.test(originalFilename),
+  );
+}
+
 export function isPreviewFresh(params: {
   preview: { original_filename: string | null; status: string; is_active: boolean } | null;
   masterAssetId: string;
+  /** Default short guest cut; paid lane uses the watermarked full file. */
+  kind?: "short" | "paidWm";
 }): boolean {
   const p = params.preview;
+  const marker =
+    params.kind === "paidWm"
+      ? paidWatermarkPreviewSourceMarker(params.masterAssetId)
+      : previewSourceMarker(params.masterAssetId);
   return Boolean(
-    p &&
-      p.is_active &&
-      p.status === "READY" &&
-      p.original_filename === previewSourceMarker(params.masterAssetId),
+    p && p.is_active && p.status === "READY" && p.original_filename === marker,
   );
 }
 

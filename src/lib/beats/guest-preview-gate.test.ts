@@ -1,16 +1,25 @@
 /**
- * Guests never receive a signed URL to the full beat file: PLAYBACK for a
+ * Guests never receive a signed URL to the clean full beat file: PLAYBACK for a
  * guest resolves the PREVIEW asset only (no PLAYBACK/MASTER fallback).
+ * Paid lane: watermarked full PREVIEW (no 20 s cap) until purchase → MASTER.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-type Row = { id: string; beat_id: string; purpose: string; object_key: string };
+type Row = {
+  id: string;
+  beat_id: string;
+  purpose: string;
+  object_key: string;
+  original_filename?: string | null;
+};
 
 const state = vi.hoisted(() => ({
   profile: null as null | { userId: string; profile: { role: string } },
   assets: [] as Row[],
   purposesQueried: [] as string[],
   signedKeys: [] as string[],
+  catalogLane: "free" as "free" | "paid",
+  purchased: false,
 }));
 
 vi.mock("@/lib/auth/session", async (orig) => {
@@ -30,7 +39,12 @@ vi.mock("@/lib/supabase/server", () => ({
       select: () => chain,
       eq: () => chain,
       maybeSingle: async () => ({
-        data: { id: "b1", status: "PUBLISHED", ownership_type: "PLATFORM" },
+        data: {
+          id: "b1",
+          status: "PUBLISHED",
+          ownership_type: "PLATFORM",
+          catalog_lane: state.catalogLane,
+        },
         error: null,
       }),
     };
@@ -53,7 +67,17 @@ vi.mock("@/lib/supabase/admin", () => ({
         const row = state.assets.find(
           (a) => a.beat_id === filters.beat_id && a.purpose === filters.purpose,
         );
-        return { data: row ? { ...row, status: "READY", is_active: true } : null, error: null };
+        return {
+          data: row
+            ? {
+                ...row,
+                status: "READY",
+                is_active: true,
+                original_filename: row.original_filename ?? null,
+              }
+            : null,
+          error: null,
+        };
       },
       storage: {
         from: () => ({
@@ -69,20 +93,55 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 vi.mock("@/lib/audio/load-premium-entitlement", () => ({
-  resolveProductEntitlementForAuthContext: vi.fn(async () => ({ limits: { downloadsDaily: 0 } })),
+  resolveProductEntitlementForAuthContext: vi.fn(async () => ({
+    limits: { downloadsDaily: 0 },
+  })),
+}));
+
+vi.mock("@/lib/beats/usage/beat-usage-server", () => ({
+  viewerPurchasedPaidBeat: vi.fn(async () => state.purchased),
+}));
+
+vi.mock("@/lib/beats/playback-guard", () => ({
+  checkFullPlaybackAllowed: vi.fn(async () => ({ allowed: true })),
+  logFullPlayback: vi.fn(async () => undefined),
 }));
 
 import { BEAT_PREVIEW_LOGIN_REQUIRED, requestBeatAudioAccess } from "@/lib/beats/audio-access";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
+import {
+  paidWatermarkPreviewSourceMarker,
+  previewSourceMarker,
+} from "@/lib/beats/preview/beat-preview";
 
-const MASTER: Row = { id: "m1", beat_id: "b1", purpose: "MASTER", object_key: "platform/b1/m1/master.bin" };
-const PREVIEW: Row = { id: "p1", beat_id: "b1", purpose: "PREVIEW", object_key: "platform/b1/p1/preview.bin" };
+const MASTER: Row = {
+  id: "m1",
+  beat_id: "b1",
+  purpose: "MASTER",
+  object_key: "platform/b1/m1/master.bin",
+};
+const PREVIEW_SHORT: Row = {
+  id: "p1",
+  beat_id: "b1",
+  purpose: "PREVIEW",
+  object_key: "platform/b1/p1/preview.bin",
+  original_filename: previewSourceMarker("m1"),
+};
+const PREVIEW_WM: Row = {
+  id: "p2",
+  beat_id: "b1",
+  purpose: "PREVIEW",
+  object_key: "platform/b1/p2/preview.bin",
+  original_filename: paidWatermarkPreviewSourceMarker("m1"),
+};
 
 beforeEach(() => {
   state.profile = null;
-  state.assets = [MASTER, PREVIEW];
+  state.assets = [MASTER, PREVIEW_SHORT];
   state.purposesQueried = [];
   state.signedKeys = [];
+  state.catalogLane = "free";
+  state.purchased = false;
 });
 
 describe("guest beat preview gate (server-enforced)", () => {
@@ -119,7 +178,7 @@ describe("guest beat preview gate (server-enforced)", () => {
     expect(state.purposesQueried).not.toContain("PREVIEW");
   });
 
-  it("signed-in catalog listen signs only PREVIEW and keeps the 20 s cap", async () => {
+  it("signed-in free catalog listen signs only PREVIEW and keeps the 20 s cap", async () => {
     state.profile = { userId: "u1", profile: { role: "USER" } };
     const r = await requestBeatAudioAccess({
       beatId: "b1",
@@ -130,5 +189,51 @@ describe("guest beat preview gate (server-enforced)", () => {
     expect(r.previewLimitSeconds).toBe(20);
     expect(state.signedKeys).toEqual(["platform/b1/p1/preview.bin"]);
     expect(state.purposesQueried).toEqual(["PREVIEW"]);
+  });
+
+  it("paid catalog: guest gets watermarked PREVIEW with no 20 s cap", async () => {
+    state.catalogLane = "paid";
+    state.assets = [MASTER, PREVIEW_WM];
+    const r = await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK" });
+    expect(r.assetId).toBe("p2");
+    expect(r.previewLimitSeconds).toBeUndefined();
+    expect(state.signedKeys).toEqual(["platform/b1/p2/preview.bin"]);
+  });
+
+  it("paid catalog: non-buyer signed-in previewOnly gets WM PREVIEW, no cap", async () => {
+    state.catalogLane = "paid";
+    state.assets = [MASTER, PREVIEW_WM];
+    state.profile = { userId: "u1", profile: { role: "USER" } };
+    const r = await requestBeatAudioAccess({
+      beatId: "b1",
+      purpose: "PLAYBACK",
+      previewOnly: true,
+    });
+    expect(r.assetId).toBe("p2");
+    expect(r.previewLimitSeconds).toBeUndefined();
+    expect(state.signedKeys).toEqual(["platform/b1/p2/preview.bin"]);
+  });
+
+  it("paid catalog: buyer previewOnly gets clean MASTER, no cap", async () => {
+    state.catalogLane = "paid";
+    state.assets = [MASTER, PREVIEW_WM];
+    state.profile = { userId: "u1", profile: { role: "USER" } };
+    state.purchased = true;
+    const r = await requestBeatAudioAccess({
+      beatId: "b1",
+      purpose: "PLAYBACK",
+      previewOnly: true,
+    });
+    expect(r.assetId).toBe("m1");
+    expect(r.previewLimitSeconds).toBeUndefined();
+    expect(state.signedKeys).toEqual(["platform/b1/m1/master.bin"]);
+  });
+
+  it("paid catalog with stale short PREVIEW still returns the 20 s cap until backfill", async () => {
+    state.catalogLane = "paid";
+    state.assets = [MASTER, PREVIEW_SHORT];
+    const r = await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK" });
+    expect(r.assetId).toBe("p1");
+    expect(r.previewLimitSeconds).toBe(20);
   });
 });

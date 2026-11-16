@@ -1,5 +1,6 @@
 /**
- * One-off backfill: guest 20 s PREVIEW assets for existing beats.
+ * One-off backfill: catalog PREVIEW assets for existing beats.
+ * Free lane → 20 s cut; paid lane → full-length voice-watermarked MP3.
  *
  *   npm run preview:backfill                      # dry run (default, no writes)
  *   BEAT_PREVIEW_BACKFILL_CONFIRM=yes npm run preview:backfill -- --apply

@@ -22,8 +22,15 @@ import {
   buildPreviewFfmpegArgs,
   buildPreviewObjectKey,
   isPreviewFresh,
+  paidWatermarkPreviewSourceMarker,
   previewSourceMarker,
 } from "@/lib/beats/preview/beat-preview";
+import { catalogLaneOf } from "@/lib/beats/catalog-lane";
+import {
+  previewMixArgs,
+  tagCycleArgs,
+} from "@/lib/studio/master/preview";
+import { PREVIEW_TAG_WAV_BASE64 } from "@/lib/studio/master/preview-tag";
 import type { BeatOwnershipType } from "@/types/domain";
 
 export type PreviewOutcome =
@@ -92,11 +99,13 @@ export async function ensureBeatPreviewAsset(
 
   const { data: beat, error: beatErr } = await admin
     .from("beats")
-    .select("id, ownership_type, owner_id")
+    .select("id, ownership_type, owner_id, catalog_lane")
     .eq("id", beatId)
     .maybeSingle();
   if (beatErr) return fail(beatId, "beat_load_failed");
   if (!beat) return fail(beatId, "beat_missing");
+  const paidWm = catalogLaneOf(beat.catalog_lane as string | null) === "paid";
+  const previewKind = paidWm ? ("paidWm" as const) : ("short" as const);
 
   const { data: master, error: mErr } = await admin
     .from("beat_audio_assets")
@@ -120,7 +129,14 @@ export async function ensureBeatPreviewAsset(
   if (pErr) return fail(beatId, "preview_load_failed");
   const currentRow = (current as AssetRow | null) ?? null;
 
-  if (!params.force && isPreviewFresh({ preview: currentRow, masterAssetId: masterRow.id })) {
+  if (
+    !params.force &&
+    isPreviewFresh({
+      preview: currentRow,
+      masterAssetId: masterRow.id,
+      kind: previewKind,
+    })
+  ) {
     return { beatId, outcome: "skipped_fresh", previewAssetId: currentRow!.id };
   }
   if (params.dryRun) {
@@ -141,13 +157,21 @@ export async function ensureBeatPreviewAsset(
 
     const out = path.join(work, "preview.mp3");
     try {
-      await runFfmpeg(
-        buildPreviewFfmpegArgs({
-          input: src,
-          output: out,
-          sourceDurationSeconds: await probe(src),
-        }),
-      );
+      if (paidWm) {
+        const tag = path.join(work, "wm_tag.wav");
+        const cycle = path.join(work, "wm_tag15.wav");
+        await writeFile(tag, Buffer.from(PREVIEW_TAG_WAV_BASE64, "base64"));
+        await runFfmpeg(tagCycleArgs(tag, cycle));
+        await runFfmpeg(previewMixArgs(src, cycle, out));
+      } else {
+        await runFfmpeg(
+          buildPreviewFfmpegArgs({
+            input: src,
+            output: out,
+            sourceDurationSeconds: await probe(src),
+          }),
+        );
+      }
     } catch {
       return fail(beatId, "ffmpeg_failed");
     }
@@ -177,7 +201,9 @@ export async function ensureBeatPreviewAsset(
       content_type: BEAT_PREVIEW_CONTENT_TYPE,
       byte_size: bytes.byteLength,
       checksum_sha256: createHash("sha256").update(bytes).digest("hex"),
-      original_filename: previewSourceMarker(masterRow.id),
+      original_filename: paidWm
+        ? paidWatermarkPreviewSourceMarker(masterRow.id)
+        : previewSourceMarker(masterRow.id),
       is_active: false,
     });
     if (insErr) return fail(beatId, "asset_insert_failed");
@@ -223,12 +249,24 @@ export async function listBeatsNeedingPreview(
   admin: SupabaseClient,
   options?: { limit?: number; includeUnpublished?: boolean },
 ): Promise<string[]> {
-  let q = admin.from("beats").select("id").order("created_at", { ascending: true });
+  let q = admin
+    .from("beats")
+    .select("id, catalog_lane")
+    .order("created_at", { ascending: true });
   if (!options?.includeUnpublished) q = q.eq("status", "PUBLISHED");
   const { data: beats, error } = await q;
   if (error) throw new Error("beats_list_failed");
-  const ids = (beats ?? []).map((b) => b.id as string);
-  if (ids.length === 0) return [];
+  const rows = beats ?? [];
+  if (rows.length === 0) return [];
+  const ids = rows.map((b) => b.id as string);
+  const laneById = new Map(
+    rows.map((b) => [
+      b.id as string,
+      catalogLaneOf(b.catalog_lane as string | null) === "paid"
+        ? ("paidWm" as const)
+        : ("short" as const),
+    ]),
+  );
 
   const { data: assets, error: aErr } = await admin
     .from("beat_audio_assets")
@@ -247,7 +285,11 @@ export async function listBeatsNeedingPreview(
   const out = ids.filter((id) => {
     const m = master.get(id);
     if (!m) return false; // nothing to cut from
-    return !isPreviewFresh({ preview: preview.get(id) ?? null, masterAssetId: m });
+    return !isPreviewFresh({
+      preview: preview.get(id) ?? null,
+      masterAssetId: m,
+      kind: laneById.get(id) ?? "short",
+    });
   });
   return typeof options?.limit === "number" ? out.slice(0, options.limit) : out;
 }

@@ -308,11 +308,15 @@
     "guestPreview": {
       "tytul": "To był {s}-sekundowy podgląd",
       "opis": "Zaloguj się, aby słuchać całych bitów, nagrywać i korzystać ze Studia.",
+      "opisKonto": "W katalogu grasz krótki podgląd. Otwórz Studio, żeby słuchać i nagrywać na całym bicie.",
       "zaloguj": "Zaloguj się",
       "zalozKonto": "Załóż konto",
+      "otworzStudio": "Otwórz Studio",
       "zamknij": "Zamknij",
       "brakPodgladu": "Ten bit nie ma jeszcze podglądu dla gości",
-      "brakOpis": "Zaloguj się, aby posłuchać całego bitu."
+      "brakOpis": "Zaloguj się, aby posłuchać całego bitu.",
+      "brakPodgladuKonto": "Ten bit nie ma jeszcze krótkiego podglądu w katalogu",
+      "brakOpisKonto": "Otwórz Studio, żeby posłuchać całego bitu."
     },
     "legal": {
       "nawigacja": "Dokumenty prawne",

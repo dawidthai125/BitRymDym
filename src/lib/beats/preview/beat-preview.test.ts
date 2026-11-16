@@ -5,7 +5,10 @@ import {
   BEAT_PREVIEW_SECONDS,
   buildPreviewFfmpegArgs,
   buildPreviewObjectKey,
+  isGuestShortPreviewFilename,
+  isPaidWatermarkPreviewFilename,
   isPreviewFresh,
+  paidWatermarkPreviewSourceMarker,
   previewSourceMarker,
 } from "@/lib/beats/preview/beat-preview";
 
@@ -48,5 +51,32 @@ describe("beat preview helpers", () => {
     expect(isPreviewFresh({ preview: ok, masterAssetId: "m3" })).toBe(false);
     expect(isPreviewFresh({ preview: { ...ok, status: "FAILED" }, masterAssetId: "m2" })).toBe(false);
     expect(isPreviewFresh({ preview: null, masterAssetId: "m2" })).toBe(false);
+  });
+
+  it("paid watermark marker is distinct from the short guest cut", () => {
+    const mid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+    const wm = paidWatermarkPreviewSourceMarker(mid);
+    expect(wm).toBe(`preview-wm-full-of-${mid}.mp3`);
+    expect(isPaidWatermarkPreviewFilename(wm)).toBe(true);
+    expect(isGuestShortPreviewFilename(wm)).toBe(false);
+    expect(isGuestShortPreviewFilename(previewSourceMarker(mid))).toBe(true);
+    expect(
+      isPreviewFresh({
+        preview: { original_filename: wm, status: "READY", is_active: true },
+        masterAssetId: mid,
+        kind: "paidWm",
+      }),
+    ).toBe(true);
+    expect(
+      isPreviewFresh({
+        preview: {
+          original_filename: previewSourceMarker(mid),
+          status: "READY",
+          is_active: true,
+        },
+        masterAssetId: mid,
+        kind: "paidWm",
+      }),
+    ).toBe(false);
   });
 });

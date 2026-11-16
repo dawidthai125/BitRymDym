@@ -13,7 +13,13 @@ export type FakeAsset = {
 };
 
 export function createFakeAdmin(init: {
-  beats: Array<{ id: string; ownership_type: string; owner_id: string | null; status?: string }>;
+  beats: Array<{
+    id: string;
+    ownership_type: string;
+    owner_id: string | null;
+    status?: string;
+    catalog_lane?: string | null;
+  }>;
   assets: FakeAsset[];
   objects?: Record<string, Buffer>;
   failInsert?: boolean;

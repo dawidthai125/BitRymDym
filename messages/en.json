@@ -308,11 +308,15 @@
     "guestPreview": {
       "tytul": "That was a {s}-second preview",
       "opis": "Sign in to hear full beats, record and use Studio.",
+      "opisKonto": "The catalogue plays a short preview. Open Studio to listen and record on the full beat.",
       "zaloguj": "Sign in",
       "zalozKonto": "Create account",
+      "otworzStudio": "Open Studio",
       "zamknij": "Close",
       "brakPodgladu": "This beat has no guest preview yet",
-      "brakOpis": "Sign in to listen to the full beat."
+      "brakOpis": "Sign in to listen to the full beat.",
+      "brakPodgladuKonto": "This beat has no short catalogue preview yet",
+      "brakOpisKonto": "Open Studio to listen to the full beat."
     },
     "legal": {
       "nawigacja": "Legal documents",
