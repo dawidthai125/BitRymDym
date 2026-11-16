@@ -862,6 +862,10 @@
       "wydano": "Released.",
       "potrzebaOkladki": "A cover is required before either release.",
       "zakup": "The paid catalogue sells the wav for 19.99 PLN through PayU. After purchase the beat goes to the buyer's catalogue: they download the wav and record on it in the Studio. It is not in the free catalogue.",
+      "pobierzMp3": "Download MP3",
+      "mp3Czeka": "Contabo is making the MP3…",
+      "mp3Nota": "The MP3 is built on Contabo from the WAV master (no watermark). The first click may wait a moment.",
+      "mp3Timeout": "Contabo did not finish the MP3 in time. Try again in a moment.",
       "blad": "The action failed.",
       "doGeneratora": "Open the generator"
     },

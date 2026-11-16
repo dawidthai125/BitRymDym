@@ -862,6 +862,10 @@
       "wydano": "Wydano.",
       "potrzebaOkladki": "Okładka jest potrzebna przed wydaniem do któregokolwiek katalogu.",
       "zakup": "Katalog płatny sprzedaje plik wav za 19,99 zł przez PayU. Po zakupie bit trafia do katalogu kupującego: pobiera wav i nagrywa na nim w Studio. W katalogu darmowym tego bitu nie ma.",
+      "pobierzMp3": "Pobierz MP3",
+      "mp3Czeka": "Contabo robi MP3…",
+      "mp3Nota": "MP3 powstaje na Contabo z mastera WAV (bez znaku wodnego). Pierwsze kliknięcie może chwilę poczekać.",
+      "mp3Timeout": "Contabo nie zdążyło zrobić MP3. Spróbuj jeszcze raz za chwilę.",
       "blad": "Akcja nie powiodła się.",
       "doGeneratora": "Otwórz generator"
     },

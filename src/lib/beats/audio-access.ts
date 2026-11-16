@@ -494,10 +494,20 @@ export async function requestPlatformBeatOpsExport(params: {
     );
   }
 
-  const asset = await resolveActiveAsset({
-    beatId: params.beatId,
-    purpose: "DOWNLOAD",
-  });
+  // Always the MASTER row — DOWNLOAD may hold the admin Contabo MP3 convert.
+  const { data: master, error: masterError } = await admin
+    .from("beat_audio_assets")
+    .select(BEAT_AUDIO_ASSET_SELECT)
+    .eq("beat_id", params.beatId)
+    .eq("purpose", "MASTER")
+    .eq("is_active", true)
+    .eq("status", "READY")
+    .maybeSingle();
+  if (masterError) throw new Error(masterError.message);
+  if (!master) {
+    throw new AuthError("NOT_FOUND", "No READY audio asset for this beat.");
+  }
+  const asset = master as BeatAudioAssetRow;
   if (asset.beat_id !== params.beatId) {
     throw new AuthError("FORBIDDEN", "Asset/beat relation mismatch.");
   }

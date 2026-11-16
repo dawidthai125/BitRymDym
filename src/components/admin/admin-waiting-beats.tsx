@@ -63,6 +63,7 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
   const [colors, setColors] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [released, setReleased] = useState(false);
+  const [mp3Busy, setMp3Busy] = useState(false);
   const approved = beat.coverStatus === "approved";
   const coverUrl = approved
     ? beatCoverUrl(
@@ -120,6 +121,53 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
   }
 
   const releaseDisabled = !approved || busy !== null;
+
+  async function downloadMp3() {
+    if (mp3Busy || lock.current) return;
+    setError(null);
+    setMp3Busy(true);
+    const deadline = Date.now() + 90_000;
+    try {
+      while (Date.now() < deadline) {
+        const res = await fetch("/api/admin/beats/waiting/mp3", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ beatId: beat.id, title: beat.title }),
+        });
+        const json = (await res.json()) as {
+          success?: boolean;
+          status?: string;
+          url?: string;
+          fileName?: string;
+          error?: string;
+        };
+        if (!res.ok || json.error) {
+          setError(json.error || t("blad"));
+          return;
+        }
+        if (json.status === "ready" && typeof json.url === "string") {
+          const anchor = document.createElement("a");
+          anchor.href = json.url;
+          anchor.download = json.fileName || `${beat.title || "bit"}.mp3`;
+          anchor.rel = "noopener";
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          return;
+        }
+        if (json.status !== "pending") {
+          setError(t("blad"));
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+      }
+      setError(t("mp3Timeout"));
+    } catch {
+      setError(t("blad"));
+    } finally {
+      setMp3Busy(false);
+    }
+  }
 
   return (
     <li className="flex flex-col gap-4 py-4 sm:flex-row">
@@ -182,7 +230,18 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
             activeMasterReady
             compactWav
           />
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11"
+            disabled={mp3Busy || busy !== null}
+            aria-busy={mp3Busy}
+            onClick={() => void downloadMp3()}
+          >
+            {mp3Busy ? t("mp3Czeka") : t("pobierzMp3")}
+          </Button>
         </div>
+        <p className="text-xs text-[var(--brd-mute)]">{t("mp3Nota")}</p>
 
         <AdminBeatBitek beatId={beat.id} startClosed onRevised={() => router.refresh()} />
 

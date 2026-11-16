@@ -12,6 +12,8 @@ describe("AdminWaitingBeats", () => {
     expect(src).toContain("Na podstawie czego powstał");
     expect(src).toContain("AdminPlatformOpsExportButton");
     expect(src).toContain("compactWav");
+    expect(src).toContain("/api/admin/beats/waiting/mp3");
+    expect(src).toContain("Pobierz MP3");
     expect(src).toContain("AdminBeatDelete");
     expect(src).toContain('redirectTo="/admin/beats/waiting"');
   });

@@ -7,10 +7,15 @@
  *   BEAT_AUTO_CHECK_VOCAL_SCRIPT, FPCALC_BIN,
  *   BEAT_PREVIEW_ENABLED=true (render guest 20 s preview after each check),
  *   BEAT_PREVIEW_SWEEP_MS (>=10000: when idle, fill one missing/stale preview).
+ *   Admin OPS MP3 (tag ops-mp3-wanted) is always swept when idle — Contabo ffmpeg.
  * Logs never include secrets or fingerprints.
  */
 import { decideAutoCheckWorkerConfig } from "../src/lib/beats/auto-check/worker-env";
 import { claimNextAutoCheck, runAutoCheck } from "../src/lib/beats/auto-check/worker";
+import {
+  ensureOpsMp3Asset,
+  listBeatsNeedingOpsMp3,
+} from "../src/lib/beats/ops-mp3/ops-mp3-service";
 import {
   ensureBeatPreviewAsset,
   listBeatsNeedingPreview,
@@ -24,6 +29,15 @@ async function preview(beatId: string) {
     console.log(JSON.stringify({ event: "preview_done", beatId, outcome: r.outcome, errorCode: r.errorCode ?? null }));
   } catch (e) {
     console.log(JSON.stringify({ event: "preview_error", beatId, message: e instanceof Error ? e.message.slice(0, 120) : "unknown" }));
+  }
+}
+
+async function opsMp3(beatId: string) {
+  try {
+    const r = await ensureOpsMp3Asset({ admin: createSupabaseAdminClient() }, { beatId });
+    console.log(JSON.stringify({ event: "ops_mp3_done", beatId, outcome: r.outcome, errorCode: r.errorCode ?? null }));
+  } catch (e) {
+    console.log(JSON.stringify({ event: "ops_mp3_error", beatId, message: e instanceof Error ? e.message.slice(0, 120) : "unknown" }));
   }
 }
 
@@ -46,6 +60,13 @@ async function main() {
         console.log(JSON.stringify({ event: "autocheck_done", checkId: check.id, status, ms: Date.now() - t0 }));
         if (cfg.previewEnabled) await preview(check.beat_id);
         continue;
+      }
+      {
+        const [opsId] = await listBeatsNeedingOpsMp3(createSupabaseAdminClient(), { limit: 1 });
+        if (opsId) {
+          await opsMp3(opsId);
+          continue;
+        }
       }
       if (cfg.previewSweepMs > 0 && Date.now() - lastSweep >= cfg.previewSweepMs) {
         lastSweep = Date.now();
