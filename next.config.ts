@@ -66,7 +66,7 @@ const nextConfig: NextConfig = {
   // switches reuse RSC instead of freezing on a full refetch (Next 15+ default dynamic: 0).
   experimental: {
     staleTimes: {
-      dynamic: 30,
+      dynamic: 45,
       static: 180,
     },
   },

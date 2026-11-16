@@ -1,15 +1,5 @@
-import { PageFrame } from "@/components/brand/chrome";
+import { AdminSegmentLoading } from "@/components/admin/admin-segment-loading";
 
-/** Instant feedback while moderation RSC is still loading. */
-export default function AdminModerationLoading() {
-  return (
-    <PageFrame width="ops" className="py-8">
-      <div className="space-y-4" aria-busy="true" aria-live="polite">
-        <div className="h-8 w-48 bg-[var(--brd-line)]" />
-        <div className="h-32 border border-[var(--brd-line)]" />
-        <div className="h-32 border border-[var(--brd-line)]" />
-        <div className="h-32 border border-[var(--brd-line)]" />
-      </div>
-    </PageFrame>
-  );
+export default function Loading() {
+  return <AdminSegmentLoading />;
 }
