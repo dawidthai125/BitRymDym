@@ -1,9 +1,8 @@
 /**
  * Contabo (auto-check host) encodes PLATFORM MASTER → admin OPS MP3.
  * Vercel only requests the tag and signs the READY asset — no ffmpeg there.
+ * No `server-only` import: the Contabo poller loads this via tsx like preview.
  */
-import "server-only";
-
 import { createHash, randomUUID } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
