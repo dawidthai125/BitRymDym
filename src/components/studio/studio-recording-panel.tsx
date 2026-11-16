@@ -1757,9 +1757,11 @@ export function StudioRecordingPanel({
           takeId: uploaded.takeId,
           ...alignedPlacement({
             startMs,
-            recPositionMs,
-            // Nothing played → nothing to line up against.
-            compensationMs: recPositionMs == null ? 0 : align.compensationMs,
+            // Unknown playhead sample → treat as 0; still apply device latency
+            // (estimate/calibration). Dropping compensation here left vocals late
+            // on Windows when sampling missed the start.
+            recPositionMs: recPositionMs ?? 0,
+            compensationMs: align.compensationMs,
           }),
         };
       }

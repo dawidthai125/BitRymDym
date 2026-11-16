@@ -120,4 +120,10 @@ describe("alignment", () => {
       sourceOffsetMs: 0,
     });
   });
+
+  it("still applies compensation when playhead sample is unknown (null → 0)", () => {
+    expect(
+      alignedPlacement({ startMs: 0, recPositionMs: null, compensationMs: 80 }),
+    ).toEqual({ timelineStartMs: 0, sourceOffsetMs: 80 });
+  });
 });

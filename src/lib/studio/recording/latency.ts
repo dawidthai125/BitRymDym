@@ -12,8 +12,11 @@ export const LATENCY_MIN_MS = -60;
 export const LATENCY_MAX_MS = 700;
 export const MANUAL_OFFSET_MIN_MS = -150;
 export const MANUAL_OFFSET_MAX_MS = 300;
-/** Unknown hardware/OS overhead added to the AudioContext estimate. */
-export const CONTEXT_ESTIMATE_PAD_MS = 10;
+/**
+ * Unknown hardware/OS overhead added to the AudioContext estimate.
+ * Windows often reports outputLatency/baseLatency as 0; 10 ms left vocals late.
+ */
+export const CONTEXT_ESTIMATE_PAD_MS = 40;
 
 export type OnsetWindow = { beforeMs: number; afterMs: number };
 

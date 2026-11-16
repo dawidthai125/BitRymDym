@@ -174,10 +174,10 @@ describe("device profile + warnings", () => {
 
   it("prefers calibration, else AudioContext estimate, plus manual", () => {
     const est = estimateLatencyFromContext({ outputLatency: 0.02, baseLatency: 0.005 });
-    expect(est).toBe(35);
+    expect(est).toBe(65);
     expect(resolveCompensationMs({ profile: null, contextEstimateMs: est })).toEqual({
-      totalMs: 35,
-      baseMs: 35,
+      totalMs: 65,
+      baseMs: 65,
       source: "estimate",
     });
     const p: LatencyProfile = {
