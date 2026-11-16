@@ -67,6 +67,7 @@ export function AdminGenerateBeatForm() {
         error?: string;
         opis?: string;
         style?: string;
+        prompt?: string;
         bpmHint?: number | null;
       };
       if (!res.ok || !json.success || typeof json.opis !== "string") {
@@ -75,10 +76,13 @@ export function AdminGenerateBeatForm() {
         return;
       }
       const style = typeof json.style === "string" ? json.style.trim() : "";
+      const english =
+        typeof json.prompt === "string" ? json.prompt.trim() : "";
       setDescription(
         descriptionFromYoutubeStyle({
           style: style || "hip-hop instrumentalny",
           opis: json.opis,
+          prompt: english || null,
         }),
       );
       const hinted =

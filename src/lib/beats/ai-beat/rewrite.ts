@@ -3,6 +3,7 @@ import {
   descriptionNeedsTranslation,
   fallbackEnglishPrompt,
   parseBeatRewrite,
+  preservedEnglishPrompt,
   sanitizeBeatOpis,
   sanitizeBeatStyle,
   withInstrumentalClause,
@@ -10,7 +11,7 @@ import {
 
 const REWRITE_URL = "https://api.x.ai/v1/chat/completions";
 
-const SYSTEM = [
+const SYSTEM_TRANSLATE = [
   "You prepare one instrumental hip-hop beat for Stable Audio 3.",
   "Reply with JSON only: {\"title\":\"...\",\"prompt\":\"...\",\"style\":\"...\",\"opis\":\"...\"}.",
   "title: a short original Polish name, 2 to 6 words. No artist names, no existing song titles.",
@@ -25,6 +26,21 @@ const SYSTEM = [
   "When a BPM is given, include that exact number and the word BPM in the prompt.",
 ].join(" ");
 
+/** Description is already English for Stable Audio — do not dilute it. */
+const SYSTEM_PRESERVE = [
+  "You prepare catalog metadata for one instrumental hip-hop beat.",
+  "The Description is already English production language for Stable Audio 3.",
+  "Reply with JSON only: {\"title\":\"...\",\"prompt\":\"...\",\"style\":\"...\",\"opis\":\"...\"}.",
+  "prompt: Keep the Description's concrete production details nearly verbatim.",
+  "You may only add or keep: instrumental hip-hop, no vocals/singing/rap/speech/lyrics, space for a vocalist, and the given BPM.",
+  "Do not simplify, shorten, paraphrase away, or replace drum/bass/melody specifics.",
+  "title: a short original Polish name, 2 to 6 words. No artist names, no existing song titles.",
+  "style: Polish, 2 to 6 words, the beat's style. No artist or song names.",
+  "opis: two to four Polish sentences summarizing the same beat for the catalog. No artist or song names.",
+  "Do not name any artist, song, album, label or producer.",
+  "When a BPM is given, include that exact number and the word BPM in the prompt.",
+].join(" ");
+
 export type RewrittenBeatPrompt = {
   title: string;
   prompt: string;
@@ -33,13 +49,16 @@ export type RewrittenBeatPrompt = {
 };
 
 function userOpis(description: string): string {
-  return description.replace(/\s+/g, " ").trim().slice(0, 500);
+  return description.replace(/\s+/g, " ").trim().slice(0, 800);
 }
 
 function englishFallback(description: string, bpm: number | null): RewrittenBeatPrompt {
+  const needsTranslate = descriptionNeedsTranslation(description);
   return {
     title: "Bit BitRymDym",
-    prompt: fallbackEnglishPrompt(description, bpm),
+    prompt: needsTranslate
+      ? fallbackEnglishPrompt(description, bpm)
+      : preservedEnglishPrompt(description, bpm),
     style: GENERATED_STYLE_DEFAULT,
     opis: userOpis(description),
   };
@@ -57,8 +76,9 @@ export async function rewriteBeatPrompt(
   deps: RewriteDeps = {},
 ): Promise<RewrittenBeatPrompt> {
   const key = deps.apiKey?.trim();
+  const alreadyEnglish = !descriptionNeedsTranslation(description);
   if (!key) {
-    if (descriptionNeedsTranslation(description)) {
+    if (!alreadyEnglish) {
       throw new Error("translate");
     }
     return englishFallback(description, bpm);
@@ -78,11 +98,11 @@ export async function rewriteBeatPrompt(
       },
       body: JSON.stringify({
         model: deps.model || "grok-4.7",
-        temperature: 0.4,
+        temperature: alreadyEnglish ? 0.2 : 0.4,
         reasoning_effort: "low",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: SYSTEM },
+          { role: "system", content: alreadyEnglish ? SYSTEM_PRESERVE : SYSTEM_TRANSLATE },
           { role: "user", content: `${tempo}\nDescription:\n${description}` },
         ],
       }),
@@ -94,9 +114,15 @@ export async function rewriteBeatPrompt(
     const content = json.choices?.[0]?.message?.content;
     const parsed = typeof content === "string" ? parseBeatRewrite(content) : null;
     if (!parsed) throw new Error("translate");
-    const prompt = bpm && !promptHasBpm(parsed.prompt, bpm)
-      ? withInstrumentalClause(`${parsed.prompt} ${bpm} BPM.`)
-      : parsed.prompt;
+
+    // English admin/YouTube briefs go to Stable Audio as-is (+ instrumental + BPM).
+    // Grok still supplies Polish title/style/opis for the catalog.
+    const prompt = alreadyEnglish
+      ? preservedEnglishPrompt(description, bpm)
+      : bpm && !promptHasBpm(parsed.prompt, bpm)
+        ? withInstrumentalClause(`${parsed.prompt} ${bpm} BPM.`)
+        : parsed.prompt;
+
     return {
       title: parsed.title,
       prompt,
@@ -104,7 +130,7 @@ export async function rewriteBeatPrompt(
       opis: sanitizeBeatOpis(parsed.opis) ?? userOpis(description),
     };
   } catch (error) {
-    if (!descriptionNeedsTranslation(description)) {
+    if (alreadyEnglish) {
       return englishFallback(description, bpm);
     }
     throw error;

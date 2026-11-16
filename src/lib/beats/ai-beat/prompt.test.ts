@@ -9,6 +9,7 @@ import {
   normalizeBeatHintBpm,
   parseBeatRewrite,
   pickGeneratedBpm,
+  preservedEnglishPrompt,
   stripStyleOfNamedArtist,
   withInstrumentalClause,
 } from "@/lib/beats/ai-beat/prompt";
@@ -26,7 +27,17 @@ describe("beat generator prompt", () => {
     expect(normalizeBeatDescription("krotki")).toBeNull();
   });
 
-  it("prefixes the YouTube style onto the producer brief", () => {
+  it("prefers the English YouTube prompt for Stable Audio", () => {
+    expect(
+      descriptionFromYoutubeStyle({
+        style: "ciemny boom bap",
+        opis: "Wolne werble i głębokie 808. Piano zostawia miejsce na zwrotkę.",
+        prompt:
+          "Soft kick, snappy snare, deep 808, sparse minor piano, room for a verse.",
+      }),
+    ).toBe(
+      "Soft kick, snappy snare, deep 808, sparse minor piano, room for a verse.",
+    );
     expect(
       descriptionFromYoutubeStyle({
         style: "ciemny boom bap",
@@ -35,12 +46,16 @@ describe("beat generator prompt", () => {
     ).toBe(
       "ciemny boom bap. Wolne werble i głębokie 808. Piano zostawia miejsce na zwrotkę.",
     );
-    expect(
-      descriptionFromYoutubeStyle({
-        style: "hip-hop instrumentalny",
-        opis: "Prosty bit z basem i werblem na zwrotkę.",
-      }),
-    ).toBe("Prosty bit z basem i werblem na zwrotkę.");
+  });
+
+  it("keeps an English description as the Stable Audio prompt", () => {
+    const prompt = preservedEnglishPrompt(
+      "Soft kick, snappy snare, deep 808, sparse minor piano.",
+      92,
+    );
+    expect(prompt).toContain("Soft kick");
+    expect(prompt).toContain("92 BPM");
+    expect(prompt.toLowerCase()).toContain("no vocals");
   });
 
   it("treats an empty tempo as optional and rejects a tempo outside 60–180", () => {

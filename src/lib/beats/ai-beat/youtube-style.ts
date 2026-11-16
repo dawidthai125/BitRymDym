@@ -11,13 +11,14 @@ const INSTRUCTION = [
   "Write a producer brief for recreating a similar ORIGINAL instrumental hip-hop beat, not a copy of a named song.",
   "Reply with JSON only.",
   "style: 2 to 6 Polish words naming the beat lane (boom bap, trap, lo-fi, drill, etc.).",
-  "drums: one Polish sentence — kick and snare feel, hi-hats, swing or quantization, groove.",
-  "bass: one Polish sentence — 808 vs synth vs upright, note length, movement.",
-  "melody: one Polish sentence — lead instruments, harmony, motifs, how sparse or dense.",
-  "mood: one Polish sentence — energy, darkness or warmth, tension.",
-  "arrangement: one Polish sentence — loop vs sections, drops, and space left for a rapper.",
+  "opis: two to four Polish sentences for the catalog — drums, bass, melody, mood, vocal space.",
+  "drums: one English sentence — kick and snare feel, hi-hats, swing or quantization, groove.",
+  "bass: one English sentence — 808 vs synth vs upright, note length, movement.",
+  "melody: one English sentence — lead instruments, harmony, motifs, how sparse or dense.",
+  "mood: one English sentence — energy, darkness or warmth, tension.",
+  "arrangement: one English sentence — loop vs sections, drops, and space left for a rapper.",
   "bpm: integer 60-180 or null if unsure.",
-  "Be concrete and specific. Prefer production language over vague adjectives alone.",
+  "English fields are the Stable Audio prompt: be concrete and specific. Prefer production language over vague adjectives alone.",
   "Do not name any artist, song, channel, label or producer.",
   "Do not quote lyrics. Do not include the URL.",
   'If there is no music, set style to "hip-hop instrumentalny" and say in every field that the clip has no beat.',
@@ -33,8 +34,11 @@ export type YoutubeStyleDeps = {
 };
 
 export type BeatStyleFromYouTube = {
+  /** Polish catalog blurb. */
   opis: string;
   style: string;
+  /** English Stable Audio producer brief. */
+  prompt: string;
   bpmHint: number | null;
 };
 
@@ -122,6 +126,7 @@ export async function describeBeatStyleFromYouTube(
             type: "object",
             properties: {
               style: { type: "string" },
+              opis: { type: "string" },
               drums: { type: "string" },
               bass: { type: "string" },
               melody: { type: "string" },
@@ -129,7 +134,7 @@ export async function describeBeatStyleFromYouTube(
               arrangement: { type: "string" },
               bpm: { type: ["integer", "null"] },
             },
-            required: ["style", "drums", "bass", "melody", "mood", "arrangement"],
+            required: ["style", "opis", "drums", "bass", "melody", "mood", "arrangement"],
           },
         },
       }),
@@ -235,10 +240,18 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
     bpm?: unknown;
   };
   const style = sanitizeBeatStyle(scrubEcho(stringOf(row.style), videoId));
-  const composed = composeProducerOpis(row, videoId);
-  const opis = sanitizeBeatOpis(composed);
+  const prompt = composeProducerOpis(row, videoId);
+  if (prompt.length < 12) return null;
+  const opis =
+    sanitizeBeatOpis(scrubEcho(stringOf(row.opis), videoId)) ??
+    sanitizeBeatOpis(prompt);
   if (!opis) return null;
-  return { style, opis, bpmHint: bpmHintOf(row.bpm) };
+  return {
+    style,
+    opis,
+    prompt: prompt.slice(0, 800),
+    bpmHint: bpmHintOf(row.bpm),
+  };
 }
 
 /** Joins structured producer fields; falls back to a legacy `opis` string. */

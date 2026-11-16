@@ -89,11 +89,19 @@ export function sanitizeBeatStyle(value: unknown): string {
   return style.slice(0, 80);
 }
 
-/** Fills the generator description field: style label plus producer brief. */
+/**
+ * Fills the generator description for Stable Audio.
+ * Prefer the English YouTube prompt; fall back to Polish style+opis.
+ */
 export function descriptionFromYoutubeStyle(input: {
   style: string;
   opis: string;
+  prompt?: string | null;
 }): string {
+  const english = (input.prompt ?? "").replace(/\s+/g, " ").trim();
+  if (english.length >= BEAT_DESCRIPTION_MIN && !descriptionNeedsTranslation(english)) {
+    return english.slice(0, BEAT_DESCRIPTION_MAX);
+  }
   const style = input.style.trim();
   const opis = input.opis.trim();
   const joined =
@@ -103,6 +111,16 @@ export function descriptionFromYoutubeStyle(input: {
       ? `${style}. ${opis}`
       : opis || style;
   return joined.replace(/\s+/g, " ").trim().slice(0, BEAT_DESCRIPTION_MAX);
+}
+
+/** English Stable Audio prompt kept close to the admin description. */
+export function preservedEnglishPrompt(description: string, bpm: number | null): string {
+  const base = description.replace(/\s+/g, " ").trim();
+  const withTempo =
+    bpm != null && !new RegExp(`\\b${bpm}\\s*BPM\\b`, "i").test(base)
+      ? `${base} ${bpm} BPM.`
+      : base;
+  return withInstrumentalClause(withTempo);
 }
 
 /**
