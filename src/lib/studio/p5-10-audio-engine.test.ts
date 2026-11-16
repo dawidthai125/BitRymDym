@@ -662,6 +662,20 @@ describe("P5.10 engine lifecycle / multi-source play", () => {
       /Math\.abs\(voice\.element\.currentTime - plan\.sourceOffsetSeconds\) > 0\.04/,
     );
   });
+
+  it("primes voices paused then re-anchors the clock before audible play (TAKE load lag)", () => {
+    const engineSrc = readFileSync(
+      join(process.cwd(), "src/lib/studio/studio-audio-engine.ts"),
+      "utf8",
+    );
+    // play(): syncVoices(..., false) → re-anchor epoch → syncVoices(..., true)
+    expect(engineSrc).toMatch(
+      /await this\.syncVoices\(playheadMs, false\);[\s\S]*?createStudioClockEpoch\([\s\S]*?await this\.syncVoices\(playheadMs, true\);/,
+    );
+    expect(engineSrc).toMatch(/livePlayheadMs\(\)/);
+    expect(engineSrc).toMatch(/sourceOffsetSecondsAtPlayhead/);
+    expect(engineSrc).toMatch(/GROSS_LAG_MS/);
+  });
 });
 
 describe("P5.10 errors / isolation / security", () => {

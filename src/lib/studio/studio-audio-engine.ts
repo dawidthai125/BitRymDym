@@ -13,6 +13,7 @@ import {
   isVoiceInSync,
   MAX_SYNC_SKEW_MS,
   playheadMsFromContextClock,
+  sourceOffsetSecondsAtPlayhead,
   type StudioClockEpoch,
 } from "@/lib/studio/studio-audio-clock";
 import type { StudioAudioErrorCode } from "@/lib/studio/studio-audio-errors";
@@ -1068,16 +1069,25 @@ export class StudioAudioEngine {
       this.listener.onError({ code: "AUDIO_CONTEXT_UNAVAILABLE" });
       return;
     }
+    // Provisional epoch so sync can resolve live offsets while loading; re-anchored
+    // after voices are primed so the playhead does not run ahead of MediaElements.
     this.epoch = createStudioClockEpoch({
       contextTime: this.ctx.currentTime,
       playheadMs,
     });
     this.setLifecycle("playing");
     this.listener.onPlayhead(playheadMs);
-    // Start meter reader immediately on Play (≤12 Hz), before async voice sync.
     this.startMetering();
+    // 1) Load + seek while paused — TAKE signed URL can take ~1–2 s.
+    await this.syncVoices(playheadMs, false);
+    if (this.lifecycle !== "playing" || !this.ctx) return;
+    // 2) Anchor clock at the audible start, then start all voices together.
+    this.epoch = createStudioClockEpoch({
+      contextTime: this.ctx.currentTime,
+      playheadMs,
+    });
+    this.listener.onPlayhead(playheadMs);
     await this.syncVoices(playheadMs, true);
-    // Stop/pause during ensureTimelineVoice must not restart the clock.
     if (this.lifecycle !== "playing") return;
     postPocketPlayhead(playheadMs);
     this.applyPocketBeatDuck();
@@ -1126,7 +1136,18 @@ export class StudioAudioEngine {
     } else {
       this.stopMetering({ reset: false });
     }
-    await this.syncVoices(playheadMs, shouldPlay);
+    if (shouldPlay) {
+      await this.syncVoices(playheadMs, false);
+      if (this.lifecycle !== "playing" || !this.ctx) return;
+      this.epoch = createStudioClockEpoch({
+        contextTime: this.ctx.currentTime,
+        playheadMs,
+      });
+      this.listener.onPlayhead(playheadMs);
+      await this.syncVoices(playheadMs, true);
+    } else {
+      await this.syncVoices(playheadMs, false);
+    }
     if (shouldPlay && this.lifecycle !== "playing") return;
     postPocketPlayhead(playheadMs);
     this.applyPocketBeatDuck();
@@ -2274,10 +2295,21 @@ export class StudioAudioEngine {
     return true;
   }
 
+  /** Playhead from the AudioContext epoch, or null when the clock is not running. */
+  private livePlayheadMs(): number | null {
+    if (!this.ctx || !this.epoch || !this.document) return null;
+    return playheadMsFromContextClock({
+      epoch: this.epoch,
+      contextTime: this.ctx.currentTime,
+      timelineLengthMs: this.document.timelineLengthMs,
+    });
+  }
+
   /**
    * Snap MediaElement to plan offset. While playing, only correct gross desync and
    * rate-limit seeks — a every-frame seek at 40 ms skew causes TAKE stutter under the beat.
-   * Setup / paused sync always snaps (single seek, no storm).
+   * Setup / paused sync always snaps (single seek, no storm). Gross lag (≥500 ms) always
+   * corrects immediately (TAKE load behind the playhead).
    */
   private maybeCorrectVoiceSeek(
     voice: Voice,
@@ -2290,12 +2322,17 @@ export class StudioAudioEngine {
       voice.element.currentTime = sourceOffsetSeconds;
       return;
     }
-    // Playing: ignore small drift (diagnostic maybeCheckSync); correct large skew sparsely.
     const CORRECT_MIN_SKEW_MS = 250;
     const CORRECT_MIN_INTERVAL_MS = 500;
+    const GROSS_LAG_MS = 500;
     if (skewMs < CORRECT_MIN_SKEW_MS) return;
     const now = this.host.nowMs();
-    if (now - this.lastVoiceSeekCorrectMs < CORRECT_MIN_INTERVAL_MS) return;
+    if (
+      skewMs < GROSS_LAG_MS &&
+      now - this.lastVoiceSeekCorrectMs < CORRECT_MIN_INTERVAL_MS
+    ) {
+      return;
+    }
     this.lastVoiceSeekCorrectMs = now;
     voice.element.currentTime = sourceOffsetSeconds;
   }
@@ -2335,7 +2372,16 @@ export class StudioAudioEngine {
         return;
       }
       if (!voice) continue;
-      this.applyClipFade(voice, clip, playheadMs, shouldPlay);
+      // After await, the AudioContext clock may have moved — never seek to a stale plan.
+      const livePlayhead = this.livePlayheadMs() ?? playheadMs;
+      const liveOffset =
+        sourceOffsetSecondsAtPlayhead({
+          playheadMs: livePlayhead,
+          timelineStartMs: clip.timelineStartMs,
+          sourceOffsetMs: clip.sourceOffsetMs,
+          durationMs: clip.durationMs,
+        }) ?? plan.sourceOffsetSeconds;
+      this.applyClipFade(voice, clip, livePlayhead, shouldPlay);
       const jogOwns = scratchJogOwnsClip({
         clipId: clip.id,
         liveClipId: this.scratchLive.clipId,
@@ -2349,7 +2395,7 @@ export class StudioAudioEngine {
       });
       const persistedPlayback = !clipPlaybackIdentity(playback) && !jogOwns && !persistedReverse;
       if (persistedPlayback) {
-        this.holdPersistedPlayback(voice, clip, playheadMs, playback);
+        this.holdPersistedPlayback(voice, clip, livePlayhead, playback);
         try {
           voice.element.pause();
         } catch {
@@ -2358,7 +2404,7 @@ export class StudioAudioEngine {
         continue;
       }
       if (!persistedReverse) {
-        this.maybeCorrectVoiceSeek(voice, plan.sourceOffsetSeconds, shouldPlay);
+        this.maybeCorrectVoiceSeek(voice, liveOffset, shouldPlay);
       }
       if (!shouldPlay) {
         this.stopBufferSource(voice);
