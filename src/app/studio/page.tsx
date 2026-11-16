@@ -36,9 +36,12 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
     redirect("/account");
   }
 
-  const projects = await listStudioProjects();
-  const tier = (await resolveProductEntitlementForAuthContext(auth)).premiumTier;
-  const params = searchParams ? await searchParams : {};
+  const [projects, entitlement, params] = await Promise.all([
+    listStudioProjects(),
+    resolveProductEntitlementForAuthContext(auth),
+    searchParams ? searchParams : Promise.resolve({} as { beatId?: string }),
+  ]);
+  const tier = entitlement.premiumTier;
   const seedBeatId =
     typeof params.beatId === "string" && params.beatId.length > 0
       ? params.beatId
@@ -72,30 +75,35 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
           <div className="flex flex-wrap gap-4 text-sm">
             <Link
               href="/studio/separator"
+              prefetch
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               Rozetnij bit
             </Link>
             <Link
               href="/studio/optymalizator"
+              prefetch
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               Sprawdź głośność
             </Link>
             <Link
               href="/nagrywarka"
+              prefetch
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               {t("programWindows")}
             </Link>
             <Link
               href="/account/takes"
+              prefetch
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               {t("archiwumNagran")}
             </Link>
             <Link
               href="/account"
+              prefetch
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               {t("konto")}

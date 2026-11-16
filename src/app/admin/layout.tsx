@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminSectionNav } from "@/components/admin/admin-section-nav";
 import { SiteHeader } from "@/components/site/site-header";
 import { FullClientMessages } from "@/i18n/client-messages";
 import {
@@ -68,110 +69,38 @@ export default async function AdminLayout({
   const showPlatform = canAccessAdminNav(role);
   const showModeration = canAccessModerationNav(role);
 
+  const navItems: { href: string; label: string; exact?: boolean }[] = [];
+  if (showPlatform) {
+    navItems.push(
+      { href: "/admin", label: t("pulpit"), exact: true },
+      { href: "/admin/beats", label: t("bity"), exact: true },
+    );
+  }
+  if (showModeration) {
+    navItems.push(
+      { href: "/admin/moderation", label: t("moderacja") },
+      { href: "/admin/samples", label: t("sample") },
+    );
+  }
+  if (showPlatform) {
+    navItems.push(
+      { href: "/admin/users", label: t("uzytkownicy") },
+      { href: "/admin/platnosci", label: t("platnosci") },
+      { href: "/admin/sample-policy", label: t("politykaNagran") },
+      { href: "/admin/site", label: t("trybPrac") },
+      { href: "/admin/beats/new", label: t("nowyBit") },
+      { href: "/admin/beats/generate", label: t("generator") },
+      { href: "/admin/beats/waiting", label: t("oczekujace") },
+    );
+  }
+  navItems.push({ href: "/beats", label: t("katalog") });
+
   return (
     <FullClientMessages>
     <div className="brd-ops min-h-dvh">
       <SiteHeader tone="admin" />
       <div className="mx-auto w-full max-w-[var(--brd-max-ops)] px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] py-3">
-        <nav
-          className="flex flex-wrap gap-1 overflow-x-auto text-sm text-[var(--brd-ink-soft)]"
-          aria-label={t("panelAdministracyjny")}
-        >
-          {showPlatform ? (
-            <Link
-              href="/admin"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("pulpit")}
-            </Link>
-          ) : null}
-          {showPlatform ? (
-            <Link
-              href="/admin/beats"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("bity")}
-            </Link>
-          ) : null}
-          {showModeration ? (
-            <Link
-              href="/admin/moderation"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("moderacja")}
-            </Link>
-          ) : null}
-          {showModeration ? (
-            <Link
-              href="/admin/samples"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("sample")}
-            </Link>
-          ) : null}
-          {showPlatform ? (
-            <Link
-              href="/admin/users"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("uzytkownicy")}
-            </Link>
-          ) : null}
-          {showPlatform ? (
-            <Link
-              href="/admin/platnosci"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("platnosci")}
-            </Link>
-          ) : null}
-          {showPlatform ? (
-            <Link
-              href="/admin/sample-policy"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("politykaNagran")}
-            </Link>
-          ) : null}
-          {showPlatform ? (
-            <Link
-              href="/admin/site"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("trybPrac")}
-            </Link>
-          ) : null}
-          {showPlatform ? (
-            <Link
-              href="/admin/beats/new"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("nowyBit")}
-            </Link>
-          ) : null}
-          {showPlatform ? (
-            <Link
-              href="/admin/beats/generate"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("generator")}
-            </Link>
-          ) : null}
-          {showPlatform ? (
-            <Link
-              href="/admin/beats/waiting"
-              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-            >
-              {t("oczekujace")}
-            </Link>
-          ) : null}
-          <Link
-            href="/beats"
-            className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
-          >
-            {t("katalog")}
-          </Link>
-        </nav>
+        <AdminSectionNav items={navItems} label={t("panelAdministracyjny")} />
       </div>
       {/*
         Skip target is a div: admin pages already render their own main landmark.
