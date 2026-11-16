@@ -4853,15 +4853,15 @@ function StudioTransportBar({
 
   return (
     <div
-      className="studio-transport sticky top-14 z-20 shrink-0 px-1.5 py-1 sm:top-2 sm:px-2 sm:py-1.5"
+      className="studio-transport sticky top-14 z-20 shrink-0 px-1.5 py-0.5 sm:top-2 sm:px-2"
       role="region"
       aria-label={tr("transportStudio")}
       data-testid="studio-transport"
       data-studio-transport-empty={noBeat ? "true" : "false"}
     >
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
         <div
-          className="flex flex-wrap items-center gap-1"
+          className="flex shrink-0 flex-nowrap items-center gap-1"
           data-testid="studio-transport-ops"
         >
           <Button
@@ -5030,7 +5030,7 @@ function StudioTransportBar({
         </div>
 
         <div
-          className="studio-counter flex min-h-11 flex-wrap items-center gap-2 px-2.5 font-mono text-xs tabular-nums"
+          className="studio-counter flex min-h-11 shrink-0 flex-nowrap items-center gap-2 px-2.5 font-mono text-xs tabular-nums"
           data-testid="studio-transport-meta"
         >
           <span
@@ -5061,7 +5061,7 @@ function StudioTransportBar({
         </div>
 
         <div
-          className="ml-auto flex min-w-[9rem] max-w-[14rem] flex-1 items-center gap-2 [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]"
+          className="ml-auto flex min-w-[9rem] max-w-[14rem] shrink-0 items-center gap-2 [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]"
           data-testid="studio-transport-master"
         >
           <StudioMixControl
@@ -5080,7 +5080,7 @@ function StudioTransportBar({
         </div>
 
         <p
-          className={`min-h-11 max-w-[12rem] truncate text-xs leading-[2.75rem] ${
+          className={`min-h-11 max-w-[12rem] shrink-0 truncate text-xs leading-[2.75rem] ${
             saveIsError || conflictActive
               ? "text-[var(--brd-warn)]"
               : "text-[var(--brd-mute)]"
@@ -5115,51 +5115,53 @@ function StudioTransportBar({
           getExpectedDocumentVersion={getExpectedDocumentVersion}
         />
       </div>
-      <div className="mt-1 flex flex-wrap gap-2" data-testid="studio-selection-readout">
-        {(
-          [
-            ["poczatek", selectionStartMs],
-            ["koniec", selectionEndMs],
+      <div className="mt-0.5 flex flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
+        <div className="flex shrink-0 flex-nowrap gap-1" data-testid="studio-selection-readout">
+          {(
             [
-              "dlugoscKrotko",
-              selectionStartMs != null && selectionEndMs != null
-                ? Math.max(0, selectionEndMs - selectionStartMs)
-                : null,
-            ],
-          ] as const
-        ).map(([key, ms]) => (
-          <span key={key} className="studio-sel-cell">
-            <span className="studio-sel-caption">{tr(key)}</span>
-            <span className="studio-sel-value">
-              {ms == null ? "—" : tl(formatStudioTimeMs(ms))}
+              ["poczatek", selectionStartMs],
+              ["koniec", selectionEndMs],
+              [
+                "dlugoscKrotko",
+                selectionStartMs != null && selectionEndMs != null
+                  ? Math.max(0, selectionEndMs - selectionStartMs)
+                  : null,
+              ],
+            ] as const
+          ).map(([key, ms]) => (
+            <span key={key} className="studio-sel-cell">
+              <span className="studio-sel-caption">{tr(key)}</span>
+              <span className="studio-sel-value">
+                {ms == null ? "—" : tl(formatStudioTimeMs(ms))}
+              </span>
             </span>
-          </span>
-        ))}
+          ))}
+        </div>
+        {showFragmentTools ? (
+          <StudioFragmentTools
+            enabled={fragmentEnabled}
+            pending={pending}
+            confirmDelete={fragmentConfirmDelete}
+            onSplit={onFragmentSplit}
+            onTrimStart={onFragmentTrimStart}
+            onTrimEnd={onFragmentTrimEnd}
+            onNudgeLeft={() => onFragmentNudge(-1)}
+            onNudgeRight={() => onFragmentNudge(1)}
+            onDuplicate={onFragmentDuplicate}
+            onFadeIn={() => onFragmentFade("in")}
+            onFadeOut={() => onFragmentFade("out")}
+            reverseOn={fragmentReverseOn}
+            onReverse={onFragmentReverse}
+            stretch={fragmentStretch}
+            pitchCents={fragmentPitchCents}
+            pitchLocked={fragmentPitchLocked}
+            onPlayback={onFragmentPlayback}
+            onAskDelete={onFragmentAskDelete}
+            onDelete={onFragmentDelete}
+            onCancelDelete={onFragmentCancelDelete}
+          />
+        ) : null}
       </div>
-      {showFragmentTools ? (
-        <StudioFragmentTools
-          enabled={fragmentEnabled}
-          pending={pending}
-          confirmDelete={fragmentConfirmDelete}
-          onSplit={onFragmentSplit}
-          onTrimStart={onFragmentTrimStart}
-          onTrimEnd={onFragmentTrimEnd}
-          onNudgeLeft={() => onFragmentNudge(-1)}
-          onNudgeRight={() => onFragmentNudge(1)}
-          onDuplicate={onFragmentDuplicate}
-          onFadeIn={() => onFragmentFade("in")}
-          onFadeOut={() => onFragmentFade("out")}
-          reverseOn={fragmentReverseOn}
-          onReverse={onFragmentReverse}
-          stretch={fragmentStretch}
-          pitchCents={fragmentPitchCents}
-          pitchLocked={fragmentPitchLocked}
-          onPlayback={onFragmentPlayback}
-          onAskDelete={onFragmentAskDelete}
-          onDelete={onFragmentDelete}
-          onCancelDelete={onFragmentCancelDelete}
-        />
-      ) : null}
       {noBeat ? (
         <p
           className="mt-1 text-[11px] text-[var(--brd-mute)]"

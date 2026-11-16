@@ -72,7 +72,7 @@ export function StudioFragmentTools({
 
   return (
     <div
-      className="mt-1 flex flex-wrap items-center gap-1 border-t border-[var(--brd-line)] pt-1"
+      className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]"
       role="group"
       aria-label={t("fragmentyAria")}
       data-testid="studio-fragment-tools"
@@ -102,7 +102,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 px-3"
+            className="min-h-11 shrink-0 px-2"
             data-testid="studio-fragment-split"
             disabled={locked}
             title={t("podzielWPlayhead")}
@@ -114,7 +114,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 px-3"
+            className="min-h-11 shrink-0 px-2"
             data-testid="studio-fragment-trim-start"
             disabled={locked}
             title={t("przytnijPoczatekDoPlayhead")}
@@ -126,7 +126,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 px-3"
+            className="min-h-11 shrink-0 px-2"
             data-testid="studio-fragment-trim-end"
             disabled={locked}
             title={t("przytnijKoniecDoPlayhead")}
@@ -138,7 +138,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 min-w-11 px-3"
+            className="min-h-11 min-w-11 shrink-0 px-2"
             data-testid="studio-fragment-nudge-left"
             disabled={locked}
             title={t("przesunFragmentLewo")}
@@ -151,7 +151,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 min-w-11 px-3"
+            className="min-h-11 min-w-11 shrink-0 px-2"
             data-testid="studio-fragment-nudge-right"
             disabled={locked}
             title={t("przesunFragmentPrawo")}
@@ -164,7 +164,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 px-3"
+            className="min-h-11 shrink-0 px-2"
             data-testid="studio-fragment-duplicate"
             disabled={locked}
             title={t("powielKlip")}
@@ -176,7 +176,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 px-3"
+            className="min-h-11 shrink-0 px-2"
             data-testid="studio-fragment-fade-in"
             disabled={locked}
             title={t("wejscieOpis")}
@@ -188,7 +188,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 px-3"
+            className="min-h-11 shrink-0 px-2"
             data-testid="studio-fragment-fade-out"
             disabled={locked}
             title={t("zejscieOpis")}
@@ -200,7 +200,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className={`min-h-11 px-3 ${reverseOn ? "border-[var(--brd-ink)] bg-[var(--brd-ink)] text-[var(--brd-paper)]" : ""}`}
+            className={`min-h-11 shrink-0 px-2 ${reverseOn ? "border-[var(--brd-ink)] bg-[var(--brd-ink)] text-[var(--brd-paper)]" : ""}`}
             data-testid="studio-fragment-reverse"
             disabled={locked}
             aria-pressed={reverseOn}
@@ -212,7 +212,7 @@ export function StudioFragmentTools({
           </Button>
           {onPlayback ? (
             <>
-              <label className="inline-flex min-h-11 items-center gap-2 px-1 text-xs">
+              <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
                 Tempo
                 <input
                   type="range"
@@ -227,7 +227,7 @@ export function StudioFragmentTools({
                   onPointerUp={(event) => onPlayback({ stretch: Number(event.currentTarget.value), pitchCents: pitchLocal })}
                 />
               </label>
-              <label className="inline-flex min-h-11 items-center gap-2 px-1 text-xs">
+              <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
                 Wysokość
                 <input
                   type="range"
@@ -248,7 +248,7 @@ export function StudioFragmentTools({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="min-h-11 px-3"
+                  className="min-h-11 shrink-0 px-2"
                   disabled={locked}
                   data-testid="studio-fragment-pitch-reset"
                   onClick={() => onPlayback({ stretch: stretchLocal, pitchCents: 0 })}
@@ -262,7 +262,7 @@ export function StudioFragmentTools({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 px-3 studio-tool-danger"
+            className="min-h-11 shrink-0 px-2 studio-tool-danger"
             data-testid="studio-fragment-delete"
             disabled={locked}
             title={t("usunFragmentOpis")}
@@ -270,7 +270,7 @@ export function StudioFragmentTools({
           >
             {t("usun")}
           </Button>
-          <p className="px-1 text-xs text-[var(--brd-mute)]" data-testid="studio-fragment-hint">
+          <p className="sr-only" data-testid="studio-fragment-hint">
             {enabled ? t("fragmentEdycja") : t("zaznaczFragment")}
           </p>
         </>

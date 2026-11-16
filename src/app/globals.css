@@ -521,14 +521,19 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   border-top: 1px solid #3a3028;
   box-shadow: none;
 }
+/* Keep transport + edit tools on two scrollable rows instead of wrapping into a tall stack. */
+.studio-desk .studio-transport > .flex {
+  min-height: 2.75rem;
+}
 .studio-desk [data-testid="studio-transport-ops"] .studio-key,
 .studio-desk [data-testid="studio-transport-ops"] .studio-rec-button,
 .studio-desk [data-testid="studio-edit-toolbar"] button,
 .studio-desk [data-testid="studio-fragment-tools"] button {
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   font-weight: 700;
   border-radius: 2px !important;
+  flex-shrink: 0;
 }
 .studio-desk .studio-key {
   background: #17130f !important;
@@ -570,22 +575,23 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
 .studio-desk .studio-sel-cell {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   min-height: 2.75rem;
-  padding: 0 0.6rem;
+  padding: 0 0.45rem;
   background: #0b0907;
   border: 1px solid #3a3028;
+  flex-shrink: 0;
 }
 .studio-desk .studio-sel-caption {
   color: #9e8f78;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 .studio-desk .studio-sel-value {
   color: #f2a93b;
   font-family: ui-monospace, monospace;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 .studio-desk .studio-gear {
   display: flex;
