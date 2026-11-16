@@ -2538,6 +2538,8 @@
       "uwagaSygnalBliskoPrzesterowania": "Warning: signal close to clipping",
       "mikrofonDziala": "The microphone works",
       "monitorDoUchaSuchy": "In-ear monitor (dry)",
+      "monitorPoglosPewnosci": "Confidence reverb (not printed to the take)",
+      "monitorPoglosTylkoWSluchawkach": "Light reverb in headphones only — the WAV stays dry. Use headphones.",
       "uslyszyszEchoILatencje": "You will hear the browser''s echo and latency. Use headphones. The mix is audible while the transport plays.",
       "oczekiwanieNaUprawnienia": "Waiting for permission…",
       "odsluch": "Monitoring",

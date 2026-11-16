@@ -446,6 +446,8 @@ export function StudioRecordingPanel({
   const [punchOutMs, setPunchOutMs] = useState(4000);
   const [countInActive, setCountInActive] = useState(false);
   const [monitorOn, setMonitorOn] = useState(false);
+  /** Light headphone reverb for confidence; never printed into the recorded WAV. */
+  const [monitorReverbOn, setMonitorReverbOn] = useState(true);
   const [catalogMessage, setCatalogMessage] = useState<string | null>(null);
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
   const takeWorkflowRef = useRef<HTMLDivElement | null>(null);
@@ -719,19 +721,38 @@ export function StudioRecordingPanel({
     const ctx = transport.getContextForAux();
     if (!ctx?.createMediaStreamSource) return;
     const source = ctx.createMediaStreamSource(meterStream);
-    const gain = ctx.createGain();
-    gain.gain.value = 0.7;
-    source.connect(gain);
-    gain.connect(ctx.destination);
+    const dry = ctx.createGain();
+    dry.gain.value = 0.7;
+    source.connect(dry);
+    dry.connect(ctx.destination);
+
+    const nodes: AudioNode[] = [source, dry];
+    if (monitorReverbOn && ctx.createDelay && ctx.createGain) {
+      // Short feedback delay = confidence room; wet only, not on the MediaRecorder path.
+      const delay = ctx.createDelay(0.35);
+      delay.delayTime.value = 0.048;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.22;
+      const wet = ctx.createGain();
+      wet.gain.value = 0.2;
+      dry.connect(delay);
+      delay.connect(feedback);
+      feedback.connect(delay);
+      delay.connect(wet);
+      wet.connect(ctx.destination);
+      nodes.push(delay, feedback, wet);
+    }
+
     return () => {
-      try {
-        source.disconnect();
-        gain.disconnect();
-      } catch {
-        // already torn down
+      for (const node of nodes) {
+        try {
+          node.disconnect();
+        } catch {
+          // already torn down
+        }
       }
     };
-  }, [meterStream, monitorOn, transport]);
+  }, [meterStream, monitorOn, monitorReverbOn, transport]);
 
   // AUD-01 — auto live mic tester (reuse useMicAnalyser; hold stream, no Studio engine).
   useEffect(() => {
@@ -2901,9 +2922,22 @@ export function StudioRecordingPanel({
                 {tr("monitorDoUchaSuchy")}
               </label>
               {monitorOn ? (
-                <p className="text-[11px] text-[var(--brd-mute)]" role="status">
-                  {tr("uslyszyszEchoILatencje")}
-                </p>
+                <>
+                  <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--brd-ink)]">
+                    <input
+                      type="checkbox"
+                      checked={monitorReverbOn}
+                      onChange={(e) => setMonitorReverbOn(e.target.checked)}
+                      data-testid="studio-monitor-reverb"
+                    />
+                    {tr("monitorPoglosPewnosci")}
+                  </label>
+                  <p className="text-[11px] text-[var(--brd-mute)]" role="status">
+                    {monitorReverbOn
+                      ? tr("monitorPoglosTylkoWSluchawkach")
+                      : tr("uslyszyszEchoILatencje")}
+                  </p>
+                </>
               ) : null}
             </>
           ) : (

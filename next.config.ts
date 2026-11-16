@@ -62,6 +62,14 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_STUDIO_MASTER_WORKER_URL: studioWorkers.master ?? "",
     NEXT_PUBLIC_STUDIO_MIX_ANALYSIS_WORKER_URL: studioWorkers.mixAnalysis ?? "",
   },
+  // Client router: keep dynamic admin/studio tab payloads briefly so back/forth
+  // switches reuse RSC instead of freezing on a full refetch (Next 15+ default dynamic: 0).
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
   serverExternalPackages: ["music-metadata", "@audio/beat", "audio-decode"],
   async headers() {
     return [

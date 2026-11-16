@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AdminSectionNav } from "@/components/admin/admin-section-nav";
 import { SiteHeader } from "@/components/site/site-header";
-import { FullClientMessages } from "@/i18n/client-messages";
+import { AdminClientMessages } from "@/i18n/client-messages";
 import {
   MAIN_CONTENT_ID,
   MAIN_CONTENT_LANDMARK_CLASS,
@@ -36,7 +36,7 @@ export default async function AdminLayout({
       redirect("/sign-in");
     }
     return (
-      <FullClientMessages>
+      <AdminClientMessages>
       <div className="min-h-dvh">
         <SiteHeader tone="admin" />
         <main
@@ -61,7 +61,7 @@ export default async function AdminLayout({
           </Link>
         </main>
       </div>
-      </FullClientMessages>
+      </AdminClientMessages>
     );
   }
 
@@ -96,7 +96,7 @@ export default async function AdminLayout({
   navItems.push({ href: "/beats", label: t("katalog") });
 
   return (
-    <FullClientMessages>
+    <AdminClientMessages>
     <div className="brd-ops min-h-dvh">
       <SiteHeader tone="admin" />
       <div className="mx-auto w-full max-w-[var(--brd-max-ops)] px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] py-3">
@@ -114,6 +114,6 @@ export default async function AdminLayout({
         {children}
       </div>
     </div>
-    </FullClientMessages>
+    </AdminClientMessages>
   );
 }

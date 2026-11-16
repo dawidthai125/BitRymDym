@@ -2538,6 +2538,8 @@
       "uwagaSygnalBliskoPrzesterowania": "Uwaga: sygnał blisko przesterowania",
       "mikrofonDziala": "Mikrofon działa",
       "monitorDoUchaSuchy": "Monitor do ucha (suchy)",
+      "monitorPoglosPewnosci": "Pogłos w odsłuchu (nie wchodzi do nagrania)",
+      "monitorPoglosTylkoWSluchawkach": "Lekki pogłos tylko w słuchawkach — plik WAV zostaje suchy. Używaj słuchawek.",
       "uslyszyszEchoILatencje": "Usłyszysz echo i latencję przeglądarki. Używaj słuchawek. Mix słychać, gdy transport gra.",
       "oczekiwanieNaUprawnienia": "Oczekiwanie na uprawnienia…",
       "odsluch": "Odsłuch",
