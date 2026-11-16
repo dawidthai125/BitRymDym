@@ -718,16 +718,16 @@ export function StudioRecordingPanel({
 
   useEffect(() => {
     if (!monitorOn || !meterStream) return;
-    const ctx = transport.getContextForAux();
-    if (!ctx?.createMediaStreamSource) return;
+    const ctx = transport.getContextForAux() as unknown as AudioContext | null;
+    if (!ctx?.createMediaStreamSource || !ctx.createGain) return;
     const source = ctx.createMediaStreamSource(meterStream);
     const dry = ctx.createGain();
     dry.gain.value = 0.7;
     source.connect(dry);
     dry.connect(ctx.destination);
 
-    const nodes: AudioNode[] = [source, dry];
-    if (monitorReverbOn && ctx.createDelay && ctx.createGain) {
+    const teardown: Array<{ disconnect: () => void }> = [source, dry];
+    if (monitorReverbOn && typeof ctx.createDelay === "function") {
       // Short feedback delay = confidence room; wet only, not on the MediaRecorder path.
       const delay = ctx.createDelay(0.35);
       delay.delayTime.value = 0.048;
@@ -740,11 +740,11 @@ export function StudioRecordingPanel({
       feedback.connect(delay);
       delay.connect(wet);
       wet.connect(ctx.destination);
-      nodes.push(delay, feedback, wet);
+      teardown.push(delay, feedback, wet);
     }
 
     return () => {
-      for (const node of nodes) {
+      for (const node of teardown) {
         try {
           node.disconnect();
         } catch {
