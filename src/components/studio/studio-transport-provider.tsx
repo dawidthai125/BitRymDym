@@ -345,6 +345,12 @@ export function StudioTransportProvider({
             timelineLengthMs: length,
           });
           if (region && clamped >= region.endMs) {
+            // Ignore wrap after user Stop — engine may still emit a final playhead.
+            if (phaseRef.current === "stopped") {
+              playheadMsRef.current = 0;
+              setPlayheadMs(0);
+              return;
+            }
             clamped = wrapLoopPlayhead(clamped, region.startMs, region.endMs);
             playheadMsRef.current = clamped;
             setPlayheadMs(clamped);

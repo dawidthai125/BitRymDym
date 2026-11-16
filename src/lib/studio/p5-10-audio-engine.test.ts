@@ -530,6 +530,138 @@ describe("P5.10 engine lifecycle / multi-source play", () => {
     expect(engineSrc).not.toMatch(/element\.volume\s*=\s*gainDbToLinearVolume/);
     expect(engineSrc).toMatch(/clipGain\.gain\.value/);
   });
+
+  it("stop during slow take resolve leaves MediaElements paused (no orphan play)", async () => {
+    const elements: StudioMediaElement[] = [];
+    let resolveTake!: (source: { url: string; expiresAt: number }) => void;
+    const takeGate = new Promise<{ url: string; expiresAt: number }>((resolve) => {
+      resolveTake = resolve;
+    });
+    let hostTime = 0;
+    const ctx = {
+      currentTime: 0,
+      state: "running",
+      destination: fakeNode(),
+      async resume() {},
+      async close() {},
+      createGain: () => fakeNode(),
+      createStereoPanner: () => fakeNode(),
+      createAnalyser: () => {
+        const node = fakeNode() as ReturnType<typeof fakeNode> & {
+          fftSize: number;
+          smoothingTimeConstant: number;
+          frequencyBinCount: number;
+          getFloatTimeDomainData: (array: Float32Array) => void;
+        };
+        node.fftSize = 256;
+        node.smoothingTimeConstant = 0;
+        node.frequencyBinCount = 128;
+        node.getFloatTimeDomainData = (array: Float32Array) => {
+          array.fill(0);
+        };
+        return node;
+      },
+      createMediaElementSource: () => fakeNode(),
+    } as unknown as StudioAudioContextLike;
+    const host: StudioAudioEngineHost = {
+      createContext() {
+        return ctx;
+      },
+      createMediaElement() {
+        const el: StudioMediaElement = {
+          src: "",
+          currentTime: 0,
+          paused: true,
+          volume: 1,
+          muted: false,
+          crossOrigin: null,
+          preload: "auto",
+          async play() {
+            this.paused = false;
+          },
+          pause() {
+            this.paused = true;
+          },
+          load() {},
+        };
+        elements.push(el);
+        return el;
+      },
+      nowMs() {
+        hostTime += 16;
+        return hostTime;
+      },
+      requestTick() {
+        return 1;
+      },
+      cancelTick() {},
+    };
+    const engine = new StudioAudioEngine({
+      registry: createStudioSourceAdapterRegistry(
+        createDefaultStudioSourceAdapters({
+          resolveBeatUrl: async () => ({
+            url: "https://cdn.example/beat.mp3",
+            expiresAt: Date.now() + 60_000,
+          }),
+          resolveTakeUrl: async () => takeGate,
+        }),
+      ),
+      host,
+      listener: {
+        onPlayhead: () => undefined,
+        onLifecycle: () => undefined,
+        onError: () => undefined,
+        onTimelineEnded: () => undefined,
+      },
+    });
+    engine.setDocument(
+      documentOf(
+        [track("beat"), track("vocal")],
+        [
+          clip({
+            id: "c-beat",
+            trackId: "beat",
+            sourceKind: "BEAT_REF",
+            sourceBeatId: BEAT_ID,
+            durationMs: 10_000,
+          }),
+          clip({
+            id: "c-take",
+            trackId: "vocal",
+            sourceKind: "TAKE",
+            sourceTakeId: TAKE_A,
+            durationMs: 5000,
+          }),
+        ],
+      ),
+    );
+    const playPromise = engine.play(0);
+    // Beat may resolve first; stop before take URL resolves.
+    await Promise.resolve();
+    engine.stop();
+    expect(engine.getLifecycle()).toBe("stopped");
+    resolveTake({
+      url: `https://cdn.example/${TAKE_A}.wav`,
+      expiresAt: Date.now() + 60_000,
+    });
+    await playPromise;
+    expect(engine.getLifecycle()).toBe("stopped");
+    expect(elements.every((el) => el.paused)).toBe(true);
+    engine.dispose();
+  });
+
+  it("rate-limits corrective MediaElement seeks while playing (no seek-storm)", async () => {
+    const engineSrc = readFileSync(
+      join(process.cwd(), "src/lib/studio/studio-audio-engine.ts"),
+      "utf8",
+    );
+    expect(engineSrc).toMatch(/maybeCorrectVoiceSeek/);
+    expect(engineSrc).toMatch(/CORRECT_MIN_SKEW_MS/);
+    expect(engineSrc).toMatch(/voiceSyncGeneration/);
+    expect(engineSrc).not.toMatch(
+      /Math\.abs\(voice\.element\.currentTime - plan\.sourceOffsetSeconds\) > 0\.04/,
+    );
+  });
 });
 
 describe("P5.10 errors / isolation / security", () => {

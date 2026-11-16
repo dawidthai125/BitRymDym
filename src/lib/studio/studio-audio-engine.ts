@@ -11,6 +11,7 @@ import {
 import {
   createStudioClockEpoch,
   isVoiceInSync,
+  MAX_SYNC_SKEW_MS,
   playheadMsFromContextClock,
   type StudioClockEpoch,
 } from "@/lib/studio/studio-audio-clock";
@@ -440,6 +441,14 @@ export class StudioAudioEngine {
   private sidechainLastMs = 0;
   private sidechainKeyData: Float32Array | null = null;
   private lastSyncCheckMs = 0;
+  /**
+   * Bumped on play/seek/pause/stop so an in-flight `syncVoices` (await ensureTimelineVoice)
+   * cannot call `element.play()` after the transport already stopped — that left orphan
+   * MediaElements looping under a frozen playhead.
+   */
+  private voiceSyncGeneration = 0;
+  /** Rate-limit corrective MediaElement seeks while playing (seek-storm → stutter). */
+  private lastVoiceSeekCorrectMs = 0;
   private failedClips = new Set<string>();
   /** BRD Tune live bakes: clip bake key → entry. */
   private tuneBakes = new Map<string, TuneBakeEntry>();
@@ -1044,6 +1053,7 @@ export class StudioAudioEngine {
 
   async play(playheadMs: number): Promise<void> {
     if (!this.initialize() || !this.ctx) return;
+    this.bumpVoiceSyncGeneration();
     this.stopPreviewInternal();
     this.failedClips.clear();
     try {
@@ -1067,6 +1077,8 @@ export class StudioAudioEngine {
     // Start meter reader immediately on Play (≤12 Hz), before async voice sync.
     this.startMetering();
     await this.syncVoices(playheadMs, true);
+    // Stop/pause during ensureTimelineVoice must not restart the clock.
+    if (this.lifecycle !== "playing") return;
     postPocketPlayhead(playheadMs);
     this.applyPocketBeatDuck();
     this.applySidechain();
@@ -1074,6 +1086,7 @@ export class StudioAudioEngine {
   }
 
   pause(): void {
+    this.bumpVoiceSyncGeneration();
     this.stopPreviewInternal();
     let playheadMs = 0;
     if (this.ctx && this.epoch && this.document) {
@@ -1099,6 +1112,7 @@ export class StudioAudioEngine {
       this.listener.onPlayhead(playheadMs);
       return;
     }
+    this.bumpVoiceSyncGeneration();
     this.stopPreviewInternal();
     this.failedClips.clear();
     this.epoch = createStudioClockEpoch({
@@ -1113,15 +1127,17 @@ export class StudioAudioEngine {
       this.stopMetering({ reset: false });
     }
     await this.syncVoices(playheadMs, shouldPlay);
+    if (shouldPlay && this.lifecycle !== "playing") return;
     postPocketPlayhead(playheadMs);
     this.applyPocketBeatDuck();
     this.applySidechain();
-    if (shouldPlay) {
+    if (shouldPlay && this.lifecycle === "playing") {
       this.startClock();
     }
   }
 
   stop(): void {
+    this.bumpVoiceSyncGeneration();
     this.stopPreviewInternal();
     this.stopClock();
     this.pauseAllTimelineVoices();
@@ -2248,11 +2264,50 @@ export class StudioAudioEngine {
     }
   }
 
+  private bumpVoiceSyncGeneration(): void {
+    this.voiceSyncGeneration += 1;
+  }
+
+  private isVoiceSyncCurrent(generation: number, shouldPlay: boolean): boolean {
+    if (generation !== this.voiceSyncGeneration) return false;
+    if (shouldPlay && this.lifecycle !== "playing") return false;
+    return true;
+  }
+
+  /**
+   * Snap MediaElement to plan offset. While playing, only correct gross desync and
+   * rate-limit seeks — a every-frame seek at 40 ms skew causes TAKE stutter under the beat.
+   * Setup / paused sync always snaps (single seek, no storm).
+   */
+  private maybeCorrectVoiceSeek(
+    voice: Voice,
+    sourceOffsetSeconds: number,
+    shouldPlay: boolean,
+  ): void {
+    const skewMs = Math.abs(voice.element.currentTime - sourceOffsetSeconds) * 1000;
+    if (skewMs <= MAX_SYNC_SKEW_MS) return;
+    if (!shouldPlay || voice.element.paused) {
+      voice.element.currentTime = sourceOffsetSeconds;
+      return;
+    }
+    // Playing: ignore small drift (diagnostic maybeCheckSync); correct large skew sparsely.
+    const CORRECT_MIN_SKEW_MS = 250;
+    const CORRECT_MIN_INTERVAL_MS = 500;
+    if (skewMs < CORRECT_MIN_SKEW_MS) return;
+    const now = this.host.nowMs();
+    if (now - this.lastVoiceSeekCorrectMs < CORRECT_MIN_INTERVAL_MS) return;
+    this.lastVoiceSeekCorrectMs = now;
+    voice.element.currentTime = sourceOffsetSeconds;
+  }
+
   private async syncVoices(
     playheadMs: number,
     shouldPlay: boolean,
   ): Promise<void> {
     if (!this.document || !this.ctx) return;
+    // Claim this sync as latest — overlapping clock ticks / ensureTimelineVoice
+    // awaits must not both call element.play() after a newer stop or sync.
+    const generation = ++this.voiceSyncGeneration;
     this.syncGraphParams();
     this.syncMidiPlayback(playheadMs, shouldPlay);
     const plans = planVoicesAtPlayhead(this.document, playheadMs);
@@ -2267,10 +2322,18 @@ export class StudioAudioEngine {
     }
 
     for (const plan of plans) {
+      if (!this.isVoiceSyncCurrent(generation, shouldPlay)) {
+        this.pauseAllTimelineVoices();
+        return;
+      }
       if (this.failedClips.has(plan.clipId)) continue;
       const clip = this.document.clips.find((c) => c.id === plan.clipId);
       if (!clip) continue;
       const voice = await this.ensureTimelineVoice(clip);
+      if (!this.isVoiceSyncCurrent(generation, shouldPlay)) {
+        this.pauseAllTimelineVoices();
+        return;
+      }
       if (!voice) continue;
       this.applyClipFade(voice, clip, playheadMs, shouldPlay);
       const jogOwns = scratchJogOwnsClip({
@@ -2294,8 +2357,8 @@ export class StudioAudioEngine {
         }
         continue;
       }
-      if (!persistedReverse && Math.abs(voice.element.currentTime - plan.sourceOffsetSeconds) > 0.04) {
-        voice.element.currentTime = plan.sourceOffsetSeconds;
+      if (!persistedReverse) {
+        this.maybeCorrectVoiceSeek(voice, plan.sourceOffsetSeconds, shouldPlay);
       }
       if (!shouldPlay) {
         this.stopBufferSource(voice);
@@ -2325,6 +2388,15 @@ export class StudioAudioEngine {
             clipId: plan.clipId,
           });
         }
+        if (!this.isVoiceSyncCurrent(generation, shouldPlay)) {
+          try {
+            voice.element.pause();
+          } catch {
+            /* ignore */
+          }
+          this.pauseAllTimelineVoices();
+          return;
+        }
       }
     }
   }
@@ -2346,9 +2418,11 @@ export class StudioAudioEngine {
     if (voice.playbackLoad || !this.ctx?.createBuffer) return;
     voice.playbackLoad = true;
     const token = sig;
+    const generation = this.voiceSyncGeneration;
     void this.ensureDecodedBuffer(voice).then((ok) => {
       voice.playbackLoad = false;
       if (!ok || voice.disposed || voice.playbackSig !== token || !this.ctx || !voice.decodedBuffer) return;
+      if (!this.isVoiceSyncCurrent(generation, true)) return;
       const decoded = voice.decodedBuffer;
       const channels = Math.max(1, decoded.numberOfChannels);
       const left = renderClipPlaybackMono(decoded.getChannelData(0), playback);
@@ -2437,9 +2511,11 @@ export class StudioAudioEngine {
     voice.reverseLoad = true;
     voice.reverseToken += 1;
     const token = voice.reverseToken;
+    const generation = this.voiceSyncGeneration;
     void this.ensureDecodedBuffer(voice).then((ok) => {
       voice.reverseLoad = false;
       if (!ok || voice.disposed || voice.reverseToken !== token || !this.ctx) return;
+      if (!this.isVoiceSyncCurrent(generation, true)) return;
       if (
         scratchJogOwnsClip({
           clipId: voice.clipId,
