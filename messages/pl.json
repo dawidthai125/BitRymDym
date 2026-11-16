@@ -2221,7 +2221,12 @@
       "pobieranieNiedostepne": "Pobieranie niedostępne.",
       "wersjaDoTelefonu": "Do telefonu",
       "telefonPobierzWav": "Pobrano WAV — wyślij znajomym z telefonu.",
-      "stemyHint": "Paczka stemów: wycisz inne ścieżki i eksportuj WAV osobno (ZIP stemów wkrótce)."
+      "telefonPobierzMp3": "Pobrano MP3 — wyślij znajomym z telefonu.",
+      "pobierzMp3": "Pobierz MP3",
+      "przygotowujeMp3": "Przygotowuję MP3…",
+      "mp3NiedostepneBezWersji": "MP3 wymaga wersji SFM Final Mix (zaufane id wersji po Master SFM). Na razie użyj WAV albo dokończ Master SFM (EXPORTS_ELIGIBLE).",
+      "mp3NieGotowe": "Nie udało się przygotować MP3 dla tej wersji Final Mix.",
+      "stemyHint": "Paczka stemów (ZIP): po zatwierdzeniu Mastera → Master → Pobierz → Projekt ZIP (Silver+). Stemy WAV: suche i po miksie."
     },
     "studioFxChainEditor": {
       "zapisywanie": "Zapisywanie…",

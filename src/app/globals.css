@@ -521,8 +521,8 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   border-top: 1px solid #3a3028;
   box-shadow: none;
 }
-/* Keep transport + edit tools on two scrollable rows instead of wrapping into a tall stack. */
-.studio-desk .studio-transport > .flex {
+/* Transport rows: scrollable strips (mobile stacks ops/tools; lg+ sits side-by-side). */
+.studio-desk .studio-transport > .flex > .flex {
   min-height: 2.75rem;
 }
 .studio-desk [data-testid="studio-transport-ops"] .studio-key,
@@ -534,6 +534,24 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   font-weight: 700;
   border-radius: 2px !important;
   flex-shrink: 0;
+}
+/* Desktop densify — reclaim timeline height; mobile keeps Tailwind min-h-11 (44px). */
+@media (min-width: 640px) {
+  .studio-desk .studio-transport > .flex > .flex {
+    min-height: 2rem;
+  }
+  .studio-desk .studio-sel-cell {
+    min-height: 2rem;
+    padding-inline: 0.3rem;
+  }
+  .studio-desk [data-testid="studio-fragment-tools"] button,
+  .studio-desk [data-testid="studio-fragment-tools"] label {
+    min-height: 2rem !important;
+  }
+  .studio-desk .studio-transport [data-testid="studio-transport-export"],
+  .studio-desk .studio-transport [data-testid="studio-transport-mix-history"] {
+    min-height: 2rem;
+  }
 }
 .studio-desk .studio-key {
   background: #17130f !important;

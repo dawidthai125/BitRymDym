@@ -226,6 +226,13 @@ function formatStudioPanShort(
   return v < 0 ? `${labels.left}${Math.abs(v)}` : `${labels.right}${v}`;
 }
 const STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0";
+/**
+ * Transport densify — Mobile First: 44px hit area by default;
+ * from sm, match Button size=sm (h-8) so timeline gains vertical room.
+ */
+const STUDIO_TRANSPORT_KEY =
+  "min-h-11 min-w-11 px-2 sm:min-h-8 sm:min-w-8";
+const STUDIO_TRANSPORT_KEY_WIDE = "min-h-11 px-2 sm:min-h-8";
 /** Track gain bounds — same as Mixer strips. */
 const STUDIO_TRACK_GAIN_DB_MIN = -24;
 const STUDIO_TRACK_GAIN_DB_MAX = 12;
@@ -4940,348 +4947,351 @@ function StudioTransportBar({
 
   return (
     <div
-      className="studio-transport sticky top-14 z-20 shrink-0 px-1.5 py-0.5 sm:top-2 sm:px-2"
+      className="studio-transport sticky top-14 z-20 shrink-0 px-1 py-0 sm:top-2 sm:px-1.5"
       role="region"
       aria-label={tr("transportStudio")}
       data-testid="studio-transport"
       data-studio-transport-empty={noBeat ? "true" : "false"}
     >
-      <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
-        <div
-          className="flex shrink-0 flex-nowrap items-center gap-1"
-          data-testid="studio-transport-ops"
-        >
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-key min-h-11 min-w-11 px-2"
-            onClick={() => seek(0)}
-            disabled={noBeat}
-            title={tr("poczatek")}
-            aria-label={tr("poczatek")}
+      {/* Mobile: ops then tools (2 rows). lg+: one horizontal strip — timeline gains height. */}
+      <div className="flex flex-col gap-0 lg:flex-row lg:items-center lg:gap-1">
+        <div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin] lg:flex-1">
+          <div
+            className="flex shrink-0 flex-nowrap items-center gap-0.5"
+            data-testid="studio-transport-ops"
           >
-            <span className="font-mono text-[13px] font-semibold">|◀</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            className="studio-key studio-key-play min-h-11 min-w-11 px-2"
-            onClick={play}
-            disabled={beatControlsDisabled || phase === "playing"}
-            title={tl(noBeat ? tr("odtworzNajpierwWybierzBit") : tr("odtworz"))}
-            aria-label={tl(noBeat ? tr("odtworzWymagaBitu") : tr("odtworz"))}
-          >
-            {busy ? "…" : (
-              <>
-                <StudioGlyph name="play" />
-                <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("graj")}</span>
-              </>
-            )}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-key min-h-11 min-w-11 px-2"
-            onClick={stop}
-            disabled={noBeat}
-            title={tr("stop")}
-            aria-label={tr("stop")}
-          >
-            <StudioGlyph name="stop" />
-            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("stop")}</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-rec-button min-h-11 min-w-11 gap-1.5 px-2.5"
-            onClick={onRecord}
-            disabled={noBeat}
-            title={
-              tl(noBeat
-                ? tr("nagrajNajpierwWybierzBit")
-                : tr("nagrajOtwieraIstniejacyKontekst"))
-            }
-            aria-label={
-              tl(noBeat
-                ? tr("nagrajWymagaBitu")
-                : tr("nagrajOtwieraPanelNagrywania"))
-            }
-            data-testid="studio-transport-record"
-          >
-            <StudioRecLamp />
-            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("nagraj")}</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-key min-h-11 px-2"
-            data-testid="studio-transport-keyboard-mode"
-            title={
-              transportKeyboardMode === "quick_rec"
-                ? tr("trybKlawiaturySzybkiRecOpis")
-                : tr("trybKlawiaturyDawOpis")
-            }
-            aria-label={
-              transportKeyboardMode === "quick_rec"
-                ? tr("trybKlawiaturySzybkiRec")
-                : tr("trybKlawiaturyDaw")
-            }
-            onClick={() =>
-              onTransportKeyboardModeChange(
-                transportKeyboardMode === "quick_rec"
-                  ? "standard_daw"
-                  : "quick_rec",
-              )
-            }
-          >
-            <span className="font-mono text-[10px] font-semibold tracking-[0.06em]">
-              {transportKeyboardMode === "quick_rec"
-                ? tr("trybKlawiaturySzybkiRecKrotki")
-                : tr("trybKlawiaturyDawKrotki")}
-            </span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-key min-h-11 min-w-11 px-2"
-            onClick={onUndo}
-            disabled={!canUndo || pending}
-            title={tr("cofnijSkrot")}
-            aria-label={tr("cofnij")}
-            data-testid="studio-transport-undo"
-          >
-            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("cofnij")}</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-key min-h-11 min-w-11 px-2"
-            onClick={onRedo}
-            disabled={!canRedo || pending}
-            title={tr("ponowSkrot")}
-            aria-label={tr("ponow")}
-            data-testid="studio-transport-redo"
-          >
-            <StudioGlyph name="redo" />
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="studio-key min-h-11 min-w-11 px-2"
-            onClick={pause}
-            disabled={noBeat || phase !== "playing"}
-            title={tr("pauza")}
-            aria-label={tr("pauza")}
-          >
-            <StudioGlyph name="pause" />
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className={
-              loopEnabled
-                ? "studio-key studio-key-on min-h-11 min-w-11 px-2"
-                : "studio-key min-h-11 min-w-11 px-2"
-            }
-            disabled={noBeat}
-            aria-pressed={loopEnabled}
-            title={tl(loopEnabled ? tr("loopWlaczony") : tr("loopRegionu"))}
-            aria-label={tl(loopEnabled ? tr("loopWlaczony") : tr("wlaczLoopRegionu"))}
-            data-testid="studio-transport-loop"
-            onClick={() =>
-              setLoop({
-                enabled: !loopEnabled,
-                startMs: 0,
-                endMs: durationMs,
-              })
-            }
-          >
-            <StudioGlyph name="loop" />
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className={
-              metronomeEnabled
-                ? "studio-key studio-key-on min-h-11 min-w-11 px-2"
-                : "studio-key min-h-11 min-w-11 px-2"
-            }
-            disabled={noBeat}
-            aria-pressed={metronomeEnabled}
-            title={
-              tl(metronomeEnabled ? tr("metronomWlaczony") : tr("metronomKlikRuntime"))
-            }
-            aria-label={
-              tl(metronomeEnabled ? tr("metronomWlaczony") : tr("wlaczMetronom"))
-            }
-            data-testid="studio-transport-metronome"
-            onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-          >
-            <StudioGlyph name="metronome" />
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            className={
-              noBeat
-                ? "min-h-11 border-[var(--brd-green)] bg-[var(--brd-green)] px-2 text-[var(--brd-paper)] hover:opacity-90"
-                : "studio-key min-h-11 px-2"
-            }
-            variant={noBeat ? "default" : "outline"}
-            onClick={onChooseBeat}
-            title={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
-            aria-label={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
-            data-testid="studio-transport-choose-beat"
-          >
-            {tl(noBeat ? tr("wybierzBit2") : tr("beatButton"))}
-          </Button>
-        </div>
-
-        <div
-          className="studio-counter flex min-h-11 shrink-0 flex-nowrap items-center gap-2 px-2.5 font-mono text-xs tabular-nums"
-          data-testid="studio-transport-meta"
-        >
-          <span
-            aria-live="polite"
-            className="studio-counter-time text-sm font-medium tracking-tight"
-          >
-            {tl(timeLabel)}
-            <span className="studio-counter-dim"> / </span>
-            {tl(formatStudioTimeMs(durationMs))}
-          </span>
-          <span className="studio-counter-dim" aria-label={tr("tempo")}>
-            {tempoBpm} {tr("bpm")}
-          </span>
-          <span className="studio-counter-dim" aria-label={tr("metrum")}>
-            {timeSignatureNum}/{timeSignatureDen}
-          </span>
-          {tuneBakePendingTrackIds.length > 0 ? (
-            <span
-              role="status"
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--tape-amber)]/40 px-2 py-0.5 font-sans text-[11px] text-[var(--tape-amber)]"
-              title={tr("przeliczamStrojenieTytul")}
-              data-testid="studio-transport-tune-bake"
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
+              onClick={() => seek(0)}
+              disabled={noBeat}
+              title={tr("poczatek")}
+              aria-label={tr("poczatek")}
             >
-              <span aria-hidden className="inline-block size-1.5 animate-pulse rounded-full bg-[var(--tape-amber)]" />
-              {tr("przeliczamStrojenie")}
-            </span>
-          ) : null}
-        </div>
-
-        <div
-          className="ml-auto flex min-w-[9rem] max-w-[14rem] shrink-0 items-center gap-2 [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]"
-          data-testid="studio-transport-master"
-        >
-          <StudioMixControl
-            label={tr("master")}
-            ariaLabel={tr("glosnoscMaster")}
-            value={masterGainDb}
-            display={tr("db", { v0: masterGainDb.toFixed(1) })}
-            min={STUDIO_MASTER_GAIN_DB_MIN}
-            max={STUDIO_MASTER_GAIN_DB_MAX}
-            step={0.5}
-            compact
-            disabled={pending}
-            onLocalChange={onMasterGainLocal}
-            onCommit={onMasterGainCommit}
-          />
-        </div>
-
-        <p
-          className={`min-h-11 max-w-[12rem] shrink-0 truncate text-xs leading-[2.75rem] ${
-            saveIsError || conflictActive
-              ? "text-[var(--brd-warn)]"
-              : "text-[var(--brd-mute)]"
-          }`}
-          role={saveIsError || conflictActive ? "alert" : "status"}
-          data-testid="studio-transport-save"
-        >
-          {tl(saveStatusLabel)}
-          {conflictActive ? (
-            <>
-              {" "}
-              <button
-                type="button"
-                className="underline"
-                onClick={() => window.location.reload()}
-              >
-                {tr("odswiez")}
-              </button>
-            </>
-          ) : null}
-        </p>
-
-        <StudioMixRevisionHistoryControl
-          projectId={projectId}
-          tipDocumentVersion={tipDocumentVersion}
-          getExpectedDocumentVersion={getExpectedDocumentVersion}
-          onDocumentRefreshed={onDocumentRefreshed}
-          disabled={pending}
-        />
-        <StudioExportControl
-          projectId={projectId}
-          getExpectedDocumentVersion={getExpectedDocumentVersion}
-        />
-      </div>
-      <div className="mt-0.5 flex flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
-        <div className="flex shrink-0 flex-nowrap gap-1" data-testid="studio-selection-readout">
-          {(
-            [
-              ["poczatek", selectionStartMs],
-              ["koniec", selectionEndMs],
-              [
-                "dlugoscKrotko",
-                selectionStartMs != null && selectionEndMs != null
-                  ? Math.max(0, selectionEndMs - selectionStartMs)
-                  : null,
-              ],
-            ] as const
-          ).map(([key, ms]) => (
-            <span key={key} className="studio-sel-cell">
-              <span className="studio-sel-caption">{tr(key)}</span>
-              <span className="studio-sel-value">
-                {ms == null ? "—" : tl(formatStudioTimeMs(ms))}
+              <span className="font-mono text-[13px] font-semibold">|◀</span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className={`studio-key studio-key-play ${STUDIO_TRANSPORT_KEY}`}
+              onClick={play}
+              disabled={beatControlsDisabled || phase === "playing"}
+              title={tl(noBeat ? tr("odtworzNajpierwWybierzBit") : tr("odtworz"))}
+              aria-label={tl(noBeat ? tr("odtworzWymagaBitu") : tr("odtworz"))}
+            >
+              {busy ? "…" : (
+                <>
+                  <StudioGlyph name="play" />
+                  <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("graj")}</span>
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
+              onClick={stop}
+              disabled={noBeat}
+              title={tr("stop")}
+              aria-label={tr("stop")}
+            >
+              <StudioGlyph name="stop" />
+              <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("stop")}</span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="studio-rec-button min-h-11 min-w-11 gap-1.5 px-2.5 sm:min-h-8 sm:min-w-8 sm:gap-1 sm:px-2"
+              onClick={onRecord}
+              disabled={noBeat}
+              title={
+                tl(noBeat
+                  ? tr("nagrajNajpierwWybierzBit")
+                  : tr("nagrajOtwieraIstniejacyKontekst"))
+              }
+              aria-label={
+                tl(noBeat
+                  ? tr("nagrajWymagaBitu")
+                  : tr("nagrajOtwieraPanelNagrywania"))
+              }
+              data-testid="studio-transport-record"
+            >
+              <StudioRecLamp />
+              <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("nagraj")}</span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE}`}
+              data-testid="studio-transport-keyboard-mode"
+              title={
+                transportKeyboardMode === "quick_rec"
+                  ? tr("trybKlawiaturySzybkiRecOpis")
+                  : tr("trybKlawiaturyDawOpis")
+              }
+              aria-label={
+                transportKeyboardMode === "quick_rec"
+                  ? tr("trybKlawiaturySzybkiRec")
+                  : tr("trybKlawiaturyDaw")
+              }
+              onClick={() =>
+                onTransportKeyboardModeChange(
+                  transportKeyboardMode === "quick_rec"
+                    ? "standard_daw"
+                    : "quick_rec",
+                )
+              }
+            >
+              <span className="font-mono text-[10px] font-semibold tracking-[0.06em]">
+                {transportKeyboardMode === "quick_rec"
+                  ? tr("trybKlawiaturySzybkiRecKrotki")
+                  : tr("trybKlawiaturyDawKrotki")}
               </span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
+              onClick={onUndo}
+              disabled={!canUndo || pending}
+              title={tr("cofnijSkrot")}
+              aria-label={tr("cofnij")}
+              data-testid="studio-transport-undo"
+            >
+              <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("cofnij")}</span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
+              onClick={onRedo}
+              disabled={!canRedo || pending}
+              title={tr("ponowSkrot")}
+              aria-label={tr("ponow")}
+              data-testid="studio-transport-redo"
+            >
+              <StudioGlyph name="redo" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
+              onClick={pause}
+              disabled={noBeat || phase !== "playing"}
+              title={tr("pauza")}
+              aria-label={tr("pauza")}
+            >
+              <StudioGlyph name="pause" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={
+                loopEnabled
+                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY}`
+                  : `studio-key ${STUDIO_TRANSPORT_KEY}`
+              }
+              disabled={noBeat}
+              aria-pressed={loopEnabled}
+              title={tl(loopEnabled ? tr("loopWlaczony") : tr("loopRegionu"))}
+              aria-label={tl(loopEnabled ? tr("loopWlaczony") : tr("wlaczLoopRegionu"))}
+              data-testid="studio-transport-loop"
+              onClick={() =>
+                setLoop({
+                  enabled: !loopEnabled,
+                  startMs: 0,
+                  endMs: durationMs,
+                })
+              }
+            >
+              <StudioGlyph name="loop" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={
+                metronomeEnabled
+                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY}`
+                  : `studio-key ${STUDIO_TRANSPORT_KEY}`
+              }
+              disabled={noBeat}
+              aria-pressed={metronomeEnabled}
+              title={
+                tl(metronomeEnabled ? tr("metronomWlaczony") : tr("metronomKlikRuntime"))
+              }
+              aria-label={
+                tl(metronomeEnabled ? tr("metronomWlaczony") : tr("wlaczMetronom"))
+              }
+              data-testid="studio-transport-metronome"
+              onClick={() => setMetronomeEnabled(!metronomeEnabled)}
+            >
+              <StudioGlyph name="metronome" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className={
+                noBeat
+                  ? `border-[var(--brd-green)] bg-[var(--brd-green)] text-[var(--brd-paper)] hover:opacity-90 ${STUDIO_TRANSPORT_KEY_WIDE}`
+                  : `studio-key ${STUDIO_TRANSPORT_KEY_WIDE}`
+              }
+              variant={noBeat ? "default" : "outline"}
+              onClick={onChooseBeat}
+              title={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
+              aria-label={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
+              data-testid="studio-transport-choose-beat"
+            >
+              {tl(noBeat ? tr("wybierzBit2") : tr("beatButton"))}
+            </Button>
+          </div>
+
+          <div
+            className="studio-counter flex min-h-11 shrink-0 flex-nowrap items-center gap-1.5 px-2 font-mono text-xs tabular-nums sm:min-h-8 sm:gap-1 sm:px-1.5"
+            data-testid="studio-transport-meta"
+          >
+            <span
+              aria-live="polite"
+              className="studio-counter-time text-sm font-medium tracking-tight"
+            >
+              {tl(timeLabel)}
+              <span className="studio-counter-dim"> / </span>
+              {tl(formatStudioTimeMs(durationMs))}
             </span>
-          ))}
-        </div>
-        {showFragmentTools ? (
-          <StudioFragmentTools
-            enabled={fragmentEnabled}
-            pending={pending}
-            confirmDelete={fragmentConfirmDelete}
-            onSplit={onFragmentSplit}
-            onTrimStart={onFragmentTrimStart}
-            onTrimEnd={onFragmentTrimEnd}
-            onNudgeLeft={() => onFragmentNudge(-1)}
-            onNudgeRight={() => onFragmentNudge(1)}
-            onDuplicate={onFragmentDuplicate}
-            onFadeIn={() => onFragmentFade("in")}
-            onFadeOut={() => onFragmentFade("out")}
-            reverseOn={fragmentReverseOn}
-            onReverse={onFragmentReverse}
-            stretch={fragmentStretch}
-            pitchCents={fragmentPitchCents}
-            pitchLocked={fragmentPitchLocked}
-            onPlayback={onFragmentPlayback}
-            onAskDelete={onFragmentAskDelete}
-            onDelete={onFragmentDelete}
-            onCancelDelete={onFragmentCancelDelete}
+            <span className="studio-counter-dim" aria-label={tr("tempo")}>
+              {tempoBpm} {tr("bpm")}
+            </span>
+            <span className="studio-counter-dim" aria-label={tr("metrum")}>
+              {timeSignatureNum}/{timeSignatureDen}
+            </span>
+            {tuneBakePendingTrackIds.length > 0 ? (
+              <span
+                role="status"
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--tape-amber)]/40 px-2 py-0.5 font-sans text-[11px] text-[var(--tape-amber)]"
+                title={tr("przeliczamStrojenieTytul")}
+                data-testid="studio-transport-tune-bake"
+              >
+                <span aria-hidden className="inline-block size-1.5 animate-pulse rounded-full bg-[var(--tape-amber)]" />
+                {tr("przeliczamStrojenie")}
+              </span>
+            ) : null}
+          </div>
+
+          <div
+            className="ml-auto flex min-w-[9rem] max-w-[14rem] shrink-0 items-center gap-2 [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]"
+            data-testid="studio-transport-master"
+          >
+            <StudioMixControl
+              label={tr("master")}
+              ariaLabel={tr("glosnoscMaster")}
+              value={masterGainDb}
+              display={tr("db", { v0: masterGainDb.toFixed(1) })}
+              min={STUDIO_MASTER_GAIN_DB_MIN}
+              max={STUDIO_MASTER_GAIN_DB_MAX}
+              step={0.5}
+              compact
+              disabled={pending}
+              onLocalChange={onMasterGainLocal}
+              onCommit={onMasterGainCommit}
+            />
+          </div>
+
+          <p
+            className={`min-h-11 max-w-[12rem] shrink-0 truncate text-xs leading-[2.75rem] sm:min-h-8 sm:leading-8 ${
+              saveIsError || conflictActive
+                ? "text-[var(--brd-warn)]"
+                : "text-[var(--brd-mute)]"
+            }`}
+            role={saveIsError || conflictActive ? "alert" : "status"}
+            data-testid="studio-transport-save"
+          >
+            {tl(saveStatusLabel)}
+            {conflictActive ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() => window.location.reload()}
+                >
+                  {tr("odswiez")}
+                </button>
+              </>
+            ) : null}
+          </p>
+
+          <StudioMixRevisionHistoryControl
+            projectId={projectId}
+            tipDocumentVersion={tipDocumentVersion}
+            getExpectedDocumentVersion={getExpectedDocumentVersion}
+            onDocumentRefreshed={onDocumentRefreshed}
+            disabled={pending}
           />
-        ) : null}
+          <StudioExportControl
+            projectId={projectId}
+            getExpectedDocumentVersion={getExpectedDocumentVersion}
+          />
+        </div>
+        <div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin] lg:flex-1">
+          <div className="flex shrink-0 flex-nowrap gap-0.5" data-testid="studio-selection-readout">
+            {(
+              [
+                ["poczatek", selectionStartMs],
+                ["koniec", selectionEndMs],
+                [
+                  "dlugoscKrotko",
+                  selectionStartMs != null && selectionEndMs != null
+                    ? Math.max(0, selectionEndMs - selectionStartMs)
+                    : null,
+                ],
+              ] as const
+            ).map(([key, ms]) => (
+              <span key={key} className="studio-sel-cell">
+                <span className="studio-sel-caption">{tr(key)}</span>
+                <span className="studio-sel-value">
+                  {ms == null ? "—" : tl(formatStudioTimeMs(ms))}
+                </span>
+              </span>
+            ))}
+          </div>
+          {showFragmentTools ? (
+            <StudioFragmentTools
+              enabled={fragmentEnabled}
+              pending={pending}
+              confirmDelete={fragmentConfirmDelete}
+              onSplit={onFragmentSplit}
+              onTrimStart={onFragmentTrimStart}
+              onTrimEnd={onFragmentTrimEnd}
+              onNudgeLeft={() => onFragmentNudge(-1)}
+              onNudgeRight={() => onFragmentNudge(1)}
+              onDuplicate={onFragmentDuplicate}
+              onFadeIn={() => onFragmentFade("in")}
+              onFadeOut={() => onFragmentFade("out")}
+              reverseOn={fragmentReverseOn}
+              onReverse={onFragmentReverse}
+              stretch={fragmentStretch}
+              pitchCents={fragmentPitchCents}
+              pitchLocked={fragmentPitchLocked}
+              onPlayback={onFragmentPlayback}
+              onAskDelete={onFragmentAskDelete}
+              onDelete={onFragmentDelete}
+              onCancelDelete={onFragmentCancelDelete}
+            />
+          ) : null}
+        </div>
       </div>
       {noBeat ? (
         <p
-          className="mt-1 text-[11px] text-[var(--brd-mute)]"
+          className="mt-0.5 text-[11px] text-[var(--brd-mute)]"
           role="status"
           data-testid="studio-transport-nobeat-status"
         >
@@ -5293,7 +5303,7 @@ function StudioTransportBar({
         </p>
       )}
       {error ? (
-        <p className="mt-1 text-xs text-[var(--brd-warn)]" role="alert">
+        <p className="mt-0.5 text-xs text-[var(--brd-warn)]" role="alert">
           {tl(error)}
         </p>
       ) : null}

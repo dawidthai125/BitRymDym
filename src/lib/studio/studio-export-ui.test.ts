@@ -8,15 +8,23 @@ import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  SFM_PHONE_MP3_QUALITY,
   STUDIO_EXPORT_POLL_MAX_ATTEMPTS,
+  createSfmQualityEncodeIdempotencyKey,
   createStudioExportIdempotencyKey,
+  findSfmCurrentQualityArtifactId,
   isStudioExportActiveStatus,
   isStudioExportTerminalStatus,
   mapJobStatusToUiPhase,
+  mapSfmEncodeHttpError,
   mapStudioExportDownloadHttpResult,
   mapStudioExportHttpResult,
   mapStudioExportLatestHttpResult,
   parseStudioExportSfmVersionId,
+  sfmVersionEncodeUrl,
+  sfmVersionGrantUrl,
+  sfmVersionJobStatusUrl,
+  sfmVersionStatusUrl,
   studioExportArtifactDownloadUrl,
   studioExportEnqueueUrl,
   studioExportLatestStatusUrl,
@@ -439,7 +447,7 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
 
   it("downloads only via owner artifact endpoint (no raw object key links)", () => {
     expect(control).toMatch(
-      /studioExportArtifactDownloadUrl\(artifactId,\s*\{\s*sfmVersionId\s*\}\)/,
+      /studioExportArtifactDownloadUrl\(id,\s*\{\s*sfmVersionId:\s*versionId\s*\}\)/,
     );
     expect(control).toMatch(/mapStudioExportDownloadHttpResult/);
     expect(studioExportArtifactDownloadUrl("art-x")).toContain(
@@ -451,6 +459,93 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(control).not.toMatch(/object_key|storage\/v1|supabase\.co\/storage/);
     expect(control).toMatch(/data-testid="studio-export-download"/);
     expect(control).toMatch(/phase === "SUCCEEDED" && Boolean\(artifactId\)/);
+  });
+
+  it("wires SFM MP3 via existing encode/grant/status routes (no new encode path)", () => {
+    expect(SFM_PHONE_MP3_QUALITY).toBe("MP3_128");
+    expect(sfmVersionStatusUrl("ver-1")).toBe(
+      "/api/studio/final/versions/ver-1",
+    );
+    expect(sfmVersionGrantUrl("ver-1")).toBe(
+      "/api/studio/final/versions/ver-1/grants",
+    );
+    expect(sfmVersionEncodeUrl("ver-1")).toBe(
+      "/api/studio/final/versions/ver-1/encode",
+    );
+    expect(sfmVersionJobStatusUrl("ver-1", "job-9")).toBe(
+      "/api/studio/final/versions/ver-1/jobs/job-9",
+    );
+    expect(
+      createSfmQualityEncodeIdempotencyKey({
+        versionId: "ver-1",
+        quality: "MP3_128",
+        projectId: "proj-1",
+      }),
+    ).toBe("sfm-encode:ver-1:MP3_128:proj-1");
+    expect(
+      findSfmCurrentQualityArtifactId(
+        {
+          currentArtifacts: [
+            {
+              artifactId: "a-mp3",
+              quality: "MP3_128",
+              status: "READY",
+              isCurrent: true,
+            },
+          ],
+        },
+        "MP3_128",
+      ),
+    ).toBe("a-mp3");
+    expect(
+      findSfmCurrentQualityArtifactId(
+        { currentArtifacts: [{ artifactId: "x", quality: "WAV", status: "READY", isCurrent: true }] },
+        "MP3_128",
+      ),
+    ).toBeNull();
+    expect(
+      mapSfmEncodeHttpError({
+        httpStatus: 403,
+        json: { code: "NOT_ELIGIBLE" },
+        fallback: "x",
+      }).code,
+    ).toBe("NOT_ELIGIBLE");
+    expect(control).toMatch(/ensureSfmPhoneMp3Artifact/);
+    expect(control).toMatch(/sfmVersionEncodeUrl/);
+    expect(control).toMatch(/sfmVersionGrantUrl/);
+    expect(control).toMatch(/data-testid="studio-export-mp3"/);
+    expect(control).toMatch(/showMp3/);
+    expect(control).toMatch(/showDownload && Boolean\(sfmVersionId\)/);
+    expect(control).not.toMatch(/encodeMp3FromBake|libmp3lame/);
+    expect(control).toMatch(/never invent/);
+  });
+
+  it("stemyHint points at Master Projekt ZIP (not coming soon)", () => {
+    // intl-test-mocks inlines pl.json into readFileSync(tsx) — assert resolved copy.
+    expect(control).toMatch(/Projekt ZIP \(Silver\+\)/);
+    expect(control).toMatch(/po zatwierdzeniu Mastera/);
+    expect(control).not.toMatch(/ZIP stemów wkrótce/);
+    expect(control).not.toMatch(/ZIP stems coming soon/);
+    const en = JSON.parse(
+      readFileSync(join(ROOT, "messages/en.json"), "utf8"),
+    ) as { studio: { studioExportControl: { stemyHint: string } } };
+    expect(en.studio.studioExportControl.stemyHint).toMatch(
+      /Project ZIP \(Silver\+\)/,
+    );
+    expect(en.studio.studioExportControl.stemyHint).not.toMatch(
+      /coming soon/i,
+    );
+  });
+
+  it("deliver route comment documents server-rendered ZIP (no stem upload action)", () => {
+    const deliver = readFileSync(
+      join(ROOT, "src/app/api/studio/projects/[projectId]/deliver/route.ts"),
+      "utf8",
+    );
+    expect(deliver).not.toMatch(/action:"stem"/);
+    expect(deliver).toMatch(/server-rendered into the ZIP/);
+    expect(deliver).toMatch(/action:"prepare"/);
+    expect(deliver).toMatch(/action:"commit"/);
   });
 
   it("handles CONFLICT / network ambiguity without inventing second key blindly", () => {

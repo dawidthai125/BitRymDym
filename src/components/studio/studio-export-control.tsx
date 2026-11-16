@@ -13,17 +13,26 @@ import {
   handleStudioDialogKeydown,
 } from "@/lib/studio/studio-dialog-focus";
 import {
+  SFM_PHONE_MP3_QUALITY,
   STUDIO_EXPORT_POLL_INTERVAL_MS,
   STUDIO_EXPORT_POLL_MAX_ATTEMPTS,
+  createSfmQualityEncodeIdempotencyKey,
   createStudioExportIdempotencyKey,
+  findSfmCurrentQualityArtifactId,
+  mapSfmEncodeHttpError,
   mapStudioExportDownloadHttpResult,
   mapStudioExportHttpResult,
   mapStudioExportLatestHttpResult,
+  sfmVersionEncodeUrl,
+  sfmVersionGrantUrl,
+  sfmVersionJobStatusUrl,
+  sfmVersionStatusUrl,
   studioExportArtifactDownloadUrl,
   studioExportEnqueueUrl,
   studioExportLatestStatusUrl,
   studioExportPhaseLabel,
   studioExportStatusUrl,
+  type SfmVersionStatusPayload,
   type StudioExportUiPhase,
 } from "@/lib/studio/studio-export-client";
 import { toUserFacingError } from "@/lib/ui/user-errors";
@@ -35,9 +44,10 @@ export type StudioExportControlProps = {
 };
 
 /**
- * Stage I — Studio Final Mix WAV export control.
+ * Stage I — Studio Final Mix WAV export control + optional SFM MP3 (existing encode API).
  * Uses POST/GET /api/studio/projects/[projectId]/export + owner artifact download.
- * I.45AU — on dialog open, GET latest (read-only) restores prior job; never auto-POST.
+ * MP3 reuses POST /api/studio/final/versions/[versionId]/encode when status returns
+ * a trusted sfmVersionId (never invent). I.45AU — on dialog open, GET latest only.
  * Does not auto-enqueue on mount. Does not accept client object keys.
  */
 export function StudioExportControl({
@@ -55,6 +65,7 @@ export function StudioExportControl({
   const [sfmVersionId, setSfmVersionId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [preparingMp3, setPreparingMp3] = useState(false);
   const [recovering, setRecovering] = useState(false);
 
   const titleId = useId();
@@ -417,10 +428,12 @@ export function StudioExportControl({
     pollAttemptsRef.current = 0;
   }
 
-  async function resolveDownloadUrl(): Promise<string> {
-    if (!artifactId) throw new Error(t("pobieranieNiedostepne"));
+  async function resolveArtifactDownloadUrl(
+    id: string,
+    versionId: string | null,
+  ): Promise<string> {
     const res = await fetch(
-      studioExportArtifactDownloadUrl(artifactId, { sfmVersionId }),
+      studioExportArtifactDownloadUrl(id, { sfmVersionId: versionId }),
       {
         method: "GET",
         credentials: "same-origin",
@@ -446,8 +459,155 @@ export function StudioExportControl({
     return mapped.url;
   }
 
+  async function resolveDownloadUrl(): Promise<string> {
+    if (!artifactId) throw new Error(t("pobieranieNiedostepne"));
+    return resolveArtifactDownloadUrl(artifactId, sfmVersionId);
+  }
+
+  async function readJsonSafe(
+    res: Response,
+  ): Promise<Record<string, unknown>> {
+    try {
+      return (await res.json()) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * Ensure an SFM MP3_128 artifact for the trusted version id (existing encode API).
+   * Does not invent version ids — requires sfmVersionId from export status.
+   */
+  async function ensureSfmPhoneMp3Artifact(): Promise<{
+    artifactId: string;
+    versionId: string;
+  }> {
+    if (!sfmVersionId) {
+      throw new Error(t("mp3NiedostepneBezWersji"));
+    }
+    const versionId = sfmVersionId;
+    const quality = SFM_PHONE_MP3_QUALITY;
+
+    const statusRes = await fetch(sfmVersionStatusUrl(versionId), {
+      method: "GET",
+      credentials: "same-origin",
+    });
+    const statusJson = (await readJsonSafe(statusRes)) as SfmVersionStatusPayload;
+    if (!statusRes.ok) {
+      throw new Error(
+        mapSfmEncodeHttpError({
+          httpStatus: statusRes.status,
+          json: statusJson,
+          fallback: t("mp3NieGotowe"),
+        }).message,
+      );
+    }
+
+    const existing = findSfmCurrentQualityArtifactId(statusJson, quality);
+    if (existing) return { artifactId: existing, versionId };
+
+    if (statusJson.status && statusJson.status !== "EXPORTS_ELIGIBLE") {
+      throw new Error(
+        mapSfmEncodeHttpError({
+          httpStatus: 403,
+          json: { code: "NOT_ELIGIBLE" },
+          fallback: t("mp3NieGotowe"),
+        }).message,
+      );
+    }
+
+    const grantRes = await fetch(sfmVersionGrantUrl(versionId), {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    const grantJson = await readJsonSafe(grantRes);
+    if (!grantRes.ok) {
+      throw new Error(
+        mapSfmEncodeHttpError({
+          httpStatus: grantRes.status,
+          json: grantJson as { error?: string; code?: string },
+          fallback: t("mp3NieGotowe"),
+        }).message,
+      );
+    }
+
+    const encodeRes = await fetch(sfmVersionEncodeUrl(versionId), {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        quality,
+        idempotencyKey: createSfmQualityEncodeIdempotencyKey({
+          versionId,
+          quality,
+          projectId: projectIdRef.current,
+        }),
+      }),
+    });
+    const encodeJson = await readJsonSafe(encodeRes);
+    if (!encodeRes.ok) {
+      throw new Error(
+        mapSfmEncodeHttpError({
+          httpStatus: encodeRes.status,
+          json: encodeJson as { error?: string; code?: string },
+          fallback: t("mp3NieGotowe"),
+        }).message,
+      );
+    }
+    const encodeJobId =
+      typeof encodeJson.jobId === "string" ? encodeJson.jobId : null;
+    if (!encodeJobId) throw new Error(t("mp3NieGotowe"));
+
+    let terminal: string | null = null;
+    for (let i = 0; i < STUDIO_EXPORT_POLL_MAX_ATTEMPTS; i++) {
+      const jobRes = await fetch(sfmVersionJobStatusUrl(versionId, encodeJobId), {
+        method: "GET",
+        credentials: "same-origin",
+      });
+      const jobJson = await readJsonSafe(jobRes);
+      if (!jobRes.ok) {
+        throw new Error(
+          mapSfmEncodeHttpError({
+            httpStatus: jobRes.status,
+            json: jobJson as { error?: string; code?: string },
+            fallback: t("mp3NieGotowe"),
+          }).message,
+        );
+      }
+      const st = typeof jobJson.status === "string" ? jobJson.status : null;
+      if (st === "SUCCEEDED" || st === "FAILED" || st === "CANCELLED" || st === "TIMEOUT") {
+        terminal = st;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, STUDIO_EXPORT_POLL_INTERVAL_MS));
+    }
+    if (terminal !== "SUCCEEDED") {
+      throw new Error(t("mp3NieGotowe"));
+    }
+
+    const afterRes = await fetch(sfmVersionStatusUrl(versionId), {
+      method: "GET",
+      credentials: "same-origin",
+    });
+    const afterJson = (await readJsonSafe(afterRes)) as SfmVersionStatusPayload;
+    if (!afterRes.ok) {
+      throw new Error(
+        mapSfmEncodeHttpError({
+          httpStatus: afterRes.status,
+          json: afterJson,
+          fallback: t("mp3NieGotowe"),
+        }).message,
+      );
+    }
+    const mp3Id = findSfmCurrentQualityArtifactId(afterJson, quality);
+    if (!mp3Id) throw new Error(t("mp3NieGotowe"));
+    return { artifactId: mp3Id, versionId };
+  }
+
   async function onDownload() {
-    if (!artifactId || downloading) return;
+    if (!artifactId || downloading || preparingMp3) return;
     setDownloading(true);
     setMessage(null);
     try {
@@ -465,18 +625,59 @@ export function StudioExportControl({
     }
   }
 
-  /** Phone share: WAV via Web Share when the browser supports files; else download. */
-  async function onSharePhone() {
-    if (!artifactId || downloading) return;
-    setDownloading(true);
+  async function onDownloadMp3() {
+    if (!artifactId || downloading || preparingMp3) return;
+    if (!sfmVersionId) {
+      setMessage(t("mp3NiedostepneBezWersji"));
+      return;
+    }
+    setPreparingMp3(true);
     setMessage(null);
     try {
-      const url = await resolveDownloadUrl();
+      const mp3 = await ensureSfmPhoneMp3Artifact();
+      window.location.assign(
+        await resolveArtifactDownloadUrl(mp3.artifactId, mp3.versionId),
+      );
+    } catch (e) {
+      setMessage(
+        toUserFacingError(
+          e instanceof Error ? e.message : t("mp3NieGotowe"),
+          "download",
+        ),
+      );
+    } finally {
+      setPreparingMp3(false);
+    }
+  }
+
+  /** Phone share: prefer SFM MP3 when trusted version id exists; else WAV. */
+  async function onSharePhone() {
+    if (!artifactId || downloading || preparingMp3) return;
+    setDownloading(true);
+    setPreparingMp3(Boolean(sfmVersionId));
+    setMessage(null);
+    try {
+      let url: string;
+      let fileName: string;
+      let mime: string;
+      let doneMsg: string;
+      if (sfmVersionId) {
+        const mp3 = await ensureSfmPhoneMp3Artifact();
+        url = await resolveArtifactDownloadUrl(mp3.artifactId, mp3.versionId);
+        fileName = "bitrymdym-studio.mp3";
+        mime = "audio/mpeg";
+        doneMsg = t("telefonPobierzMp3");
+      } else {
+        url = await resolveDownloadUrl();
+        fileName = "bitrymdym-studio.wav";
+        mime = "audio/wav";
+        doneMsg = t("telefonPobierzWav");
+      }
       const fileRes = await fetch(url);
       if (!fileRes.ok) throw new Error(t("pobieranieNiedostepne"));
       const blob = await fileRes.blob();
-      const file = new File([blob], "bitrymdym-studio.wav", {
-        type: blob.type || "audio/wav",
+      const file = new File([blob], fileName, {
+        type: blob.type || mime,
       });
       const nav = navigator as Navigator & {
         canShare?: (data: ShareData) => boolean;
@@ -490,7 +691,7 @@ export function StudioExportControl({
         });
       } else {
         window.location.assign(url);
-        setMessage(t("telefonPobierzWav"));
+        setMessage(doneMsg);
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
@@ -502,6 +703,7 @@ export function StudioExportControl({
       );
     } finally {
       setDownloading(false);
+      setPreparingMp3(false);
     }
   }
 
@@ -535,6 +737,9 @@ export function StudioExportControl({
     !recovering &&
     unavailableWithTrackedJob;
   const showDownload = phase === "SUCCEEDED" && Boolean(artifactId);
+  /** MP3 only when export status returned a trusted SFM version id (never invent). */
+  const showMp3 = showDownload && Boolean(sfmVersionId);
+  const busyDownload = downloading || preparingMp3;
   const startLabel = submitting
     ? t("wysylanie")
     : recovering
@@ -678,11 +883,25 @@ export function StudioExportControl({
                   size="sm"
                   variant="outline"
                   className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
-                  disabled={downloading}
+                  disabled={busyDownload}
                   data-testid="studio-export-download"
                   onClick={() => void onDownload()}
                 >
-                  {tl(downloading ? t("pobieranie") : t("pobierzWav"))}
+                  {tl(busyDownload ? t("pobieranie") : t("pobierzWav"))}
+                </Button>
+              ) : null}
+
+              {showMp3 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  disabled={busyDownload}
+                  data-testid="studio-export-mp3"
+                  onClick={() => void onDownloadMp3()}
+                >
+                  {tl(preparingMp3 ? t("przygotowujeMp3") : t("pobierzMp3"))}
                 </Button>
               ) : null}
 
@@ -692,11 +911,17 @@ export function StudioExportControl({
                   size="sm"
                   variant="outline"
                   className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
-                  disabled={downloading}
+                  disabled={busyDownload}
                   data-testid="studio-export-phone"
                   onClick={() => void onSharePhone()}
                 >
-                  {tl(downloading ? t("pobieranie") : t("wersjaDoTelefonu"))}
+                  {tl(
+                    preparingMp3
+                      ? t("przygotowujeMp3")
+                      : busyDownload
+                        ? t("pobieranie")
+                        : t("wersjaDoTelefonu"),
+                  )}
                 </Button>
               ) : null}
 

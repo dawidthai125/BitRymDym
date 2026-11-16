@@ -10,9 +10,9 @@ type RouteContext = { params: Promise<{ projectId: string }> };
 
 /**
  * POST — downloads, enforced here (tier from the server entitlement, never from the client):
- *   {action:"prepare", kind, format} → jobId (+ upload URL for browser-rendered mix/raw)
- *   {action:"stem", jobId, name}     → upload URL for one Projekt stem (Gold only, re-checked on commit)
+ *   {action:"prepare", kind, format} → jobId (E3 worker renders mix / raw / project ZIP from storage)
  *   {action:"commit", jobId, kind, format} → quota consumed atomically, job queued
+ * Stems for kind=project are server-rendered into the ZIP (no browser stem upload action).
  */
 export async function POST(request: Request, context: RouteContext) {
   try {

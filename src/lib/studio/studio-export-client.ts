@@ -454,3 +454,142 @@ export function studioExportPhaseLabel(phase: StudioExportUiPhase): string {
 
 export const STUDIO_EXPORT_POLL_INTERVAL_MS = 1500;
 export const STUDIO_EXPORT_POLL_MAX_ATTEMPTS = 40;
+
+/** Phone / preview MP3 — lowest SFM quality on every paid plan (BRONZE+). */
+export const SFM_PHONE_MP3_QUALITY = "MP3_128" as const;
+
+export function sfmVersionStatusUrl(versionId: string): string {
+  return `/api/studio/final/versions/${encodeURIComponent(versionId)}`;
+}
+
+export function sfmVersionGrantUrl(versionId: string): string {
+  return `/api/studio/final/versions/${encodeURIComponent(versionId)}/grants`;
+}
+
+export function sfmVersionEncodeUrl(versionId: string): string {
+  return `/api/studio/final/versions/${encodeURIComponent(versionId)}/encode`;
+}
+
+export function sfmVersionJobStatusUrl(versionId: string, jobId: string): string {
+  return `/api/studio/final/versions/${encodeURIComponent(versionId)}/jobs/${encodeURIComponent(jobId)}`;
+}
+
+export function createSfmQualityEncodeIdempotencyKey(input: {
+  versionId: string;
+  quality: string;
+  projectId: string;
+}): string {
+  return `sfm-encode:${input.versionId}:${input.quality}:${input.projectId}`;
+}
+
+export type SfmVersionStatusPayload = {
+  success?: boolean;
+  status?: string;
+  currentArtifacts?: Array<{
+    artifactId?: string;
+    quality?: string;
+    status?: string;
+    isCurrent?: boolean;
+  }>;
+  error?: string;
+  code?: string;
+};
+
+/** Find current READY artifact for a quality on a version status payload. */
+export function findSfmCurrentQualityArtifactId(
+  payload: SfmVersionStatusPayload,
+  quality: string,
+): string | null {
+  const rows = Array.isArray(payload.currentArtifacts)
+    ? payload.currentArtifacts
+    : [];
+  for (const row of rows) {
+    if (
+      row?.quality === quality &&
+      row?.isCurrent === true &&
+      row?.status === "READY" &&
+      typeof row.artifactId === "string" &&
+      row.artifactId.length > 0
+    ) {
+      return row.artifactId;
+    }
+  }
+  return null;
+}
+
+export type SfmEncodeMappedError = {
+  ok: false;
+  httpStatus: number;
+  code: string | null;
+  message: string;
+};
+
+/** Map SFM grant/encode/status HTTP errors to safe UI copy (no SQL). */
+export function mapSfmEncodeHttpError(input: {
+  httpStatus: number;
+  json: { error?: string; code?: string };
+  fallback: string;
+}): SfmEncodeMappedError {
+  const code =
+    typeof input.json.code === "string" && input.json.code.length > 0
+      ? input.json.code
+      : null;
+  if (input.httpStatus === 401) {
+    return {
+      ok: false,
+      httpStatus: 401,
+      code,
+      message: "Zaloguj się, aby pobrać MP3.",
+    };
+  }
+  if (input.httpStatus === 503 || code === "DISABLED") {
+    return {
+      ok: false,
+      httpStatus: input.httpStatus,
+      code: code ?? "DISABLED",
+      message: "Eksport MP3 Final Mix jest wyłączony.",
+    };
+  }
+  if (code === "NOT_ELIGIBLE" || input.httpStatus === 403) {
+    const byCode: Record<string, string> = {
+      NOT_ELIGIBLE:
+        "Wersja Final Mix nie jest jeszcze gotowa do MP3 (Master SFM musi się udać).",
+      NO_GRANT: "Brak uprawnienia do pobrania MP3 dla tej wersji.",
+      FREE_NO_DOWNLOAD: "Plan Free nie obejmuje pobierania MP3.",
+      PLAN_DENIED: "Twój plan nie obejmuje tego formatu MP3.",
+      QUALITY_DENIED: "Ten format MP3 nie jest w Twoim uprawnieniu.",
+      DOWNGRADE_NEW_QUALITY:
+        "Ten format MP3 nie był w uprawnieniu przy pierwszym pobraniu.",
+    };
+    return {
+      ok: false,
+      httpStatus: input.httpStatus,
+      code,
+      message:
+        (code && byCode[code]) ||
+        (typeof input.json.error === "string" && input.json.error.length > 0
+          ? input.json.error
+          : input.fallback),
+    };
+  }
+  if (input.httpStatus === 409) {
+    return {
+      ok: false,
+      httpStatus: 409,
+      code,
+      message:
+        code === "LIMIT_EXCEEDED"
+          ? "Wykorzystano dzienny limit pierwszego pobrania Final Mix."
+          : input.fallback,
+    };
+  }
+  return {
+    ok: false,
+    httpStatus: input.httpStatus,
+    code,
+    message:
+      typeof input.json.error === "string" && input.json.error.length > 0
+        ? input.json.error
+        : input.fallback,
+  };
+}
