@@ -100,7 +100,7 @@ describe("describeBeatStyleFromYouTube", () => {
       input: Array<{ uri?: string; text?: string }>;
       response_format?: { schema?: { required?: string[] } };
     };
-    expect(sent.model).toBe("gemini-4-hydrogen");
+    expect(sent.model).toBe("gemini-3-flash-preview");
     expect(sent.input[0]?.uri).toBe(CANONICAL);
     const instruction = sent.input[1]?.text ?? "";
     expect(instruction).toContain("Stable Audio");

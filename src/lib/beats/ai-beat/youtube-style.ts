@@ -2,7 +2,8 @@ import { sanitizeBeatOpis, sanitizeBeatStyle } from "@/lib/beats/ai-beat/prompt"
 import { BeatRequestError } from "@/lib/beats/request-error";
 
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
-const DEFAULT_MODEL = "gemini-4-hydrogen";
+/** Flash preview accepts YouTube URI and stays up when hydrogen is capacity-limited. */
+const DEFAULT_MODEL = "gemini-3-flash-preview";
 const TIMEOUT_MS = 55_000;
 
 const INSTRUCTION = [
