@@ -1,6 +1,7 @@
 /**
  * 1-tap mild beat ducker — sidechain on the lead vocal (existing bus key).
- * Depth ~0.28 ≈ gentle pocket under the vocal; not the full default 0.65.
+ * Producent: −2.5 dB ≈ depth 0.25; attack 12 / release 120.
+ * FX sidechain has no band param (wanted 200–4500 Hz) — depth/time only.
  */
 
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
@@ -8,10 +9,10 @@ import { upsertFx } from "@/lib/studio/mix-autofix/plan";
 import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
 import type { StudioTrackRole } from "@/config/studio";
 
-/** Mild hip-hop duck under the vocal. */
-export const BEAT_DUCKER_DEPTH = 0.28;
+/** −2.5 dB duck ≈ 1 − 10^(−2.5/20). */
+export const BEAT_DUCKER_DEPTH = 0.25;
 export const BEAT_DUCKER_ATTACK_MS = 12;
-export const BEAT_DUCKER_RELEASE_MS = 180;
+export const BEAT_DUCKER_RELEASE_MS = 120;
 
 export type BeatDuckerTrack = {
   id: string;

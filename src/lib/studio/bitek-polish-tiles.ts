@@ -13,17 +13,18 @@ export type BitekPolishTile = {
   fixes: readonly MixPlanFixId[];
 };
 
+/** Producent order: Sybilanty → Muł → Klej. */
 export const BITEK_POLISH_TILES: readonly BitekPolishTile[] = [
-  {
-    id: "mud",
-    labelKey: "mud",
-    /** High-pass + presence EQ path lives in eq autofix. */
-    fixes: ["eq"],
-  },
   {
     id: "sibilance",
     labelKey: "sibilance",
     fixes: ["deesser"],
+  },
+  {
+    id: "mud",
+    labelKey: "mud",
+    /** High-pass + low-mid cut live in eq autofix. */
+    fixes: ["eq"],
   },
   {
     id: "glue",

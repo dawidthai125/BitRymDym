@@ -13,14 +13,14 @@ export type HipHopStructureSection = {
   bars: number;
 };
 
-/** Classic: Intro 4 · Verse 16 · Hook 8 · Verse 16 · Hook 8 · Outro 4 */
+/** Producent: Intro 8 · Verse 16 · Hook 8 · Verse 16 · Hook 8 · Outro 8 @ 90 BPM. */
 export const HIPHOP_STRUCTURE_SECTIONS: readonly HipHopStructureSection[] = [
-  { label: "Intro", kind: "verse", bars: 4 },
+  { label: "Intro", kind: "verse", bars: 8 },
   { label: "Zwrotka 1", kind: "verse", bars: 16 },
   { label: "Refren 1", kind: "hook", bars: 8 },
   { label: "Zwrotka 2", kind: "verse", bars: 16 },
   { label: "Refren 2", kind: "hook", bars: 8 },
-  { label: "Outro", kind: "verse", bars: 4 },
+  { label: "Outro", kind: "verse", bars: 8 },
 ] as const;
 
 export type HipHopStructureMarker = {

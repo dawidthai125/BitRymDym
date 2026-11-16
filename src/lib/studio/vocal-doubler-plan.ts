@@ -3,9 +3,11 @@
  * Pure numbers; editor applies via existing duplicate + pan/pitch/move APIs.
  */
 
-export const VOCAL_DOUBLER_OFFSET_MS = 18;
-export const VOCAL_DOUBLER_DETUNE_CENTS = 5;
-export const VOCAL_DOUBLER_PAN = 0.65;
+/** Producent Bitów (v2) — hip-hop double defaults. */
+export const VOCAL_DOUBLER_OFFSET_MS = 22;
+export const VOCAL_DOUBLER_DETUNE_CENTS = 8;
+/** ±30% panorama. */
+export const VOCAL_DOUBLER_PAN = 0.3;
 /** Slightly under the lead so the double sits behind. */
 export const VOCAL_DOUBLER_GAIN_DB = -2.5;
 

@@ -12,11 +12,11 @@ describe("hiphop-marker-structure", () => {
     const markers = planHipHopStructureMarkers({ bpm: 90 });
     expect(markers[0]).toMatchObject({ label: "Intro", kind: "verse", positionMs: 0 });
     expect(markers[1]?.kind).toBe("verse");
-    expect(markers[1]?.positionMs).toBe(Math.round(4 * bar));
+    expect(markers[1]?.positionMs).toBe(Math.round(8 * bar));
     expect(markers[2]).toMatchObject({
       label: "Refren 1",
       kind: "hook",
-      positionMs: Math.round(20 * bar),
+      positionMs: Math.round(24 * bar),
     });
     expect(markers.length).toBe(6);
   });
