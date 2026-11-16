@@ -11,9 +11,12 @@ import { deleteBeatAction } from "@/lib/beats/actions";
 export function AdminBeatDelete({
   beatId,
   redirectTo,
+  compact = false,
 }: {
   beatId: string;
   redirectTo?: string;
+  /** Waiting list: no top border, shorter confirm copy via same checkbox. */
+  compact?: boolean;
 }) {
   const t = useTranslations("admin.adminLifecycleControls");
   const router = useRouter();
@@ -22,7 +25,13 @@ export function AdminBeatDelete({
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="mt-4 space-y-3 border-t border-[var(--brd-line)] pt-4">
+    <div
+      className={
+        compact
+          ? "space-y-3"
+          : "mt-4 space-y-3 border-t border-[var(--brd-line)] pt-4"
+      }
+    >
       <label className="flex items-start gap-3 text-sm">
         <input
           type="checkbox"

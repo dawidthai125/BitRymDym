@@ -8,12 +8,15 @@ import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { requestPlatformBeatOpsExportAction } from "@/lib/beats/audio-actions";
+import { opsExportFileName } from "@/lib/beats/audio-types";
 import { toSafeDownloadErrorMessage } from "@/lib/beats/public";
 
 type AdminPlatformOpsExportButtonProps = {
   beatId: string;
   title: string;
   activeMasterReady: boolean;
+  /** Waiting catalogue: short WAV label, no ops footnote. */
+  compactWav?: boolean;
 };
 
 /**
@@ -24,6 +27,7 @@ export function AdminPlatformOpsExportButton({
   beatId,
   title,
   activeMasterReady,
+  compactWav = false,
 }: AdminPlatformOpsExportButtonProps) {
   const tl = useLibText();
   const t = useTranslations("admin.adminPlatformOpsExportButton");
@@ -40,7 +44,7 @@ export function AdminPlatformOpsExportButton({
       }
       const anchor = document.createElement("a");
       anchor.href = result.url;
-      anchor.download = `${title || "platform-beat"}.bin`;
+      anchor.download = opsExportFileName(title, result.contentType ?? null);
       anchor.rel = "noopener";
       document.body.appendChild(anchor);
       anchor.click();
@@ -49,7 +53,7 @@ export function AdminPlatformOpsExportButton({
   }
 
   return (
-    <div className="space-y-2">
+    <div className={compactWav ? "space-y-1" : "space-y-2"}>
       <Button
         type="button"
         variant="outline"
@@ -58,11 +62,21 @@ export function AdminPlatformOpsExportButton({
         aria-busy={isPending}
         className="min-h-11"
       >
-        {tl(isPending ? t("eksportOperacyjny") : t("eksportOperacyjnyMaster"))}
+        {tl(
+          isPending
+            ? compactWav
+              ? t("pobieranieWav")
+              : t("eksportOperacyjny")
+            : compactWav
+              ? t("pobierzWav")
+              : t("eksportOperacyjnyMaster"),
+        )}
       </Button>
-      <p className="text-xs text-muted-foreground">
-        {t("privilegowanyEksportBituPlatformy")}
-      </p>
+      {compactWav ? null : (
+        <p className="text-xs text-muted-foreground">
+          {t("privilegowanyEksportBituPlatformy")}
+        </p>
+      )}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {tl(error)}

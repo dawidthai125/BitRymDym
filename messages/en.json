@@ -839,12 +839,13 @@
     "adminBeatsWaitingPage": {
       "lista": "← List",
       "tytul": "Catalogue of created beats",
-      "opis": "Beats from the generator land here. Listen, add a cover, and release to the free or the paid catalogue.",
+      "opis": "Beats from the generator land here. Listen, download the WAV, check the style and description used to generate it, add a cover, or delete the draft. Then release to the free or the paid catalogue.",
       "pusto": "No beats are waiting for a decision.",
       "bpm": "BPM",
       "czas": "Duration",
+      "promptGeneracji": "What it was generated from",
       "styl": "Style",
-      "opisBitu": "Style description",
+      "opisBitu": "Description",
       "okladka": "Cover",
       "brakOkladki": "No cover",
       "generujOkladke": "Generate cover",
@@ -1176,6 +1177,8 @@
     "adminPlatformOpsExportButton": {
       "eksportOperacyjny": "Operational export…",
       "eksportOperacyjnyMaster": "Operational Master export",
+      "pobierzWav": "Download WAV",
+      "pobieranieWav": "Downloading WAV…",
       "privilegowanyEksportBituPlatformy": "Privileged platform beat export (this is not a user download)."
     },
     "adminSamplePolicyForm": {

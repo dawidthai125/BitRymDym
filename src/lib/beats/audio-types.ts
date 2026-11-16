@@ -45,6 +45,28 @@ export function mapBeatAudioAssetRow(row: BeatAudioAssetRow): BeatAudioAsset {
 export const BEAT_AUDIO_ASSET_SELECT =
   "id, beat_id, purpose, status, storage_bucket, object_key, content_type, byte_size, checksum_sha256, original_filename, is_active, replaced_by_asset_id, created_by, created_at, updated_at";
 
+/** Extension for an admin ops export from the stored master content type. */
+export function opsExportExtension(contentType: string | null | undefined): string {
+  const raw = (contentType ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
+  if (raw === "audio/mpeg" || raw === "audio/mp3") return "mp3";
+  if (raw === "audio/wav" || raw === "audio/x-wav" || raw === "audio/wave") return "wav";
+  return "bin";
+}
+
+/** Browser download filename for an admin ops export. */
+export function opsExportFileName(
+  title: string,
+  contentType: string | null | undefined,
+): string {
+  const base =
+    title
+      .replace(/[^\p{L}\p{N}\-_ ]+/gu, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 80) || "bitrymdym-platform";
+  return `${base}.${opsExportExtension(contentType)}`;
+}
+
 /** Public-safe projection — never return object_key to browsers. */
 export type BeatAudioPublicInfo = {
   beatId: string;

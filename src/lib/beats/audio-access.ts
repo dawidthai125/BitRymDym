@@ -71,6 +71,9 @@ export type PlatformBeatOpsExportResult = {
   assetId: string;
   ownershipType: "PLATFORM";
   purpose: "OPS_EXPORT";
+  contentType: string | null;
+  /** Safe download basename stem; caller adds extension from contentType. */
+  downloadBaseName: string;
 };
 
 function actorFromRole(role: SystemRole | null): AudioAccessActor {
@@ -526,5 +529,7 @@ export async function requestPlatformBeatOpsExport(params: {
     assetId: asset.id,
     ownershipType: "PLATFORM",
     purpose: "OPS_EXPORT",
+    contentType: asset.content_type,
+    downloadBaseName: "bitrymdym-platform",
   };
 }

@@ -28,6 +28,8 @@ export type AudioActionState = {
   assetId?: string;
   url?: string;
   expiresAt?: string;
+  contentType?: string | null;
+  downloadBaseName?: string;
   remainingToday?: number;
   /** Guests: stop playback here and show the sign-in prompt. */
   previewLimitSeconds?: number;
@@ -146,6 +148,8 @@ export async function requestPlatformBeatOpsExportAction(params: {
       url: result.url,
       expiresAt: result.expiresAt,
       assetId: result.assetId,
+      contentType: result.contentType,
+      downloadBaseName: result.downloadBaseName,
     };
   } catch (error) {
     return catchAudio(error, "DOWNLOAD");

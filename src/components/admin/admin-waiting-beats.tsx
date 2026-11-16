@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { AdminBeatBitek } from "@/components/admin/admin-beat-bitek";
+import { AdminBeatDelete } from "@/components/admin/admin-beat-delete";
 import { AdminBeatPlayButton } from "@/components/admin/admin-beat-play-button";
+import { AdminPlatformOpsExportButton } from "@/components/admin/admin-platform-ops-export-button";
 import { Button } from "@/components/ui/button";
 import { beatCoverUrl } from "@/lib/beats/cover/cover-url";
 import { formatDurationSeconds } from "@/lib/beats/public";
@@ -159,14 +161,28 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
           </span>
         </p>
 
-        <p className="text-sm break-words">
-          <span className="text-[var(--brd-mute)]">{t("styl")}: </span>
-          {beat.style?.trim() || "—"}
-        </p>
-        <p className="text-sm break-words text-[var(--brd-ink-soft)]">
-          <span className="text-[var(--brd-mute)]">{t("opisBitu")}: </span>
-          {beat.description?.trim() || "—"}
-        </p>
+        <div className="space-y-1 rounded-lg border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3">
+          <p className="text-xs uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+            {t("promptGeneracji")}
+          </p>
+          <p className="text-sm break-words">
+            <span className="text-[var(--brd-mute)]">{t("styl")}: </span>
+            {beat.style?.trim() || "—"}
+          </p>
+          <p className="text-sm break-words text-[var(--brd-ink-soft)]">
+            <span className="text-[var(--brd-mute)]">{t("opisBitu")}: </span>
+            {beat.description?.trim() || "—"}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-start gap-3">
+          <AdminPlatformOpsExportButton
+            beatId={beat.id}
+            title={beat.title}
+            activeMasterReady
+            compactWav
+          />
+        </div>
 
         <AdminBeatBitek beatId={beat.id} startClosed onRevised={() => router.refresh()} />
 
@@ -249,6 +265,12 @@ function WaitingBeatRow({ beat }: { beat: WaitingGeneratedBeat }) {
             {error}
           </p>
         ) : null}
+
+        <AdminBeatDelete
+          beatId={beat.id}
+          redirectTo="/admin/beats/waiting"
+          compact
+        />
       </div>
     </li>
   );

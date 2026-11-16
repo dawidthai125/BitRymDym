@@ -839,12 +839,13 @@
     "adminBeatsWaitingPage": {
       "lista": "← Lista",
       "tytul": "Katalog utworzonych bitów",
-      "opis": "Tu leżą bity z generatora. Odsłuchaj, dodaj okładkę i wydaj do katalogu darmowego albo płatnego.",
+      "opis": "Tu leżą bity z generatora. Odsłuchaj, pobierz WAV, sprawdź styl i opis użyte do generacji, dodaj okładkę albo usuń szkic. Potem wydaj do katalogu darmowego albo płatnego.",
       "pusto": "Nie ma bitów czekających na decyzję.",
       "bpm": "BPM",
       "czas": "Czas",
+      "promptGeneracji": "Na podstawie czego powstał",
       "styl": "Styl",
-      "opisBitu": "Opis stylu",
+      "opisBitu": "Opis",
       "okladka": "Okładka",
       "brakOkladki": "Brak okładki",
       "generujOkladke": "Generuj okładkę",
@@ -1176,6 +1177,8 @@
     "adminPlatformOpsExportButton": {
       "eksportOperacyjny": "Eksport operacyjny…",
       "eksportOperacyjnyMaster": "Eksport operacyjny Master",
+      "pobierzWav": "Pobierz WAV",
+      "pobieranieWav": "Pobieram WAV…",
       "privilegowanyEksportBituPlatformy": "Uprzywilejowany eksport bitu platformy (nie jest to pobieranie użytkownika)."
     },
     "adminSamplePolicyForm": {
