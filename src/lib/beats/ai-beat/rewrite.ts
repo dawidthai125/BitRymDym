@@ -63,7 +63,8 @@ export async function rewriteBeatPrompt(
 
   const tempo = bpm ? `Requested tempo: ${bpm} BPM.` : "Choose a natural hip-hop tempo.";
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20_000);
+  // grok-4.7 defaults to high reasoning (~15s+); low keeps this under the route budget.
+  const timer = setTimeout(() => controller.abort(), 25_000);
   try {
     const res = await (deps.fetchFn ?? fetch)(REWRITE_URL, {
       method: "POST",
@@ -75,6 +76,7 @@ export async function rewriteBeatPrompt(
       body: JSON.stringify({
         model: deps.model || "grok-4.7",
         temperature: 0.4,
+        reasoning_effort: "low",
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM },

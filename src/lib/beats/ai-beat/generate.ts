@@ -46,7 +46,11 @@ export async function startBeatGeneration(params: {
       apiKey: process.env.XAI_API_KEY,
       model: process.env.BITEK_XAI_MODEL || "grok-4.7",
     });
-  } catch {
+  } catch (error) {
+    console.error(
+      "[beat-rewrite] failed:",
+      error instanceof Error ? error.name : "unknown",
+    );
     throw new BeatRequestError("Nie udało się przetłumaczyć opisu. Spróbuj jeszcze raz.");
   }
 
