@@ -164,9 +164,13 @@ export type StudioMediaElement = {
   preload: string;
   /** Linked Scratch rate. Optional so legacy test hosts keep compiling. */
   playbackRate?: number;
+  /** HTMLMediaElement.readyState — optional for lightweight test hosts. */
+  readyState?: number;
   play(): Promise<void>;
   pause(): void;
   load(): void;
+  addEventListener?(type: string, listener: () => void): void;
+  removeEventListener?(type: string, listener: () => void): void;
 };
 
 export type StudioAudioContextLike = StudioFxGraphContext & {
@@ -2372,16 +2376,18 @@ export class StudioAudioEngine {
         return;
       }
       if (!voice) continue;
-      // After await, the AudioContext clock may have moved — never seek to a stale plan.
-      const livePlayhead = this.livePlayheadMs() ?? playheadMs;
+      // Clock ticks: follow the live playhead. Prime/play bootstrap (no tick yet):
+      // stay on the requested playhead — provisional epoch must not drift seeks.
+      const seekPlayhead =
+        this.tickId != null ? (this.livePlayheadMs() ?? playheadMs) : playheadMs;
       const liveOffset =
         sourceOffsetSecondsAtPlayhead({
-          playheadMs: livePlayhead,
+          playheadMs: seekPlayhead,
           timelineStartMs: clip.timelineStartMs,
           sourceOffsetMs: clip.sourceOffsetMs,
           durationMs: clip.durationMs,
         }) ?? plan.sourceOffsetSeconds;
-      this.applyClipFade(voice, clip, livePlayhead, shouldPlay);
+      this.applyClipFade(voice, clip, seekPlayhead, shouldPlay);
       const jogOwns = scratchJogOwnsClip({
         clipId: clip.id,
         liveClipId: this.scratchLive.clipId,
@@ -2395,7 +2401,7 @@ export class StudioAudioEngine {
       });
       const persistedPlayback = !clipPlaybackIdentity(playback) && !jogOwns && !persistedReverse;
       if (persistedPlayback) {
-        this.holdPersistedPlayback(voice, clip, livePlayhead, playback);
+        this.holdPersistedPlayback(voice, clip, seekPlayhead, playback);
         try {
           voice.element.pause();
         } catch {
@@ -2414,7 +2420,7 @@ export class StudioAudioEngine {
       if (jogOwns) {
         if (voice.scratchReverse || voice.bufferSource) continue;
       } else if (persistedReverse) {
-        this.holdPersistedReverse(voice, clip, playheadMs);
+        this.holdPersistedReverse(voice, clip, seekPlayhead);
         try {
           voice.element.pause();
         } catch {
@@ -2709,7 +2715,14 @@ export class StudioAudioEngine {
       if (existing && !existing.disposed && existing.sourceUrl === baked.url) return existing;
       if (existing) this.disposeVoice(clip.id);
       try {
-        return this.createVoice(clip, { url: baked.url, expiresAt: Number.MAX_SAFE_INTEGER }, `tune-bake:${baked.key}`);
+        const voice = this.createVoice(
+          clip,
+          { url: baked.url, expiresAt: Number.MAX_SAFE_INTEGER },
+          `tune-bake:${baked.key}`,
+        );
+        await this.awaitMediaReady(voice.element);
+        if (voice.disposed) return null;
+        return voice;
       } catch {
         this.failedClips.add(clip.id);
         this.listener.onError({ code: "AUDIO_OUTPUT_ERROR", sourceKind: clip.sourceKind, clipId: clip.id });
@@ -2759,7 +2772,10 @@ export class StudioAudioEngine {
     }
 
     try {
-      return this.createVoice(clip, resolved.source, nextIdentity);
+      const voice = this.createVoice(clip, resolved.source, nextIdentity);
+      await this.awaitMediaReady(voice.element);
+      if (voice.disposed) return null;
+      return voice;
     } catch {
       this.failedClips.add(clip.id);
       this.listener.onError({
@@ -2769,6 +2785,35 @@ export class StudioAudioEngine {
       });
       return null;
     }
+  }
+
+  /**
+   * Wait until currentTime seeks stick. Seeking before loadedmetadata is ignored,
+   * so Play would start the TAKE at 0 while the playhead had already moved.
+   */
+  private awaitMediaReady(element: StudioMediaElement): Promise<void> {
+    if ((element.readyState ?? 0) >= 1) return Promise.resolve();
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        try {
+          element.removeEventListener?.("loadedmetadata", finish);
+        } catch {
+          /* ignore */
+        }
+        resolve();
+      };
+      try {
+        element.addEventListener?.("loadedmetadata", finish);
+      } catch {
+        finish();
+        return;
+      }
+      // Hosts without events (unit fakes) resolve on the next macrotask.
+      setTimeout(finish, element.addEventListener ? 8000 : 0);
+    });
   }
 
   private createVoice(

@@ -422,6 +422,7 @@ function createFakeHost(played: string[]): StudioAudioEngineHost {
         muted: false,
         crossOrigin: null,
         preload: "auto",
+        readyState: 1,
         async play() {
           this.paused = false;
           played.push(this.src);
@@ -576,6 +577,7 @@ describe("P5.10 engine lifecycle / multi-source play", () => {
           muted: false,
           crossOrigin: null,
           preload: "auto",
+          readyState: 1,
           async play() {
             this.paused = false;
           },
@@ -675,6 +677,8 @@ describe("P5.10 engine lifecycle / multi-source play", () => {
     expect(engineSrc).toMatch(/livePlayheadMs\(\)/);
     expect(engineSrc).toMatch(/sourceOffsetSecondsAtPlayhead/);
     expect(engineSrc).toMatch(/GROSS_LAG_MS/);
+    expect(engineSrc).toMatch(/awaitMediaReady/);
+    expect(engineSrc).toMatch(/this\.tickId != null/);
   });
 });
 
