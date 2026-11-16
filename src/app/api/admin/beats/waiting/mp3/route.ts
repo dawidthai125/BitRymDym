@@ -5,7 +5,7 @@ import {
   beatApiBadRequest,
   beatAudioApiErrorResponse,
 } from "@/lib/beats/beat-operation-error";
-import { requestWaitingOpsMp3Download } from "@/lib/beats/ops-mp3/ops-mp3-service";
+import { requestWaitingOpsMp3Download } from "@/lib/beats/ops-mp3/ops-mp3-request";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;

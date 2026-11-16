@@ -1,7 +1,6 @@
 /**
  * Contabo (auto-check host) encodes PLATFORM MASTER → admin OPS MP3.
- * Vercel only requests the tag and signs the READY asset — no ffmpeg there.
- * No `server-only` import: the Contabo poller loads this via tsx like preview.
+ * Vercel request/signing lives in ops-mp3-request.ts (not loaded here).
  */
 import { createHash, randomUUID } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -11,13 +10,7 @@ import path from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { resolveFfmpegBin, runCapture } from "@/lib/audio/native-ffmpeg";
-import { rewriteThroughAudioEdge } from "@/lib/audio/audio-edge";
-import { AuthError, requireRole } from "@/lib/auth/session";
-import {
-  BEAT_AUDIO_BUCKET,
-  BEAT_AUDIO_DOWNLOAD_TTL_SECONDS,
-} from "@/lib/beats/audio-validation";
-import { GENERATED_BEAT_TAG } from "@/lib/beats/catalog-lane";
+import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
 import {
   buildOpsMp3FfmpegArgs,
   buildOpsMp3ObjectKey,
@@ -26,10 +19,7 @@ import {
   OPS_MP3_WANTED_TAG,
   opsMp3SourceMarker,
   tagsWithoutOpsMp3Wanted,
-  tagsWithOpsMp3Wanted,
 } from "@/lib/beats/ops-mp3/ops-mp3";
-import { BeatRequestError } from "@/lib/beats/request-error";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type OpsMp3Outcome =
   | "skipped_fresh"
@@ -185,7 +175,6 @@ async function storeOpsMp3Bytes(
 ): Promise<{ ok: true; assetId: string } | { ok: false; errorCode: string }> {
   const assetId = randomUUID();
   const objectKey = buildOpsMp3ObjectKey({ beatId: params.beatId, assetId });
-  let uploadedKey: string | null = objectKey;
   const { error: upErr } = await admin.storage
     .from(BEAT_AUDIO_BUCKET)
     .upload(objectKey, params.bytes, { contentType: params.contentType, upsert: false });
@@ -208,7 +197,6 @@ async function storeOpsMp3Bytes(
     await admin.storage.from(BEAT_AUDIO_BUCKET).remove([objectKey]).catch(() => undefined);
     return { ok: false, errorCode: "asset_insert_failed" };
   }
-  uploadedKey = null;
 
   if (params.currentRow) {
     const { error: oldErr } = await admin
@@ -229,9 +217,6 @@ async function storeOpsMp3Bytes(
         .eq("id", params.currentRow.id);
     }
     return { ok: false, errorCode: "activate_failed" };
-  }
-  if (uploadedKey) {
-    await admin.storage.from(BEAT_AUDIO_BUCKET).remove([uploadedKey]).catch(() => undefined);
   }
   return { ok: true, assetId };
 }
@@ -262,108 +247,4 @@ export async function listBeatsNeedingOpsMp3(
     .limit(limit);
   if (error) throw new Error(error.message);
   return (data ?? []).map((row) => row.id as string);
-}
-
-export type OpsMp3DownloadState =
-  | { status: "ready"; url: string; expiresAt: string; fileName: string }
-  | { status: "pending" }
-  | { status: "error"; error: string };
-
-/**
- * Admin waiting catalogue: return a signed MP3 URL, or mark the Contabo queue.
- */
-export async function requestWaitingOpsMp3Download(params: {
-  beatId: string;
-  title: string;
-}): Promise<OpsMp3DownloadState> {
-  await requireRole(["ADMIN"]);
-  const admin = createSupabaseAdminClient();
-
-  const { data: beat, error: beatErr } = await admin
-    .from("beats")
-    .select("id, ownership_type, status, tags, title")
-    .eq("id", params.beatId)
-    .maybeSingle();
-  if (beatErr) throw new Error(beatErr.message);
-  if (!beat || beat.ownership_type !== "PLATFORM") {
-    throw new AuthError("NOT_FOUND", "Beat not found.");
-  }
-  if (beat.status !== "DRAFT") {
-    throw new BeatRequestError("MP3 z kolejki tylko dla szkiców oczekujących.");
-  }
-  const tags = beat.tags;
-  if (
-    !Array.isArray(tags) ||
-    !tags.includes(GENERATED_BEAT_TAG)
-  ) {
-    throw new BeatRequestError("To nie jest bit z generatora.");
-  }
-
-  const { data: master, error: mErr } = await admin
-    .from("beat_audio_assets")
-    .select(ASSET_COLS)
-    .eq("beat_id", params.beatId)
-    .eq("purpose", "MASTER")
-    .eq("is_active", true)
-    .eq("status", "READY")
-    .maybeSingle();
-  if (mErr) throw new Error(mErr.message);
-  if (!master) {
-    return { status: "error", error: "Brak gotowego mastera audio." };
-  }
-  const masterRow = master as AssetRow;
-
-  const { data: current } = await admin
-    .from("beat_audio_assets")
-    .select(ASSET_COLS)
-    .eq("beat_id", params.beatId)
-    .eq("purpose", "DOWNLOAD")
-    .eq("is_active", true)
-    .eq("status", "READY")
-    .maybeSingle();
-  const currentRow = (current as AssetRow | null) ?? null;
-
-  if (isOpsMp3Fresh({ asset: currentRow, masterAssetId: masterRow.id })) {
-    return signOpsMp3(admin, currentRow!, params.title);
-  }
-
-  // Master already MPEG — sign MASTER directly as MP3 (no Contabo).
-  if (isMpeg(masterRow.content_type)) {
-    return signOpsMp3(admin, masterRow, params.title);
-  }
-
-  const nextTags = tagsWithOpsMp3Wanted(tags);
-  const { error: tagErr } = await admin
-    .from("beats")
-    .update({ tags: nextTags })
-    .eq("id", params.beatId);
-  if (tagErr) throw new Error(tagErr.message);
-  return { status: "pending" };
-}
-
-async function signOpsMp3(
-  admin: SupabaseClient,
-  asset: AssetRow,
-  title: string,
-): Promise<Extract<OpsMp3DownloadState, { status: "ready" }>> {
-  const { data: signed, error } = await admin.storage
-    .from(asset.storage_bucket)
-    .createSignedUrl(asset.object_key, BEAT_AUDIO_DOWNLOAD_TTL_SECONDS, {
-      download: true,
-    });
-  if (error || !signed?.signedUrl) {
-    throw new Error(error?.message ?? "Failed to create signed URL.");
-  }
-  const base =
-    title
-      .replace(/[^\p{L}\p{N}\-_ ]+/gu, "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 80) || "bitrymdym-platform";
-  return {
-    status: "ready",
-    url: rewriteThroughAudioEdge(signed.signedUrl),
-    expiresAt: new Date(Date.now() + BEAT_AUDIO_DOWNLOAD_TTL_SECONDS * 1000).toISOString(),
-    fileName: `${base}.mp3`,
-  };
 }
