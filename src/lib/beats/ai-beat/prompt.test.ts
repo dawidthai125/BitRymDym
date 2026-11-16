@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_BEAT_DURATION,
+  descriptionFromYoutubeStyle,
   fallbackEnglishPrompt,
   normalizeBeatDescription,
   normalizeBeatDuration,
@@ -23,6 +24,23 @@ describe("beat generator prompt", () => {
   it("keeps a real description and drops a short one", () => {
     expect(normalizeBeatDescription("  ciemny   bit na noc  ")).toBe("ciemny bit na noc");
     expect(normalizeBeatDescription("krotki")).toBeNull();
+  });
+
+  it("prefixes the YouTube style onto the producer brief", () => {
+    expect(
+      descriptionFromYoutubeStyle({
+        style: "ciemny boom bap",
+        opis: "Wolne werble i głębokie 808. Piano zostawia miejsce na zwrotkę.",
+      }),
+    ).toBe(
+      "ciemny boom bap. Wolne werble i głębokie 808. Piano zostawia miejsce na zwrotkę.",
+    );
+    expect(
+      descriptionFromYoutubeStyle({
+        style: "hip-hop instrumentalny",
+        opis: "Prosty bit z basem i werblem na zwrotkę.",
+      }),
+    ).toBe("Prosty bit z basem i werblem na zwrotkę.");
   });
 
   it("treats an empty tempo as optional and rejects a tempo outside 60–180", () => {

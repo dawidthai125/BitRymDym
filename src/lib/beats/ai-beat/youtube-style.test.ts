@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { BeatRequestError } from "@/lib/beats/request-error";
 import {
+  composeProducerOpis,
   describeBeatStyleFromYouTube,
   parseYouTubeWatchUrl,
 } from "@/lib/beats/ai-beat/youtube-style";
@@ -33,11 +34,39 @@ describe("parseYouTubeWatchUrl", () => {
   });
 });
 
+describe("composeProducerOpis", () => {
+  it("joins structured producer fields into one brief", () => {
+    const brief = composeProducerOpis({
+      drums: "Wolne werble i miękka stopa z lekkim swingiem.",
+      bass: "Głębokie 808 z długimi nutami.",
+      melody: "Krótkie piano w moll.",
+      mood: "Ciemny, spokojny nastrój nocny.",
+      arrangement: "Pętla z miejscem na zwrotkę.",
+    });
+    expect(brief).toContain("werble");
+    expect(brief).toContain("808");
+    expect(brief).toContain("piano");
+    expect(brief).toContain("zwrotkę");
+  });
+
+  it("falls back to legacy opis when fields are missing", () => {
+    expect(
+      composeProducerOpis({
+        opis: "Wolne werble, głębokie 808 i krótkie piano.",
+      }),
+    ).toContain("werble");
+  });
+});
+
 describe("describeBeatStyleFromYouTube", () => {
   const payload = {
     output_text: JSON.stringify({
       style: "ciemny boom bap",
-      opis: "Wolne werble, głębokie 808 i krótkie piano. Zostawia miejsce na zwrotkę.",
+      drums: "Wolne werble i miękka stopa z lekkim swingiem.",
+      bass: "Głębokie 808 z długimi nutami.",
+      melody: "Krótkie piano w moll zostawia powietrze.",
+      mood: "Ciemny, spokojny nastrój nocny.",
+      arrangement: "Pętla z miejscem na zwrotkę rapera.",
       bpm: 97,
     }),
   };
@@ -53,11 +82,12 @@ describe("describeBeatStyleFromYouTube", () => {
       `https://youtu.be/${ID}?t=4`,
       { skipAuth: true, env: { GEMINI_API_KEY: "test-key" }, fetchFn },
     );
-    expect(described).toEqual({
-      style: "ciemny boom bap",
-      opis: "Wolne werble, głębokie 808 i krótkie piano. Zostawia miejsce na zwrotkę.",
-      bpmHint: 97,
-    });
+    expect(described.style).toBe("ciemny boom bap");
+    expect(described.bpmHint).toBe(97);
+    expect(described.opis).toContain("werble");
+    expect(described.opis).toContain("808");
+    expect(described.opis).toContain("piano");
+    expect(described.opis).toContain("zwrotkę");
     expect(fetchFn).toHaveBeenCalledTimes(1);
     const [calledUrl, init] = fetchFn.mock.calls[0] as [string, RequestInit];
     expect(calledUrl).toBe("https://generativelanguage.googleapis.com/v1beta/interactions");
@@ -65,14 +95,19 @@ describe("describeBeatStyleFromYouTube", () => {
     expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBe("test-key");
     const sent = JSON.parse(String(init.body)) as {
       model: string;
-      input: Array<{ uri?: string }>;
+      input: Array<{ uri?: string; text?: string }>;
+      response_format?: { schema?: { required?: string[] } };
     };
     expect(sent.model).toBe("gemini-4-hydrogen");
     expect(sent.input[0]?.uri).toBe(CANONICAL);
+    expect(sent.input[1]?.text).toContain("producer brief");
+    expect(sent.response_format?.schema?.required).toEqual(
+      expect.arrayContaining(["drums", "bass", "melody", "mood", "arrangement"]),
+    );
     expect(String(init.body)).not.toContain("base64");
   });
 
-  it("uses BEAT_STYLE_GEMINI_MODEL and reads fenced JSON", async () => {
+  it("uses BEAT_STYLE_GEMINI_MODEL and reads fenced legacy JSON", async () => {
     const fetchFn = mockFetch({
       outputs: [{ text: "```json\n{\"style\":\"lofi noc\",\"opis\":\"Ciche bębny i ciepły bas przez cały loop.\",\"bpm\":\"40\"}\n```" }],
     });
@@ -82,6 +117,7 @@ describe("describeBeatStyleFromYouTube", () => {
       fetchFn,
     });
     expect(described.style).toBe("lofi noc");
+    expect(described.opis).toContain("Ciche bębny");
     expect(described.bpmHint).toBeNull();
     const sent = JSON.parse(String(fetchFn.mock.calls[0]![1].body)) as { model: string };
     expect(sent.model).toBe("gemini-x");
@@ -99,7 +135,11 @@ describe("describeBeatStyleFromYouTube", () => {
               type: "text",
               text: JSON.stringify({
                 style: "ciepły lo-fi",
-                opis: "Miękkie bębny, okrągły bas i krótka melodia w tle.",
+                drums: "Miękkie bębny z lekkim swingiem.",
+                bass: "Okrągły bas z krótkim ruchem.",
+                melody: "Krótka melodia w tle.",
+                mood: "Ciepły, spokojny wieczór.",
+                arrangement: "Prosta pętla z miejscem na wokal.",
                 bpm: 84,
               }),
             },
@@ -113,14 +153,18 @@ describe("describeBeatStyleFromYouTube", () => {
       fetchFn,
     });
     expect(described.bpmHint).toBe(84);
-    expect(described.opis).toContain("okrągły bas");
+    expect(described.opis).toContain("Okrągły bas");
   });
 
   it("drops a tempo above 180", async () => {
     const fetchFn = mockFetch({
       output_text: JSON.stringify({
         style: "szybki trap",
-        opis: "Szybkie hi-haty i krótki bas. Energia idzie do przodu.",
+        drums: "Szybkie hi-haty i ostry werbel.",
+        bass: "Krótki bas z bounce.",
+        melody: "Minimalna syntezatorowa linia.",
+        mood: "Energia idzie do przodu.",
+        arrangement: "Krótka pętla pod rap.",
         bpm: 200,
       }),
     });
@@ -136,7 +180,11 @@ describe("describeBeatStyleFromYouTube", () => {
     const fetchFn = mockFetch({
       output_text: JSON.stringify({
         style: "youtube boom bap",
-        opis: `Wolne werble i głęboki bas. Źródło ${ID} na youtube.`,
+        drums: `Wolne werble. Źródło ${ID} na youtube.`,
+        bass: "Głęboki bas z długimi nutami.",
+        melody: "Prosta linia piano.",
+        mood: "Ciemny klimat uliczny.",
+        arrangement: "Miejsce na zwrotkę.",
         bpm: 90,
       }),
     });

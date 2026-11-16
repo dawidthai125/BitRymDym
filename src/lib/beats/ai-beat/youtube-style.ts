@@ -3,15 +3,24 @@ import { BeatRequestError } from "@/lib/beats/request-error";
 
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 const DEFAULT_MODEL = "gemini-4-hydrogen";
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 55_000;
 
 const INSTRUCTION = [
-  "Listen to this public YouTube video.",
-  "Describe only the instrumental musical style: drums, bass, melody, mood and energy.",
-  "Reply with JSON only: style is 2 to 6 Polish words, opis is one or two Polish sentences, bpm is an integer 60-180 or null if unsure.",
+  "Listen carefully to the instrumental and rhythmic bed of this public YouTube video.",
+  "Ignore vocals, lyrics, speech and brand intros when describing the beat.",
+  "Write a producer brief for recreating a similar ORIGINAL instrumental hip-hop beat, not a copy of a named song.",
+  "Reply with JSON only.",
+  "style: 2 to 6 Polish words naming the beat lane (boom bap, trap, lo-fi, drill, etc.).",
+  "drums: one Polish sentence — kick and snare feel, hi-hats, swing or quantization, groove.",
+  "bass: one Polish sentence — 808 vs synth vs upright, note length, movement.",
+  "melody: one Polish sentence — lead instruments, harmony, motifs, how sparse or dense.",
+  "mood: one Polish sentence — energy, darkness or warmth, tension.",
+  "arrangement: one Polish sentence — loop vs sections, drops, and space left for a rapper.",
+  "bpm: integer 60-180 or null if unsure.",
+  "Be concrete and specific. Prefer production language over vague adjectives alone.",
   "Do not name any artist, song, channel, label or producer.",
   "Do not quote lyrics. Do not include the URL.",
-  'If there is no music, set style to "hip-hop instrumentalny" and say in opis that the clip has no beat.',
+  'If there is no music, set style to "hip-hop instrumentalny" and say in every field that the clip has no beat.',
 ].join(" ");
 
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -113,10 +122,14 @@ export async function describeBeatStyleFromYouTube(
             type: "object",
             properties: {
               style: { type: "string" },
-              opis: { type: "string" },
+              drums: { type: "string" },
+              bass: { type: "string" },
+              melody: { type: "string" },
+              mood: { type: "string" },
+              arrangement: { type: "string" },
               bpm: { type: ["integer", "null"] },
             },
-            required: ["style", "opis"],
+            required: ["style", "drums", "bass", "melody", "mood", "arrangement"],
           },
         },
       }),
@@ -211,11 +224,40 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
     return null;
   }
   if (!parsed || typeof parsed !== "object") return null;
-  const row = parsed as { style?: unknown; opis?: unknown; bpm?: unknown };
+  const row = parsed as {
+    style?: unknown;
+    opis?: unknown;
+    drums?: unknown;
+    bass?: unknown;
+    melody?: unknown;
+    mood?: unknown;
+    arrangement?: unknown;
+    bpm?: unknown;
+  };
   const style = sanitizeBeatStyle(scrubEcho(stringOf(row.style), videoId));
-  const opis = sanitizeBeatOpis(scrubEcho(stringOf(row.opis), videoId));
+  const composed = composeProducerOpis(row, videoId);
+  const opis = sanitizeBeatOpis(composed);
   if (!opis) return null;
   return { style, opis, bpmHint: bpmHintOf(row.bpm) };
+}
+
+/** Joins structured producer fields; falls back to a legacy `opis` string. */
+export function composeProducerOpis(
+  row: {
+    opis?: unknown;
+    drums?: unknown;
+    bass?: unknown;
+    melody?: unknown;
+    mood?: unknown;
+    arrangement?: unknown;
+  },
+  videoId = "",
+): string {
+  const parts = [row.drums, row.bass, row.melody, row.mood, row.arrangement]
+    .map((part) => scrubEcho(stringOf(part), videoId))
+    .filter((part) => part.length >= 8);
+  if (parts.length >= 2) return parts.join(" ").replace(/\s+/g, " ").trim();
+  return scrubEcho(stringOf(row.opis), videoId);
 }
 
 function stringOf(value: unknown): string {

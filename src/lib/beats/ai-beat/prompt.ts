@@ -89,15 +89,32 @@ export function sanitizeBeatStyle(value: unknown): string {
   return style.slice(0, 80);
 }
 
+/** Fills the generator description field: style label plus producer brief. */
+export function descriptionFromYoutubeStyle(input: {
+  style: string;
+  opis: string;
+}): string {
+  const style = input.style.trim();
+  const opis = input.opis.trim();
+  const joined =
+    style &&
+    style !== GENERATED_STYLE_DEFAULT &&
+    !opis.toLowerCase().startsWith(style.toLowerCase())
+      ? `${style}. ${opis}`
+      : opis || style;
+  return joined.replace(/\s+/g, " ").trim().slice(0, BEAT_DESCRIPTION_MAX);
+}
+
 /**
  * Polish style description. Null when missing or shorter than 12 characters
- * so the caller can keep the user's original text.
+ * so the caller can keep the user's original text. Caps at BEAT_DESCRIPTION_MAX
+ * so a YouTube producer brief fits the generator field.
  */
 export function sanitizeBeatOpis(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const text = value.replace(/\s+/g, " ").trim();
   if (text.length < 12) return null;
-  return text.slice(0, 500);
+  return text.slice(0, BEAT_DESCRIPTION_MAX);
 }
 
 export function parseBeatRewrite(

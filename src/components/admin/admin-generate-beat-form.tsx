@@ -11,6 +11,7 @@ import { beatGenerationPercent } from "@/lib/beats/ai-beat/generation-progress";
 import {
   BEAT_DURATION_CHOICES,
   DEFAULT_BEAT_DURATION,
+  descriptionFromYoutubeStyle,
   type BeatDuration,
 } from "@/lib/beats/ai-beat/prompt";
 
@@ -73,13 +74,21 @@ export function AdminGenerateBeatForm() {
         setError(json.error || t("blad"));
         return;
       }
-      setDescription(json.opis);
+      const style = typeof json.style === "string" ? json.style.trim() : "";
+      setDescription(
+        descriptionFromYoutubeStyle({
+          style: style || "hip-hop instrumentalny",
+          opis: json.opis,
+        }),
+      );
       const hinted =
         typeof json.bpmHint === "number" && Number.isFinite(json.bpmHint)
           ? Math.round(json.bpmHint)
           : null;
-      setBpmHint(hinted != null && hinted >= 60 && hinted <= 180 ? hinted : null);
-      const style = typeof json.style === "string" ? json.style.trim() : "";
+      const tempo =
+        hinted != null && hinted >= 60 && hinted <= 180 ? hinted : null;
+      setBpmHint(tempo);
+      if (tempo != null) setBpm(String(tempo));
       setStyleLabel(style || null);
       setPhase("idle");
     } catch {

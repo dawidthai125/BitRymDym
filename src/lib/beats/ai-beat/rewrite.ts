@@ -11,15 +11,18 @@ import {
 const REWRITE_URL = "https://api.x.ai/v1/chat/completions";
 
 const SYSTEM = [
-  "You prepare one instrumental hip-hop beat for Stable Audio.",
+  "You prepare one instrumental hip-hop beat for Stable Audio 3.",
   "Reply with JSON only: {\"title\":\"...\",\"prompt\":\"...\",\"style\":\"...\",\"opis\":\"...\"}.",
   "title: a short original Polish name, 2 to 6 words. No artist names, no existing song titles.",
   "style: Polish, 2 to 6 words, the beat's style. No artist or song names.",
-  "opis: one or two Polish sentences about mood, drums, bass and melody. No artist or song names.",
-  "prompt: English only. Drums, bass and melody. No vocals, no singing, no rap, no speech, no lyrics.",
+  "opis: two to four Polish sentences covering drums, bass, melody, mood and vocal headroom. No artist or song names.",
+  "prompt: English only, 2 to 5 dense sentences for Stable Audio.",
+  "In prompt, specify kick/snare/hat character, bass type and motion, melodic instruments and harmony, groove or swing, energy, mix density, and clear space for a vocalist.",
+  "Prefer concrete production language over vague mood words alone.",
+  "No vocals, no singing, no rap, no speech, no lyrics in the music.",
   "Do not name any artist, song, album, label or producer.",
   "If the user names one, drop the name and keep only the musical idea.",
-  "When a BPM is given, include that exact number and the word BPM.",
+  "When a BPM is given, include that exact number and the word BPM in the prompt.",
 ].join(" ");
 
 export type RewrittenBeatPrompt = {
