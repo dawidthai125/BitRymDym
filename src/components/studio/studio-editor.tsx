@@ -2395,6 +2395,28 @@ function StudioEditorInner({
 
     function onKeyDown(event: KeyboardEvent) {
       if (isTypingTarget(event.target)) return;
+
+      // Space / R — record start/stop on the target track (same path as top-bar REC).
+      // Must work while recordingLocked so Space can stop an in-progress take.
+      const recordKey =
+        event.key === " " ||
+        event.code === "Space" ||
+        event.key === "r" ||
+        event.key === "R";
+      if (
+        recordKey &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey
+      ) {
+        if (pending) return;
+        event.preventDefault();
+        setInspectorPreferRecord(true);
+        openInspectorOverlay();
+        setTransportRecordRequest((n) => n + 1);
+        return;
+      }
+
       if (recordingLocked || pending) return;
 
       // Stage 0 — Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl+Y redo.
@@ -2406,8 +2428,13 @@ function StudioEditorInner({
         return;
       }
 
-      // Phase 7.1.5.3 — minimal transport shortcuts (Space required; Home/End if safe).
-      if (event.key === " " || event.code === "Space") {
+      // P — play/pause (Space is reserved for record).
+      if (
+        (event.key === "p" || event.key === "P") &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey
+      ) {
         event.preventDefault();
         if (transport.phase === "playing") transport.pause();
         else transport.play();

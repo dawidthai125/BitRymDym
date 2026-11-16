@@ -287,8 +287,10 @@ describe("Phase 7.1.5 — stacked Escape regression (Mixer + FxSheet)", () => {
 });
 
 describe("Phase 7.1.5.3 — minimal transport keyboard", () => {
-  it("binds Space play/pause and Home/End seek with typing exclusion", () => {
-    expect(editor).toMatch(/event\.key === " " \|\| event\.code === "Space"/);
+  it("binds Space/R record, P play/pause, Home/End seek with typing exclusion", () => {
+    expect(editor).toMatch(/event\.key === " " \|\|[\s\S]*event\.code === "Space"/);
+    expect(editor).toMatch(/setTransportRecordRequest/);
+    expect(editor).toMatch(/event\.key === "p" \|\| event\.key === "P"/);
     expect(editor).toMatch(/transport\.phase === "playing"/);
     expect(editor).toMatch(/transport\.play\(\)/);
     expect(editor).toMatch(/transport\.pause\(\)/);

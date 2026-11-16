@@ -1386,7 +1386,12 @@ class RecorderWindow:
             self.gate_status.set(self.status_boot)
         self.root.bind_all("<MouseWheel>", self._on_wheel)
         for sequence, handler in (
-            ("<space>", lambda: self.toggle_play()),
+            # Space = record/stop on the armed track (●). P = play/stop. R = same as Space.
+            ("<space>", lambda: self.toggle_record()),
+            ("<p>", lambda: self.toggle_play()),
+            ("<r>", lambda: self.toggle_record()),
+            ("<m>", lambda: self.toggle_beat_mute()),
+            ("<Escape>", lambda: self.stop()),
             ("<Delete>", lambda: self.edit("delete")),
             ("<BackSpace>", lambda: self.edit("delete")),
             ("<Control-z>", lambda: self.undo()),
@@ -1395,7 +1400,10 @@ class RecorderWindow:
             ("<Control-v>", lambda: self.edit("paste")),
             ("<Control-i>", lambda: self.edit("split")),
             ("<Home>", lambda: self._set_cursor(0.0)),
-            ("<r>", lambda: self.record()),
+            ("<Left>", lambda: self._nudge_cursor(-0.1)),
+            ("<Right>", lambda: self._nudge_cursor(0.1)),
+            ("<Shift-Left>", lambda: self._nudge_cursor(-1.0)),
+            ("<Shift-Right>", lambda: self._nudge_cursor(1.0)),
         ):
             self.root.bind(sequence, lambda event, run=handler: self._key(event, run))
         self.show_splash()
@@ -1698,8 +1706,9 @@ class RecorderWindow:
             self.studio,
             text=(
                 "Klik: kursor. Przeciągnij: zaznaczenie, potem Wytnij, Usuń albo Podziel. Pasek klipu: przesuń. "
-                "1 s mocno przybliża, Ctrl+kółko też. Spacja: graj/stop, R: nagraj. "
-                "M na bicie wycisza od razu. Panorama: L, C, R."
+                "● uzbrój ścieżkę, potem Spacja lub R: nagraj/stop. P: graj/stop. Esc: stop. "
+                "M: wycisz bit. Strzałki: kursor (±0,1 s, Shift ±1 s). Home: początek. "
+                "Delete, Ctrl+X/C/V, Ctrl+I, Ctrl+Z. Ctrl+kółko: zoom."
             ),
             bg=PAPER, fg=MUTE, font=(FONT_UI, 8), anchor="w", justify="left",
         )
@@ -3251,12 +3260,25 @@ class RecorderWindow:
         return out
 
     def toggle_play(self) -> None:
-        if self.recording:
+        """P — transport play/stop (does not arm a new take)."""
+        if self.recording or self._arming:
             self.stop()
-        elif self.playing or self._arming:
+        elif self.playing:
             self.stop()
         else:
             self.play()
+
+    def toggle_record(self) -> None:
+        """Space / R — start or stop capture on the armed track (●)."""
+        if self.recording or self._arming:
+            self.stop()
+        else:
+            self.record()
+
+    def _nudge_cursor(self, delta_sec: float) -> None:
+        if self.recording or self._arming or self.playing:
+            return
+        self._set_cursor(max(0.0, self.cursor + delta_sec))
 
     def play(self) -> None:
         if self.recording or self._arming:
