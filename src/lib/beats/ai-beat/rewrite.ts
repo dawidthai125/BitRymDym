@@ -1,5 +1,6 @@
 import {
   GENERATED_STYLE_DEFAULT,
+  clipBeatDescription,
   descriptionNeedsTranslation,
   fallbackEnglishPrompt,
   parseBeatRewrite,
@@ -49,7 +50,7 @@ export type RewrittenBeatPrompt = {
 };
 
 function userOpis(description: string): string {
-  return description.replace(/\s+/g, " ").trim().slice(0, 800);
+  return clipBeatDescription(description);
 }
 
 function englishFallback(description: string, bpm: number | null): RewrittenBeatPrompt {

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const bpm = normalizeBeatHintBpm(body?.bpm);
   if (!description || !duration || bpm === "invalid") {
     return beatApiBadRequest(
-      "Wpisz opis bitu (8–800 znaków), wybierz długość i ewentualnie tempo 60–180.",
+      "Wpisz opis bitu (min. 8 znaków), wybierz długość i ewentualnie tempo 60–180.",
     );
   }
 

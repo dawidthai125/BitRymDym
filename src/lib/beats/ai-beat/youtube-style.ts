@@ -1,4 +1,8 @@
-import { sanitizeBeatOpis, sanitizeBeatStyle } from "@/lib/beats/ai-beat/prompt";
+import {
+  clipBeatDescription,
+  sanitizeBeatOpis,
+  sanitizeBeatStyle,
+} from "@/lib/beats/ai-beat/prompt";
 import { BeatRequestError } from "@/lib/beats/request-error";
 
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
@@ -14,19 +18,18 @@ const INSTRUCTION = [
   "Goal: recreate a similar ORIGINAL instrumental hip-hop beat, not a cover or clone of a named track.",
   "Reply with JSON only.",
   "style: 2 to 6 Polish words naming the lane (boom bap, trap, lo-fi, drill, phonk, etc.).",
-  "opis: two to four Polish catalog sentences — drums, bass, melody, mood, space for a vocal.",
-  "drums: 1–2 dense English sentences. Name kick pattern feel (boom / syncopated / four-on-floor), snare/clap placement, hi-hat speed (straight 8ths, 16ths, triplets, rolls), swing vs hard quantize, pocket (behind / on / ahead of the beat).",
-  "bass: 1–2 dense English sentences. Instrument (long 808 / short 808 slides / synth sub / upright / electric), note length, glide or static, how it locks with the kick.",
-  "melody: 1–2 dense English sentences. Concrete instruments and processing (dusty piano, muted guitar, filtered pad, bell pluck, chopped sample texture), harmony (minor / major / modal), motif length, sparse vs layered.",
-  "mood: 1–2 dense English sentences. Energy arc, warmth vs cold, tension, grit or polish — tied to audible texture (vinyl dust, tape hiss, clean digital, distorted edges), not mood words alone.",
-  "arrangement: 1–2 dense English sentences. Loop vs sections, drops or filter rides, how much empty midrange is left for a rapper.",
-  "bpm: integer 60–180 if you can hear it, else null. Prefer a real estimate over null when the pulse is clear.",
-  "English fields become the Stable Audio prompt. Prefer production nouns and verbs over vague adjectives.",
+  "opis: one or two short Polish catalog sentences — drums, bass, melody, mood, vocal space.",
+  "drums: ONE short English sentence — kick/snare feel, hats, swing or quantize, pocket.",
+  "bass: ONE short English sentence — 808/synth/upright, note length, lock with kick.",
+  "melody: ONE short English sentence — instrument, harmony (minor/major), sparse or dense.",
+  "mood: ONE short English sentence — energy and texture (vinyl, tape, clean digital, grit).",
+  "arrangement: ONE short English sentence — loop vs sections and space for a rapper.",
+  "bpm: integer 60–180 if you can hear it, else null.",
+  "Hard limit: the five English fields together must stay under 500 characters. Concrete and short beats vague and long.",
   "BAD (too vague): dark atmospheric beat with hard drums and deep bass.",
-  "GOOD: dusty swung boom-bap drums, snappy snare on 2 and 4, soft triplet hats; long minor-key 808 under a sparse muted piano motif; warm night mood with vinyl crackle and open space for a verse.",
-  "Every English field must include at least one concrete sonic detail (instrument, pattern, processing or pocket). Reject empty mood words alone.",
-  "Do not name any artist, song, channel, label or producer.",
-  "Do not quote lyrics. Do not include the URL or video id.",
+  "BAD (too long): multi-clause essays, repeated adjectives, or more than one sentence per English field.",
+  "GOOD: Soft swung boom-bap kick and snappy snare with triplet hats. Long minor 808 under a sparse muted piano. Warm night mood with vinyl crackle. Simple loop with room for a verse.",
+  "Every English field needs one concrete sonic detail. No artist, song, channel, label, producer, lyrics, URL or video id.",
   'If there is no music, set style to "hip-hop instrumentalny" and say in every field that the clip has no beat.',
 ].join(" ");
 
@@ -255,7 +258,7 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
   return {
     style,
     opis,
-    prompt: prompt.slice(0, 800),
+    prompt: clipBeatDescription(prompt),
     bpmHint: bpmHintOf(row.bpm),
   };
 }

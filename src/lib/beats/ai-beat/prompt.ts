@@ -26,12 +26,29 @@ export function normalizeBeatDuration(value: unknown): BeatDuration | null {
     : null;
 }
 
+/**
+ * Caps a generator description without cutting mid-word when possible.
+ * Prefers the last full sentence under the limit, then the last space.
+ */
+export function clipBeatDescription(
+  text: string,
+  max = BEAT_DESCRIPTION_MAX,
+): string {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (cleaned.length <= max) return cleaned;
+  const hard = cleaned.slice(0, max);
+  const minKeep = Math.floor(max * 0.55);
+  const sentence = Math.max(hard.lastIndexOf(". "), hard.lastIndexOf("! "), hard.lastIndexOf("? "));
+  if (sentence >= minKeep) return hard.slice(0, sentence + 1).trim();
+  const space = hard.lastIndexOf(" ");
+  if (space >= minKeep) return hard.slice(0, space).trim();
+  return hard.trim();
+}
+
 export function normalizeBeatDescription(value: unknown): string | null {
   if (typeof value !== "string") return null;
-  const text = value.replace(/\s+/g, " ").trim();
-  if (text.length < BEAT_DESCRIPTION_MIN || text.length > BEAT_DESCRIPTION_MAX) {
-    return null;
-  }
+  const text = clipBeatDescription(value);
+  if (text.length < BEAT_DESCRIPTION_MIN) return null;
   return text;
 }
 
@@ -100,7 +117,7 @@ export function descriptionFromYoutubeStyle(input: {
 }): string {
   const english = (input.prompt ?? "").replace(/\s+/g, " ").trim();
   if (english.length >= BEAT_DESCRIPTION_MIN && !descriptionNeedsTranslation(english)) {
-    return english.slice(0, BEAT_DESCRIPTION_MAX);
+    return clipBeatDescription(english);
   }
   const style = input.style.trim();
   const opis = input.opis.trim();
@@ -110,7 +127,7 @@ export function descriptionFromYoutubeStyle(input: {
     !opis.toLowerCase().startsWith(style.toLowerCase())
       ? `${style}. ${opis}`
       : opis || style;
-  return joined.replace(/\s+/g, " ").trim().slice(0, BEAT_DESCRIPTION_MAX);
+  return clipBeatDescription(joined);
 }
 
 /** English Stable Audio prompt kept close to the admin description. */
@@ -130,9 +147,9 @@ export function preservedEnglishPrompt(description: string, bpm: number | null):
  */
 export function sanitizeBeatOpis(value: unknown): string | null {
   if (typeof value !== "string") return null;
-  const text = value.replace(/\s+/g, " ").trim();
+  const text = clipBeatDescription(value);
   if (text.length < 12) return null;
-  return text.slice(0, BEAT_DESCRIPTION_MAX);
+  return text;
 }
 
 export function parseBeatRewrite(

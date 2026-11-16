@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BEAT_DESCRIPTION_MAX,
   DEFAULT_BEAT_DURATION,
+  clipBeatDescription,
   descriptionFromYoutubeStyle,
   fallbackEnglishPrompt,
   normalizeBeatDescription,
@@ -25,6 +27,19 @@ describe("beat generator prompt", () => {
   it("keeps a real description and drops a short one", () => {
     expect(normalizeBeatDescription("  ciemny   bit na noc  ")).toBe("ciemny bit na noc");
     expect(normalizeBeatDescription("krotki")).toBeNull();
+  });
+
+  it("clips a long description at a sentence instead of rejecting it", () => {
+    const long =
+      "Soft swung kick and snappy snare. Deep long 808 under a sparse piano. " +
+      "Warm night mood with vinyl crackle. ".repeat(40);
+    const clipped = normalizeBeatDescription(long);
+    expect(clipped).not.toBeNull();
+    expect(clipped!.length).toBeLessThanOrEqual(BEAT_DESCRIPTION_MAX);
+    expect(clipped!.endsWith(".")).toBe(true);
+    expect(clipBeatDescription("word ".repeat(300)).length).toBeLessThanOrEqual(
+      BEAT_DESCRIPTION_MAX,
+    );
   });
 
   it("prefers the English YouTube prompt for Stable Audio", () => {

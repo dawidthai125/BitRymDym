@@ -105,6 +105,7 @@ describe("describeBeatStyleFromYouTube", () => {
     const instruction = sent.input[1]?.text ?? "";
     expect(instruction).toContain("Stable Audio");
     expect(instruction).toContain("BAD (too vague)");
+    expect(instruction).toContain("500 characters");
     expect(instruction).toContain("GOOD:");
     expect(instruction).toContain("concrete sonic detail");
     expect(instruction).toContain("pocket");
