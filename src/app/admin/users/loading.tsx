@@ -1,16 +1,15 @@
-import { useTranslations } from "next-intl";
 import { PageFrame } from "@/components/brand/chrome";
 
+/** Instant feedback while users admin RSC is still loading. */
 export default function AdminUsersLoading() {
-  const t = useTranslations("admin.adminUsersLoading");
   return (
-    <main className="pb-16">
-      <PageFrame width="ops" className="py-8 sm:py-10">
-        <h1 className="brd-display mt-2 text-3xl font-semibold tracking-tight">
-          {t("uzytkownicy")}
-        </h1>
-        <p className="mt-6 text-sm text-[var(--brd-mute)]">{t("ladowanie")}</p>
-      </PageFrame>
-    </main>
+    <PageFrame width="ops" className="py-8">
+      <div className="space-y-4" aria-busy="true" aria-live="polite">
+        <div className="h-8 w-48 bg-[var(--brd-line)]" />
+        <div className="h-10 w-full max-w-xl border border-[var(--brd-line)]" />
+        <div className="h-40 border border-[var(--brd-line)]" />
+        <div className="h-40 border border-[var(--brd-line)]" />
+      </div>
+    </PageFrame>
   );
 }

@@ -11,7 +11,6 @@ import {
 } from "@/components/site/skip-to-main";
 import { cn } from "@/lib/utils";
 import { AuthError, requireRole } from "@/lib/auth/session";
-import { getCurrentProfile } from "@/lib/auth/session";
 import { canAccessAdminNav, canAccessModerationNav } from "@/lib/auth/permissions";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -28,8 +27,10 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("admin.adminLayout");
+  let context: Awaited<ReturnType<typeof requireRole>>;
   try {
-    await requireRole(["ADMIN", "MODERATOR"]);
+    // Single chrome gate: nested ADMIN-only layouts narrow further; profile is React cache()'d.
+    context = await requireRole(["ADMIN", "MODERATOR"]);
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
       redirect("/sign-in");
@@ -64,8 +65,7 @@ export default async function AdminLayout({
     );
   }
 
-  const context = await getCurrentProfile();
-  const role = context?.profile.role;
+  const role = context.profile.role;
   const showPlatform = canAccessAdminNav(role);
   const showModeration = canAccessModerationNav(role);
 
