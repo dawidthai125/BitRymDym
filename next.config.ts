@@ -71,7 +71,11 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
-    return [{ source: "/favicon.ico", destination: "/icon.png", permanent: true }];
+    return [
+      { source: "/favicon.ico", destination: "/icon.png", permanent: true },
+      { source: "/samples", destination: "/sampel", permanent: true },
+      { source: "/samples/:path*", destination: "/sampel", permanent: true },
+    ];
   },
 };
 

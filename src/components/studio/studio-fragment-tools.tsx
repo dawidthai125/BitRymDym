@@ -213,7 +213,7 @@ export function StudioFragmentTools({
           {onPlayback ? (
             <>
               <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
-                Tempo
+                {t("tempoKlipuEtykieta")}
                 <input
                   type="range"
                   min={0.5}
@@ -221,14 +221,14 @@ export function StudioFragmentTools({
                   step={0.05}
                   value={stretchLocal}
                   disabled={locked}
-                  aria-label="Tempo klipu, wysokość zostaje"
+                  aria-label={t("tempoKlipuAria")}
                   data-testid="studio-fragment-stretch"
                   onChange={(event) => setStretchLocal(Number(event.target.value))}
                   onPointerUp={(event) => onPlayback({ stretch: Number(event.currentTarget.value), pitchCents: pitchLocal })}
                 />
               </label>
               <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
-                Wysokość
+                {t("wysokoscKlipuEtykieta")}
                 <input
                   type="range"
                   min={-1200}
@@ -236,8 +236,8 @@ export function StudioFragmentTools({
                   step={100}
                   value={pitchLocal}
                   disabled={locked || pitchLocked}
-                  aria-label="Wysokość klipu, tempo zostaje"
-                  title={pitchLocked ? "Wysokość od Silver. Tempo zostaje." : undefined}
+                  aria-label={t("wysokoscKlipuAria")}
+                  title={pitchLocked ? t("wysokoscKlipuOdSilver") : undefined}
                   data-testid="studio-fragment-pitch"
                   onChange={(event) => setPitchLocal(Number(event.target.value))}
                   onPointerUp={(event) => onPlayback({ stretch: stretchLocal, pitchCents: Number(event.currentTarget.value) })}
@@ -253,7 +253,7 @@ export function StudioFragmentTools({
                   data-testid="studio-fragment-pitch-reset"
                   onClick={() => onPlayback({ stretch: stretchLocal, pitchCents: 0 })}
                 >
-                  Wyzeruj wysokość
+                  {t("wyzerujWysokosc")}
                 </Button>
               ) : null}
             </>

@@ -28,6 +28,8 @@ describe("jak-nagrac + licence summary", () => {
   });
   it("page is linked from sitemap, footer and the beat page", () => {
     expect(read("src/app/sitemap.ts")).toContain("/jak-nagrac");
+    expect(read("src/app/sitemap.ts")).toContain("/sampel");
+    expect(read("src/app/sitemap.ts")).toContain("/ranking/sampel");
     expect(read("src/components/site/site-footer.tsx")).toContain("/jak-nagrac");
     expect(read("src/app/beat/[id]/page.tsx")).toContain("<LicenseSummary");
   });
