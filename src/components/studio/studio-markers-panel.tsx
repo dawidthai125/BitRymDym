@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { planHipHopStructureMarkers } from "@/lib/studio/hiphop-marker-structure";
 import {
   studioMarkerKindLabelPl,
   type StudioMarkerDto,
@@ -31,6 +32,8 @@ type StudioMarkersPanelProps = {
   onSeek?: (positionMs: number) => void;
   /** Shared Inspector tip — same helper as recording-panel persist. */
   onDocumentVersionAck?: (ack: unknown) => number;
+  /** Project tempo for hip-hop structure template (default 90). */
+  tempoBpm?: number;
 };
 
 export function StudioMarkersPanel({
@@ -40,6 +43,7 @@ export function StudioMarkersPanel({
   getPlayheadMs,
   onSeek,
   onDocumentVersionAck,
+  tempoBpm = 90,
 }: StudioMarkersPanelProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioMarkersPanel");
@@ -47,7 +51,7 @@ export function StudioMarkersPanel({
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
     "loading",
   );
-  const [busy, setBusy] = useState<"verse" | "hook" | "remove" | null>(null);
+  const [busy, setBusy] = useState<"verse" | "hook" | "remove" | "structure" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const getBaseVersionRef = useRef(getExpectedDocumentVersion);
   getBaseVersionRef.current = getExpectedDocumentVersion;
@@ -100,10 +104,15 @@ export function StudioMarkersPanel({
   const persistOp = useCallback(
     async (
       op: "add" | "remove",
-      payload: { kind?: StudioMarkerKind; markerId?: string },
+      payload: {
+        kind?: StudioMarkerKind;
+        markerId?: string;
+        positionMs?: number;
+        quiet?: boolean;
+      },
     ) => {
       const kindBusy = payload.kind ?? "remove";
-      setBusy(kindBusy);
+      if (!payload.quiet) setBusy(kindBusy);
       const result = await enqueuePersistAsync(async () => {
         const response = await fetch(
           `/api/studio/projects/${projectId}/markers`,
@@ -114,7 +123,11 @@ export function StudioMarkersPanel({
               op,
               kind: payload.kind,
               positionMs:
-                op === "add" ? Math.floor(getPlayheadMs()) : undefined,
+                op === "add"
+                  ? Math.floor(
+                      payload.positionMs ?? getPlayheadMs(),
+                    )
+                  : undefined,
               markerId: payload.markerId,
               expectedDocumentVersion: versionTip.expected(),
             }),
@@ -141,17 +154,40 @@ export function StudioMarkersPanel({
           documentVersion,
           apply: () => {
             setMarkers(body.markers!);
-            setMessage(
-              op === "add" ? t("dodanoMarker") : t("usunietoMarker"),
-            );
+            if (!payload.quiet) {
+              setMessage(
+                op === "add" ? t("dodanoMarker") : t("usunietoMarker"),
+              );
+            }
           },
         };
       });
-      setBusy(null);
+      if (!payload.quiet) setBusy(null);
       if (!result.ok) setMessage(result.message);
+      return result;
     },
-    [ackDocumentVersion, enqueuePersistAsync, getPlayheadMs, projectId, versionTip],
+    [ackDocumentVersion, enqueuePersistAsync, getPlayheadMs, projectId, versionTip, t],
   );
+
+  const insertHipHopStructure = useCallback(async () => {
+    setBusy("structure");
+    setMessage(null);
+    const planned = planHipHopStructureMarkers({ bpm: tempoBpm });
+    let failed = false;
+    for (const row of planned) {
+      const result = await persistOp("add", {
+        kind: row.kind,
+        positionMs: row.positionMs,
+        quiet: true,
+      });
+      if (!result.ok) {
+        failed = true;
+        break;
+      }
+    }
+    setBusy(null);
+    setMessage(failed ? t("nieUdaloSieZapisac") : t("wstawionoStrukture"));
+  }, [persistOp, t, tempoBpm]);
 
   const sorted = markers.toSorted((a, b) => a.positionMs - b.positionMs);
 
@@ -188,6 +224,19 @@ export function StudioMarkersPanel({
           }}
         >
           {tl(busy === "hook" ? t("dodawanie") : t("dodajRefren"))}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11 w-full sm:col-span-2"
+          disabled={busy !== null || loadState === "loading"}
+          data-testid="studio-markers-hiphop-structure"
+          onClick={() => {
+            void insertHipHopStructure();
+          }}
+        >
+          {tl(busy === "structure" ? t("dodawanie") : t("wstawStruktureHipHop"))}
         </Button>
       </div>
       {loadState === "loading" ? (

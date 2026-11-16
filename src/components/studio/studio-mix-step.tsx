@@ -41,6 +41,8 @@ import {
   type MixAutofixNote,
   type MixPlanFixId,
 } from "@/lib/studio/mix-autofix/plan";
+import { BITEK_POLISH_TILES } from "@/lib/studio/bitek-polish-tiles";
+import { planBeatDuckerOps } from "@/lib/studio/beat-ducker-plan";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
 import { StudioVocalSetsCard } from "@/components/studio/studio-vocal-presets";
@@ -1001,6 +1003,56 @@ export function StudioMixStep({
                   onClick={() => void runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"))}
                 >
                   {fixing === "all" ? t("poprawTrwa") : t("poprawWszystko")}
+                </Button>
+              ) : null}
+              {onApplyAutofix
+                ? BITEK_POLISH_TILES.map((tile) => (
+                    <Button
+                      key={tile.id}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="min-h-11 w-full sm:w-auto"
+                      disabled={Boolean(fixing) || running || stale}
+                      data-testid={`studio-mix-polish-${tile.id}`}
+                      onClick={() =>
+                        void runFix(
+                          tile.fixes,
+                          `polish-${tile.id}`,
+                          t(`polishTiles.${tile.labelKey}`),
+                        )
+                      }
+                    >
+                      {fixing === `polish-${tile.id}`
+                        ? t("poprawTrwa")
+                        : t(`polishTiles.${tile.labelKey}`)}
+                    </Button>
+                  ))
+                : null}
+              {onApplyAutofix ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11 w-full sm:w-auto"
+                  disabled={Boolean(fixing) || running || stale}
+                  data-testid="studio-mix-beat-duck"
+                  onClick={() => {
+                    const ops = planBeatDuckerOps({ tracks: doc.tracks });
+                    if (ops.length === 0 || !onApplyAutofix || fixing || running) return;
+                    setFixing("duck");
+                    void onApplyAutofix(ops, t("sciszBitPodWokal")).then((res) => {
+                      setFixing(null);
+                      if (!res.ok) {
+                        setPanel({ kind: "error", conflict: res.conflict });
+                        return;
+                      }
+                      setPanel({ kind: "done", notes: [], after: null });
+                      setFixSeq((n) => n + 1);
+                    });
+                  }}
+                >
+                  {fixing === "duck" ? t("poprawTrwa") : t("sciszBitPodWokal")}
                 </Button>
               ) : null}
               <span id="studio-mix-pocket-hint" className="sr-only">{t("kieszenOpis")}</span>

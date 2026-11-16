@@ -417,36 +417,41 @@ export function StudioExportControl({
     pollAttemptsRef.current = 0;
   }
 
+  async function resolveDownloadUrl(): Promise<string> {
+    if (!artifactId) throw new Error(t("pobieranieNiedostepne"));
+    const res = await fetch(
+      studioExportArtifactDownloadUrl(artifactId, { sfmVersionId }),
+      {
+        method: "GET",
+        credentials: "same-origin",
+      },
+    );
+    let json: { success?: boolean; url?: string; error?: string } = {};
+    try {
+      json = (await res.json()) as {
+        success?: boolean;
+        url?: string;
+        error?: string;
+      };
+    } catch {
+      json = {};
+    }
+    const mapped = mapStudioExportDownloadHttpResult({
+      httpStatus: res.status,
+      json,
+    });
+    if (!mapped.ok) {
+      throw new Error(mapped.message);
+    }
+    return mapped.url;
+  }
+
   async function onDownload() {
     if (!artifactId || downloading) return;
     setDownloading(true);
     setMessage(null);
     try {
-      const res = await fetch(
-        studioExportArtifactDownloadUrl(artifactId, { sfmVersionId }),
-        {
-          method: "GET",
-          credentials: "same-origin",
-        },
-      );
-      let json: { success?: boolean; url?: string; error?: string } = {};
-      try {
-        json = (await res.json()) as {
-          success?: boolean;
-          url?: string;
-          error?: string;
-        };
-      } catch {
-        json = {};
-      }
-      const mapped = mapStudioExportDownloadHttpResult({
-        httpStatus: res.status,
-        json,
-      });
-      if (!mapped.ok) {
-        throw new Error(mapped.message);
-      }
-      window.location.assign(mapped.url);
+      window.location.assign(await resolveDownloadUrl());
     } catch (e) {
       setMessage(
         toUserFacingError(
@@ -455,6 +460,46 @@ export function StudioExportControl({
         ),
       );
       setPhase("UNAVAILABLE");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  /** Phone share: WAV via Web Share when the browser supports files; else download. */
+  async function onSharePhone() {
+    if (!artifactId || downloading) return;
+    setDownloading(true);
+    setMessage(null);
+    try {
+      const url = await resolveDownloadUrl();
+      const fileRes = await fetch(url);
+      if (!fileRes.ok) throw new Error(t("pobieranieNiedostepne"));
+      const blob = await fileRes.blob();
+      const file = new File([blob], "bitrymdym-studio.wav", {
+        type: blob.type || "audio/wav",
+      });
+      const nav = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean;
+        share?: (data: ShareData) => Promise<void>;
+      };
+      if (nav.share && (!nav.canShare || nav.canShare({ files: [file] }))) {
+        await nav.share({
+          files: [file],
+          title: "BitRymDym",
+          text: t("wersjaDoTelefonu"),
+        });
+      } else {
+        window.location.assign(url);
+        setMessage(t("telefonPobierzWav"));
+      }
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      setMessage(
+        toUserFacingError(
+          e instanceof Error ? e.message : t("pobieranieNiedostepne"),
+          "download",
+        ),
+      );
     } finally {
       setDownloading(false);
     }
@@ -546,6 +591,9 @@ export function StudioExportControl({
               >
                 {t("formatWavOperacjaW")}
               </p>
+              <p className="text-[11px] text-[var(--brd-ink)]/75">
+                {t("stemyHint")}
+              </p>
             </div>
 
             <p
@@ -635,6 +683,20 @@ export function StudioExportControl({
                   onClick={() => void onDownload()}
                 >
                   {tl(downloading ? t("pobieranie") : t("pobierzWav"))}
+                </Button>
+              ) : null}
+
+              {showDownload ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  disabled={downloading}
+                  data-testid="studio-export-phone"
+                  onClick={() => void onSharePhone()}
+                >
+                  {tl(downloading ? t("pobieranie") : t("wersjaDoTelefonu"))}
                 </Button>
               ) : null}
 

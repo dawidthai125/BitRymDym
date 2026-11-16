@@ -2759,6 +2759,7 @@ export function StudioRecordingPanel({
           getPlayheadMs={transport.getPlayheadMs}
           onSeek={transport.seek}
           onDocumentVersionAck={ackDocumentVersion}
+          tempoBpm={transport.tempoBpm}
         />
         <StudioScratchPanel
           sourceDurationMs={Math.max(1, transport.timelineLengthMs)}

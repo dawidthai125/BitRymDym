@@ -134,6 +134,16 @@ import {
 } from "@/lib/studio/studio-master-mix";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import {
+  readStudioTransportKeyboardMode,
+  resolveStudioTransportKeyAction,
+  writeStudioTransportKeyboardMode,
+  type StudioTransportKeyboardMode,
+} from "@/lib/studio/transport-keyboard-mode";
+import {
+  planDoubledClipStartMs,
+  planVocalDoubler,
+} from "@/lib/studio/vocal-doubler-plan";
+import {
   canAddStudioTrack,
   formatStudioTrackCapacityLabel,
   shouldShowStudioTrackUpgradeCta,
@@ -444,6 +454,14 @@ function StudioEditorInner({
   const [inspectorPreferRecord, setInspectorPreferRecord] = useState(false);
   /** Top-bar REC presses not yet consumed by StudioRecordingPanel (0 = none). */
   const [transportRecordRequest, setTransportRecordRequest] = useState(0);
+  /** Space/R vs Space=Play — Owner GO; default remains Szybki REC. */
+  const [transportKeyboardMode, setTransportKeyboardMode] =
+    useState<StudioTransportKeyboardMode>("quick_rec");
+  useEffect(() => {
+    setTransportKeyboardMode(readStudioTransportKeyboardMode(window.localStorage));
+  }, []);
+  const transportKeyboardModeRef = useRef(transportKeyboardMode);
+  transportKeyboardModeRef.current = transportKeyboardMode;
   /** Scratch session SSOT — survives Record panel unmount. */
   const [lastScratchClipId, setLastScratchClipId] = useState<string | null>(
     null,
@@ -1721,9 +1739,11 @@ function StudioEditorInner({
   }
 
   /** Phase 6 / 7.1.6 — duplicate track via CAS + serial orchestrator. */
-  function duplicateTrack(trackId: string): void {
+  function duplicateTrack(trackId: string, opts?: { asVocalDouble?: boolean }): void {
     setError(null);
     setTrackMenuId(null);
+    const asDouble = Boolean(opts?.asVocalDouble);
+    const doublePlan = asDouble ? planVocalDoubler("R") : null;
     enqueuePersist(async () => {
       try {
         const res = await fetch(
@@ -1809,6 +1829,28 @@ function StudioEditorInner({
                 duplicateClipIds: dupClipIds,
               },
             });
+            if (doublePlan) {
+              patchTrack(track.id, {
+                pan: doublePlan.pan,
+                gainDb: doublePlan.gainDb,
+                trackRole: doublePlan.trackRole,
+                name: `${track.name} · ${doublePlan.nameSuffix}`.slice(0, 80),
+              });
+              for (const clip of clips) {
+                persistClipMove(
+                  clip.id,
+                  planDoubledClipStartMs(clip.timelineStartMs, doublePlan.offsetMs),
+                  { applySnapGrid: false },
+                );
+                if (clipPitchForTier(trackCapacity.premiumTier)) {
+                  saveClipPlayback(clip.id, {
+                    stretch: clip.stretchRatio ?? 1,
+                    pitchCents: doublePlan.pitchCents,
+                  });
+                }
+              }
+              setStatus(tr("dubelGotowy"));
+            }
           },
         };
       } catch {
@@ -2396,24 +2438,29 @@ function StudioEditorInner({
     function onKeyDown(event: KeyboardEvent) {
       if (isTypingTarget(event.target)) return;
 
-      // Space / R — record start/stop on the target track (same path as top-bar REC).
-      // Must work while recordingLocked so Space can stop an in-progress take.
-      const recordKey =
-        event.key === " " ||
-        event.code === "Space" ||
-        event.key === "r" ||
-        event.key === "R";
-      if (
-        recordKey &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey
-      ) {
+      // Transport keys — mode from localStorage (quick_rec vs standard_daw).
+      // Record must work while recordingLocked so Space/R can stop an in-progress take.
+      const transportAction = resolveStudioTransportKeyAction({
+        mode: transportKeyboardModeRef.current,
+        key: event.key,
+        code: event.code,
+        metaKey: event.metaKey,
+        ctrlKey: event.ctrlKey,
+        altKey: event.altKey,
+      });
+      if (transportAction === "record") {
         if (pending) return;
         event.preventDefault();
         setInspectorPreferRecord(true);
         openInspectorOverlay();
         setTransportRecordRequest((n) => n + 1);
+        return;
+      }
+      if (transportAction === "play") {
+        if (recordingLocked || pending) return;
+        event.preventDefault();
+        if (transport.phase === "playing") transport.pause();
+        else transport.play();
         return;
       }
 
@@ -2428,18 +2475,6 @@ function StudioEditorInner({
         return;
       }
 
-      // P — play/pause (Space is reserved for record).
-      if (
-        (event.key === "p" || event.key === "P") &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey
-      ) {
-        event.preventDefault();
-        if (transport.phase === "playing") transport.pause();
-        else transport.play();
-        return;
-      }
       if (event.key === "Home") {
         event.preventDefault();
         transport.seek(0);
@@ -3333,6 +3368,11 @@ function StudioEditorInner({
           openInspectorOverlay();
           setTransportRecordRequest((n) => n + 1);
         }}
+        transportKeyboardMode={transportKeyboardMode}
+        onTransportKeyboardModeChange={(mode) => {
+          setTransportKeyboardMode(mode);
+          writeStudioTransportKeyboardMode(window.localStorage, mode);
+        }}
         tempoBpm={doc.project.tempoBpm}
         timeSignatureNum={doc.project.timeSignatureNum}
         timeSignatureDen={doc.project.timeSignatureDen}
@@ -3464,6 +3504,21 @@ function StudioEditorInner({
             }}
           >
             {tr("duplikuj")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            role="menuitem"
+            data-testid="studio-track-vocal-double"
+            disabled={recordingLocked || pending || atTrackCapacity}
+            title={tr("dubelOpis")}
+            onClick={() => {
+              duplicateTrack(trackMenuTrack.id, { asVocalDouble: true });
+            }}
+          >
+            {tr("dubel")}
           </Button>
           {studioAdvancedRecordAllowed(trackCapacity.premiumTier) ? (
             <>
@@ -4759,6 +4814,8 @@ function StudioTransportBar({
   onDocumentRefreshed,
   onChooseBeat,
   onRecord,
+  transportKeyboardMode,
+  onTransportKeyboardModeChange,
   tempoBpm,
   timeSignatureNum,
   timeSignatureDen,
@@ -4801,6 +4858,8 @@ function StudioTransportBar({
   onDocumentRefreshed: (document: StudioProjectDocument) => void;
   onChooseBeat: () => void;
   onRecord: () => void;
+  transportKeyboardMode: StudioTransportKeyboardMode;
+  onTransportKeyboardModeChange: (mode: StudioTransportKeyboardMode) => void;
   tempoBpm: number;
   timeSignatureNum: number;
   timeSignatureDen: number;
@@ -4954,6 +5013,36 @@ function StudioTransportBar({
           >
             <StudioRecLamp />
             <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("nagraj")}</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="studio-key min-h-11 px-2"
+            data-testid="studio-transport-keyboard-mode"
+            title={
+              transportKeyboardMode === "quick_rec"
+                ? tr("trybKlawiaturySzybkiRecOpis")
+                : tr("trybKlawiaturyDawOpis")
+            }
+            aria-label={
+              transportKeyboardMode === "quick_rec"
+                ? tr("trybKlawiaturySzybkiRec")
+                : tr("trybKlawiaturyDaw")
+            }
+            onClick={() =>
+              onTransportKeyboardModeChange(
+                transportKeyboardMode === "quick_rec"
+                  ? "standard_daw"
+                  : "quick_rec",
+              )
+            }
+          >
+            <span className="font-mono text-[10px] font-semibold tracking-[0.06em]">
+              {transportKeyboardMode === "quick_rec"
+                ? tr("trybKlawiaturySzybkiRecKrotki")
+                : tr("trybKlawiaturyDawKrotki")}
+            </span>
           </Button>
           <Button
             type="button"

@@ -28,7 +28,12 @@
       "wstep": "Ta strona zbiera zasady: jak wygląda nagranie w praktyce, ile wolno na Twoim planie i co wolno zrobić z gotowym utworem. Pełny opis produktu i film są w sekcji „Jak to działa” na stronie głównej.",
       "przegladLink": "Zobacz „Jak to działa”: pełna ścieżka od bitu do pliku i film",
       "wskazowkiTytul": "Zanim zaczniesz nagrywać",
-      "wskazowki": { "w1": "Posłuchaj bitu bez konta (podgląd), a do nagrania załóż konto. Nagrywać można tylko na opublikowanym bicie.", "w2": "Nie podoba Ci się ujęcie? „Nagraj ponownie”. Dobre ujęcie zachowaj, bo pliki z nagrań są trzymane tylko przez czas z tabeli niżej.", "w3": "Mikrofon sprawdź próbą przed nagraniem; słuchawki zmniejszają echo i zapętlenie bitu w nagraniu.", "w4": "Przed publikacją dodaj podpis autora bitu (tabela licencji niżej). Miks i mastering robi Bitek, gdy o to poprosisz." },
+      "wskazowki": {
+        "w1": "Posłuchaj bitu bez konta (podgląd), a do nagrania załóż konto. Nagrywać można tylko na opublikowanym bicie.",
+        "w2": "Nie podoba Ci się ujęcie? „Nagraj ponownie”. Dobre ujęcie zachowaj, bo pliki z nagrań są trzymane tylko przez czas z tabeli niżej.",
+        "w3": "Mikrofon sprawdź próbą przed nagraniem; słuchawki zmniejszają echo i zapętlenie bitu w nagraniu.",
+        "w4": "Przed publikacją dodaj podpis autora bitu (tabela licencji niżej). Miks i mastering robi Bitek, gdy o to poprosisz."
+      },
       "planyTytul": "Limity planów",
       "kolPlan": "Plan",
       "kolUjecie": "Długość ujęcia",
@@ -2178,7 +2183,16 @@
       "panLewoKrotko": "L",
       "panPrawoKrotko": "P",
       "przeliczamStrojenie": "przeliczam strojenie…",
-      "przeliczamStrojenieTytul": "Przeliczam Twoje ręczne nuty, żeby było je słychać w odtwarzaniu. Do tego czasu grasz z automatycznym strojeniem."
+      "przeliczamStrojenieTytul": "Przeliczam Twoje ręczne nuty, żeby było je słychać w odtwarzaniu. Do tego czasu grasz z automatycznym strojeniem.",
+      "dubel": "Dubel",
+      "dubelOpis": "Kopia wokalu: +18 ms, lekko w prawo, ±5 centów — szeroki refren.",
+      "dubelGotowy": "Dubel stereo gotowy.",
+      "trybKlawiaturySzybkiRec": "Szybki REC: Spacja i R nagrywają, P gra",
+      "trybKlawiaturyDaw": "Standard DAW: Spacja gra, R nagrywa",
+      "trybKlawiaturySzybkiRecOpis": "Przełącz na Standard DAW (Spacja = play).",
+      "trybKlawiaturyDawOpis": "Przełącz na Szybki REC (Spacja = nagraj).",
+      "trybKlawiaturySzybkiRecKrotki": "REC",
+      "trybKlawiaturyDawKrotki": "DAW"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "Eksport dotyczy innego projektu.",
@@ -2204,7 +2218,10 @@
       "pobieranie": "Pobieranie…",
       "pobierzWav": "Pobierz WAV",
       "zamknij": "Zamknij",
-      "pobieranieNiedostepne": "Pobieranie niedostępne."
+      "pobieranieNiedostepne": "Pobieranie niedostępne.",
+      "wersjaDoTelefonu": "Do telefonu",
+      "telefonPobierzWav": "Pobrano WAV — wyślij znajomym z telefonu.",
+      "stemyHint": "Paczka stemów: wycisz inne ścieżki i eksportuj WAV osobno (ZIP stemów wkrótce)."
     },
     "studioFxChainEditor": {
       "zapisywanie": "Zapisywanie…",
@@ -2250,7 +2267,9 @@
       "wczytywanieMarkerow": "Wczytywanie markerów…",
       "brakMarkerow": "Brak markerów.",
       "usunMarker": "Usuń marker {v0}",
-      "usun": "Usuń"
+      "usun": "Usuń",
+      "wstawStruktureHipHop": "Wstaw strukturę hip-hop",
+      "wstawionoStrukture": "Wstawiono Intro / Zwrotki / Refreny / Outro."
     },
     "studioMasterMeter": {
       "miernikMaster": "Miernik Master",
@@ -2401,7 +2420,7 @@
       "recPaneUstawienia": "Ustawienia",
       "recPaneUjecia": "Ujęcia",
       "recPaneScratch": "Scratch",
-      "sampleTytul": "Sample",
+      "sampleTytul": "Tytuł",
       "sampleZakladkaOpis": "Zagraj instrument albo wybierz sample i połóż go na ścieżce. Mikrofon jest w zakładce Nagranie.",
       "trybNagrywania": "TRYB NAGRYWANIA ·",
       "startPlayhead": "Start: głowica odtwarzania",
@@ -2439,7 +2458,6 @@
       "sampleInstrument": "Instrument",
       "sampleNuta": "Nuta",
       "sampleDlugosc": "Długość",
-      "sampleTytul": "Tytuł",
       "samplePrawa": "Mam prawo użyć tego dźwięku i mogę oddać go do katalogu po moderacji.",
       "samplePrawaWymagane": "Zaznacz, że masz prawo do tego dźwięku.",
       "samplePodglad": "Odsłuch",
@@ -2958,6 +2976,12 @@
         },
         "dymek": "Poprawiłem {count, plural, one {# rzecz} few {# rzeczy} other {# rzeczy}} w Twoim mixie.",
         "sprawdzam": "Sprawdzam jeszcze raz…"
+      },
+      "sciszBitPodWokal": "Ścisz bit pod wokal",
+      "polishTiles": {
+        "mud": "Wytnij dudnienie",
+        "sibilance": "Sybilanty",
+        "glue": "Sklej z bitem"
       }
     },
     "bitek": {
@@ -3517,7 +3541,14 @@
         "tryb": "Tryb pisania",
         "styl": "Styl",
         "stylBrak": "Bez stylu",
-        "style": { "rap": "Rap", "trap": "Trap", "drill": "Drill", "boombap": "Boom bap", "refleksyjny": "Refleksyjny", "melodyjny": "Melodyjny" },
+        "style": {
+          "rap": "Rap",
+          "trap": "Trap",
+          "drill": "Drill",
+          "boombap": "Boom bap",
+          "refleksyjny": "Refleksyjny",
+          "melodyjny": "Melodyjny"
+        },
         "tryby": {
           "keywords": "Z mojego opisu",
           "continue": "Dokończ tekst",

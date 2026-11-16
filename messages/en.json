@@ -28,7 +28,12 @@
       "wstep": "This page collects the rules: what recording looks like in practice, what your plan allows and what you may do with the finished track. The full product walkthrough and film are in the “How it works” section on the home page.",
       "przegladLink": "See “How it works”: the full path from beat to file, with a film",
       "wskazowkiTytul": "Before you record",
-      "wskazowki": { "w1": "Listen to a beat without an account (preview); you need an account to record. You can only record on a published beat.", "w2": "Not happy with a take? “Record again”. Keep the good one: recording files are only stored for the time in the table below.", "w3": "Test your microphone before recording; headphones reduce echo and the beat leaking into the recording.", "w4": "Before publishing, credit the beat author (licence table below). Bitek does mix and master when you ask." },
+      "wskazowki": {
+        "w1": "Listen to a beat without an account (preview); you need an account to record. You can only record on a published beat.",
+        "w2": "Not happy with a take? “Record again”. Keep the good one: recording files are only stored for the time in the table below.",
+        "w3": "Test your microphone before recording; headphones reduce echo and the beat leaking into the recording.",
+        "w4": "Before publishing, credit the beat author (licence table below). Bitek does mix and master when you ask."
+      },
       "planyTytul": "Plan limits",
       "kolPlan": "Plan",
       "kolUjecie": "Take length",
@@ -2178,7 +2183,16 @@
       "panLewoKrotko": "L",
       "panPrawoKrotko": "R",
       "przeliczamStrojenie": "retuning…",
-      "przeliczamStrojenieTytul": "I'm recomputing your manual notes so you hear them in playback. Until then you hear automatic tuning."
+      "przeliczamStrojenieTytul": "I'm recomputing your manual notes so you hear them in playback. Until then you hear automatic tuning.",
+      "dubel": "Double",
+      "dubelOpis": "Vocal copy: +18 ms, pan right, ±5 cents — wide chorus.",
+      "dubelGotowy": "Stereo double ready.",
+      "trybKlawiaturySzybkiRec": "Quick REC: Space/R record, P play",
+      "trybKlawiaturyDaw": "Standard DAW: Space play, R record",
+      "trybKlawiaturySzybkiRecOpis": "Switch to Standard DAW (Space = play).",
+      "trybKlawiaturyDawOpis": "Switch to Quick REC (Space = record).",
+      "trybKlawiaturySzybkiRecKrotki": "REC",
+      "trybKlawiaturyDawKrotki": "DAW"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "The export belongs to another project.",
@@ -2204,7 +2218,10 @@
       "pobieranie": "Downloading…",
       "pobierzWav": "Download WAV",
       "zamknij": "Close",
-      "pobieranieNiedostepne": "Download unavailable."
+      "pobieranieNiedostepne": "Download unavailable.",
+      "wersjaDoTelefonu": "Send to phone",
+      "telefonPobierzWav": "WAV downloaded — share it from your phone.",
+      "stemyHint": "Stem pack: mute other tracks and export WAV per stem (ZIP stems coming soon)."
     },
     "studioFxChainEditor": {
       "zapisywanie": "Saving…",
@@ -2250,7 +2267,9 @@
       "wczytywanieMarkerow": "Loading markers…",
       "brakMarkerow": "No markers.",
       "usunMarker": "Remove marker {v0}",
-      "usun": "Delete"
+      "usun": "Delete",
+      "wstawStruktureHipHop": "Insert hip-hop structure",
+      "wstawionoStrukture": "Inserted Intro / Verses / Hooks / Outro."
     },
     "studioMasterMeter": {
       "miernikMaster": "Master meter",
@@ -2401,7 +2420,7 @@
       "recPaneUstawienia": "Setup",
       "recPaneUjecia": "Takes",
       "recPaneScratch": "Scratch",
-      "sampleTytul": "Samples",
+      "sampleTytul": "Title",
       "sampleZakladkaOpis": "Play an instrument or pick a sample and place it on the track. The microphone is on the Record tab.",
       "trybNagrywania": "RECORDING MODE ·",
       "startPlayhead": "Start: playhead",
@@ -2439,7 +2458,6 @@
       "sampleInstrument": "Instrument",
       "sampleNuta": "Note",
       "sampleDlugosc": "Length",
-      "sampleTytul": "Title",
       "samplePrawa": "I have the right to use this sound and I can offer it to the catalogue after moderation.",
       "samplePrawaWymagane": "Confirm that you have the right to this sound.",
       "samplePodglad": "Preview",
@@ -2958,6 +2976,12 @@
         },
         "dymek": "I fixed {count, plural, one {# thing} other {# things}} in your mix.",
         "sprawdzam": "Checking again…"
+      },
+      "sciszBitPodWokal": "Duck beat under vocal",
+      "polishTiles": {
+        "mud": "Cut the mud",
+        "sibilance": "De-ess",
+        "glue": "Glue to beat"
       }
     },
     "bitek": {
@@ -3517,7 +3541,14 @@
         "tryb": "Writing mode",
         "styl": "Style",
         "stylBrak": "No style",
-        "style": { "rap": "Rap", "trap": "Trap", "drill": "Drill", "boombap": "Boom bap", "refleksyjny": "Reflective", "melodyjny": "Melodic" },
+        "style": {
+          "rap": "Rap",
+          "trap": "Trap",
+          "drill": "Drill",
+          "boombap": "Boom bap",
+          "refleksyjny": "Reflective",
+          "melodyjny": "Melodic"
+        },
         "tryby": {
           "keywords": "From my description",
           "continue": "Continue the text",
