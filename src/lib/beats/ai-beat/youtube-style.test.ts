@@ -102,7 +102,12 @@ describe("describeBeatStyleFromYouTube", () => {
     };
     expect(sent.model).toBe("gemini-4-hydrogen");
     expect(sent.input[0]?.uri).toBe(CANONICAL);
-    expect(sent.input[1]?.text).toContain("Stable Audio");
+    const instruction = sent.input[1]?.text ?? "";
+    expect(instruction).toContain("Stable Audio");
+    expect(instruction).toContain("BAD (too vague)");
+    expect(instruction).toContain("GOOD:");
+    expect(instruction).toContain("concrete sonic detail");
+    expect(instruction).toContain("pocket");
     expect(sent.response_format?.schema?.required).toEqual(
       expect.arrayContaining(["opis", "drums", "bass", "melody", "mood", "arrangement"]),
     );
