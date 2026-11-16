@@ -887,7 +887,11 @@ export function StudioExportControl({
                   data-testid="studio-export-download"
                   onClick={() => void onDownload()}
                 >
-                  {tl(busyDownload ? t("pobieranie") : t("pobierzWav"))}
+                  {tl(
+                    downloading && !preparingMp3
+                      ? t("pobieranie")
+                      : t("pobierzWav"),
+                  )}
                 </Button>
               ) : null}
 

@@ -1256,12 +1256,13 @@ export function StudioRecordingPanel({
     if (!a.section || a.recT0 == null || !placeTrackId) return;
     const takeDurationMs = Math.round((takeDurationSeconds ?? 0) * 1000);
     const range = a.mode === "punch" && a.line ? a.line : a.section;
-    const starts =
+    // Unknown playhead sample → treat as 0; still apply device latency
+    // (same contract as single-take alignedPlacement / c428193).
+    const startsRaw =
       a.mode === "loop"
         ? loopPassStarts({ samples: a.samples, section: a.section, recordStartPerfMs: a.recT0 })
-        : [recordingPositionOf({ samples: a.samples, targetMs: range.startMs, recordStartPerfMs: a.recT0 })].filter(
-            (v): v is number => v != null,
-          );
+        : [recordingPositionOf({ samples: a.samples, targetMs: range.startMs, recordStartPerfMs: a.recT0 }) ?? 0];
+    const starts = startsRaw.length > 0 ? startsRaw : [0];
     const captured = buildCapturedPasses({
       passStartsRecMs: starts,
       section: range,

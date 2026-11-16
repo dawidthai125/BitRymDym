@@ -126,4 +126,22 @@ describe("alignment", () => {
       alignedPlacement({ startMs: 0, recPositionMs: null, compensationMs: 80 }),
     ).toEqual({ timelineStartMs: 0, sourceOffsetMs: 80 });
   });
+
+  it("lane capture with unknown pass start still compensates from 0", () => {
+    expect(
+      buildCapturedPasses({
+        passStartsRecMs: [0],
+        section: { startMs: 1000, endMs: 5000 },
+        takeDurationMs: 6000,
+        compensationMs: 80,
+      }),
+    ).toEqual([
+      {
+        sourceOffsetMs: 80,
+        rangeStartMs: 1000,
+        rangeEndMs: 5000,
+        complete: true,
+      },
+    ]);
+  });
 });

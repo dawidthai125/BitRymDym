@@ -1,8 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
   CLAP_CALIBRATION,
   CLICK_CALIBRATION,
+  CONTEXT_ESTIMATE_PAD_MS,
   LATENCY_STORAGE_KEY,
   calibrationClickTimesMs,
   estimateLatencyFromContext,
@@ -210,5 +214,18 @@ describe("device profile + warnings", () => {
     expect(all["mic|phones"]?.manualOffsetMs).toBe(300);
     mem.set(LATENCY_STORAGE_KEY, "{broken");
     expect(loadLatencyProfiles(storage)).toEqual({});
+  });
+
+  it("keeps compensation when playhead sample is missing (single + lane)", () => {
+    expect(CONTEXT_ESTIMATE_PAD_MS).toBe(40);
+    const panel = readFileSync(
+      join(process.cwd(), "src/components/studio/studio-recording-panel.tsx"),
+      "utf8",
+    );
+    expect(panel).toMatch(/recPositionMs:\s*recPositionMs\s*\?\?\s*0/);
+    expect(panel).toMatch(/compensationMs:\s*align\.compensationMs/);
+    // Lane/punch must not drop null samples (empty starts → no capture).
+    expect(panel).toMatch(/recordingPositionOf\([\s\S]*?\)\s*\?\?\s*0/);
+    expect(panel).toMatch(/startsRaw\.length\s*>\s*0\s*\?\s*startsRaw\s*:\s*\[0\]/);
   });
 });

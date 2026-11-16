@@ -518,6 +518,14 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(control).toMatch(/showDownload && Boolean\(sfmVersionId\)/);
     expect(control).not.toMatch(/encodeMp3FromBake|libmp3lame/);
     expect(control).toMatch(/never invent/);
+    // WAV label must not flip to "Pobieranie…" while MP3 encode/share is preparing
+    // (intl-test-mocks inlines t() keys into pl copy).
+    expect(control).toMatch(
+      /downloading && !preparingMp3\s*\?\s*"Pobieranie…"/,
+    );
+    expect(control).not.toMatch(
+      /busyDownload\s*\?\s*"Pobieranie…"\s*:\s*"Pobierz WAV"/,
+    );
   });
 
   it("stemyHint points at Master Projekt ZIP (not coming soon)", () => {
