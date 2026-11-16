@@ -49,6 +49,18 @@ export const STUDIO_BEAT_PLAYBACK_ERROR_PL =
 export const STUDIO_TAKE_PLAYBACK_ERROR_PL =
   "Nie udało się odtworzyć nagrania. Sprawdź połączenie lub spróbuj ponownie.";
 
+/** Take still on the timeline after retention ended (/api/takes/preview 403). */
+export const STUDIO_TAKE_EXPIRED_ERROR_PL =
+  "To nagranie wygasło. Nagraj ponownie albo dodaj świeże ujęcie na ścieżkę.";
+
+/** Map /api/takes/preview failure body to stable Studio copy. */
+export function takePreviewFailureMessage(error: string | null | undefined): string {
+  if (error && /session expired|wygasł|wygasła|expired/i.test(error)) {
+    return STUDIO_TAKE_EXPIRED_ERROR_PL;
+  }
+  return STUDIO_TAKE_PLAYBACK_ERROR_PL;
+}
+
 export function isStudioAudioErrorCode(
   value: string,
 ): value is StudioAudioErrorCode {

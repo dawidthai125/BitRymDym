@@ -23,7 +23,9 @@ import {
   type StudioMeterSnapshot,
 } from "@/lib/studio/studio-audio-engine";
 import {
+  STUDIO_TAKE_EXPIRED_ERROR_PL,
   STUDIO_TAKE_PLAYBACK_ERROR_PL,
+  takePreviewFailureMessage,
   userFacingPlaybackError,
   type StudioAudioErrorCode,
 } from "@/lib/studio/studio-audio-errors";
@@ -276,8 +278,13 @@ export function StudioTransportProvider({
       success?: boolean;
       url?: string;
       expiresAt?: string;
+      error?: string;
     };
-    if (!res.ok || !json.success || !json.url) return null;
+    if (!res.ok || !json.success || !json.url) {
+      // Expired/deleted take still referenced on the timeline — tell the user once.
+      setError(takePreviewFailureMessage(json.error));
+      return null;
+    }
 
     let playableUrl = json.url;
     let expiresAt = json.expiresAt
@@ -386,12 +393,13 @@ export function StudioTransportProvider({
           if (params.code === "AUDIO_SYNC_FAILED") return;
           if (params.code.startsWith("AUDIO_FX_")) return;
           if (params.sourceKind === "ARTIFACT") return;
-          setError(
-            userFacingPlaybackError({
+          setError((prev) => {
+            if (prev === STUDIO_TAKE_EXPIRED_ERROR_PL) return prev;
+            return userFacingPlaybackError({
               code: params.code,
               sourceKind: params.sourceKind,
-            }),
-          );
+            });
+          });
           if (phaseRef.current !== "playing") {
             setAudioState("error");
           }
@@ -652,7 +660,8 @@ export function StudioTransportProvider({
     setPhase("paused");
     const source = await resolveTakeUrl(takeId);
     if (!source) {
-      setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
+      // resolveTakeUrl already set expired/generic copy when the API answered.
+      setError((prev) => prev ?? STUDIO_TAKE_PLAYBACK_ERROR_PL);
       throw new Error(STUDIO_TAKE_PLAYBACK_ERROR_PL);
     }
     setError(null);
