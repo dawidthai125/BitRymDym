@@ -1422,6 +1422,7 @@ class RecorderWindow:
         self.root.bind_all("<MouseWheel>", self._on_wheel)
         for sequence, handler in (
             # Space = record/stop on the armed track (●). P = play/stop. R = same as Space.
+            # bind_all: focus is often on the timeline Canvas after click — root.bind alone misses keys.
             ("<space>", lambda: self.toggle_record()),
             ("<p>", lambda: self.toggle_play()),
             ("<r>", lambda: self.toggle_record()),
@@ -1440,14 +1441,19 @@ class RecorderWindow:
             ("<Shift-Left>", lambda: self._nudge_cursor(-1.0)),
             ("<Shift-Right>", lambda: self._nudge_cursor(1.0)),
         ):
-            self.root.bind(sequence, lambda event, run=handler: self._key(event, run))
+            self.root.bind_all(sequence, lambda event, run=handler: self._key(event, run))
         self.show_splash()
         # Devices and the site both block. The login window opens after this splash.
         self.root.after(60, self._boot_background)
 
     def _key(self, event: tk.Event, run: Callable[[], object]) -> str | None:
         """Shortcuts work on the timeline, not while typing in a text field."""
-        if not self.studio.winfo_manager() or isinstance(event.widget, (tk.Entry, tk.Listbox)):
+        if not self.studio.winfo_manager():
+            return None
+        widget = event.widget
+        # Class name: some Tk builds wrap Entry; isinstance alone misses them under SendInput focus.
+        name = widget.winfo_class() if hasattr(widget, "winfo_class") else ""
+        if isinstance(widget, (tk.Entry, tk.Listbox, tk.Text)) or name in {"Entry", "Listbox", "Text", "TEntry"}:
             return None
         run()
         return "break"
@@ -1666,7 +1672,8 @@ class RecorderWindow:
         self.play_button = self._tool(bar, "▶ GRAJ", self.play, ON_AMBER, AMBER, 13)
         self.play_button.pack(side="left", padx=2, pady=5)
         self._tool(bar, "■ STOP", self.stop, INK, size=13).pack(side="left", padx=2, pady=5)
-        self.rec_button = self._tool(bar, "● NAGRAJ", self.record, INK, REC, 13)
+        # toggle: second click / Space while NAGRYWA must stop (record() alone no-ops when already capturing).
+        self.rec_button = self._tool(bar, "● NAGRAJ", self.toggle_record, INK, REC, 13)
         self.rec_button.pack(side="left", padx=2, pady=5)
         clock = tk.Label(bar, textvariable=self.clock, bg="#0b0907", fg=AMBER, font=(FONT_META, 15), padx=10, width=21, anchor="w")
         clock.pack(side="left", padx=(10, 4), pady=5)
@@ -3434,6 +3441,11 @@ class RecorderWindow:
         self._paint_lamp()
         self._paint_all()
         self._tick()
+        # Keys / STOP must land even when the last click left focus on a Canvas child.
+        try:
+            self.root.focus_force()
+        except tk.TclError:
+            pass
 
     def record(self) -> None:
         if self.recording or self._arming:
