@@ -10,6 +10,25 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### OD-15 — Final visual identity CLOSED / ACCEPTED
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | OD-15 — Finalna identyfikacja wizualna |
+| Status | **CLOSED / ACCEPTED** |
+| Date | 2026-11-17 |
+| Documents | [VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md](./VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md) · [VISUAL_DIRECTION_ZINE_CONTROL_ROOM_2026-10-24.md](./VISUAL_DIRECTION_ZINE_CONTROL_ROOM_2026-10-24.md) · [VISUAL_DIRECTION_GLOBAL_DARK_DEFAULT_2026-10-24.md](./VISUAL_DIRECTION_GLOBAL_DARK_DEFAULT_2026-10-24.md) |
+| Does not close | OD-16 (brand copy) remains **OPEN** |
+
+Owner GO picks (2026-11-17):
+
+1. **Q1 A** — Accept zine + control-room + global dark default as **FINAL** Visual Identity.
+2. **Q2 A + Q3 A** — Dark default + light toggle; dual character public zine + Studio control-room; account / library / settings follow global theme only.
+3. **Q4 A** — Close on current tokens / logo invert; authored logo / covers = follow-up GO (non-blocking for OD-15).
+4. **Q5 B (policy note)** — Product GREEN *may* WAIVE OD-15 if Owner freezes an allowlist. Because OD-15 is now **CLOSED**, that WAIVE clause is **historical / for reopen only**: OD-15 is no longer an OPEN Product GREEN blocker. Future GREEN allowlists record CLOSED OD-15 (or a reopen) — they do not treat OD-15 as an OPEN waive target.
+
+**Explicit non-claims:** ≠ Product GREEN · ≠ PRODUCTION VERIFIED · Contabo untouched · Sacred WIP untouched · OD-16 remains OPEN.
+
 ### Płatności — operator PayU, checkout włączony
 
 | Pole | Wartość |

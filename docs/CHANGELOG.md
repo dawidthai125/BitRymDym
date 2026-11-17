@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-17 — OD-15 CLOSED / ACCEPTED (Visual Identity FINAL)
+
+**Status:** documentation · Owner GO · OD-15 **CLOSED / ACCEPTED**
+
+Owner locked zine + control-room + global dark default as FINAL Visual Identity (Q1 A · Q2/Q3 A+A · Q4 A). Q5 B recorded as GREEN-allowlist policy note (WAIVE historical/reopen; OD-15 no longer an OPEN blocker). Lock: `docs/decisions/VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md`. OD-16 remains OPEN. ≠ Product GREEN · Contabo untouched · Sacred WIP untouched.
+
 ## 2026-11-12 — SESSION_BRIDGE §4 archive (batch 31, room for listen-linki Free)
 
 **Status:** documentation · stałe GO Owner · archiwizacja 3 najstarszych living `EXECUTED` (`STUDIO-SAMPLE-TAB` · `STUDIO-PLAY-INPUT` · `GO-SB-ARCHIVE-26`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany

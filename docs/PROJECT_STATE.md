@@ -2,7 +2,9 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-29 — **Mobile Studio layout** (timeline fit + track hit targets) · living tip start **`3f8b094…`** = `origin/main` · GO editor w unit · vitest stu-07 + p7-1-1 **PASS** · runtime CDP this tip **NOT VERIFIED** until deploy · last verified deploy prior **`dpl_6xkcYZYhfZThRhErkp3BkVBJqu3P`** **Ready** @ `3f8b094` (jog) · Contabo/SFM **nietknięte** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED** · `STOP — OWNER DECISION REQUIRED` **kept** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · OD-15 **OPEN** · [CHANGELOG 2026-10-29](./CHANGELOG.md)
+**Updated:** 2026-11-17 — **OD-15 CLOSED / ACCEPTED** (Owner GO: zine + control-room + global dark default = FINAL Visual Identity) · lock [VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md](./decisions/VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md) · Q5 WAIVE = policy note for GREEN allowlists (historical/reopen; OD-15 no longer OPEN blocker) · OD-16 **OPEN** · Contabo/SFM **nietknięte** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · [CHANGELOG 2026-11-17](./CHANGELOG.md)
+
+**Prior (2026-10-29):** **Mobile Studio layout** (timeline fit + track hit targets) · living tip start **`3f8b094…`** = `origin/main` · GO editor w unit · vitest stu-07 + p7-1-1 **PASS** · runtime CDP this tip **NOT VERIFIED** until deploy · last verified deploy prior **`dpl_6xkcYZYhfZThRhErkp3BkVBJqu3P`** **Ready** @ `3f8b094` (jog) · Contabo/SFM **nietknięte** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED** · `STOP — OWNER DECISION REQUIRED` **kept** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · OD-15 then **OPEN** (now **CLOSED** 2026-11-17) · [CHANGELOG 2026-10-29](./CHANGELOG.md)
 
 **Prior (2026-10-29):** **Unit 5 Scratch jog mobile** · tip **`3f8b094…`** · pad-normalized jog · vitest **21/21** · deploy Ready @ tip · Owner ucha jog **NOT VERIFIED** · **≠ Product GREEN** · [CHANGELOG 2026-10-29](./CHANGELOG.md)
 

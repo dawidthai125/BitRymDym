@@ -1,6 +1,7 @@
 # Visual direction — global dark default (2026-10-24)
 
-**Status:** ADDITIVE OWNER DIRECTION · **≠** closing OD-15 / OD-16  
+**Status:** **ACCEPTED FINAL** (OD-15 CLOSED 2026-11-17) · OD-16 remains **OPEN**  
+**Lock:** [VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md](./VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md)  
 **Builds on:** [VISUAL_DIRECTION_ZINE_CONTROL_ROOM_2026-10-24.md](./VISUAL_DIRECTION_ZINE_CONTROL_ROOM_2026-10-24.md)  
 **Does not reopen:** Studio Visual Parity V2 structural contracts (DAW chrome / audio / CAS)
 
