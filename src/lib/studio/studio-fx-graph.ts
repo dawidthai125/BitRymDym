@@ -45,6 +45,7 @@ import {
 import { createHarmonyNode } from "@/lib/studio/mix-analysis/harmony-worklet";
 import { createPocketNode, postPocketSlot } from "@/lib/studio/mix-analysis/pocket-worklet";
 import { createVoiceNode } from "@/lib/studio/mix-analysis/voice-worklet";
+import { createGateNode } from "@/lib/studio/mix-analysis/gate-worklet";
 import { createRiderNode } from "@/lib/studio/mix-analysis/rider-worklet";
 import { toTuneCoreParams } from "@/lib/studio/tune/tune";
 import { createTuneNode } from "@/lib/studio/tune/tune-worklet";
@@ -625,10 +626,24 @@ function buildDeesserSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): 
 }
 
 /**
- * Downward expander from nodes: |x| → LPF envelope → gain curve → modulates
- * a GainNode whose base gain is 0 (AudioParam input sums with value).
+ * Prefer AudioWorklet (same GateEnvelopeCore as offline). Fallback: |x| → LPF → curve → VCA.
  */
 function buildGateSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  const params = effect.params as StudioFxGateParams;
+  const worklet = createGateNode(ctx, params);
+  if (worklet) {
+    return buildShellSlot(ctx, effect, (input, wet) => {
+      input.connect(worklet as unknown as StudioFxConnectable);
+      worklet.connect(wet);
+      return {
+        nodes: [worklet as unknown as StudioFxConnectable],
+        names: ["worklet-brd-gate"],
+        apply(next) {
+          worklet.port.postMessage({ params: next.params as StudioFxGateParams });
+        },
+      };
+    });
+  }
   const createShaper = ctx.createWaveShaper?.bind(ctx);
   if (!createShaper) {
     return buildWireSlot(ctx, { status: "bypass", effect } as StudioFxPlaybackSlot);

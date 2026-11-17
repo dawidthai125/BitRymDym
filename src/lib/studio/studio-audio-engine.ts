@@ -92,6 +92,7 @@ import {
   readPocketSidechain,
 } from "@/lib/studio/mix-analysis/pocket-worklet";
 import { ensureVoiceWorklet, isVoiceWorkletReady } from "@/lib/studio/mix-analysis/voice-worklet";
+import { ensureGateWorklet, isGateWorkletReady } from "@/lib/studio/mix-analysis/gate-worklet";
 import { ensureRiderWorklet, isRiderWorkletReady } from "@/lib/studio/mix-analysis/rider-worklet";
 import { ensureTuneWorklet, isTuneWorkletReady } from "@/lib/studio/tune/tune-worklet";
 import {
@@ -2053,6 +2054,7 @@ export class StudioAudioEngine {
   /** Loads rider, harmony, voice and pocket worklets once. Until then those slots are dry. */
   private ensurePreviewWorklets(document: StudioEngineDocument): void {
     this.loadInsertWorklet(document, "rider", isRiderWorkletReady, ensureRiderWorklet);
+    this.loadInsertWorklet(document, "gate", isGateWorkletReady, ensureGateWorklet);
     this.loadInsertWorklet(document, "harmony", isHarmonyWorkletReady, ensureHarmonyWorklet);
     this.loadInsertWorklet(document, "voice", isVoiceWorkletReady, ensureVoiceWorklet);
     this.loadInsertWorklet(document, "pocket", isPocketWorkletReady, ensurePocketWorklet);

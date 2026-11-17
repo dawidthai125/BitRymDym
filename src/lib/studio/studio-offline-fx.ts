@@ -62,13 +62,8 @@ import {
   processReverbSample,
   type StereoReverbRuntime,
 } from "@/lib/studio/studio-offline-fx-reverb";
-import {
-  createGateEnvelopeState,
-  deesserDynamicsSpec,
-  gateGainForEnvelope,
-  LR4_SECTION_Q,
-  processGateEnvelope,
-} from "@/lib/studio/studio-fx-stage2-dsp";
+import { deesserDynamicsSpec, LR4_SECTION_Q } from "@/lib/studio/studio-fx-stage2-dsp";
+import { GateEnvelopeCore } from "@/lib/studio/studio-gate-envelope";
 
 import { TuneCore } from "@/lib/studio/tune/tune-core";
 import { toTuneCoreParams } from "@/lib/studio/tune/tune";
@@ -583,7 +578,7 @@ export function createGateProcessorAtRate(
   sampleRate: number,
 ): StudioOfflineFxProcessor {
   const params = effect.params;
-  let envState = createGateEnvelopeState();
+  let core = new GateEnvelopeCore(sampleRate, params);
   return {
     type: "gate",
     effectId: effect.id,
@@ -591,12 +586,11 @@ export function createGateProcessorAtRate(
     stateBytes: 16,
     process(sample) {
       const peak = Math.max(Math.abs(sample.left), Math.abs(sample.right));
-      const envelope = processGateEnvelope(peak, envState, params, sampleRate);
-      const g = gateGainForEnvelope(envelope, params);
+      const g = core.gainFor(core.step(peak));
       return { left: sample.left * g, right: sample.right * g };
     },
     reset() {
-      envState = createGateEnvelopeState();
+      core = new GateEnvelopeCore(sampleRate, params);
     },
   };
 }
