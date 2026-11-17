@@ -2192,7 +2192,9 @@
       "trybKlawiaturySzybkiRecOpis": "Przełącz na Standard DAW (Spacja = play).",
       "trybKlawiaturyDawOpis": "Przełącz na Szybki REC (Spacja = nagraj).",
       "trybKlawiaturySzybkiRecKrotki": "REC",
-      "trybKlawiaturyDawKrotki": "DAW"
+      "trybKlawiaturyDawKrotki": "DAW",
+      "gainKlipuEtykieta": "Głośność",
+      "gainKlipuAria": "Głośność zaznaczonego fragmentu"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "Eksport dotyczy innego projektu.",
@@ -2986,7 +2988,8 @@
       "polishTiles": {
         "mud": "Wytnij dudnienie",
         "sibilance": "Sybilanty",
-        "glue": "Sklej z bitem"
+        "glue": "Sklej z bitem",
+        "noise": "Wycisz szum"
       }
     },
     "bitek": {

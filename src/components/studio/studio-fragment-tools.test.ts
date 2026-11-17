@@ -23,11 +23,15 @@ describe("timeline fragment tools", () => {
     expect(tools).toContain('data-testid="studio-fragment-reverse"');
     expect(tools).toContain('data-testid="studio-fragment-stretch"');
     expect(tools).toContain('data-testid="studio-fragment-pitch"');
+    expect(tools).toContain('data-testid="studio-fragment-gain"');
     // fs mock resolves t("…") → pl copy for contract greps
     expect(tools).toContain('aria-label="Tempo klipu, wysokość zostaje"');
     expect(tools).toContain('aria-label="Wysokość klipu, tempo zostaje"');
+    expect(tools).toContain('aria-label="Głośność zaznaczonego fragmentu"');
     expect(tools).toContain("aria-pressed={reverseOn}");
     expect(editor).toContain("onFragmentReverse");
+    expect(editor).toContain("onFragmentGain");
+    expect(editor).toContain("fragmentGainDb");
     expect(editor).toContain('op: "set_scratch"');
     expect(editor).toContain("fragmentConfirmDelete");
     expect(editor).toContain("onFragmentDuplicate");
@@ -45,5 +49,7 @@ describe("timeline fragment tools", () => {
     expect(ed.wysokoscKlipuAria).toBe("Clip pitch, tempo stays the same");
     expect(ed.wysokoscKlipuOdSilver).toBe("Pitch from Silver. Tempo stays.");
     expect(ed.wyzerujWysokosc).toBe("Reset pitch");
+    expect(ed.gainKlipuAria).toBe("Selected fragment level");
+    expect(ed.gainKlipuEtykieta).toBe("Level");
   });
 });

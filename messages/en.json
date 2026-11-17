@@ -2192,7 +2192,9 @@
       "trybKlawiaturySzybkiRecOpis": "Switch to Standard DAW (Space = play).",
       "trybKlawiaturyDawOpis": "Switch to Quick REC (Space = record).",
       "trybKlawiaturySzybkiRecKrotki": "REC",
-      "trybKlawiaturyDawKrotki": "DAW"
+      "trybKlawiaturyDawKrotki": "DAW",
+      "gainKlipuEtykieta": "Level",
+      "gainKlipuAria": "Selected fragment level"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "The export belongs to another project.",
@@ -2986,7 +2988,8 @@
       "polishTiles": {
         "mud": "Cut the mud",
         "sibilance": "De-ess",
-        "glue": "Glue to beat"
+        "glue": "Glue to beat",
+        "noise": "Kill noise"
       }
     },
     "bitek": {

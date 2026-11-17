@@ -31,9 +31,48 @@ export function parseDecodedWav(buf: Buffer, shared = false): MixAnalysisSource 
   throw new Error("decode_format");
 }
 
-/** Stem file name inside the Projekt zip: NN-safe-name.wav, or NN-safe-name-mix.wav after the mix. */
-export function stemFileName(index: number, trackName: string, kind: "dry" | "mix" = "dry"): string {
-  const slug = trackName.toLowerCase().replace(/ł/g, "l").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
-  const base = `${String(index).padStart(2, "0")}-${slug || "track"}`;
+/** Stable ZIP sort: lead → doubles/adlibs → beat → rest (hip-hop pack). */
+export const STEM_ROLE_SORT: Record<string, number> = {
+  lead_vocal: 10,
+  double: 20,
+  adlib: 30,
+  backing: 40,
+  beat: 50,
+  instrument: 60,
+  other: 90,
+};
+
+export function stemRoleSortKey(role: string | undefined): number {
+  if (!role) return 80;
+  return STEM_ROLE_SORT[role] ?? 80;
+}
+
+function slugPart(raw: string, max: number): string {
+  return raw
+    .toLowerCase()
+    .replace(/ł/g, "l")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/_/g, "-")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, max);
+}
+
+/**
+ * Stem file name inside the Projekt zip:
+ * `NN-role-name.wav` or `NN-role-name-mix.wav` (role omitted when empty).
+ */
+export function stemFileName(
+  index: number,
+  trackName: string,
+  kind: "dry" | "mix" = "dry",
+  role?: string,
+): string {
+  const roleSlug = role ? slugPart(role, 24) : "";
+  const nameSlug = slugPart(trackName, 40) || "track";
+  const base = roleSlug
+    ? `${String(index).padStart(2, "0")}-${roleSlug}-${nameSlug}`
+    : `${String(index).padStart(2, "0")}-${nameSlug}`;
   return kind === "mix" ? `${base}-mix.wav` : `${base}.wav`;
 }

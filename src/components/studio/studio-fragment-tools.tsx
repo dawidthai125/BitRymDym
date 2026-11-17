@@ -24,6 +24,9 @@ type StudioFragmentToolsProps = {
   /** Non-zero pitch is Silver+. Tempo and a reset to 0 stay available. */
   pitchLocked?: boolean;
   onPlayback?: (next: { stretch: number; pitchCents: number }) => void;
+  /** Clip gain (dB) — ride the selected fragment without opening the inspector. */
+  gainDb?: number;
+  onGain?: (gainDb: number) => void;
   onAskDelete: () => void;
   onDelete: () => void;
   onCancelDelete: () => void;
@@ -51,6 +54,8 @@ export function StudioFragmentTools({
   pitchCents = 0,
   pitchLocked = false,
   onPlayback,
+  gainDb = 0,
+  onGain,
   onAskDelete,
   onDelete,
   onCancelDelete,
@@ -59,8 +64,10 @@ export function StudioFragmentTools({
   const locked = !enabled || pending;
   const [stretchLocal, setStretchLocal] = useState(stretch);
   const [pitchLocal, setPitchLocal] = useState(pitchCents);
+  const [gainLocal, setGainLocal] = useState(gainDb);
   const [seenStretch, setSeenStretch] = useState(stretch);
   const [seenPitch, setSeenPitch] = useState(pitchCents);
+  const [seenGain, setSeenGain] = useState(gainDb);
   if (stretch !== seenStretch) {
     setSeenStretch(stretch);
     setStretchLocal(stretch);
@@ -68,6 +75,10 @@ export function StudioFragmentTools({
   if (pitchCents !== seenPitch) {
     setSeenPitch(pitchCents);
     setPitchLocal(pitchCents);
+  }
+  if (gainDb !== seenGain) {
+    setSeenGain(gainDb);
+    setGainLocal(gainDb);
   }
 
   return (
@@ -257,6 +268,27 @@ export function StudioFragmentTools({
                 </Button>
               ) : null}
             </>
+          ) : null}
+          {onGain ? (
+            <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
+              {t("gainKlipuEtykieta")}
+              <input
+                type="range"
+                min={-24}
+                max={12}
+                step={0.5}
+                value={gainLocal}
+                disabled={locked}
+                aria-label={t("gainKlipuAria")}
+                data-testid="studio-fragment-gain"
+                onChange={(event) => setGainLocal(Number(event.target.value))}
+                onPointerUp={(event) => onGain(Number(event.currentTarget.value))}
+              />
+              <span className="tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-gain-value">
+                {gainLocal > 0 ? "+" : ""}
+                {gainLocal.toFixed(1)} dB
+              </span>
+            </label>
           ) : null}
           <Button
             type="button"

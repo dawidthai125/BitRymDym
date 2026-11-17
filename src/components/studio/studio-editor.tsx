@@ -3448,6 +3448,11 @@ function StudioEditorInner({
           if (!selectedClip) return;
           saveClipPlayback(selectedClip.id, next);
         }}
+        fragmentGainDb={selectedClip?.gainDb ?? 0}
+        onFragmentGain={(gainDb) => {
+          if (!selectedClip) return;
+          saveClipGain(gainDb);
+        }}
         onFragmentAskDelete={() => setFragmentConfirmDelete(true)}
         onFragmentDelete={() => {
           deleteSelectedClip();
@@ -4851,6 +4856,8 @@ function StudioTransportBar({
   fragmentPitchCents,
   fragmentPitchLocked,
   onFragmentPlayback,
+  fragmentGainDb,
+  onFragmentGain,
   onFragmentAskDelete,
   onFragmentDelete,
   onFragmentCancelDelete,
@@ -4895,6 +4902,8 @@ function StudioTransportBar({
   fragmentPitchCents: number;
   fragmentPitchLocked: boolean;
   onFragmentPlayback: (next: { stretch: number; pitchCents: number }) => void;
+  fragmentGainDb: number;
+  onFragmentGain: (gainDb: number) => void;
   onFragmentAskDelete: () => void;
   onFragmentDelete: () => void;
   onFragmentCancelDelete: () => void;
@@ -5282,6 +5291,8 @@ function StudioTransportBar({
               pitchCents={fragmentPitchCents}
               pitchLocked={fragmentPitchLocked}
               onPlayback={onFragmentPlayback}
+              gainDb={fragmentGainDb}
+              onGain={onFragmentGain}
               onAskDelete={onFragmentAskDelete}
               onDelete={onFragmentDelete}
               onCancelDelete={onFragmentCancelDelete}

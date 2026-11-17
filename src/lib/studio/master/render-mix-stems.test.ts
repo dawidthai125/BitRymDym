@@ -49,6 +49,8 @@ describe("renderMixStems", () => {
   it("names a dry stem and a mix stem", () => {
     expect(stemFileName(1, "Wokal", "dry")).toBe("01-wokal.wav");
     expect(stemFileName(1, "Wokal", "mix")).toBe("01-wokal-mix.wav");
+    expect(stemFileName(1, "Wokal", "dry", "lead_vocal")).toBe("01-lead-vocal-wokal.wav");
+    expect(stemFileName(2, "Adlib", "mix", "adlib")).toBe("02-adlib-adlib-mix.wav");
   });
 
   it("keeps track gain, drops master gain, silences a muted track, and ducks the beat under the pocket", () => {

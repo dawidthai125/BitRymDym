@@ -4,7 +4,7 @@
 
 import type { MixPlanFixId } from "@/lib/studio/mix-autofix/plan";
 
-export type BitekPolishTileId = "mud" | "sibilance" | "glue";
+export type BitekPolishTileId = "mud" | "sibilance" | "glue" | "noise";
 
 export type BitekPolishTile = {
   id: BitekPolishTileId;
@@ -13,7 +13,7 @@ export type BitekPolishTile = {
   fixes: readonly MixPlanFixId[];
 };
 
-/** Producent order: Sybilanty → Muł → Klej. */
+/** Producent order: Sybilanty → Muł → Szum → Klej. */
 export const BITEK_POLISH_TILES: readonly BitekPolishTile[] = [
   {
     id: "sibilance",
@@ -25,6 +25,12 @@ export const BITEK_POLISH_TILES: readonly BitekPolishTile[] = [
     labelKey: "mud",
     /** High-pass + low-mid cut live in eq autofix. */
     fixes: ["eq"],
+  },
+  {
+    id: "noise",
+    labelKey: "noise",
+    /** Gate + rumble HPF via mix-autofix denoise. */
+    fixes: ["denoise"],
   },
   {
     id: "glue",

@@ -27,7 +27,7 @@ import { previewKeyFor, previewMixArgs, tagCycleArgs } from "./preview";
 import { PREVIEW_TAG_WAV_BASE64 } from "./preview-tag";
 import { renderMixStems, renderMixStereo } from "./render-mix";
 import { renderMixStereoParallel } from "./render-mix-parallel";
-import { stemFileName } from "./render-io";
+import { stemFileName, stemRoleSortKey } from "./render-io";
 import { assertServerDocVersion, loadServerMixInput, writeWavFloat } from "./server-render";
 import type { StudioMasterWorkerConfig } from "./worker-env";
 
@@ -278,16 +278,27 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
         if (job.kind === "project_zip") {
           const stemsDir = path.join(dir, "stems");
           await mkdir(stemsDir);
-          const total = Math.max(1, input.tracks.length);
+          const ordered = [...input.tracks].sort(
+            (a, b) => stemRoleSortKey(a.role) - stemRoleSortKey(b.role) || a.name.localeCompare(b.name),
+          );
+          const total = Math.max(1, ordered.length);
           let n = 0;
-          for (const tr of input.tracks) {
-            await writeWavFloat(path.join(stemsDir, stemFileName(++n, tr.name, "dry")), renderMixStereo(input, { raw: true, normalize: false, onlyTrackId: tr.id }));
+          for (const tr of ordered) {
+            await writeWavFloat(
+              path.join(stemsDir, stemFileName(++n, tr.name, "dry", tr.role)),
+              renderMixStereo(input, { raw: true, normalize: false, onlyTrackId: tr.id }),
+            );
             progress.report("render", n / (total * 2));
           }
-          const mixed = renderMixStems(input);
+          const mixed = renderMixStems(input).sort(
+            (a, b) => stemRoleSortKey(a.role) - stemRoleSortKey(b.role) || a.name.localeCompare(b.name),
+          );
           n = 0;
           for (const stem of mixed) {
-            await writeWavFloat(path.join(stemsDir, stemFileName(++n, stem.name, "mix")), stem.audio);
+            await writeWavFloat(
+              path.join(stemsDir, stemFileName(++n, stem.name, "mix", stem.role)),
+              stem.audio,
+            );
             progress.report("render", (total + n) / (total * 2));
           }
           cur = stemsDir;

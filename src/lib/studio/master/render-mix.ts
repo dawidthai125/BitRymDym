@@ -85,7 +85,7 @@ export function renderMixStereo(input: MixAnalysisInput, opts: RenderMixOptions 
   return finishMixStereo(src, left, right, opts);
 }
 
-export type MixStem = { id: string; name: string; audio: Stereo };
+export type MixStem = { id: string; name: string; role: string; audio: Stereo };
 
 /**
  * One stereo file per track after track FX, gain, pan and the rap pocket.
@@ -102,6 +102,11 @@ export function renderMixStems(input: MixAnalysisInput): MixStem[] {
 }
 
 function stemOrSilence(t: MixAnalysisTrack, hit: CollectedTrack | undefined, len: number, sampleRate: number): MixStem {
-  if (hit) return { id: t.id, name: t.name, audio: { left: hit.left, right: hit.right, sampleRate } };
-  return { id: t.id, name: t.name, audio: { left: new Float32Array(len), right: new Float32Array(len), sampleRate } };
+  if (hit) return { id: t.id, name: t.name, role: t.role, audio: { left: hit.left, right: hit.right, sampleRate } };
+  return {
+    id: t.id,
+    name: t.name,
+    role: t.role,
+    audio: { left: new Float32Array(len), right: new Float32Array(len), sampleRate },
+  };
 }

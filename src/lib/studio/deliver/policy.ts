@@ -7,7 +7,7 @@
  * nothing (the old 1 file / 7 days MP3 128 is gone — locked buttons + premium
  * nudge); Bronze MP3 128; Silver MP3 128/192; Gold MP3 128/192/320 + WAV 24-bit;
  * Project (zip of all tracks) shown to everyone, enabled where
- * `downloads.projectZip` (Gold). Everything requires an approved master.
+ * `downloads.projectZip` (Silver+). Everything requires an approved master.
  */
 
 import { minimumTierForQuality, PLAN_POLICY, type PlanDownloadQuality } from "@/config/plan-policy";
