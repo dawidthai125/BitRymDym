@@ -40,10 +40,47 @@ export function deesserDynamicsSpec(
   };
 }
 
-/** Envelope smoothing low-pass cutoff from release time: fc = 1/(2π·τ). */
+/** Envelope smoothing low-pass cutoff from release time: fc = 1/(2π·τ). Live graph still uses this (no hold yet). */
 export function gateEnvelopeCutoffHz(params: StudioFxGateParams): number {
   const tau = Math.max(0.001, params.releaseMs / 1000);
   return Math.min(200, Math.max(0.5, 1 / (2 * Math.PI * tau)));
+}
+
+export type GateEnvelopeState = {
+  level: number;
+  holdLeft: number;
+};
+
+export function createGateEnvelopeState(): GateEnvelopeState {
+  return { level: 0, holdLeft: 0 };
+}
+
+function gateTimeCoeff(ms: number, sampleRate: number): number {
+  const sec = Math.max(0, ms) / 1000;
+  if (sec <= 0 || !(sampleRate > 0)) return 1;
+  return 1 - Math.exp(-1 / (sampleRate * sec));
+}
+
+/**
+ * Peak follower with attack / hold / release (offline + future worklet).
+ * `peak` is a linear |sample| (or max of stereo).
+ */
+export function processGateEnvelope(
+  peak: number,
+  state: GateEnvelopeState,
+  params: StudioFxGateParams,
+  sampleRate: number,
+): number {
+  const x = Math.max(0, peak);
+  if (x >= state.level) {
+    state.level += (x - state.level) * gateTimeCoeff(params.attackMs, sampleRate);
+    state.holdLeft = Math.max(0, Math.round((Math.max(0, params.holdMs) / 1000) * sampleRate));
+  } else if (state.holdLeft > 0) {
+    state.holdLeft -= 1;
+  } else {
+    state.level += (x - state.level) * gateTimeCoeff(params.releaseMs, sampleRate);
+  }
+  return state.level;
 }
 
 /** Expander ratio below threshold (1:2) — gentle, capped by rangeDb. */

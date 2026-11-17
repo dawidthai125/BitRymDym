@@ -23,6 +23,8 @@ import type { MixMetrics, TrackMetrics } from "@/lib/studio/mix-analysis/metrics
 import type { MixCardId, MixCardStatus, MixVerdict } from "@/lib/studio/mix-analysis/verdict";
 import {
   P0_DENOISE_RANGE_DB,
+  P0_GATE_ATTACK_MS,
+  P0_GATE_HOLD_MS,
   P0_GATE_RELEASE_MS,
   P0_HPF_HZ,
   P0_RIDE_MAX_DB,
@@ -363,6 +365,8 @@ function fixDenoise(ctx: Ctx): void {
       withFx(ctx, t, "gate", () => ({
         thresholdDb,
         rangeDb,
+        attackMs: P0_GATE_ATTACK_MS,
+        holdMs: P0_GATE_HOLD_MS,
         releaseMs: P0_GATE_RELEASE_MS,
       }))
     ) {

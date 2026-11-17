@@ -7,6 +7,8 @@
 
 import {
   P0_DENOISE_RANGE_DB,
+  P0_GATE_ATTACK_MS,
+  P0_GATE_HOLD_MS,
   P0_GATE_RELEASE_MS,
   P0_GATE_THRESHOLD_DBFS,
   P0_HPF_HZ,
@@ -119,7 +121,11 @@ export type StudioFxGateParams = {
   thresholdDb: number;
   /** Maximum attenuation (dB) — "gentle" gate when small. */
   rangeDb: number;
-  /** Envelope smoothing (ms). */
+  /** How fast the envelope rises when the signal opens the gate (ms). */
+  attackMs: number;
+  /** How long the gate stays open after the signal falls (ms). */
+  holdMs: number;
+  /** How fast the envelope falls when closing (ms). */
   releaseMs: number;
 };
 
@@ -314,7 +320,7 @@ const REVERB_KEYS = new Set(["mix", "decaySeconds"]);
 const DELAY_KEYS = new Set(["mix", "timeMs", "feedback"]);
 const HIGHPASS_KEYS = new Set(["frequencyHz", "q"]);
 const DEESSER_KEYS = new Set(["frequencyHz", "thresholdDb", "ratio"]);
-const GATE_KEYS = new Set(["thresholdDb", "rangeDb", "releaseMs"]);
+const GATE_KEYS = new Set(["thresholdDb", "rangeDb", "attackMs", "holdMs", "releaseMs"]);
 const TUNE_KEYS = new Set(["keyRoot", "scale", "retuneMs", "amount"]);
 const RIDER_KEYS = new Set(["amount", "maxBoostDb", "maxCutDb"]);
 const HARMONY_KEYS = new Set(["amount"]);
@@ -328,7 +334,13 @@ const SPECTRUM_KEYS = new Set(["b0", "b1", "b2", "b3", "b4", "b5", "b6"]);
 export const STUDIO_FX_STAGE2_RANGES = {
   highpass: { frequencyHz: [20, 500], q: [0.1, 2] },
   deesser: { frequencyHz: [4000, 10000], thresholdDb: [-60, 0], ratio: [1, 20] },
-  gate: { thresholdDb: [-90, -20], rangeDb: [0, 40], releaseMs: [10, 1000] },
+  gate: {
+    thresholdDb: [-90, -20],
+    rangeDb: [0, 40],
+    attackMs: [0, 200],
+    holdMs: [0, 500],
+    releaseMs: [10, 1000],
+  },
   tune: { keyRoot: [0, 11], scale: [0, 2], retuneMs: [0, 400], amount: [0, 1] },
   rider: { amount: [0, 1], maxBoostDb: [0, 12], maxCutDb: [0, 12] },
   harmony: { amount: [0, 1] },
@@ -363,6 +375,8 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
     gate: {
       thresholdDb: P0_GATE_THRESHOLD_DBFS,
       rangeDb: P0_DENOISE_RANGE_DB,
+      attackMs: P0_GATE_ATTACK_MS,
+      holdMs: P0_GATE_HOLD_MS,
       releaseMs: P0_GATE_RELEASE_MS,
     },
     // Natural style (Free) — chromatic until a key is known.
@@ -1041,6 +1055,8 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
     params: [
       slider("thresholdDb", "Od jakiej głośności", -90, -20, 0.5, "dB"),
       slider("rangeDb", "Jak mocno wycisza", 0, 40, 0.5, "dB"),
+      slider("attackMs", "Jak szybko otwiera", 0, 200, 1, "ms"),
+      slider("holdMs", "Jak długo trzyma", 0, 500, 1, "ms"),
       slider("releaseMs", "Jak szybko wraca", 10, 1000, 1, "ms"),
     ],
   },

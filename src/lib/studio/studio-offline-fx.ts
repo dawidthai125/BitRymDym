@@ -63,10 +63,11 @@ import {
   type StereoReverbRuntime,
 } from "@/lib/studio/studio-offline-fx-reverb";
 import {
+  createGateEnvelopeState,
   deesserDynamicsSpec,
-  gateEnvelopeCutoffHz,
   gateGainForEnvelope,
   LR4_SECTION_Q,
+  processGateEnvelope,
 } from "@/lib/studio/studio-fx-stage2-dsp";
 
 import { TuneCore } from "@/lib/studio/tune/tune-core";
@@ -582,35 +583,20 @@ export function createGateProcessorAtRate(
   sampleRate: number,
 ): StudioOfflineFxProcessor {
   const params = effect.params;
-  const env = computeBiquadCoeffs(
-    "lowpass",
-    sampleRate,
-    gateEnvelopeCutoffHz(params),
-    0,
-    Math.SQRT1_2,
-  );
-  let state = createStereoBiquadState();
+  let envState = createGateEnvelopeState();
   return {
     type: "gate",
     effectId: effect.id,
     status: "IMPLEMENTED",
-    stateBytes: STEREO_BIQUAD_STATE_BYTES,
+    stateBytes: 16,
     process(sample) {
-      const e = processStereoBiquadSample(
-        Math.abs(sample.left),
-        Math.abs(sample.right),
-        env,
-        state,
-      );
-      // Live: AudioParam input is down-mixed to mono → average channel gains.
-      const g =
-        (gateGainForEnvelope(e.left, params) +
-          gateGainForEnvelope(e.right, params)) /
-        2;
+      const peak = Math.max(Math.abs(sample.left), Math.abs(sample.right));
+      const envelope = processGateEnvelope(peak, envState, params, sampleRate);
+      const g = gateGainForEnvelope(envelope, params);
       return { left: sample.left * g, right: sample.right * g };
     },
     reset() {
-      state = createStereoBiquadState();
+      envState = createGateEnvelopeState();
     },
   };
 }

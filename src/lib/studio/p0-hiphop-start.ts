@@ -1,7 +1,6 @@
 /**
  * Producent Bitów — startowe P0 hip-hop (2026-11-17).
  * Jedno źródło liczb dla denoise/gate, ride, lekkiego pitch i compingu.
- * Gate FX schema ma tylko threshold/range/release (bez atk/hold).
  */
 
 /** HPF rumble on denoise / start vocal chain. */
@@ -13,7 +12,9 @@ export const P0_DENOISE_RANGE_DB = 8;
 /** Start gate threshold when inserting a default gate. */
 export const P0_GATE_THRESHOLD_DBFS = -42;
 
-/** Gate release (schema has no attack/hold; Producent: atk 2 ms / hold 40 ms). */
+/** Gate timing (Producent P0). */
+export const P0_GATE_ATTACK_MS = 2;
+export const P0_GATE_HOLD_MS = 40;
 export const P0_GATE_RELEASE_MS = 100;
 
 /** Clip / rider max correction per word (Producent ±3.5 dB). */

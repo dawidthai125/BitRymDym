@@ -238,8 +238,20 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     const ad1 = chainOf(p, AD1)!;
     expect(ad1.effects.map((e) => e.type)).toEqual(["highpass", "gate"]);
     expect(ad1.effects[0]!.params).toEqual({ frequencyHz: 80, q: 0.707 });
-    expect(ad1.effects[1]!.params).toEqual({ thresholdDb: -34, rangeDb: 8, releaseMs: 100 });
-    expect(chainOf(p, AD2)!.effects[1]!.params).toMatchObject({ thresholdDb: -46, rangeDb: 8, releaseMs: 100 });
+    expect(ad1.effects[1]!.params).toEqual({
+      thresholdDb: -34,
+      rangeDb: 8,
+      attackMs: 2,
+      holdMs: 40,
+      releaseMs: 100,
+    });
+    expect(chainOf(p, AD2)!.effects[1]!.params).toMatchObject({
+      thresholdDb: -46,
+      rangeDb: 8,
+      attackMs: 2,
+      holdMs: 40,
+      releaseMs: 100,
+    });
   });
 
   it("panorama: lead centred, adlibs alternate L/R 40 %, doubles 70 %", () => {

@@ -120,7 +120,7 @@ describe("stage 2 FX contract", () => {
       "thresholdDb",
       "ratio",
     ]);
-    expect(STUDIO_FX_UI_META.gate.params).toHaveLength(3);
+    expect(STUDIO_FX_UI_META.gate.params).toHaveLength(5);
   });
 });
 
@@ -189,7 +189,7 @@ describe("stage 2 offline DSP (E3 render path)", () => {
             id: "3fa85f64-5717-4562-b3fc-2c963f66afb2",
             type: "gate",
             enabled: false,
-            params: { thresholdDb: -42, rangeDb: 8, releaseMs: 100 },
+            params: { thresholdDb: -42, rangeDb: 8, attackMs: 2, holdMs: 40, releaseMs: 100 },
           },
         ],
       },

@@ -4,6 +4,8 @@ import { STUDIO_TAKE_LANE_LIMITS } from "@/config/studio-recording-features";
 import {
   P0_COMPING_CROSSFADE_MS,
   P0_DENOISE_RANGE_DB,
+  P0_GATE_ATTACK_MS,
+  P0_GATE_HOLD_MS,
   P0_GATE_RELEASE_MS,
   P0_GATE_THRESHOLD_DBFS,
   P0_HPF_HZ,
@@ -22,6 +24,8 @@ describe("P0 hip-hop start params (Producent)", () => {
     expect(STUDIO_FX_DEFAULTS.gate).toEqual({
       thresholdDb: P0_GATE_THRESHOLD_DBFS,
       rangeDb: P0_DENOISE_RANGE_DB,
+      attackMs: P0_GATE_ATTACK_MS,
+      holdMs: P0_GATE_HOLD_MS,
       releaseMs: P0_GATE_RELEASE_MS,
     });
     expect(STUDIO_FX_DEFAULTS.rider.maxBoostDb).toBe(P0_RIDE_MAX_DB);
