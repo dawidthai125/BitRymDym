@@ -2983,7 +2983,12 @@
           "spaceSide": "Dodałem pogłos ({decay} s) i echo w tempie bitu ({note} nuty, {ms} ms) na „{track}”. Adliby robią przestrzeń za Tobą."
         },
         "dymek": "Poprawiłem {count, plural, one {# rzecz} few {# rzeczy} other {# rzeczy}} w Twoim mixie.",
-        "sprawdzam": "Sprawdzam jeszcze raz…"
+        "sprawdzam": "Sprawdzam jeszcze raz…",
+        "techTytul": "Plan zmian (parametry)",
+        "techMix": "Cały mix",
+        "propose": "Oto co chcę zrobić — nic nie zapisuję, dopóki nie zatwierdzisz.",
+        "zastosuj": "Zastosuj",
+        "anuluj": "Anuluj"
       },
       "sciszBitPodWokal": "Ścisz bit pod wokal",
       "polishTiles": {

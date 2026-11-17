@@ -33,6 +33,7 @@ import type { MixCard, MixCardStatus, MixVerdict } from "@/lib/studio/mix-analys
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
 import { emptyStudioFxChain } from "@/lib/studio/studio-fx-chain";
 import {
+  applyMixOpsToDocument,
   MIX_AUTOFIX_ALL,
   MIX_CARD_FIXES,
   NOVA_PASS_FIXES,
@@ -41,6 +42,10 @@ import {
   type MixAutofixNote,
   type MixPlanFixId,
 } from "@/lib/studio/mix-autofix/plan";
+import {
+  groupTechChipsByTrack,
+  techChipsFromAutofixNotes,
+} from "@/lib/studio/mix-autofix/tech-log";
 import { BITEK_POLISH_TILES } from "@/lib/studio/bitek-polish-tiles";
 import { planBeatDuckerOps } from "@/lib/studio/beat-ducker-plan";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
@@ -59,8 +64,21 @@ export type MixAutofixApply = (
 
 type FixPanel =
   | { kind: "done"; notes: MixAutofixNote[]; after: string | null }
+  | {
+      kind: "propose";
+      notes: MixAutofixNote[];
+      ops: MixWorkingOp[];
+      preview: StudioProjectDocument;
+      summary: string;
+      key: string;
+    }
   | { kind: "nothing" }
   | { kind: "error"; conflict: boolean };
+
+/** Nova / „Popraw wszystko” — show tech plan first; smaller tiles apply immediately. */
+function needsProposeGate(key: string): boolean {
+  return key === "nova" || key === "all";
+}
 
 const STATUS_RAIL: Record<MixCardStatus, string> = {
   green: "border-l-[var(--brd-green)]",
@@ -296,9 +314,43 @@ export function StudioMixStep({
     onAbOverride?.(mode === "before" ? ab.before : null);
   };
 
-  const runFix = async (fixes: readonly MixPlanFixId[], key: string, summary: string) => {
+  const commitAutofix = async (
+    ops: MixWorkingOp[],
+    notes: MixAutofixNote[],
+    key: string,
+    summary: string,
+  ) => {
     const applyAutofix = applyAutofixRef.current;
     if (!result || !applyAutofix || fixing || running || stale) return;
+    setFixing(key);
+    if (ab) onAbOverride?.(null);
+    const res = await applyAutofix(ops, t("autofix.historia", { summary }));
+    setFixing(null);
+    if (!res.ok) {
+      setPanel({ kind: "error", conflict: res.conflict });
+      return;
+    }
+    reanalyzeRef.current = { fromSig: signature };
+    setAb({ before: res.before, afterSig: null, metricsBefore: result.metrics });
+    setAbMode("after");
+    setPanel({ kind: "done", notes, after: null });
+    setFixSeq((n) => n + 1);
+    const texts = notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
+    const tech = techChipsFromAutofixNotes(notes).map((c) =>
+      c.track ? `${c.track}: ${c.label}` : c.label,
+    );
+    onBitekNote?.(t("autofix.historia", { summary }), {
+      notes: [...texts, ...(tech.length ? [t("autofix.techTytul"), ...tech] : [])],
+    });
+  };
+
+  const runFix = async (
+    fixes: readonly MixPlanFixId[],
+    key: string,
+    summary: string,
+    opts?: { immediate?: boolean },
+  ) => {
+    if (!result || !applyAutofixRef.current || fixing || running || stale) return;
     const plan = planMixAutofix({
       doc,
       metrics: result.metrics,
@@ -310,21 +362,19 @@ export function StudioMixStep({
       setPanel({ kind: "nothing" });
       return;
     }
-    setFixing(key);
-    if (ab) onAbOverride?.(null);
-    const res = await applyAutofix(plan.ops, t("autofix.historia", { summary }));
-    setFixing(null);
-    if (!res.ok) {
-      setPanel({ kind: "error", conflict: res.conflict });
+    if (needsProposeGate(key) && !opts?.immediate) {
+      setPanel({
+        kind: "propose",
+        notes: plan.notes,
+        ops: plan.ops,
+        preview: applyMixOpsToDocument(doc, plan.ops),
+        summary,
+        key,
+      });
+      setFixSeq((n) => n + 1);
       return;
     }
-    reanalyzeRef.current = { fromSig: signature };
-    setAb({ before: res.before, afterSig: null, metricsBefore: result.metrics });
-    setAbMode("after");
-    setPanel({ kind: "done", notes: plan.notes, after: null });
-    setFixSeq((n) => n + 1);
-    const texts = plan.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
-    onBitekNote?.(t("autofix.historia", { summary }), { notes: texts });
+    await commitAutofix(plan.ops, plan.notes, key, summary);
   };
 
   async function notesFromVocal() {
@@ -560,7 +610,10 @@ export function StudioMixStep({
       return;
     }
     autoLock.current = true;
-    const job = step === "analyze" ? analyze() : runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"));
+    const job =
+      step === "analyze"
+        ? analyze()
+        : runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"), { immediate: true });
     void job.finally(() => {
       autoLock.current = false;
     });
@@ -589,7 +642,10 @@ export function StudioMixStep({
       return;
     }
     autoLock.current = true;
-    const job = step === "analyze" ? analyze() : runFix(NOVA_PASS_FIXES, "nova", t("zrobUtwor"));
+    const job =
+      step === "analyze"
+        ? analyze()
+        : runFix(NOVA_PASS_FIXES, "nova", t("zrobUtwor"), { immediate: true });
     if (step === "fix") songFixed.current = true;
     void Promise.resolve(job).finally(() => {
       autoLock.current = false;
@@ -754,13 +810,42 @@ export function StudioMixStep({
       };
     }
     if (fixing) return { key: `fixing-${fixing}`, mood: "thinking", text: t("poprawTrwa") };
+    if (panel?.kind === "propose") {
+      const notes = panel.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
+      const tech = techChipsFromAutofixNotes(panel.notes).map((c) =>
+        c.track ? `${c.track}: ${c.label}` : c.label,
+      );
+      return {
+        key: `propose-${fixSeq}`,
+        mood: "alert",
+        text: t("autofix.propose"),
+        details: [...tech, ...notes],
+        actions: [
+          {
+            id: "applyPropose",
+            label: t("autofix.zastosuj"),
+            primary: true,
+            onClick: () =>
+              void commitAutofix(panel.ops, panel.notes, panel.key, panel.summary),
+          },
+          {
+            id: "cancelPropose",
+            label: t("autofix.anuluj"),
+            onClick: () => setPanel(null),
+          },
+        ],
+      };
+    }
     if (panel?.kind === "done") {
       const notes = panel.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
+      const tech = techChipsFromAutofixNotes(panel.notes).map((c) =>
+        c.track ? `${c.track}: ${c.label}` : c.label,
+      );
       return {
         key: `fix-${fixSeq}-${panel.after ? "checked" : "checking"}`,
         mood: panel.after && verdict?.overall === "red" ? "alert" : "done",
         text: [t("autofix.dymek", { count: notes.length }), panel.after ?? t("autofix.sprawdzam")].join(" "),
-        details: [...notes, t("autofix.zapisane")],
+        details: [...tech, ...notes, t("autofix.zapisane")],
       };
     }
     if (panel?.kind === "error") {
@@ -1122,6 +1207,78 @@ export function StudioMixStep({
           ) : null}
 
           <StudioVocalCleanup doc={doc} />
+
+          {panel?.kind === "propose" ? (
+            <section
+              aria-labelledby="studio-mix-nova-plan-title"
+              data-testid="studio-mix-nova-plan"
+              className="flex flex-col gap-3 rounded-[2px] border border-[var(--brd-amber)] bg-[var(--brd-paper)] p-3"
+            >
+              <h3 id="studio-mix-nova-plan-title" className="brd-display text-base">
+                {t("autofix.techTytul")}
+              </h3>
+              <p className="text-sm text-[var(--brd-ink-soft)]">{t("autofix.propose")}</p>
+              <ul className="flex flex-col gap-2" data-testid="studio-mix-tech-log">
+                {groupTechChipsByTrack(techChipsFromAutofixNotes(panel.notes)).map((group) => (
+                  <li key={group.track ?? "__mix"} className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+                      {group.track ?? t("autofix.techMix")}
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.chips.map((c) => (
+                        <span
+                          key={c.id}
+                          data-testid="studio-mix-tech-chip"
+                          className="border border-[var(--brd-line)] bg-[var(--brd-bg)] px-2 py-1 font-mono text-xs text-[var(--brd-ink)]"
+                        >
+                          {c.label}
+                        </span>
+                      ))}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <StudioChangeReport before={doc} after={panel.preview} metricsBefore={result?.metrics ?? null} />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-11"
+                  data-testid="studio-mix-nova-apply"
+                  disabled={Boolean(fixing) || running}
+                  onClick={() => void commitAutofix(panel.ops, panel.notes, panel.key, panel.summary)}
+                >
+                  {t("autofix.zastosuj")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11"
+                  data-testid="studio-mix-nova-cancel"
+                  disabled={Boolean(fixing)}
+                  onClick={() => setPanel(null)}
+                >
+                  {t("autofix.anuluj")}
+                </Button>
+              </div>
+            </section>
+          ) : null}
+
+          {panel?.kind === "done" && techChipsFromAutofixNotes(panel.notes).length > 0 ? (
+            <div data-testid="studio-mix-tech-log" className="flex flex-wrap gap-1.5" aria-label={t("autofix.techTytul")}>
+              {techChipsFromAutofixNotes(panel.notes).map((c) => (
+                <span
+                  key={c.id}
+                  data-testid="studio-mix-tech-chip"
+                  className="border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 py-1 font-mono text-xs"
+                  title={c.track ?? undefined}
+                >
+                  {c.track ? `${c.track}: ${c.label}` : c.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
 
           {abLive ? (
             <StudioChangeReport

@@ -2983,7 +2983,12 @@
           "spaceSide": "I added reverb ({decay} s) and an echo in time with the beat ({note} note, {ms} ms) on “{track}”. Your adlibs make space behind you."
         },
         "dymek": "I fixed {count, plural, one {# thing} other {# things}} in your mix.",
-        "sprawdzam": "Checking again…"
+        "sprawdzam": "Checking again…",
+        "techTytul": "Change plan (parameters)",
+        "techMix": "Whole mix",
+        "propose": "Here is what I want to do — nothing is saved until you approve.",
+        "zastosuj": "Apply",
+        "anuluj": "Cancel"
       },
       "sciszBitPodWokal": "Duck beat under vocal",
       "polishTiles": {
