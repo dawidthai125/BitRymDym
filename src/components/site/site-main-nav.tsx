@@ -16,6 +16,7 @@ const items = [
   { href: "/nagrywarka", label: "recorder" },
   { href: "/about", label: "about" },
   { href: "/studio", label: "studio" },
+  { href: "/mastering", label: "mastering" },
   { href: "/premium", label: "premium" },
 ] as const;
 

@@ -3970,6 +3970,7 @@
       "about": "O nas",
       "howTo": "Jak nagrać",
       "studio": "Studio",
+      "mastering": "Master only",
       "recorder": "Nagrywarka",
       "premium": "Premium",
       "library": "Biblioteka",
@@ -3987,6 +3988,29 @@
     "pl": "Polski",
     "en": "English",
     "hint": "Język całej strony. Domyślnie polski."
+  },
+  "mastering": {
+    "intro": "Wrzuć gotowy stereo mix (WAV/MP3). Master pod streaming (−14 LUFS). Od planu Silver — upload idzie jako stem projektu.",
+    "wymagaSilver": "Master only — od Silver",
+    "wybierzPlik": "Wybierz plik",
+    "gotowy": "Plik jest na miejscu. Możesz odpalić master.",
+    "zrobMaster": "Zrób master",
+    "masteruje": "Pieczę master… to może chwilę potrwać.",
+    "masterGotowy": "Master gotowy. Posłuchaj podglądu, zatwierdź, potem pobierz WAV.",
+    "zatwierdz": "Zatwierdź master",
+    "pobierzWav": "Pobierz WAV",
+    "bladPrepare": "Nie udało się przygotować mastera.",
+    "bladCommit": "Master nie wystartował ({code}).",
+    "bladJob": "Master się nie udał ({code}).",
+    "bladTimeout": "Master trwa zbyt długo — spróbuj później.",
+    "bladSiec": "Błąd sieci.",
+    "bladApprove": "Nie udało się zatwierdzić.",
+    "bladDeliver": "Nie udało się pobrać pliku.",
+    "stage": {
+      "create": "Tworzę projekt…",
+      "upload": "Wgrywam plik…",
+      "place": "Kładę na oś…"
+    }
   },
   "listen": {
     "metaTitle": "Prywatny odsłuch",
