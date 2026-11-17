@@ -189,7 +189,7 @@ describe("stage 2 offline DSP (E3 render path)", () => {
             id: "3fa85f64-5717-4562-b3fc-2c963f66afb2",
             type: "gate",
             enabled: false,
-            params: { thresholdDb: -55, rangeDb: 12, releaseMs: 150 },
+            params: { thresholdDb: -42, rangeDb: 8, releaseMs: 100 },
           },
         ],
       },
@@ -311,7 +311,7 @@ describe("stage 2 live Web Audio graph", () => {
     expect(h?.inspect()[0]?.nodes).toEqual(["gain", "biquad-highpass"]);
     const bq = nodes.find((n) => n.kind === "biquad");
     expect(bq?.type).toBe("highpass");
-    expect(bq?.frequency.value).toBe(90);
+    expect(bq?.frequency.value).toBe(80);
     expect(bq?.Q.value).toBeCloseTo(linearQToWebAudioDb(0.707), 6);
   });
 

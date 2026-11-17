@@ -5,6 +5,8 @@
  * land, set `minTier` here and the UI/API read the same helper — one place.
  */
 
+import { P0_COMPING_CROSSFADE_MS } from "@/lib/studio/p0-hiphop-start";
+
 export type StudioRecordingFeature =
   | "latencyCalibration"
   | "bluetoothWarning"
@@ -48,8 +50,8 @@ export const STUDIO_TAKE_LANE_LIMITS = {
   maxPassesPerLane: 24,
   maxLanesPerProject: 64,
   sectionBars: [4, 8, 16] as const,
-  /** Overlap between comp segments. */
-  crossfadeMs: 12,
+  /** Overlap between comp segments (Producent P0). */
+  crossfadeMs: P0_COMPING_CROSSFADE_MS,
   /** Tiny fade at comp edges against clicks. */
   edgeFadeMs: 4,
 } as const;

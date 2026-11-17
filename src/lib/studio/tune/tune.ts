@@ -4,6 +4,10 @@
  */
 import type { PremiumTier } from "@/types/premium";
 import { pitchCorrectionAccessForTier } from "@/config/plan-policy";
+import {
+  P0_TUNE_NATURAL_AMOUNT,
+  P0_TUNE_NATURAL_RETUNE_MS,
+} from "@/lib/studio/p0-hiphop-start";
 import type { StudioEngineDocument } from "@/lib/studio/studio-audio-schedule";
 import {
   defaultStudioFxParams,
@@ -23,8 +27,8 @@ export const TUNE_LATENCY_MS = 40;
 
 export type TuneStyle = "natural" | "hard";
 export const TUNE_STYLES: Record<TuneStyle, Pick<StudioFxTuneParams, "retuneMs" | "amount">> = {
-  /** Free: gentle, keeps some natural movement. */
-  natural: { retuneMs: 100, amount: 0.85 },
+  /** Free: gentle, keeps some natural movement (Producent P0). */
+  natural: { retuneMs: P0_TUNE_NATURAL_RETUNE_MS, amount: P0_TUNE_NATURAL_AMOUNT },
   /** Silver+: instant snap — the hard "trap" sound. */
   hard: { retuneMs: 0, amount: 1 },
 };

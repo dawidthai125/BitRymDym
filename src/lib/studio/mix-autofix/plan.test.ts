@@ -232,13 +232,14 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     expect(chainOf(p, BEAT)).toBeUndefined();
   });
 
-  it("denoise: gate only on noisy vocals (floor + 6), range 20 dB when loud noise, plus HPF", () => {
+  it("denoise: gate only on noisy vocals (floor + 6), Producent range 8 dB + HPF 80 Hz", () => {
     const p = plan(["denoise"]);
     expect(chainOf(p, LEAD)).toBeUndefined();
     const ad1 = chainOf(p, AD1)!;
     expect(ad1.effects.map((e) => e.type)).toEqual(["highpass", "gate"]);
-    expect(ad1.effects[1]!.params).toEqual({ thresholdDb: -34, rangeDb: 20, releaseMs: 150 });
-    expect(chainOf(p, AD2)!.effects[1]!.params).toMatchObject({ thresholdDb: -46, rangeDb: 12 });
+    expect(ad1.effects[0]!.params).toEqual({ frequencyHz: 80, q: 0.707 });
+    expect(ad1.effects[1]!.params).toEqual({ thresholdDb: -34, rangeDb: 8, releaseMs: 100 });
+    expect(chainOf(p, AD2)!.effects[1]!.params).toMatchObject({ thresholdDb: -46, rangeDb: 8, releaseMs: 100 });
   });
 
   it("panorama: lead centred, adlibs alternate L/R 40 %, doubles 70 %", () => {

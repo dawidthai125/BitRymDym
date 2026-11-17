@@ -57,7 +57,7 @@ function presetSpecs(id: VocalPresetId, bpm: number, tuneKey: TuneKey | null = n
   switch (id) {
     case "clean":
       return [
-        { type: "highpass", enabled: true, params: { frequencyHz: 90, q: 0.707 } },
+        { type: "highpass", enabled: true, params: { frequencyHz: 80, q: 0.707 } },
         { type: "eq", enabled: true, params: { low: { frequencyHz: 200, gainDb: -1.5, q: 0.7 }, mid: { frequencyHz: 3000, gainDb: 1.5, q: 1 }, high: { frequencyHz: 10000, gainDb: 2, q: 0.7 } } },
         { type: "compressor", enabled: true, params: { thresholdDb: -18, ratio: 3, attackMs: 10, releaseMs: 120, makeupDb: 3 } },
         deesser(),

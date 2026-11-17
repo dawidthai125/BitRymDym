@@ -15,12 +15,18 @@
  *  - vocal compression 2.5–3:1, ~3–6 dB GR
  *  - delay 1/8 (lead) or 1/4 (adlibs) from BPM, deeper reverb on adlibs
  *  - lead centre, adlibs alternating L/R 40–55 %, doubles wide 70 %
- *  - gentle gate/expander (range 12–20 dB) on noisy vocals
+ *  - gentle gate/expander (~8 dB range, Producent P0 start) on noisy vocals
  */
 
 import type { StudioTrackRole } from "@/config/studio";
 import type { MixMetrics, TrackMetrics } from "@/lib/studio/mix-analysis/metrics";
 import type { MixCardId, MixCardStatus, MixVerdict } from "@/lib/studio/mix-analysis/verdict";
+import {
+  P0_DENOISE_RANGE_DB,
+  P0_GATE_RELEASE_MS,
+  P0_HPF_HZ,
+  P0_RIDE_MAX_DB,
+} from "@/lib/studio/p0-hiphop-start";
 import {
   defaultStudioFxParams,
   STUDIO_FX_CHAIN_MAX_EFFECTS,
@@ -351,14 +357,19 @@ function fixDenoise(ctx: Ctx): void {
     const floor = t.metrics!.noiseFloorDbfs;
     if (floor === null || floor <= -60) continue;
     const thresholdDb = clamp(Math.round(floor + 6), -90, -20);
-    const rangeDb = floor > -45 ? 20 : 12;
-    if (withFx(ctx, t, "gate", () => ({ thresholdDb, rangeDb, releaseMs: 150 }))) {
+    const rangeDb = P0_DENOISE_RANGE_DB;
+    if (
+      withFx(ctx, t, "gate", () => ({
+        thresholdDb,
+        rangeDb,
+        releaseMs: P0_GATE_RELEASE_MS,
+      }))
+    ) {
       note(ctx, "denoiseGate", { track: t.name, db: rangeDb });
     }
     if (!t.chain.effects.some((e) => e.type === "highpass")) {
-      const hz = t.role === "lead_vocal" ? 90 : 120;
-      if (withFx(ctx, t, "highpass", () => ({ frequencyHz: hz, q: 0.707 }))) {
-        note(ctx, "denoiseRumble", { track: t.name, hz });
+      if (withFx(ctx, t, "highpass", () => ({ frequencyHz: P0_HPF_HZ, q: 0.707 }))) {
+        note(ctx, "denoiseRumble", { track: t.name, hz: P0_HPF_HZ });
       }
     }
   }
@@ -456,7 +467,12 @@ function fixRider(ctx: Ctx): void {
   let changed = false;
   for (const t of leads) {
     const before = JSON.stringify(t.chain);
-    const next = upsertFx(t.chain, "rider", (p) => p, ctx.createId);
+    const next = upsertFx(
+      t.chain,
+      "rider",
+      (p) => ({ ...p, maxBoostDb: P0_RIDE_MAX_DB, maxCutDb: P0_RIDE_MAX_DB }),
+      ctx.createId,
+    );
     if (!next) {
       note(ctx, "chainFull", { track: t.name });
       continue;

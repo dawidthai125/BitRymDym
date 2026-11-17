@@ -5,6 +5,16 @@
  * Studio-owned. Not E3 Mix. Not StudioAudioEngine graph.
  */
 
+import {
+  P0_DENOISE_RANGE_DB,
+  P0_GATE_RELEASE_MS,
+  P0_GATE_THRESHOLD_DBFS,
+  P0_HPF_HZ,
+  P0_RIDE_MAX_DB,
+  P0_TUNE_NATURAL_AMOUNT,
+  P0_TUNE_NATURAL_RETUNE_MS,
+} from "@/lib/studio/p0-hiphop-start";
+
 export const STUDIO_FX_CHAIN_SCHEMA_VERSION = 1 as const;
 export const STUDIO_FX_CHAIN_MAX_EFFECTS = 12 as const;
 
@@ -347,12 +357,22 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
     limiter: { thresholdDb: -1, ceilingDb: -0.1 },
     reverb: { mix: 0, decaySeconds: 1.2 },
     delay: { mix: 0, timeMs: 250, feedback: 0.25 },
-    highpass: { frequencyHz: 90, q: 0.707 },
+    highpass: { frequencyHz: P0_HPF_HZ, q: 0.707 },
     deesser: { frequencyHz: 6500, thresholdDb: -30, ratio: 4 },
-    gate: { thresholdDb: -55, rangeDb: 12, releaseMs: 150 },
+    // Producent P0 hip-hop start (see p0-hiphop-start.ts).
+    gate: {
+      thresholdDb: P0_GATE_THRESHOLD_DBFS,
+      rangeDb: P0_DENOISE_RANGE_DB,
+      releaseMs: P0_GATE_RELEASE_MS,
+    },
     // Natural style (Free) — chromatic until a key is known.
-    tune: { keyRoot: 0, scale: 2, retuneMs: 100, amount: 0.85 },
-    rider: { amount: 0.65, maxBoostDb: 6, maxCutDb: 6 },
+    tune: {
+      keyRoot: 0,
+      scale: 2,
+      retuneMs: P0_TUNE_NATURAL_RETUNE_MS,
+      amount: P0_TUNE_NATURAL_AMOUNT,
+    },
+    rider: { amount: 0.65, maxBoostDb: P0_RIDE_MAX_DB, maxCutDb: P0_RIDE_MAX_DB },
     harmony: { amount: 0.7 },
     voice: { color: 0, mix: 1 },
     saturate: { drive: 0.35, mix: 0.55 },
