@@ -6,8 +6,8 @@
 **Living SSOT:** [PROJECT_STATE.md](../PROJECT_STATE.md)  
 **Impl report:** [CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md)  
 **Enable audit:** [CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md](../audits/CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md)  
-**Parent context:** Final Mix Production GREEN **VERIFIED** (frozen IN) · Contabo always-on **ENABLED** (living) · residual **GO-SYNC** + canary **OPEN / NOT RUN**  
-**Related:** [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) · [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](../audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) · [P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md](../audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md)
+**Parent context:** Final Mix Production GREEN **VERIFIED** (frozen IN) · Contabo always-on **ENABLED** (living) · residual **GO-SYNC OPEN / PARTIAL** (marker-proof 2026-11-17) + canary **OPEN / NOT RUN**  
+**Related:** [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) · [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](../audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) · [P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md](../audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [CONTABO_GO_SYNC_MARKER_PROOF_2026-11-17.md](../audits/CONTABO_GO_SYNC_MARKER_PROOF_2026-11-17.md)
 
 ```text
 DESIGN FREEZE: ACCEPTED
@@ -228,7 +228,7 @@ Impl/enable GOs must re-verify planes. Poller code must be present on Contabo at
 | A | **GO-DF-CONTABO-POLL** | Freeze only — **DONE** |
 | B | **GO-IMPL-CONTABO-POLL** | RPC + poller + tests · **no** enable — **IMPLEMENTED / LOCAL TESTS PASS** |
 | C | **GO-HOST-RO-CONTABO** | Live read-only host verify — **PASS** (2026-10-27 · **re-verified 2026-11-17**) |
-| D | **GO-SYNC-CONTABO-POLL** | Sync approved tree to Contabo — **NOT DONE** (SHA **NOT VERIFIED** / `HAS_GIT=no`) |
+| D | **GO-SYNC-CONTABO-POLL** | Sync approved tree to Contabo — **OPEN / PARTIAL** (marker-proof VERIFIED 2026-11-17 · poller PATHS MATCH tip · pipeline/once MISMATCH · full-tree **NOT DONE** / `HAS_GIT=no`) |
 | E | **GO-ENABLE-CONTABO-POLL-CANARY** | Enable poller · one new job · observe — **NOT RUN** (residual) |
 | F | **GO-CONTABO-POLL-ALWAYS-ON** | Persistent enable — **ENABLED** 2026-11-17 (Owner „włącz always-on”; canary residual OPEN) |
 
@@ -252,6 +252,7 @@ Claim contract: RUNNING after claim-next · bake must not re-claim QUEUED
 Enqueue: UNCHANGED
 GO-CONTABO-POLL-ALWAYS-ON: ENABLED (living 2026-11-17)
 GO-HOST-RO-CONTABO: PASS (re-verified 2026-11-17)
-GO-SYNC / formal canary: STILL OPEN
+GO-SYNC: OPEN / PARTIAL (marker-proof 2026-11-17 · ≠ FULL CLOSE)
+formal canary: STILL OPEN
 ≠ Product GREEN
 ```
