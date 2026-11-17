@@ -179,9 +179,16 @@ def windows_app_id() -> None:
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("pl.bitrymdym.nagrywarka")
 
 
+# Paths passed to AddFontResourceW. Must RemoveFontResourceW before Velopack
+# renames current\ — otherwise Windows font cache keeps the TTFs open and
+# Update.exe fails, then relaunches the old build (~10 s later).
+_LOADED_FONT_PATHS: list[str] = []
+
+
 def load_user_fonts() -> None:
     if os.name != "nt":
         return
+    global _LOADED_FONT_PATHS
     folders = [app_dir() / "fonts"]
     user_fonts = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "Windows" / "Fonts"
     if user_fonts.is_dir():
@@ -189,12 +196,40 @@ def load_user_fonts() -> None:
     import ctypes
 
     add = ctypes.windll.gdi32.AddFontResourceW
+    loaded: list[str] = []
     for folder in folders:
         if not folder.is_dir():
             continue
         for path in folder.glob("*.ttf"):
             if path.name.startswith(("SourceSerif4", "SchibstedGrotesk", "BigShoulders", "IBMPlexMono")):
-                add(str(path))
+                text = str(path)
+                if add(text):
+                    loaded.append(text)
+    _LOADED_FONT_PATHS = loaded
+
+
+def unload_user_fonts() -> None:
+    """Drop GDI holds on current\\fonts so Velopack can replace the folder."""
+    global _LOADED_FONT_PATHS
+    paths = list(_LOADED_FONT_PATHS)
+    _LOADED_FONT_PATHS = []
+    if os.name != "nt" or not paths:
+        return
+    import ctypes
+
+    remove = ctypes.windll.gdi32.RemoveFontResourceW
+    for text in paths:
+        try:
+            remove(text)
+        except Exception:
+            pass
+    try:
+        # Tell other apps the font table changed (same pattern as font installers).
+        HWND_BROADCAST = 0xFFFF
+        WM_FONTCHANGE = 0x001D
+        ctypes.windll.user32.SendMessageW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0)
+    except Exception:
+        pass
 
 
 SESSION = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-session.json"
@@ -5467,6 +5502,11 @@ class RecorderWindow:
         except Exception:
             pass
         updater.leave_install_dir()
+        # Release TTFs under current\fonts before Update.exe renames the folder.
+        try:
+            unload_user_fonts()
+        except Exception:
+            pass
         try:
             updater.schedule_installer(path)
         except OSError:
@@ -5482,9 +5522,17 @@ class RecorderWindow:
             time.sleep(0.6)
             os._exit(0)
 
+        try:
+            unload_user_fonts()
+        except Exception:
+            pass
         threading.Thread(target=_die, daemon=True, name="bitrymdym-exit").start()
         try:
             self._on_close(ask_save=False)
+        except Exception:
+            pass
+        try:
+            unload_user_fonts()
         except Exception:
             pass
         os._exit(0)

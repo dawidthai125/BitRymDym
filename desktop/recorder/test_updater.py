@@ -109,6 +109,18 @@ def main() -> None:
         left = sorted(p.name for p in folder.iterdir())
         if left != ["BitRymDym-Setup-2026.12.1.exe"]:
             raise SystemExit(f"śmieci po pobraniu: {left}")
+    # Font unload must clear the tracked list (GDI remove is Windows-only).
+    import record_app as app
+
+    app._LOADED_FONT_PATHS = [r"C:\fake\fonts\SourceSerif4-Regular.ttf"]
+    app.unload_user_fonts()
+    if app._LOADED_FONT_PATHS:
+        raise SystemExit("unload_user_fonts ma opróżnić listę czcionek przed Velopack")
+    if "unload_user_fonts" not in open(Path(__file__).with_name("record_app.py"), encoding="utf-8").read():
+        raise SystemExit("record_app musi mieć unload_user_fonts")
+    launch = open(Path(__file__).with_name("record_app.py"), encoding="utf-8").read()
+    if "unload_user_fonts()" not in launch or "_launch_update" not in launch:
+        raise SystemExit("Zaktualizuj musi odpinać czcionki przed Update.exe")
     print("updater tests ok")
 
 
