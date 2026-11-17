@@ -6,11 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-17 — Contabo always-on ENABLED (GO-CONTABO-POLL-ALWAYS-ON)
+
+**Status:** documentation · Owner GO „włącz always-on” · Ops enable evidence
+
+`bitrymdym-e3-worker-poll` **enabled + active/running** after idempotent `enable --now` · `workerRef=contabo-poll-1` · true-class kill-switch · oneshot remains disabled. Audit: `docs/audits/CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md`. **Still OPEN:** GO-SYNC (SHA NOT VERIFIED / `HAS_GIT=no`) · formal STUDIO_EXPORT canary **NOT RUN**. ≠ Product GREEN · Sacred WIP untouched.
+
 ## 2026-11-17 — OD-15 CLOSED / ACCEPTED (Visual Identity FINAL)
 
 **Status:** documentation · Owner GO · OD-15 **CLOSED / ACCEPTED**
 
-Owner locked zine + control-room + global dark default as FINAL Visual Identity (Q1 A · Q2/Q3 A+A · Q4 A). Q5 B recorded as GREEN-allowlist policy note (WAIVE historical/reopen; OD-15 no longer an OPEN blocker). Lock: `docs/decisions/VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md`. OD-16 remains OPEN. ≠ Product GREEN · Contabo untouched · Sacred WIP untouched.
+Owner locked zine + control-room + global dark default as FINAL Visual Identity (Q1 A · Q2/Q3 A+A · Q4 A). Q5 B recorded as GREEN-allowlist policy note (WAIVE historical/reopen; OD-15 no longer an OPEN blocker). Lock: `docs/decisions/VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md`. OD-16 remains OPEN. ≠ Product GREEN · Contabo untouched (later same day: always-on ENABLED) · Sacred WIP untouched.
 
 ## 2026-11-12 — SESSION_BRIDGE §4 archive (batch 31, room for listen-linki Free)
 

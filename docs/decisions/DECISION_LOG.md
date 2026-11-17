@@ -10,6 +10,22 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Contabo poller — GO-CONTABO-POLL-ALWAYS-ON ACCEPTED ENABLED
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | GO-CONTABO-POLL-ALWAYS-ON |
+| Status | **CLOSED / ACCEPTED ENABLED** |
+| Date | 2026-11-17 |
+| Documents | [CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md](../audits/CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md) · [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) |
+| Owner gate | „włącz always-on” (2026-11-17 session) |
+
+Live after idempotent `enable --now`: `bitrymdym-e3-worker-poll.service` **enabled + active/running** · `workerRef=contabo-poll-1` · `claims_empty` idle ticks · `E3_RENDER_JOBS_ENABLED` **true-class** · oneshot **disabled/inactive** · host `vmi3622761`.
+
+**Still OPEN:** **GO-SYNC-CONTABO-POLL** (SHA **NOT VERIFIED** / `HAS_GIT=no`) · **GO-ENABLE-CONTABO-POLL-CANARY** (**NOT RUN**). **GO-HOST-RO-CONTABO** = **CLOSED / PASS** (re-verified 2026-11-17).
+
+**Explicit non-claims:** ≠ Product GREEN · ≠ PRODUCTION VERIFIED · Sacred WIP untouched.
+
 ### OD-15 — Final visual identity CLOSED / ACCEPTED
 
 | Pole | Wartość |

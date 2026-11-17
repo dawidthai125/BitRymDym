@@ -1,11 +1,12 @@
 # Contabo Continuous Worker — Design Freeze (GO-DF-CONTABO-POLL)
 
-**Status:** **DESIGN FREEZE ACCEPTED** (GO-DF-CONTABO-POLL) · **GO-IMPL-CONTABO-POLL: IMPLEMENTED** · **GO-POLLER-KILL-SWITCH-01: fail-closed bootstrap** · Contabo always-on **NOT ENABLED**  
-**Date:** 2026-10-13  
-**Unit:** GO-DF-CONTABO-POLL (freeze) · GO-IMPL-CONTABO-POLL · GO-POLLER-KILL-SWITCH-01  
+**Status:** **DESIGN FREEZE ACCEPTED** (GO-DF-CONTABO-POLL) · **GO-IMPL-CONTABO-POLL: IMPLEMENTED** · **GO-POLLER-KILL-SWITCH-01: fail-closed bootstrap** · Contabo always-on **ENABLED** (living · 2026-11-17)  
+**Date:** 2026-10-13 · living always-on note **2026-11-17**  
+**Unit:** GO-DF-CONTABO-POLL (freeze) · GO-IMPL-CONTABO-POLL · GO-POLLER-KILL-SWITCH-01 · GO-CONTABO-POLL-ALWAYS-ON  
 **Living SSOT:** [PROJECT_STATE.md](../PROJECT_STATE.md)  
 **Impl report:** [CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md)  
-**Parent context:** Final Mix Production GREEN **VERIFIED** (frozen IN) · Contabo always-on still **OPEN / NOT VERIFIED** · last-known persistent unit **disabled/inactive**  
+**Enable audit:** [CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md](../audits/CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md)  
+**Parent context:** Final Mix Production GREEN **VERIFIED** (frozen IN) · Contabo always-on **ENABLED** (living) · residual **GO-SYNC** + canary **OPEN / NOT RUN**  
 **Related:** [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) · [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](../audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) · [P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md](../audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md)
 
 ```text
@@ -16,7 +17,8 @@ Max active renders / instance: 1
 Claim: atomic claim-next + FINDING-01 + bake on RUNNING
 Auto-retry FAILED/TIMEOUT/crash: FORBIDDEN
 Enqueue contract: UNCHANGED
-Contabo sync / production deploy / host verify / canary / always-on: NOT DONE
+Contabo always-on: ENABLED (living 2026-11-17)
+Contabo sync SHA / formal canary: STILL OPEN / NOT VERIFIED
 ```
 
 ---
@@ -225,10 +227,10 @@ Impl/enable GOs must re-verify planes. Poller code must be present on Contabo at
 |-------|----------|--------|
 | A | **GO-DF-CONTABO-POLL** | Freeze only — **DONE** |
 | B | **GO-IMPL-CONTABO-POLL** | RPC + poller + tests · **no** enable — **IMPLEMENTED / LOCAL TESTS PASS** |
-| C | **GO-HOST-RO-CONTABO** | Live read-only host verify — **NOT DONE** |
-| D | **GO-SYNC-CONTABO-POLL** | Sync approved tree to Contabo — **NOT DONE** |
-| E | **GO-ENABLE-CONTABO-POLL-CANARY** | Enable poller · one new job · observe — **NOT RUN** |
-| F | **GO-CONTABO-POLL-ALWAYS-ON** | Persistent enable after canary PASS — **NOT ENABLED** |
+| C | **GO-HOST-RO-CONTABO** | Live read-only host verify — **PASS** (2026-10-27 · **re-verified 2026-11-17**) |
+| D | **GO-SYNC-CONTABO-POLL** | Sync approved tree to Contabo — **NOT DONE** (SHA **NOT VERIFIED** / `HAS_GIT=no`) |
+| E | **GO-ENABLE-CONTABO-POLL-CANARY** | Enable poller · one new job · observe — **NOT RUN** (residual) |
+| F | **GO-CONTABO-POLL-ALWAYS-ON** | Persistent enable — **ENABLED** 2026-11-17 (Owner „włącz always-on”; canary residual OPEN) |
 
 **Rollback (any enable stage):** stop/disable poller unit · confirm no worker process · optional restore oneshot+`E3_RENDER_JOB_ID` unit · leave jobs terminal; do not mass re-QUEUED.
 
@@ -248,6 +250,8 @@ GO-IMPL-CONTABO-POLL: IMPLEMENTED / LOCAL TESTS PASS
 V1: STUDIO_EXPORT only · max 1 active · atomic claim-next · no auto-retry
 Claim contract: RUNNING after claim-next · bake must not re-claim QUEUED
 Enqueue: UNCHANGED
-Contabo sync / deploy / host verify / canary / always-on: NOT DONE
-NEXT: Owner GO — GO-HOST-RO-CONTABO · GO-SYNC · canary · always-on · prod migration apply
+GO-CONTABO-POLL-ALWAYS-ON: ENABLED (living 2026-11-17)
+GO-HOST-RO-CONTABO: PASS (re-verified 2026-11-17)
+GO-SYNC / formal canary: STILL OPEN
+≠ Product GREEN
 ```
