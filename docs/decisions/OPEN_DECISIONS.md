@@ -100,8 +100,8 @@
 | GO-IMPL-CONTABO-POLL | Implement RPC + poller + tests (no enable) | OD-CWP | Code/migration | **CLOSED / IMPLEMENTED / LOCAL TESTS PASS** — 2026-10-13 · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · Contabo sync/deploy/canary/always-on **NOT DONE** |
 | GO-HOST-RO-CONTABO | Live Contabo read-only verify | OD-CWP | Sync/enable | **CLOSED / PASS** — 2026-10-27 · **re-verified 2026-11-17** (always-on enable session) · [RO](../audits/CONTABO_GO_HOST_RO_2026-10-27.md) · [enable](../audits/CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md) |
 | GO-SYNC-CONTABO-POLL | Sync approved poller tree to Contabo | OD-CWP | Enable | **OPEN / PARTIAL** — marker-proof **VERIFIED** 2026-11-17 ([audit](../audits/CONTABO_GO_SYNC_MARKER_PROOF_2026-11-17.md)) · poller PATHS byte-MATCH tip · living markers `5fbba5c5` (kill-switch selective) · pipeline/once/package SHA **MISMATCH** tip · full-tree sync **NOT DONE** · `HAS_GIT=no` |
-| GO-ENABLE-CONTABO-POLL-CANARY | Enable poller · one new STUDIO_EXPORT canary | OD-CWP | Always-on | **OPEN** — canary **NOT RUN** (2026-11-17 residual) |
-| GO-CONTABO-POLL-ALWAYS-ON | Persistent poller enable after canary PASS | OD-CWP | Production continuous | **CLOSED / ACCEPTED ENABLED** — 2026-11-17 · Owner „włącz always-on” · [audit](../audits/CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md) · canary residual **OPEN** |
+| GO-ENABLE-CONTABO-POLL-CANARY | Enable poller · one new STUDIO_EXPORT canary | OD-CWP | Always-on | **CLOSED / PASS** — 2026-11-17 · job `7122e55b-…` · claim `contabo-poll-1` → terminal `FAILED`/`LIMIT` (journal `STUDIO_RENDER_DURATION_CAP`) · no re-QUEUED · [audit](../audits/CONTABO_POLL_CANARY_2026-11-17.md) |
+| GO-CONTABO-POLL-ALWAYS-ON | Persistent poller enable after canary PASS | OD-CWP | Production continuous | **CLOSED / ACCEPTED ENABLED** — 2026-11-17 · Owner „włącz always-on” · [audit](../audits/CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md) · canary **PASS** (same day residual closed) |
 
 ---
 
@@ -203,8 +203,7 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 | OD-16 | Język marki | Copy UI |
 | OD-18 | Liczenie udostępnień | Beat sharing stats |
 | GO-SYNC-CONTABO-POLL | Sync drzewa pollera na Contabo (**OPEN / PARTIAL** · marker-proof VERIFIED · full-tree **NOT DONE** / `HAS_GIT=no`) | Real sync GO for MISMATCH paths + marker rewrite |
-| GO-ENABLE-CONTABO-POLL-CANARY | Enable + jeden nowy job canary (**NOT RUN** · residual po always-on 2026-11-17) | Formal STUDIO_EXPORT canary |
-| (prod migration apply) | Apply `claim_next_studio_export_job` on production DB | Remote claim-next |
+| (prod migration apply `claim_next_studio_export_job`) | **CLOSED / VERIFIED APPLIED** — history `20261013183721` (2026-11-17 canary preflight) | — |
 | OD-REC-PENDING-UPLOAD-TTL | Okno wysyłki dla `PENDING_UPLOAD` — **CLOSED (wartość 900 s, Owner 2026-10-18)** · STU-16 **code + migration ON `main` @ `c2be3b0`** · **Production DB apply: VERIFIED BY READ-ONLY AUDIT** · **Local live suite: VERIFIED 17/17 PASS** (TTL via backdate) · **`STU-16 LIMITED PRODUCTION PASS` (2026-10-19):** F-A1/F-B1/F-B2 + exact-ID cleanup · **Evidence V2 PASS:** XP ledger · SQL semantic parity · Cron schedule · **Still NOT VERIFIED (osobne GO):** janitor Cron fire (next **2026-10-20 00:00Z**) · wall-clock 900 s · concurrency load · SQL byte-for-byte · **≠** Production GREEN | Odblokowanie nowych nagrań po zgubionej odpowiedzi sesji |
 
 **OD-REC-PENDING-UPLOAD-TTL (2026-10-18, STU-15):** `PHASE_RECORDING_DESIGN_FREEZE.md` opisuje osobny „pending TTL”, a implementacja rezerwuje `PENDING_UPLOAD` do pełnego `expires_at` retencji (gość: 2 h); indeksy `takes_one_pending_per_owner_uidx` / `takes_one_pending_per_anon_hash_uidx` + `CONCURRENT_SESSION` blokują wtedy nowe nagrania, jeśli przeglądarka zgubiła `takeId`. Propozycja (niezastosowana — wymaga migracji, zmiany RPC i GO): krótkie okno wysyłki dla rezerwacji `PENDING_UPLOAD` oraz w `claim_take_recording_session` przejęcie własnej rezerwacji, której okno minęło bez przesłanego pliku. Klient STU-15 niczego nie usuwa na podstawie wieku. Szczegóły: [RECORDING.md](../architecture/RECORDING.md).

@@ -189,7 +189,7 @@ A peek that returns `id` without holding exclusion until CAS allows two pollers 
 | Area | Status |
 |------|--------|
 | Script | `scripts/e3-render-worker-poll.ts` · `npm run e3:worker:poll` — **IN REPO** |
-| DB | Migration `20261013120000_claim_next_studio_export_job.sql` — **IN REPO** · **not applied to production** |
+| DB | Migration `claim_next_studio_export_job` — **IN REPO** · **APPLIED on production** (history `20261013183721` · verified 2026-11-17 canary) |
 | App | `claimNextStudioExportAsWorker` + `runAlreadyClaimedStudioExportWorkerJob` + poller core — **IN REPO** |
 | HTTP enqueue / claim-by-id API | Unchanged |
 | systemd | Ops GO only — **NOT ENABLED** |
@@ -229,8 +229,8 @@ Impl/enable GOs must re-verify planes. Poller code must be present on Contabo at
 | B | **GO-IMPL-CONTABO-POLL** | RPC + poller + tests · **no** enable — **IMPLEMENTED / LOCAL TESTS PASS** |
 | C | **GO-HOST-RO-CONTABO** | Live read-only host verify — **PASS** (2026-10-27 · **re-verified 2026-11-17**) |
 | D | **GO-SYNC-CONTABO-POLL** | Sync approved tree to Contabo — **OPEN / PARTIAL** (marker-proof VERIFIED 2026-11-17 · poller PATHS MATCH tip · pipeline/once MISMATCH · full-tree **NOT DONE** / `HAS_GIT=no`) |
-| E | **GO-ENABLE-CONTABO-POLL-CANARY** | Enable poller · one new job · observe — **NOT RUN** (residual) |
-| F | **GO-CONTABO-POLL-ALWAYS-ON** | Persistent enable — **ENABLED** 2026-11-17 (Owner „włącz always-on”; canary residual OPEN) |
+| E | **GO-ENABLE-CONTABO-POLL-CANARY** | Enable poller · one new job · observe — **PASS** 2026-11-17 (job `7122e55b-…`) |
+| F | **GO-CONTABO-POLL-ALWAYS-ON** | Persistent enable — **ENABLED** 2026-11-17 (Owner „włącz always-on”; canary later PASS same day) |
 
 **Rollback (any enable stage):** stop/disable poller unit · confirm no worker process · optional restore oneshot+`E3_RENDER_JOB_ID` unit · leave jobs terminal; do not mass re-QUEUED.
 
@@ -252,7 +252,7 @@ Claim contract: RUNNING after claim-next · bake must not re-claim QUEUED
 Enqueue: UNCHANGED
 GO-CONTABO-POLL-ALWAYS-ON: ENABLED (living 2026-11-17)
 GO-HOST-RO-CONTABO: PASS (re-verified 2026-11-17)
+GO-ENABLE-CONTABO-POLL-CANARY: PASS (2026-11-17 · job 7122e55b-…)
 GO-SYNC: OPEN / PARTIAL (marker-proof 2026-11-17 · ≠ FULL CLOSE)
-formal canary: STILL OPEN
 ≠ Product GREEN
 ```

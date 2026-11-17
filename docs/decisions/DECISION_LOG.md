@@ -10,6 +10,20 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Contabo poller — GO-ENABLE-CONTABO-POLL-CANARY PASS
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | GO-ENABLE-CONTABO-POLL-CANARY |
+| Status | **CLOSED / PASS** |
+| Date | 2026-11-17 |
+| Documents | [CONTABO_POLL_CANARY_2026-11-17.md](../audits/CONTABO_POLL_CANARY_2026-11-17.md) · [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) |
+| Job | `7122e55b-62e7-44a4-a345-8a9b787f989f` · project `901428a5-…` · `STUDIO_EXPORT` |
+
+Enqueue (Owner-auth POST) → poller `claim_ok` (`workerRef=contabo-poll-1`) → `bake_fail` / terminal DB `FAILED` + `LIMIT` (journal `STUDIO_RENDER_DURATION_CAP`) → idle `claims_empty` · **no** re-QUEUED · **no** artifact download. Prod `claim_next_studio_export_job` **APPLIED** (`20261013183721`).
+
+**Still OPEN:** **GO-SYNC-CONTABO-POLL** (**OPEN / PARTIAL**). **Explicit non-claims:** ≠ Product GREEN · ≠ SUCCEEDED WAV canary · ≠ empty-session fixture (deleted) · Sacred WIP untouched.
+
 ### Contabo poller — GO-SYNC marker proof PARTIAL (still OPEN)
 
 | Pole | Wartość |
@@ -20,7 +34,7 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 | Documents | [CONTABO_GO_SYNC_MARKER_PROOF_2026-11-17.md](../audits/CONTABO_GO_SYNC_MARKER_PROOF_2026-11-17.md) · [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) |
 | Mutate | **none** (RO only) |
 
-Living markers under `HAS_GIT=no`: `DEPLOYED_COMMIT=5fbba5c5…` · `SOURCE=go-poller-kill-switch-01-selective`. Poller PATHS byte-MATCH tip; pipeline/once/package SHA MISMATCH tip → Stage D **not** FULL CLOSE. Canary still **NOT RUN**.
+Living markers under `HAS_GIT=no`: `DEPLOYED_COMMIT=5fbba5c5…` · `SOURCE=go-poller-kill-switch-01-selective`. Poller PATHS byte-MATCH tip; pipeline/once/package SHA MISMATCH tip → Stage D **not** FULL CLOSE. Canary later **PASS** (same day; see entry above).
 
 **Explicit non-claims:** ≠ Product GREEN · ≠ real sync executed · Sacred WIP untouched.
 
@@ -36,7 +50,7 @@ Living markers under `HAS_GIT=no`: `DEPLOYED_COMMIT=5fbba5c5…` · `SOURCE=go-p
 
 Live after idempotent `enable --now`: `bitrymdym-e3-worker-poll.service` **enabled + active/running** · `workerRef=contabo-poll-1` · `claims_empty` idle ticks · `E3_RENDER_JOBS_ENABLED` **true-class** · oneshot **disabled/inactive** · host `vmi3622761`.
 
-**Still OPEN:** **GO-SYNC-CONTABO-POLL** (**OPEN / PARTIAL** after 2026-11-17 marker-proof · full-tree **NOT DONE**) · **GO-ENABLE-CONTABO-POLL-CANARY** (**NOT RUN**). **GO-HOST-RO-CONTABO** = **CLOSED / PASS** (re-verified 2026-11-17).
+**Still OPEN (at enable time):** **GO-SYNC-CONTABO-POLL** · **GO-ENABLE-CONTABO-POLL-CANARY** (canary later **PASS** same day — see entry above). **GO-HOST-RO-CONTABO** = **CLOSED / PASS** (re-verified 2026-11-17).
 
 **Explicit non-claims:** ≠ Product GREEN · ≠ PRODUCTION VERIFIED · Sacred WIP untouched.
 

@@ -6,17 +6,23 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-17 — Contabo GO-ENABLE-CONTABO-POLL-CANARY PASS
+
+**Status:** documentation · one new production `STUDIO_EXPORT` · poll observe
+
+Job `7122e55b-62e7-44a4-a345-8a9b787f989f` · project `901428a5-…` · Owner-auth enqueue · poller `claim_ok` (`contabo-poll-1`) → terminal `FAILED`/`LIMIT` (journal `STUDIO_RENDER_DURATION_CAP`) · no re-QUEUED · no artifact download. Prod `claim_next_studio_export_job` **APPLIED**. Audit: `docs/audits/CONTABO_POLL_CANARY_2026-11-17.md`. **Still OPEN:** GO-SYNC **OPEN / PARTIAL**. ≠ Product GREEN · Sacred WIP untouched.
+
 ## 2026-11-17 — Contabo GO-SYNC marker proof (PARTIAL / still OPEN)
 
 **Status:** documentation · RO SSH · no sync mutate
 
-`HAS_GIT=no` alternate proof: living `DEPLOYED_COMMIT`/`WORKER_TARGET_SHA` readable · kill-switch selective `@5fbba5c5` · poller PATHS byte-MATCH tip · `render-worker-pipeline.ts` / `e3-render-worker-once.ts` / `package.json` SHA **MISMATCH** tip · I.45CF backup retained (living markers superseded). Audit: `docs/audits/CONTABO_GO_SYNC_MARKER_PROOF_2026-11-17.md`. **GO-SYNC = OPEN / PARTIAL** (≠ FULL CLOSE) · canary still **NOT RUN**. ≠ Product GREEN · Sacred WIP untouched.
+`HAS_GIT=no` alternate proof: living `DEPLOYED_COMMIT`/`WORKER_TARGET_SHA` readable · kill-switch selective `@5fbba5c5` · poller PATHS byte-MATCH tip · `render-worker-pipeline.ts` / `e3-render-worker-once.ts` / `package.json` SHA **MISMATCH** tip · I.45CF backup retained (living markers superseded). Audit: `docs/audits/CONTABO_GO_SYNC_MARKER_PROOF_2026-11-17.md`. **GO-SYNC = OPEN / PARTIAL** (≠ FULL CLOSE) · canary later **PASS** same day. ≠ Product GREEN · Sacred WIP untouched.
 
 ## 2026-11-17 — Contabo always-on ENABLED (GO-CONTABO-POLL-ALWAYS-ON)
 
 **Status:** documentation · Owner GO „włącz always-on” · Ops enable evidence
 
-`bitrymdym-e3-worker-poll` **enabled + active/running** after idempotent `enable --now` · `workerRef=contabo-poll-1` · true-class kill-switch · oneshot remains disabled. Audit: `docs/audits/CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md`. **Still OPEN:** GO-SYNC (later same day: PARTIAL marker-proof) · formal STUDIO_EXPORT canary **NOT RUN**. ≠ Product GREEN · Sacred WIP untouched.
+`bitrymdym-e3-worker-poll` **enabled + active/running** after idempotent `enable --now` · `workerRef=contabo-poll-1` · true-class kill-switch · oneshot remains disabled. Audit: `docs/audits/CONTABO_ALWAYS_ON_ENABLE_2026-11-17.md`. **At enable time OPEN:** GO-SYNC (later PARTIAL) · canary (later **PASS**). ≠ Product GREEN · Sacred WIP untouched.
 
 ## 2026-11-17 — OD-15 CLOSED / ACCEPTED (Visual Identity FINAL)
 
