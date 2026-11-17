@@ -34,7 +34,7 @@ Does **not** reopen Studio Visual Parity V2 structural / audio / CAS contracts.
 ## Explicit non-claims / unchanged
 
 - **≠** Product GREEN · **≠** PRODUCTION VERIFIED
-- **OD-16** (brand copy) remains **OPEN**
+- **OD-16** (brand copy) **CLOSED / ACCEPTED** same day — [BRAND_COPY_OD16_LOCK_2026-11-17.md](./BRAND_COPY_OD16_LOCK_2026-11-17.md)
 - Contabo / SFM ops **untouched** by this lock
 - Sacred WIP **untouched**
 - Authored logo / photography / covers = separate Owner GO (Q4 A)

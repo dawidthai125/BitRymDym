@@ -34,7 +34,7 @@
 | OD-13 | Metoda watermarkingu audio | §9 | Download pipeline | OPEN |
 | OD-14 | Metoda miksowania nagrania z bitem | §24 | Export / publikacja utworu | OPEN |
 | OD-15 | Finalna identyfikacja wizualna | §2, §41 | Design system, UI | **CLOSED / ACCEPTED** — 2026-11-17 · zine + control-room + global dark default FINAL · [VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md](./VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md) |
-| OD-16 | Finalny język marki (copy) | §2, §41 | Teksty UI / marketing | OPEN |
+| OD-16 | Finalny język marki (copy) | §2, §41 | Teksty UI / marketing | **CLOSED / ACCEPTED** — 2026-11-17 · living PL Studio/marketing FINAL · EN = operational translation of PL SSOT · [BRAND_COPY_OD16_LOCK_2026-11-17.md](./BRAND_COPY_OD16_LOCK_2026-11-17.md) |
 | OD-17 | Zasady liczenia powtórnych pobrań | §17 | Download stats | **CLOSED / ACCEPTED** — 2026-09-26 (Phase 1.8A interim) |
 | OD-18 | Zasady liczenia udostępnień | §34 | Beat sharing stats | OPEN |
 | OD-19 | Domyślny account level przy rejestracji | §4 | Profile creation default | **CLOSED / ACCEPTED** — 2026-09-25 |
@@ -200,7 +200,6 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 | OD-12 | Kodowanie audio | Playback / download versions |
 | OD-13 | Watermarking audio | Download pipeline (OUT of Phase 1.8A) |
 | OD-14 | Miksowanie nagrania z bitem | Export / publikacja |
-| OD-16 | Język marki | Copy UI |
 | OD-18 | Liczenie udostępnień | Beat sharing stats |
 | GO-SYNC-CONTABO-POLL | Sync drzewa pollera na Contabo (**OPEN / PARTIAL** · marker-proof VERIFIED · full-tree **NOT DONE** / `HAS_GIT=no`) | Real sync GO for MISMATCH paths + marker rewrite |
 | (prod migration apply `claim_next_studio_export_job`) | **CLOSED / VERIFIED APPLIED** — history `20261013183721` (2026-11-17 canary preflight) | — |

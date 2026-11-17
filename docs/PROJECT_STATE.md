@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-11-17 — **GO-SYNC marker-proof PARTIAL** ([audit](./audits/CONTABO_GO_SYNC_MARKER_PROOF_2026-11-17.md) · poller PATHS MATCH tip · full-tree still OPEN) · Contabo always-on **ENABLED** · canary **OPEN/NOT RUN** · **OD-15 CLOSED / ACCEPTED** · OD-16 **OPEN** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · [CHANGELOG 2026-11-17](./CHANGELOG.md)
+**Updated:** 2026-11-17 — **OD-16 CLOSED / ACCEPTED** (living PL Studio/marketing FINAL · EN = operational translation of PL SSOT · [lock](./decisions/BRAND_COPY_OD16_LOCK_2026-11-17.md)) · **OD-15 CLOSED / ACCEPTED** · Contabo always-on **ENABLED** · GO-SYNC **OPEN / PARTIAL** · canary **PASS** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · [CHANGELOG 2026-11-17](./CHANGELOG.md)
 
 **Prior (2026-10-29):** **Mobile Studio layout** (timeline fit + track hit targets) · living tip start **`3f8b094…`** = `origin/main` · GO editor w unit · vitest stu-07 + p7-1-1 **PASS** · runtime CDP this tip **NOT VERIFIED** until deploy · last verified deploy prior **`dpl_6xkcYZYhfZThRhErkp3BkVBJqu3P`** **Ready** @ `3f8b094` (jog) · Contabo/SFM **nietknięte** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED** · `STOP — OWNER DECISION REQUIRED` **kept** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · OD-15 then **OPEN** (now **CLOSED** 2026-11-17) · [CHANGELOG 2026-10-29](./CHANGELOG.md)
 

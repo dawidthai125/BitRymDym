@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-17 — OD-16 CLOSED / ACCEPTED (Brand copy FINAL)
+
+**Status:** documentation · Owner GO · OD-16 **CLOSED / ACCEPTED**
+
+Owner locked living PL Studio/marketing copy as FINAL brand language (no more A/B). EN = operational translation of PL SSOT. Lock: `docs/decisions/BRAND_COPY_OD16_LOCK_2026-11-17.md`. ≠ Product GREEN · Contabo untouched · Sacred WIP untouched.
+
 ## 2026-11-17 — Contabo GO-ENABLE-CONTABO-POLL-CANARY PASS
 
 **Status:** documentation · one new production `STUDIO_EXPORT` · poll observe

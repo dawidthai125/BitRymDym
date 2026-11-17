@@ -10,6 +10,27 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### OD-16 — Final brand copy CLOSED / ACCEPTED
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | OD-16 — Finalny język marki (copy) |
+| Status | **CLOSED / ACCEPTED** |
+| Date | 2026-11-17 |
+| Documents | [BRAND_COPY_OD16_LOCK_2026-11-17.md](./BRAND_COPY_OD16_LOCK_2026-11-17.md) · living `messages/pl.json` (PL SSOT) · `messages/en.json` (operational translation) |
+| Cite (tmp ≠ SSOT) | `tmp/od16-decision-pack-2026-11-17.md` · `tmp/od16-brand-voice-profile-2026-11-17.md` |
+| Does not claim | ≠ Product GREEN · ≠ PRODUCTION VERIFIED |
+
+Owner GO (2026-11-17) — accept living PL Studio/marketing copy as **FINAL** brand language (no more A/B). EN parity remains operational translation of PL SSOT.
+
+1. **Q1 A** — Shipped direct / receipt-heavy PL with light street = FINAL public marketing voice.
+2. **Q2 A (PL SSOT)** — EN = faithful meaning translation; PL may keep more street texture.
+3. **Q3 A** — Dual forever: marketing/UI plain-street · TERMS formal · license summary bridge.
+4. **Q4 A** — Dual character: marketing second-person product copy · Studio BITEK first-person coach — both FINAL as shipped.
+5. **Q5 B (policy note)** — Product GREEN *may* WAIVE OD-16 if Owner freezes an allowlist. Because OD-16 is now **CLOSED**, that WAIVE clause is **historical / for reopen only**: OD-16 is no longer an OPEN Product GREEN blocker.
+
+**Explicit non-claims:** ≠ Product GREEN · ≠ PRODUCTION VERIFIED · Contabo untouched · Sacred WIP untouched · OD-15 remains CLOSED / ACCEPTED.
+
 ### Contabo poller — GO-ENABLE-CONTABO-POLL-CANARY PASS
 
 | Pole | Wartość |

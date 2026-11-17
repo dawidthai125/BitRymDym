@@ -1,6 +1,6 @@
 # Visual direction — paper zine + control room (2026-10-24)
 
-**Status:** **ACCEPTED FINAL** (OD-15 CLOSED 2026-11-17) · OD-16 remains **OPEN**  
+**Status:** **ACCEPTED FINAL** (OD-15 CLOSED 2026-11-17) · OD-16 **CLOSED / ACCEPTED** 2026-11-17  
 **Lock:** [VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md](./VISUAL_IDENTITY_OD15_LOCK_2026-11-17.md)  
 **Authority:** Owner (Prezes Dawid) visual brief · Owner GO 2026-11-17  
 **Does not replace:** [STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md](./STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md) (CLOSED — DAW structure / audio / CAS contracts remain)
@@ -41,7 +41,7 @@ Studio transport uses stable `--brd-recess` / `--brd-recess-fg` so the strip sta
 - Studio Visual Parity V2 shell: Transport + Toolbar + Timeline + Inspector + Mixer
 - Audio engines, CAS / autosave, eligibility, upload, preview, delete, AuthZ
 - Schema, migrations, production data
-- OD-16 status (remains **OPEN**; OD-15 **CLOSED / ACCEPTED** 2026-11-17)
+- OD-16 status (**CLOSED / ACCEPTED** 2026-11-17 · [BRAND_COPY_OD16_LOCK_2026-11-17.md](./BRAND_COPY_OD16_LOCK_2026-11-17.md); OD-15 **CLOSED / ACCEPTED**)
 - Sacred WIP path (untouched)
 
 ---
@@ -68,7 +68,7 @@ Demo visuals (`public/demo/visual/*`, hash-based `BeatArtwork`) are **not** real
 
 ## 6. Follow-up 2026-10-24 (copy + control-room REC)
 
-**Additive polish only · OD-15 CLOSED 2026-11-17 · OD-16 still OPEN · Studio V2 structure unchanged**
+**Additive polish only · OD-15 CLOSED 2026-11-17 · OD-16 CLOSED 2026-11-17 · Studio V2 structure unchanged**
 
 | Change | Detail |
 |--------|--------|
