@@ -37,6 +37,7 @@ import {
 } from "@/lib/studio/studio-fx-chain";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import type { StudioProjectDocument } from "@/lib/studio/studio-types";
+import { TUNE_STYLES } from "@/lib/studio/tune/tune";
 
 export const MIX_AUTOFIX_IDS = [
   "gain",
@@ -51,8 +52,8 @@ export const MIX_AUTOFIX_IDS = [
 
 export type MixAutofixId = (typeof MIX_AUTOFIX_IDS)[number];
 
-/** Pocket, rider, harmony and voice are separate buttons. They are not part of „Popraw wszystko”. */
-export type MixPlanFixId = MixAutofixId | "pocket" | "rider" | "harmony" | "voice";
+/** Pocket, rider, harmony, voice and light Tune are separate buttons. They are not part of „Popraw wszystko”. */
+export type MixPlanFixId = MixAutofixId | "pocket" | "rider" | "harmony" | "voice" | "tune";
 
 /** Which fixes a card's „Popraw” runs. `stereo` has no automatic fix. */
 export const MIX_CARD_FIXES: Record<MixCardId, readonly MixAutofixId[]> = {
@@ -436,6 +437,7 @@ const RUNNERS: Record<MixPlanFixId, (ctx: Ctx) => void> = {
   rider: fixRider,
   harmony: fixHarmony,
   voice: fixVoice,
+  tune: fixTune,
 };
 
 function fixPocket(ctx: Ctx): void {
@@ -517,6 +519,29 @@ function fixHarmony(ctx: Ctx): void {
   if (changed) note(ctx, "harmony", {});
 }
 
+/** Light BRD Tune on lead (natural) — discoverability tile; no Antares. */
+function fixTune(ctx: Ctx): void {
+  const leads = ctx.state.tracks.filter((t) => t.role === "lead_vocal");
+  if (leads.length === 0) return;
+  let changed = false;
+  for (const t of leads) {
+    const before = JSON.stringify(t.chain);
+    const next = upsertFx(
+      t.chain,
+      "tune",
+      (p) => ({ ...p, ...TUNE_STYLES.natural }),
+      ctx.createId,
+    );
+    if (!next) {
+      note(ctx, "chainFull", { track: t.name });
+      continue;
+    }
+    t.chain = next;
+    if (JSON.stringify(t.chain) !== before) changed = true;
+  }
+  if (changed) note(ctx, "tune", {});
+}
+
 /** Effective BPM for sync (project tempo, sane fallback). */
 export function autofixBpm(doc: StudioProjectDocument): number {
   const bpm = doc.project.tempoBpm;
@@ -552,7 +577,9 @@ export function planMixAutofix(params: {
     createId: params.createId ?? (() => crypto.randomUUID()),
     notes: [],
   };
-  const order = ([...MIX_AUTOFIX_IDS, "pocket", "rider", "harmony", "voice"] as const).filter((id) => params.fixes.includes(id));
+  const order = ([...MIX_AUTOFIX_IDS, "pocket", "rider", "harmony", "voice", "tune"] as const).filter((id) =>
+    params.fixes.includes(id),
+  );
   const unchanged: MixPlanFixId[] = [];
   for (const id of order) {
     const before = ctx.notes.length;

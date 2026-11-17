@@ -169,8 +169,8 @@ export function StudioTunePanel({
 
       <div className="space-y-1.5">
         <p className="text-xs font-medium text-[var(--brd-ink)]">{t("styl")}</p>
-        <div className="grid grid-cols-2 gap-1.5" role="group" aria-label={t("styl")}>
-          {(["natural", "hard"] as const satisfies readonly TuneStyle[]).map((s) => {
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3" role="group" aria-label={t("styl")}>
+          {(["natural", "hook", "hard"] as const satisfies readonly TuneStyle[]).map((s) => {
             const locked = s === "hard" && !custom;
             return (
               <button

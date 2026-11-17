@@ -2958,6 +2958,7 @@
           "rider": "I leveled the vocal: quiet words up, loud words down, and the pause stays quiet.",
           "harmony": "I added a second, quieter note under the vocal and above it. The main voice stays in front.",
           "voice": "I added a voice color on the lead. Same voice: lower, higher, or a phone band.",
+          "tune": "I added light pitch correction on the lead (natural style). Notes sit closer to the key, without a hard trap snap.",
           "gainClipTrack": "I turned “{track}” down {db} dB because it was clipping. Now it has headroom.",
           "gainTrimTrack": "I turned “{track}” down {db} dB so it doesn't hit zero.",
           "gainMasterDown": "I turned the whole mix down {db} dB to leave headroom for mastering.",
@@ -2989,7 +2990,8 @@
         "mud": "Cut the mud",
         "sibilance": "De-ess",
         "glue": "Glue to beat",
-        "noise": "Kill noise"
+        "noise": "Kill noise",
+        "pitch": "Light pitch"
       }
     },
     "bitek": {
@@ -3662,15 +3664,17 @@
       "styl": "Style",
       "style": {
         "natural": "Natural",
+        "hook": "Hook",
         "hard": "Trap (hard)",
         "custom": "Custom"
       },
       "styleOpis": {
-        "natural": "Gentle, slower correction — keeps the voice's natural movement.",
+        "natural": "Gentle, slower correction — keeps the voice's natural movement. Skip on aggressive punch-rap.",
+        "hook": "Faster light correction for a melodic hook (~30 ms).",
         "hard": "Instant snap to the note — the signature trap effect.",
         "custom": "Your own retune speed and strength."
       },
-      "lockSilver": "Trap style and custom speed/strength — Silver plan and up.",
+      "lockSilver": "Trap style and custom speed/strength sliders — Silver plan and up.",
       "recznie": "Manual per-note correction — in the note editor below (Gold).",
       "latencja": "Tuning adds 40 ms latency — the studio compensates for it automatically.",
       "szybkosc": "Retune speed",

@@ -277,10 +277,12 @@ describe("BRD Tune — chain, keys, plans, latency compensation", () => {
     expect({ keyRoot: key.keyRoot, scale: key.scale }).toEqual({ keyRoot: 9, scale: 1 });
   });
 
-  it("plan gate: Free/Bronze natural only, Silver/Gold any style", () => {
+  it("plan gate: Free/Bronze natural+hook, Silver/Gold any style", () => {
     const hard = tuneChain(TUNE_STYLES.hard);
     const natural = tuneChain(TUNE_STYLES.natural);
+    const hook = tuneChain(TUNE_STYLES.hook);
     expect(findLockedTuneEffect("FREE", natural)).toBeNull();
+    expect(findLockedTuneEffect("FREE", hook)).toBeNull();
     expect(findLockedTuneEffect("FREE", hard)?.type).toBe("tune");
     expect(findLockedTuneEffect("BRONZE", hard)).not.toBeNull();
     expect(findLockedTuneEffect("SILVER", hard)).toBeNull();
@@ -289,6 +291,7 @@ describe("BRD Tune — chain, keys, plans, latency compensation", () => {
     expect(tuneStyleOf(clamped.effects[0]!.params as never)).toBe("natural");
     expect(clampTuneChainForTier("SILVER", hard)).toBe(hard);
     expect(tuneParams({ keyRoot: 2, scale: 0 }, "hard")).toEqual({ keyRoot: 2, scale: 0, retuneMs: 0, amount: 1 });
+    expect(tuneStyleOf(TUNE_STYLES.hook)).toBe("hook");
   });
 
   it("per-sample paths start tuned clips earlier by the latency (head trimmed at 0)", () => {

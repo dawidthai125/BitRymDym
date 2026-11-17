@@ -2958,6 +2958,7 @@
           "rider": "Wyrównałem wokal: ciche słowa podniosłem, głośne przyciszyłem, pauza zostaje cicha.",
           "harmony": "Dodałem drugą, cichszą nutę pod wokalem i nad nim. Główny głos zostaje z przodu.",
           "voice": "Dodałem zmianę głosu na leadzie. To ten sam głos: niżej, wyżej albo pasmo telefonu.",
+          "tune": "Dodałem lekkie strojenie na leadzie (styl naturalny). Nuty siedzą bliżej tonacji, bez twardego trap snapu.",
           "gainClipTrack": "Ściszyłem „{track}” o {db} dB, bo przesterowało. Teraz ma zapas.",
           "gainTrimTrack": "Ściszyłem „{track}” o {db} dB, żeby nie dobijała do zera.",
           "gainMasterDown": "Ściszyłem całość o {db} dB, żeby zostawić zapas na mastering.",
@@ -2989,7 +2990,8 @@
         "mud": "Wytnij dudnienie",
         "sibilance": "Sybilanty",
         "glue": "Sklej z bitem",
-        "noise": "Wycisz szum"
+        "noise": "Wycisz szum",
+        "pitch": "Lekki pitch"
       }
     },
     "bitek": {
@@ -3662,15 +3664,17 @@
       "styl": "Styl",
       "style": {
         "natural": "Naturalny",
+        "hook": "Hook",
         "hard": "Trap (twardy)",
         "custom": "Własny"
       },
       "styleOpis": {
-        "natural": "Łagodne, wolniejsze dociąganie — zostaje naturalny ruch głosu.",
+        "natural": "Łagodne, wolniejsze dociąganie — zostaje naturalny ruch głosu. Nie na agresywny punch-rap.",
+        "hook": "Szybsze lekkie dociąganie pod melodyczny refren (~30 ms).",
         "hard": "Natychmiastowy skok na nutę — charakterystyczny efekt trapowy.",
         "custom": "Własna szybkość i siła strojenia."
       },
-      "lockSilver": "Styl Trap oraz własna szybkość i siła — od planu Silver.",
+      "lockSilver": "Styl Trap oraz własne suwaki szybkości i siły — od planu Silver.",
       "recznie": "Ręczna korekta pojedynczych nut — w edytorze nut poniżej (Gold).",
       "latencja": "Strojenie dodaje 40 ms opóźnienia — studio kompensuje je automatycznie.",
       "szybkosc": "Szybkość strojenia",

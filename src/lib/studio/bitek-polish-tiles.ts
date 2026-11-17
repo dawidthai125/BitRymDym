@@ -4,7 +4,7 @@
 
 import type { MixPlanFixId } from "@/lib/studio/mix-autofix/plan";
 
-export type BitekPolishTileId = "mud" | "sibilance" | "glue" | "noise";
+export type BitekPolishTileId = "mud" | "sibilance" | "glue" | "noise" | "pitch";
 
 export type BitekPolishTile = {
   id: BitekPolishTileId;
@@ -13,7 +13,7 @@ export type BitekPolishTile = {
   fixes: readonly MixPlanFixId[];
 };
 
-/** Producent order: Sybilanty → Muł → Szum → Klej. */
+/** Producent order: Sybilanty → Muł → Szum → Klej → Lekki pitch. */
 export const BITEK_POLISH_TILES: readonly BitekPolishTile[] = [
   {
     id: "sibilance",
@@ -36,6 +36,12 @@ export const BITEK_POLISH_TILES: readonly BitekPolishTile[] = [
     id: "glue",
     labelKey: "glue",
     fixes: ["balance", "compression", "rider"],
+  },
+  {
+    id: "pitch",
+    labelKey: "pitch",
+    /** BRD Tune natural on lead — no Antares. */
+    fixes: ["tune"],
   },
 ] as const;
 

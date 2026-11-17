@@ -5,6 +5,8 @@
 import type { PremiumTier } from "@/types/premium";
 import { pitchCorrectionAccessForTier } from "@/config/plan-policy";
 import {
+  P0_TUNE_HOOK_AMOUNT,
+  P0_TUNE_HOOK_RETUNE_MS,
   P0_TUNE_NATURAL_AMOUNT,
   P0_TUNE_NATURAL_RETUNE_MS,
 } from "@/lib/studio/p0-hiphop-start";
@@ -25,10 +27,12 @@ export const TUNE_SCALE = { major: 0, minor: 1, chromatic: 2 } as const;
 /** Fixed processing latency of TuneCore (compensated in every render path). */
 export const TUNE_LATENCY_MS = 40;
 
-export type TuneStyle = "natural" | "hard";
+export type TuneStyle = "natural" | "hook" | "hard";
 export const TUNE_STYLES: Record<TuneStyle, Pick<StudioFxTuneParams, "retuneMs" | "amount">> = {
   /** Free: gentle, keeps some natural movement (Producent P0). */
   natural: { retuneMs: P0_TUNE_NATURAL_RETUNE_MS, amount: P0_TUNE_NATURAL_AMOUNT },
+  /** Free: faster light correction for melodic hooks (Producent 25–35 ms). */
+  hook: { retuneMs: P0_TUNE_HOOK_RETUNE_MS, amount: P0_TUNE_HOOK_AMOUNT },
   /** Silver+: instant snap — the hard "trap" sound. */
   hard: { retuneMs: 0, amount: 1 },
 };
@@ -71,7 +75,7 @@ export function formatTuneKey(k: TuneKey, lang: "pl" | "en" = "pl"): string {
 }
 
 export function tuneStyleOf(p: Pick<StudioFxTuneParams, "retuneMs" | "amount">): TuneStyle | "custom" {
-  for (const style of ["natural", "hard"] as const) {
+  for (const style of ["natural", "hook", "hard"] as const) {
     const s = TUNE_STYLES[style];
     if (Math.abs(p.retuneMs - s.retuneMs) < 1e-6 && Math.abs(p.amount - s.amount) < 1e-6) return style;
   }
@@ -100,10 +104,11 @@ export function toTuneCoreParams(p: StudioFxTuneParams, notes?: readonly StudioT
   return { keyRoot: p.keyRoot, scale: p.scale, retuneMs: p.retuneMs, amount: p.amount, ...(flat ? { notes: flat } : {}) };
 }
 
-/** True when the plan may store these params (Free/Bronze: natural style only). */
+/** True when the plan may store these params (Free/Bronze: natural + hook; hard/custom = Silver+). */
 export function tuneParamsAllowedForTier(tier: PremiumTier, p: StudioFxTuneParams): boolean {
   if (pitchCorrectionAccessForTier(tier).custom) return true;
-  return tuneStyleOf(p) === "natural";
+  const style = tuneStyleOf(p);
+  return style === "natural" || style === "hook";
 }
 
 /** Manual note edits are Gold-only (plan policy `manualNotes`). */

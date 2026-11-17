@@ -328,6 +328,15 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     expect(p.notes.length).toBeGreaterThan(10);
     expect(p.notes.find((n) => n.key === "spaceSide")?.params).toMatchObject({ track: "Adlib 1", note: "1/4", ms: 500 });
   });
+
+  it("tune: inserts BRD Tune natural on lead", () => {
+    const p = plan(["tune"]);
+    const lead = chainOf(p, LEAD)!;
+    expect(lead.effects.map((e) => e.type)).toContain("tune");
+    const tune = lead.effects.find((e) => e.type === "tune")!;
+    expect(tune.params).toMatchObject({ retuneMs: 60, amount: 0.85 });
+    expect(p.notes.map((n) => n.key)).toContain("tune");
+  });
 });
 
 describe("Stage 2 autofix — i18n", () => {

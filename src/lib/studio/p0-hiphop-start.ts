@@ -25,7 +25,7 @@ export const P0_RIDE_TARGET_RMS_DBFS = -18;
 /** Peak ceiling already used by gain autofix. */
 export const P0_PEAK_MAX_DBFS = -6;
 
-/** BRD Tune „natural” retune (Producent 60 ms; hook melody 25–35 ms = custom). */
+/** BRD Tune „natural” retune (Producent 60 ms). */
 export const P0_TUNE_NATURAL_RETUNE_MS = 60;
 
 /** Light pitch: leave ~15 % of drift (amount 0.85). Max ±30 cent is guidance, not a hard clip. */
@@ -33,6 +33,9 @@ export const P0_TUNE_NATURAL_AMOUNT = 0.85;
 export const P0_TUNE_LIGHT_MAX_CENTS = 30;
 export const P0_TUNE_HOOK_RETUNE_MS_MIN = 25;
 export const P0_TUNE_HOOK_RETUNE_MS_MAX = 35;
+/** Hook melody style — midpoint of Producent 25–35 ms. */
+export const P0_TUNE_HOOK_RETUNE_MS = 30;
+export const P0_TUNE_HOOK_AMOUNT = 0.9;
 
 /** Comping overlap between A/B takes. */
 export const P0_COMPING_CROSSFADE_MS = 8;
