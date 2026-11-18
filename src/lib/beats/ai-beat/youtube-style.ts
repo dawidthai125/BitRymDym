@@ -8,8 +8,8 @@ import { BeatRequestError } from "@/lib/beats/request-error";
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 /** Flash preview accepts YouTube URI and stays up when hydrogen is capacity-limited. */
 const DEFAULT_MODEL = "gemini-3-flash-preview";
-/** Long videos (5+ min) need more than 55 s. Route maxDuration is 120. */
-const TIMEOUT_MS = 105_000;
+/** Long videos (5+ min) need more than 55 s. Route maxDuration is 300. */
+const TIMEOUT_MS = 170_000;
 const BRIEF_MAX = 800;
 /** Stable Audio drifts dark and bass-heavy; say the tonal balance out loud. */
 export const MIX_BALANCE =
