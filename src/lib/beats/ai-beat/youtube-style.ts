@@ -69,6 +69,8 @@ export type YoutubeStyleDeps = {
   fetchFn?: typeof fetch;
   /** Tests only. The route always checks the admin session. */
   skipAuth?: boolean;
+  /** Overrides the default Gemini wait, so a caller can keep a total time budget. */
+  timeoutMs?: number;
 };
 
 export type BeatStyleFromYouTube = {
@@ -124,6 +126,8 @@ export type YoutubeRevision = {
   previousBrief: string;
   /** What the user said is wrong, in their words. */
   note: string;
+  /** The generated beat, uploaded to the Gemini Files API. Gemini compares it with the video. */
+  audio?: { uri: string; mimeType: string };
 };
 
 function revisionInstruction(r: YoutubeRevision): string {
@@ -136,6 +140,13 @@ function revisionInstruction(r: YoutubeRevision): string {
     "Listen to the video again, find what the previous brief got wrong or left out, and rewrite every field so the next generation sounds closer to the video.",
     "Apply the feedback literally (more energy = faster hats, harder drums, brighter lead, higher energy score).",
     "If the listener says dark, dull, muddy, bass-heavy or lacking top, make the mood field name the top end explicitly (bright, crisp, airy hats and lead forward) and keep the bass tight and high-passed.",
+    ...(r.audio
+      ? [
+          "The audio input is the GENERATED beat made from the previous brief (the first minute or so).",
+          "Compare it with the video: tempo feel, key, kick/snare/hat pattern, bass sound, lead or riff, energy, top end versus low end, loudness. Decide what the generated beat is missing or has too much of.",
+          "Then write the new brief so the next generation closes exactly those gaps. Say what to add or change in concrete production words; do not describe the generated audio itself.",
+        ]
+      : []),
   ].join(" ");
 }
 
@@ -162,12 +173,15 @@ export async function describeBeatStyleFromYouTube(
   const videoId = canonical.slice(-11);
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), deps.timeoutMs ?? TIMEOUT_MS);
   try {
     const requestBody = {
       model,
       input: [
         { type: "video", uri: canonical },
+        ...(revision?.audio
+          ? [{ type: "audio", uri: revision.audio.uri, mime_type: revision.audio.mimeType }]
+          : []),
         { type: "text", text: revision ? `${INSTRUCTION} ${revisionInstruction(revision)}` : INSTRUCTION },
       ],
       response_format: RESPONSE_FORMAT,

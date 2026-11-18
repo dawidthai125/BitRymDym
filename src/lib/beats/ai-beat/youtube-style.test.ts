@@ -210,6 +210,41 @@ describe("describeBeatStyleFromYouTube", () => {
     expect(described.prompt).toContain("Soft kick");
   });
 
+  it("adds the generated audio as an audio input and asks Gemini to compare", async () => {
+    const fetchFn = mockFetch(payload);
+    await describeBeatStyleFromYouTube(
+      CANONICAL,
+      { skipAuth: true, env: { GEMINI_API_KEY: "k" }, fetchFn, timeoutMs: 40_000 },
+      {
+        previousBrief: "Slow boom bap.",
+        note: "za mało energii",
+        audio: { uri: "https://generativelanguage.googleapis.com/v1beta/files/abc", mimeType: "audio/wav" },
+      },
+    );
+    const body = JSON.parse((fetchFn.mock.calls[0] as unknown as [string, { body: string }])[1].body);
+    expect(body.input[0]).toEqual({ type: "video", uri: CANONICAL });
+    expect(body.input[1]).toEqual({
+      type: "audio",
+      uri: "https://generativelanguage.googleapis.com/v1beta/files/abc",
+      mime_type: "audio/wav",
+    });
+    const text = body.input[2].text as string;
+    expect(body.input[2].type).toBe("text");
+    expect(text).toContain("GENERATED beat");
+    expect(text).toContain("Compare it with the video");
+  });
+
+  it("sends no audio input for a plain revision", async () => {
+    const fetchFn = mockFetch(payload);
+    await describeBeatStyleFromYouTube(
+      CANONICAL,
+      { skipAuth: true, env: { GEMINI_API_KEY: "k" }, fetchFn },
+      { previousBrief: "Slow.", note: "więcej energii" },
+    );
+    const body = JSON.parse((fetchFn.mock.calls[0] as unknown as [string, { body: string }])[1].body);
+    expect(body.input.map((i: { type: string }) => i.type)).toEqual(["video", "text"]);
+  });
+
   it("drops a tempo above 180", async () => {
     const fetchFn = mockFetch({
       output_text: JSON.stringify({
