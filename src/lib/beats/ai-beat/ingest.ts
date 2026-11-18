@@ -20,6 +20,7 @@ import {
   sanitizeBeatTitle,
 } from "@/lib/beats/ai-beat/prompt";
 import type { AudioFileKind } from "@/lib/beats/ai-beat/stability";
+import { balanceGeneratedWav } from "@/lib/beats/ai-beat/tonal-balance";
 
 export type IngestGeneratedBeatResult = {
   beatId: string;
@@ -43,10 +44,19 @@ export async function ingestGeneratedBeat(params: {
     throw new BeatRequestError("Wygenerowany plik jest za duży.");
   }
 
+  // Stable Audio drifts dark and bass-heavy; correct it before the master is stored.
+  // BEAT_TONAL_BALANCE=off switches this off. Unreadable files pass through unchanged.
+  let bytes = params.bytes;
+  if (params.contentType === "audio/wav" && process.env.BEAT_TONAL_BALANCE?.trim().toLowerCase() !== "off") {
+    const balanced = balanceGeneratedWav(params.bytes);
+    bytes = balanced.bytes;
+    console.log("[ai-beat] tonal balance", JSON.stringify(balanced.report));
+  }
+
   const filename = params.contentType === "audio/mpeg" ? "bitrymdym-ai.mp3" : "bitrymdym-ai.wav";
   const session = await createPlatformBeatSignedUploadSession({
     contentType: params.contentType,
-    byteSize: params.bytes.byteLength,
+    byteSize: bytes.byteLength,
     originalFilename: filename,
   });
 
@@ -54,7 +64,7 @@ export async function ingestGeneratedBeat(params: {
     const admin = createSupabaseAdminClient();
     const { error: uploadError } = await admin.storage
       .from(BEAT_AUDIO_BUCKET)
-      .upload(session.objectKey, Buffer.from(params.bytes), {
+      .upload(session.objectKey, Buffer.from(bytes), {
         contentType: params.contentType,
         upsert: false,
       });
@@ -88,7 +98,7 @@ export async function ingestGeneratedBeat(params: {
       tags: ["hip-hop", "instrumental", GENERATED_BEAT_TAG],
     });
 
-    await storeGeneratedLevel(session.beatId, params.bytes, params.contentType);
+    await storeGeneratedLevel(session.beatId, bytes, params.contentType);
     return { beatId: session.beatId, bpm: picked.bpm };
   } catch (error) {
     await deleteBeat(session.beatId).catch(() => undefined);
