@@ -22,11 +22,12 @@ describe("Bitek review facts", () => {
     expect(lines).toEqual([
       "Tytuł: Mroczny puls",
       "Styl: piano 808",
-      "Opis: Wolny bit.",
+      "Opis zamówienia dla generatora (to prośba, nie potwierdzenie brzmienia pliku): Wolny bit.",
       "Tempo: 86 BPM.",
       "Długość: 151 s.",
       "Głośność: niezmierzona.",
       "Nagranie: nie sprawdzono, czy jest puste.",
+      "Pomiar pasm i tonacji: niedostępny.",
     ]);
   });
 

@@ -1,4 +1,5 @@
 import { levelFactLines } from "@/lib/beats/ai-beat/level";
+import { toneFactLines, type ToneFacts } from "@/lib/beats/ai-beat/tone-facts";
 import {
   BEAT_DESCRIPTION_MAX,
   BEAT_DURATION_CHOICES,
@@ -10,7 +11,8 @@ import {
 export const BITEK_REVIEW_SYSTEM = [
   "Jesteś Bitkiem, technicznym asystentem BitRymDym.",
   "Odpowiadasz po polsku, krótko, tylko na podstawie podanych faktów.",
-  "Nie twierdzisz, że słyszysz stopę, fortepian, przestrzeń ani żaden instrument.",
+  "Nie twierdzisz, że słyszysz stopę, fortepian, gitarę, przestrzeń ani żaden instrument. Opis zamówienia to tylko prośba do generatora, a nie dowód, że plik tak brzmi.",
+  "Oceniaj tylko pomiary: tempo, tonację, balans pasm, dynamikę i głośność. Gdy pomiar odbiega od zamówienia (np. dużo basu, mało góry), powiedz to wprost i zaproponuj, co zmienić w opisie.",
   "Szczyt i średnia w decybelach to pomiar pliku. Nie zamieniaj ich na nazwy instrumentów.",
   "Odpowiadasz na ostatnią uwagę rozmówcy, nie powtarzasz poprzedniej odpowiedzi. Nie otwierasz linków. Gdy proszą o poprawę (np. więcej energii), napisz jedno zdanie, co zmienić w opisie.",
   "Nie twierdzisz, że plik jest już gotowy.",
@@ -27,6 +29,8 @@ export type BitekBeatFacts = {
   durationSeconds: number | null;
   peakDb?: number | null;
   rmsDb?: number | null;
+  /** Measured in the file. Null when it could not be read. */
+  tone?: ToneFacts | null;
 };
 
 export type BitekChatTurn = {
@@ -57,10 +61,13 @@ export function bitekFactsLines(facts: BitekBeatFacts): string[] {
   return [
     `Tytuł: ${title}`,
     style ? `Styl: ${style}` : "Styl: brak zapisanego stylu.",
-    opis ? `Opis: ${opis}` : "Opis: brak zapisanego opisu.",
+    opis
+      ? `Opis zamówienia dla generatora (to prośba, nie potwierdzenie brzmienia pliku): ${opis}`
+      : "Opis: brak zapisanego opisu.",
     bpm,
     duration,
     ...levelFactLines(facts.peakDb, facts.rmsDb),
+    ...toneFactLines(facts.tone),
   ];
 }
 

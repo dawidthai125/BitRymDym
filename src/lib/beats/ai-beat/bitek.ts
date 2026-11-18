@@ -16,6 +16,7 @@ import {
 } from "@/lib/beats/ai-beat/bitek-review";
 import { openAiCompatibleProvider, type BitekLlmProvider } from "@/lib/studio/bitek/chat/providers";
 import { requireAdminGenerator, startBeatGeneration } from "@/lib/beats/ai-beat/generate";
+import { measureToneFacts, type ToneFacts } from "@/lib/beats/ai-beat/tone-facts";
 import { descriptionFromYoutubeStyle, normalizeBeatHintBpm } from "@/lib/beats/ai-beat/prompt";
 import { describeBeatStyleFromYouTube, parseYouTubeWatchUrl } from "@/lib/beats/ai-beat/youtube-style";
 
@@ -104,6 +105,40 @@ async function ensureStoredLevel(row: WaitingFactRow): Promise<{ peakDb: number 
   }
 }
 
+const toneCache = new Map<string, ToneFacts | null>();
+
+/** Spectrum, dynamics and key of the stored master. Best effort; a miss never blocks the chat. */
+async function measureStoredTone(beatId: string): Promise<ToneFacts | null> {
+  if (toneCache.has(beatId)) return toneCache.get(beatId) ?? null;
+  try {
+    const admin = createSupabaseAdminClient();
+    const asset = await admin
+      .from("beat_audio_assets")
+      .select("object_key, content_type")
+      .eq("beat_id", beatId)
+      .eq("purpose", "MASTER")
+      .eq("is_active", true)
+      .maybeSingle();
+    const objectKey =
+      asset.data && typeof asset.data.object_key === "string" ? asset.data.object_key : "";
+    if (asset.error || !objectKey) return null;
+    const bytes = await downloadBeatAudioObjectBytes(objectKey);
+    const contentType =
+      asset.data && typeof asset.data.content_type === "string"
+        ? asset.data.content_type
+        : "audio/wav";
+    const decoded = await decodeAudioToMonoPcm({ bytes, contentType });
+    if (!decoded.ok) return null;
+    const tone = measureToneFacts(decoded.samples, decoded.sampleRate);
+    if (toneCache.size >= 40) toneCache.delete(toneCache.keys().next().value as string);
+    toneCache.set(beatId, tone);
+    return tone;
+  } catch (error) {
+    console.error("[bitek] tone unread", error instanceof Error ? error.name : "unknown");
+    return null;
+  }
+}
+
 async function loadWaitingGeneratedBeat(beatId: string): Promise<WaitingFactRow> {
   await requireAdminGenerator();
   if (!isUuid(beatId)) throw new BeatRequestError(NOT_WAITING);
@@ -136,7 +171,7 @@ export async function talkAboutWaitingBeat(
   messages: readonly BitekChatTurn[],
 ): Promise<string> {
   const row = await loadWaitingGeneratedBeat(beatId);
-  const level = await ensureStoredLevel(row);
+  const [level, tone] = await Promise.all([ensureStoredLevel(row), measureStoredTone(row.id)]);
   const facts = bitekFactsLines({
     title: row.title,
     style: row.style,
@@ -145,6 +180,7 @@ export async function talkAboutWaitingBeat(
     durationSeconds: row.duration_seconds,
     peakDb: level.peakDb,
     rmsDb: level.rmsDb,
+    tone,
   }).join("\n");
   if (messages.length === 0) {
     throw new BeatRequestError("Napisz pytanie do Bitka.");
