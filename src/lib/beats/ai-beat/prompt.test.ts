@@ -10,6 +10,7 @@ import {
   normalizeBeatDuration,
   normalizeBeatHintBpm,
   parseBeatRewrite,
+  pickAllowedNearHint,
   pickGeneratedBpm,
   preservedEnglishPrompt,
   stripStyleOfNamedArtist,
@@ -145,6 +146,43 @@ describe("beat generator prompt", () => {
       160,
     );
     expect(hinted).toEqual({ bpm: 160, mode: "CANDIDATE" });
+  });
+
+  it("prefers the requested tempo over a half or double reading from the tracker", () => {
+    const conflict = (detectedBpm: number, allowlist: number[]) => ({
+      decision: "MANUAL_REQUIRED" as const,
+      detectedBpm,
+      allowlist,
+      requiresExplicitSelection: true,
+      confidenceClass: "CONFLICT",
+    });
+    // asked for 171, tracker says 86 but also allows 172
+    expect(pickGeneratedBpm(conflict(86, [86, 172]), 171)).toEqual({ bpm: 172, mode: "CANDIDATE" });
+    // asked for 85, tracker says 172 but also allows 86
+    expect(pickGeneratedBpm(conflict(172, [86, 172]), 85)).toEqual({ bpm: 86, mode: "CANDIDATE" });
+    // asked for 90, allowed 45 and 180: octave of the request wins over a far detected value
+    expect(pickGeneratedBpm(conflict(161, [45, 161, 180]), 90)).toEqual({ bpm: 180, mode: "CANDIDATE" });
+    // a direct match beats an octave match
+    expect(pickGeneratedBpm(conflict(172, [86, 172]), 86)).toEqual({ bpm: 86, mode: "CANDIDATE" });
+  });
+
+  it("falls back to the tracker when no allowed tempo is near the request", () => {
+    const envelope = {
+      decision: "MANUAL_REQUIRED" as const,
+      detectedBpm: 100,
+      allowlist: [100, 130],
+      requiresExplicitSelection: true,
+      confidenceClass: "CONFLICT",
+    };
+    expect(pickGeneratedBpm(envelope, 90)).toEqual({ bpm: 100, mode: "CANDIDATE" });
+    expect(pickGeneratedBpm(envelope, null)).toEqual({ bpm: 100, mode: "CANDIDATE" });
+  });
+
+  it("never picks a tempo outside the allowed list", () => {
+    expect(pickAllowedNearHint([70, 95], 171)).toBeNull();
+    expect(pickAllowedNearHint([], 90)).toBeNull();
+    expect(pickAllowedNearHint([45], 90)).toBeNull(); // below the 60–180 hip-hop range
+    expect(pickAllowedNearHint([86, 172], 171)).toBe(172);
   });
 
   it("returns no tempo when the file has no allowed value", () => {
