@@ -18,7 +18,8 @@ import { openAiCompatibleProvider, type BitekLlmProvider } from "@/lib/studio/bi
 import { requireAdminGenerator, startBeatGeneration } from "@/lib/beats/ai-beat/generate";
 import { measureToneFacts, type ToneFacts } from "@/lib/beats/ai-beat/tone-facts";
 import { descriptionFromYoutubeStyle, normalizeBeatHintBpm } from "@/lib/beats/ai-beat/prompt";
-import { describeBeatStyleFromYouTube, parseYouTubeWatchUrl } from "@/lib/beats/ai-beat/youtube-style";
+import { reviseBriefFromVideo } from "@/lib/beats/ai-beat/gemini-audio-compare";
+import { parseYouTubeWatchUrl } from "@/lib/beats/ai-beat/youtube-style";
 
 const NOT_WAITING = "Tego bitu nie ma w katalogu oczekujących.";
 
@@ -222,6 +223,7 @@ export async function reviseWaitingBeat(
   note: string,
   source?: { youtubeUrl?: string | null; brief?: string | null },
 ) {
+  const startedAt = Date.now();
   const row = await loadWaitingGeneratedBeat(beatId);
   const cleanNote = note.replace(/\s+/g, " ").trim();
   const hinted = normalizeBeatHintBpm(row.bpm);
@@ -231,16 +233,18 @@ export async function reviseWaitingBeat(
   let description = revisionDescription(previous, cleanNote);
   const url = parseYouTubeWatchUrl(source?.youtubeUrl ?? "");
   if (url && cleanNote) {
-    // Back to the video: Gemini hears it again and fixes what the old brief got wrong.
-    try {
-      const fixed = await describeBeatStyleFromYouTube(url, {}, {
-        previousBrief: previous,
-        note: cleanNote,
-      });
-      description = descriptionFromYoutubeStyle(fixed);
-      if (fixed.bpmHint != null) bpm = fixed.bpmHint;
-    } catch (error) {
-      console.error("[bitek] video revision failed", error instanceof Error ? error.message : "unknown");
+    // Back to the video, now also with the generated audio: Gemini compares the two and fixes the gap.
+    // Any failure falls back to the video-only revision, then to the text-only one above.
+    const revised = await reviseBriefFromVideo({
+      beatId,
+      youtubeUrl: url,
+      previousBrief: previous,
+      note: cleanNote,
+      startedAt,
+    });
+    if (revised) {
+      description = descriptionFromYoutubeStyle(revised.brief);
+      if (revised.brief.bpmHint != null) bpm = revised.brief.bpmHint;
     }
   }
   if (!description) {
