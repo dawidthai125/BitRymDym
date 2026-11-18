@@ -14,10 +14,10 @@ import {
   revisionDescription,
   type BitekChatTurn,
 } from "@/lib/beats/ai-beat/bitek-review";
+import { openAiCompatibleProvider, type BitekLlmProvider } from "@/lib/studio/bitek/chat/providers";
 import { requireAdminGenerator, startBeatGeneration } from "@/lib/beats/ai-beat/generate";
 import { normalizeBeatHintBpm } from "@/lib/beats/ai-beat/prompt";
 
-const TALK_URL = "https://api.x.ai/v1/chat/completions";
 const NOT_WAITING = "Tego bitu nie ma w katalogu oczekujących.";
 
 type WaitingFactRow = {
@@ -34,8 +34,23 @@ type WaitingFactRow = {
   tags: string[] | null;
 };
 
-function factsOnlyReply(facts: string): string {
-  return `Sprawdzam tylko zapisane fakty i pomiar głośności, bez nazw instrumentów. ${facts.replace(/\n/g, " ")}`;
+function factsOnlyReply(facts: string, lastUser?: string): string {
+  const note = lastUser
+    ? "Bitek AI chwilowo nie odpowiada, więc nie umiem odnieść się do Twojej uwagi. Użyj „Weź tę uwagę”, żeby wygenerować nową wersję z poprawką. "
+    : "";
+  return `${note}Zapisane fakty: ${facts.replace(/\n/g, " ")}`;
+}
+
+function bitekChatProviders(env: Record<string, string | undefined> = process.env): BitekLlmProvider[] {
+  const base = { maxTokens: 700, temperature: 0.3 };
+  const list: BitekLlmProvider[] = [];
+  const xai = env.XAI_API_KEY?.trim();
+  const groq = env.GROQ_API_KEY?.trim();
+  const gemini = env.GEMINI_API_KEY?.trim();
+  if (xai) list.push(openAiCompatibleProvider({ ...base, id: "xai", baseUrl: "https://api.x.ai/v1", apiKey: xai, model: env.BITEK_XAI_MODEL || "grok-4.7", reasoningEffort: "low", timeoutMs: 11_000 }));
+  if (groq) list.push(openAiCompatibleProvider({ ...base, id: "groq", baseUrl: "https://api.groq.com/openai/v1", apiKey: groq, model: env.BITEK_GROQ_MODEL || "openai/gpt-oss-20b", reasoningEffort: "low", timeoutMs: 7_000 }));
+  if (gemini) list.push(openAiCompatibleProvider({ ...base, id: "gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", apiKey: gemini, model: env.BITEK_GEMINI_MODEL || "gemini-3.5-flash-lite", reasoningEffort: "low", timeoutMs: 11_000 }));
+  return list;
 }
 
 function dbOf(value: number | string | null | undefined): number | null {
@@ -134,41 +149,31 @@ export async function talkAboutWaitingBeat(
     throw new BeatRequestError("Napisz pytanie do Bitka.");
   }
 
-  const key = process.env.XAI_API_KEY?.trim();
-  if (!key) return factsOnlyReply(facts);
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20_000);
-  try {
-    const res = await fetch(TALK_URL, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: process.env.BITEK_XAI_MODEL || "grok-4.7",
-        temperature: 0.3,
-        messages: [
-          { role: "system", content: `${BITEK_REVIEW_SYSTEM}\n\nFakty:\n${facts}` },
-          ...messages,
-        ],
-      }),
-    });
-    if (!res.ok) return factsOnlyReply(facts);
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = json.choices?.[0]?.message?.content;
-    const reply =
-      typeof content === "string" ? content.replace(/\s+/g, " ").trim().slice(0, 1200) : "";
-    return reply || factsOnlyReply(facts);
-  } catch {
-    return factsOnlyReply(facts);
-  } finally {
-    clearTimeout(timer);
+  const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content;
+  const prompt = [
+    { role: "system" as const, content: `${BITEK_REVIEW_SYSTEM}\n\nFakty:\n${facts}` },
+    ...messages,
+  ];
+  // xAI -> Groq -> Gemini; the next one is tried when one fails or times out.
+  const providers = bitekChatProviders();
+  for (const provider of providers) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), provider.timeoutMs);
+    try {
+      const content = await provider.complete(prompt, controller.signal);
+      const reply = content.replace(/\s+/g, " ").trim().slice(0, 1200);
+      if (reply) return reply;
+    } catch (error) {
+      console.error(
+        "[bitek] provider failed",
+        provider.id,
+        error instanceof Error ? error.message : "unknown",
+      );
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  return factsOnlyReply(facts, lastUser);
 }
 
 /**

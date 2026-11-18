@@ -9,7 +9,7 @@ import {
 } from "@/lib/beats/beat-operation-error";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 40;
 
 /**
  * POST JSON { action: "talk", beatId, messages } → { reply }
