@@ -52,7 +52,7 @@ export function AdminBeatBitek({
   brief?: string;
   autoReview?: boolean;
   startClosed?: boolean;
-  onRevised?: (beatId: string, title?: string, description?: string) => void;
+  onRevised?: (beatId: string, title?: string, description?: string, bpm?: number | null) => void;
 }) {
   const t = useTranslations("admin.adminBeatsGeneratePage");
   const [chat, setChat] = useState<ChatItem[]>([]);
@@ -175,7 +175,7 @@ export function AdminBeatBitek({
           setRevisionPhase(null);
           setNote("");
           setNotice(t("bitekGotowa"));
-          onRevised?.(textOf(resultJson.beatId), pollBody.title || undefined, pollBody.description);
+          onRevised?.(textOf(resultJson.beatId), pollBody.title || undefined, pollBody.description, pollBody.bpm);
           return;
         }
       }

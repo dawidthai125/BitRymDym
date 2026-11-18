@@ -10,7 +10,7 @@ import {
 } from "@/lib/beats/beat-operation-error";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 /**
  * POST JSON { url }

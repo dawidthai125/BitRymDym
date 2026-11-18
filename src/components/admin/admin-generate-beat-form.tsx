@@ -324,8 +324,9 @@ export function AdminGenerateBeatForm() {
           autoReview
           youtubeUrl={youtubeUrl.trim()}
           brief={description}
-          onRevised={(nextId, title, nextDescription) => {
+          onRevised={(nextId, title, nextDescription, nextBpm) => {
             setBeatId(nextId);
+            if (typeof nextBpm === "number") setBpm(String(nextBpm));
             if (nextDescription) setDescription(nextDescription);
             if (title) setReadyTitle(title);
             setRevised(true);
