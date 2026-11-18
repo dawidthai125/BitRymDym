@@ -11,6 +11,9 @@ const DEFAULT_MODEL = "gemini-3-flash-preview";
 /** Long videos (5+ min) need more than 55 s. Route maxDuration is 120. */
 const TIMEOUT_MS = 105_000;
 const BRIEF_MAX = 800;
+/** Stable Audio drifts dark and bass-heavy; say the tonal balance out loud. */
+export const MIX_BALANCE =
+  "Bright crisp top end, hi-hats and lead instruments forward, tight high-passed low end, even loudness without quiet gaps.";
 
 const INSTRUCTION = [
   "You are a hip-hop beat producer writing a Stable Audio prompt from what you HEAR.",
@@ -110,6 +113,7 @@ function revisionInstruction(r: YoutubeRevision): string {
     `Listener feedback: ${note}`,
     "Listen to the video again, find what the previous brief got wrong or left out, and rewrite every field so the next generation sounds closer to the video.",
     "Apply the feedback literally (more energy = faster hats, harder drums, brighter lead, higher energy score).",
+    "If the listener says dark, dull, muddy, bass-heavy or lacking top, make the mood field name the top end explicitly (bright, crisp, airy hats and lead forward) and keep the bass tight and high-passed.",
   ].join(" ");
 }
 
@@ -279,7 +283,10 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
   const keyText = scrubEcho(stringOf(row.key), videoId).slice(0, 30);
   const head = [bpm ? `${bpm} BPM.` : "", keyText ? `Key: ${keyText}.` : ""].filter(Boolean).join(" ");
   const body = composeProducerOpis(row, videoId);
-  const prompt = body && head ? `${head} ${body}` : body;
+  const withHead = body && head ? `${head} ${body}` : body;
+  // Fit the balance clause inside the cap so it is never clipped away.
+  const room = BRIEF_MAX - MIX_BALANCE.length - 1;
+  const prompt = withHead ? `${clipBeatDescription(withHead, room)} ${MIX_BALANCE}` : withHead;
   if (prompt.length < 12) return null;
   const opis =
     sanitizeBeatOpis(scrubEcho(stringOf(row.opis), videoId)) ??
@@ -288,7 +295,7 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
   return {
     style,
     opis,
-    prompt: clipBeatDescription(prompt, BRIEF_MAX),
+    prompt,
     bpmHint: bpm,
   };
 }

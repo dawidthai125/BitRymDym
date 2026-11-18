@@ -175,6 +175,7 @@ describe("describeBeatStyleFromYouTube", () => {
       fetchFn,
     });
     expect(described.prompt.startsWith("97 BPM. Key: F minor.")).toBe(true);
+    expect(described.prompt).toContain("Bright crisp top end");
   });
 
   it("sends the old brief and the listener note when revising", async () => {
