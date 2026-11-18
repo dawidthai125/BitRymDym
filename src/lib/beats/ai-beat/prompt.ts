@@ -180,6 +180,30 @@ export function parseBeatRewrite(
   };
 }
 
+/** How far a tracker value may sit from the tempo we asked Stable Audio for. */
+export const HINT_TEMPO_TOLERANCE = 0.04;
+
+/**
+ * Tempo trackers often report half or double of the real pulse. The generator prompt
+ * carries the tempo we asked for, so among the values the file allows, the one closest
+ * to that request (as-is, or half/double) inside the hip-hop range 60–180 is the most believable. A direct match beats
+ * an octave match. Returns null when nothing allowed is within tolerance.
+ * It only ever chooses from `allow`; the server still validates the final value.
+ */
+export function pickAllowedNearHint(allow: readonly number[], hint: number): number | null {
+  let best: { bpm: number; score: number } | null = null;
+  for (const n of allow) {
+    if (n < BEAT_HINT_BPM_MIN || n > BEAT_HINT_BPM_MAX) continue;
+    const direct = Math.abs(n - hint) / hint;
+    const octave = Math.min(Math.abs(n - hint / 2) / (hint / 2), Math.abs(n - hint * 2) / (hint * 2));
+    let score = Number.POSITIVE_INFINITY;
+    if (direct <= HINT_TEMPO_TOLERANCE) score = direct;
+    else if (octave <= HINT_TEMPO_TOLERANCE) score = octave + 1;
+    if (score < (best?.score ?? Number.POSITIVE_INFINITY)) best = { bpm: n, score };
+  }
+  return best?.bpm ?? null;
+}
+
 export type GeneratedBpmPick = {
   bpm: number;
   mode: "AUTO" | "CANDIDATE";
@@ -215,6 +239,10 @@ export function pickGeneratedBpm(
   }
 
   if (hintOk) return { bpm: hint, mode: "CANDIDATE" };
+  if (hint != null) {
+    const near = pickAllowedNearHint(allow, hint);
+    if (near != null) return { bpm: near, mode: "CANDIDATE" };
+  }
   if (detectedOk) return { bpm: envelope.detectedBpm as number, mode: "CANDIDATE" };
   if (allow.length === 0) return null;
 
