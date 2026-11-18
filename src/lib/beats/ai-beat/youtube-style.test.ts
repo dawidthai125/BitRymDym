@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { BeatRequestError } from "@/lib/beats/request-error";
 import {
   composeProducerOpis,
+  hipHopGuard,
   describeBeatStyleFromYouTube,
   parseYouTubeWatchUrl,
 } from "@/lib/beats/ai-beat/youtube-style";
@@ -174,7 +175,9 @@ describe("describeBeatStyleFromYouTube", () => {
       env: { GEMINI_API_KEY: "k" },
       fetchFn,
     });
-    expect(described.prompt.startsWith("97 BPM. Key: F minor.")).toBe(true);
+    expect(described.prompt.startsWith("Hip-hop rap instrumental")).toBe(true);
+    expect(described.prompt).toContain("97 BPM. Key: F minor.");
+    expect(described.prompt.endsWith("Not rock, not metal, not a live band.")).toBe(true);
     expect(described.prompt).toContain("Bright crisp top end");
   });
 
@@ -304,5 +307,19 @@ describe("describeBeatStyleFromYouTube", () => {
     expect(error).toBeInstanceOf(BeatRequestError);
     expect((error as Error).message).toBe("Ten film musi być publiczny na YouTube.");
     expect((error as Error).message).not.toContain(ID);
+  });
+});
+
+describe("hipHopGuard", () => {
+  it("turns a live rock description into a hip-hop one", () => {
+    const out = hipHopGuard("Gritty, palm-muted distorted electric guitar riff with chugging power chords and a live drum kit.");
+    expect(out).not.toMatch(/distorted|riff|chug|power chord|drum kit|electric/i);
+    expect(out).toContain("sampled guitar");
+    expect(out).toContain("programmed drums");
+  });
+
+  it("leaves a clean hip-hop description alone", () => {
+    const text = "Punchy kick on 1 and 3 with a crisp snare and 1/8 hats. Deep 808 with a muted piano loop.";
+    expect(hipHopGuard(text)).toBe(text);
   });
 });

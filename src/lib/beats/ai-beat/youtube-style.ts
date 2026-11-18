@@ -12,6 +12,32 @@ const DEFAULT_MODEL = "gemini-3-flash-preview";
 const TIMEOUT_MS = 170_000;
 const BRIEF_MAX = 800;
 /** Stable Audio drifts dark and bass-heavy; say the tonal balance out loud. */
+/** Opens every brief so Stable Audio stays in hip-hop even when the source has a live band. */
+export const GENRE_ANCHOR =
+  "Hip-hop rap instrumental built on programmed drums and 808-style bass, with sampled and chopped loops, no live band.";
+/** Closes every brief. */
+export const GENRE_NEGATIVE = "Not rock, not metal, not a live band.";
+
+/**
+ * Source videos often have real guitars and drum kits; described literally, Stable Audio
+ * renders rock. Swap those words for the hip-hop way of saying it.
+ */
+export function hipHopGuard(text: string): string {
+  return text
+    .replace(/\b(distorted|overdriven|fuzz(?:ed|y)?|crunchy|heavy metal|metal|shredding|power chords?)\b/gi, "")
+    .replace(/\bpalm[- ]muted\b/gi, "muted")
+    .replace(/\b(chugging|chug)\b/gi, "rhythmic")
+    .replace(/\belectric guitar\b/gi, "sampled guitar")
+    .replace(/\bguitar riffs?\b/gi, "sampled guitar loop")
+    .replace(/\briffs?\b/gi, "loop")
+    .replace(/\b(live|acoustic) (drums?|drum kit)\b/gi, "programmed drums")
+    .replace(/\bdrum kit\b/gi, "programmed drums")
+    .replace(/\brock\b/gi, "hip-hop")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([.,;])/g, "$1")
+    .trim();
+}
+
 export const MIX_BALANCE =
   "Bright crisp top end, hi-hats and lead instruments forward, tight high-passed low end, even loudness without quiet gaps.";
 
@@ -48,7 +74,8 @@ const INSTRUCTION = [
   "opis: one or two short Polish catalog sentences — drums, bass, melody, mood, vocal space.",
   "drums: ONE English sentence — kick and snare character and placement, hat pattern and subdivision (e.g. 1/16 rolls, triplets), swing or quantize, pocket.",
   "bass: ONE English sentence — 808/synth/upright, glide or staccato, note length, how it locks with the kick.",
-  "melody: ONE English sentence — exact instrument or synth type (e.g. detuned saw lead, felt piano, plucked guitar), minor/major, sparse or dense, repeating motif.",
+  "melody: ONE English sentence — exact instrument or synth type (e.g. detuned saw lead, felt piano, plucked sample), minor/major, sparse or dense, repeating motif.",
+  "GENRE RULE: the result must be a hip-hop / rap instrumental, never rock. If the original has a live guitar or band, describe that part as a sampled, filtered or chopped loop on top of programmed drums and an 808 or synth bass. Never write distorted, riff, palm-muted, power chords, metal, live drums or rock. For aggression use harder programmed drums, faster hats and a tighter 808, not guitar distortion.",
   "mood: ONE English sentence — energy 1 to 10 and texture (vinyl, tape, clean digital, grit, reverb size).",
   "arrangement: ONE English sentence — loop vs sections, intro/drop/hook feel, space for a rapper.",
   "key: musical key if you can hear it (e.g. F minor), else empty string.",
@@ -138,7 +165,7 @@ function revisionInstruction(r: YoutubeRevision): string {
     `Previous brief: ${prev}`,
     `Listener feedback: ${note}`,
     "Listen to the video again, find what the previous brief got wrong or left out, and rewrite every field so the next generation sounds closer to the video.",
-    "Apply the feedback literally (more energy = faster hats, harder drums, brighter lead, higher energy score).",
+    "Apply the feedback literally (more energy = faster hats, harder programmed drums, tighter 808, brighter lead, higher energy score) but keep it a hip-hop instrumental: aggressive never means distorted guitars or rock.",
     "If the listener says dark, dull, muddy, bass-heavy or lacking top, make the mood field name the top end explicitly (bright, crisp, airy hats and lead forward) and keep the bass tight and high-passed.",
     ...(r.audio
       ? [
@@ -311,8 +338,11 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
   const body = composeProducerOpis(row, videoId);
   const withHead = body && head ? `${head} ${body}` : body;
   // Fit the balance clause inside the cap so it is never clipped away.
-  const room = BRIEF_MAX - MIX_BALANCE.length - 1;
-  const prompt = withHead ? `${clipBeatDescription(withHead, room)} ${MIX_BALANCE}` : withHead;
+  const tail = `${MIX_BALANCE} ${GENRE_NEGATIVE}`;
+  const room = BRIEF_MAX - tail.length - GENRE_ANCHOR.length - 2;
+  const prompt = withHead
+    ? `${GENRE_ANCHOR} ${clipBeatDescription(hipHopGuard(withHead), room)} ${tail}`
+    : withHead;
   if (prompt.length < 12) return null;
   const opis =
     sanitizeBeatOpis(scrubEcho(stringOf(row.opis), videoId)) ??
