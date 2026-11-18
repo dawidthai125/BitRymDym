@@ -536,6 +536,7 @@ export function StudioMasterStep({
     }
   }
 
+  const approveRef = useRef<() => void>(() => {});
   async function approve() {
     if (sm.phase !== "done" || approving) return;
     setApproving(true);
@@ -546,6 +547,9 @@ export function StudioMasterStep({
       setApproving(false);
     }
   }
+  useEffect(() => {
+    approveRef.current = () => void approve();
+  });
 
   async function deliver(kind: DeliverKind, format: DeliverFormat) {
     const key = `${kind}-${format}`;
@@ -660,9 +664,20 @@ export function StudioMasterStep({
     let key: string;
     if (renderFailed) [mood, text, key] = ["alert", t("renderBlad"), "m-renderfail"];
     else if (!mix) [mood, text, key] = ["thinking", t("bitek.renderuje"), "m-render"];
-    else if (approved) [mood, text, key] = ["done", t("bitek.zatwierdzone"), "m-approved"];
+    else if (approved) [mood, text, key] = ["done", `${t("bitek.zatwierdzone")} ${t("bitek.copoDalej")}`, "m-approved"];
     else if (sm.phase === "done" && refLines) return { key: "m-done-ref", mood: "done", text: t("referencja.bitek.gotowe"), details: refLines, actions: [back] };
-    else if (sm.phase === "done") [mood, text, key] = ["done", t(`bitek.gotowe.${target}`), `m-done-${target}`];
+    else if (sm.phase === "done") {
+      // Master rendered: Bitek asks, the user listens in the player and decides.
+      return {
+        key: `m-ask-${target}`,
+        mood: "done",
+        text: `${t(`bitek.gotowe.${target}`)} ${t("bitek.pytanieMaster")}`,
+        actions: [
+          { id: "approveMaster", label: t("zatwierdz"), primary: true, onClick: () => approveRef.current() },
+          back,
+        ],
+      };
+    }
     else if (sm.phase === "working") [mood, text, key] = ["thinking", prog.master ? t(`bitek.etap.${prog.master.stage}`, { pct: prog.master.progress }) : t("bitek.masterTrwa"), `m-working-${prog.master?.stage ?? "start"}`];
     else if (sm.phase === "failed") [mood, text, key] = ["alert", t("bitek.blad"), "m-failed"];
     else if (worst?.status === "red") [mood, text, key] = ["alert", t("bitek.problem", { card: t(`cards.${worst.id}.title`) }), `m-red-${worst.id}`];

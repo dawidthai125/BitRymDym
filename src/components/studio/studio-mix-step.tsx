@@ -188,6 +188,7 @@ export function StudioMixStep({
   const [midiNote, setMidiNote] = useState<string | null>(null);
   const [panel, setPanel] = useState<FixPanel | null>(null);
   const [fixSeq, setFixSeq] = useState(0);
+  const [declinedKey, setDeclinedKey] = useState<string | null>(null);
   const [ab, setAb] = useState<{ before: StudioProjectDocument; afterSig: string | null; metricsBefore: MixMetrics | null } | null>(null);
   const [abMode, setAbMode] = useState<"before" | "after">("after");
   const [listenMode, setListenMode] = useState<"dry" | "mix" | "master">("mix");
@@ -844,8 +845,31 @@ export function StudioMixStep({
       return {
         key: `fix-${fixSeq}-${panel.after ? "checked" : "checking"}`,
         mood: panel.after && verdict?.overall === "red" ? "alert" : "done",
-        text: [t("autofix.dymek", { count: notes.length }), panel.after ?? t("autofix.sprawdzam")].join(" "),
+        text: [
+          t("autofix.dymek", { count: notes.length }),
+          panel.after ?? t("autofix.sprawdzam"),
+          panel.after && !running && !stale && verdict
+            ? verdict.redCount + verdict.yellowCount === 0
+              ? t("autofix.gotowePytanie")
+              : fixSeq < 2 && canAutofix
+                ? t("autofix.jeszczePytanie", { count: verdict.redCount + verdict.yellowCount })
+                : ""
+            : "",
+        ].filter(Boolean).join(" "),
         details: [...tech, ...notes, t("autofix.zapisane")],
+        // After the re-audit: ask whether to keep fixing or move on (user decides).
+        actions: (() => {
+          if (!panel.after || running || stale || !verdict) return undefined;
+          const left = verdict.redCount + verdict.yellowCount;
+          const goOn = { id: "toMaster", label: t("autofix.doMasteringu"), primary: left === 0, onClick: () => onGoMaster?.() };
+          if (left === 0) {
+            return [goOn, { id: "fixMyself", label: t("autofix.poprawiamSam"), onClick: () => setPanel(null) }];
+          }
+          const again = canAutofix && fixSeq < 2
+            ? [{ id: "fixMore", label: t("autofix.jeszczeTak"), primary: true, onClick: () => setPending((p) => ({ id: "fix-all", seq: (p?.seq ?? 0) + 1 })) }]
+            : [];
+          return [...again, { id: "moveOn", label: t("autofix.jeszczeNie"), onClick: () => (canMaster ? onGoMaster?.() : setPanel(null)) }];
+        })(),
       };
     }
     if (panel?.kind === "error") {
@@ -864,6 +888,29 @@ export function StudioMixStep({
           ? "done"
           : "happy";
     const actions: BitekBubble["actions"] = [];
+    // First audit with findings: ask yes / no before touching the mix.
+    if (verdict && hasIssues && !stale && !running && canAutofix && !panel) {
+      const askKey = `${verdict.overall}${verdict.redCount}${verdict.yellowCount}-${fixSeq}`;
+      const count = verdict.redCount + verdict.yellowCount;
+      if (declinedKey === askKey) {
+        return {
+          key: `mix-declined-${askKey}`,
+          mood: "happy",
+          text: t("autofix.zostawione"),
+          actions: [{ id: "toMaster", label: t("autofix.doMasteringu"), primary: true, onClick: () => onGoMaster?.() }],
+        };
+      }
+      return {
+        key: `mix-ask-${askKey}`,
+        mood: "alert",
+        text: t("autofix.pytanie", { count }),
+        details: msgs.map((m) => tBitek(`msg.${m.key}`, m.params ?? {})),
+        actions: [
+          { id: "fix-all", label: t("autofix.tak"), primary: true, onClick: () => setPending((p) => ({ id: "fix-all", seq: (p?.seq ?? 0) + 1 })) },
+          { id: "declineFix", label: t("autofix.nie"), onClick: () => setDeclinedKey(askKey) },
+        ],
+      };
+    }
     if (first?.action) {
       const a = first.action;
       actions.push({ id: a, label: tBitek(`akcja.${a}`), primary: true, onClick: () => setPending((p) => ({ id: a, seq: (p?.seq ?? 0) + 1 })) });
@@ -878,7 +925,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, autoEnabled]);
+  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, autoEnabled, declinedKey, canMaster, onGoMaster]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
