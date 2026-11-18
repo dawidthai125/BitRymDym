@@ -9,7 +9,7 @@ import {
 } from "@/lib/beats/beat-operation-error";
 
 export const runtime = "nodejs";
-export const maxDuration = 40;
+export const maxDuration = 90;
 
 /**
  * POST JSON { action: "talk", beatId, messages } → { reply }
@@ -21,6 +21,8 @@ export async function POST(request: Request) {
     beatId?: unknown;
     messages?: unknown;
     note?: unknown;
+    youtubeUrl?: unknown;
+    brief?: unknown;
   } | null;
 
   if (!isUuid(body?.beatId)) {
@@ -36,7 +38,10 @@ export async function POST(request: Request) {
       if (typeof body.note !== "string") {
         return beatApiBadRequest("Napisz, co zmienić.");
       }
-      const started = await reviseWaitingBeat(body.beatId, body.note);
+      const started = await reviseWaitingBeat(body.beatId, body.note, {
+        youtubeUrl: typeof body.youtubeUrl === "string" ? body.youtubeUrl : null,
+        brief: typeof body.brief === "string" ? body.brief.slice(0, 1000) : null,
+      });
       return NextResponse.json({ success: true, ...started });
     }
     return beatApiBadRequest("Nieznana akcja.");

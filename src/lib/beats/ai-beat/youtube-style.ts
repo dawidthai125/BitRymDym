@@ -9,6 +9,7 @@ const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/inter
 /** Flash preview accepts YouTube URI and stays up when hydrogen is capacity-limited. */
 const DEFAULT_MODEL = "gemini-3-flash-preview";
 const TIMEOUT_MS = 55_000;
+const BRIEF_MAX = 800;
 
 const INSTRUCTION = [
   "You are a hip-hop beat producer writing a Stable Audio prompt from what you HEAR.",
@@ -19,16 +20,18 @@ const INSTRUCTION = [
   "Reply with JSON only.",
   "style: 2 to 6 Polish words naming the lane (boom bap, trap, lo-fi, drill, phonk, etc.).",
   "opis: one or two short Polish catalog sentences — drums, bass, melody, mood, vocal space.",
-  "drums: ONE short English sentence — kick/snare feel, hats, swing or quantize, pocket.",
-  "bass: ONE short English sentence — 808/synth/upright, note length, lock with kick.",
-  "melody: ONE short English sentence — instrument, harmony (minor/major), sparse or dense.",
-  "mood: ONE short English sentence — energy and texture (vinyl, tape, clean digital, grit).",
-  "arrangement: ONE short English sentence — loop vs sections and space for a rapper.",
-  "bpm: integer 60–180 if you can hear it, else null.",
-  "Hard limit: the five English fields together must stay under 500 characters. Concrete and short beats vague and long.",
+  "drums: ONE English sentence — kick and snare character and placement, hat pattern and subdivision (e.g. 1/16 rolls, triplets), swing or quantize, pocket.",
+  "bass: ONE English sentence — 808/synth/upright, glide or staccato, note length, how it locks with the kick.",
+  "melody: ONE English sentence — exact instrument or synth type (e.g. detuned saw lead, felt piano, plucked guitar), minor/major, sparse or dense, repeating motif.",
+  "mood: ONE English sentence — energy 1 to 10 and texture (vinyl, tape, clean digital, grit, reverb size).",
+  "arrangement: ONE English sentence — loop vs sections, intro/drop/hook feel, space for a rapper.",
+  "key: musical key if you can hear it (e.g. F minor), else empty string.",
+  "bpm: integer 60–180, count it carefully from the drums, else null.",
+  "Match the original's groove, tempo, key, sound palette and energy as closely as possible while writing original music. Never describe it vaguely.",
+  "Hard limit: the five English fields together must stay under 700 characters. Concrete and specific beats vague and long.",
   "BAD (too vague): dark atmospheric beat with hard drums and deep bass.",
   "BAD (too long): multi-clause essays, repeated adjectives, or more than one sentence per English field.",
-  "GOOD: Soft swung boom-bap kick and snappy snare with triplet hats. Long minor 808 under a sparse muted piano. Warm night mood with vinyl crackle. Simple loop with room for a verse.",
+  "GOOD: Hard 145 BPM trap kick on 1 and 3 with a cracking snare on 3 and fast 1/16 hi-hat rolls. Long F minor 808 with glide locked to the kick. Bright detuned saw lead plays a repeating four-note motif over sparse pads. High energy 8/10, clean digital with wide reverb. Eight-bar loop with drop and room for a verse.",
   "Every English field needs one concrete sonic detail. No artist, song, channel, label, producer, lyrics, URL or video id.",
   'If there is no music, set style to "hip-hop instrumentalny" and say in every field that the clip has no beat.',
 ].join(" ");
@@ -90,9 +93,29 @@ function videoIdFromHost(host: string, url: URL): string | null {
   return null;
 }
 
+export type YoutubeRevision = {
+  /** The English brief that produced the beat the user did not like. */
+  previousBrief: string;
+  /** What the user said is wrong, in their words. */
+  note: string;
+};
+
+function revisionInstruction(r: YoutubeRevision): string {
+  const note = r.note.replace(/\s+/g, " ").trim().slice(0, 400);
+  const prev = r.previousBrief.replace(/\s+/g, " ").trim().slice(0, 800);
+  return [
+    "REVISION. A beat was generated from the brief below and the listener says it is too far from the video.",
+    `Previous brief: ${prev}`,
+    `Listener feedback: ${note}`,
+    "Listen to the video again, find what the previous brief got wrong or left out, and rewrite every field so the next generation sounds closer to the video.",
+    "Apply the feedback literally (more energy = faster hats, harder drums, brighter lead, higher energy score).",
+  ].join(" ");
+}
+
 export async function describeBeatStyleFromYouTube(
   url: string,
   deps: YoutubeStyleDeps = {},
+  revision?: YoutubeRevision,
 ): Promise<BeatStyleFromYouTube> {
   const canonical = parseYouTubeWatchUrl(url);
   if (!canonical) {
@@ -126,7 +149,7 @@ export async function describeBeatStyleFromYouTube(
         model,
         input: [
           { type: "video", uri: canonical },
-          { type: "text", text: INSTRUCTION },
+          { type: "text", text: revision ? `${INSTRUCTION} ${revisionInstruction(revision)}` : INSTRUCTION },
         ],
         response_format: {
           type: "text",
@@ -141,6 +164,7 @@ export async function describeBeatStyleFromYouTube(
               melody: { type: "string" },
               mood: { type: "string" },
               arrangement: { type: "string" },
+              key: { type: "string" },
               bpm: { type: ["integer", "null"] },
             },
             required: ["style", "opis", "drums", "bass", "melody", "mood", "arrangement"],
@@ -246,10 +270,15 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
     melody?: unknown;
     mood?: unknown;
     arrangement?: unknown;
+    key?: unknown;
     bpm?: unknown;
   };
   const style = sanitizeBeatStyle(scrubEcho(stringOf(row.style), videoId));
-  const prompt = composeProducerOpis(row, videoId);
+  const bpm = bpmHintOf(row.bpm);
+  const keyText = scrubEcho(stringOf(row.key), videoId).slice(0, 30);
+  const head = [bpm ? `${bpm} BPM.` : "", keyText ? `Key: ${keyText}.` : ""].filter(Boolean).join(" ");
+  const body = composeProducerOpis(row, videoId);
+  const prompt = body && head ? `${head} ${body}` : body;
   if (prompt.length < 12) return null;
   const opis =
     sanitizeBeatOpis(scrubEcho(stringOf(row.opis), videoId)) ??
@@ -258,8 +287,8 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
   return {
     style,
     opis,
-    prompt: clipBeatDescription(prompt),
-    bpmHint: bpmHintOf(row.bpm),
+    prompt: clipBeatDescription(prompt, BRIEF_MAX),
+    bpmHint: bpm,
   };
 }
 

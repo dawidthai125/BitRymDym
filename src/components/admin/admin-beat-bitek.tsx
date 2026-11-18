@@ -41,12 +41,18 @@ export function AdminBeatBitek({
   beatId,
   autoReview = false,
   startClosed = false,
+  youtubeUrl = "",
+  brief = "",
   onRevised,
 }: {
   beatId: string;
+  /** Source video of the brief; lets a fix go back to the original. */
+  youtubeUrl?: string;
+  /** English brief that made this beat. */
+  brief?: string;
   autoReview?: boolean;
   startClosed?: boolean;
-  onRevised?: (beatId: string, title?: string) => void;
+  onRevised?: (beatId: string, title?: string, description?: string) => void;
 }) {
   const t = useTranslations("admin.adminBeatsGeneratePage");
   const [chat, setChat] = useState<ChatItem[]>([]);
@@ -123,7 +129,7 @@ export function AdminBeatBitek({
       const startRes = await fetch("/api/admin/beats/generate/bitek", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", beatId, note: text }),
+        body: JSON.stringify({ action: "revise", beatId, note: text, youtubeUrl, brief }),
       });
       const startJson = await readJson(startRes);
       if (!live.current) return;
@@ -169,7 +175,7 @@ export function AdminBeatBitek({
           setRevisionPhase(null);
           setNote("");
           setNotice(t("bitekGotowa"));
-          onRevised?.(textOf(resultJson.beatId), pollBody.title || undefined);
+          onRevised?.(textOf(resultJson.beatId), pollBody.title || undefined, pollBody.description);
           return;
         }
       }

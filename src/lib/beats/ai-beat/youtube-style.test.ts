@@ -105,7 +105,7 @@ describe("describeBeatStyleFromYouTube", () => {
     const instruction = sent.input[1]?.text ?? "";
     expect(instruction).toContain("Stable Audio");
     expect(instruction).toContain("BAD (too vague)");
-    expect(instruction).toContain("500 characters");
+    expect(instruction).toContain("700 characters");
     expect(instruction).toContain("GOOD:");
     expect(instruction).toContain("concrete sonic detail");
     expect(instruction).toContain("pocket");
@@ -165,6 +165,30 @@ describe("describeBeatStyleFromYouTube", () => {
     expect(described.bpmHint).toBe(84);
     expect(described.prompt).toContain("Round short bass");
     expect(described.opis).toContain("Miekkie");
+  });
+
+  it("puts tempo and key in front of the brief", async () => {
+    const fetchFn = mockFetch({ output_text: JSON.stringify({ ...JSON.parse(payload.output_text), key: "F minor" }) });
+    const described = await describeBeatStyleFromYouTube(CANONICAL, {
+      skipAuth: true,
+      env: { GEMINI_API_KEY: "k" },
+      fetchFn,
+    });
+    expect(described.prompt.startsWith("97 BPM. Key: F minor.")).toBe(true);
+  });
+
+  it("sends the old brief and the listener note when revising", async () => {
+    const fetchFn = mockFetch(payload);
+    await describeBeatStyleFromYouTube(
+      CANONICAL,
+      { skipAuth: true, env: { GEMINI_API_KEY: "k" }, fetchFn },
+      { previousBrief: "Slow boom bap.", note: "za mało energii" },
+    );
+    const body = JSON.parse((fetchFn.mock.calls[0] as unknown as [string, { body: string }])[1].body);
+    const text = body.input.find((p: { type: string }) => p.type === "text").text as string;
+    expect(text).toContain("REVISION");
+    expect(text).toContain("Slow boom bap.");
+    expect(text).toContain("za mało energii");
   });
 
   it("drops a tempo above 180", async () => {

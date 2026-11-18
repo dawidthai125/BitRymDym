@@ -16,7 +16,8 @@ import {
 } from "@/lib/beats/ai-beat/bitek-review";
 import { openAiCompatibleProvider, type BitekLlmProvider } from "@/lib/studio/bitek/chat/providers";
 import { requireAdminGenerator, startBeatGeneration } from "@/lib/beats/ai-beat/generate";
-import { normalizeBeatHintBpm } from "@/lib/beats/ai-beat/prompt";
+import { descriptionFromYoutubeStyle, normalizeBeatHintBpm } from "@/lib/beats/ai-beat/prompt";
+import { describeBeatStyleFromYouTube, parseYouTubeWatchUrl } from "@/lib/beats/ai-beat/youtube-style";
 
 const NOT_WAITING = "Tego bitu nie ma w katalogu oczekujących.";
 
@@ -180,16 +181,37 @@ export async function talkAboutWaitingBeat(
  * Starts a new draft from the stored description plus the fix note.
  * The beat this was called on is left as it is.
  */
-export async function reviseWaitingBeat(beatId: string, note: string) {
+export async function reviseWaitingBeat(
+  beatId: string,
+  note: string,
+  source?: { youtubeUrl?: string | null; brief?: string | null },
+) {
   const row = await loadWaitingGeneratedBeat(beatId);
-  const description = revisionDescription(row.description, note);
+  const cleanNote = note.replace(/\s+/g, " ").trim();
+  const hinted = normalizeBeatHintBpm(row.bpm);
+  let bpm = hinted === "invalid" ? null : hinted;
+  const previous = (source?.brief ?? "").replace(/\s+/g, " ").trim() || (row.description ?? "");
+
+  let description = revisionDescription(previous, cleanNote);
+  const url = parseYouTubeWatchUrl(source?.youtubeUrl ?? "");
+  if (url && cleanNote) {
+    // Back to the video: Gemini hears it again and fixes what the old brief got wrong.
+    try {
+      const fixed = await describeBeatStyleFromYouTube(url, {}, {
+        previousBrief: previous,
+        note: cleanNote,
+      });
+      description = descriptionFromYoutubeStyle(fixed);
+      if (fixed.bpmHint != null) bpm = fixed.bpmHint;
+    } catch (error) {
+      console.error("[bitek] video revision failed", error instanceof Error ? error.message : "unknown");
+    }
+  }
   if (!description) {
     throw new BeatRequestError(
       "Napisz, co zmienić. Opis z poprawką musi mieć od 8 do 800 znaków.",
     );
   }
-  const hinted = normalizeBeatHintBpm(row.bpm);
-  const bpm = hinted === "invalid" ? null : hinted;
   const started = await startBeatGeneration({
     description,
     duration: nearestBeatDuration(row.duration_seconds),
