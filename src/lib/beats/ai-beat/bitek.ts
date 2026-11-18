@@ -242,6 +242,7 @@ export async function reviseWaitingBeat(
       note: cleanNote,
       startedAt,
     });
+    console.log("[bitek] revise path", revised ? (revised.usedAudio ? "video+audio" : "video-only") : "text-only");
     if (revised) {
       description = descriptionFromYoutubeStyle(revised.brief);
       if (revised.brief.bpmHint != null) bpm = revised.brief.bpmHint;
