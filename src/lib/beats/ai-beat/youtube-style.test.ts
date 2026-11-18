@@ -192,6 +192,24 @@ describe("describeBeatStyleFromYouTube", () => {
     expect(text).toContain("za mało energii");
   });
 
+  it("asks for a low temperature and retries without it on a plain 400", async () => {
+    const calls: string[] = [];
+    const fetchFn = vi.fn(async (_u: unknown, init?: { body?: string }) => {
+      calls.push(String(init?.body));
+      if (calls.length === 1) return new Response(JSON.stringify({ error: "bad generation_config" }), { status: 400 });
+      return new Response(JSON.stringify(payload), { status: 200 });
+    });
+    const described = await describeBeatStyleFromYouTube(CANONICAL, {
+      skipAuth: true,
+      env: { GEMINI_API_KEY: "k" },
+      fetchFn: fetchFn as unknown as typeof fetch,
+    });
+    expect(calls).toHaveLength(2);
+    expect(JSON.parse(calls[0]).generation_config.temperature).toBeLessThanOrEqual(0.2);
+    expect(JSON.parse(calls[1]).generation_config).toBeUndefined();
+    expect(described.prompt).toContain("Soft kick");
+  });
+
   it("drops a tempo above 180", async () => {
     const fetchFn = mockFetch({
       output_text: JSON.stringify({

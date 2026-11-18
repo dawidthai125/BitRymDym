@@ -15,6 +15,28 @@ const BRIEF_MAX = 800;
 export const MIX_BALANCE =
   "Bright crisp top end, hi-hats and lead instruments forward, tight high-passed low end, even loudness without quiet gaps.";
 
+const BRIEF_TEMPERATURE = 0.1;
+
+const RESPONSE_FORMAT = {
+  type: "text",
+  mime_type: "application/json",
+  schema: {
+    type: "object",
+    properties: {
+      style: { type: "string" },
+      opis: { type: "string" },
+      drums: { type: "string" },
+      bass: { type: "string" },
+      melody: { type: "string" },
+      mood: { type: "string" },
+      arrangement: { type: "string" },
+      key: { type: "string" },
+      bpm: { type: ["integer", "null"] },
+    },
+    required: ["style", "opis", "drums", "bass", "melody", "mood", "arrangement"],
+  },
+};
+
 const INSTRUCTION = [
   "You are a hip-hop beat producer writing a Stable Audio prompt from what you HEAR.",
   "Listen to the instrumental / rhythmic bed of this public YouTube video.",
@@ -142,41 +164,31 @@ export async function describeBeatStyleFromYouTube(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const res = await (deps.fetchFn ?? fetch)(INTERACTIONS_URL, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "x-goog-api-key": apiKey,
-        "Content-Type": "application/json",
-        "Api-Revision": "2026-05-20",
-      },
-      body: JSON.stringify({
-        model,
-        input: [
-          { type: "video", uri: canonical },
-          { type: "text", text: revision ? `${INSTRUCTION} ${revisionInstruction(revision)}` : INSTRUCTION },
-        ],
-        response_format: {
-          type: "text",
-          mime_type: "application/json",
-          schema: {
-            type: "object",
-            properties: {
-              style: { type: "string" },
-              opis: { type: "string" },
-              drums: { type: "string" },
-              bass: { type: "string" },
-              melody: { type: "string" },
-              mood: { type: "string" },
-              arrangement: { type: "string" },
-              key: { type: "string" },
-              bpm: { type: ["integer", "null"] },
-            },
-            required: ["style", "opis", "drums", "bass", "melody", "mood", "arrangement"],
-          },
+    const requestBody = {
+      model,
+      input: [
+        { type: "video", uri: canonical },
+        { type: "text", text: revision ? `${INSTRUCTION} ${revisionInstruction(revision)}` : INSTRUCTION },
+      ],
+      response_format: RESPONSE_FORMAT,
+    };
+    const send = (extra: Record<string, unknown>) =>
+      (deps.fetchFn ?? fetch)(INTERACTIONS_URL, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "x-goog-api-key": apiKey,
+          "Content-Type": "application/json",
+          "Api-Revision": "2026-05-20",
         },
-      }),
-    });
+        body: JSON.stringify({ ...requestBody, ...extra }),
+      });
+    // Low temperature: the same link should give nearly the same brief.
+    let res = await send({ generation_config: { temperature: BRIEF_TEMPERATURE } });
+    if (res.status === 400) {
+      const detail = await res.clone().text().catch(() => "");
+      if (!/private|unlisted|not found|unavailable/i.test(detail)) res = await send({});
+    }
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       console.error("[beat-style] gemini HTTP", res.status);
