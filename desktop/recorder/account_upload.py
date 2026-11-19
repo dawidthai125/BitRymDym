@@ -198,6 +198,20 @@ class SiteClient:
         except Exception:
             return False
 
+    def delete_take(self, take_id: str) -> None:
+        """Drops a half-sent take so it no longer holds the single recording session. Never raises."""
+        try:
+            self._json("POST", "/api/takes/delete", {"takeId": take_id})
+        except Exception:
+            pass
+
+    def delete_project(self, project: str) -> None:
+        """Drops an empty project left by a failed send. Never raises."""
+        try:
+            self._json("DELETE", f"/api/studio/projects/{project}")
+        except Exception:
+            pass
+
     def plan_usage(self) -> dict[str, Any]:
         return self._json("GET", "/api/account/plan-usage")
 
@@ -305,6 +319,29 @@ def give_back_send(client: Any, state: "UploadState | None", send_id: str) -> tu
     return True, state
 
 
+def send_one_take(client: Any, beat_id: str, wav: bytes) -> str:
+    """Opens a take, uploads and finalizes it. When that fails, the half-sent take is deleted,
+    otherwise it keeps the only recording session and the next try gets 409 CONCURRENT_SESSION."""
+    session = client.open_take(beat_id, len(wav))
+    take_id = str(session["takeId"])
+    try:
+        client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
+        client.finalize(take_id)
+    except BaseException:
+        client.delete_take(take_id)
+        raise
+    return take_id
+
+
+def drop_empty_project(client: Any, state: "UploadState | None") -> "UploadState | None":
+    """A failed send that placed nothing leaves an empty project and a resume state with no value.
+    Delete the project and forget the state (the clips stay on the desk, the user presses Gotowe again)."""
+    if state is None or state.placed > 0 or not state.project_id:
+        return state
+    client.delete_project(state.project_id)
+    return None
+
+
 def upload_vocals(
     client: SiteClient,
     *,
@@ -383,10 +420,7 @@ def upload_vocals(
         for index in range(state.placed, len(blobs)):
             wav = blobs[index]
             say(f"Wysyłam {noun} {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
-            session = client.open_take(state.beat_id, len(wav))
-            client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
-            take_id = str(session["takeId"])
-            client.finalize(take_id)
+            take_id = send_one_take(client, state.beat_id, wav)
             placed = client.place(
                 pid,
                 {
@@ -462,10 +496,7 @@ def _upload_timeline(
             wav = blobs[index]
             if len(state.take_ids) <= index:
                 say(f"Wysyłam nagranie {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
-                session = client.open_take(state.beat_id, len(wav))
-                client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
-                take_id = str(session["takeId"])
-                client.finalize(take_id)
+                take_id = send_one_take(client, state.beat_id, wav)
                 state.take_ids.append(take_id)
                 saved(state)
             placed = client.place(
@@ -580,6 +611,12 @@ def self_test() -> None:
 
 
 class _FakeSite:
+    def delete_take(self, take_id: str) -> None:
+        pass
+
+    def delete_project(self, project: str) -> None:
+        pass
+
     def __init__(self) -> None:
         self.calls: list[object] = []
 
@@ -774,6 +811,7 @@ def _self_test_clips() -> None:
     for clip in clips:
         clip.unlink(missing_ok=True)
     _self_test_send_refund()
+    _self_test_failed_send_cleanup()
 
 
 def _self_test_send_refund() -> None:
@@ -830,3 +868,35 @@ class _Refunder:
 
 if __name__ == "__main__":
     self_test()
+
+
+def _self_test_failed_send_cleanup() -> None:
+    """A failed upload deletes its half-sent take and the empty project."""
+    deleted_takes: list[str] = []
+    deleted_projects: list[str] = []
+
+    class _Broken:
+        def open_take(self, beat_id: str, byte_size: int) -> dict[str, Any]:
+            return {"takeId": "t1", "signedUrl": "u"}
+
+        def put_wav(self, signed_url: str, wav: bytes, upload_token: str) -> None:
+            raise RuntimeError("siec")
+
+        def finalize(self, take_id: str) -> None:
+            raise AssertionError("no finalize")
+
+        def delete_take(self, take_id: str) -> None:
+            deleted_takes.append(take_id)
+
+        def delete_project(self, project: str) -> None:
+            deleted_projects.append(project)
+
+    try:
+        send_one_take(_Broken(), "b", b"x" * 50)
+    except RuntimeError:
+        pass
+    assert deleted_takes == ["t1"], deleted_takes
+    empty = UploadState(project_id="p1", beat_id="b", title="t", version=1, wav_paths=["a.wav"], track_of=[0], starts_ms=[0])
+    assert drop_empty_project(_Broken(), empty) is None and deleted_projects == ["p1"]
+    kept = replace(empty, placed=1)
+    assert drop_empty_project(_Broken(), kept) is kept and deleted_projects == ["p1"]

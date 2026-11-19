@@ -51,6 +51,7 @@ from account_upload import (
     UploadState,
     friendly_upload_error,
     give_back_send,
+    drop_empty_project,
     is_unauthorized,
     network_message,
     playback_target,
@@ -1245,6 +1246,10 @@ def load_pending() -> UploadState | None:
     except (OSError, json.JSONDecodeError):
         return None
     if state is None or not all(Path(item).is_file() for item in state.wav_paths):
+        return None
+    if state.placed == 0:
+        # Nothing was placed: there is no work to finish, and the old project is empty.
+        clear_pending()
         return None
     return state
 
@@ -4203,6 +4208,10 @@ class RecorderWindow:
             # The upload failed: the daily send it held goes back to the user. A saved resume state keeps
             # its clips but loses the send id, so the next "Gotowe i Wrzuć do Studia" claims a fresh one.
             if client is not None:
+                # Nothing placed yet: the empty project goes away and there is nothing worth resuming.
+                if self._pending is not None and drop_empty_project(client, self._pending) is None:
+                    self._pending = None
+                    clear_pending()
                 gave_back, kept = give_back_send(client, self._pending, active_send_id)
                 if gave_back:
                     message = f"{message} Dzisiejsza wysyłka wróciła na konto."
