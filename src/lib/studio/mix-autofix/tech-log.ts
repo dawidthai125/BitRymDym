@@ -10,7 +10,7 @@ export type MixTechChip = {
   id: string;
   /** Track name when the note is per-track; null for master / whole-mix. */
   track: string | null;
-  /** Short technical label, e.g. "HPF 100 Hz". */
+  /** Short technical label, e.g. "odcięcie dołu 100 Hz". */
   label: string;
 };
 
@@ -28,79 +28,79 @@ export function techChipsFromAutofixNotes(notes: readonly MixAutofixNote[]): Mix
     switch (n.key) {
       case "gainClipTrack":
       case "gainTrimTrack":
-        chip(`gain ${s(p.db)} dB`);
+        chip(`głośność ${s(p.db)} dB`);
         break;
       case "gainMasterDown":
       case "gainMasterUp":
         out.push({ id: `${n.key}-${i}`, track: null, label: `master ${s(p.db)} dB` });
         break;
       case "balanceVocalUp":
-        out.push({ id: `${n.key}-${i}-v`, track: null, label: `vocal +${s(p.up)} dB` });
-        out.push({ id: `${n.key}-${i}-b`, track: null, label: `beat −${s(p.down)} dB` });
+        out.push({ id: `${n.key}-${i}-v`, track: null, label: `wokal +${s(p.up)} dB` });
+        out.push({ id: `${n.key}-${i}-b`, track: null, label: `bit −${s(p.down)} dB` });
         break;
       case "balanceVocalDown":
-        out.push({ id: `${n.key}-${i}-v`, track: null, label: `vocal −${s(p.down)} dB` });
-        out.push({ id: `${n.key}-${i}-b`, track: null, label: `beat +${s(p.up)} dB` });
+        out.push({ id: `${n.key}-${i}-v`, track: null, label: `wokal −${s(p.down)} dB` });
+        out.push({ id: `${n.key}-${i}-b`, track: null, label: `bit +${s(p.up)} dB` });
         break;
       case "balanceSideDown":
       case "balanceSideUp":
-        chip(`level ${n.key === "balanceSideUp" ? "+" : "−"}${s(p.db)} dB`);
+        chip(`poziom ${n.key === "balanceSideUp" ? "+" : "−"}${s(p.db)} dB`);
         break;
       case "compLead":
       case "compSide":
-        chip(`comp ${s(p.ratio)}:1`);
+        chip(`kompresja ${s(p.ratio)}:1`);
         break;
       case "eqBeatCut":
         chip(`EQ −${s(p.db)} dB @ 2.5 kHz`);
         break;
       case "eqVocalHighpass":
-        chip(`HPF ${s(p.hz)} Hz`);
+        chip(`odcięcie dołu ${s(p.hz)} Hz`);
         break;
       case "eqVocalPresence":
-        chip("EQ mud − / presence +2 dB");
+        chip("EQ: mniej mułu, +2 dB blasku");
         break;
       case "deesserSoft":
-        chip("de-esser soft");
+        chip("sybilanty delikatnie");
         break;
       case "deesserStrong":
-        chip("de-esser strong");
+        chip("sybilanty mocno");
         break;
       case "denoiseGate":
-        chip(`gate ≤${s(p.db)} dB`);
+        chip(`bramka szumu ≤${s(p.db)} dB`);
         break;
       case "denoiseRumble":
-        chip(`rumble HPF ${s(p.hz)} Hz`);
+        chip(`odcięcie dudnienia ${s(p.hz)} Hz`);
         break;
       case "panLeadCenter":
-        chip("pan C");
+        chip("panorama: środek");
         break;
       case "panLeft":
-        chip(`pan L ${s(p.pct)}%`);
+        chip(`panorama: lewo ${s(p.pct)}%`);
         break;
       case "panRight":
-        chip(`pan R ${s(p.pct)}%`);
+        chip(`panorama: prawo ${s(p.pct)}%`);
         break;
       case "spaceLead":
       case "spaceSide":
-        chip(`delay ${s(p.note)} / ${s(p.ms)} ms`);
+        chip(`echo ${s(p.note)} / ${s(p.ms)} ms`);
         break;
       case "pocket":
-        out.push({ id: `${n.key}-${i}`, track: null, label: "pocket + duck" });
+        out.push({ id: `${n.key}-${i}`, track: null, label: "kieszeń + ściszanie bitu pod wokal" });
         break;
       case "rider":
-        out.push({ id: `${n.key}-${i}`, track: null, label: "rider" });
+        out.push({ id: `${n.key}-${i}`, track: null, label: "wyrównanie głośności wokalu" });
         break;
       case "harmony":
-        out.push({ id: `${n.key}-${i}`, track: null, label: "harmony" });
+        out.push({ id: `${n.key}-${i}`, track: null, label: "harmonia" });
         break;
       case "voice":
-        out.push({ id: `${n.key}-${i}`, track: null, label: "voice" });
+        out.push({ id: `${n.key}-${i}`, track: null, label: "zmiana głosu" });
         break;
       case "tune":
-        out.push({ id: `${n.key}-${i}`, track: null, label: "tune light" });
+        out.push({ id: `${n.key}-${i}`, track: null, label: "lekki pitch" });
         break;
       case "chainFull":
-        chip("FX chain full");
+        chip("limit efektów na ścieżce");
         break;
       default:
         break;

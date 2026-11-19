@@ -11,9 +11,9 @@ describe("techChipsFromAutofixNotes", () => {
       { key: "eqBeatCut", params: { track: "Beat", db: 1.5 } },
     ]);
     expect(chips.map((c) => `${c.track}:${c.label}`)).toEqual([
-      "Lead:HPF 100 Hz",
-      "Lead:comp 3:1",
-      "Lead:gate ≤8 dB",
+      "Lead:odcięcie dołu 100 Hz",
+      "Lead:kompresja 3:1",
+      "Lead:bramka szumu ≤8 dB",
       "Beat:EQ −1.5 dB @ 2.5 kHz",
     ]);
   });
