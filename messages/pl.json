@@ -3001,7 +3001,7 @@
         "nie": "Nie, zostaw",
         "zostawione": "Dobrze, zostawiam mix tak, jak jest. Posłuchaj go w odtwarzaczu. Gdy będziesz gotowy, przejdź do masteringu.",
         "jeszczePytanie": "Po poprawkach zostało jeszcze {count, plural, one {# uwaga} few {# uwagi} other {# uwag}}. Poprawiać dalej?",
-        "resztaRecznie": "Zostało {count, plural, one {# uwaga} few {# uwagi} other {# uwag}}, których sam już nie ruszę. Przy kartach niżej masz przyciski „Popraw” i swoje ucho. Przechodzimy do masteringu czy poprawiasz sam?",
+        "resztaRecznie": "Zostało {count, plural, one {# uwaga} few {# uwagi} other {# uwag}}, czego sam już nie poprawię. Przy kartach niżej masz przyciski „Popraw” i swoje ucho. Przechodzimy do masteringu czy poprawiasz sam?",
         "jeszczeTak": "Tak, poprawiaj dalej",
         "jeszczeNie": "Nie, idziemy dalej",
         "zostaloPoUtworze": "Mix gra, ale po moim przejściu zostało jeszcze {count, plural, one {# uwaga} few {# uwagi} other {# uwag}} (szczegóły niżej). Poprawić? W międzyczasie posłuchaj, a jak coś Ci przeszkadza, napisz mi w „Pogadaj”.",
