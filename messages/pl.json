@@ -1859,6 +1859,7 @@
     "studioPage": {
       "metaTitle": "Studio",
       "twojeProjekty": "Twoje projekty",
+      "projektNieZnaleziony": "Nie znaleziono tego projektu albo nie masz do niego dostępu. Wybierz projekt z listy albo zacznij nowy.",
       "nocnaDeskaOtworzProjekt": "Otwórz projekt, wróć do miksu albo skasuj stare szkice. Nagrać możesz w programie Windows albo na stronie bitu. Pobranie programu i logowanie używają tego konta. Na Maca wersja wkrótce.",
       "programWindows": "Program Windows",
       "archiwumNagran": "Archiwum nagrań",
@@ -2784,6 +2785,8 @@
       "krokSample": "Sample",
       "krokMix": "Mix",
       "krokMastering": "Mastering",
+      "krokMixTytul": "Przejdź do miksu",
+      "krokMasteringTytul": "Mastering otworzy się z kroku Miks, po analizie miksu.",
       "krokiAria": "Kroki utworu",
       "przejdzDoMixu": "Przejdź do MIXU",
       "przejdzDoMixuOpis": "Sprawdzimy, jak wokal brzmi na tle bitu.",

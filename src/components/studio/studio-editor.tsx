@@ -3287,19 +3287,44 @@ function StudioEditorInner({
               {tMix("krokSample")}
             </button>
           </li>
-          {(["mix", "master"] as const).map((s, i) => (
-            <li
-              key={s}
-              aria-current={studioStep === s ? "step" : undefined}
-              className={
-                studioStep === s
-                  ? "rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
-                  : "px-2 py-1 text-[var(--brd-mute)]"
-              }
-            >
-              {i + 2}. {s === "mix" ? tMix("krokMix") : tMix("krokMastering")}
-            </li>
-          ))}
+          {(["mix", "master"] as const).map((s, i) => {
+            const label = `${i + 2}. ${s === "mix" ? tMix("krokMix") : tMix("krokMastering")}`;
+            const active = studioStep === s;
+            // Mix opens from the record step (once there is a vocal) and from Mastering. Mastering opens only from the Mix step.
+            const goMix = s === "mix" && !active && (studioStep === "master" || canGoMix);
+            if (goMix) {
+              return (
+                <li key={s}>
+                  <button
+                    type="button"
+                    data-testid="studio-tab-mix"
+                    title={tMix("krokMixTytul")}
+                    className="min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] underline-offset-4 hover:underline"
+                    onClick={() => {
+                      setSampleTab(false);
+                      setStudioStep("mix");
+                    }}
+                  >
+                    {label}
+                  </button>
+                </li>
+              );
+            }
+            return (
+              <li
+                key={s}
+                aria-current={active ? "step" : undefined}
+                title={!active && s === "master" ? tMix("krokMasteringTytul") : undefined}
+                className={
+                  active
+                    ? "rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
+                    : "px-2 py-1 text-[var(--brd-mute)]"
+                }
+              >
+                {label}
+              </li>
+            );
+          })}
         </ol>
         {studioStep === "record" ? (
           <div className="ml-auto flex items-center gap-2">

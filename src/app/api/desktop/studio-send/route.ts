@@ -15,7 +15,11 @@ type SendRow = { allowed: boolean; send_id: string | null; used: number; day_lim
  * Windows recorder: daily "Wrzuć do Studia" sends (Owner 2026-11-13), separate from the
  * site count of finished songs. Same plan number per UTC day (recording.sessionsPerDay).
  * GET only reads the counter; POST spends one send before the recorder uploads anything.
+ * DELETE gives the send back when the upload failed and nothing is left to resume
+ * (Owner 2026-11-19). Only the owner's own send, and only within REFUND_WINDOW_MS.
  */
+const REFUND_WINDOW_MS = 6 * 60 * 60 * 1000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function handle(peek: boolean) {
   const context = await getCurrentProfile();
   if (!context) {
@@ -48,4 +52,31 @@ export async function GET() {
 
 export async function POST() {
   return handle(false);
+}
+
+export async function DELETE(request: Request) {
+  const context = await getCurrentProfile();
+  if (!context) {
+    return NextResponse.json({ error: "Zaloguj się.", code: "LOGIN_REQUIRED" }, { status: 401, headers: NO_STORE });
+  }
+  const body = (await request.json().catch(() => null)) as { sendId?: unknown } | null;
+  const sendId = typeof body?.sendId === "string" ? body.sendId : "";
+  if (!UUID.test(sendId)) {
+    return NextResponse.json({ error: "Zły identyfikator wysyłki." }, { status: 400, headers: NO_STORE });
+  }
+  try {
+    const admin = createSupabaseAdminClient();
+    const since = new Date(Date.now() - REFUND_WINDOW_MS).toISOString();
+    const { data, error } = await admin
+      .from("desktop_studio_sends")
+      .delete()
+      .eq("id", sendId)
+      .eq("owner_id", context.userId)
+      .gte("created_at", since)
+      .select("id");
+    if (error) throw new Error(error.message);
+    return NextResponse.json({ success: true, refunded: (data ?? []).length > 0 }, { headers: NO_STORE });
+  } catch {
+    return NextResponse.json({ error: "Nie udało się zwrócić wysyłki." }, { status: 500, headers: NO_STORE });
+  }
 }

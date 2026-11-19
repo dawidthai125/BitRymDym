@@ -1859,6 +1859,7 @@
     "studioPage": {
       "metaTitle": "Studio",
       "twojeProjekty": "Your projects",
+      "projektNieZnaleziony": "That project was not found, or you do not have access to it. Pick a project from the list or start a new one.",
       "nocnaDeskaOtworzProjekt": "Open a project, get back to the mix or delete old sketches. You can record in the Windows app or on the beat page. Downloading the app and signing in use this account. A Mac version is coming soon.",
       "programWindows": "Windows app",
       "archiwumNagran": "Recording archive",
@@ -2784,6 +2785,8 @@
       "krokSample": "Samples",
       "krokMix": "Mix",
       "krokMastering": "Mastering",
+      "krokMixTytul": "Go to the mix",
+      "krokMasteringTytul": "Mastering opens from the Mix step, after the mix analysis.",
       "krokiAria": "Song steps",
       "przejdzDoMixu": "Go to MIX",
       "przejdzDoMixuOpis": "We'll check how your vocal sits on the beat.",

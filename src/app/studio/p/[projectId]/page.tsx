@@ -38,7 +38,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
     document = await getStudioProjectDocument(projectId);
   } catch (error) {
     if (error instanceof AuthError) {
-      redirect("/studio");
+      redirect("/studio?notice=project-missing");
     }
     throw error;
   }

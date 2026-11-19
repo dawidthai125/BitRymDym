@@ -4133,6 +4133,8 @@ class RecorderWindow:
         self.root.after(0, lambda: self.status.set(text) if self._uploading else None)
 
     def _run_upload(self, title: str, beat_id: str, clips: list[tuple[int, Clip]]) -> None:
+        spent_send_id = ""
+        client = None
         try:
             paths, slots, starts = self._render_clip_files(clips)
             resume = self._pending if self._pending is not None and self._pending.wav_paths == [str(path) for path in paths] else None
@@ -4148,6 +4150,7 @@ class RecorderWindow:
                 self._upload_say("Sprawdzam dzienny limit wysyłek do Studia.")
                 claimed = client.desktop_send(True)
                 send_id = str(claimed.get("sendId") or "")
+                spent_send_id = send_id
                 self._upload_say(f"Wysyłka {claimed.get('used')} z {claimed.get('limit')} na dziś.")
             project = upload_vocals(
                 client,
@@ -4163,6 +4166,10 @@ class RecorderWindow:
             )
         except Exception as error:
             message = str(error)
+            # Nothing saved to resume from -> the daily send this run spent goes back to the user.
+            if spent_send_id and self._pending is None and client is not None:
+                if client.desktop_send_refund(spent_send_id):
+                    message = f"{message} Dzisiejsza wysyłka wróciła na konto."
             self.root.after(0, lambda: self._upload_done(None, message))
             return
         self.root.after(0, lambda: self._upload_done(project, ""))

@@ -189,6 +189,15 @@ class SiteClient:
         """Daily "Wrzuć do Studia" counter of the Windows recorder. spend=False only reads it."""
         return self._json("POST" if spend else "GET", "/api/desktop/studio-send")
 
+    def desktop_send_refund(self, send_id: str) -> bool:
+        """Gives one daily send back (upload failed, nothing to resume). Never raises."""
+        if not send_id:
+            return False
+        try:
+            return bool(self._json("DELETE", "/api/desktop/studio-send", {"sendId": send_id}).get("refunded"))
+        except Exception:
+            return False
+
     def plan_usage(self) -> dict[str, Any]:
         return self._json("GET", "/api/account/plan-usage")
 
@@ -751,6 +760,34 @@ def _self_test_clips() -> None:
         raise SystemExit("limit wysyłek: zapis send_id")
     for clip in clips:
         clip.unlink(missing_ok=True)
+    _self_test_send_refund()
+
+
+def _self_test_send_refund() -> None:
+    """Refund of a spent daily send: true only when the site says so, never raises."""
+    calls: list[tuple[str, str, Any]] = []
+
+    class _Fake:
+        reply: Any = {"refunded": True}
+
+        def _json(self, method: str, path: str, body: Any = None) -> dict[str, Any]:
+            calls.append((method, path, body))
+            if isinstance(self.reply, Exception):
+                raise self.reply
+            return self.reply
+
+    fake = _Fake()
+    refund = SiteClient.desktop_send_refund
+    if refund(fake, "") is not False or calls:  # type: ignore[arg-type]
+        raise SystemExit("zwrot wysyłki: pusty identyfikator")
+    if refund(fake, "abc") is not True or calls[-1] != ("DELETE", "/api/desktop/studio-send", {"sendId": "abc"}):  # type: ignore[arg-type]
+        raise SystemExit("zwrot wysyłki: wywołanie")
+    fake.reply = {"refunded": False}
+    if refund(fake, "abc") is not False:  # type: ignore[arg-type]
+        raise SystemExit("zwrot wysyłki: odmowa")
+    fake.reply = RuntimeError("sieć")
+    if refund(fake, "abc") is not False:  # type: ignore[arg-type]
+        raise SystemExit("zwrot wysyłki: błąd sieci")
 
 
 if __name__ == "__main__":

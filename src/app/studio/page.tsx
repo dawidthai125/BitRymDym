@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 }
 
 type PageProps = {
-  searchParams?: Promise<{ beatId?: string }>;
+  searchParams?: Promise<{ beatId?: string; notice?: string }>;
 };
 
 /** OD-P5-03 — Studio hub = project list (Quick Record remains on beat detail). */
@@ -39,7 +39,7 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
   const [projects, entitlement, params] = await Promise.all([
     listStudioProjects(),
     resolveProductEntitlementForAuthContext(auth),
-    searchParams ? searchParams : Promise.resolve({} as { beatId?: string }),
+    searchParams ? searchParams : Promise.resolve({} as { beatId?: string; notice?: string }),
   ]);
   const tier = entitlement.premiumTier;
   const seedBeatId =
@@ -55,6 +55,11 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
         className="min-h-[calc(100dvh-4.5rem)] pb-16"
       >
         <PageFrame className="flex flex-col gap-8 py-10 sm:py-12">
+          {params.notice === "project-missing" ? (
+            <p role="alert" data-testid="studio-project-missing" className="border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] px-3 py-2 text-sm">
+              {t("projektNieZnaleziony")}
+            </p>
+          ) : null}
           <header className="space-y-2 border-b border-[var(--brd-line)] pb-6">
             <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">
               {t("twojeProjekty")}

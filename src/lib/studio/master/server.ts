@@ -267,8 +267,9 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   // Free watermark: 3 per rolling 24 h. The RPC keeps the 7-day backstop (21).
   const wm = d.watermark ? await freeWatermarkUsage(admin, p.ownerId) : null;
   if (wm && (wm.dailyUsed ?? 0) >= FREE_WATERMARK_PER_DAY) return { ok: false as const, error: "daily_limit", usage: wm };
-  if (kind === "master") {
-    // Owner 2026-11-13: the first master download of a project is one finished song (daily plan number).
+  if (kind !== "project") {
+    // Owner 2026-11-13: the first download of a project is one finished song (daily plan number).
+    // Owner 2026-11-19: mix and raw downloads count too, not only the master (a project counts once).
     const { data: s, error: se } = await admin.rpc("claim_song_completion", {
       p_owner_id: p.ownerId, p_project_id: p.projectId, p_max_per_utc_day: PLAN_POLICY[p.tier].recording.sessionsPerDay,
     });
