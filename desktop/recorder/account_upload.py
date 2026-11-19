@@ -866,10 +866,6 @@ class _Refunder:
         return self.result and bool(send_id)
 
 
-if __name__ == "__main__":
-    self_test()
-
-
 def _self_test_failed_send_cleanup() -> None:
     """A failed upload deletes its half-sent take and the empty project."""
     deleted_takes: list[str] = []
@@ -900,3 +896,7 @@ def _self_test_failed_send_cleanup() -> None:
     assert drop_empty_project(_Broken(), empty) is None and deleted_projects == ["p1"]
     kept = replace(empty, placed=1)
     assert drop_empty_project(_Broken(), kept) is kept and deleted_projects == ["p1"]
+
+if __name__ == "__main__":
+    self_test()
+
