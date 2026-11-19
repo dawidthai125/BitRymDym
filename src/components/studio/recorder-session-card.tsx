@@ -151,7 +151,7 @@ export function RecorderSessionCard({ tier }: Props) {
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
             {gold
               ? "Utwórz projekt i otwórz sesję. Tam jest „Importuj stemy”: każdy plik kładzie się od początku osi. Stemy są nagrane od 0:00, więc siedzą tak jak przy nagrywaniu. Głośność i balans lewo–prawo ustaw według ściągi."
-              : "Odczyt sesji jest dla każdego. Wrzucenie stemów w sesji studia jest w planie Gold."}
+              : "Odczyt sesji jest dla każdego. Wrzucenie stemów w sesji studia jest od planu Silver."}
           </p>
           <div className="flex flex-wrap gap-3">
             <BrdButton type="button" variant="secondary" onClick={() => void copyList()}>

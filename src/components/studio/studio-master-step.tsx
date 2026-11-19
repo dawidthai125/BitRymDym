@@ -939,9 +939,12 @@ export function StudioMasterStep({
                 {approved ? (
                   <p role="status" className="text-sm font-semibold">✓ {t("zatwierdzone")}</p>
                 ) : (
-                  <Button type="button" size="lg" className="min-h-11 self-start px-4" disabled={approving} onClick={() => void approve()} data-testid="studio-master-approve">
-                    {approving ? t("zatwierdzTrwa") : t("zatwierdz")}
-                  </Button>
+                  <>
+                    <Button type="button" size="lg" className="min-h-11 self-start px-4" disabled={approving} onClick={() => void approve()} data-testid="studio-master-approve">
+                      {approving ? t("zatwierdzTrwa") : t("zatwierdz")}
+                    </Button>
+                    <p className="text-xs text-[var(--brd-mute)]" data-testid="studio-master-approve-note">{t("zatwierdzUwaga")}</p>
+                  </>
                 )}
                 {approved ? <StudioListenLinks projectId={projectId} /> : null}
               </section>
