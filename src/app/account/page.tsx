@@ -17,6 +17,7 @@ import {
 import { DisplayNameForm } from "@/components/auth/display-name-form";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { WorkPrizeDesk } from "@/components/account/work-prize-desk";
+import { OwnStudioTracks } from "@/components/account/own-studio-tracks";
 import { RewardDesk } from "@/components/community/reward-desk";
 import { NotificationPreferencesForm } from "@/components/account/notification-preferences-form";
 import { notifyEnv } from "@/lib/email/notify/config";
@@ -227,6 +228,8 @@ export default async function AccountPage({
               ) : (
                 <OwnTakesList items={recentTakes} variant="dashboard" purchasedBeatIds={purchasedBeatIds} />
               )}
+
+              <OwnStudioTracks userId={context.userId} />
 
               <section className="pt-8">
                 <SectionLabel className="mb-3">{tr("twojaBiblioteka")}</SectionLabel>
