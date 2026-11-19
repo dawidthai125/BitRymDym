@@ -28,7 +28,8 @@ export default async function AccountTakesPage() {
   }
 
   const [takes, purchasedBeatIds] = await Promise.all([
-    listOwnTakes(),
+    // Usunięte nagrania znikają z listy (nie zostają z etykietą „usunięte”).
+    listOwnTakes({ includeDeleted: false }),
     listPurchasedBeatIds(userId),
   ]);
 
