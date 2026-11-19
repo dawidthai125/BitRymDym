@@ -552,12 +552,51 @@ export function autofixBpm(doc: StudioProjectDocument): number {
   return Number.isFinite(bpm) && bpm >= 40 && bpm <= 250 ? bpm : MIX_AUTOFIX_TARGETS.defaultBpm;
 }
 
+/** Optional effects Bitek drops first when a plan caps the chain length (least essential first). */
+const CLAMP_DROP_ORDER: readonly string[] = ["saturate", "reverb", "delay", "pocket", "harmony", "rider", "voice", "gate", "tune", "spectrum", "limiter", "deesser", "highpass", "compressor", "eq"];
+
+/**
+ * Fit an auto-fixed chain to the user's plan. Only effects Bitek ADDED are dropped (never the user's own).
+ * Mirrors the server rule in fxChainWriteAllowed: reject when next > cap AND next >= previous.
+ * Returns null when the chain cannot be made valid (the caller then leaves the chain untouched).
+ */
+export function clampChainToPlan(
+  chain: StudioFxChainV1,
+  original: StudioFxChainV1,
+  limits: { maxEffects?: number; allowSidechain?: boolean },
+): StudioFxChainV1 | null {
+  const originalIds = new Set(original.effects.map((e) => e.id));
+  let effects = chain.effects.slice();
+  if (limits.allowSidechain === false) {
+    effects = effects.filter((e) => e.type !== "sidechain" || originalIds.has(e.id));
+  }
+  const cap = limits.maxEffects;
+  if (cap !== undefined) {
+    const over = () => effects.length > cap && effects.length >= original.effects.length;
+    while (over()) {
+      const added = effects.filter((e) => !originalIds.has(e.id));
+      if (added.length === 0) return null;
+      added.sort((a, b) => {
+        const ia = CLAMP_DROP_ORDER.indexOf(a.type);
+        const ib = CLAMP_DROP_ORDER.indexOf(b.type);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      });
+      const victim = added[0]!;
+      effects = effects.filter((e) => e.id !== victim.id);
+    }
+  }
+  return effects.length === chain.effects.length ? chain : { ...chain, effects };
+}
+
 export function planMixAutofix(params: {
   doc: StudioProjectDocument;
   metrics: MixMetrics;
   verdict: MixVerdict;
   fixes: readonly MixPlanFixId[];
   createId?: () => string;
+  /** Plan limits (FREE/BRONZE: 4 effects per chain, no sidechain). Omitted = no limit. */
+  maxEffects?: number;
+  allowSidechain?: boolean;
 }): MixAutofixPlan {
   const { doc, metrics, verdict } = params;
   const byId = new Map(metrics.tracks.map((m) => [m.trackId, m]));
@@ -604,8 +643,12 @@ export function planMixAutofix(params: {
     if (t.gainDb !== orig.gainDb) controls.gainDb = t.gainDb;
     if (t.pan !== orig.pan) controls.pan = t.pan;
     if (controls.gainDb !== undefined || controls.pan !== undefined) ops.push(controls);
-    if (JSON.stringify(t.chain) !== JSON.stringify(orig.effectsChain)) {
-      ops.push({ op: "set_track_fx", trackId: t.id, effectsChain: t.chain });
+    const fitted =
+      params.maxEffects === undefined && params.allowSidechain === undefined
+        ? t.chain
+        : clampChainToPlan(t.chain, orig.effectsChain, { maxEffects: params.maxEffects, allowSidechain: params.allowSidechain });
+    if (fitted && JSON.stringify(fitted) !== JSON.stringify(orig.effectsChain)) {
+      ops.push({ op: "set_track_fx", trackId: t.id, effectsChain: fitted });
     }
   }
   return { fixes: order, ops, notes: ctx.notes, unchanged };

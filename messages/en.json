@@ -2787,6 +2787,7 @@
       "krokiAria": "Song steps",
       "przejdzDoMixu": "Go to MIX",
       "przejdzDoMixuOpis": "We'll check how your vocal sits on the beat.",
+      "przejdzDoMixuBrakWokalu": "First add a beat, then record a vocal or import a finished file.",
       "przejdzDoMixuUtwor": "The next step is one button, “Make the song”, which sets the vocal against the beat.",
       "pelnyWidok": "Full view",
       "prostyWidok": "Simple view",
@@ -2827,6 +2828,7 @@
       "poprawWkrotce": "Mix fixes are in this step.",
       "przejdzDoMasteringu": "Go to Mastering",
       "masteringZablokowany": "Fix the red items first.",
+      "masteringNajpierwAnaliza": "First click “Analyze mix”. Mastering unlocks after that.",
       "masteringWkrotce": "Your mix is ready. Mastering is the next step.",
       "masteringTytul": "Mastering — next step",
       "tabelaTytul": "Track loudness",
@@ -3009,6 +3011,7 @@
         "anuluj": "Cancel"
       },
       "sciszBitPodWokal": "Duck beat under vocal",
+      "sciszBitTylkoSilver": "Ducking the beat under the vocal starts on Silver.",
       "polishTiles": {
         "mud": "Cut the mud",
         "sibilance": "De-ess",
@@ -3369,6 +3372,7 @@
       "masteryReset": "new pool {date}",
       "masteryLimit": "This month's master pool is used up. This mix can wait — or take a higher plan.",
       "freeBezPobierania": "On Free you listen, but don't download. Files unlock from Bronze.",
+      "freeUprzedzenie": "Free plan: after mastering you can listen and share a listening link, but not download the file. Downloads start on Bronze. Mastering counts toward your monthly limit.",
       "freeZeZnakiem": "On Free you download a watermarked MP3 (for sharing, {n} a day). Clean files unlock from Bronze.",
       "zobaczPlany": "See plans",
       "etap": {
@@ -4173,6 +4177,7 @@
       "noPlayer": "The full master stays with the owner.",
       "publishTitle": "Finished-track catalogue",
       "publishLead": "The track is finished. You choose whether it enters the catalogue.",
+      "publishNoPlayer": "The catalogue is for ratings and comments. The full master is not played here; use the private listening link above to let someone listen.",
       "publish": "Publish to the catalogue",
       "titleLabel": "Title",
       "allowRatings": "Allow ratings",

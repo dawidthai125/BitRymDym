@@ -130,11 +130,16 @@ export function StudioMixStep({
   onGoMaster,
   onListen,
   autoEnabled = false,
+  maxEffects,
+  allowSidechain,
 }: {
   /** Stage 3 — enter Mastering with the current (approved) mix. */
   onGoMaster?: () => void;
   /** Transport play — the mixed song, after the auto mix. */
   onListen?: () => void;
+  /** Plan limits for Bitek's fixes: effects per chain and sidechain (the server enforces the same). */
+  maxEffects?: number;
+  allowSidechain?: boolean;
   /** Gold switch is on. Off for every other plan, even if a flag was planted. */
   autoEnabled?: boolean;
   doc: StudioProjectDocument;
@@ -151,6 +156,8 @@ export function StudioMixStep({
 }) {
   const locale = useLocale();
   const t = useTranslations("studio.mixStep");
+  /** planMixAutofix limited to what the user's plan can save (otherwise the server rejects the whole fix). */
+  const planForPlan = (args: Parameters<typeof planMixAutofix>[0]) => planMixAutofix({ ...args, maxEffects, allowSidechain });
   const tRole = useTranslations("studio.trackRole");
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -357,7 +364,7 @@ export function StudioMixStep({
     opts?: { immediate?: boolean },
   ) => {
     if (!result || !applyAutofixRef.current || fixing || running || stale) return;
-    const plan = planMixAutofix({
+    const plan = planForPlan({
       doc,
       metrics: result.metrics,
       verdict: result.verdict,
@@ -480,7 +487,7 @@ export function StudioMixStep({
         const apply = applyAutofixRef.current;
         if (!snap.result || snap.stale) return { ok: false, reason: "no-analysis" };
         if (!apply) return { ok: false, reason: "failed" };
-        const plan = planMixAutofix({
+        const plan = planForPlan({
           doc: snap.doc,
           metrics: snap.result.metrics,
           verdict: snap.result.verdict,
@@ -507,12 +514,12 @@ export function StudioMixStep({
   const autofixExhausted = useMemo(() => {
     if (!result || stale || running || result.verdict.canMaster || !Number.isFinite(result.metrics.master.integratedLufs)) return false;
     if (fixSeq >= 2) return true;
-    return planMixAutofix({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length === 0;
+    return planForPlan({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length === 0;
   }, [result, stale, running, fixSeq, doc]);
   /** Bitek still has automatic moves left (and the two-round cap is not reached). */
   const canFixMore = useMemo(() => {
     if (!result || stale || running || !canAutofix || rounds >= 2) return false;
-    return planMixAutofix({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0;
+    return planForPlan({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0;
   }, [result, stale, running, canAutofix, rounds, doc]);
   const canMaster = (Boolean(verdict?.canMaster) || autofixExhausted) && !stale && !running;
 
@@ -546,7 +553,7 @@ export function StudioMixStep({
       const snap = latest.current;
       const fixes: MixAutofixId[] = pendingHandoff.issue === "clip" ? ["gain"] : ["balance", "gain"];
       const measured = snap.result && !snap.stale
-        ? planMixAutofix({
+        ? planForPlan({
             doc,
             metrics: snap.result.metrics,
             verdict: snap.result.verdict,
@@ -593,7 +600,7 @@ export function StudioMixStep({
     }
     const fresh = Boolean(result && !stale);
     const opsLeft = fresh && result
-      ? planMixAutofix({
+      ? planForPlan({
           doc,
           metrics: result.metrics,
           verdict: result.verdict,
@@ -642,7 +649,7 @@ export function StudioMixStep({
         songRounds.current < 2 &&
         freshResult &&
         !freshResult.verdict.canMaster &&
-        planMixAutofix({ doc, metrics: freshResult.metrics, verdict: freshResult.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0,
+        planForPlan({ doc, metrics: freshResult.metrics, verdict: freshResult.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0,
     );
     const step = nextSongStep({
       failed: Boolean(failure || panel?.kind === "error"),
@@ -1201,12 +1208,15 @@ export function StudioMixStep({
                   ))
                 : null}
               {onApplyAutofix ? (
+                <>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
                   className="min-h-11 w-full sm:w-auto"
-                  disabled={Boolean(fixing) || running || stale}
+                  disabled={Boolean(fixing) || running || stale || allowSidechain === false}
+                  title={allowSidechain === false ? t("sciszBitTylkoSilver") : undefined}
+                  aria-describedby={allowSidechain === false ? "studio-mix-duck-plan" : undefined}
                   data-testid="studio-mix-beat-duck"
                   onClick={() => {
                     const ops = planBeatDuckerOps({ tracks: doc.tracks });
@@ -1225,6 +1235,12 @@ export function StudioMixStep({
                 >
                   {fixing === "duck" ? t("poprawTrwa") : t("sciszBitPodWokal")}
                 </Button>
+                {allowSidechain === false ? (
+                  <span id="studio-mix-duck-plan" data-testid="studio-mix-duck-plan" className="text-xs text-[var(--brd-mute)]">
+                    {t("sciszBitTylkoSilver")}
+                  </span>
+                ) : null}
+                </>
               ) : null}
               <span id="studio-mix-pocket-hint" className="sr-only">{t("kieszenOpis")}</span>
               <span id="studio-mix-harmony-hint" className="sr-only">{t("harmoniaOpis")}</span>
@@ -1446,7 +1462,7 @@ export function StudioMixStep({
                 {t("przejdzDoMasteringu")} →
               </Button>
               <p id="studio-mix-master-hint" className="text-xs text-[var(--brd-mute)]">
-                {autofixExhausted ? t("autofix.wyczerpane") : verdict && !verdict.canMaster ? t("masteringZablokowany") : t("masteringTytul")}
+                {autofixExhausted ? t("autofix.wyczerpane") : !verdict || stale ? t("masteringNajpierwAnaliza") : !verdict.canMaster ? t("masteringZablokowany") : t("masteringTytul")}
               </p>
             </div>
             {masterInfoOpen ? (

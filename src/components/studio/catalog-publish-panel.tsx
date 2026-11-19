@@ -106,6 +106,7 @@ export function CatalogPublishPanel({
     <section aria-labelledby="catalog-publish-title" data-testid="catalog-publish" className="flex flex-col gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3">
       <h3 id="catalog-publish-title" className="brd-display text-lg">{t("publishTitle")}</h3>
       <p className="text-sm">{t("publishLead")}</p>
+      <p className="text-xs text-[var(--brd-mute)]">{t("publishNoPlayer")}</p>
       <label className="flex min-h-11 items-center gap-2 text-sm">
         <input type="checkbox" checked={publish} onChange={(event) => setPublish(event.target.checked)} />
         {t("publish")}

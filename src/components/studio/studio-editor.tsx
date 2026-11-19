@@ -3338,7 +3338,9 @@ function StudioEditorInner({
                 clips: doc.clips,
               }).ready
                 ? tMix("przejdzDoMixuUtwor")
-                : tMix("przejdzDoMixuOpis")}
+                : canGoMix
+                  ? tMix("przejdzDoMixuOpis")
+                  : tMix("przejdzDoMixuBrakWokalu")}
             </span>
             <Button
               type="button"
@@ -3796,6 +3798,8 @@ function StudioEditorInner({
           }}
           onListen={() => transport.play()}
           autoEnabled={autoOn}
+          maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}
+          allowSidechain={sidechainForTier(trackCapacity.premiumTier)}
           doc={doc}
           resolveClipSourceUrl={resolveClipSourceUrl}
           onBack={() => {

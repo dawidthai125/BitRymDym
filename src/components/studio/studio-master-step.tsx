@@ -886,6 +886,12 @@ export function StudioMasterStep({
           ) : null}
 
           <div className="flex flex-col gap-2 border-t border-[var(--brd-line)] pt-3">
+            {server.tier === "FREE" && !freeWatermark && sm.phase !== "done" && !approved ? (
+              <p data-testid="studio-master-free-heads-up" role="note" className="border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] px-3 py-2 text-sm">
+                {t("freeUprzedzenie")}{" "}
+                <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a>
+              </p>
+            ) : null}
             {sm.phase !== "done" && !approved ? (
               <div className="flex flex-wrap items-center gap-2">
                 <Button type="button" size="lg" className="min-h-11 px-4" disabled={sm.phase === "working" || sm.phase === "unavailable" || mastersLeft === 0} aria-describedby={server.masters ? "studio-master-quota" : undefined} onClick={() => void makeMaster()} data-testid="studio-master-make">

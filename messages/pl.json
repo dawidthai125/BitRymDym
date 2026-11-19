@@ -2787,6 +2787,7 @@
       "krokiAria": "Kroki utworu",
       "przejdzDoMixu": "Przejdź do MIXU",
       "przejdzDoMixuOpis": "Sprawdzimy, jak wokal brzmi na tle bitu.",
+      "przejdzDoMixuBrakWokalu": "Najpierw dodaj bit, a potem nagraj wokal albo zaimportuj gotowy plik.",
       "przejdzDoMixuUtwor": "Następny krok to jeden przycisk „Zrób utwór”, który ustawia wokal do bitu.",
       "pelnyWidok": "Pełny widok",
       "prostyWidok": "Prosty widok",
@@ -2827,6 +2828,7 @@
       "poprawWkrotce": "Poprawki miksu są w tym kroku.",
       "przejdzDoMasteringu": "Przejdź do Masteringu",
       "masteringZablokowany": "Najpierw popraw czerwone punkty.",
+      "masteringNajpierwAnaliza": "Najpierw kliknij „Analizuj mix”. Dopiero potem odblokuje się mastering.",
       "masteringWkrotce": "Twój mix jest gotowy. Następny krok to mastering.",
       "masteringTytul": "Mastering — następny krok",
       "tabelaTytul": "Głośność ścieżek",
@@ -3009,6 +3011,7 @@
         "anuluj": "Anuluj"
       },
       "sciszBitPodWokal": "Ścisz bit pod wokal",
+      "sciszBitTylkoSilver": "Ściszanie bitu pod wokal jest od planu Silver.",
       "polishTiles": {
         "mud": "Wytnij dudnienie",
         "sibilance": "Sybilanty",
@@ -3369,6 +3372,7 @@
       "masteryReset": "nowa pula {date}",
       "masteryLimit": "Pula masterów na ten miesiąc się skończyła. Ten mix poczeka — albo weź wyższy plan.",
       "freeBezPobierania": "W Free słuchasz, ale nie pobierasz. Pliki odblokujesz od Bronze.",
+      "freeUprzedzenie": "Plan Free: po masteringu odsłuchasz utwór i udostępnisz link do odsłuchu, ale nie pobierzesz pliku. Pobieranie jest od planu Bronze. Mastering liczy się do Twojego limitu miesięcznego.",
       "freeZeZnakiem": "W Free pobierasz MP3 ze znakiem wodnym (do pokazania, {n} na dobę). Czysty plik odblokujesz od Bronze.",
       "zobaczPlany": "Zobacz plany",
       "etap": {
@@ -4173,6 +4177,7 @@
       "noPlayer": "Odsłuch pełnego masteru zostaje u właściciela.",
       "publishTitle": "Katalog utworów",
       "publishLead": "Kawałek jest gotowy. Sam decydujesz, czy wchodzi do katalogu.",
+      "publishNoPlayer": "Katalog to oceny i komentarze. Pełnego masteru tu nie odtwarzamy; do wysłuchania komuś użyj prywatnego linku powyżej.",
       "publish": "Wrzucam do katalogu",
       "titleLabel": "Tytuł",
       "allowRatings": "Zgoda na oceny",
