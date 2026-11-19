@@ -507,6 +507,11 @@ export function StudioMixStep({
     if (fixSeq >= 2) return true;
     return planMixAutofix({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length === 0;
   }, [result, stale, running, fixSeq, doc]);
+  /** Bitek still has automatic moves left (and the two-round cap is not reached). */
+  const canFixMore = useMemo(() => {
+    if (!result || stale || running || !canAutofix || rounds >= 2) return false;
+    return planMixAutofix({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0;
+  }, [result, stale, running, canAutofix, rounds, doc]);
   const canMaster = (Boolean(verdict?.canMaster) || autofixExhausted) && !stale && !running;
 
   // Stage 2b — BITEK bubble (short) instead of long notes on the page.
@@ -854,9 +859,9 @@ export function StudioMixStep({
           panel.after && !running && !stale && verdict
             ? verdict.redCount + verdict.yellowCount === 0
               ? t("autofix.gotowePytanie")
-              : rounds < 2 && canAutofix
+              : canFixMore
                 ? t("autofix.jeszczePytanie", { count: verdict.redCount + verdict.yellowCount })
-                : ""
+                : t("autofix.resztaRecznie", { count: verdict.redCount + verdict.yellowCount })
             : "",
         ].filter(Boolean).join(" "),
         details: [...tech, ...notes, t("autofix.zapisane")],
@@ -868,7 +873,10 @@ export function StudioMixStep({
           if (left === 0) {
             return [goOn, { id: "fixMyself", label: t("autofix.poprawiamSam"), onClick: () => setPanel(null) }];
           }
-          const again = canAutofix && rounds < 2
+          if (!canFixMore) {
+            return [goOn, { id: "fixMyself", label: t("autofix.poprawiamSam"), onClick: () => setPanel(null) }];
+          }
+          const again = canFixMore
             ? [{ id: "fixMore", label: t("autofix.jeszczeTak"), primary: true, onClick: () => setPending((p) => ({ id: "fix-all", seq: (p?.seq ?? 0) + 1 })) }]
             : [];
           return [...again, { id: "moveOn", label: t("autofix.jeszczeNie"), onClick: () => (canMaster ? onGoMaster?.() : setPanel(null)) }];
@@ -928,7 +936,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, autoEnabled, declinedKey, canMaster, onGoMaster, rounds]);
+  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, autoEnabled, declinedKey, canMaster, onGoMaster, canFixMore]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);

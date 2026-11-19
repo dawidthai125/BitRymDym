@@ -2996,6 +2996,7 @@
         "nie": "No, leave it",
         "zostawione": "OK, I leave the mix as it is. Listen to it in the player. When you are ready, go to mastering.",
         "jeszczePytanie": "After the fixes {count, plural, one {# note} other {# notes}} remain. Keep fixing?",
+        "resztaRecznie": "{count, plural, one {# note is} other {# notes are}} left that I will not touch on my own. Use the Fix buttons on the cards below and your ears. Go to mastering, or fix it yourself?",
         "jeszczeTak": "Yes, keep fixing",
         "jeszczeNie": "No, move on",
         "gotowePytanie": "Audit after the fixes: the mix works, nothing red or yellow. Anything else to fix, or on to mastering?",
