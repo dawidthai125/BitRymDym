@@ -2291,6 +2291,15 @@
       "poziomMasterSamplePeak": "Poziom Master (szczyt próbki)"
     },
     "studioMixRevisionHistoryControl": {
+      "coZmienilaTaWersja": "Co zmieniła ta wersja",
+      "wczytujeOpisZmian": "Wczytuję opis zmian…",
+      "nieUdaloSieOpisuZmian": "Nie udało się opisać zmian tej wersji.",
+      "brakZmianWOpisie": "Ta wersja nie zmieniła ustawień miksu (głośność, panorama, efekty).",
+      "iJeszczeZmian": "i jeszcze {n}",
+      "cofnijTeZmiane": "Cofnij tę zmianę",
+      "cofnacTeZmiane": "Cofnąć tę zmianę?",
+      "cofnijOpis": "Wrócę do stanu miksu sprzed tej zmiany. Zmiany zrobione po niej też się cofną. Zapiszę to jako nową wersję, a stare zostają w historii. Nie ruszam plików dźwięku ani mastera.",
+      "coWroci": "Po cofnięciu zmieni się:",
       "przywrocenieJuzByloZapisane": "Przywrócenie już było zapisane — pokazano wynik bez ponownej zmiany.",
       "przywroconoStanMiksuUtworzono": "Przywróciłem miks i dopisałem nową wersję do historii.",
       "brakPolaczeniaSprawdzSiec": "Brak sieci. Sprawdź połączenie i spróbuj jeszcze raz.",

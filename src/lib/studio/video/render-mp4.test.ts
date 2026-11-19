@@ -59,10 +59,21 @@ function ffmpegDashI(bin: string, file: string): Promise<string> {
 }
 
 let ffmpegBin: string | null = null;
+/** The renderer burns the title with the drawtext filter; some ffmpeg builds (no libfreetype) do not have it. */
+let hasDrawtext = false;
+
+async function ffmpegHasFilter(bin: string, name: string): Promise<boolean> {
+  try {
+    return new RegExp(`\\b${name}\\b`).test(await run(bin, ["-hide_banner", "-filters"]));
+  } catch {
+    return false;
+  }
+}
 
 beforeAll(async () => {
   ffmpegBin = await firstBin(["ffmpeg", FFMPEG_FALLBACK]);
   const ffprobe = await firstBin(["ffprobe", FFPROBE_FALLBACK]);
+  hasDrawtext = ffmpegBin ? await ffmpegHasFilter(ffmpegBin, "drawtext") : false;
   if (ffmpegBin) process.env.E3_FFMPEG_PATH = ffmpegBin;
   if (ffprobe) process.env.E3_FFPROBE_PATH = ffprobe;
 });
@@ -80,7 +91,7 @@ afterEach(async () => {
 
 describe("YouTube MP4 render", () => {
   it("writes a 1920x1080 H.264 file with an audio stream", async (ctx) => {
-    if (!ffmpegBin) ctx.skip();
+    if (!ffmpegBin || !hasDrawtext) ctx.skip();
     await mkdir(DIR, { recursive: true });
     const image = `${DIR}/cover.jpg`;
     const audio = `${DIR}/tone.wav`;

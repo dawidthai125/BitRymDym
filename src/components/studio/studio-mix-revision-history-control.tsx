@@ -13,9 +13,7 @@ import {
   type MixHistoryListLoadState,
 } from "@/lib/studio/mix-working/mix-history-list-ui-state";
 import {
-  formatMixRevisionDiffValue,
   formatMixRevisionWhen,
-  groupMixRevisionDiffChanges,
   isLikelyTipRevision,
   mapMixRevisionCompareHttpResult,
   mapMixRevisionDetailHttpResult,
@@ -23,7 +21,6 @@ import {
   mapMixRevisionRestoreHttpResult,
   mapStudioProjectDocumentHttpResult,
   mixRevisionAuthorLabel,
-  mixRevisionDiffPathLabel,
   mixRevisionKindLabel,
   mixRevisionRowLabel,
   mixWorkingRevisionCompareUrl,
@@ -35,6 +32,7 @@ import {
   type MixRevisionListItem,
 } from "@/lib/studio/mix-working/mix-working-revision-client";
 import type { MixWorkingRevisionDiff } from "@/lib/studio/mix-working/mix-working-diff";
+import { summarizeMixChanges } from "@/lib/studio/mix-working/mix-change-summary";
 import type { MixRevision } from "@/lib/studio/mix-working/mix-working-types";
 import {
   getStudioDialogFocusable,
@@ -49,6 +47,8 @@ export type StudioMixRevisionHistoryControlProps = {
   getExpectedDocumentVersion: () => number;
   tipDocumentVersion: number;
   onDocumentRefreshed: (document: StudioProjectDocument) => void;
+  /** Track id → name of the open project, so history reads "Wokal", not an id. */
+  trackNames?: Record<string, string>;
   disabled?: boolean;
 };
 
@@ -67,6 +67,7 @@ export function StudioMixRevisionHistoryControl({
   getExpectedDocumentVersion,
   tipDocumentVersion,
   onDocumentRefreshed,
+  trackNames,
   disabled,
 }: StudioMixRevisionHistoryControlProps) {
   const tl = useLibText();
@@ -97,6 +98,12 @@ export function StudioMixRevisionHistoryControl({
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
   const [restoreTone, setRestoreTone] = useState<"ok" | "warn" | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  /** revisionId → what that revision changed vs the one before it (plain sentences). */
+  const [summaries, setSummaries] = useState<Record<string, string[] | "loading" | "error">>({});
+  /** What "Cofnij tę zmianę" will bring back: current mix → the revision before the selected one. */
+  const [undoPreview, setUndoPreview] = useState<{ targetId: string; lines: string[] | "loading" | "error" } | null>(null);
+  const trackNamesRef = useRef<Record<string, string>>(trackNames ?? {});
+  trackNamesRef.current = trackNames ?? {};
 
   const titleId = useId();
   const descriptionId = useId();
@@ -119,6 +126,7 @@ export function StudioMixRevisionHistoryControl({
     setRestoreSubmitting(false);
     restoreRequestIdRef.current = null;
     restoreTargetIdRef.current = null;
+    setUndoPreview(null);
   }, []);
 
   useEffect(() => {
@@ -255,12 +263,24 @@ export function StudioMixRevisionHistoryControl({
     setDetailError(null);
     setRestoreMessage(null);
     setStatusMessage(null);
+    setSummaries({});
+    setUndoPreview(null);
     setListLoadState("loading");
     setListError(null);
     void loadList({ reset: true });
   }, [open, projectId, loadList]);
 
+  async function ensureSummary(revisionId: string) {
+    const idx = revisions.findIndex((r) => r.id === revisionId);
+    const prev = idx >= 0 ? revisions[idx + 1] : undefined;
+    if (!prev || summaries[revisionId]) return;
+    setSummaries((s) => ({ ...s, [revisionId]: "loading" }));
+    const lines = await fetchDiffLines(prev.id, revisionId);
+    setSummaries((s) => ({ ...s, [revisionId]: lines ?? "error" }));
+  }
+
   async function openDetail(revisionId: string) {
+    void ensureSummary(revisionId);
     setSelectedId(revisionId);
     setView("detail");
     setDetail(null);
@@ -334,7 +354,68 @@ export function StudioMixRevisionHistoryControl({
     }
   }
 
-  function beginRestoreConfirm(revisionId: string) {
+  /** Revision diff in plain sentences; null when the compare call fails. */
+  const fetchDiffLines = useCallback(
+    async (fromId: string, toId: string): Promise<string[] | null> => {
+      try {
+        const res = await fetch(mixWorkingRevisionCompareUrl(projectId), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ fromRevisionId: fromId, toRevisionId: toId }),
+        });
+        const mapped = mapMixRevisionCompareHttpResult({ httpStatus: res.status, json: await readJson(res) });
+        if (!mapped.ok) return null;
+        return summarizeMixChanges(mapped.diff.changes, trackNamesRef.current);
+      } catch {
+        return null;
+      }
+    },
+    [projectId],
+  );
+
+  /** Fills "what this version changed" for the newest rows, one request at a time. */
+  const summarizedRef = useRef(new Set<string>());
+  useEffect(() => {
+    if (!open || view !== "list") return;
+    let cancelled = false;
+    void (async () => {
+      for (let i = 0; i < Math.min(revisions.length - 1, 12); i++) {
+        const row = revisions[i]!;
+        const prev = revisions[i + 1]!;
+        if (summarizedRef.current.has(row.id)) continue;
+        summarizedRef.current.add(row.id);
+        setSummaries((s) => ({ ...s, [row.id]: "loading" }));
+        const lines = await fetchDiffLines(prev.id, row.id);
+        if (cancelled) {
+          summarizedRef.current.delete(row.id);
+          return;
+        }
+        setSummaries((s) => ({ ...s, [row.id]: lines ?? "error" }));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, view, revisions, fetchDiffLines]);
+  useEffect(() => {
+    if (!open) summarizedRef.current = new Set();
+  }, [open]);
+
+  /** "Cofnij tę zmianę": go back to the version right before the selected one. */
+  async function beginUndoChange(revisionId: string) {
+    const idx = revisions.findIndex((r) => r.id === revisionId);
+    const target = idx >= 0 ? revisions[idx + 1] : undefined;
+    const tip = revisions[0];
+    if (!target || !tip) return;
+    beginRestoreConfirm(target.id, true);
+    setUndoPreview({ targetId: target.id, lines: "loading" });
+    const lines = tip.id === target.id ? [] : await fetchDiffLines(tip.id, target.id);
+    setUndoPreview((p) => (p && p.targetId === target.id ? { ...p, lines: lines ?? "error" } : p));
+  }
+
+  function beginRestoreConfirm(revisionId: string, undoChange = false) {
+    if (!undoChange) setUndoPreview(null);
     restoreTargetIdRef.current = revisionId;
     restoreRequestIdRef.current = crypto.randomUUID();
     setRestoreMessage(null);
@@ -404,6 +485,7 @@ export function StudioMixRevisionHistoryControl({
       );
       restoreRequestIdRef.current = null;
       restoreTargetIdRef.current = null;
+      setUndoPreview(null);
       await loadList({ reset: true });
       setView("list");
       setSelectedId(null);
@@ -417,6 +499,8 @@ export function StudioMixRevisionHistoryControl({
       setRestoreSubmitting(false);
     }
   }
+
+  const undoShown = restoreOpen ? undoPreview : null;
 
   return (
     <div className="relative">
@@ -558,6 +642,8 @@ export function StudioMixRevisionHistoryControl({
 
               {view === "list" ? (
                 <ListPanel
+                  summaries={summaries}
+                  onUndo={(id) => void beginUndoChange(id)}
                   revisions={revisions}
                   nextCursor={nextCursor}
                   loadState={listLoadState}
@@ -583,6 +669,11 @@ export function StudioMixRevisionHistoryControl({
 
               {view === "detail" ? (
                 <DetailPanel
+                  changeLines={selectedId ? summaries[selectedId] : undefined}
+                  canUndo={Boolean(selectedId && revisions.findIndex((r) => r.id === selectedId) >= 0 && revisions.findIndex((r) => r.id === selectedId) < revisions.length - 1)}
+                  onUndoChange={() => {
+                    if (selectedId) void beginUndoChange(selectedId);
+                  }}
                   loading={detailLoading}
                   error={detailError}
                   revision={detail}
@@ -611,6 +702,7 @@ export function StudioMixRevisionHistoryControl({
                   loading={compareLoading}
                   error={compareError}
                   diff={diff}
+                  trackNames={trackNames ?? {}}
                   onFromChange={setCompareFromId}
                   onToChange={setCompareToId}
                   onRun={() => {
@@ -645,12 +737,18 @@ export function StudioMixRevisionHistoryControl({
                     data-testid="studio-mix-history-restore-dialog"
                   >
                     <p id={restoreTitleId} className="text-sm font-semibold">
-                      {t("przywrocicTeRewizjeMiksu")}
+                      {undoShown ? t("cofnacTeZmiane") : t("przywrocicTeRewizjeMiksu")}
                     </p>
                     <p className="text-xs text-[var(--brd-ink)]/75">
-                      {t("operacjaUtworzyNowaRewizje")}
+                      {undoShown ? t("cofnijOpis") : t("operacjaUtworzyNowaRewizje")}
                     </p>
-                    {detail ? (
+                    {undoShown ? (
+                      <div data-testid="studio-mix-history-undo-preview">
+                        <p className="text-xs font-semibold">{t("coWroci")}</p>
+                        <ChangeLines lines={undoShown.lines} testId="studio-mix-history-undo-lines" />
+                      </div>
+                    ) : null}
+                    {detail && !undoShown ? (
                       <p className="font-mono text-[11px] text-[var(--brd-ink)]/80">
                         {tl(mixRevisionRowLabel(detail))} · v
                         {detail.sourceDocumentVersion}
@@ -690,7 +788,7 @@ export function StudioMixRevisionHistoryControl({
                         data-testid="studio-mix-history-restore-confirm"
                         onClick={() => void confirmRestore()}
                       >
-                        {tl(restoreSubmitting ? t("przywracanie") : t("przywroc"))}
+                        {tl(restoreSubmitting ? t("przywracanie") : undoShown ? t("cofnijTeZmiane") : t("przywroc"))}
                       </Button>
                     </div>
                   </div>
@@ -704,7 +802,30 @@ export function StudioMixRevisionHistoryControl({
   );
 }
 
+function ChangeLines(props: { lines: string[] | "loading" | "error" | undefined; max?: number; testId?: string }) {
+  const t = useTranslations("studio.studioMixRevisionHistoryControl");
+  const tl = useLibText();
+  if (props.lines === undefined) return null;
+  if (props.lines === "loading") return <p className="mt-1 text-[11px] text-[var(--brd-ink)]/55">{t("wczytujeOpisZmian")}</p>;
+  if (props.lines === "error") return <p className="mt-1 text-[11px] text-[var(--brd-warn)]">{t("nieUdaloSieOpisuZmian")}</p>;
+  if (props.lines.length === 0) return <p className="mt-1 text-[11px] text-[var(--brd-ink)]/55">{t("brakZmianWOpisie")}</p>;
+  const shown = props.max ? props.lines.slice(0, props.max) : props.lines;
+  const rest = props.lines.length - shown.length;
+  return (
+    <ul className="mt-1 space-y-0.5 text-[11px] leading-snug" data-testid={props.testId ?? "studio-mix-history-change-lines"}>
+      {shown.map((line, i) => (
+        <li key={i} className="before:mr-1 before:content-['•']">
+          {tl(line)}
+        </li>
+      ))}
+      {rest > 0 ? <li className="text-[var(--brd-ink)]/55">{t("iJeszczeZmian", { n: rest })}</li> : null}
+    </ul>
+  );
+}
+
 function ListPanel(props: {
+  summaries: Record<string, string[] | "loading" | "error">;
+  onUndo: (id: string) => void;
   revisions: MixRevisionListItem[];
   nextCursor: string | null;
   loadState: MixHistoryListLoadState;
@@ -820,8 +941,21 @@ function ListPanel(props: {
                     {t("zeZrodla")}{" "}{tl(row.restoredFromRevisionId.slice(0, 8))}…
                   </p>
                 ) : null}
+                <ChangeLines lines={props.summaries[row.id]} max={3} />
               </button>
               <div className="mt-1 flex flex-wrap gap-1">
+                {props.revisions.findIndex((r) => r.id === row.id) < props.revisions.length - 1 ? (
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="outline"
+                    className="min-h-9 text-[10px]"
+                    data-testid={`studio-mix-history-undo-${row.id}`}
+                    onClick={() => props.onUndo(row.id)}
+                  >
+                    {t("cofnijTeZmiane")}
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   size="xs"
@@ -863,6 +997,9 @@ function ListPanel(props: {
 }
 
 function DetailPanel(props: {
+  changeLines: string[] | "loading" | "error" | undefined;
+  canUndo: boolean;
+  onUndoChange: () => void;
   loading: boolean;
   error: MixRevisionApiFailure | null;
   revision: MixRevision | null;
@@ -907,6 +1044,10 @@ function DetailPanel(props: {
   const tip = r.sourceDocumentVersion === props.tipDocumentVersion;
   return (
     <div className="space-y-3" data-testid="studio-mix-history-detail">
+      <section aria-label={t("coZmienilaTaWersja")} className="rounded border border-[var(--brd-line)] px-2.5 py-2">
+        <h3 className="text-xs font-semibold">{t("coZmienilaTaWersja")}</h3>
+        <ChangeLines lines={props.changeLines} testId="studio-mix-history-detail-changes" />
+      </section>
       <dl className="grid gap-1 text-xs">
         <div>
           <dt className="text-[var(--brd-ink)]/55">{t("rodzaj")}</dt>
@@ -973,11 +1114,23 @@ function DetailPanel(props: {
         </label>
       ) : null}
 
-      <div className="sticky bottom-0 -mx-3 border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 pt-3">
+      <div className="sticky bottom-0 -mx-3 flex flex-wrap gap-2 border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 pt-3">
+        {props.canUndo ? (
+          <Button
+            type="button"
+            size="sm"
+            className="min-h-11 w-full bg-[var(--brd-green)] text-[var(--brd-paper)] hover:opacity-90 sm:w-auto"
+            data-testid="studio-mix-history-detail-undo"
+            onClick={props.onUndoChange}
+          >
+            {t("cofnijTeZmiane")}
+          </Button>
+        ) : null}
         <Button
           type="button"
           size="sm"
-          className="min-h-11 w-full bg-[var(--brd-green)] text-[var(--brd-paper)] hover:opacity-90 sm:w-auto"
+          variant="outline"
+          className="min-h-11 w-full sm:w-auto"
           data-testid="studio-mix-history-detail-restore"
           onClick={props.onRestore}
         >
@@ -995,15 +1148,13 @@ function ComparePanel(props: {
   loading: boolean;
   error: MixRevisionApiFailure | null;
   diff: MixWorkingRevisionDiff | null;
+  trackNames: Record<string, string>;
   onFromChange: (id: string | null) => void;
   onToChange: (id: string | null) => void;
   onRun: () => void;
 }) {
   const tl = useLibText();
   const t = useTranslations("studio.studioMixRevisionHistoryControl");
-  const groups = props.diff
-    ? groupMixRevisionDiffChanges(props.diff.changes)
-    : [];
 
   return (
     <div className="space-y-3" data-testid="studio-mix-history-compare">
@@ -1078,29 +1229,7 @@ function ComparePanel(props: {
               {t("brakZmianWDozwolonych")}
             </p>
           ) : (
-            groups.map((group) => (
-              <section key={group.group} className="mb-3">
-                <h3 className="mb-1 text-xs font-semibold">{tl(group.label)}</h3>
-                <ul className="space-y-2">
-                  {group.changes.map((change) => (
-                    <li
-                      key={change.path}
-                      className="rounded border border-[var(--brd-line)] px-2 py-1.5 text-[11px]"
-                    >
-                      <p className="font-medium">
-                        {tl(mixRevisionDiffPathLabel(change.path))}
-                      </p>
-                      <p className="mt-0.5 font-mono text-[var(--brd-ink)]/80">
-                        <span className="text-[var(--brd-ink)]/50">{t("przed")}{" "}</span>
-                        {tl(formatMixRevisionDiffValue(change.before))}
-                        <span className="text-[var(--brd-ink)]/50"> {t("po")}{" "}</span>
-                        {tl(formatMixRevisionDiffValue(change.after))}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))
+            <ChangeLines lines={summarizeMixChanges(props.diff.changes, props.trackNames)} testId="studio-mix-history-compare-lines" />
           )}
         </div>
       ) : null}

@@ -3387,6 +3387,7 @@ function StudioEditorInner({
 
       <StudioTransportBar
         projectId={doc.project.id}
+        trackNames={Object.fromEntries(doc.tracks.map((t) => [t.id, t.name]))}
         tipDocumentVersion={doc.project.documentVersion}
         getExpectedDocumentVersion={expectedDocumentVersion}
         onDocumentRefreshed={(next) => {
@@ -4850,6 +4851,7 @@ function ClipEditPanelPlayheadBound(
 
 function StudioTransportBar({
   projectId,
+  trackNames,
   tipDocumentVersion,
   getExpectedDocumentVersion,
   onDocumentRefreshed,
@@ -4896,6 +4898,7 @@ function StudioTransportBar({
   selectionEndMs,
 }: {
   projectId: string;
+  trackNames: Record<string, string>;
   tipDocumentVersion: number;
   getExpectedDocumentVersion: () => number;
   onDocumentRefreshed: (document: StudioProjectDocument) => void;
@@ -5272,6 +5275,7 @@ function StudioTransportBar({
             tipDocumentVersion={tipDocumentVersion}
             getExpectedDocumentVersion={getExpectedDocumentVersion}
             onDocumentRefreshed={onDocumentRefreshed}
+            trackNames={trackNames}
             disabled={pending}
           />
           <StudioExportControl

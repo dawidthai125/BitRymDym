@@ -301,10 +301,10 @@ export function StudioBitekChat({
         wanted.set(takeId, body.job.id);
       }
       if (!wanted.size) return;
-      const deadline = Date.now() + 45000;
+      // 23 rounds of 2 s ≈ 45 s of waiting for the cleanup job (a counter, not the clock: render-pure).
       const done = new Set<string>();
       let applied = 0;
-      while (Date.now() < deadline) {
+      for (let round = 0; round < 23; round += 1) {
         const list = (await fetch(base).then((r) => r.json()).catch(() => null)) as { jobs?: { id: string; takeId: string; status: string; applied: boolean }[] } | null;
         const jobs = list?.jobs ?? [];
         let pending = false;

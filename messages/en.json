@@ -2291,6 +2291,15 @@
       "poziomMasterSamplePeak": "Master level (sample peak)"
     },
     "studioMixRevisionHistoryControl": {
+      "coZmienilaTaWersja": "What this version changed",
+      "wczytujeOpisZmian": "Loading the change description…",
+      "nieUdaloSieOpisuZmian": "Could not describe this version's changes.",
+      "brakZmianWOpisie": "This version did not change the mix settings (level, pan, effects).",
+      "iJeszczeZmian": "and {n} more",
+      "cofnijTeZmiane": "Undo this change",
+      "cofnacTeZmiane": "Undo this change?",
+      "cofnijOpis": "I will go back to the mix as it was before this change. Changes made after it are undone too. This is saved as a new version; older ones stay in the history. Audio files and the master are untouched.",
+      "coWroci": "After undoing, this changes:",
       "przywrocenieJuzByloZapisane": "The restore was already saved — showing the result without changing anything again.",
       "przywroconoStanMiksuUtworzono": "I restored the mix and added a new version to the history.",
       "brakPolaczeniaSprawdzSiec": "No network. Check the connection and try again.",

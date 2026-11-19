@@ -147,7 +147,9 @@ export function formatMixRevisionWhen(iso: string | null | undefined): string {
   const ms = Date.parse(iso);
   if (Number.isNaN(ms)) return "";
   try {
-    return new Intl.DateTimeFormat(undefined, {
+    // The history is written in Polish; a browser set to English must not mix "Nov 19, 8:14 PM" into it.
+    const en = typeof document !== "undefined" && document.documentElement.lang.toLowerCase().startsWith("en");
+    return new Intl.DateTimeFormat(en ? "en-GB" : "pl-PL", {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(new Date(ms));
