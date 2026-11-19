@@ -84,7 +84,7 @@ type ServerMaster =
 
 const STATUS_RAIL = { green: "border-l-[var(--brd-green)]", yellow: "border-l-[var(--brd-amber)]", red: "border-l-[var(--brd-rec)]", na: "border-l-[var(--brd-line)]" } as const;
 const MIN_PLAN = (format: DeliverFormat): Tier => minimumTierForDeliverFormat(format);
-const FORMATS: DeliverFormat[] = ["MP3_128", "MP3_192", "MP3_320", "WAV_24"];
+const FORMATS: DeliverFormat[] = ["MP3_128", "MP3_192", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F"];
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -487,7 +487,7 @@ export function StudioMasterStep({
     if (j.downloadUrl) return j.downloadUrl;
     if (!j.downloadParts?.length) return null;
     const ext = (j.filename ?? "").split(".").pop();
-    const blob = await joinParts(j.downloadParts, ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : "audio/wav");
+    const blob = await joinParts(j.downloadParts, ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : ext === "flac" ? "audio/flac" : ext === "aiff" ? "audio/aiff" : "audio/wav");
     return blob ? URL.createObjectURL(blob) : null;
   }
 

@@ -3253,6 +3253,9 @@
         "MP3_192": "MP3 192",
         "MP3_320": "MP3 320",
         "WAV_24": "WAV 24-bit",
+        "FLAC_24": "FLAC 24-bit",
+        "AIFF_24": "AIFF 24-bit",
+        "WAV_32F": "WAV 32-bit float",
         "ZIP": "ZIP"
       },
       "formatAria": "{kind} — {format}",

@@ -367,7 +367,7 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
       }
     }
     resultKey = `${prefix}/out/${job.kind}.${ext}`;
-    const contentType = ext === "mp4" ? "video/mp4" : ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : ext === "flac" ? "audio/flac" : "audio/wav";
+    const contentType = ext === "mp4" ? "video/mp4" : ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : ext === "flac" ? "audio/flac" : ext === "aiff" ? "audio/aiff" : "audio/wav";
     progress.report("upload");
     const parts = await uploadFile(resultKey, cur, contentType, (f) => progress.report("upload", f));
     // Master jobs also get a watermarked preview: the studio plays it instead of the clean file until approval.
