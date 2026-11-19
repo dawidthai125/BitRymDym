@@ -55,6 +55,10 @@ import { StudioChangeReport } from "@/components/studio/studio-change-report";
 import { StudioVocalCleanup } from "@/components/studio/studio-vocal-cleanup";
 import { publishPocketMarkers } from "@/lib/studio/mix-analysis/pocket-worklet";
 
+/** Bitek keeps fixing and re-auditing until nothing is left to fix; these are only safety caps. */
+const MAX_FIX_ROUNDS = 6;
+const MAX_FIX_STEPS = 12;
+
 export type MixAutofixApply = (
   ops: MixWorkingOp[],
   description: string,
@@ -513,12 +517,12 @@ export function StudioMixStep({
   // don't trap the user — let them go on with a BITEK warning.
   const autofixExhausted = useMemo(() => {
     if (!result || stale || running || result.verdict.canMaster || !Number.isFinite(result.metrics.master.integratedLufs)) return false;
-    if (fixSeq >= 2) return true;
+    if (fixSeq >= MAX_FIX_STEPS) return true;
     return planForPlan({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length === 0;
   }, [result, stale, running, fixSeq, doc]);
   /** Bitek still has automatic moves left (and the two-round cap is not reached). */
   const canFixMore = useMemo(() => {
-    if (!result || stale || running || !canAutofix || rounds >= 2) return false;
+    if (!result || stale || running || !canAutofix || rounds >= MAX_FIX_ROUNDS) return false;
     return planForPlan({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0;
   }, [result, stale, running, canAutofix, rounds, doc]);
   const canMaster = (Boolean(verdict?.canMaster) || autofixExhausted) && !stale && !running;
@@ -781,6 +785,20 @@ export function StudioMixStep({
         actions: [
           { id: "autoListen", label: tBitek("akcja.autoListen"), onClick: () => listenRef.current?.() },
           { id: "autoMasterNie", label: tBitek("akcja.autoMasterNie"), onClick: () => { setAutoPhase("stay"); setSongPhase("stay"); } },
+        ],
+      };
+    }
+    if ((autoPhase === "ask" || songPhase === "ask") && verdict && !stale && !running && canFixMore && verdict.redCount + verdict.yellowCount > 0) {
+      // The mix is playable but not clean: offer another fix round instead of jumping to mastering.
+      const left = verdict.redCount + verdict.yellowCount;
+      return {
+        key: `song-more-${fixSeq}-${left}`,
+        mood: "alert",
+        text: t("autofix.zostaloPoUtworze", { count: left }),
+        actions: [
+          { id: "songMoreTak", label: t("autofix.jeszczeTak"), primary: true, onClick: () => { setAutoPhase("stay"); setSongPhase("stay"); setPending((p) => ({ id: "fix-all", seq: (p?.seq ?? 0) + 1 })); } },
+          { id: "autoListen", label: tBitek("akcja.autoListen"), onClick: () => listenRef.current?.() },
+          { id: "songMoreNie", label: t("autofix.jeszczeNie"), onClick: () => { saveAutoMasterHandoff(doc.project.id); setAutoPhase("stay"); setSongPhase("stay"); goMasterRef.current?.(); } },
         ],
       };
     }
