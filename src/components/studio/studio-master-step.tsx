@@ -861,7 +861,8 @@ export function StudioMasterStep({
             </section>
           ) : null}
 
-          {streaming ? (
+          {/* Before the master exists this is the only platform view (from the preview). After it, the change report below shows the real numbers. */}
+          {streaming && sm.phase !== "done" && !approved ? (
             <section aria-labelledby="studio-master-streaming-title" data-testid="studio-master-streaming" data-score={streaming.score} className="flex flex-col gap-2 rounded-[2px] border border-[var(--brd-line)] border-l-4 bg-[var(--brd-paper)] p-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 id="studio-master-streaming-title" className="brd-display text-base">{t("streaming.tytul")}</h3>
