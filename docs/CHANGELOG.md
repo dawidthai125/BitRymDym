@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-19 — Nagrywarka Windows 2026.11.34 (PUBLIC)
+
+Po teście lokalnego bota na .33: zwrot dziennej wysyłki działa teraz po każdej nieudanej wysyłce, także gdy program zapisał stan do wznowienia (wcześniej wysyłka zostawała zużyta, gdy upload padł po utworzeniu projektu). Stan do wznowienia zostaje, ale bez identyfikatora wysyłki, więc kolejne „Gotowe i Wrzuć do Studia” bierze świeżą. Logika w `give_back_send` (`account_upload.py`) z autotestem. Feed `releases.win.json` w korzeniu R2 odzwierciedla teraz tę samą wersję co `feed/`. Tag `recorder-v2026.11.34`, Actions run `44547475929`, Setup SHA-256 `382708bf…`, 127 888 610 B. Nie sprawdzono na komputerze użytkownika.
+
+---
+
 ## 2026-11-19 — Nagrywarka Windows 2026.11.33 (PUBLIC)
 
 Naprawy po teście lokalnego bota na Windows: (1) feed Velopack leży w `bitrymdym/feed/`, a wydanie .32 trafiło o poziom wyżej, więc pasek oferował .31. Naprawione: paczka i `releases.win.json` .32 i .33 są w `feed/`; z .31 program widzi teraz .33. (2) Program ładuje czcionki z kopii w `%LOCALAPPDATA%\BitRymDym\fonts`, więc nic nie blokuje katalogu `current` przy aktualizacji i ręcznym Setupie (działa od aktualizacji z .33). Tag `recorder-v2026.11.33`, Actions run `44543188007`. Setup SHA-256 `28fbcc78…`, 127 887 580 B. Nie sprawdzono na komputerze użytkownika.
