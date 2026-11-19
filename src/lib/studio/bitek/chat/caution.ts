@@ -35,5 +35,7 @@ export function withMeasurementCaution(result: BitekChatResult, ctx: BitekChatCo
   if (!raisesLead) return result;
   const note = TEXT[ctx.lang](lu.toFixed(1).replace(/^(\d)/, "+$1"));
   if (result.reply.includes(note)) return result;
+  // The model already warned from the measurement: do not say it twice.
+  if (/pomiar|measur|analysis says|\bLU\b/i.test(result.reply)) return result;
   return { ...result, reply: `${result.reply} ${note}`.trim() };
 }

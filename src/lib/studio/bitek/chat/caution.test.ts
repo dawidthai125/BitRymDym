@@ -27,6 +27,10 @@ describe("withMeasurementCaution", () => {
     expect(withMeasurementCaution(up(2), ctx("+3.1 LU")).reply).toBe("Podgłośnię wokal.");
     expect(withMeasurementCaution(up(5.5), ctx("+3.1 LU", false, "master")).reply).toBe("Podgłośnię wokal.");
   });
+  it("stays silent when the reply already warns from the measurement", () => {
+    const warned: BitekChatResult = { ...up(5.5), reply: "Podgłośnię wokal, ale z pomiaru jest już o 3,3 LU głośniejszy od bitu, więc jak będzie za blisko, cofnij." };
+    expect(withMeasurementCaution(warned, ctx("+3.1 LU")).reply).toBe(warned.reply);
+  });
   it("does not repeat itself", () => {
     const once = withMeasurementCaution(up(5.5), ctx("+3.1 LU"));
     expect(withMeasurementCaution(once, ctx("+3.1 LU")).reply).toBe(once.reply);
