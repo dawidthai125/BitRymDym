@@ -188,6 +188,8 @@ export function StudioMixStep({
   const [midiNote, setMidiNote] = useState<string | null>(null);
   const [panel, setPanel] = useState<FixPanel | null>(null);
   const [fixSeq, setFixSeq] = useState(0);
+  /** Committed auto-fix rounds only (fixSeq also counts the "propose" step of gated fixes). */
+  const [rounds, setRounds] = useState(0);
   const [declinedKey, setDeclinedKey] = useState<string | null>(null);
   const [ab, setAb] = useState<{ before: StudioProjectDocument; afterSig: string | null; metricsBefore: MixMetrics | null } | null>(null);
   const [abMode, setAbMode] = useState<"before" | "after">("after");
@@ -336,6 +338,7 @@ export function StudioMixStep({
     setAbMode("after");
     setPanel({ kind: "done", notes, after: null });
     setFixSeq((n) => n + 1);
+    setRounds((n) => n + 1);
     const texts = notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
     const tech = techChipsFromAutofixNotes(notes).map((c) =>
       c.track ? `${c.track}: ${c.label}` : c.label,
@@ -851,7 +854,7 @@ export function StudioMixStep({
           panel.after && !running && !stale && verdict
             ? verdict.redCount + verdict.yellowCount === 0
               ? t("autofix.gotowePytanie")
-              : fixSeq < 2 && canAutofix
+              : rounds < 2 && canAutofix
                 ? t("autofix.jeszczePytanie", { count: verdict.redCount + verdict.yellowCount })
                 : ""
             : "",
@@ -865,7 +868,7 @@ export function StudioMixStep({
           if (left === 0) {
             return [goOn, { id: "fixMyself", label: t("autofix.poprawiamSam"), onClick: () => setPanel(null) }];
           }
-          const again = canAutofix && fixSeq < 2
+          const again = canAutofix && rounds < 2
             ? [{ id: "fixMore", label: t("autofix.jeszczeTak"), primary: true, onClick: () => setPending((p) => ({ id: "fix-all", seq: (p?.seq ?? 0) + 1 })) }]
             : [];
           return [...again, { id: "moveOn", label: t("autofix.jeszczeNie"), onClick: () => (canMaster ? onGoMaster?.() : setPanel(null)) }];
@@ -925,7 +928,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, autoEnabled, declinedKey, canMaster, onGoMaster]);
+  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, autoEnabled, declinedKey, canMaster, onGoMaster, rounds]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
