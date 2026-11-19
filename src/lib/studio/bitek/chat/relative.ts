@@ -109,7 +109,7 @@ export function nextRelativeValue(params: {
 const REPLY: Record<BitekLang, Record<BitekRelativeKind | "limit", string>> = {
   pl: {
     more: "Dokładam jeszcze tyle samo, co ostatnio. Kliknij „Zastosuj” i posłuchaj.",
-    bit_more: "Dorzucam jeszcze odrobinę w tę samą stronę. Zastosuj i posłuchaj.",
+    bit_more: "Zmieniam jeszcze o odrobinę, tak jak prosisz. Zastosuj i posłuchaj.",
     less: "Racja, przesadziłem — cofam połowę ostatniej zmiany. Zastosuj i porównaj.",
     too_little: "Dobra, dokładam jeszcze połowę tego, co ostatnio. Zastosuj i posłuchaj.",
     undo: "Jasne, wracam do ustawień sprzed mojej ostatniej zmiany.",
@@ -117,7 +117,7 @@ const REPLY: Record<BitekLang, Record<BitekRelativeKind | "limit", string>> = {
   },
   en: {
     more: "I'll add the same amount again. Hit \"Apply\" and listen.",
-    bit_more: "I'll nudge it a little further the same way. Apply and listen.",
+    bit_more: "I'll nudge it a little more, as you asked. Apply and listen.",
     less: "Fair, I overdid it — I'll pull back half of the last change. Apply and compare.",
     too_little: "OK, I'll add half of the last change again. Apply and listen.",
     undo: "Sure, I'll go back to how it was before my last change.",
