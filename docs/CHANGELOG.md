@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-19 — Nagrywarka Windows 2026.11.33 (PUBLIC)
+
+Naprawy po teście lokalnego bota na Windows: (1) feed Velopack leży w `bitrymdym/feed/`, a wydanie .32 trafiło o poziom wyżej, więc pasek oferował .31. Naprawione: paczka i `releases.win.json` .32 i .33 są w `feed/`; z .31 program widzi teraz .33. (2) Program ładuje czcionki z kopii w `%LOCALAPPDATA%\BitRymDym\fonts`, więc nic nie blokuje katalogu `current` przy aktualizacji i ręcznym Setupie (działa od aktualizacji z .33). Tag `recorder-v2026.11.33`, Actions run `44543188007`. Setup SHA-256 `28fbcc78…`, 127 887 580 B. Nie sprawdzono na komputerze użytkownika.
+
+---
+
 ## 2026-11-19 — Nagrywarka Windows 2026.11.32 (PUBLIC)
 
 Zwrot dziennej wysyłki do Studia, gdy wysyłka z programu się nie uda i nie ma stanu do wznowienia (`DELETE /api/desktop/studio-send`, okno zwrotu 6 h). Tag `recorder-v2026.11.32`, commit `3acd6aa`, Actions run `44464630275` success. R2 `kt-releases/bitrymdym`: Setup (SHA-256 `76f9901d…`, 127 885 501 B), paczka `BitRymDym.Nagrywarka-2026.11.32-full.nupkg`, `releases.win.json`, podpisany `latest.json`. Poprzedni Setup zostaje pod `BitRymDym-Setup-2026.11.31.exe`. Nie sprawdzono na komputerze użytkownika.
