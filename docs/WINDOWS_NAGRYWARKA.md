@@ -60,6 +60,7 @@ Publikacja nowego buildu (kolejność ma znaczenie, `latest.json` na końcu):
 1. podbij `APP_VERSION` w `updater.py` i `AppVersion` w `installer/BitRymDym.iss` (CI sprawdza zgodność), commit, tag `recorder-v<wersja>`;
 2. pobierz artefakt z workflow, sprawdź SHA-256;
 3. R2: kopia poprzedniego `BitRymDym-Setup.exe` pod klucz z jego wersją, wgraj `BitRymDym-Setup-<wersja>.exe` i `BitRymDym-Setup.exe` (+ `.sha256`);
+3a. **Feed Velopack (z niego program bierze aktualizacje z paska):** wgraj `BitRymDym.Nagrywarka-<wersja>-full.nupkg` do `bitrymdym/feed/` (nie do `bitrymdym/`), a potem `releases.win.json` do `bitrymdym/feed/` (z `Cache-Control: no-cache`). Kolejność: paczka najpierw, feed po niej. `aws s3 cp` między kluczami R2 wymaga `--copy-props none` (R2 nie ma tagowania), prościej wgrać plik z artefaktu. Sprawdź: `python -c "import updater; print(updater.check_for_update(current='<poprzednia wersja>').version)"` ma zwrócić nową wersję. Pliki `bitrymdym/releases.win.json` i `bitrymdym/*.nupkg` w korzeniu są nieużywane przez program.
 4. `python installer/publish_manifest.py --installer <plik> --version <wersja> --key <ścieżka klucza z Vault> --out latest.json --notes "…"` i wgraj `latest.json` jako `bitrymdym/latest.json` z `Cache-Control: no-cache`.
 
 ## Instalator

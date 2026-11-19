@@ -185,11 +185,44 @@ def windows_app_id() -> None:
 _LOADED_FONT_PATHS: list[str] = []
 
 
+_FONT_PREFIXES = ("SourceSerif4", "SchibstedGrotesk", "BigShoulders", "IBMPlexMono")
+
+
+def stable_fonts_dir(source: Path | None = None, target: Path | None = None) -> Path:
+    """Folder the program loads its TTFs from.
+
+    Fonts loaded straight from current\\fonts are held open by Windows, so Velopack and a manual
+    Setup could not rename current\\ ("Failed to remove existing application directory").
+    The program therefore keeps a copy under %LOCALAPPDATA%\\BitRymDym\\fonts (outside the install
+    folder), refreshes it when a bundled file changed and loads that copy. If anything fails it falls
+    back to the bundled folder, as before.
+    """
+    src = source if source is not None else app_dir() / "fonts"
+    dst = target if target is not None else Path(os.environ.get("LOCALAPPDATA", "")) / "BitRymDym" / "fonts"
+    try:
+        if not src.is_dir() or str(dst).strip() in ("", "."):
+            return src
+        dst.mkdir(parents=True, exist_ok=True)
+        copied = 0
+        for path in src.glob("*.ttf"):
+            if not path.name.startswith(_FONT_PREFIXES):
+                continue
+            out = dst / path.name
+            if not out.is_file() or out.stat().st_size != path.stat().st_size:
+                tmp = out.with_suffix(".part")
+                tmp.write_bytes(path.read_bytes())
+                tmp.replace(out)
+            copied += 1
+        return dst if copied else src
+    except Exception:
+        return src
+
+
 def load_user_fonts() -> None:
     if os.name != "nt":
         return
     global _LOADED_FONT_PATHS
-    folders = [app_dir() / "fonts"]
+    folders = [stable_fonts_dir()]
     user_fonts = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "Windows" / "Fonts"
     if user_fonts.is_dir():
         folders.append(user_fonts)
@@ -201,7 +234,7 @@ def load_user_fonts() -> None:
         if not folder.is_dir():
             continue
         for path in folder.glob("*.ttf"):
-            if path.name.startswith(("SourceSerif4", "SchibstedGrotesk", "BigShoulders", "IBMPlexMono")):
+            if path.name.startswith(_FONT_PREFIXES):
                 text = str(path)
                 if add(text):
                     loaded.append(text)
@@ -209,7 +242,7 @@ def load_user_fonts() -> None:
 
 
 def unload_user_fonts() -> None:
-    """Drop GDI holds on current\\fonts so Velopack can replace the folder."""
+    """Drop GDI holds on the loaded fonts (a copy outside current\\) before an update."""
     global _LOADED_FONT_PATHS
     paths = list(_LOADED_FONT_PATHS)
     _LOADED_FONT_PATHS = []

@@ -116,6 +116,24 @@ def main() -> None:
     app.unload_user_fonts()
     if app._LOADED_FONT_PATHS:
         raise SystemExit("unload_user_fonts ma opróżnić listę czcionek przed Velopack")
+    with tempfile.TemporaryDirectory() as folder:
+        src, dst = Path(folder) / "bundled", Path(folder) / "user" / "fonts"
+        src.mkdir()
+        (src / "SourceSerif4-Regular.ttf").write_bytes(b"A" * 10)
+        (src / "Other-Font.ttf").write_bytes(b"B" * 10)
+        got = app.stable_fonts_dir(src, dst)
+        if got != dst or not (dst / "SourceSerif4-Regular.ttf").is_file() or (dst / "Other-Font.ttf").exists():
+            raise SystemExit("stable_fonts_dir: kopia czcionek poza katalogiem instalacji")
+        (src / "SourceSerif4-Regular.ttf").write_bytes(b"C" * 14)
+        app.stable_fonts_dir(src, dst)
+        if (dst / "SourceSerif4-Regular.ttf").stat().st_size != 14:
+            raise SystemExit("stable_fonts_dir: odświeżenie zmienionej czcionki")
+        empty = Path(folder) / "empty"
+        empty.mkdir()
+        if app.stable_fonts_dir(empty, Path(folder) / "u2") != empty:
+            raise SystemExit("stable_fonts_dir: brak czcionek ma zostać przy folderze programu")
+        if app.stable_fonts_dir(Path(folder) / "missing", dst) != Path(folder) / "missing":
+            raise SystemExit("stable_fonts_dir: brak folderu źródłowego")
     if "unload_user_fonts" not in open(Path(__file__).with_name("record_app.py"), encoding="utf-8").read():
         raise SystemExit("record_app musi mieć unload_user_fonts")
     launch = open(Path(__file__).with_name("record_app.py"), encoding="utf-8").read()
