@@ -34,6 +34,8 @@ const TARGETS: { re: RegExp; roles: string[] }[] = [
   { re: /\bbit\w*|beat|podklad|instrumental/, roles: ["beat", "instrument"] },
   { re: /wokal|vocal|glos\b|voice|zwrotk/, roles: ["lead_vocal"] },
 ];
+/** Mix step: a message about an effect or tone is a new request, not "more of the last level change". */
+const OTHER_SUBJECT = /poglos|reverb|\bech[oay]\b|delay|\beq\b|korekt|kompres|compress|de-?ess|sybil|\bsyk|szum|noise|harmoni|pitch|autotune|\btune\b|efekt|chorus|szersz|szerok|stereo|wide|brzmi|barw|jasn|cieplej|bas\b/;
 const MAX_WORDS = 8;
 
 const isMasterParam = (p: string): p is BitekMasterSetting => (BITEK_MASTER_SETTINGS as readonly string[]).includes(p);
@@ -56,6 +58,7 @@ export function classifyBitekRelative(message: string): { kind: BitekRelativeKin
 /** Message names a target (vocal / beat / adlibs) different from what was last changed → not a follow-up. */
 function namesOtherTarget(message: string, changes: BitekChange[], ctx: BitekChatContext): boolean {
   const m = norm(message);
+  if (ctx.step !== "master" && OTHER_SUBJECT.test(m)) return true;
   const roles = new Set(changes.map((c) => ctx.tracks.find((t) => t.ref === c.trackRef)?.role ?? (c.trackRef === BITEK_MASTER_REF ? "master" : "")));
   for (const t of TARGETS) {
     if (t.re.test(m) && !t.roles.some((r) => roles.has(r))) return true;

@@ -43,6 +43,15 @@ describe("classifyBitekRelative", () => {
 });
 
 describe("resolveBitekRelative (mix)", () => {
+  it("an effect or tone request is a new ask, not 'more of the last level change'", () => {
+    for (const msg of ["dodaj więcej pogłosu na wokalu", "więcej echa", "jeszcze mocniej kompresja", "więcej sybilantów", "zrób wokal szerszy", "jaśniej wokal więcej"]) {
+      expect(resolveBitekRelative(msg, ctx), msg).toBeNull();
+    }
+  });
+  it("plain 'więcej' and 'jeszcze trochę ciszej' still continue the last change", () => {
+    expect(resolveBitekRelative("więcej", ctx)).not.toBeNull();
+    expect(resolveBitekRelative("jeszcze trochę ciszej", ctx)).not.toBeNull();
+  });
   it("więcej → repeats the delta from the current value, with a first-person why", () => {
     const r = resolveBitekRelative("więcej", ctx)!;
     expect(r.relative).toBe("more");
