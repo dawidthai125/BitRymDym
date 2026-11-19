@@ -406,6 +406,7 @@
       "zapisanych": "{v0} zapisanych",
       "ostatnieNagrania": "Ostatnie nagrania",
       "mojeUtwory": "Moje utwory",
+      "mojeUtworyBlad": "Nie udało się wczytać Twoich utworów. Odśwież stronę za chwilę.",
       "mojeUtworyPusto": "Gotowe utwory ze Studio pojawią się tu po zatwierdzeniu mastera.",
       "zatwierdzony": "Zatwierdzony {date}",
       "wKatalogu": "w katalogu",

@@ -19,7 +19,11 @@ type WorkRow = { master_job_id: string; withdrawn_at: string | null };
 /** Pure join. `jobs` must be newest approval first; only the first job of each project is kept. */
 export function joinFinishedTracks(jobs: JobRow[], projects: ProjectRow[], works: WorkRow[], limit = 8): FinishedTrack[] {
   const titles = new Map(projects.map((p) => [p.id, (p.title ?? "").trim()]));
-  const listedJobs = new Set(works.filter((w) => w.withdrawn_at == null).map((w) => w.master_job_id));
+  const projectOfJob = new Map(jobs.map((j) => [j.id, j.project_id]));
+  // A project counts as listed when ANY of its masters is live (an older master can stay public after a re-master).
+  const listedProjects = new Set(
+    works.filter((w) => w.withdrawn_at == null).map((w) => projectOfJob.get(w.master_job_id)).filter((id): id is string => Boolean(id)),
+  );
   const seen = new Set<string>();
   const out: FinishedTrack[] = [];
   for (const job of jobs) {
@@ -31,7 +35,7 @@ export function joinFinishedTracks(jobs: JobRow[], projects: ProjectRow[], works
       masterJobId: job.id,
       title: titles.get(job.project_id) || "—",
       approvedAt: job.approved_at,
-      listed: listedJobs.has(job.id),
+      listed: listedProjects.has(job.project_id),
     });
   }
   return out;
@@ -50,7 +54,8 @@ export async function listOwnFinishedTracks(admin: Admin, ownerId: string, limit
     .eq("status", "succeeded")
     .not("approved_at", "is", null)
     .order("approved_at", { ascending: false })
-    .limit(60);
+    .limit(500);
+  if (jobsRes.error) throw new Error(`own_tracks_jobs: ${jobsRes.error.message}`);
   const jobs = (jobsRes.data ?? []) as JobRow[];
   if (jobs.length === 0) return [];
   const projectIds = [...new Set(jobs.map((j) => j.project_id))];
@@ -58,5 +63,7 @@ export async function listOwnFinishedTracks(admin: Admin, ownerId: string, limit
     admin.from("studio_projects").select("id, title").eq("owner_id", ownerId).in("id", projectIds),
     admin.from("catalog_works").select("master_job_id, withdrawn_at").eq("owner_id", ownerId).in("master_job_id", jobs.map((j) => j.id)),
   ]);
+  if (projectsRes.error) throw new Error(`own_tracks_projects: ${projectsRes.error.message}`);
+  if (worksRes.error) throw new Error(`own_tracks_catalog: ${worksRes.error.message}`);
   return joinFinishedTracks(jobs, (projectsRes.data ?? []) as ProjectRow[], (worksRes.data ?? []) as WorkRow[], limit);
 }

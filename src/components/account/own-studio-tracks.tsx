@@ -9,15 +9,20 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 export async function OwnStudioTracks({ userId }: { userId: string }) {
   const t = await getTranslations("account.accountPage");
   const locale = await getLocale();
-  const tracks = await listOwnFinishedTracks(createSupabaseAdminClient(), userId).catch(() => []);
+  const tracks = await listOwnFinishedTracks(createSupabaseAdminClient(), userId).catch((e: unknown) => {
+    console.error("[account] own tracks failed", e instanceof Error ? e.message : e);
+    return null;
+  });
   const fmt = (iso: string) => {
     const ms = Date.parse(iso);
-    return Number.isFinite(ms) ? new Date(ms).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" }) : "";
+    return Number.isFinite(ms) ? new Date(ms).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric", timeZone: "Europe/Warsaw" }) : "";
   };
   return (
     <section className="space-y-3 pt-8" data-testid="account-own-tracks">
       <SectionLabel>{t("mojeUtwory")}</SectionLabel>
-      {tracks.length === 0 ? (
+      {tracks === null ? (
+        <p className="text-sm text-[var(--brd-mute)]">{t("mojeUtworyBlad")}</p>
+      ) : tracks.length === 0 ? (
         <p className="text-sm text-[var(--brd-mute)]">{t("mojeUtworyPusto")}</p>
       ) : (
         <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">

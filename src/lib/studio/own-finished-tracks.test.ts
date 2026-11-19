@@ -14,6 +14,10 @@ describe("joinFinishedTracks", () => {
     const r = joinFinishedTracks(jobs, projects, works);
     expect(r.map((x) => [x.masterJobId, x.title, x.listed])).toEqual([["j3", "Mój numer", true], ["j2", "—", false]]);
   });
+  it("marks a project listed when an older master is still live", () => {
+    const jobs = [{ id: "new", project_id: "p1", approved_at: "2" }, { id: "old", project_id: "p1", approved_at: "1" }];
+    expect(joinFinishedTracks(jobs, projects, [{ master_job_id: "old", withdrawn_at: null }])[0]?.listed).toBe(true);
+  });
   it("skips jobs whose project is not the owner's and respects the limit", () => {
     const jobs = [{ id: "a", project_id: "zz", approved_at: "x" }, { id: "b", project_id: "p1", approved_at: "y" }];
     expect(joinFinishedTracks(jobs, projects, []).map((x) => x.masterJobId)).toEqual(["b"]);
