@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-19 — Nagrywarka Windows 2026.11.32 (PUBLIC)
+
+Zwrot dziennej wysyłki do Studia, gdy wysyłka z programu się nie uda i nie ma stanu do wznowienia (`DELETE /api/desktop/studio-send`, okno zwrotu 6 h). Tag `recorder-v2026.11.32`, commit `3acd6aa`, Actions run `44464630275` success. R2 `kt-releases/bitrymdym`: Setup (SHA-256 `76f9901d…`, 127 885 501 B), paczka `BitRymDym.Nagrywarka-2026.11.32-full.nupkg`, `releases.win.json`, podpisany `latest.json`. Poprzedni Setup zostaje pod `BitRymDym-Setup-2026.11.31.exe`. Nie sprawdzono na komputerze użytkownika.
+
+---
+
 ## 2026-11-17 — OD-16 CLOSED / ACCEPTED (Brand copy FINAL)
 
 **Status:** documentation · Owner GO · OD-16 **CLOSED / ACCEPTED**
