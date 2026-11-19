@@ -108,6 +108,22 @@ describe("scopeToNamedTarget", () => {
     expect(out.dropped).toBe(true);
     expect(out.result.proposals.map((p) => p.trackRef)).toEqual(["t1"]);
   });
+  it("an effect change the user never mentioned is dropped, one they asked for stays", () => {
+    const withSpace: BitekChatResult = {
+      provider: "groq",
+      reply: "Ściszę bit i dodam pogłos.",
+      proposals: [
+        { trackRef: "t1", param: "gainDb", value: -10, label: "" },
+        { trackRef: "t2", param: "space", value: 3, label: "" },
+      ],
+    };
+    const dropped = scopeToNamedTarget(withSpace, "ściszyj bit", ctx());
+    expect(dropped.dropped).toBe(true);
+    expect(dropped.result.proposals.map((p) => p.param)).toEqual(["gainDb"]);
+    const kept = scopeToNamedTarget(withSpace, "ściszyj bit i dodaj pogłos", ctx());
+    expect(kept.dropped).toBe(false);
+    expect(kept.result.proposals).toHaveLength(2);
+  });
   it("names both or neither target: nothing is dropped", () => {
     expect(scopeToNamedTarget(model(), "ściszyj bit i podgłośnij wokal", ctx()).dropped).toBe(false);
     expect(scopeToNamedTarget(model(), "popraw miks", ctx()).dropped).toBe(false);
