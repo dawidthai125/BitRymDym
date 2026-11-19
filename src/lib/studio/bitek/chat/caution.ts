@@ -9,9 +9,9 @@ const VOCAL_HOT_LU = 2.5;
 
 const TEXT = {
   pl: (lu: string) =>
-    `Uwaga: z pomiaru wokal jest już o ${lu} LU głośniejszy od bitu. Jeśli podgłośnimy go jeszcze, bit może go mniej przykrywać, ale łatwo o zbyt jaskrawy wokal. Zastosuj i posłuchaj. Gdy będzie za ostro, cofnij (Ctrl+Z).`,
+    `Uwaga: z pomiaru wokal jest już o ${lu} LU głośniejszy od bitu. Jeśli podgłośnimy go jeszcze, bit może go mniej przykrywać, ale łatwo o zbyt jaskrawy wokal. Gdy będzie za ostro, cofnij (Ctrl+Z).`,
   en: (lu: string) =>
-    `Heads-up: the analysis says the vocal is already ${lu} LU louder than the beat. Raising it more may help clarity but can sound harsh. Apply and listen; undo with Ctrl+Z if it is too much.`,
+    `Heads-up: the analysis says the vocal is already ${lu} LU louder than the beat. Raising it more may help clarity but can sound harsh. Undo with Ctrl+Z if it is too much.`,
 } as const;
 
 function balanceLu(ctx: BitekChatContext): number | null {
