@@ -139,3 +139,16 @@ describe("scopeToNamedTarget", () => {
     expect(r.reply).not.toContain("Podgłośnię wokal");
   });
 });
+
+import { resolveBitekRelative } from "./relative";
+
+describe("relative follow-ups after a reverb change", () => {
+  const last = { ...ctx(2), lastChange: [{ trackRef: "t2", param: "space" as const, from: 1, to: 2 }] };
+  it("a level word does not continue the reverb change", () => {
+    expect(resolveBitekRelative("ściszyj wokal trochę", last)).toBeNull();
+    expect(resolveBitekRelative("jeszcze trochę głośniej", last)).toBeNull();
+  });
+  it("'więcej' without a level word still continues it", () => {
+    expect(resolveBitekRelative("więcej", last)!.proposals[0]).toMatchObject({ param: "space", value: 3 });
+  });
+});

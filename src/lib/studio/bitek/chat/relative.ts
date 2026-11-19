@@ -160,6 +160,8 @@ export function resolveBitekRelative(message: string, ctx: BitekChatContext): Bi
     }
     const track = ctx.tracks.find((t) => t.ref === c.trackRef);
     if (!track) continue;
+    // "ciszej / głośniej / trochę ciszej" is about level: it must not continue a reverb, tune or pan change.
+    if (cls.direction !== 0 && c.param !== "gainDb") continue;
     if (c.param === "muted") {
       if (cls.kind === "undo" && typeof c.from === "boolean") raw.push({ trackRef: c.trackRef, param: "muted", value: c.from, label: "" });
       continue;
