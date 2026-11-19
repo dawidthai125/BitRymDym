@@ -3126,6 +3126,7 @@
         "bezPomiaru": "Click “Analyze mix” first. I won't move faders without a fresh measurement.",
         "powitanie": "Hey! Ask about your mix or tell me what to change — I'll suggest a concrete setting.",
         "dostawca": {
+          "xai": "answer: Grok (xAI)",
           "groq": "answered by: Groq",
           "gemini": "answered by: Gemini",
           "e3": "answered by: BitRymDym server",

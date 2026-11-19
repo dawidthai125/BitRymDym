@@ -3126,6 +3126,7 @@
         "bezPomiaru": "Najpierw kliknij „Analizuj mix”. Bez świeżego pomiaru nie zmieniam suwaków.",
         "powitanie": "Siema! Pytaj o miks albo napisz, co zmienić — zaproponuję konkretne ustawienie.",
         "dostawca": {
+          "xai": "odpowiedź: Grok (xAI)",
           "groq": "odpowiedź: Groq",
           "gemini": "odpowiedź: Gemini",
           "e3": "odpowiedź: serwer BitRymDym",
