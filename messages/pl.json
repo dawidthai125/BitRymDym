@@ -3202,6 +3202,25 @@
       "podgladUwaga": "Podgląd w przeglądarce jest przybliżony. Finalny master robi serwer.",
       "podgladLiczy": "Liczę podgląd…",
       "kartyTytul": "Analiza mastera",
+      "streaming": {
+              "tytul": "Gotowość na streaming",
+              "wynik": "{score}/100",
+              "bitek": "Gotowość na streaming: {score}/100.",
+              "serwis": { "spotify": "Spotify", "youtube": "YouTube", "tidal": "Tidal", "apple": "Apple Music" },
+              "akcja": {
+                "down": "ściszy utwór o {db} dB",
+                "up": "podgłośni utwór o {db} dB",
+                "none": "zagra bez zmiany głośności"
+              },
+              "uwagi": {
+                "ok": "Głośność i szczyt są w normie dla wszystkich serwisów. Nic do poprawy.",
+                "tpOver": "Szczyt {tp} dBTP przekracza bezpieczne {ceiling} dBTP. Po kompresji do MP3/AAC może trzaskać. Zmniejsz głośność mastera o 1 krok.",
+                "loud": "Jest głośno ({lufs} LUFS). Serwisy ściszą utwór o około {down} dB, więc głośność nic nie da, a stracisz dynamikę. Zmniejsz głośność o 1–2 kroki.",
+                "quiet": "Jest cicho ({lufs} LUFS). Część serwisów nie podgłośni utworu, więc zabrzmi słabiej od innych. Zwiększ głośność o 1–2 kroki.",
+                "squashed": "Dynamika jest mocno ściśnięta (PLR {plr}). Zmniejsz „ściśnięcie” albo głośność, żeby bit nie był płaski.",
+                "phase": "Korelacja stereo {corr}: na telefonie albo w mono część brzmienia może zniknąć. Zmniejsz szerokość."
+              }
+            },
       "zrobMaster": "Zrób master",
       "masterTrwa": "Robię master na serwerze…",
       "masterKolejka": "Czekam w kolejce…",

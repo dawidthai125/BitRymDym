@@ -3202,6 +3202,25 @@
       "podgladUwaga": "The browser preview is approximate. The server makes the final master.",
       "podgladLiczy": "Computing preview…",
       "kartyTytul": "Master analysis",
+      "streaming": {
+              "tytul": "Streaming readiness",
+              "wynik": "{score}/100",
+              "bitek": "Streaming readiness: {score}/100.",
+              "serwis": { "spotify": "Spotify", "youtube": "YouTube", "tidal": "Tidal", "apple": "Apple Music" },
+              "akcja": {
+                "down": "turns the track down by {db} dB",
+                "up": "turns the track up by {db} dB",
+                "none": "plays without a level change"
+              },
+              "uwagi": {
+                "ok": "Loudness and peak are fine for every service. Nothing to fix.",
+                "tpOver": "Peak {tp} dBTP is over the safe {ceiling} dBTP. It can crackle after MP3/AAC encoding. Lower the master loudness by 1 step.",
+                "loud": "It is loud ({lufs} LUFS). Services will turn it down by about {down} dB, so the loudness gains nothing and you lose dynamics. Lower the loudness by 1–2 steps.",
+                "quiet": "It is quiet ({lufs} LUFS). Some services will not turn it up, so it will sound weaker than other tracks. Raise the loudness by 1–2 steps.",
+                "squashed": "Dynamics are heavily squashed (PLR {plr}). Reduce the squash or the loudness so the track is not flat.",
+                "phase": "Stereo correlation {corr}: on a phone or in mono part of the sound may vanish. Reduce the width."
+              }
+            },
       "zrobMaster": "Make the master",
       "masterTrwa": "Mastering on the server…",
       "masterKolejka": "Waiting in the queue…",

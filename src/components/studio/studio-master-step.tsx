@@ -27,6 +27,7 @@ import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
 import { explainReferenceMatch, isReferenceMatchReport } from "@/lib/studio/master/reference";
 import { DEFAULT_MASTER_INTENSITY, DEFAULT_MASTER_SETTINGS, DEFAULT_REFERENCE_INTENSITY, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, applyMasterStyle, clampMasterSettings, isMasterStyleId, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterStyleId, type MasterTargetId } from "@/lib/studio/master/targets";
 import { buildMasterVerdict, type MasterCard } from "@/lib/studio/master/verdict";
+import { buildStreamingReadiness } from "@/lib/studio/master/streaming-readiness";
 import { decodeMixAnalysisInput } from "@/lib/studio/mix-analysis/client";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
 import type { MasterSessionSnap } from "@/lib/studio/studio-undo-history";
@@ -402,6 +403,7 @@ export function StudioMasterStep({
   };
   const useReference = !!refState.gate?.allowed && refState.reference?.status === "ready";
   const measured = preview?.metrics ?? mix?.metrics ?? null;
+  const streaming = useMemo(() => (measured ? buildStreamingReadiness(measured) : null), [measured]);
   const latest = useRef({ settings, target, verdict, measured });
   useEffect(() => {
     latest.current = { settings, target, verdict, measured };
@@ -671,7 +673,8 @@ export function StudioMasterStep({
       return {
         key: `m-ask-${target}`,
         mood: "done",
-        text: `${t(`bitek.gotowe.${target}`)} ${t("bitek.pytanieMaster")}`,
+        text: `${t(`bitek.gotowe.${target}`)} ${streaming ? t("streaming.bitek", { score: streaming.score }) + " " : ""}${t("bitek.pytanieMaster")}`,
+        details: streaming?.notes.map((n) => t(`streaming.uwagi.${n.key}`, n.params)),
         actions: [
           { id: "approveMaster", label: t("zatwierdz"), primary: true, onClick: () => approveRef.current() },
           back,
@@ -683,7 +686,7 @@ export function StudioMasterStep({
     else if (worst?.status === "red") [mood, text, key] = ["alert", t("bitek.problem", { card: t(`cards.${worst.id}.title`) }), `m-red-${worst.id}`];
     else [mood, text, key] = ["happy", t("bitek.gotowy"), "m-ready"];
     return { key, mood, text, details: mix && !approved ? [t("bitek.wrocInfo"), ...(sm.phase === "unavailable" ? [t("bitek.niedostepny")] : [])] : undefined, actions: approved ? [] : [back] };
-  }, [manual, renderFailed, mix, approved, sm.phase, target, worst, t, tBitek, prog.master, refLines]);
+  }, [manual, renderFailed, mix, approved, sm.phase, target, worst, t, tBitek, prog.master, refLines, streaming]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
@@ -853,6 +856,29 @@ export function StudioMasterStep({
                     {c.value ? <p className="font-mono text-lg leading-none">{c.value}</p> : null}
                     <p className="text-sm">{t(`cards.${c.id}.${c.messageKey}`, { ...c.params, band: typeof c.params.band === "string" ? t(`pasma.${c.params.band}`) : "" })}</p>
                   </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {streaming ? (
+            <section aria-labelledby="studio-master-streaming-title" data-testid="studio-master-streaming" data-score={streaming.score} className="flex flex-col gap-2 rounded-[2px] border border-[var(--brd-line)] border-l-4 bg-[var(--brd-paper)] p-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h3 id="studio-master-streaming-title" className="brd-display text-base">{t("streaming.tytul")}</h3>
+                <p className="font-mono text-lg leading-none">{t("streaming.wynik", { score: streaming.score })}</p>
+              </div>
+              <ul className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
+                {streaming.rows.map((r) => (
+                  <li key={r.id} data-testid="studio-master-streaming-row" data-platform={r.id}>
+                    <span className="font-semibold">{t(`streaming.serwis.${r.id}`)}</span>{" "}
+                    <span className="text-[var(--brd-mute)]">({r.target} LUFS)</span>:{" "}
+                    {t(`streaming.akcja.${r.action}`, { db: Math.abs(r.gainDb).toLocaleString(locale === "en" ? "en-US" : "pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}
+                  </li>
+                ))}
+              </ul>
+              <ul className="list-disc pl-5 text-sm">
+                {streaming.notes.map((n) => (
+                  <li key={n.key}>{t(`streaming.uwagi.${n.key}`, n.params)}</li>
                 ))}
               </ul>
             </section>
