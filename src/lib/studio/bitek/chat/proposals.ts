@@ -8,6 +8,7 @@ import {
   type BitekJob,
   type BitekMasterSetting,
   type BitekProposal,
+  type BitekSpaceLevel,
   type BitekTuneLevel,
 } from "./types";
 import { isBitekWrongLanguage, sanitizeLabel } from "./prompt";
@@ -20,12 +21,17 @@ const TUNE_NAME: Record<BitekLang, Record<BitekTuneLevel, string>> = {
   en: { 0: "off", 1: "natural", 2: "hard (trap)" },
 };
 
+const SPACE_NAME: Record<BitekLang, Record<BitekSpaceLevel, string>> = {
+  pl: { 0: "brak", 1: "lekko", 2: "średnio", 3: "dużo" },
+  en: { 0: "none", 1: "light", 2: "medium", 3: "a lot" },
+};
+
 /**
  * Button label built server-side from the VALIDATED proposal (current → target), never from model text.
  * gainDb: "Wokal: −6 → −3 dB (+3)", pan: "Wokal: pan C → L50", muted: "Wokal: wycisz" / "Vocal: unmute".
  */
 export function buildBitekProposalLabel(
-  track: Pick<BitekTrackContext, "name" | "gainDb" | "pan" | "muted" | "tune">,
+  track: Pick<BitekTrackContext, "name" | "gainDb" | "pan" | "muted" | "tune" | "space">,
   param: BitekProposal["param"],
   value: number | boolean,
   lang: BitekLang,
@@ -42,6 +48,9 @@ export function buildBitekProposalLabel(
   } else if (param === "tune") {
     const names = TUNE_NAME[lang];
     body = `${lang === "pl" ? "strojenie" : "tuning"} ${names[track.tune ?? 0]} \u2192 ${names[value as BitekTuneLevel]}`;
+  } else if (param === "space") {
+    const names = SPACE_NAME[lang];
+    body = `${lang === "pl" ? "pogłos i echo" : "reverb and echo"} ${names[track.space ?? 0]} \u2192 ${names[value as BitekSpaceLevel]}`;
   } else {
     body = value ? (lang === "pl" ? "wycisz" : "mute") : lang === "pl" ? "włącz dźwięk" : "unmute";
   }
@@ -91,6 +100,11 @@ export function buildBitekProposalWhy(
         ? pl ? `Włączam twarde strojenie na ${name} — ten trapowy efekt skaczącej nuty.` : `I'm switching ${name} to hard tuning — that trap snap between notes.`
         : pl ? `Delikatnie dociągam ${name} do tonacji bitu, żeby nie było fałszu.` : `I'm gently pulling ${name} into the beat's key so nothing sounds off.`;
   }
+  if (param === "space") {
+    return value === 0
+      ? pl ? `Zdejmuję pogłos i echo z ${name}, żeby brzmiał na sucho.` : `I'm taking reverb and echo off ${name} so it sounds dry.`
+      : pl ? `Ustawiam pogłos i echo na ${name}, żeby brzmiał przestrzenniej.` : `I'm setting reverb and echo on ${name} so it sounds roomier.`;
+  }
   if (param === "pan") {
     return value === 0
       ? pl ? `Ustawiam ${name} na środku, bo tam niesie cały numer.` : `I'm centring ${name} because that's where it carries the track.`
@@ -121,6 +135,7 @@ function isNoop(track: BitekTrackContext, param: BitekProposal["param"], v: numb
   if (param === "gainDb") return Math.round(track.gainDb * 2) / 2 === v;
   if (param === "pan") return Math.round(track.pan * 100) / 100 === v;
   if (param === "tune") return (track.tune ?? 0) === v;
+  if (param === "space") return (track.space ?? 0) === v;
   return track.muted === v;
 }
 
@@ -210,6 +225,12 @@ export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekPro
       if (!BITEK_TUNE_ROLES.includes(track.role)) continue;
       const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
       if (n !== 0 && n !== 1 && n !== 2) continue;
+      v = n;
+    } else if (param === "space") {
+      // Reverb + echo amount: vocal tracks only, 0 none / 1 light / 2 medium / 3 a lot.
+      if (!BITEK_TUNE_ROLES.includes(track.role)) continue;
+      const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+      if (n !== 0 && n !== 1 && n !== 2 && n !== 3) continue;
       v = n;
     } else continue;
     if (isNoop(track, param, v)) continue;

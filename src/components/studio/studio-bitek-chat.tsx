@@ -14,9 +14,10 @@ import {
   type BitekStoredChange,
 } from "@/lib/studio/bitek/chat/decisions";
 import { NOVA_PASS_FIXES } from "@/lib/studio/mix-autofix/plan";
-import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekJob, type BitekMasterSetting, type BitekProposal, type BitekTuneLevel } from "@/lib/studio/bitek/chat/types";
+import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekJob, type BitekMasterSetting, type BitekProposal, type BitekSpaceLevel, type BitekTuneLevel } from "@/lib/studio/bitek/chat/types";
 import { emitStudioTakeSourceChanged } from "@/lib/studio/cleanup/cleanup-events";
 import { addStudioFxToChain } from "@/lib/studio/studio-fx-chain";
+import { bitekSpaceChain } from "@/lib/studio/bitek/chat/space-apply";
 import { bitekTuneChain } from "@/lib/studio/bitek/chat/tune-apply";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import type { PremiumTier } from "@/types/premium";
@@ -191,6 +192,14 @@ export function StudioBitekChat({
       if (!next) return null;
       void onApplyFxOps([{ op: "set_track_fx", trackId: target, effectsChain: next }], `BITEK: ${track.name}`);
       return track.tune ?? 0;
+    }
+    if (param === "space") {
+      const chain = getContext().effectsChainByTrackId[target];
+      if (!onApplyFxOps || !chain || typeof value !== "number") return null;
+      const next = bitekSpaceChain({ chain, level: value as BitekSpaceLevel });
+      if (!next) return null;
+      void onApplyFxOps([{ op: "set_track_fx", trackId: target, effectsChain: next }], `BITEK: ${track.name}`);
+      return track.space ?? 0;
     }
     const from = param === "gainDb" ? track.gainDb : param === "pan" ? track.pan : param === "muted" ? track.muted : null;
     if (from === null) return null;

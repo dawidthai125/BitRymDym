@@ -31,7 +31,7 @@ const LOUDER = /glosniej|podglosn|podkrec|louder|turn (it )?up/;
 const QUIETER = /ciszej|scisz|przycisz|quieter|turn (it )?down/;
 const TARGETS: { re: RegExp; roles: string[] }[] = [
   { re: /adlib|ad-lib|dogryw|double|dubl|chork|backing/, roles: ["adlib", "double", "backing"] },
-  { re: /\bbit\w*|beat|podklad|instrumental/, roles: ["beat", "instrument"] },
+  { re: /\bbit\w*|\bbici\w*|beat|podklad|instrumental/, roles: ["beat", "instrument"] },
   { re: /wokal|vocal|glos\b|voice|zwrotk/, roles: ["lead_vocal"] },
 ];
 /** Mix step: a message about an effect or tone is a new request, not "more of the last level change". */
@@ -162,6 +162,13 @@ export function resolveBitekRelative(message: string, ctx: BitekChatContext): Bi
     if (!track) continue;
     if (c.param === "muted") {
       if (cls.kind === "undo" && typeof c.from === "boolean") raw.push({ trackRef: c.trackRef, param: "muted", value: c.from, label: "" });
+      continue;
+    }
+    if (c.param === "space") {
+      if (typeof c.from !== "number" || typeof c.to !== "number") continue;
+      const cur = track.space ?? (c.to as number);
+      const value = cls.kind === "undo" ? c.from : cls.kind === "less" ? Math.max(0, cur - 1) : Math.min(3, cur + 1);
+      raw.push({ trackRef: c.trackRef, param: "space", value, label: "" });
       continue;
     }
     if (c.param === "tune") {

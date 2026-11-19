@@ -7,6 +7,7 @@ import {
   type BitekChatTurn,
   type BitekMasterSetting,
   type BitekTakeLevel,
+  type BitekSpaceLevel,
   type BitekTuneLevel,
 } from "./types";
 
@@ -76,6 +77,10 @@ export function parseBitekLastChange(raw: unknown, refs: ReadonlySet<string>, st
       const ok = (v: unknown) => v === 0 || v === 1 || v === 2;
       if (!ok(r.from) || !ok(r.to)) continue;
       out.push({ trackRef, param, from: r.from as number, to: r.to as number });
+    } else if (param === "space") {
+      const ok = (v: unknown) => v === 0 || v === 1 || v === 2 || v === 3;
+      if (!ok(r.from) || !ok(r.to)) continue;
+      out.push({ trackRef, param, from: r.from as number, to: r.to as number });
     } else if (param === "gainDb" || param === "pan") {
       if (typeof r.from !== "number" || typeof r.to !== "number") continue;
       const [lo, hi] = param === "gainDb" ? [BITEK_LIMITS.gainDbMin, BITEK_LIMITS.gainDbMax] : [-1, 1];
@@ -119,6 +124,7 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
           ...(durationMs !== undefined ? { durationMs } : {}),
           ...(effects.length ? { effects } : {}),
           ...(r.tune === 0 || r.tune === 1 || r.tune === 2 ? { tune: r.tune as BitekTuneLevel } : {}),
+          ...(r.space === 0 || r.space === 1 || r.space === 2 || r.space === 3 ? { space: r.space as BitekSpaceLevel } : {}),
         };
       })
     : [];

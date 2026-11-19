@@ -5,6 +5,8 @@ import { buildBitekSystemPrompt, isBitekWrongLanguage } from "./prompt";
 import { parseBitekModelOutput } from "./proposals";
 import { bitekRecordHelper } from "./record-helper";
 import { resolveBitekRelative } from "./relative";
+import { scopeToNamedTarget } from "./scope";
+import { bitekSpaceChat } from "./space-intent";
 import { BitekProviderError, type BitekLlmProvider } from "./providers";
 import { BITEK_LIMITS, type BitekChatContext, type BitekChatResult, type BitekChatTurn } from "./types";
 
@@ -35,6 +37,12 @@ export async function runBitekChatChain(params: {
   if (relative) {
     params.log?.({ provider: "rules", ms: now() - t0, attempts: [] });
     return groundBitekResult(relative, params.context);
+  }
+  // Mix: "more reverb / echo / roomier vocal" is a measurable, deterministic change.
+  const space = bitekSpaceChat(params.message, params.context);
+  if (space) {
+    params.log?.({ provider: "rules", ms: now() - t0, attempts: [] });
+    return groundBitekResult(space, params.context);
   }
   // Mastering: single-track asks, style presets and measured loudness targets are deterministic.
   // Open questions still go through the LLM; rules are the fallback.
@@ -69,6 +77,12 @@ export async function runBitekChatChain(params: {
       const parsed = parseBitekModelOutput(text, params.context);
       if (!parsed) throw new BitekProviderError("bad_response");
       let result = groundBitekResult({ provider: p.id, ...parsed }, params.context);
+      // The user named one target: drop changes on other tracks and answer from the rules (the model text would describe them).
+      const scoped = scopeToNamedTarget(result, params.message, params.context);
+      if (scoped.dropped) {
+        const rules = bitekRulesChat(params.message, params.context);
+        result = rules.proposals.length > 0 ? { ...rules, provider: p.id } : scoped.result;
+      }
       // Model chatted but did not name a real action — use the deterministic mix plan when it has one.
       if (params.context.step === "mix" && result.proposals.length === 0 && !result.jobs?.length) {
         const rules = bitekRulesChat(params.message, params.context);

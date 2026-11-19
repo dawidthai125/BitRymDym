@@ -14,6 +14,8 @@ export type BitekTrackContext = {
   muted: boolean;
   /** BRD Tune on this track: 0 off, 1 natural, 2 hard / custom (vocal roles only). */
   tune?: BitekTuneLevel;
+  /** Reverb + echo amount on this track: 0 none, 1 light, 2 medium, 3 a lot (vocal roles only). */
+  space?: BitekSpaceLevel;
   /**
    * False when the track has no clip with duration (empty lane).
    * Omitted only for older clients — treated as unknown, not as "has audio".
@@ -52,6 +54,7 @@ export type BitekJob =
   | { kind: "novaPass"; label: string };
 
 export type BitekTuneLevel = 0 | 1 | 2;
+export type BitekSpaceLevel = 0 | 1 | 2 | 3;
 /** Track roles BITEK may tune (pitch correction is a vocal effect). */
 export const BITEK_TUNE_ROLES: readonly string[] = ["lead_vocal", "adlib", "double", "backing"];
 
@@ -91,7 +94,7 @@ export type BitekMasterSetting = (typeof BITEK_MASTER_SETTINGS)[number];
 /** Proposals in Mastering use trackRef "master" (the whole song). */
 export const BITEK_MASTER_REF = "master";
 
-export type BitekProposalParam = "gainDb" | "pan" | "muted" | "tune" | BitekMasterSetting;
+export type BitekProposalParam = "gainDb" | "pan" | "muted" | "tune" | "space" | BitekMasterSetting;
 
 export type BitekProposal = {
   trackRef: string;

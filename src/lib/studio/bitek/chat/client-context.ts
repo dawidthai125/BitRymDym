@@ -5,6 +5,8 @@ import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
 import { tuneStyleOf } from "@/lib/studio/tune/tune";
 
+import { bitekSpaceLevelOf } from "./space-apply";
+
 import type { MixPlanFixId } from "@/lib/studio/mix-autofix/plan";
 
 import {
@@ -101,7 +103,7 @@ export function buildBitekClientContext(params: {
       clipCount: audio.clipCount,
       durationMs: audio.durationMs,
       ...(effects.length ? { effects } : {}),
-      ...(BITEK_TUNE_ROLES.includes(role) ? { tune: bitekTuneLevelOf(t.effectsChain) } : {}),
+      ...(BITEK_TUNE_ROLES.includes(role) ? { tune: bitekTuneLevelOf(t.effectsChain), space: bitekSpaceLevelOf(t.effectsChain) } : {}),
     };
   });
   const takeLevel = params.step === "record" ? readBitekLiveTakeLevel(params.doc.project.id) : null;
