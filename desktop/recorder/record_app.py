@@ -50,6 +50,7 @@ from account_upload import (
     SiteClient,
     UploadState,
     friendly_upload_error,
+    give_back_send,
     is_unauthorized,
     network_message,
     playback_target,
@@ -4166,7 +4167,7 @@ class RecorderWindow:
         self.root.after(0, lambda: self.status.set(text) if self._uploading else None)
 
     def _run_upload(self, title: str, beat_id: str, clips: list[tuple[int, Clip]]) -> None:
-        spent_send_id = ""
+        active_send_id = ""
         client = None
         try:
             paths, slots, starts = self._render_clip_files(clips)
@@ -4183,8 +4184,8 @@ class RecorderWindow:
                 self._upload_say("Sprawdzam dzienny limit wysyłek do Studia.")
                 claimed = client.desktop_send(True)
                 send_id = str(claimed.get("sendId") or "")
-                spent_send_id = send_id
                 self._upload_say(f"Wysyłka {claimed.get('used')} z {claimed.get('limit')} na dziś.")
+            active_send_id = send_id
             project = upload_vocals(
                 client,
                 title=title,
@@ -4199,10 +4200,15 @@ class RecorderWindow:
             )
         except Exception as error:
             message = str(error)
-            # Nothing saved to resume from -> the daily send this run spent goes back to the user.
-            if spent_send_id and self._pending is None and client is not None:
-                if client.desktop_send_refund(spent_send_id):
+            # The upload failed: the daily send it held goes back to the user. A saved resume state keeps
+            # its clips but loses the send id, so the next "Gotowe i Wrzuć do Studia" claims a fresh one.
+            if client is not None:
+                gave_back, kept = give_back_send(client, self._pending, active_send_id)
+                if gave_back:
                     message = f"{message} Dzisiejsza wysyłka wróciła na konto."
+                    if kept is not self._pending and kept is not None:
+                        self._pending = kept
+                        save_pending(kept)
             self.root.after(0, lambda: self._upload_done(None, message))
             return
         self.root.after(0, lambda: self._upload_done(project, ""))

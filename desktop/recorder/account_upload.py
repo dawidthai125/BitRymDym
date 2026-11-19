@@ -9,7 +9,7 @@ import json
 import socket
 import urllib.error
 import urllib.request
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable
 
@@ -290,6 +290,19 @@ class UploadState:
             return f"wysłane nagrania: {len(self.take_ids)} z {len(self.wav_paths)}, projektu jeszcze nie ma"
         noun = "klipów" if self.track_of else "ścieżek"
         return f"projekt {self.project_id}: {self.placed} z {len(self.wav_paths)} {noun}"
+
+
+def give_back_send(client: Any, state: "UploadState | None", send_id: str) -> tuple[bool, "UploadState | None"]:
+    """After a failed upload: return the daily send to the account.
+
+    True when the site took it back. A saved resume state keeps its clips but loses the send id,
+    so the next send claims a fresh one instead of reusing a refunded id.
+    """
+    if not send_id or not client.desktop_send_refund(send_id):
+        return False, state
+    if state is not None and state.send_id == send_id:
+        state = replace(state, send_id="")
+    return True, state
 
 
 def upload_vocals(
@@ -788,6 +801,31 @@ def _self_test_send_refund() -> None:
     fake.reply = RuntimeError("sieć")
     if refund(fake, "abc") is not False:  # type: ignore[arg-type]
         raise SystemExit("zwrot wysyłki: błąd sieci")
+    fake.reply = {"refunded": True}
+    ok, kept = give_back_send(_Refunder(True), None, "s1")
+    if not ok or kept is not None:
+        raise SystemExit("give_back_send: bez stanu")
+    state = UploadState(project_id="p", beat_id="b", title="t", version=1, wav_paths=["a.wav"], send_id="s1")
+    ok, kept = give_back_send(_Refunder(True), state, "s1")
+    if not ok or kept is None or kept.send_id != "" or kept.wav_paths != ["a.wav"]:
+        raise SystemExit("give_back_send: stan do wznowienia ma zostać bez identyfikatora wysyłki")
+    ok, kept = give_back_send(_Refunder(False), state, "s1")
+    if ok or kept is not state or kept.send_id != "s1":
+        raise SystemExit("give_back_send: odmowa serwera ma zostawić stan")
+    ok, kept = give_back_send(_Refunder(True), state, "inna")
+    if not ok or kept is not state:
+        raise SystemExit("give_back_send: cudzy identyfikator nie rusza stanu")
+    ok, _ = give_back_send(_Refunder(True), state, "")
+    if ok:
+        raise SystemExit("give_back_send: pusty identyfikator")
+
+
+class _Refunder:
+    def __init__(self, result: bool) -> None:
+        self.result = result
+
+    def desktop_send_refund(self, send_id: str) -> bool:
+        return self.result and bool(send_id)
 
 
 if __name__ == "__main__":
