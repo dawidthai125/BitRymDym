@@ -21,6 +21,7 @@ import {
   mapMixRevisionRestoreHttpResult,
   mapStudioProjectDocumentHttpResult,
   mixRevisionAuthorLabel,
+  mixRevisionDescriptionLabel,
   mixRevisionKindLabel,
   mixRevisionRowLabel,
   mixWorkingRevisionCompareUrl,
@@ -752,7 +753,7 @@ export function StudioMixRevisionHistoryControl({
                       <p className="font-mono text-[11px] text-[var(--brd-ink)]/80">
                         {tl(mixRevisionRowLabel(detail))} · v
                         {detail.sourceDocumentVersion}
-                        {tl(detail.description ? ` · ${detail.description}` : "")}
+                        {tl(detail.description ? ` · ${mixRevisionDescriptionLabel(detail.description)}` : "")}
                       </p>
                     ) : null}
                     {restoreMessage ? (
@@ -933,7 +934,7 @@ function ListPanel(props: {
                 </p>
                 {row.description ? (
                   <p className="mt-0.5 line-clamp-2 text-[11px]">
-                    {tl(row.description)}
+                    {tl(mixRevisionDescriptionLabel(row.description))}
                   </p>
                 ) : null}
                 {row.restoredFromRevisionId ? (
@@ -1071,7 +1072,7 @@ function DetailPanel(props: {
         {r.description ? (
           <div>
             <dt className="text-[var(--brd-ink)]/55">{t("opis")}</dt>
-            <dd>{tl(r.description)}</dd>
+            <dd>{tl(mixRevisionDescriptionLabel(r.description))}</dd>
           </div>
         ) : null}
         {r.restoredFromRevisionId ? (

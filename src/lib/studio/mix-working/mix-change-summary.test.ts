@@ -59,3 +59,13 @@ describe("summarizeChainChange", () => {
     expect(out[0]).toContain("środek · wzmocnienie (dB) 0 → 2");
   });
 });
+
+import { mixRevisionDescriptionLabel } from "./mix-working-revision-client";
+
+describe("mixRevisionDescriptionLabel", () => {
+  it("old English restore descriptions read in Polish, others stay", () => {
+    expect(mixRevisionDescriptionLabel("Restore from a90adbde-7e84-4b7a-ab0d-7c50c7b66b9e")).toBe("Przywrócenie starszej wersji");
+    expect(mixRevisionDescriptionLabel("BITEK: Zrób utwór")).toBe("BITEK: Zrób utwór");
+    expect(mixRevisionDescriptionLabel(null)).toBe("");
+  });
+});

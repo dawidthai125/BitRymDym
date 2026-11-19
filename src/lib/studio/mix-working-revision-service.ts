@@ -301,7 +301,7 @@ export async function restoreMixWorkingRevisionFor(
     requestFingerprint: restoreFingerprint,
     revision: {
       kind: "restored",
-      description: `Restore from ${source.id}`,
+      description: `Przywrócono wersję v${source.sourceDocumentVersion}`,
       restoredFromRevisionId: source.id,
       // A3.5-B: parent resolved in RPC TX from tip source_document_version
       recordRevision: true,

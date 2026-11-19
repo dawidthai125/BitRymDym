@@ -158,6 +158,13 @@ export function formatMixRevisionWhen(iso: string | null | undefined): string {
   }
 }
 
+/** Revision descriptions from older restores were written in English with a raw id. */
+export function mixRevisionDescriptionLabel(description: string | null | undefined): string {
+  if (!description) return "";
+  if (/^Restore from [0-9a-f-]{8,}/i.test(description)) return "Przywrócenie starszej wersji";
+  return description;
+}
+
 export function formatMixRevisionDiffValue(value: unknown): string {
   if (value === null || value === undefined) return "—";
   if (typeof value === "boolean") return value ? "tak" : "nie";
