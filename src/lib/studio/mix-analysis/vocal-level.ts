@@ -6,18 +6,23 @@
  * Amount 0 is a wire. This is not a LUFS preset and not the verse/hook pocket.
  */
 
-import { P0_RIDE_MAX_DB } from "@/lib/studio/p0-hiphop-start";
-
 export type VocalLevelParams = {
   amount: number;
   maxBoostDb: number;
   maxCutDb: number;
 };
 
+/**
+ * Default boost/cut cap in dB. Keep in sync with P0_RIDE_MAX_DB (p0-hiphop-start.ts; a test pins it).
+ * VocalLevelCore is serialised into an AudioWorklet with toString(), so the class must not
+ * reference anything outside itself, including imported constants.
+ */
+export const VOCAL_LEVEL_DEFAULT_MAX_DB = 3.5;
+
 export class VocalLevelCore {
   amount = 0.65;
-  maxBoostDb = P0_RIDE_MAX_DB;
-  maxCutDb = P0_RIDE_MAX_DB;
+  maxBoostDb = 3.5;
+  maxCutDb = 3.5;
   fast = 0;
   slow = 0;
   gain = 1;
@@ -45,8 +50,8 @@ export class VocalLevelCore {
       return Math.min(hi, Math.max(lo, x));
     };
     this.amount = n(params.amount, 0.65, 0, 1);
-    this.maxBoostDb = n(params.maxBoostDb, P0_RIDE_MAX_DB, 0, 12);
-    this.maxCutDb = n(params.maxCutDb, P0_RIDE_MAX_DB, 0, 12);
+    this.maxBoostDb = n(params.maxBoostDb, 3.5, 0, 12);
+    this.maxCutDb = n(params.maxCutDb, 3.5, 0, 12);
     this.boost = Math.pow(10, this.maxBoostDb / 20);
     this.cut = Math.pow(10, -this.maxCutDb / 20);
   }

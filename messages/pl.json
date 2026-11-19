@@ -3092,7 +3092,8 @@
         "autoNeedBeat": "Wokal jest. Wybierz bit, wtedy mogę zmiksować numer.",
         "autoReady": "Wokal i bit są. Kliknij, a zmiksuję całość — poprawię wszystko, co da się poprawić z pomiaru.",
         "autoMixTrwa": "Miksuję. Poprawiam wszystko, co da się poprawić z pomiaru.",
-        "autoMixGotowy": "Mix gotowy. Posłuchaj go. Zrobić mastering?"
+        "autoMixGotowy": "Mix gotowy. Posłuchaj go. Zrobić mastering?",
+        "autoMixNiegotowy": "Zrobiłem, co się dało automatycznie, ale mix nie jest jeszcze gotowy do masteringu: zostało czerwonych punktów: {count}. Przy kartach niżej masz przyciski „Popraw”. Gdy to zrobisz, przejdziemy do masteringu."
       },
       "chat": {
         "inputLabel": "Wiadomość do BITKA",

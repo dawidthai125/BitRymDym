@@ -212,6 +212,8 @@ export function StudioMixStep({
   const [autoPhase, setAutoPhase] = useState<"run" | "ask" | "stay" | null>(null);
   const [songPhase, setSongPhase] = useState<"run" | "ask" | "stay" | null>(null);
   const songFixed = useRef(false);
+  /** Auto-fix passes done in this "Make the song" run (Nova pass first, then at most one full pass). */
+  const songRounds = useRef(0);
   const goMasterRef = useRef(onGoMaster);
   const listenRef = useRef(onListen);
   useEffect(() => {
@@ -632,13 +634,23 @@ export function StudioMixStep({
   useEffect(() => {
     if (songPhase !== "run") return;
     if (autoLock.current) return;
+    // After the Nova pass, keep going (one more full pass) while the mix is still not master-ready
+    // and Bitek has moves left. Otherwise the song would be offered for mastering while still red.
+    const freshResult = result && !stale ? result : null;
+    const needMore = Boolean(
+      songFixed.current &&
+        songRounds.current < 2 &&
+        freshResult &&
+        !freshResult.verdict.canMaster &&
+        planMixAutofix({ doc, metrics: freshResult.metrics, verdict: freshResult.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0,
+    );
     const step = nextSongStep({
       failed: Boolean(failure || panel?.kind === "error"),
       running,
       fixing: Boolean(fixing),
       hasFreshAnalysis: Boolean(result && !stale),
       canApply: canAutofix,
-      fixed: songFixed.current,
+      fixed: songFixed.current && !needMore,
     });
     if (step === "wait") return;
     if (step === "stop") {
@@ -654,8 +666,11 @@ export function StudioMixStep({
     const job =
       step === "analyze"
         ? analyze()
-        : runFix(NOVA_PASS_FIXES, "nova", t("zrobUtwor"), { immediate: true });
-    if (step === "fix") songFixed.current = true;
+        : runFix(songRounds.current === 0 ? NOVA_PASS_FIXES : MIX_AUTOFIX_ALL, songRounds.current === 0 ? "nova" : "all", t("zrobUtwor"), { immediate: true });
+    if (step === "fix") {
+      songFixed.current = true;
+      songRounds.current += 1;
+    }
     void Promise.resolve(job).finally(() => {
       autoLock.current = false;
     });
@@ -750,6 +765,18 @@ export function StudioMixStep({
     if (autoPhase === "run" || songPhase === "run") {
       return { key: songPhase === "run" ? "song-run" : "auto-mix-run", mood: "thinking", text: tBitek("msg.autoMixTrwa") };
     }
+    if ((autoPhase === "ask" || songPhase === "ask") && verdict && !verdict.canMaster && !autofixExhausted && !stale) {
+      // Honest state: the automatic passes are done but the mix is still not master-ready.
+      return {
+        key: "song-not-ready",
+        mood: "alert",
+        text: tBitek("msg.autoMixNiegotowy", { count: verdict.redCount }),
+        actions: [
+          { id: "autoListen", label: tBitek("akcja.autoListen"), onClick: () => listenRef.current?.() },
+          { id: "autoMasterNie", label: tBitek("akcja.autoMasterNie"), onClick: () => { setAutoPhase("stay"); setSongPhase("stay"); } },
+        ],
+      };
+    }
     if (autoPhase === "ask" || songPhase === "ask") {
       return {
         key: songPhase === "ask" ? "song-ask" : "auto-mix-ask",
@@ -767,7 +794,7 @@ export function StudioMixStep({
               goMasterRef.current?.();
             },
           },
-          { id: "autoMasterNie", label: tBitek("akcja.autoMasterNie"), onClick: () => setAutoPhase("stay") },
+          { id: "autoMasterNie", label: tBitek("akcja.autoMasterNie"), onClick: () => { setAutoPhase("stay"); setSongPhase("stay"); } },
         ],
       };
     }
@@ -975,6 +1002,7 @@ export function StudioMixStep({
                 data-testid="studio-mix-make-song"
                 onClick={() => {
                   songFixed.current = false;
+                  songRounds.current = 0;
                   setFailure(null);
                   setPanel(null);
                   setSongPhase("run");

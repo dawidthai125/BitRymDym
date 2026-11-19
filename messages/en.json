@@ -3092,7 +3092,8 @@
         "autoNeedBeat": "The vocal is in. Choose a beat and I can mix the song.",
         "autoReady": "Vocal and beat are ready. Click and I'll mix the whole song — everything the measurement can fix.",
         "autoMixTrwa": "Mixing. I'm fixing everything the measurement can fix.",
-        "autoMixGotowy": "Mix is ready. Have a listen. Master it?"
+        "autoMixGotowy": "Mix is ready. Have a listen. Master it?",
+        "autoMixNiegotowy": "I did what I could automatically, but the mix is not ready for mastering yet: red items left: {count}. Use the Fix buttons on the cards below. Then we move on to mastering."
       },
       "chat": {
         "inputLabel": "Message to BITEK",
