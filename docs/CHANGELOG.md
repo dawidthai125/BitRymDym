@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-19 — Nagrywarka Windows 2026.11.35
+
+Po teście lokalnego bota na .34 (aktualizacja przyciskiem przeszła, zwrot wysyłki działa). Trzy błędy po nieudanej wysyłce: (1) niedokończone nagranie zostawało w stanie „w toku” i kolejna próba dostawała 409 CONCURRENT_SESSION, teraz program je usuwa (`send_one_take`, `delete_take`); (2) nieudana wysyłka zostawiała pusty projekt, teraz go usuwa (`drop_empty_project`); (3) stan do wznowienia bez ułożonych nagrań nie jest już zapisywany ani wczytywany przy starcie (znikło „0 ścieżek, 0 klipów”). Autotest `_self_test_failed_send_cleanup`. Nie sprawdzono na komputerze użytkownika.
+
 ## 2026-11-19 — Nagrywarka Windows 2026.11.34 (PUBLIC)
 
 Po teście lokalnego bota na .33: zwrot dziennej wysyłki działa teraz po każdej nieudanej wysyłce, także gdy program zapisał stan do wznowienia (wcześniej wysyłka zostawała zużyta, gdy upload padł po utworzeniu projektu). Stan do wznowienia zostaje, ale bez identyfikatora wysyłki, więc kolejne „Gotowe i Wrzuć do Studia” bierze świeżą. Logika w `give_back_send` (`account_upload.py`) z autotestem. Feed `releases.win.json` w korzeniu R2 odzwierciedla teraz tę samą wersję co `feed/`. Tag `recorder-v2026.11.34`, Actions run `44547475929`, Setup SHA-256 `382708bf…`, 127 888 610 B. Nie sprawdzono na komputerze użytkownika.
