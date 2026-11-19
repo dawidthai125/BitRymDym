@@ -1,3 +1,4 @@
+import { withMeasurementCaution } from "./caution";
 import { validateBitekJobs } from "./jobs";
 import type { BitekChatContext, BitekChatResult, BitekLang } from "./types";
 
@@ -88,12 +89,15 @@ export function groundBitekResult(result: BitekChatResult, ctx: BitekChatContext
       ...(result.relative ? { relative: result.relative } : {}),
     };
   }
-  return {
-    provider: result.provider,
-    reply,
-    proposals,
-    ...(jobs.length ? { jobs } : {}),
-    ...(result.backToMix ? { backToMix: true } : {}),
-    ...(result.relative ? { relative: result.relative } : {}),
-  };
+  return withMeasurementCaution(
+    {
+      provider: result.provider,
+      reply,
+      proposals,
+      ...(jobs.length ? { jobs } : {}),
+      ...(result.backToMix ? { backToMix: true } : {}),
+      ...(result.relative ? { relative: result.relative } : {}),
+    },
+    ctx,
+  );
 }
