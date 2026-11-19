@@ -1,4 +1,5 @@
 import { withMeasurementCaution } from "./caution";
+import { withConsistentWording } from "./consistency";
 import { validateBitekJobs } from "./jobs";
 import type { BitekChatContext, BitekChatResult, BitekLang } from "./types";
 
@@ -90,6 +91,7 @@ export function groundBitekResult(result: BitekChatResult, ctx: BitekChatContext
     };
   }
   return withMeasurementCaution(
+    withConsistentWording(
     {
       provider: result.provider,
       reply,
@@ -98,6 +100,8 @@ export function groundBitekResult(result: BitekChatResult, ctx: BitekChatContext
       ...(result.backToMix ? { backToMix: true } : {}),
       ...(result.relative ? { relative: result.relative } : {}),
     },
+    ctx,
+    ),
     ctx,
   );
 }
