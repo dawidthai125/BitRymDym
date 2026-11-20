@@ -9,6 +9,7 @@ import { isUuid } from "@/lib/beats/audio-validation";
 import { loadPlanUsage } from "@/lib/plans/plan-usage";
 import { loadUsageResets } from "@/lib/plans/usage-resets";
 import { windowStartAfterReset, type UsageResetMetric } from "@/lib/plans/usage-resets-model";
+import { NOT_SAMPLE_COPY_TAKE } from "@/lib/studio/samples/sample-policy";
 import { countsTowardCleanupQuota } from "@/lib/studio/cleanup/cleanup-core";
 import { warsawDayStartIso } from "@/lib/studio/cleanup/cleanup-server";
 import { aiCoverPerDay } from "@/lib/studio/video/ai-cover/config";
@@ -99,7 +100,7 @@ export async function loadAdminUserDesk(userId: string): Promise<AdminUserDesk |
   const [projects, beats, takes, songs, jobs, payments, works, limits, addon] = await Promise.all([
     admin.from("studio_projects").select("id, title, status, updated_at, created_at").eq("owner_id", userId).order("updated_at", { ascending: false }).limit(200),
     admin.from("beats").select("id, title, status, ownership_type, created_at").eq("owner_id", userId).order("created_at", { ascending: false }).limit(200),
-    admin.from("takes").select("id, title, status, created_at, duration_seconds, deleted_at").eq("owner_id", userId).eq("is_stem", false).order("created_at", { ascending: false }).limit(200),
+    admin.from("takes").select("id, title, status, created_at, duration_seconds, deleted_at").eq("owner_id", userId).eq("is_stem", false).or(NOT_SAMPLE_COPY_TAKE).order("created_at", { ascending: false }).limit(200),
     admin.from("studio_song_completions").select("id, project_id, created_at, paid_with_credit").eq("owner_id", userId).order("created_at", { ascending: false }).limit(200),
     admin.from("studio_master_jobs").select("id, kind, status, created_at, project_id").eq("owner_id", userId).order("created_at", { ascending: false }).limit(200),
     admin.from("payment_orders").select("id, status, product_kind, plan_tier, addon, pack, period, amount_grosz, currency, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(100),

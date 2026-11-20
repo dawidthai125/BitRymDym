@@ -1,4 +1,5 @@
 import "server-only";
+import { NOT_SAMPLE_COPY_TAKE } from "@/lib/studio/samples/sample-policy";
 
 import type { AuthContext } from "@/lib/auth/types";
 import { isTakeActivelyReady } from "@/lib/takes/entitlement";
@@ -46,6 +47,7 @@ export async function listReplaceableTakesFor(
     .select("id, beat_id, duration_seconds, created_at, expires_at, status, deleted_at")
     .eq("owner_id", context.userId)
     .eq("is_stem", false)
+    .or(NOT_SAMPLE_COPY_TAKE)
     .eq("status", "READY")
     .is("deleted_at", null)
     .gt("expires_at", new Date().toISOString())

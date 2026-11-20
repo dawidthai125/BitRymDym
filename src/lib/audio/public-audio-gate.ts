@@ -10,7 +10,7 @@ import { isE3PublicAudioAuthorized } from "@/config/audio-render";
 import type { EffectiveAudioEntitlement } from "@/lib/audio/effective-entitlement";
 
 export class PublicAudioGateError extends Error {
-  readonly code: "DISABLED" = "DISABLED";
+  readonly code = "DISABLED" as const;
   constructor(message: string) {
     super(message);
     this.name = "PublicAudioGateError";

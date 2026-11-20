@@ -101,8 +101,8 @@ export function applyBasicEq(
   let hpL = 0;
   let hpR = 0;
   for (let i = 0; i < frames; i++) {
-    let l = interleaved[i * 2] ?? 0;
-    let r = interleaved[i * 2 + 1] ?? 0;
+    const l = interleaved[i * 2] ?? 0;
+    const r = interleaved[i * 2 + 1] ?? 0;
     lpL = lp * lpL + (1 - lp) * l;
     lpR = lp * lpR + (1 - lp) * r;
     const lowL = lpL;

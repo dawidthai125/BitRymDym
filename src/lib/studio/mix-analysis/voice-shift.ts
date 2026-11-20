@@ -75,7 +75,7 @@ export class VoiceShiftCore {
         rOut[i] = dryR;
         continue;
       }
-      let wet = this.step(dryL, dryR);
+      const wet = this.step(dryL, dryR);
       let wetL = wet.l;
       let wetR = wet.r;
       if (this.color === 2) {

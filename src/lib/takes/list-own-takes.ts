@@ -14,6 +14,7 @@ import {
   type TakeExportLadderItem,
 } from "@/lib/takes/take-export-capability";
 import { displayTakeTitle } from "@/lib/takes/take-title";
+import { NOT_SAMPLE_COPY_TAKE } from "@/lib/studio/samples/sample-policy";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type OwnTakeListItem = {
@@ -98,6 +99,7 @@ export async function countOwnActiveTakes(userId: string): Promise<{ total: numb
       .select("id", { count: "exact", head: true })
       .eq("owner_id", userId)
       .eq("is_stem", false)
+      .or(NOT_SAMPLE_COPY_TAKE)
       .neq("status", "DELETED")
       .is("deleted_at", null);
   const [all, ready] = await Promise.all([base(), base().eq("status", "READY")]);
@@ -140,6 +142,7 @@ export async function listOwnTakesFor(
     .eq("owner_id", context.userId)
     // The recording archive lists vocal takes; stems live in their project.
     .eq("is_stem", false)
+    .or(NOT_SAMPLE_COPY_TAKE)
     .order("created_at", { ascending: false })
     .limit(limit);
 

@@ -317,6 +317,13 @@ export function catalogDurationSeconds(durationMs: number): number {
   return seconds;
 }
 
+/**
+ * PostgREST `.or()` filter that keeps normal takes (title empty or anything else) and drops
+ * the private take copies a sample makes when it goes on the timeline (title "smp:<id>").
+ * Those copies are Studio plumbing, not recordings: they must not show in "Moje nagrania".
+ */
+export const NOT_SAMPLE_COPY_TAKE = "title.is.null,title.not.like.smp:*";
+
 export function sampleCopyTakeTitle(sampleId: string): string {
   return `smp:${sampleId.toLowerCase()}`;
 }

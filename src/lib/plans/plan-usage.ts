@@ -6,6 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildPlanUsage, type PlanUsage } from "@/lib/plans/plan-usage-model";
 import { loadUsageResets } from "@/lib/plans/usage-resets";
 import { windowStartAfterReset } from "@/lib/plans/usage-resets-model";
+import { NOT_SAMPLE_COPY_TAKE } from "@/lib/studio/samples/sample-policy";
 import type { PremiumTier } from "@/types/premium";
 
 type HeadResult = { count: number | null; error: { message?: string; code?: string } | null };
@@ -51,7 +52,7 @@ export async function loadPlanUsage(params: {
       admin.from("studio_projects").select("id", head).eq("owner_id", params.userId).neq("status", "ARCHIVED"),
       // Owner 2026-11-13: "Nagrania" today = finished songs (first master download of a project).
       admin.from("studio_song_completions").select("id", head).eq("owner_id", params.userId).gte("created_at", recDayStart),
-      admin.from("takes").select("id", head).eq("owner_id", params.userId).eq("is_stem", false).eq("status", "READY").is("deleted_at", null).gt("expires_at", nowIso),
+      admin.from("takes").select("id", head).eq("owner_id", params.userId).eq("is_stem", false).or(NOT_SAMPLE_COPY_TAKE).eq("status", "READY").is("deleted_at", null).gt("expires_at", nowIso),
       admin.from("studio_master_jobs").select("id", head).eq("owner_id", params.userId).eq("kind", "master").gte("created_at", masterStart).not("status", "in", "(failed,cancelled)"),
       studioQuotaRemaining(params.userId, "take"),
       studioQuotaRemaining(params.userId, "master"),
