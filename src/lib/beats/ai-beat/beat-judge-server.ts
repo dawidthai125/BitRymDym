@@ -9,6 +9,7 @@ import {
   type JudgeRun,
 } from "@/lib/beats/ai-beat/beat-judge";
 import { loadMasterAudio, prepareBeatAudioForGemini } from "@/lib/beats/ai-beat/gemini-audio-compare";
+import { geminiVideoModelChain, isGeminiCapacityStatus } from "@/lib/beats/ai-beat/gemini-models";
 import { measureToneFacts } from "@/lib/beats/ai-beat/tone-facts";
 import { parseYouTubeWatchUrl, textFromGemini } from "@/lib/beats/ai-beat/youtube-style";
 import { decodeAudioToMonoPcm } from "@/lib/beats/audio-pcm-decode";
@@ -33,13 +34,13 @@ async function oneVerdict(params: {
 }): Promise<JudgeRun | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), JUDGE_TIMEOUT_MS);
-  const send = () =>
+  const send = (model: string) =>
     fetch(INTERACTIONS_URL, {
       method: "POST",
       signal: controller.signal,
       headers: { "x-goog-api-key": params.apiKey, "Content-Type": "application/json", "Api-Revision": "2026-05-20" },
       body: JSON.stringify({
-        model: params.model,
+        model,
         input: [
           { type: "video", uri: params.url },
           { type: "audio", uri: params.audio.uri, mime_type: params.audio.mimeType },
@@ -50,12 +51,18 @@ async function oneVerdict(params: {
       }),
     });
   try {
-    let res = await send();
+    // Next model first (separate daily limits), then a short wait on the last one.
+    let res!: Response;
+    for (const m of geminiVideoModelChain(params.model)) {
+      res = await send(m);
+      if (!isGeminiCapacityStatus(res.status)) break;
+      console.error("[beat-judge] gemini busy", m, res.status);
+    }
+    const last = geminiVideoModelChain(params.model).at(-1)!;
     for (const wait of RATE_LIMIT_WAITS_MS) {
       if (res.status !== 429 && res.status !== 503) break;
-      console.error("[beat-judge] gemini busy", res.status, "retry in", wait);
       await new Promise((r) => setTimeout(r, wait));
-      res = await send();
+      res = await send(last);
     }
     if (!res.ok) {
       const detail = (await res.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 300);

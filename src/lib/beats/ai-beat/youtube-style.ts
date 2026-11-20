@@ -4,6 +4,7 @@ import {
   sanitizeBeatOpis,
   sanitizeBeatStyle,
 } from "@/lib/beats/ai-beat/prompt";
+import { geminiVideoModelChain, isGeminiCapacityStatus } from "@/lib/beats/ai-beat/gemini-models";
 import {
   keyForBrief,
   resolveReferenceTempo,
@@ -253,11 +254,17 @@ export async function describeBeatStyleFromYouTube(
         },
         body: JSON.stringify({ ...requestBody, ...extra }),
       });
-    // Low temperature: the same link should give nearly the same brief.
-    let res = await send({ generation_config: { temperature: BRIEF_TEMPERATURE } });
-    if (res.status === 400) {
-      const detail = await res.clone().text().catch(() => "");
-      if (!/private|unlisted|not found|unavailable/i.test(detail)) res = await send({});
+    // Next model when one is out of quota or overloaded (Free Tier: 20 requests a day).
+    let res!: Response;
+    for (const m of geminiVideoModelChain(model)) {
+      // Low temperature: the same link should give nearly the same brief.
+      res = await send({ model: m, generation_config: { temperature: BRIEF_TEMPERATURE } });
+      if (res.status === 400) {
+        const detail = await res.clone().text().catch(() => "");
+        if (!/private|unlisted|not found|unavailable/i.test(detail)) res = await send({ model: m });
+      }
+      if (!isGeminiCapacityStatus(res.status)) break;
+      console.error("[beat-style] gemini busy", m, res.status);
     }
     if (!res.ok) {
       const detail = await res.text().catch(() => "");

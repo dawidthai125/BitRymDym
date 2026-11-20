@@ -214,6 +214,20 @@ describe("describeBeatStyleFromYouTube", () => {
     expect(described.bpmHint).toBe(80);
   });
 
+  it("moves to a lighter model when the main one is out of quota", async () => {
+    let n = 0;
+    const fetchFn = vi.fn(async () => {
+      n += 1;
+      return n === 1
+        ? new Response(JSON.stringify({ error: { code: "too_many_requests" } }), { status: 429 })
+        : new Response(JSON.stringify(payload), { status: 200 });
+    });
+    const described = await describeBeatStyleFromYouTube(CANONICAL, { skipAuth: true, env: { GEMINI_API_KEY: "k" }, fetchFn });
+    expect(described.bpmHint).toBe(97);
+    const models = fetchFn.mock.calls.map((c) => JSON.parse(String((c as unknown as [string, RequestInit])[1].body)).model);
+    expect(models).toEqual(["gemini-3-flash-preview", "gemini-3.5-flash-lite"]);
+  });
+
   it("sends the old brief and the listener note when revising", async () => {
     const fetchFn = mockFetch(payload);
     await describeBeatStyleFromYouTube(
