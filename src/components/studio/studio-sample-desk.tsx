@@ -3,6 +3,8 @@
 import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { SampleBitekCard, type BitekApply, type BitekPreview } from "@/components/studio/sample-bitek-card";
+
 import { Button } from "@/components/ui/button";
 import {
   SAMPLE_INSTRUMENTS,
@@ -38,10 +40,15 @@ export function StudioSampleDesk({
   trackId,
   disabled,
   onPlace,
+  bitekPreview,
+  bitekApply,
 }: {
   trackId: string;
   disabled: boolean;
   onPlace: (sampleId: string) => Promise<{ ok: true } | { ok: false; message: string }>;
+  /** Bitek places the sample: tempo, key, bar and repeats (proposal first, then apply). */
+  bitekPreview?: BitekPreview;
+  bitekApply?: BitekApply;
 }) {
   const tr = useTranslations("studio.studioRecordingPanel");
   const [tab, setTab] = useState<"mine" | "catalog" | "create">("create");
@@ -57,6 +64,7 @@ export function StudioSampleDesk({
   const [rights, setRights] = useState(false);
   const [uploadKind, setUploadKind] = useState<SampleKind>("effect");
   const [quota, setQuota] = useState<string | null>(null);
+  const [bitekFor, setBitekFor] = useState<string | null>(null);
 
   const load = useCallback(async (scope: "mine" | "catalog") => {
     setLoading(true);
@@ -422,6 +430,29 @@ export function StudioSampleDesk({
                 >
                   {tr("sampleDodajNaSciezke")}
                 </Button>
+                {bitekPreview && bitekApply ? (
+                  bitekFor === sample.id ? (
+                    <SampleBitekCard
+                      sampleId={sample.id}
+                      preview={bitekPreview}
+                      apply={bitekApply}
+                      onClose={(done) => {
+                        setBitekFor(null);
+                        if (done) setStatus(tr("bitekWstawil"));
+                      }}
+                    />
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="col-span-2 min-h-11 w-full"
+                      disabled={disabled || busyId === sample.id || !trackId}
+                      onClick={() => setBitekFor(sample.id)}
+                    >
+                      {tr("bitekWstawSampel")}
+                    </Button>
+                  )
+                ) : null}
                 {sample.mine && (sample.status === "PRIVATE" || sample.status === "REJECTED") ? (
                   <div className="col-span-2">
                     <Button

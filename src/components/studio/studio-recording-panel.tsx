@@ -19,6 +19,8 @@ import { StudioStemImport } from "@/components/studio/studio-stem-import";
 import { StudioQuotaLine } from "@/components/studio/studio-quota-line";
 import { StudioPlayKeys } from "@/components/studio/studio-play-keys";
 import { StudioSampleDesk } from "@/components/studio/studio-sample-desk";
+import type { BitekApply, BitekPreview } from "@/components/studio/sample-bitek-card";
+import type { SamplePlacementPlan } from "@/lib/studio/samples/sample-bitek-plan";
 import type { StudioMidiV1 } from "@/lib/studio/studio-midi";
 import { placeOwnedStudioSample } from "@/lib/studio/studio-scratch-place";
 import { useMicAnalyser } from "@/hooks/use-mic-analyser";
@@ -2334,6 +2336,70 @@ export function StudioRecordingPanel({
   const scratchOpen = !simple && !samplesMode && visiblePane === "scratch";
   const takeOpen = !samplesMode && (simple || visiblePane === "take");
 
+  // Bitek places a sample: the server plans tempo, key, bar and repeats; apply goes through the persist queue.
+  const bitekSamplePreview = useCallback<BitekPreview>(
+    async (sampleId, scope) => {
+      if (!trackId) return { ok: false, message: tr("sampleBrakSciezki") };
+      try {
+        const res = await fetch(`/api/studio/projects/${projectId}/samples/bitek`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sampleId, trackId, scope, playheadMs: Math.floor(transport.getPlayheadMs()) }),
+        });
+        const body = (await res.json().catch(() => null)) as { plan?: SamplePlacementPlan; error?: string } | null;
+        if (!res.ok || !body?.plan) return { ok: false, message: body?.error ?? tr("bitekBlad") };
+        return { ok: true, plan: body.plan };
+      } catch {
+        return { ok: false, message: tr("bitekBlad") };
+      }
+    },
+    [projectId, trackId, transport, tr],
+  );
+  const bitekSampleApply = useCallback<BitekApply>(
+    async (sampleId, scope) => {
+      if (!trackId) return { ok: false, message: tr("sampleBrakSciezki") };
+      setCatalogMessage(null);
+      setWorkflowError(null);
+      const result = await enqueuePersistAsync(async () => {
+        const res = await fetch(`/api/studio/projects/${projectId}/samples/bitek`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sampleId,
+            trackId,
+            scope,
+            playheadMs: Math.floor(transport.getPlayheadMs()),
+            apply: true,
+            expectedDocumentVersion: persistVersionTip.expected(),
+          }),
+        });
+        const body = (await res.json().catch(() => null)) as {
+          clips?: StudioClipDto[];
+          documentVersion?: number;
+          error?: string;
+        } | null;
+        if (!res.ok || !body?.clips || typeof body.documentVersion !== "number") {
+          return classifyPersistHttpFailure({ status: res.status, message: body?.error ?? tr("bitekBlad") });
+        }
+        const documentVersion = persistVersionTip.applyAck(body.documentVersion);
+        const clips = body.clips;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            for (const clip of clips) onClipCreated(clip, documentVersion, { keepRecordPanel: true });
+            if (clips.length) onLastScratchClipIdChange(clips[clips.length - 1].id);
+            setCatalogMessage(tr("bitekWstawil"));
+          },
+        };
+      });
+      if (!result.ok) return { ok: false, message: result.message };
+      return { ok: true };
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [projectId, trackId, transport, tr],
+  );
+
   return (
     <section
       className={
@@ -2671,6 +2737,8 @@ export function StudioRecordingPanel({
       <StudioSampleDesk
         trackId={trackId}
         disabled={Boolean(workflowBusy)}
+        bitekPreview={bitekSamplePreview}
+        bitekApply={bitekSampleApply}
         onPlace={async (sampleId) => {
           if (!trackId) {
             return { ok: false as const, message: tr("sampleBrakSciezki") };
