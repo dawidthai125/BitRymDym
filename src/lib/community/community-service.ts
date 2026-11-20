@@ -50,6 +50,14 @@ export type PublicSampleCard = {
   bars: number | null;
   /** Published by BitRymDym (an admin account), not by a user. */
   platform: boolean;
+  /** ISO time the sample was created (catalog numbers count by this). */
+  createdAt: string | null;
+  /** Average stars (1 decimal) and number of ratings, all time. */
+  ratingAvg: number | null;
+  ratingCount: number;
+  /** Same over the last 7 days (for "Sampel tygodnia"). */
+  weekAvg: number | null;
+  weekCount: number;
 };
 
 export type BoardRow = {
@@ -266,7 +274,8 @@ export async function listPublicSamples(source: CatalogSource): Promise<PublicSa
   const works = (await publishedWorks("sample")).filter((work) =>
     source === "brd" ? work.ownership === "PLATFORM" : work.ownership === "USER",
   );
-  const meta = await sampleLabMeta(works.map((work) => work.id));
+  const ids = works.map((work) => work.id);
+  const [meta, stats] = await Promise.all([sampleLabMeta(ids), sampleRatingStats(ids)]);
   return works.map((work) => ({
     id: work.id,
     title: work.title,
@@ -279,15 +288,83 @@ export async function listPublicSamples(source: CatalogSource): Promise<PublicSa
     musicalKey: meta.get(work.id)?.musicalKey ?? null,
     bars: meta.get(work.id)?.bars ?? null,
     platform: work.ownership === "PLATFORM",
+    createdAt: meta.get(work.id)?.createdAt ?? null,
+    ratingAvg: stats.get(work.id)?.avg ?? null,
+    ratingCount: stats.get(work.id)?.count ?? 0,
+    weekAvg: stats.get(work.id)?.weekAvg ?? null,
+    weekCount: stats.get(work.id)?.weekCount ?? 0,
   }));
 }
 
+export type SampleRatingStats = { avg: number | null; count: number; weekAvg: number | null; weekCount: number };
+
+/** Pure: per-sample average and count, all time and over the 7 days before `now`. */
+export function summarizeSampleRatings(
+  rows: readonly { target_id: string; stars: number; created_at: string }[],
+  now: Date = new Date(),
+): Map<string, SampleRatingStats> {
+  const weekStart = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+  const acc = new Map<string, { sum: number; n: number; wsum: number; wn: number }>();
+  for (const row of rows) {
+    const stars = Number(row.stars);
+    if (!Number.isFinite(stars) || stars < 1 || stars > 5) continue;
+    const a = acc.get(row.target_id) ?? { sum: 0, n: 0, wsum: 0, wn: 0 };
+    a.sum += stars;
+    a.n += 1;
+    if (Date.parse(row.created_at) >= weekStart) {
+      a.wsum += stars;
+      a.wn += 1;
+    }
+    acc.set(row.target_id, a);
+  }
+  const round = (v: number) => Math.round(v * 10) / 10;
+  const out = new Map<string, SampleRatingStats>();
+  for (const [id, a] of acc) {
+    out.set(id, {
+      avg: a.n ? round(a.sum / a.n) : null,
+      count: a.n,
+      weekAvg: a.wn ? round(a.wsum / a.wn) : null,
+      weekCount: a.wn,
+    });
+  }
+  return out;
+}
+
+async function sampleRatingStats(ids: string[]): Promise<Map<string, SampleRatingStats>> {
+  const admin = adminOrNull();
+  if (!admin || ids.length === 0) return new Map();
+  const loaded = await admin
+    .from(RATINGS)
+    .select("target_id, stars, created_at")
+    .eq("target_kind", "sample")
+    .in("target_id", ids)
+    .limit(5000);
+  if (loaded.error) return new Map();
+  return summarizeSampleRatings((loaded.data ?? []) as { target_id: string; stars: number; created_at: string }[]);
+}
+
+/**
+ * "Sampel tygodnia": best 7-day average with at least 2 ratings that week; otherwise the most
+ * rated sample of all time (ties: higher average). Null when nothing has a rating.
+ */
+export function pickSampleOfTheWeek<T extends { id: string; ratingAvg: number | null; ratingCount: number; weekAvg: number | null; weekCount: number }>(
+  samples: readonly T[],
+): T | null {
+  const week = samples.filter((s) => s.weekCount >= 2 && s.weekAvg != null);
+  if (week.length) {
+    return [...week].sort((a, b) => (b.weekAvg ?? 0) - (a.weekAvg ?? 0) || b.weekCount - a.weekCount)[0] ?? null;
+  }
+  const rated = samples.filter((s) => s.ratingCount > 0);
+  if (!rated.length) return null;
+  return [...rated].sort((a, b) => b.ratingCount - a.ratingCount || (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0))[0] ?? null;
+}
+
 /** Lab metadata in a separate read, so a DB without the lab columns still lists samples. */
-async function sampleLabMeta(ids: string[]): Promise<Map<string, { sampleType: string | null; bpm: number | null; musicalKey: string | null; bars: number | null }>> {
-  const out = new Map<string, { sampleType: string | null; bpm: number | null; musicalKey: string | null; bars: number | null }>();
+async function sampleLabMeta(ids: string[]): Promise<Map<string, { sampleType: string | null; bpm: number | null; musicalKey: string | null; bars: number | null; createdAt: string | null }>> {
+  const out = new Map<string, { sampleType: string | null; bpm: number | null; musicalKey: string | null; bars: number | null; createdAt: string | null }>();
   const admin = adminOrNull();
   if (!admin || ids.length === 0) return out;
-  const { data, error } = await admin.from("studio_samples").select("id, sample_type, bpm, musical_key, bars").in("id", ids);
+  const { data, error } = await admin.from("studio_samples").select("id, sample_type, bpm, musical_key, bars, created_at").in("id", ids);
   if (error) return out;
   for (const row of (data ?? []) as Record<string, unknown>[]) {
     out.set(String(row.id), {
@@ -295,6 +372,7 @@ async function sampleLabMeta(ids: string[]): Promise<Map<string, { sampleType: s
       bpm: row.bpm == null ? null : Number(row.bpm),
       musicalKey: (row.musical_key as string | null) ?? null,
       bars: row.bars == null ? null : Number(row.bars),
+      createdAt: typeof row.created_at === "string" ? row.created_at : null,
     });
   }
   return out;

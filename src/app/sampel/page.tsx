@@ -1,11 +1,12 @@
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
 import { SampleCatalog, type CatalogSampleItem } from "@/components/community/sample-catalog";
 import { AppShell } from "@/components/site/app-shell";
 import { getCurrentProfile } from "@/lib/auth/session";
-import { listPublicSamples, type CatalogSource } from "@/lib/community/community-service";
+import { listPublicSamples, pickSampleOfTheWeek, type CatalogSource } from "@/lib/community/community-service";
 import { LIVE_SAMPLE_INSTRUMENTS, SAMPLE_INSTRUMENTS, SAMPLE_TYPES } from "@/lib/studio/samples/sample-policy";
 
 export async function generateMetadata() {
@@ -20,6 +21,7 @@ export default async function SampleCatalogPage({
 }) {
   const t = await getTranslations("community.catalog");
   const tl = await getTranslations("studio.sampleLab");
+  const ts = await getTranslations("community.sampleCatalog");
   const params = searchParams ? await searchParams : {};
   const source: CatalogSource = params.zrodlo === "brd" ? "brd" : "user";
   const session = await getCurrentProfile();
@@ -28,11 +30,15 @@ export default async function SampleCatalogPage({
 
   const instrumentLabel = (id: string | null) => (id && tl.has(`instrument.${id}`) ? tl(`instrument.${id}`) : id);
   const typeLabel = (id: string | null) => (id && tl.has(`typ.${id}`) ? tl(`typ.${id}`) : null);
-  // Newest first from the service; the catalog number counts from the oldest (#01).
+  // Catalog number counts from the oldest (#01) by creation time, whatever the sort.
+  const byAge = [...samples].sort(
+    (a, b) => (a.createdAt ? Date.parse(a.createdAt) : 0) - (b.createdAt ? Date.parse(b.createdAt) : 0),
+  );
+  const numberOf = new Map(byAge.map((s, i) => [s.id, i + 1]));
   const items: CatalogSampleItem[] = samples
     .map((s, i) => ({
       id: s.id,
-      no: samples.length - i,
+      no: numberOf.get(s.id) ?? samples.length - i,
       title: s.title,
       author: t("by", { name: s.author }),
       durationMs: s.durationMs,
@@ -45,8 +51,12 @@ export default async function SampleCatalogPage({
       barsLabel: s.bars ? tl("taktow", { n: s.bars }) : null,
       musicalKey: s.musicalKey,
       platform: s.platform,
+      ratingAvg: s.ratingAvg,
+      ratingCount: s.ratingCount,
     }))
-    .reverse();
+    .sort((a, b) => b.no - a.no);
+  const best = source === "user" ? pickSampleOfTheWeek(samples) : null;
+  const bestItem = best ? items.find((i) => i.id === best.id) ?? null : null;
   const instruments = [...SAMPLE_INSTRUMENTS, ...LIVE_SAMPLE_INSTRUMENTS].map((o) => ({ id: o.id, label: instrumentLabel(o.id) ?? o.id }));
   const types = SAMPLE_TYPES.map((id) => ({ id, label: typeLabel(id) ?? id }));
 
@@ -56,6 +66,32 @@ export default async function SampleCatalogPage({
         <PageFrame width="wide" className="py-5 sm:py-6">
           <CommunityShelf current="samples" />
           <CommunitySource kind="samples" source={source} />
+          <div className="mb-4 flex flex-wrap items-stretch gap-3">
+            {bestItem && best ? (
+              <a
+                href={`#${bestItem.id}`}
+                className="flex min-w-0 flex-1 flex-col gap-1 rounded-xl border border-[var(--brd-amber)] bg-[var(--brd-amber)]/10 px-4 py-3"
+              >
+                <span className="text-xs uppercase tracking-wide text-[var(--brd-amber)]">{ts("tygodnia")}</span>
+                <span className="truncate text-base text-[var(--brd-ink)]">
+                  #{String(bestItem.no).padStart(2, "0")} {bestItem.title}
+                </span>
+                <span className="text-xs text-[var(--brd-mute)]">
+                  {bestItem.author}
+                  {" · "}
+                  {best.weekCount >= 2
+                    ? ts("tygodniaOcena", { avg: (best.weekAvg ?? 0).toFixed(1), count: best.weekCount })
+                    : ts("tygodniaNajczesciej", { avg: (best.ratingAvg ?? 0).toFixed(1), count: best.ratingCount })}
+                </span>
+              </a>
+            ) : null}
+            <Link
+              href="/ranking/sampel"
+              className="inline-flex min-h-11 items-center rounded-xl border border-[var(--brd-line)] px-4 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)]"
+            >
+              {ts("rankingLink")}
+            </Link>
+          </div>
           {items.length === 0 ? (
             <p className="text-sm text-[var(--brd-mute)]">
               {source === "brd" ? t("samplesEmptyBrd") : t("samplesEmptyUser")}

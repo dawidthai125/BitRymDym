@@ -1,0 +1,314 @@
+{
+ "id": "piano",
+ "attribution": "Salamander Grand Piano V3 \u2014 Alexander Holm, CC BY 3.0",
+ "zones": [
+  {
+   "file": "33-soft.mp3",
+   "center": 33,
+   "lo": 21,
+   "hi": 34,
+   "vel": "soft"
+  },
+  {
+   "file": "33-hard.mp3",
+   "center": 33,
+   "lo": 21,
+   "hi": 34,
+   "vel": "hard"
+  },
+  {
+   "file": "36-soft.mp3",
+   "center": 36,
+   "lo": 35,
+   "hi": 37,
+   "vel": "soft"
+  },
+  {
+   "file": "36-hard.mp3",
+   "center": 36,
+   "lo": 35,
+   "hi": 37,
+   "vel": "hard"
+  },
+  {
+   "file": "39-soft.mp3",
+   "center": 39,
+   "lo": 38,
+   "hi": 40,
+   "vel": "soft"
+  },
+  {
+   "file": "39-hard.mp3",
+   "center": 39,
+   "lo": 38,
+   "hi": 40,
+   "vel": "hard"
+  },
+  {
+   "file": "42-soft.mp3",
+   "center": 42,
+   "lo": 41,
+   "hi": 43,
+   "vel": "soft"
+  },
+  {
+   "file": "42-hard.mp3",
+   "center": 42,
+   "lo": 41,
+   "hi": 43,
+   "vel": "hard"
+  },
+  {
+   "file": "45-soft.mp3",
+   "center": 45,
+   "lo": 44,
+   "hi": 46,
+   "vel": "soft"
+  },
+  {
+   "file": "45-hard.mp3",
+   "center": 45,
+   "lo": 44,
+   "hi": 46,
+   "vel": "hard"
+  },
+  {
+   "file": "48-soft.mp3",
+   "center": 48,
+   "lo": 47,
+   "hi": 49,
+   "vel": "soft"
+  },
+  {
+   "file": "48-hard.mp3",
+   "center": 48,
+   "lo": 47,
+   "hi": 49,
+   "vel": "hard"
+  },
+  {
+   "file": "51-soft.mp3",
+   "center": 51,
+   "lo": 50,
+   "hi": 52,
+   "vel": "soft"
+  },
+  {
+   "file": "51-hard.mp3",
+   "center": 51,
+   "lo": 50,
+   "hi": 52,
+   "vel": "hard"
+  },
+  {
+   "file": "54-soft.mp3",
+   "center": 54,
+   "lo": 53,
+   "hi": 55,
+   "vel": "soft"
+  },
+  {
+   "file": "54-hard.mp3",
+   "center": 54,
+   "lo": 53,
+   "hi": 55,
+   "vel": "hard"
+  },
+  {
+   "file": "57-soft.mp3",
+   "center": 57,
+   "lo": 56,
+   "hi": 58,
+   "vel": "soft"
+  },
+  {
+   "file": "57-hard.mp3",
+   "center": 57,
+   "lo": 56,
+   "hi": 58,
+   "vel": "hard"
+  },
+  {
+   "file": "59-soft.mp3",
+   "center": 59,
+   "lo": 58,
+   "hi": 61,
+   "vel": "soft"
+  },
+  {
+   "file": "59-hard.mp3",
+   "center": 59,
+   "lo": 58,
+   "hi": 61,
+   "vel": "hard"
+  },
+  {
+   "file": "63-soft.mp3",
+   "center": 63,
+   "lo": 61,
+   "hi": 64,
+   "vel": "soft"
+  },
+  {
+   "file": "63-hard.mp3",
+   "center": 63,
+   "lo": 61,
+   "hi": 64,
+   "vel": "hard"
+  },
+  {
+   "file": "66-soft.mp3",
+   "center": 66,
+   "lo": 65,
+   "hi": 67,
+   "vel": "soft"
+  },
+  {
+   "file": "66-hard.mp3",
+   "center": 66,
+   "lo": 65,
+   "hi": 67,
+   "vel": "hard"
+  },
+  {
+   "file": "69-soft.mp3",
+   "center": 69,
+   "lo": 68,
+   "hi": 70,
+   "vel": "soft"
+  },
+  {
+   "file": "69-hard.mp3",
+   "center": 69,
+   "lo": 68,
+   "hi": 70,
+   "vel": "hard"
+  },
+  {
+   "file": "72-soft.mp3",
+   "center": 72,
+   "lo": 71,
+   "hi": 73,
+   "vel": "soft"
+  },
+  {
+   "file": "72-hard.mp3",
+   "center": 72,
+   "lo": 71,
+   "hi": 73,
+   "vel": "hard"
+  },
+  {
+   "file": "75-soft.mp3",
+   "center": 75,
+   "lo": 74,
+   "hi": 76,
+   "vel": "soft"
+  },
+  {
+   "file": "75-hard.mp3",
+   "center": 75,
+   "lo": 74,
+   "hi": 76,
+   "vel": "hard"
+  },
+  {
+   "file": "78-soft.mp3",
+   "center": 78,
+   "lo": 77,
+   "hi": 79,
+   "vel": "soft"
+  },
+  {
+   "file": "78-hard.mp3",
+   "center": 78,
+   "lo": 77,
+   "hi": 79,
+   "vel": "hard"
+  },
+  {
+   "file": "81-soft.mp3",
+   "center": 81,
+   "lo": 80,
+   "hi": 82,
+   "vel": "soft"
+  },
+  {
+   "file": "81-hard.mp3",
+   "center": 81,
+   "lo": 80,
+   "hi": 82,
+   "vel": "hard"
+  },
+  {
+   "file": "84-soft.mp3",
+   "center": 84,
+   "lo": 83,
+   "hi": 85,
+   "vel": "soft"
+  },
+  {
+   "file": "84-hard.mp3",
+   "center": 84,
+   "lo": 83,
+   "hi": 85,
+   "vel": "hard"
+  },
+  {
+   "file": "87-soft.mp3",
+   "center": 87,
+   "lo": 86,
+   "hi": 88,
+   "vel": "soft"
+  },
+  {
+   "file": "87-hard.mp3",
+   "center": 87,
+   "lo": 86,
+   "hi": 88,
+   "vel": "hard"
+  },
+  {
+   "file": "90-soft.mp3",
+   "center": 90,
+   "lo": 89,
+   "hi": 91,
+   "vel": "soft"
+  },
+  {
+   "file": "90-hard.mp3",
+   "center": 90,
+   "lo": 89,
+   "hi": 91,
+   "vel": "hard"
+  },
+  {
+   "file": "93-soft.mp3",
+   "center": 93,
+   "lo": 92,
+   "hi": 94,
+   "vel": "soft"
+  },
+  {
+   "file": "93-hard.mp3",
+   "center": 93,
+   "lo": 92,
+   "hi": 94,
+   "vel": "hard"
+  },
+  {
+   "file": "96-soft.mp3",
+   "center": 96,
+   "lo": 95,
+   "hi": 108,
+   "vel": "soft"
+  },
+  {
+   "file": "96-hard.mp3",
+   "center": 96,
+   "lo": 95,
+   "hi": 108,
+   "vel": "hard"
+  }
+ ]
+}

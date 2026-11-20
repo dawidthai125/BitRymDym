@@ -1,0 +1,10 @@
+Instrument sounds used by the BitRymDym "Graj" instruments
+
+piano   Salamander Grand Piano V3 — Alexander Holm — CC BY 3.0 — https://archive.org/details/SalamanderGrandPianoV3
+epiano  FreePats FM Piano 1 — CC0 1.0 — https://freepats.zenvoid.org/ElectricPiano/synthesized-piano.html
+guitar  FreePats Spanish Classical Guitar — CC0 1.0 — https://freepats.zenvoid.org/Guitar/acoustic-guitar.html
+bass    FreePats Bass Guitar YR (finger), Andrea Biasior — CC0 1.0 — https://freepats.zenvoid.org/ElectricGuitar/clean-electric-bass.html
+drums   MuldjordKit — Lars Muldjord — CC BY 4.0 — https://freepats.zenvoid.org/Percussion/acoustic-drum-kit.html
+hiphop  BitRymDym own synthesized one-shots
+
+Files are trimmed, faded and re-encoded (MP3) by scripts/instruments/build-instruments.py.

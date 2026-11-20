@@ -1,0 +1,90 @@
+{
+ "id": "epiano",
+ "attribution": "FreePats FM Piano 1 \u2014 CC0",
+ "zones": [
+  {
+   "file": "30-soft.mp3",
+   "center": 30,
+   "lo": 18,
+   "hi": 33,
+   "vel": "soft"
+  },
+  {
+   "file": "36-soft.mp3",
+   "center": 36,
+   "lo": 33,
+   "hi": 39,
+   "vel": "soft"
+  },
+  {
+   "file": "42-soft.mp3",
+   "center": 42,
+   "lo": 39,
+   "hi": 45,
+   "vel": "soft"
+  },
+  {
+   "file": "48-soft.mp3",
+   "center": 48,
+   "lo": 45,
+   "hi": 51,
+   "vel": "soft"
+  },
+  {
+   "file": "54-soft.mp3",
+   "center": 54,
+   "lo": 51,
+   "hi": 57,
+   "vel": "soft"
+  },
+  {
+   "file": "60-soft.mp3",
+   "center": 60,
+   "lo": 57,
+   "hi": 63,
+   "vel": "soft"
+  },
+  {
+   "file": "66-soft.mp3",
+   "center": 66,
+   "lo": 63,
+   "hi": 69,
+   "vel": "soft"
+  },
+  {
+   "file": "72-soft.mp3",
+   "center": 72,
+   "lo": 69,
+   "hi": 75,
+   "vel": "soft"
+  },
+  {
+   "file": "78-soft.mp3",
+   "center": 78,
+   "lo": 75,
+   "hi": 81,
+   "vel": "soft"
+  },
+  {
+   "file": "84-soft.mp3",
+   "center": 84,
+   "lo": 81,
+   "hi": 87,
+   "vel": "soft"
+  },
+  {
+   "file": "90-soft.mp3",
+   "center": 90,
+   "lo": 87,
+   "hi": 93,
+   "vel": "soft"
+  },
+  {
+   "file": "96-soft.mp3",
+   "center": 96,
+   "lo": 93,
+   "hi": 108,
+   "vel": "soft"
+  }
+ ]
+}

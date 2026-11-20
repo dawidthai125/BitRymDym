@@ -27,6 +27,7 @@ import { LIVE_SAMPLE_INSTRUMENTS, SAMPLE_BARS, SAMPLE_MAX_MS, instrumentKind } f
 import { cn } from "@/lib/utils";
 
 import { MySamples } from "./my-samples";
+import { PlayStudio } from "../play/play-studio";
 
 export type LabBeat = { id: string; title: string; bpm: number; key: string | null };
 
@@ -313,6 +314,7 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
 
   return (
     <div className="space-y-6">
+      <PlayStudio bpm={bpm} beatId={beat?.id ?? null} canUseAi={allowed} />
       {/* 1. What */}
       <section className={panel} aria-labelledby="lab-what">
         <h2 id="lab-what" className="mb-4 text-base font-semibold">{t("krok1")}</h2>

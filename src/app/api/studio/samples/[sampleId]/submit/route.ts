@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { sampleUserMessage } from "@/lib/studio/samples/sample-policy";
 import { submitStudioSample } from "@/lib/studio/samples/sample-service";
 
 export const runtime = "nodejs";
+
+/** Publishing to the user catalog is Bronze+ (owner decision 2026-11-20); Free keeps samples private. */
+const SAMPLE_PUBLISH_MIN_TIERS = ["BRONZE", "SILVER", "GOLD"] as const;
+const SAMPLE_PUBLISH_TIER_MESSAGE =
+  "Publikacja sampli w katalogu jest od planu Bronze. Na planie Free sample zostają prywatne.";
 
 export async function POST(
   _request: Request,
@@ -13,6 +19,16 @@ export async function POST(
   try {
     const auth = await requireUser();
     const { sampleId } = await context.params;
+    const staff = auth.profile.role === "ADMIN" || auth.profile.role === "MODERATOR";
+    if (!staff) {
+      const tier = (await resolveProductEntitlementForAuthContext(auth)).premiumTier;
+      if (!(SAMPLE_PUBLISH_MIN_TIERS as readonly string[]).includes(tier)) {
+        return NextResponse.json(
+          { error: "SAMPLE_PLAN_REQUIRED", message: SAMPLE_PUBLISH_TIER_MESSAGE },
+          { status: 403 },
+        );
+      }
+    }
     const result = await submitStudioSample(auth, sampleId);
     if (!result.ok) {
       const status =

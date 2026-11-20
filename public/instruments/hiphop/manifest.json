@@ -1,0 +1,38 @@
+{
+ "id": "hiphop",
+ "attribution": "BitRymDym (w\u0142asne)",
+ "pads": [
+  {
+   "id": "kick",
+   "file": "kick.mp3"
+  },
+  {
+   "id": "snare",
+   "file": "snare.mp3"
+  },
+  {
+   "id": "clap",
+   "file": "clap.mp3"
+  },
+  {
+   "id": "hat",
+   "file": "hat.mp3"
+  },
+  {
+   "id": "openhat",
+   "file": "openhat.mp3"
+  },
+  {
+   "id": "rim",
+   "file": "rim.mp3"
+  },
+  {
+   "id": "808a",
+   "file": "808a.mp3"
+  },
+  {
+   "id": "808f",
+   "file": "808f.mp3"
+  }
+ ]
+}

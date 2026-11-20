@@ -23,7 +23,22 @@ export type CatalogSampleItem = {
   barsLabel: string | null;
   musicalKey: string | null;
   platform: boolean;
+  /** Average stars and number of ratings (catalog only). */
+  ratingAvg?: number | null;
+  ratingCount?: number;
 };
+
+export type CatalogSort = "new" | "top";
+
+/** Pure: newest first (by catalog number) or best rated (average, then count, then newest). */
+export function sortCatalogItems<T extends Pick<CatalogSampleItem, "no" | "ratingAvg" | "ratingCount">>(items: readonly T[], sort: CatalogSort): T[] {
+  if (sort === "top") {
+    return [...items].sort(
+      (a, b) => (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0) || (b.ratingCount ?? 0) - (a.ratingCount ?? 0) || b.no - a.no,
+    );
+  }
+  return [...items].sort((a, b) => b.no - a.no);
+}
 
 type Option = { id: string; label: string };
 
@@ -72,6 +87,7 @@ export function SampleCatalog({
   const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [instrumentFilter, setInstrumentFilter] = useState<string>("all");
+  const [sort, setSort] = useState<CatalogSort>("new");
   const [editing, setEditing] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(() => new Set());
 
@@ -85,13 +101,16 @@ export function SampleCatalog({
 
   const shown = useMemo(
     () =>
-      items.filter(
-        (s) =>
-          !removed.has(s.id) &&
-          (typeFilter === "all" || s.sampleType === typeFilter) &&
-          (instrumentFilter === "all" || s.instrument === instrumentFilter),
+      sortCatalogItems(
+        items.filter(
+          (s) =>
+            !removed.has(s.id) &&
+            (typeFilter === "all" || s.sampleType === typeFilter) &&
+            (instrumentFilter === "all" || s.instrument === instrumentFilter),
+        ),
+        showFilters ? sort : "new",
       ),
-    [items, typeFilter, instrumentFilter, removed],
+    [items, typeFilter, instrumentFilter, removed, sort, showFilters],
   );
   const typeCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -166,6 +185,25 @@ export function SampleCatalog({
 
   return (
     <div className="space-y-4">
+      {showFilters ? (
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("sortuj")}>
+        {(["new", "top"] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setSort(id)}
+            aria-pressed={sort === id}
+            className={`min-h-9 rounded-full border px-3 text-sm ${
+              sort === id
+                ? "border-[var(--brd-amber)] bg-[var(--brd-amber)]/15 text-[var(--brd-ink)]"
+                : "border-[var(--brd-line)] text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
+            }`}
+          >
+            {id === "new" ? t("najnowsze") : t("najwyzejOceniane")}
+          </button>
+        ))}
+      </div>
+      ) : null}
       {showFilters ? (
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("filtr")}>
         {[
@@ -251,6 +289,11 @@ export function SampleCatalog({
                   <p className="truncate text-base text-[var(--brd-ink)]">{s.title}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--brd-mute)]">
                     <span>{s.author}</span>
+                    {s.ratingCount ? (
+                      <span className="text-[var(--brd-amber)]" aria-label={t("ocenaAria", { avg: s.ratingAvg ?? 0, count: s.ratingCount })}>
+                        ★ {(s.ratingAvg ?? 0).toFixed(1)} <span className="text-[var(--brd-mute)]">({s.ratingCount})</span>
+                      </span>
+                    ) : null}
                     {[s.typeLabel, s.instrumentLabel, s.bpm ? `${Math.round(s.bpm)} BPM` : null, s.barsLabel, s.musicalKey]
                       .filter(Boolean)
                       .map((chip) => (

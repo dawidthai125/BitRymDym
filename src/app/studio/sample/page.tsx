@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { PageFrame } from "@/components/brand/chrome";
 import { SampleLab, type LabBeat } from "@/components/studio/sample-lab/sample-lab";
 import { AppShell } from "@/components/site/app-shell";
-import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { toPublicCatalogItem } from "@/lib/beats/public";
@@ -16,14 +15,15 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
   return { title: t("metaTitle") };
 }
 
-/** Sample Lab — live instruments, loops and one-shots (owner decision 2026-11-20: Silver+). */
+/** Sample Lab — live instruments, manual virtual instruments, loops and one-shots. */
 export default async function SampleLabPage() {
   const t = await getTranslations("studio.sampleLab");
   let allowed = false;
   try {
-    const auth = await requireUser();
-    const tier = (await resolveProductEntitlementForAuthContext(auth)).premiumTier;
-    allowed = tier === "SILVER" || tier === "GOLD";
+    await requireUser();
+    // Manual playing is available to every signed-in user; premium plans only affect
+    // the existing microphone/import flow and AI provider availability.
+    allowed = true;
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
       redirect(signInPathWithNext("/studio/sample"));

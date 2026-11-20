@@ -211,7 +211,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 3,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 3, maxRecordingTracks: 1, maxStems: 0, maxSamples: 5, maxFxEffects: 4, engineerRequestsPerMonth: 0, clipPitch: false, sidechain: false },
+    studio: { maxProjects: 3, maxRecordingTracks: 1, maxStems: 0, maxSamples: 3, maxFxEffects: 4, engineerRequestsPerMonth: 0, clipPitch: false, sidechain: false },
     mastering: { mastersPerMonth: 2, referenceMastering: "none" },
     downloads: {
       qualities: [],

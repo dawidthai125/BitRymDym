@@ -1,0 +1,188 @@
+{
+ "id": "guitar",
+ "attribution": "FreePats Spanish Classical Guitar \u2014 CC0",
+ "zones": [
+  {
+   "file": "32-soft.mp3",
+   "center": 32,
+   "lo": 20,
+   "hi": 33,
+   "vel": "soft"
+  },
+  {
+   "file": "34-soft.mp3",
+   "center": 34,
+   "lo": 33,
+   "hi": 35,
+   "vel": "soft"
+  },
+  {
+   "file": "36-soft.mp3",
+   "center": 36,
+   "lo": 35,
+   "hi": 37,
+   "vel": "soft"
+  },
+  {
+   "file": "38-soft.mp3",
+   "center": 38,
+   "lo": 37,
+   "hi": 39,
+   "vel": "soft"
+  },
+  {
+   "file": "40-soft.mp3",
+   "center": 40,
+   "lo": 39,
+   "hi": 42,
+   "vel": "soft"
+  },
+  {
+   "file": "45-soft.mp3",
+   "center": 45,
+   "lo": 43,
+   "hi": 46,
+   "vel": "soft"
+  },
+  {
+   "file": "48-soft.mp3",
+   "center": 48,
+   "lo": 47,
+   "hi": 49,
+   "vel": "soft"
+  },
+  {
+   "file": "50-soft.mp3",
+   "center": 50,
+   "lo": 49,
+   "hi": 51,
+   "vel": "soft"
+  },
+  {
+   "file": "52-soft.mp3",
+   "center": 52,
+   "lo": 51,
+   "hi": 53,
+   "vel": "soft"
+  },
+  {
+   "file": "54-soft.mp3",
+   "center": 54,
+   "lo": 53,
+   "hi": 54,
+   "vel": "soft"
+  },
+  {
+   "file": "55-soft.mp3",
+   "center": 55,
+   "lo": 55,
+   "hi": 55,
+   "vel": "soft"
+  },
+  {
+   "file": "56-soft.mp3",
+   "center": 56,
+   "lo": 56,
+   "hi": 57,
+   "vel": "soft"
+  },
+  {
+   "file": "58-soft.mp3",
+   "center": 58,
+   "lo": 57,
+   "hi": 58,
+   "vel": "soft"
+  },
+  {
+   "file": "59-soft.mp3",
+   "center": 59,
+   "lo": 59,
+   "hi": 59,
+   "vel": "soft"
+  },
+  {
+   "file": "60-soft.mp3",
+   "center": 60,
+   "lo": 60,
+   "hi": 61,
+   "vel": "soft"
+  },
+  {
+   "file": "62-soft.mp3",
+   "center": 62,
+   "lo": 61,
+   "hi": 63,
+   "vel": "soft"
+  },
+  {
+   "file": "64-soft.mp3",
+   "center": 64,
+   "lo": 63,
+   "hi": 65,
+   "vel": "soft"
+  },
+  {
+   "file": "66-soft.mp3",
+   "center": 66,
+   "lo": 65,
+   "hi": 68,
+   "vel": "soft"
+  },
+  {
+   "file": "70-soft.mp3",
+   "center": 70,
+   "lo": 68,
+   "hi": 71,
+   "vel": "soft"
+  },
+  {
+   "file": "72-soft.mp3",
+   "center": 72,
+   "lo": 71,
+   "hi": 73,
+   "vel": "soft"
+  },
+  {
+   "file": "74-soft.mp3",
+   "center": 74,
+   "lo": 73,
+   "hi": 75,
+   "vel": "soft"
+  },
+  {
+   "file": "76-soft.mp3",
+   "center": 76,
+   "lo": 75,
+   "hi": 77,
+   "vel": "soft"
+  },
+  {
+   "file": "78-soft.mp3",
+   "center": 78,
+   "lo": 77,
+   "hi": 79,
+   "vel": "soft"
+  },
+  {
+   "file": "80-soft.mp3",
+   "center": 80,
+   "lo": 79,
+   "hi": 81,
+   "vel": "soft"
+  },
+  {
+   "file": "82-soft.mp3",
+   "center": 82,
+   "lo": 81,
+   "hi": 83,
+   "vel": "soft"
+  },
+  {
+   "file": "84-soft.mp3",
+   "center": 84,
+   "lo": 83,
+   "hi": 96,
+   "vel": "soft"
+  }
+ ]
+}

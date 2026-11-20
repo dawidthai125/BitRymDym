@@ -1,0 +1,46 @@
+{
+ "id": "drums",
+ "attribution": "MuldjordKit \u2014 Lars Muldjord, CC BY 4.0",
+ "pads": [
+  {
+   "id": "kick",
+   "file": "kick.mp3",
+   "key": 48
+  },
+  {
+   "id": "snare",
+   "file": "snare.mp3",
+   "key": 50
+  },
+  {
+   "id": "hat",
+   "file": "hat.mp3",
+   "key": 52
+  },
+  {
+   "id": "openhat",
+   "file": "openhat.mp3",
+   "key": 53
+  },
+  {
+   "id": "tom1",
+   "file": "tom1.mp3",
+   "key": 61
+  },
+  {
+   "id": "tom2",
+   "file": "tom2.mp3",
+   "key": 63
+  },
+  {
+   "id": "crash",
+   "file": "crash.mp3",
+   "key": 58
+  },
+  {
+   "id": "ride",
+   "file": "ride.mp3",
+   "key": 54
+  }
+ ]
+}
