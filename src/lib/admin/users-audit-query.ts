@@ -17,6 +17,7 @@ export const ADMIN_AUDIT_ACTIONS = [
   "USER_ACCOUNT_DELETE",
   "PLAN_ADDON_GRANT",
   "PLAN_ADDON_REVOKE",
+  "USAGE_RESET",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];

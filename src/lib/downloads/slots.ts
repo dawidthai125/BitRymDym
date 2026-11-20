@@ -1,4 +1,5 @@
 import "server-only";
+import { usageWindowStart } from "@/lib/plans/usage-resets";
 
 import { DOWNLOAD_RESERVATION_TTL_SECONDS } from "@/config/downloads";
 import { AuthError } from "@/lib/auth/session";
@@ -65,7 +66,11 @@ export async function reserveDownloadSlot(params: {
     p_user_id: params.userId,
     p_anonymous_token_hash: params.anonymousTokenHash,
     p_daily_limit: params.dailyLimit,
-    p_window_start: utcDayWindowStart().toISOString(),
+    // USER: an admin "reset limits" moves the day window forward (usage_resets).
+    p_window_start:
+      params.actorType === "USER" && params.userId
+        ? await usageWindowStart(params.userId, "downloads", utcDayWindowStart().toISOString(), admin)
+        : utcDayWindowStart().toISOString(),
     p_ttl_seconds: DOWNLOAD_RESERVATION_TTL_SECONDS,
   });
 

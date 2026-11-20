@@ -138,8 +138,24 @@ function mapChangeLabels(
     };
   }
 
+  if (action === "USAGE_RESET") {
+    const metrics = Array.isArray(newRecord?.metrics) ? (newRecord?.metrics as unknown[]) : [];
+    const names = metrics.map((m) => USAGE_METRIC_LABEL[String(m)] ?? String(m));
+    return { oldLabel: "—", newLabel: names.length >= 7 ? "Wszystkie limity od zera" : `${names.join(", ")} od zera` };
+  }
+
   return { oldLabel: "—", newLabel: "—" };
 }
+
+const USAGE_METRIC_LABEL: Record<string, string> = {
+  recordings: "Nagrania",
+  masters: "Mastery",
+  downloads: "Pobrania",
+  video: "Wideo",
+  cleanup: "Czyszczenie wokalu",
+  lyrics: "Teksty z AI",
+  cover: "Okładki z AI",
+};
 
 function addonName(addon: unknown): string {
   return addon === "reference_mastering" ? "Mastering pod referencję" : "Dodatek";

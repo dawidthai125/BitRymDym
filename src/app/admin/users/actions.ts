@@ -25,6 +25,11 @@ import {
   type AdminAddonCode,
 } from "@/lib/admin/users-addons";
 import { executeAccountProfile01Deletion } from "@/lib/auth/delete-account";
+import {
+  USAGE_RESET_METRICS,
+  isUsageResetMetric,
+  type UsageResetMetric,
+} from "@/lib/plans/usage-resets-model";
 import { AuthError, requirePermission, requireRole } from "@/lib/auth/session";
 import { sendAdminAccountDeletionEmail } from "@/lib/email/send-admin-account-deletion-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -290,5 +295,59 @@ export async function setAdminPlanAddonAction(input: {
   } catch (error) {
     const code: AdminAddonCode = error instanceof AuthError ? "ADMIN_FORBIDDEN" : "MUTATION_FAILED";
     return { success: false, error: polishAdminAddonError(code), code };
+  }
+}
+
+export type AdminUsageResetState = { success: boolean; error: string | null; resetAt: string | null };
+
+/**
+ * Admin "reset limits": every counter of the chosen metric(s) starts again from now.
+ * History stays intact (usage_resets marker, see migration 20261120090000). Logged as USAGE_RESET.
+ */
+export async function resetAdminUserUsageAction(input: {
+  targetUserId: unknown;
+  metric: unknown;
+}): Promise<AdminUsageResetState> {
+  try {
+    const context = await requireAdminUsersMutateAccess();
+    const target = parseAdminDeleteTargetUserId(input.targetUserId);
+    if (!target.ok) return { success: false, error: "Nieprawidłowy użytkownik.", resetAt: null };
+    const metrics: UsageResetMetric[] =
+      input.metric === "all" ? [...USAGE_RESET_METRICS] : isUsageResetMetric(input.metric) ? [input.metric] : [];
+    if (metrics.length === 0) return { success: false, error: "Nieznany limit.", resetAt: null };
+
+    const admin = createSupabaseAdminClient();
+    const resetAt = new Date().toISOString();
+    const { error } = await admin.from("usage_resets").upsert(
+      metrics.map((metric) => ({ user_id: target.value, metric, reset_at: resetAt, reset_by: context.userId })),
+      { onConflict: "user_id,metric" },
+    );
+    if (error) return { success: false, error: "Nie udało się wyzerować limitu. Spróbuj ponownie.", resetAt: null };
+
+    const { data: numbers } = await admin
+      .from("profiles")
+      .select("id, user_number")
+      .in("id", [context.userId, target.value]);
+    const numberOf = (id: string) =>
+      toSnapshotNumber((numbers ?? []).find((row) => row.id === id)?.user_number as number | null | undefined);
+    await admin.from("admin_audit_events").insert({
+      actor_user_id: context.userId,
+      target_user_id: target.value,
+      actor_user_number: numberOf(context.userId),
+      target_user_number: numberOf(target.value),
+      action: "USAGE_RESET",
+      old_value: null,
+      new_value: { metrics, resetAt },
+      metadata: { panel: "admin_user_desk" },
+    });
+
+    revalidatePath(`/admin/users/${target.value}`);
+    return { success: true, error: null, resetAt };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof AuthError ? "Brak uprawnień do zmiany limitów." : "Nie udało się wyzerować limitu. Spróbuj ponownie.",
+      resetAt: null,
+    };
   }
 }

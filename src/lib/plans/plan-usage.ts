@@ -4,6 +4,8 @@ import { studioQuotaRemaining } from "@/lib/studio/quota-credits-read";
 import { warsawMonthWindow } from "@/lib/studio/studio-plan-limits";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildPlanUsage, type PlanUsage } from "@/lib/plans/plan-usage-model";
+import { loadUsageResets } from "@/lib/plans/usage-resets";
+import { windowStartAfterReset } from "@/lib/plans/usage-resets-model";
 import type { PremiumTier } from "@/types/premium";
 
 type HeadResult = { count: number | null; error: { message?: string; code?: string } | null };
@@ -35,16 +37,22 @@ export async function loadPlanUsage(params: {
   const nowIso = now.toISOString();
   const month = warsawMonthWindow(now);
   const head = { count: "exact" as const, head: true };
+  // Admin "reset limits" moves a counter's window start forward (usage_resets).
+  const resets = await loadUsageResets(params.userId, admin);
+  const dlDayStart = windowStartAfterReset(dayStart, resets.downloads);
+  const dlWeekStart = windowStartAfterReset(weekStart, resets.downloads);
+  const recDayStart = windowStartAfterReset(dayStart, resets.recordings);
+  const masterStart = windowStartAfterReset(month.startIso, resets.masters);
 
   const [downloads, exports, projects, takesToday, activeTakes, masters, takeCredits, masterCredits] =
     await Promise.all([
-      admin.from("beat_download_events").select("id", head).eq("user_id", params.userId).gte("created_at", dayStart),
-      admin.from("studio_download_usage").select("owner_id", head).eq("owner_id", params.userId).gte("created_at", weekStart),
+      admin.from("beat_download_events").select("id", head).eq("user_id", params.userId).gte("created_at", dlDayStart),
+      admin.from("studio_download_usage").select("owner_id", head).eq("owner_id", params.userId).gte("created_at", dlWeekStart),
       admin.from("studio_projects").select("id", head).eq("owner_id", params.userId).neq("status", "ARCHIVED"),
       // Owner 2026-11-13: "Nagrania" today = finished songs (first master download of a project).
-      admin.from("studio_song_completions").select("id", head).eq("owner_id", params.userId).gte("created_at", dayStart),
+      admin.from("studio_song_completions").select("id", head).eq("owner_id", params.userId).gte("created_at", recDayStart),
       admin.from("takes").select("id", head).eq("owner_id", params.userId).eq("is_stem", false).eq("status", "READY").is("deleted_at", null).gt("expires_at", nowIso),
-      admin.from("studio_master_jobs").select("id", head).eq("owner_id", params.userId).eq("kind", "master").gte("created_at", month.startIso).not("status", "in", "(failed,cancelled)"),
+      admin.from("studio_master_jobs").select("id", head).eq("owner_id", params.userId).eq("kind", "master").gte("created_at", masterStart).not("status", "in", "(failed,cancelled)"),
       studioQuotaRemaining(params.userId, "take"),
       studioQuotaRemaining(params.userId, "master"),
     ]);

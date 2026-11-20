@@ -1,4 +1,5 @@
 import "server-only";
+import { usageWindowStart } from "@/lib/plans/usage-resets";
 
 /**
  * Gold — YouTube MP4 server logic (service_role, owner-checked, tier from the server
@@ -67,7 +68,7 @@ async function projectBeatCover(admin: Admin, ownerId: string, beatId: string | 
 
 async function usedThisWeek(admin: Admin, ownerId: string): Promise<number> {
   const { count, error } = await admin.from("studio_master_jobs").select("id", { count: "exact", head: true })
-    .eq("owner_id", ownerId).eq("kind", "youtube_video").gte("created_at", warsawWeekStartIso()).not("status", "in", "(failed,cancelled)");
+    .eq("owner_id", ownerId).eq("kind", "youtube_video").gte("created_at", await usageWindowStart(ownerId, "video", warsawWeekStartIso(), admin)).not("status", "in", "(failed,cancelled)");
   check(error);
   return count ?? 0;
 }

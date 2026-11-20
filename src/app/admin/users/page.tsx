@@ -179,15 +179,13 @@ export default async function AdminUsersPage({
                 : "")}
             </p>
             <div className="relative overflow-x-auto border border-[var(--brd-line)]">
-              <table className="w-full min-w-[64rem] text-left text-sm">
+              <table className="w-full min-w-[56rem] text-left text-sm">
                 <thead className="bg-[var(--brd-paper-deep)]/40 text-[var(--brd-mute)]">
                   <tr>
-                    <th className="px-3 py-3 font-medium">{t("ksywka")}</th>
-                    <th className="px-3 py-3 font-medium">{t("eMail")}</th>
+                    <th className="px-3 py-3 font-medium">{t("ksywka")} · {t("eMail")}</th>
                     <th className="px-3 py-3 font-medium">{t("id")}</th>
+                    <th className="px-3 py-3 font-medium">{t("premium")} · {t("wygasa")}</th>
                     <th className="px-3 py-3 font-medium">{t("ranga")}</th>
-                    <th className="px-3 py-3 font-medium">{t("premium")}</th>
-                    <th className="px-3 py-3 font-medium">{t("wygasa")}</th>
                     <th className="px-3 py-3 font-medium">{t("dodatki")}</th>
                     <th className="px-3 py-3 font-medium">{t("rola")}</th>
                     <th className="px-3 py-3 font-medium">
@@ -197,27 +195,27 @@ export default async function AdminUsersPage({
                 </thead>
                 <tbody className="divide-y divide-[var(--brd-line)]">
                   {result.rows.map((row) => (
-                    <tr key={row.id}>
-                      <td className="px-3 py-3 font-medium">
-                        <Link href={`/admin/users/${row.id}`} className="hover:text-[var(--brd-green)]">
+                    <tr key={row.id} className="align-top hover:bg-[var(--brd-paper-deep)]/40">
+                      <td className="px-3 py-3">
+                        <Link href={`/admin/users/${row.id}`} className="font-semibold text-[var(--brd-ink)] hover:text-[var(--brd-amber)] hover:underline">
                           {tl(row.displayName?.trim() || t("uzytkownik"))}
                         </Link>
+                        <span className="block text-[var(--brd-ink-soft)]">{tl(row.email ?? "—")}</span>
                       </td>
-                      <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
-                        {tl(row.email ?? "—")}
+                      <td className="px-3 py-3 font-mono tabular-nums">
+                        #{row.userNumber ?? "—"}
                       </td>
-                      <td className="px-3 py-3 tabular-nums">
-                        {row.userNumber ?? "—"}
+                      <td className="px-3 py-3">
+                        <span className="inline-flex rounded-full border border-[var(--brd-amber)]/60 px-2 py-0.5 text-xs font-semibold text-[var(--brd-amber)]">
+                          {tl(labelPremiumPlan(row.premiumTier, row.premiumPrize))}
+                        </span>
+                        <span className="mt-1 block text-xs text-[var(--brd-ink-soft)]">
+                          {tl(row.premiumTier === "FREE"
+                            ? "—"
+                            : formatExpiresAt(row.premiumExpiresAt, tag, tShared("noExpiry")))}
+                        </span>
                       </td>
                       <td className="px-3 py-3">{tl(labelCreatorRank(row.rank))}</td>
-                      <td className="px-3 py-3">
-                        {tl(labelPremiumPlan(row.premiumTier, row.premiumPrize))}
-                      </td>
-                      <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
-                        {tl(row.premiumTier === "FREE"
-                          ? "—"
-                          : formatExpiresAt(row.premiumExpiresAt, tag, tShared("noExpiry")))}
-                      </td>
                       <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
                         <AdminUsersAddonCell
                           status={row.referenceAddon}
@@ -226,7 +224,13 @@ export default async function AdminUsersPage({
                       </td>
                       <td className="px-3 py-3">{tl(labelSystemRole(row.role))}</td>
                       <td className="px-3 py-3">
-                        <div className="flex flex-col items-start gap-2">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                          <Link
+                            href={`/admin/users/${row.id}`}
+                            className="inline-flex min-h-9 items-center rounded-md bg-[var(--brd-amber)] px-3 text-sm font-semibold text-[var(--brd-on-media)]"
+                          >
+                            {tl("Karta →")}
+                          </Link>
                           <AdminUsersManageDialog
                             userId={row.id}
                             displayName={row.displayName}
@@ -292,7 +296,7 @@ export default async function AdminUsersPage({
           </div>
         )}
 
-        <section className="mt-12 border-t border-[var(--brd-line)] pt-8">
+        <section id="historia" className="mt-12 scroll-mt-24 border-t border-[var(--brd-line)] pt-8">
           <h2 className="brd-display text-2xl font-semibold tracking-tight">
             {t("historiaZmian")}
           </h2>

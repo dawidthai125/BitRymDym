@@ -1,4 +1,5 @@
 import "server-only";
+import { usageWindowStart } from "@/lib/plans/usage-resets";
 
 /**
  * AI lyrics: ownership check → daily cap (reserve a slot) → provider chain
@@ -43,7 +44,7 @@ async function usedToday(admin: Admin, ownerId: string): Promise<number> {
     .from("studio_ai_lyrics_usage")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", ownerId)
-    .gte("created_at", warsawDayStartIso())
+    .gte("created_at", await usageWindowStart(ownerId, "lyrics", warsawDayStartIso(), admin))
     .neq("status", "failed");
   if (missing(error)) throw new StudioMasterUnavailable("ai_lyrics_missing");
   if (error) throw new Error(error.message);

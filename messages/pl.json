@@ -769,6 +769,70 @@
     }
   },
   "admin": {
+    "userDesk": {
+      "metaTitle": "Karta użytkownika",
+      "limity": "Limity planu",
+      "limityOpis": "Ile osoba zużyła w bieżącym okresie. Wyzerowanie liczy dany limit od teraz, historia zostaje.",
+      "wyzeruj": "Wyzeruj",
+      "wyzerujWszystkie": "Wyzeruj wszystkie limity",
+      "potwierdz": "Wyzerować?",
+      "potwierdzWszystkie": "Wyzerować wszystkie limity tej osoby?",
+      "tak": "Tak",
+      "nie": "Nie",
+      "wyzerowano": "Wyzerowano. Licznik liczy od teraz.",
+      "bladZerowania": "Nie udało się wyzerować limitu.",
+      "limit": {
+        "recordingsToday": "Nagrania (ukończone utwory)",
+        "masters": "Mastery",
+        "beatDownloads": "Pobrania bitów",
+        "studioExports": "Pobrania gotowych plików",
+        "video": "Wideo MP4 na YouTube",
+        "lyrics": "Teksty z AI",
+        "cleanup": "Czyszczenie wokalu",
+        "cover": "Okładki z AI"
+      },
+      "okres": {
+        "day": "na dobę",
+        "week": "w 7 dni",
+        "month": "w miesiącu"
+      },
+      "ostatnioZerowane": "wyzerowano {kiedy}",
+      "brakWPlanie": "brak w planie",
+      "bezLimitu": "{used} · bez limitu",
+      "zawartosc": "Zawartość konta",
+      "zakladka": {
+        "projects": "Projekty",
+        "takes": "Nagrania",
+        "songs": "Utwory",
+        "beats": "Bity",
+        "jobs": "Mastery i wideo",
+        "payments": "Płatności"
+      },
+      "szukajWZakladce": "Szukaj po nazwie lub ID",
+      "status": "Status",
+      "wszystkieStatusy": "Wszystkie statusy",
+      "pokazano": "{n} z {total}",
+      "brakWynikow": "Nic nie pasuje do filtrów.",
+      "pusto": "Brak pozycji.",
+      "kolNazwa": "Nazwa",
+      "kolSzczegoly": "Szczegóły",
+      "kolData": "Data",
+      "utworzono": "utworzony {kiedy}",
+      "wKatalogu": "W katalogu",
+      "wycofany": "Wycofany",
+      "prywatny": "Prywatny",
+      "zPakietu": "z pakietu",
+      "bitPlatformy": "bit platformy",
+      "rodzaj": {
+        "video": "Wideo MP4",
+        "master": "Master",
+        "inne": "Zadanie"
+      },
+      "doKiedy": "do {kiedy}",
+      "bezterminowo": "bezterminowo",
+      "historiaZmian": "Historia zmian",
+      "limitWierszy": "Każda zakładka pokazuje do 200 ostatnich pozycji."
+    },
     "adminBeatsPage": {
       "brakDostepu": "Brak dostępu",
       "brakUprawnieniaDoEdycji": "Brak uprawnienia do edycji bitów platformy.",
@@ -882,6 +946,11 @@
       "doGeneratora": "Otwórz generator"
     },
     "adminLayout": {
+      "grupaPrzeglad": "Przegląd",
+      "grupaTresci": "Treści",
+      "grupaLudzie": "Ludzie i płatności",
+      "grupaUstawienia": "Ustawienia",
+      "grupaStrona": "Strona",
       "metaTitle": "Panel Administracyjny",
       "metaDescription": "Panel Administracyjny BitRymDym",
       "brakDostepu": "Brak dostępu",
@@ -998,6 +1067,13 @@
       "akcjaNiePowiodla": "Akcja nie powiodła się."
     },
     "adminPage": {
+      "nowi7dni": "Nowi (7 dni)",
+      "placacy": "Płacący teraz",
+      "wplatyMiesiac": "Wpłaty w miesiącu",
+      "doModeracji": "Do moderacji",
+      "masteryMiesiac": "Mastery w mies. · wszystkie zadania",
+      "nowiUzytkownicy": "Nowi użytkownicy",
+      "wszyscy": "Wszyscy →",
       "pulpit": "Pulpit",
       "zarzadzajBitamiModeracjaI": "Zarządzaj bitami, moderacją i stanem platformy.",
       "nowyBit": "Nowy bit",

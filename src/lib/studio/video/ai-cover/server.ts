@@ -1,4 +1,5 @@
 import "server-only";
+import { usageWindowStart } from "@/lib/plans/usage-resets";
 
 /**
  * Gold — AI cover generator: prompt → rules + Groq safeguard → image provider chain
@@ -80,7 +81,7 @@ export async function projectOwnBeatId(admin: Admin, ownerId: string, beatId: st
 /** Today's generations (Warsaw day); failed attempts (all providers down) do not count. */
 export async function aiCoversUsedToday(admin: Admin, ownerId: string): Promise<number> {
   const { count, error } = await admin.from("studio_ai_cover_usage").select("id", { count: "exact", head: true })
-    .eq("owner_id", ownerId).gte("created_at", warsawDayStartIso()).neq("status", "failed");
+    .eq("owner_id", ownerId).gte("created_at", await usageWindowStart(ownerId, "cover", warsawDayStartIso(), admin)).neq("status", "failed");
   if (missing(error)) throw new StudioMasterUnavailable("ai_cover_missing");
   if (error) throw new Error(error.message);
   return count ?? 0;

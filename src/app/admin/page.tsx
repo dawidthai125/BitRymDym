@@ -1,6 +1,5 @@
 import { useLibText } from "@/i18n/use-lib-text";
 import { getLibText } from "@/i18n/get-lib-text";
-import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -40,14 +39,44 @@ export default async function AdminIndexPage() {
   const readyCount = beats.filter((b) => b.activeMasterReady).length;
   let takeCount = "—";
   let exportCount = "—";
+  const people = { total: "—", week: "—", paying: "—", review: "—", mastersMonth: "—", paidMonth: "—", revenueMonth: "—" };
+  let newest: { id: string; name: string; number: number | null; createdAt: string | null }[] = [];
   if (showPlatform) {
     const admin = createSupabaseAdminClient();
-    const [takes, jobs] = await Promise.all([
-      admin.from("takes").select("id", { count: "exact", head: true }).eq("is_stem", false).neq("status", "DELETED"),
-      admin.from("studio_master_jobs").select("id", { count: "exact", head: true }),
+    const head = { count: "exact" as const, head: true };
+    const { weekAgo, monthStart } = dashboardWindows();
+    const [takes, jobs, total, week, paying, review, masters, paid, latest] = await Promise.all([
+      admin.from("takes").select("id", head).eq("is_stem", false).neq("status", "DELETED"),
+      admin.from("studio_master_jobs").select("id", head),
+      admin.from("profiles").select("id", head),
+      admin.from("profiles").select("id", head).gte("created_at", weekAgo),
+      admin.from("premium_entitlements").select("user_id", head).eq("active", true).neq("source", "manual_admin"),
+      admin.from("beats").select("id", head).eq("status", "PENDING_REVIEW"),
+      admin.from("studio_master_jobs").select("id", head).eq("kind", "master").gte("created_at", monthStart).not("status", "in", "(failed,cancelled)"),
+      admin.from("payment_orders").select("amount_grosz").eq("status", "paid").gte("created_at", monthStart),
+      admin.from("profiles").select("id, display_name, user_number, created_at").order("created_at", { ascending: false }).limit(6),
     ]);
-    if (!takes.error && takes.count != null) takeCount = String(takes.count);
-    if (!jobs.error && jobs.count != null) exportCount = String(jobs.count);
+    const n = (r: { count: number | null; error: unknown }) => (!r.error && r.count != null ? String(r.count) : "—");
+    takeCount = n(takes);
+    exportCount = n(jobs);
+    people.total = n(total);
+    people.week = n(week);
+    people.paying = n(paying);
+    people.review = n(review);
+    people.mastersMonth = n(masters);
+    if (!paid.error) {
+      const rows = (paid.data ?? []) as { amount_grosz: number | null }[];
+      people.paidMonth = String(rows.length);
+      people.revenueMonth = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" }).format(
+        rows.reduce((sum, row) => sum + Number(row.amount_grosz ?? 0), 0) / 100,
+      );
+    }
+    newest = ((latest.data ?? []) as { id: string; display_name: string | null; user_number: number | null; created_at: string | null }[]).map((u) => ({
+      id: u.id,
+      name: u.display_name?.trim() || "—",
+      number: u.user_number,
+      createdAt: u.created_at,
+    }));
   }
 
   return (
@@ -76,11 +105,17 @@ export default async function AdminIndexPage() {
           </div>
         </header>
 
-        <div className="mb-10 grid grid-cols-2 gap-px border border-[var(--brd-line)] bg-[var(--brd-line)] sm:grid-cols-4">
-          <AdminStat label={t("bity")} value={String(beats.length)} />
-          <AdminStat label={t("gotoweAudio")} value={String(readyCount)} />
+        <div className="mb-3 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[var(--brd-line)] bg-[var(--brd-line)] sm:grid-cols-4">
+          <AdminStat label={t("uzytkownicy")} value={people.total} href="/admin/users" />
+          <AdminStat label={t("nowi7dni")} value={people.week} href="/admin/users" />
+          <AdminStat label={t("placacy")} value={people.paying} href="/admin/platnosci" />
+          <AdminStat label={t("wplatyMiesiac")} value={`${people.paidMonth} · ${people.revenueMonth}`} href="/admin/platnosci" />
+        </div>
+        <div className="mb-10 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[var(--brd-line)] bg-[var(--brd-line)] sm:grid-cols-4">
+          <AdminStat label={t("doModeracji")} value={people.review} href="/admin/moderation" alert={people.review !== "—" && people.review !== "0"} />
+          <AdminStat label={t("bity")} value={`${readyCount} / ${beats.length}`} href="/admin/beats" />
           <AdminStat label={t("nagrania")} value={takeCount} />
-          <AdminStat label={t("eksporty")} value={exportCount} />
+          <AdminStat label={t("masteryMiesiac")} value={`${people.mastersMonth} · ${exportCount}`} />
         </div>
 
         <div className="grid gap-10 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
@@ -152,61 +187,31 @@ export default async function AdminIndexPage() {
 
           <section className="space-y-8">
             <div>
-              <SectionLabel className="mb-4">{t("sekcje")}</SectionLabel>
-              <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
-                <AdminLink
-                  href="/admin/beats"
-                  title={t("bity")}
-                  meta={t("tworzenieMetadataPublikacja")}
-                />
-                <AdminLink
-                  href="/admin/moderation"
-                  title={t("moderacja")}
-                  meta={t("kolejkaSpolecznosci")}
-                />
-                <AdminLink
-                  href="/admin/users"
-                  title={t("uzytkownicy")}
-                  meta={t("listaWyszukiwanieFiltry")}
-                />
-                <AdminLink
-                  href="/admin/sample-policy"
-                  title={t("politykaNagran")}
-                  meta={t("limityDlugosciNagraniaBronze")}
-                />
-                <AdminLink
-                  href="/admin/site"
-                  title={t("trybPrac")}
-                  meta={t("trybPracMeta")}
-                />
-                <AdminLink
-                  href="/admin/users"
-                  title={t("nagrania")}
-                  meta={t("wProfiluUzytkownika")}
-                />
-                <AdminLink
-                  href="/admin/users"
-                  title={t("eksporty")}
-                  meta={t("wProfiluUzytkownika")}
-                />
-                <AdminLink
-                  href="/admin/site"
-                  title={t("ustawienia")}
-                  meta={t("trybPracMeta")}
-                />
-              </ul>
-            </div>
-
-            <div>
-              <SectionLabel className="mb-4">{t("ostatniaAktywnosc")}</SectionLabel>
-              <ul className="space-y-3 text-sm text-[var(--brd-ink-soft)]">
-                <li className="border-l-2 border-[var(--brd-green)] pl-3">
-                  {t("panelBitowIModeracja")}
-                </li>
-                <li className="border-l-2 border-[var(--brd-line)] pl-3">
-                  {t("pelnyPodgladNagranI")}
-                </li>
-              </ul>
+              <div className="mb-4 flex items-baseline justify-between gap-3">
+                <SectionLabel>{t("nowiUzytkownicy")}</SectionLabel>
+                <Link href="/admin/users" className="text-sm text-[var(--brd-amber)] hover:underline">
+                  {t("wszyscy")}
+                </Link>
+              </div>
+              {newest.length === 0 ? (
+                <p className="text-sm text-[var(--brd-ink-soft)]">—</p>
+              ) : (
+                <ul className="divide-y divide-[var(--brd-line)] rounded-lg border border-[var(--brd-line)]">
+                  {newest.map((u) => (
+                    <li key={u.id}>
+                      <Link
+                        href={`/admin/users/${u.id}`}
+                        className="flex min-h-12 items-center justify-between gap-3 px-4 py-2 hover:bg-[var(--brd-paper-deep)]/40"
+                      >
+                        <span className="min-w-0 truncate font-medium">{tl(u.name)}</span>
+                        <span className="shrink-0 font-mono text-xs text-[var(--brd-ink-soft)]">
+                          #{u.number ?? "—"} · {u.createdAt ? new Intl.DateTimeFormat("pl-PL", { dateStyle: "medium", timeZone: "Europe/Warsaw" }).format(new Date(u.createdAt)) : "—"}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </section>
         </div>
@@ -215,45 +220,28 @@ export default async function AdminIndexPage() {
   );
 }
 
-function AdminStat({ label, value }: { label: string; value: string }) {
+function AdminStat({ label, value, href, alert }: { label: string; value: string; href?: string; alert?: boolean }) {
   const tl = useLibText();
-  return (
-    <div className="bg-[var(--brd-paper)] px-4 py-4">
-      <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-        {tl(label)}
-      </p>
-      <p className="mt-2 text-2xl text-[var(--brd-ink)]">{tl(value)}</p>
-    </div>
+  const body = (
+    <>
+      <p className="text-xs uppercase tracking-[0.08em] text-[var(--brd-ink-soft)]">{tl(label)}</p>
+      <p className={`mt-2 font-mono text-2xl tabular-nums ${alert ? "text-[var(--brd-amber)]" : "text-[var(--brd-ink)]"}`}>{tl(value)}</p>
+    </>
+  );
+  return href ? (
+    <Link href={href} className="block bg-[var(--brd-paper)] px-4 py-4 transition-colors hover:bg-[var(--brd-paper-deep)]">
+      {body}
+    </Link>
+  ) : (
+    <div className="bg-[var(--brd-paper)] px-4 py-4">{body}</div>
   );
 }
 
-function AdminLink({
-  href,
-  title,
-  meta,
-  soon,
-}: {
-  href: string;
-  title: string;
-  meta: string;
-  soon?: boolean;
-}) {
-  const tl = useLibText();
-  const t = useTranslations("admin.adminPage");
-  return (
-    <li>
-      <Link
-        href={href}
-        className="flex min-h-11 items-center justify-between gap-3 py-3 hover:bg-[var(--brd-paper-deep)]/40"
-      >
-        <div className="min-w-0">
-          <p className="font-medium">{tl(title)}</p>
-          <p className="text-sm text-[var(--brd-mute)]">{tl(meta)}</p>
-        </div>
-        <StatusPill tone={soon ? "neutral" : "ok"}>
-          {tl(soon ? t("wkrotce") : t("dostepne"))}
-        </StatusPill>
-      </Link>
-    </li>
-  );
+/** Time windows for the dashboard counters (kept out of render for react-hooks/purity). */
+function dashboardWindows(): { weekAgo: string; monthStart: string } {
+  const now = new Date();
+  return {
+    weekAgo: new Date(now.getTime() - 7 * 864e5).toISOString(),
+    monthStart: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString(),
+  };
 }

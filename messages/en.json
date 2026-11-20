@@ -769,6 +769,70 @@
     }
   },
   "admin": {
+    "userDesk": {
+      "metaTitle": "User card",
+      "limity": "Plan limits",
+      "limityOpis": "What this person used in the current period. A reset counts that limit from now; history stays.",
+      "wyzeruj": "Reset",
+      "wyzerujWszystkie": "Reset all limits",
+      "potwierdz": "Reset?",
+      "potwierdzWszystkie": "Reset all limits of this person?",
+      "tak": "Yes",
+      "nie": "No",
+      "wyzerowano": "Reset done. The counter starts from now.",
+      "bladZerowania": "Could not reset the limit.",
+      "limit": {
+        "recordingsToday": "Recordings (finished songs)",
+        "masters": "Masters",
+        "beatDownloads": "Beat downloads",
+        "studioExports": "Finished-file downloads",
+        "video": "YouTube MP4 videos",
+        "lyrics": "AI lyrics",
+        "cleanup": "Vocal cleanup",
+        "cover": "AI covers"
+      },
+      "okres": {
+        "day": "per day",
+        "week": "per 7 days",
+        "month": "per month"
+      },
+      "ostatnioZerowane": "reset {kiedy}",
+      "brakWPlanie": "not in plan",
+      "bezLimitu": "{used} · no limit",
+      "zawartosc": "Account content",
+      "zakladka": {
+        "projects": "Projects",
+        "takes": "Recordings",
+        "songs": "Songs",
+        "beats": "Beats",
+        "jobs": "Masters and video",
+        "payments": "Payments"
+      },
+      "szukajWZakladce": "Search by name or ID",
+      "status": "Status",
+      "wszystkieStatusy": "All statuses",
+      "pokazano": "{n} of {total}",
+      "brakWynikow": "Nothing matches the filters.",
+      "pusto": "No items.",
+      "kolNazwa": "Name",
+      "kolSzczegoly": "Details",
+      "kolData": "Date",
+      "utworzono": "created {kiedy}",
+      "wKatalogu": "In catalogue",
+      "wycofany": "Withdrawn",
+      "prywatny": "Private",
+      "zPakietu": "from a pack",
+      "bitPlatformy": "platform beat",
+      "rodzaj": {
+        "video": "MP4 video",
+        "master": "Master",
+        "inne": "Job"
+      },
+      "doKiedy": "until {kiedy}",
+      "bezterminowo": "no end date",
+      "historiaZmian": "Change history",
+      "limitWierszy": "Each tab shows up to 200 latest items."
+    },
     "adminBeatsPage": {
       "brakDostepu": "No access",
       "brakUprawnieniaDoEdycji": "You do not have permission to edit platform beats.",
@@ -882,6 +946,11 @@
       "doGeneratora": "Open the generator"
     },
     "adminLayout": {
+      "grupaPrzeglad": "Overview",
+      "grupaTresci": "Content",
+      "grupaLudzie": "People and payments",
+      "grupaUstawienia": "Settings",
+      "grupaStrona": "Site",
       "metaTitle": "Admin panel",
       "metaDescription": "BitRymDym admin panel",
       "brakDostepu": "No access",
@@ -998,6 +1067,13 @@
       "akcjaNiePowiodla": "Action failed."
     },
     "adminPage": {
+      "nowi7dni": "New (7 days)",
+      "placacy": "Paying now",
+      "wplatyMiesiac": "Payments this month",
+      "doModeracji": "Awaiting review",
+      "masteryMiesiac": "Masters this month · all jobs",
+      "nowiUzytkownicy": "New users",
+      "wszyscy": "All →",
       "pulpit": "Dashboard",
       "zarzadzajBitamiModeracjaI": "Manage beats, moderation and platform status.",
       "nowyBit": "New beat",

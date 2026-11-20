@@ -1,4 +1,5 @@
 import "server-only";
+import { usageWindowStart } from "@/lib/plans/usage-resets";
 
 /**
  * Stage 3 — Mastering + delivery server logic (service_role, owner-checked).
@@ -38,8 +39,9 @@ const missingFn = (e: { code?: string } | null) => !!e && (e.code === "PGRST202"
 /** Masters this calendar month (Europe/Warsaw); failed/cancelled do not count. */
 async function masterMonthUsage(admin: Admin, ownerId: string, tier: PremiumTier): Promise<MasterQuota> {
   const { startIso, resetIso } = warsawMonthWindow(new Date());
+  const from = await usageWindowStart(ownerId, "masters", startIso, admin);
   const { count, error } = await admin.from("studio_master_jobs").select("id", { count: "exact", head: true })
-    .eq("owner_id", ownerId).eq("kind", "master").gte("created_at", startIso).not("status", "in", "(failed,cancelled)");
+    .eq("owner_id", ownerId).eq("kind", "master").gte("created_at", from).not("status", "in", "(failed,cancelled)");
   check(error);
   const used = count ?? 0;
   const credits = await studioQuotaRemaining(ownerId, "master");
@@ -105,11 +107,11 @@ type DownloadUsage = {
 
 /** Rolling 24 h and 7-day counts. The oldest row in each window sets when one slot frees. */
 async function freeWatermarkUsage(admin: Admin, ownerId: string): Promise<DownloadUsage> {
-  const since = new Date(Date.now() - 7 * 864e5).toISOString();
+  const since = await usageWindowStart(ownerId, "downloads", new Date(Date.now() - 7 * 864e5).toISOString(), admin);
   const { data: u, error: ue } = await admin.from("studio_download_usage").select("created_at").eq("owner_id", ownerId).gte("created_at", since).order("created_at");
   check(ue);
   const rows = (u ?? []) as { created_at: string }[];
-  const dayCut = Date.now() - 864e5;
+  const dayCut = Math.max(Date.now() - 864e5, Date.parse(since));
   const day = rows.filter((r) => new Date(String(r.created_at)).getTime() >= dayCut);
   const plus = (iso: string, ms: number) => new Date(new Date(iso).getTime() + ms).toISOString();
   return {
@@ -143,7 +145,7 @@ export async function getStudioMasterState(p: { ownerId: string; projectId: stri
     let used = 0;
     let resetAt: string | null = null;
     if (limit !== null) {
-      const since = new Date(Date.now() - 7 * 864e5).toISOString();
+      const since = await usageWindowStart(p.ownerId, "downloads", new Date(Date.now() - 7 * 864e5).toISOString(), admin);
       const { data: u, error: ue } = await admin.from("studio_download_usage").select("created_at").eq("owner_id", p.ownerId).gte("created_at", since).order("created_at");
       check(ue);
       used = u?.length ?? 0;

@@ -2,7 +2,11 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AdminSectionNav } from "@/components/admin/admin-section-nav";
+import {
+  AdminSectionNav,
+  type AdminNavGroup,
+  type AdminNavItem,
+} from "@/components/admin/admin-section-nav";
 import { SiteHeader } from "@/components/site/site-header";
 import { AdminClientMessages } from "@/i18n/client-messages";
 import {
@@ -69,49 +73,65 @@ export default async function AdminLayout({
   const showPlatform = canAccessAdminNav(role);
   const showModeration = canAccessModerationNav(role);
 
-  const navItems: { href: string; label: string; exact?: boolean }[] = [];
+  const groups: AdminNavGroup[] = [];
   if (showPlatform) {
-    navItems.push(
-      { href: "/admin", label: t("pulpit"), exact: true },
+    groups.push({ label: t("grupaPrzeglad"), items: [{ href: "/admin", label: t("pulpit"), exact: true }] });
+  }
+  const content: AdminNavItem[] = [];
+  if (showPlatform) {
+    content.push(
       { href: "/admin/beats", label: t("bity"), exact: true },
-    );
-  }
-  if (showModeration) {
-    navItems.push(
-      { href: "/admin/moderation", label: t("moderacja") },
-      { href: "/admin/samples", label: t("sample") },
-    );
-  }
-  if (showPlatform) {
-    navItems.push(
-      { href: "/admin/users", label: t("uzytkownicy") },
-      { href: "/admin/platnosci", label: t("platnosci") },
-      { href: "/admin/sample-policy", label: t("politykaNagran") },
-      { href: "/admin/site", label: t("trybPrac") },
       { href: "/admin/beats/new", label: t("nowyBit") },
       { href: "/admin/beats/generate", label: t("generator") },
       { href: "/admin/beats/waiting", label: t("oczekujace") },
     );
   }
-  navItems.push({ href: "/beats", label: t("katalog") });
+  if (showModeration) {
+    content.push(
+      { href: "/admin/moderation", label: t("moderacja") },
+      { href: "/admin/samples", label: t("sample") },
+    );
+  }
+  if (content.length) groups.push({ label: t("grupaTresci"), items: content });
+  if (showPlatform) {
+    groups.push(
+      {
+        label: t("grupaLudzie"),
+        items: [
+          { href: "/admin/users", label: t("uzytkownicy") },
+          { href: "/admin/platnosci", label: t("platnosci") },
+        ],
+      },
+      {
+        label: t("grupaUstawienia"),
+        items: [
+          { href: "/admin/sample-policy", label: t("politykaNagran") },
+          { href: "/admin/site", label: t("trybPrac") },
+        ],
+      },
+    );
+  }
+  groups.push({ label: t("grupaStrona"), items: [{ href: "/beats", label: t("katalog") }] });
 
   return (
     <AdminClientMessages>
     <div className="brd-ops min-h-dvh">
       <SiteHeader tone="admin" />
-      <div className="mx-auto w-full max-w-[var(--brd-max-ops)] px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] py-3">
-        <AdminSectionNav items={navItems} label={t("panelAdministracyjny")} />
-      </div>
-      {/*
-        Skip target is a div: admin pages already render their own main landmark.
-        Nesting another main landmark would be invalid HTML.
-      */}
-      <div
-        id={MAIN_CONTENT_ID}
-        tabIndex={-1}
-        className={MAIN_CONTENT_LANDMARK_CLASS}
-      >
-        {children}
+      <div className="mx-auto w-full max-w-[var(--brd-max-ops)] px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
+        <aside className="py-3 lg:sticky lg:top-24 lg:self-start lg:py-8">
+          <AdminSectionNav groups={groups} label={t("panelAdministracyjny")} />
+        </aside>
+        {/*
+          Skip target is a div: admin pages already render their own main landmark.
+          Nesting another main landmark would be invalid HTML.
+        */}
+        <div
+          id={MAIN_CONTENT_ID}
+          tabIndex={-1}
+          className={cn("min-w-0 lg:[&_main>div:first-child]:!px-0 lg:[&_main>div:first-child]:!max-w-none", MAIN_CONTENT_LANDMARK_CLASS)}
+        >
+          {children}
+        </div>
       </div>
     </div>
     </AdminClientMessages>

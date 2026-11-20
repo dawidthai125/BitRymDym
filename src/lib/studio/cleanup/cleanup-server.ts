@@ -1,4 +1,5 @@
 import "server-only";
+import { usageWindowStart } from "@/lib/plans/usage-resets";
 
 /**
  * Gaps P1 #5 — vocal cleanup jobs (service_role, owner-checked).
@@ -64,7 +65,7 @@ export async function listCleanupJobs(p: { ownerId: string; projectId: string; t
     .order("created_at", { ascending: false }).limit(50);
   check(error);
   const { data: today, error: cErr } = await admin.from("studio_cleanup_jobs").select("settings")
-    .eq("owner_id", p.ownerId).gte("created_at", warsawDayStartIso()).not("status", "in", "(failed,cancelled)");
+    .eq("owner_id", p.ownerId).gte("created_at", await usageWindowStart(p.ownerId, "cleanup", warsawDayStartIso(), admin)).not("status", "in", "(failed,cancelled)");
   check(cErr);
   const usedToday = (today ?? []).filter((row) => countsTowardCleanupQuota((row as { settings: unknown }).settings)).length;
   const jobs = (data ?? []).filter((row) => countsTowardCleanupQuota((row as { settings: unknown }).settings)).map((row) => view(row as Record<string, unknown>));
