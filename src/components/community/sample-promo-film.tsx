@@ -57,14 +57,14 @@ export function SamplePromoFilm() {
         controls
         playsInline
         preload="none"
-        poster="/promo/sample-jak-dziala-poster.jpg"
+        poster="/promo/sample-jak-dziala-v2-poster.jpg"
         aria-label={t("promoFilm")}
         className="tape-focus aspect-video w-full rounded-[var(--tape-r-panel)] border border-tape-line-strong bg-tape-soot"
         onPlay={onPlay}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
       >
-        <source src="/promo/sample-jak-dziala.mp4" type="video/mp4" />
+        <source src="/promo/sample-jak-dziala-v2.mp4" type="video/mp4" />
       </video>
       <figcaption className="mt-3 max-w-[60ch] text-sm leading-relaxed text-tape-cream-soft">
         {t("promoPodpis")}
