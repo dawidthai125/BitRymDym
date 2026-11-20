@@ -1856,7 +1856,15 @@
       "brakBituDoOdtworzenia": "No beat to play",
       "vu": "VU",
       "bpm": "{v0} BPM",
-      "odtworz": "Play"
+      "odtworz": "Play",
+      "pozycja": "{n} / {total}",
+      "gra": "Playing",
+      "stop": "Stop",
+      "pauza": "Pause",
+      "poprzedni": "Previous beat",
+      "nastepny": "Next beat",
+      "przewin": "Seek: {title}",
+      "naTasmie": "On the tape"
     }
   },
   "studio": {

@@ -1856,7 +1856,15 @@
       "brakBituDoOdtworzenia": "Brak bitu do odtworzenia",
       "vu": "VU",
       "bpm": "{v0} BPM",
-      "odtworz": "Odtwórz"
+      "odtworz": "Odtwórz",
+      "pozycja": "{n} / {total}",
+      "gra": "Gra",
+      "stop": "Stop",
+      "pauza": "Pauza",
+      "poprzedni": "Poprzedni bit",
+      "nastepny": "Następny bit",
+      "przewin": "Przewiń: {title}",
+      "naTasmie": "Na taśmie"
     }
   },
   "studio": {

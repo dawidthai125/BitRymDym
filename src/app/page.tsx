@@ -269,7 +269,6 @@ export default async function HomePage() {
   const beats = presentBeats(
     (await publishedPromise).map(toPublicCatalogItem),
   );
-  const featured = beats[0] ?? null;
   const strip = beats.slice(0, 6);
 
   return (
@@ -312,7 +311,7 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="lg:col-span-5">
-              <TapeDeck beat={featured} />
+              <TapeDeck beats={strip} />
             </div>
           </div>
         </section>
