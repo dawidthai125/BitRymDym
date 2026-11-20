@@ -4523,7 +4523,12 @@
       "usunPewny": "Usunąć na stałe? Kopii w projektach to nie rusza.",
       "zdejmijPewny": "Zdjąć z katalogu? Sampel wróci do autora jako prywatny.",
       "tak": "Tak",
-      "nie": "Nie"
+      "nie": "Nie",
+      "filtrTyp": {
+        "oneshot": "Pojedyncze",
+        "loop": "Pętle",
+        "phrase": "Frazy"
+      }
     }
   },
   "maintenance": {

@@ -4523,7 +4523,12 @@
       "usunPewny": "Delete for good? Copies in projects stay.",
       "zdejmijPewny": "Remove from the catalog? The sample goes back to its author as private.",
       "tak": "Yes",
-      "nie": "No"
+      "nie": "No",
+      "filtrTyp": {
+        "oneshot": "One-shots",
+        "loop": "Loops",
+        "phrase": "Phrases"
+      }
     }
   },
   "maintenance": {

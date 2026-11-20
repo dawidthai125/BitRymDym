@@ -157,7 +157,10 @@ export function SampleCatalog({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("filtr")}>
-        {[{ id: "all", label: t("wszystkie") }, ...types.filter((o) => typeCounts.has(o.id))].map((o) => (
+        {[
+          { id: "all", label: t("wszystkie") },
+          ...types.filter((o) => typeCounts.has(o.id)).map((o) => ({ id: o.id, label: t.has(`filtrTyp.${o.id}`) ? t(`filtrTyp.${o.id}`) : o.label })),
+        ].map((o) => (
           <button
             key={o.id}
             type="button"
