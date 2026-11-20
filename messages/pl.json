@@ -4568,6 +4568,14 @@
       "prizeOff": "Nagroda włączy się po aktualizacji bazy."
     },
     "sampleCatalog": {
+      "sortuj": "Sortuj",
+      "najnowsze": "Najnowsze",
+      "najwyzejOceniane": "Najwyżej oceniane",
+      "ocenaAria": "Ocena: {avg} na 5, {count} głosów",
+      "tygodnia": "Sampel tygodnia",
+      "tygodniaOcena": "{avg}/5 · {count} ocen w tym tygodniu",
+      "tygodniaNajczesciej": "{avg}/5 · {count} ocen łącznie",
+      "rankingLink": "Ranking sampli",
       "filtr": "Filtr sampli",
       "wszystkie": "Wszystkie",
       "wszystkieInstrumenty": "Wszystkie instrumenty",

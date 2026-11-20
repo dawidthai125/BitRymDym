@@ -4568,6 +4568,14 @@
       "prizeOff": "The prize turns on after the database update."
     },
     "sampleCatalog": {
+      "sortuj": "Sort",
+      "najnowsze": "Newest",
+      "najwyzejOceniane": "Top rated",
+      "ocenaAria": "Rating: {avg} out of 5, {count} votes",
+      "tygodnia": "Sample of the week",
+      "tygodniaOcena": "{avg}/5 · {count} ratings this week",
+      "tygodniaNajczesciej": "{avg}/5 · {count} ratings total",
+      "rankingLink": "Sample ranking",
       "filtr": "Sample filter",
       "wszystkie": "All",
       "wszystkieInstrumenty": "All instruments",
