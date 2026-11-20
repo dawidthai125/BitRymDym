@@ -500,9 +500,12 @@ export default async function HomePage() {
                 );
               })}
             </ul>
-            <details className="mt-6">
-              <summary className="inline-flex min-h-11 cursor-pointer items-center gap-2 font-mono text-sm uppercase tracking-[0.08em] text-tape-amber hover:underline">
+            <details className="group mt-6">
+              <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 font-mono text-sm uppercase tracking-[0.08em] text-tape-amber hover:underline [&::-webkit-details-marker]:hidden">
                 {t("planWszystkie", { n: planRows.length })}
+                <span aria-hidden="true" className="transition-transform group-open:rotate-180">
+                  ▾
+                </span>
               </summary>
             <OverflowXScrollRegion className="mt-4 overflow-x-auto border border-tape-line" ariaLabel={t("planTabelaAria")}>
               <table className="w-full min-w-[44rem] text-left text-sm text-tape-cream" data-testid="home-plan-board">
