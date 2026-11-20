@@ -30,7 +30,7 @@ export function SiteMainNav() {
 
   return (
     <nav
-      className="hidden min-w-0 flex-wrap items-center lg:flex"
+      className="hidden min-w-0 flex-nowrap items-center lg:flex"
       aria-label={t("glowneMenu")}
     >
       {items.map((item) => {

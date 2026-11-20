@@ -90,7 +90,7 @@ function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
         <span className="mt-1 block truncate text-sm text-tape-cream-soft">
           {tl(beat.producer)}
           {meta ? (
-            <span className="font-mono text-xs text-tape-mute"> · {tl(meta)}</span>
+            <span className="text-sm text-tape-cream-soft"> · {tl(meta)}</span>
           ) : null}
         </span>
       </Link>

@@ -170,7 +170,7 @@ export function PlanBadge({ userKey }: { userKey: string }) {
           ) : null}
         </span>
         {usage ? (
-          <span className="hidden items-center gap-2 lg:inline-flex" data-testid="plan-badge-chips">
+          <span className="hidden items-center gap-2 min-[1440px]:inline-flex" data-testid="plan-badge-chips">
             {chip("recordingsToday", t("pozycja.recordingsToday"))}
             <span aria-hidden className="text-[var(--brd-line)]">·</span>
             {chip("masters", t("pozycja.masters"))}

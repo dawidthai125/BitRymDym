@@ -361,7 +361,7 @@ export default async function HomePage() {
                 >
                   <span className="tape-rack-screw self-start" aria-hidden="true" />
                   <div className="grid gap-x-6 gap-y-1 sm:grid-cols-[12rem_1fr]">
-                    <p className="font-mono text-xs uppercase tracking-[0.14em] text-tape-amber">
+                    <p className="font-mono text-sm uppercase tracking-[0.08em] text-tape-amber">
                       {tc(c.channel)}
                     </p>
                     <div>
@@ -453,7 +453,7 @@ export default async function HomePage() {
                 <caption className="sr-only">{t("planTabelaAria")}</caption>
                 <thead className="border-b border-tape-line bg-tape-panel">
                   <tr>
-                    <th scope="col" className="px-3 py-3 font-mono text-xs uppercase tracking-[0.14em] text-tape-amber">
+                    <th scope="col" className="px-3 py-3 font-mono text-sm uppercase tracking-[0.08em] text-tape-amber">
                       {t("planCo")}
                     </th>
                     {HOME_TIERS.map((tier) => (

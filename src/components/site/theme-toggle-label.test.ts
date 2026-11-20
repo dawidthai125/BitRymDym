@@ -14,14 +14,15 @@ describe("ThemeToggle Motyw label readability", () => {
     expect(src).toContain("aria-pressed={theme === \"dark\"}");
   });
 
-  it("Motyw eyebrow uses readable size and ink-soft, not 10px mute", () => {
-    const motyw = src.match(
-      /className="([^"]*)"[\s\S]*?>\s*Motyw\s*</,
+  it("header icon-only mode keeps the theme name for screen readers; visible label elsewhere is readable", () => {
+    expect(src).toContain("iconOnly");
+    expect(src).toMatch(/iconOnly \? "sr-only" : "font-medium text-\[var\(--brd-ink\)\]"/);
+    expect(src).not.toMatch(/text-\[10px\]/);
+    const header = readFileSync(
+      join(process.cwd(), "src/components/site/site-header.tsx"),
+      "utf8",
     );
-    expect(motyw?.[1]).toMatch(/(?:^|\s)text-xs(?:\s|$)/);
-    expect(motyw?.[1]).toContain("text-[var(--brd-ink-soft)]");
-    expect(motyw?.[1]).not.toMatch(/text-\[10px\]/);
-    expect(motyw?.[1]).not.toContain("text-[var(--brd-mute)]");
+    expect(header).toContain("<ThemeToggle iconOnly");
   });
 });
 

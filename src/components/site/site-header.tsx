@@ -65,12 +65,13 @@ export async function SiteHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          <HeaderSearch className="hidden sm:block" compact />
+          {/* Od lg do 1279px pasek ma menu, więc wyszukiwarka wraca od 1280px (jest też w katalogu bitów). */}
+          <HeaderSearch className="hidden sm:block lg:max-xl:hidden" compact />
           {/* Od lg do 1279px język jest tylko w stopce: przy 1260px Premium schodzi
               do drugiego rzędu, gdy PL/EN wraca na pasek. Od 1280px mieści się w jednej linii.
               Bez lg:hidden — ta reguła w CSS jest później niż min-[1280px] i zostaje na zawsze. */}
-          <LanguageSwitcher className="hidden shrink-0 md:max-lg:inline-flex min-[1280px]:inline-flex" />
-          <ThemeToggle className="shrink-0" />
+          <LanguageSwitcher compact className="hidden shrink-0 md:max-lg:inline-flex min-[1280px]:inline-flex" />
+          <ThemeToggle iconOnly className="shrink-0" />
           {session ? (
             <PlanBadge userKey={session.userId} />
           ) : null}

@@ -15,7 +15,14 @@ import { cn } from "@/lib/utils";
  * hairline border, soft label, active segment in full ink.
  * Locale lives in the NEXT_LOCALE cookie; no URL prefix.
  */
-export function LanguageSwitcher({ className }: { className?: string }) {
+export function LanguageSwitcher({
+  className,
+  compact = false,
+}: {
+  className?: string;
+  /** Header: no visible "Język" word (the group keeps its aria-label). */
+  compact?: boolean;
+}) {
   const tl = useLibText();
   const t = useTranslations("language");
   const locale = useLocale() as AppLocale;
@@ -42,7 +49,12 @@ export function LanguageSwitcher({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="hidden px-1 text-xs text-[var(--brd-ink-soft)] sm:inline">
+      <span
+        className={cn(
+          "hidden px-1 text-xs text-[var(--brd-ink-soft)]",
+          !compact && "sm:inline",
+        )}
+      >
         {t("label")}
       </span>
       {LOCALES.map((code) => {
