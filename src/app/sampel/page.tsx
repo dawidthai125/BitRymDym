@@ -27,6 +27,15 @@ export default async function SampleCatalogPage({
   searchParams?: Promise<{ zrodlo?: string }>;
 }) {
   const t = await getTranslations("community.catalog");
+  const tl = await getTranslations("studio.sampleLab");
+  const label = (sample: Awaited<ReturnType<typeof listPublicSamples>>[number]) =>
+    [
+      sample.instrument && tl.has(`instrument.${sample.instrument}`) ? tl(`instrument.${sample.instrument}`) : sample.instrument,
+      sample.sampleType && tl.has(`typ.${sample.sampleType}`) ? tl(`typ.${sample.sampleType}`) : null,
+      sample.bpm ? `${Math.round(sample.bpm)} BPM` : null,
+      sample.bars ? tl("taktow", { n: sample.bars }) : null,
+      sample.musicalKey,
+    ].filter(Boolean);
   const params = searchParams ? await searchParams : {};
   const source: CatalogSource = params.zrodlo === "brd" ? "brd" : "user";
   const session = await getCurrentProfile();
@@ -48,7 +57,7 @@ export default async function SampleCatalogPage({
                   <p className="text-base text-[var(--brd-ink)]">{sample.title}</p>
                   <p className="text-sm text-[var(--brd-mute)]">
                     {t("by", { name: sample.author })} · {secondsLabel(sample.durationMs)}
-                    {sample.instrument ? ` · ${sample.instrument}` : ""}
+                    {label(sample).map((part) => ` · ${part}`).join("")}
                   </p>
                   {session ? <SampleListen id={sample.id} /> : (
                     <Link href="/sign-in" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">

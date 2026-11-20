@@ -94,4 +94,25 @@ describe("Bitek sample placement", () => {
     expect(plan.pitchCents).toBe(0);
     expect(plan.gainDb).toBe(-3);
   });
+
+  it("fills a section completely despite ms rounding (live case: 140 BPM hats on a 92 BPM beat)", () => {
+    const hatsMs = ((2 * 4 * 60) / 140) * 1000;
+    const plan = planSamplePlacement({
+      sample: { type: "loop", bpm: 140, key: null, bars: 2, durationMs: Math.round(hatsMs) },
+      project: { ...project, bpm: 92 },
+      playheadMs: 0,
+      scope: "section",
+      canPitch: true,
+    });
+    expect(plan.explain.tempo?.feel).toBe("double");
+    expect(plan.starts).toHaveLength(8);
+    const pluck = planSamplePlacement({
+      sample: { type: "loop", bpm: 95, key: "Dm", bars: 2, durationMs: 5053 },
+      project: { ...project, bpm: 95 },
+      playheadMs: 0,
+      scope: "section",
+      canPitch: true,
+    });
+    expect(pluck.starts).toHaveLength(4);
+  });
 });

@@ -32,7 +32,7 @@ export type BitekSampleRequest = {
 export async function previewBitekSamplePlacement(
   context: AuthContext,
   req: BitekSampleRequest,
-): Promise<{ plan: SamplePlacementPlan; sampleTitle: string }> {
+): Promise<{ plan: SamplePlacementPlan; sampleTitle: string; sampleDurationMs: number }> {
   if (!isSampleUuid(req.sampleId)) throw new AuthError("NOT_FOUND", sampleUserMessage("SAMPLE_NOT_FOUND"));
   const document = await getStudioProjectDocumentFor(context, req.projectId);
   if (!document.tracks.some((t) => t.id === req.trackId)) throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
@@ -75,7 +75,7 @@ export async function previewBitekSamplePlacement(
     scope: req.scope,
     canPitch: clipPitchForTier(tier),
   });
-  return { plan, sampleTitle: String(sample.title) };
+  return { plan, sampleTitle: String(sample.title), sampleDurationMs: Number(sample.duration_ms) };
 }
 
 /**
@@ -86,7 +86,7 @@ export async function applyBitekSamplePlacement(
   context: AuthContext,
   req: BitekSampleRequest & { expectedDocumentVersion: number },
 ): Promise<{ clips: StudioClipDto[]; documentVersion: number; plan: SamplePlacementPlan }> {
-  const { plan } = await previewBitekSamplePlacement(context, req);
+  const { plan, sampleDurationMs } = await previewBitekSamplePlacement(context, req);
   const copied = await copyStudioSampleToTake(context, { sampleId: req.sampleId, projectId: req.projectId });
   if (!copied.ok) throw new AuthError("FORBIDDEN", sampleUserMessage(copied.error));
 
@@ -99,6 +99,8 @@ export async function applyBitekSamplePlacement(
       takeId: copied.takeId,
       timelineStartMs: start,
       expectedDocumentVersion: version,
+      // The take copy rounds its length up to whole seconds; the clip keeps the exact sample length.
+      durationMs: sampleDurationMs > 0 ? Math.floor(sampleDurationMs) : undefined,
     });
     version = placed.documentVersion;
     let clip = placed.clip;

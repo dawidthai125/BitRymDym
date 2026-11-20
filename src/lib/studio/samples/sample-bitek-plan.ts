@@ -75,6 +75,8 @@ export type SamplePlacementPlan = {
 };
 
 const MAX_COPIES = 32;
+/** Whole-ms rounding of bars and stretched lengths must not drop the last copy (seen live: 7 of 8). */
+const FIT_TOLERANCE_MS = 10;
 
 export function planSamplePlacement(input: SamplePlacementInput): SamplePlacementPlan {
   const { sample, project } = input;
@@ -115,7 +117,7 @@ export function planSamplePlacement(input: SamplePlacementInput): SamplePlacemen
     starts = [startMs];
   } else if (sample.type === "loop") {
     starts = [];
-    for (let t = startMs; t + Math.min(step, lengthMs) <= untilMs + 1 && starts.length < MAX_COPIES; t += step) starts.push(t);
+    for (let t = startMs; t + Math.min(step, lengthMs) <= untilMs + FIT_TOLERANCE_MS && starts.length < MAX_COPIES; t += step) starts.push(t);
     if (!starts.length) starts = [startMs];
   } else if (sample.type === "oneshot") {
     // An accent on every section start in range; without sections, every 8 bars.
@@ -128,7 +130,7 @@ export function planSamplePlacement(input: SamplePlacementInput): SamplePlacemen
   } else {
     // A phrase repeats only when it fits; otherwise once.
     starts = [];
-    for (let t = startMs; t + lengthMs <= untilMs + 1 && starts.length < MAX_COPIES; t += step) starts.push(t);
+    for (let t = startMs; t + lengthMs <= untilMs + FIT_TOLERANCE_MS && starts.length < MAX_COPIES; t += step) starts.push(t);
     if (!starts.length) starts = [startMs];
   }
   starts = [...new Set(starts.map((s) => Math.round(s)))].sort((a, b) => a - b).slice(0, MAX_COPIES);

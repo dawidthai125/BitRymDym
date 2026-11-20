@@ -43,6 +43,11 @@ export type PublicSampleCard = {
   kind: string;
   instrument: string | null;
   durationMs: number;
+  /** Sample Lab metadata (null when not set or before the lab columns existed). */
+  sampleType: string | null;
+  bpm: number | null;
+  musicalKey: string | null;
+  bars: number | null;
 };
 
 export type BoardRow = {
@@ -143,6 +148,16 @@ function adminOrNull(): Admin | null {
   }
 }
 
+/** Samples published by an admin are the official BitRymDym pack (catalog tab "BitRymDym"). */
+async function platformSampleOwners(ownerIds: string[]): Promise<Set<string>> {
+  const admin = adminOrNull();
+  const ids = [...new Set(ownerIds)];
+  if (!admin || ids.length === 0) return new Set();
+  const { data, error } = await admin.from("profiles").select("id, role").in("id", ids).eq("role", "ADMIN");
+  if (error) return new Set();
+  return new Set(((data ?? []) as { id: string }[]).map((row) => row.id));
+}
+
 async function authorNames(ownerIds: string[]): Promise<Map<string, string | null>> {
   try {
     return await loadPublicAuthorDisplayNames(ownerIds);
@@ -226,14 +241,19 @@ async function publishedWorks(kind: TargetKind | "work"): Promise<Work[]> {
     }));
   }
   const rows = await loadPublishedSampleRows();
-  const names = await authorNames(rows.map((row) => row.owner_id));
+  const [names, platform] = await Promise.all([
+    authorNames(rows.map((row) => row.owner_id)),
+    platformSampleOwners(rows.map((row) => row.owner_id)),
+  ]);
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
     ownerId: row.owner_id,
-    ownership: "USER" as const,
+    ownership: platform.has(row.owner_id) ? ("PLATFORM" as const) : ("USER" as const),
     allowComments: row.allow_comments !== false,
-    author: publicAuthorName({ ownership: "USER", displayName: names.get(row.owner_id) }),
+    author: platform.has(row.owner_id)
+      ? publicAuthorName({ ownership: "PLATFORM" })
+      : publicAuthorName({ ownership: "USER", displayName: names.get(row.owner_id) }),
     kind: row.kind,
     instrument: row.instrument,
     durationMs: Number(row.duration_ms),
@@ -241,8 +261,10 @@ async function publishedWorks(kind: TargetKind | "work"): Promise<Work[]> {
 }
 
 export async function listPublicSamples(source: CatalogSource): Promise<PublicSampleCard[]> {
-  if (source === "brd") return [];
-  const works = await publishedWorks("sample");
+  const works = (await publishedWorks("sample")).filter((work) =>
+    source === "brd" ? work.ownership === "PLATFORM" : work.ownership === "USER",
+  );
+  const meta = await sampleLabMeta(works.map((work) => work.id));
   return works.map((work) => ({
     id: work.id,
     title: work.title,
@@ -250,7 +272,29 @@ export async function listPublicSamples(source: CatalogSource): Promise<PublicSa
     kind: work.kind === "effect" ? "effect" : "instrument",
     instrument: work.instrument ?? null,
     durationMs: work.durationMs ?? 0,
+    sampleType: meta.get(work.id)?.sampleType ?? null,
+    bpm: meta.get(work.id)?.bpm ?? null,
+    musicalKey: meta.get(work.id)?.musicalKey ?? null,
+    bars: meta.get(work.id)?.bars ?? null,
   }));
+}
+
+/** Lab metadata in a separate read, so a DB without the lab columns still lists samples. */
+async function sampleLabMeta(ids: string[]): Promise<Map<string, { sampleType: string | null; bpm: number | null; musicalKey: string | null; bars: number | null }>> {
+  const out = new Map<string, { sampleType: string | null; bpm: number | null; musicalKey: string | null; bars: number | null }>();
+  const admin = adminOrNull();
+  if (!admin || ids.length === 0) return out;
+  const { data, error } = await admin.from("studio_samples").select("id, sample_type, bpm, musical_key, bars").in("id", ids);
+  if (error) return out;
+  for (const row of (data ?? []) as Record<string, unknown>[]) {
+    out.set(String(row.id), {
+      sampleType: (row.sample_type as string | null) ?? null,
+      bpm: row.bpm == null ? null : Number(row.bpm),
+      musicalKey: (row.musical_key as string | null) ?? null,
+      bars: row.bars == null ? null : Number(row.bars),
+    });
+  }
+  return out;
 }
 
 function prizeLabel(prize: { place: number; tier: string; days: number; mode: string } | undefined) {
@@ -343,11 +387,12 @@ async function loadBoardWorks(kind: TargetKind): Promise<BoardWork[]> {
     }));
   }
   const rows = await loadPublishedSampleRows();
+  const platform = await platformSampleOwners(rows.map((row) => row.owner_id));
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
     ownerId: row.owner_id,
-    ownership: "USER" as const,
+    ownership: platform.has(row.owner_id) ? ("PLATFORM" as const) : ("USER" as const),
     allowComments: row.allow_comments !== false,
     author: "",
     producer: null,
@@ -361,7 +406,9 @@ async function loadBoardWorks(kind: TargetKind): Promise<BoardWork[]> {
 function boardAuthor(work: BoardWork, names: Map<string, string | null>): string {
   const displayName = work.ownerId ? (names.get(work.ownerId) ?? null) : null;
   if (work.source === "sample") {
-    return publicAuthorName({ ownership: "USER", displayName });
+    return work.ownership === "PLATFORM"
+      ? publicAuthorName({ ownership: "PLATFORM" })
+      : publicAuthorName({ ownership: "USER", displayName });
   }
   return resolvePublicAuthor({
     ownershipType: work.ownership === "USER" ? "USER" : "PLATFORM",
