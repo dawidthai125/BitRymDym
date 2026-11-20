@@ -266,6 +266,8 @@ describe("describeBeatStyleFromYouTube", () => {
     expect(body.input[2].type).toBe("text");
     expect(text).toContain("GENERATED beat");
     expect(text).toContain("Compare it with the video");
+    expect(text).toContain("at least 9/10");
+    expect(text).toContain("never the original melody note for note");
   });
 
   it("sends no audio input for a plain revision", async () => {

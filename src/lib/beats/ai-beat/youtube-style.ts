@@ -192,6 +192,8 @@ function revisionInstruction(r: YoutubeRevision): string {
           "The audio input is the GENERATED beat made from the previous brief (the first minute or so).",
           "Compare it with the video: tempo feel, key, kick/snare/hat pattern, bass sound, lead or riff, energy, top end versus low end, loudness. Decide what the generated beat is missing or has too much of.",
           "Then write the new brief so the next generation closes exactly those gaps. Say what to add or change in concrete production words; do not describe the generated audio itself.",
+          "TARGET: the next beat must score at least 9/10 against the video's instrumental on each of tempo, drums/groove, bass, melody/instruments, mood/energy and mix/texture. Score the generated beat silently on each; every one below 9 must change the matching field (drums, bass, melody, mood, arrangement) with a concrete production fix, e.g. bass rhythm and note movement, which instruments and layers, drum sound and swing, reverb and saturation. Keep what already scores 9 or more.",
+          "Stay an original instrumental in the same style: match the sound and feel, never the original melody note for note.",
         ]
       : []),
   ].join(" ");
