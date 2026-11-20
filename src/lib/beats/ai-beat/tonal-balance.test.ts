@@ -63,7 +63,7 @@ describe("balanceGeneratedWav", () => {
     expect(shares.high).toBeGreaterThan(before.high);
     let peak = 0;
     for (const x of after) peak = Math.max(peak, Math.abs(x));
-    expect(peak).toBeLessThanOrEqual(0.9);
+    expect(peak).toBeLessThanOrEqual(0.85);
     expect(result.bytes.byteLength).toBe(wav.byteLength);
   });
 
@@ -73,6 +73,18 @@ describe("balanceGeneratedWav", () => {
     const result = balanceGeneratedWav(wav);
     expect(result.report.applied).toBe(false);
     expect(result.bytes).toBe(wav);
+  });
+
+  it("still limits a balanced file whose peak is over the ceiling", () => {
+    const l = tone([[100, 0.3], [800, 0.4], [3000, 0.2], [6000, 0.12]]);
+    const wav = wavOf([l, l]);
+    const result = balanceGeneratedWav(wav);
+    expect(result.report.applied).toBe(true);
+    expect(result.report.lowCutDb).toBe(0);
+    expect(result.report.highBoostDb).toBe(0);
+    let peak = 0;
+    for (const x of readMono(result.bytes)) peak = Math.max(peak, Math.abs(x));
+    expect(peak).toBeLessThanOrEqual(0.85);
   });
 
   it("passes through anything that is not a 16-bit PCM WAV", () => {
@@ -90,7 +102,8 @@ describe("balanceGeneratedWav", () => {
 
 describe("planCorrection", () => {
   it("caps both corrections and does nothing at target", () => {
-    expect(planCorrection(0.5, 0.06)).toEqual({ lowCutDb: 0, highBoostDb: 0 });
+    expect(planCorrection(0.5, 0.1)).toEqual({ lowCutDb: 0, highBoostDb: 0 });
+    expect(planCorrection(0.5, 0.06).highBoostDb).toBeGreaterThan(0);
     const hard = planCorrection(0.95, 0.001);
     expect(hard.lowCutDb).toBeLessThanOrEqual(7);
     expect(hard.highBoostDb).toBeLessThanOrEqual(9);

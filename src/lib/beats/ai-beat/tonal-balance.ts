@@ -17,11 +17,15 @@ export type ToneReport = {
 
 /** Share of energy below 150 Hz above which the low end is trimmed. */
 export const LOW_SHARE_TARGET = 0.5;
-/** Share of energy above 2 kHz below which the top end is lifted. */
-export const HIGH_SHARE_TARGET = 0.06;
+/**
+ * Share of energy above 2 kHz below which the top end is lifted. 0.10 is where the best-rated
+ * test beat sat (2026-11-20: 10% vs 6–7% for the darker versions Gemini marked 5/10 on mix).
+ */
+export const HIGH_SHARE_TARGET = 0.1;
 export const MAX_LOW_CUT_DB = 7;
 export const MAX_HIGH_BOOST_DB = 9;
-const PEAK_CEILING = 0.89; // about -1 dBFS
+/** About -1.5 dBFS: MP3/AAC encoding adds inter-sample peaks (seen +0.8 dBTP at a -1 dBFS ceiling). */
+export const PEAK_CEILING = 0.84;
 
 type Biquad = { b0: number; b1: number; b2: number; a1: number; a2: number };
 
@@ -243,14 +247,18 @@ export function balanceGeneratedWav(bytes: Uint8Array): { bytes: Uint8Array; rep
     const shares = bandShares(mono, wav.sampleRate);
     const plan = planCorrection(shares.low, shares.high);
     const before = { lowShareBefore: shares.low, highShareBefore: shares.high };
-    if (plan.lowCutDb < 0.3 && plan.highBoostDb < 0.3) {
-      return { bytes, report: { applied: false, reason: "already balanced", ...before } };
+    const balanced = plan.lowCutDb < 0.3 && plan.highBoostDb < 0.3;
+    if (balanced) {
+      let peak = 0;
+      for (const ch of chans) for (let i = 0; i < frames; i += 1) peak = Math.max(peak, Math.abs(ch[i] as number));
+      // Balanced tone still needs a safe peak; untouched only when it is already under the ceiling.
+      if (peak <= PEAK_CEILING) return { bytes, report: { applied: false, reason: "already balanced", ...before } };
     }
 
-    const chain: Biquad[] = [highPass(wav.sampleRate, 28)];
+    const chain: Biquad[] = balanced ? [] : [highPass(wav.sampleRate, 28)];
     if (plan.lowCutDb >= 0.3) chain.push(lowShelf(wav.sampleRate, 160, -plan.lowCutDb));
     if (plan.highBoostDb >= 0.3) chain.push(highShelf(wav.sampleRate, 3200, plan.highBoostDb));
-    const shaped = chans.map((ch) => run(chain, ch));
+    const shaped = chain.length ? chans.map((ch) => run(chain, ch)) : chans;
 
     const limited = limitPeaks(shaped, PEAK_CEILING, wav.sampleRate);
 

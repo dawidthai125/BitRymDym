@@ -7,6 +7,18 @@ export const BEAT_DURATION_CHOICES = [90, 120, 150, 180] as const;
 export const DEFAULT_BEAT_DURATION = 150;
 export const BEAT_DESCRIPTION_MIN = 8;
 export const BEAT_DESCRIPTION_MAX = 800;
+/**
+ * House pattern for every generated beat, taken from the best-rated test (2026-11-20, "v2":
+ * right key, an arrangement with a break, brightest top end). The darker, flat-loop and
+ * 40-second-dip versions scored lower. Used by the YouTube brief and the typed-description rewrite.
+ */
+export const BEAT_PRODUCTION_PATTERN =
+  "Production pattern: warm organic programmed drums with light swing (hard quantized only for trap or drill); " +
+  "an active melodic bass that moves with the chords (note changes and slides, not only root notes); " +
+  "one lead instrument plus one supporting layer (for example piano with strings or pads); " +
+  "an arrangement that moves: short intro, main loop, one 4 to 8 bar breakdown where drums or bass drop out, then the return with an added layer, never more than 8 bars of near silence; " +
+  "the key named as tonic plus major or minor.";
+
 export const BEAT_HINT_BPM_MIN = 60;
 export const BEAT_HINT_BPM_MAX = 180;
 export const GENERATED_STYLE_DEFAULT = "hip-hop instrumentalny";

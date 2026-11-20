@@ -1,4 +1,5 @@
 import {
+  BEAT_PRODUCTION_PATTERN,
   GENERATED_STYLE_DEFAULT,
   clipBeatDescription,
   descriptionNeedsTranslation,
@@ -21,6 +22,7 @@ const SYSTEM_TRANSLATE = [
   "prompt: English only, 2 to 5 dense sentences for Stable Audio.",
   "In prompt, specify kick/snare/hat character, bass type and motion, melodic instruments and harmony, groove or swing, energy, mix density, and clear space for a vocalist.",
   "Prefer concrete production language over vague mood words alone.",
+  `Follow this unless the description asks otherwise. ${BEAT_PRODUCTION_PATTERN}`,
   "No vocals, no singing, no rap, no speech, no lyrics in the music.",
   "Do not name any artist, song, album, label or producer.",
   "If the user names one, drop the name and keep only the musical idea.",

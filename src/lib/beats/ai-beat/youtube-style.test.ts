@@ -110,6 +110,8 @@ describe("describeBeatStyleFromYouTube", () => {
     expect(instruction).toContain("GOOD:");
     expect(instruction).toContain("concrete sonic detail");
     expect(instruction).toContain("pocket");
+    expect(instruction).toContain("Production pattern:");
+    expect(instruction).toContain("breakdown");
     expect(sent.response_format?.schema?.required).toEqual(
       expect.arrayContaining(["opis", "drums", "bass", "melody", "mood", "arrangement"]),
     );

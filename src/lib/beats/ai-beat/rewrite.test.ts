@@ -13,6 +13,7 @@ describe("rewriteBeatPrompt", () => {
       expect(body.reasoning_effort).toBe("low");
       expect(body.model).toBe("grok-4.7");
       expect(body.messages?.[0]?.content).toContain("Stable Audio 3");
+      expect(body.messages?.[0]?.content).toContain("Production pattern:");
       return new Response(
         JSON.stringify({
           choices: [
