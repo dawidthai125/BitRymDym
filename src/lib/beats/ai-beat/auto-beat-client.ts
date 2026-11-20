@@ -95,13 +95,21 @@ async function waitForBeat(start: {
   throw new Error("timeout");
 }
 
-async function judge(beatId: string, youtubeUrl: string, targetKey: string | null): Promise<BeatVerdict | null> {
+async function judgeOnce(beatId: string, youtubeUrl: string, targetKey: string | null): Promise<BeatVerdict | null> {
   try {
     const res = await json<{ verdict?: BeatVerdict }>("/api/admin/beats/generate/judge", { beatId, youtubeUrl, targetKey });
     return res.verdict ?? null;
   } catch {
     return null;
   }
+}
+
+/** One more try after a pause: an unjudged variant would be thrown away (live: Gemini 429). */
+async function judge(beatId: string, youtubeUrl: string, targetKey: string | null): Promise<BeatVerdict | null> {
+  const first = await judgeOnce(beatId, youtubeUrl, targetKey);
+  if (first) return first;
+  await new Promise((r) => setTimeout(r, 15_000));
+  return judgeOnce(beatId, youtubeUrl, targetKey);
 }
 
 async function discard(beatId: string): Promise<boolean> {
@@ -129,7 +137,9 @@ export async function runAutoBeat(params: {
   const style = (described.style ?? "").trim() || null;
   const description = descriptionFromYoutubeStyle({ style: style || "hip-hop instrumentalny", opis: described.opis, prompt: described.prompt ?? null });
   const bpm = typeof described.bpmHint === "number" ? Math.round(described.bpmHint) : null;
-  const targetKey = params.measured?.key ?? keyFromBrief(description);
+  // Only a measured key may penalise a variant: Gemini's own key for the same film varied
+  // between D minor, C# minor and G minor across runs (2026-11-20), so a brief key is a guess.
+  const targetKey = params.measured?.key ?? null;
 
   onProgress({ step: "generate", detail: `${AUTO_VARIANTS.length}` });
   const settled = await Promise.allSettled(

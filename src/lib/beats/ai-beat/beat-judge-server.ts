@@ -17,7 +17,9 @@ import { BeatRequestError } from "@/lib/beats/request-error";
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 const DEFAULT_MODEL = "gemini-3-flash-preview";
 /** Two verdicts in parallel; each must finish inside the route's 300 s with the upload. */
-const JUDGE_TIMEOUT_MS = 170_000;
+const JUDGE_TIMEOUT_MS = 150_000;
+/** One pipeline makes ~8 Gemini calls in a few minutes; 429 came back live. Wait and retry. */
+const RATE_LIMIT_WAITS_MS = [8_000, 20_000];
 export const JUDGE_RUNS = 2;
 
 async function oneVerdict(params: {
@@ -28,8 +30,8 @@ async function oneVerdict(params: {
 }): Promise<JudgeRun | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), JUDGE_TIMEOUT_MS);
-  try {
-    const res = await fetch(INTERACTIONS_URL, {
+  const send = () =>
+    fetch(INTERACTIONS_URL, {
       method: "POST",
       signal: controller.signal,
       headers: { "x-goog-api-key": params.apiKey, "Content-Type": "application/json", "Api-Revision": "2026-05-20" },
@@ -44,6 +46,14 @@ async function oneVerdict(params: {
         generation_config: { temperature: 0.1 },
       }),
     });
+  try {
+    let res = await send();
+    for (const wait of RATE_LIMIT_WAITS_MS) {
+      if (res.status !== 429 && res.status !== 503) break;
+      console.error("[beat-judge] gemini busy", res.status, "retry in", wait);
+      await new Promise((r) => setTimeout(r, wait));
+      res = await send();
+    }
     if (!res.ok) {
       console.error("[beat-judge] gemini HTTP", res.status);
       return null;
@@ -88,8 +98,14 @@ export async function judgeGeneratedBeat(params: {
     prepareBeatAudioForGemini(params.beatId, { loadMaster: async () => master }),
   ]);
   try {
+    // Staggered by 2 s so two calls do not hit the per-minute limit at the same instant.
     const runs = (
-      await Promise.all(Array.from({ length: JUDGE_RUNS }, () => oneVerdict({ url, audio: prepared.ref, apiKey, model })))
+      await Promise.all(
+        Array.from({ length: JUDGE_RUNS }, async (_, i) => {
+          if (i) await new Promise((r) => setTimeout(r, 2000 * i));
+          return oneVerdict({ url, audio: prepared.ref, apiKey, model });
+        }),
+      )
     ).filter((r): r is JudgeRun => r != null);
     const verdict = combineVerdict(runs, { measured: key, target: params.targetKey });
     if (!verdict) throw new BeatRequestError("Gemini nie ocenił bitu. Spróbuj jeszcze raz.");
