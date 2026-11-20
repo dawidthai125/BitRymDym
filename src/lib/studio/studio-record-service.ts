@@ -43,6 +43,8 @@ export async function placeReadyTakeAsStudioClipFor(
     sourceOffsetMs?: number;
     /** Optional cap on clip length (integer ms). */
     durationMs?: number;
+    /** See geometryForStudioRecording: exact-length sample copies only. */
+    durationSlackMs?: number;
   },
 ): Promise<{
   clip: StudioClipDto;
@@ -90,6 +92,7 @@ export async function placeReadyTakeAsStudioClipFor(
     timelineLengthMs: document.project.timelineLengthMs,
     sourceOffsetMs: input.sourceOffsetMs,
     durationMs: input.durationMs,
+    durationSlackMs: input.durationSlackMs,
   });
 
   // Keep / network retry: do not create a second identical Clip.

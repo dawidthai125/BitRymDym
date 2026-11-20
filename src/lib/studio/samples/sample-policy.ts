@@ -309,9 +309,12 @@ export function evaluateSampleDelete(input: {
   return { ok: true };
 }
 
-/** Catalog duration is a whole second. Samples are already at least 1s. */
+/**
+ * Catalog duration is a whole second, rounded UP: a take copy cut to fewer seconds than the
+ * audio would chop the end of a loop on the timeline (seen live: 3.43 s hats became 3 s).
+ */
 export function catalogDurationSeconds(durationMs: number): number {
-  const seconds = Math.round(durationMs / 1000);
+  const seconds = Math.ceil(durationMs / 1000 - 0.001);
   if (seconds < 1) return 1;
   if (seconds > 180) return 180;
   return seconds;

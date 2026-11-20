@@ -117,6 +117,8 @@ describe("studio sample policy", () => {
 
   it("rounds catalog duration into the existing 1–180 second gate", () => {
     expect(catalogDurationSeconds(1500)).toBe(2);
+    expect(catalogDurationSeconds(3429)).toBe(4);
+    expect(catalogDurationSeconds(5053)).toBe(6);
     expect(catalogDurationSeconds(1000)).toBe(1);
     expect(catalogDurationSeconds(30_000)).toBe(30);
   });

@@ -101,6 +101,7 @@ export async function applyBitekSamplePlacement(
       expectedDocumentVersion: version,
       // The take copy rounds its length up to whole seconds; the clip keeps the exact sample length.
       durationMs: sampleDurationMs > 0 ? Math.floor(sampleDurationMs) : undefined,
+      durationSlackMs: 999,
     });
     version = placed.documentVersion;
     let clip = placed.clip;

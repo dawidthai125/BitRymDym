@@ -31,6 +31,11 @@ export function geometryForStudioRecording(params: {
   timelineLengthMs: number;
   sourceOffsetMs?: number;
   durationMs?: number;
+  /**
+   * takes.duration_seconds is a whole second, so the real audio can be up to 999 ms longer.
+   * A caller that knows the exact length (a sample copy) may let the clip reach it.
+   */
+  durationSlackMs?: number;
 }): {
   timelineStartMs: number;
   durationMs: number;
@@ -54,7 +59,8 @@ export function geometryForStudioRecording(params: {
   if (params.durationMs != null) {
     assertIntegerMs(params.durationMs, "durationMs");
     if (params.durationMs < 1) throw new Error("durationMs must be >= 1.");
-    durationMs = Math.min(durationMs, params.durationMs);
+    const slack = Math.max(0, Math.min(999, Math.floor(params.durationSlackMs ?? 0)));
+    durationMs = Math.min(durationMs + slack, params.durationMs);
   }
   const end = params.playheadMs + durationMs;
   if (end > params.timelineLengthMs) {
