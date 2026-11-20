@@ -1498,7 +1498,8 @@
       "tonacjaZmierzona": "Measured: {key}",
       "tonacjaInna": "Measured: {key} (not the one asked for)",
       "doKatalogu": "To the catalog",
-      "wydany": "In the catalog ✓"
+      "wydany": "In the catalog ✓",
+      "przestrojony": "Retuned from {from}"
     }
   },
   "auth": {

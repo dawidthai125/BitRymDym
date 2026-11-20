@@ -4,13 +4,13 @@
  * clean a one-shot, set the level, and read the key/note we actually got.
  */
 
+import { fftRadix2 } from "@/lib/studio/studio-offline-fx-fft";
 import {
   applyFades,
-  dominantNote,
   loopLengthFrames,
   maxBarsFor,
+  NOTE_NAMES,
   normalizePeak,
-  pitchTrack,
   sliceChannels,
   trimSilence,
 } from "@/lib/studio/samples/sample-lab-dsp";
@@ -31,7 +31,7 @@ export type SamplePreset = {
 };
 
 export const SAMPLE_PRESETS: readonly SamplePreset[] = [
-  { id: "piano", instrument: "piano", types: ["loop", "oneshot"], sound: "felt upright piano playing soulful minor chords", pitched: true },
+  { id: "piano", instrument: "piano", types: ["loop", "oneshot"], sound: "felt upright piano playing soulful chords", pitched: true },
   { id: "rhodes", instrument: "keys", types: ["loop", "oneshot"], sound: "Rhodes electric piano with warm tremolo playing jazzy seventh chords", pitched: true },
   { id: "strings", instrument: "strings", types: ["loop"], sound: "cinematic string section with legato violins and cellos", pitched: true },
   { id: "pad", instrument: "pad", types: ["loop", "oneshot"], sound: "warm analog synth pad with slow attack", pitched: true },
@@ -119,9 +119,10 @@ export function buildSamplePrompt(req: SampleGenRequest): string {
       .filter(Boolean)
       .join(", ");
   }
+  // Key first: Stable Audio follows the opening words most (a Rhodes loop came out in Am for D).
   return [
-    `Hip-hop sample loop: solo ${req.preset.sound}`,
-    key,
+    `Hip-hop sample loop${key ? ` ${key}` : ""}: solo ${req.preset.sound}`,
+    key ? `strictly ${key.replace(/^in /, "")} harmony` : "",
     `${req.bpm} BPM`,
     `${req.bars} bars of 4/4`,
     style,
@@ -172,9 +173,84 @@ export function shapeOneShot(channels: Float32Array[], sampleRate: number): Floa
   });
 }
 
-/** Note of a pitched one-shot ("A1"), from the pitch track; null when unpitched. */
+/**
+ * Fundamental of a one-shot in Hz: strongest spectral peak (25–2000 Hz, 0.7 Hz bins) of the
+ * body after the attack, then the lowest sub-harmonic that is still strong. The time-domain
+ * pitch tracker misread a 49 Hz 808 as F#6 (live, 2026-11-20).
+ */
+export function oneShotFundamentalHz(mono: Float32Array, sampleRate: number): number | null {
+  const n = 65536;
+  const start = Math.min(Math.floor(0.03 * sampleRate), Math.max(0, mono.length - 1));
+  const seg = mono.subarray(start, Math.min(mono.length, start + Math.floor(0.6 * sampleRate)));
+  if (seg.length < sampleRate * 0.1) return null;
+  const re = new Float64Array(n);
+  const im = new Float64Array(n);
+  for (let i = 0; i < seg.length; i++) re[i] = seg[i]! * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (seg.length - 1)));
+  fftRadix2(re, im, false);
+  const binHz = sampleRate / n;
+  const mag = (hz: number) => {
+    const k = Math.round(hz / binHz);
+    let m = 0;
+    for (let j = k - 1; j <= k + 1; j++) m = Math.max(m, Math.hypot(re[j] ?? 0, im[j] ?? 0));
+    return m;
+  };
+  let peakHz = 0;
+  let peak = 0;
+  for (let k = Math.ceil(25 / binHz); k <= Math.floor(2000 / binHz); k++) {
+    const m = Math.hypot(re[k]!, im[k]!);
+    if (m > peak) {
+      peak = m;
+      peakHz = k * binHz;
+    }
+  }
+  if (!(peak > 0)) return null;
+  let f0 = peakHz;
+  for (const div of [2, 3, 4]) {
+    const sub = peakHz / div;
+    if (sub >= 25 && mag(sub) >= 0.3 * peak) f0 = sub;
+  }
+  return f0;
+}
+
+export function hzToNoteName(hz: number): string {
+  const midi = Math.round(69 + 12 * Math.log2(hz / 440));
+  return `${NOTE_NAMES[((midi % 12) + 12) % 12]}${Math.floor(midi / 12) - 1}`;
+}
+
+/** "F1" → 43.65 Hz; null for a key without octave. */
+export function noteNameToHz(note: string): number | null {
+  const m = /^([A-G]#?)(\d)$/.exec(note.trim());
+  if (!m) return null;
+  const pc = NOTE_NAMES.indexOf(m[1] as (typeof NOTE_NAMES)[number]);
+  const midi = (Number(m[2]) + 1) * 12 + pc;
+  return 440 * 2 ** ((midi - 69) / 12);
+}
+
+/** Note of a pitched one-shot ("A1"); null when nothing pitched was found. */
 export function oneShotNote(mono: Float32Array, sampleRate: number): string | null {
-  return dominantNote(pitchTrack(mono, sampleRate));
+  const hz = oneShotFundamentalHz(mono, sampleRate);
+  return hz ? hzToNoteName(hz) : null;
+}
+
+/**
+ * Retune a one-shot by resampling (pitch and length change together, fine for a hit).
+ * Only within ±7 semitones, so a misread never turns a sound into a chipmunk.
+ */
+export function retuneOneShot(channels: Float32Array[], fromHz: number, toHz: number): Float32Array[] | null {
+  const ratio = toHz / fromHz;
+  if (!(ratio > 0) || Math.abs(12 * Math.log2(ratio)) > 7) return null;
+  if (Math.abs(ratio - 1) < 0.003) return channels;
+  const len = Math.floor((channels[0]?.length ?? 0) / ratio);
+  return channels.map((ch) => {
+    const out = new Float32Array(len);
+    for (let i = 0; i < len; i++) {
+      const x = i * ratio;
+      const j = Math.floor(x);
+      const t = x - j;
+      out[i] = (ch[j] ?? 0) * (1 - t) + (ch[j + 1] ?? 0) * t;
+    }
+    return out;
+  });
 }
 
 /** Short Polish-free catalog title, e.g. "Rhodes Am 90 #2". */

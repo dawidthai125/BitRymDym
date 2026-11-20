@@ -18,7 +18,11 @@ import {
   checkSampleRequest,
   decodeWav16,
   generationSeconds,
+  hzToNoteName,
+  noteNameToHz,
+  oneShotFundamentalHz,
   oneShotNote,
+  retuneOneShot,
   shapeLoop,
   shapeOneShot,
   type SampleGenRequest,
@@ -63,7 +67,7 @@ export async function startSampleGeneration(req: SampleGenRequest): Promise<{ ge
 
 export type GeneratedSample = {
   sample: StudioSampleDto;
-  measured: { key: string | null; bpm: number | null };
+  measured: { key: string | null; bpm: number | null; retunedFrom?: string | null };
 };
 
 /**
@@ -84,18 +88,33 @@ export async function finishSampleGeneration(params: {
   const wav = decodeWav16(polled.bytes);
   if (!wav) throw new BeatRequestError("Model oddał plik w nieznanym formacie.");
   const { req } = params;
-  const shaped =
+  let shaped =
     req.type === "loop" && req.bpm && req.bars
       ? shapeLoop(wav.channels, wav.sampleRate, req.bpm, req.bars)
       : shapeOneShot(wav.channels, wav.sampleRate);
   if (!shaped) throw new BeatRequestError("Z wygenerowanego dźwięku nie dało się wyciąć sampla. Spróbuj jeszcze raz.");
 
-  const mono = new Float32Array(shaped[0]!.length);
-  for (const ch of shaped) for (let i = 0; i < mono.length; i++) mono[i] += ch[i]! / shaped.length;
+  const monoOf = (chs: Float32Array[]) => {
+    const m = new Float32Array(chs[0]!.length);
+    for (const ch of chs) for (let i = 0; i < m.length; i++) m[i] += ch[i]! / chs.length;
+    return m;
+  };
+  let mono = monoOf(shaped);
   let measuredKey: string | null = null;
+  let retunedFrom: string | null = null;
   if (req.preset.pitched) {
-    if (req.type === "oneshot") measuredKey = oneShotNote(mono, wav.sampleRate);
-    else {
+    if (req.type === "oneshot") {
+      // A one-shot is tuned to the note asked for (Stable Audio gave G1 for F1 live).
+      const target = req.key ? noteNameToHz(req.key) : null;
+      const f0 = oneShotFundamentalHz(mono, wav.sampleRate);
+      const retuned = target && f0 ? retuneOneShot(shaped, f0, target) : null;
+      if (retuned && retuned !== shaped) {
+        retunedFrom = hzToNoteName(f0!);
+        shaped = shapeOneShot(retuned, wav.sampleRate) ?? retuned;
+        mono = monoOf(shaped);
+      }
+      measuredKey = oneShotNote(mono, wav.sampleRate);
+    } else {
       const k = detectBeatKeyFromMonoPcm(mono, wav.sampleRate);
       measuredKey = k && k.confidence >= KEY_SUGGEST_MIN_CONFIDENCE ? beatKeyDetectedLabel(k) : null;
     }
@@ -125,7 +144,7 @@ export async function finishSampleGeneration(params: {
       created.error === "SAMPLE_CAP" ? "Konto admina ma już 100 sampli. Usuń zbędne w katalogu." : "Nie udało się zapisać sampla.",
     );
   }
-  return { status: "ready", sample: created.sample, measured: { key: measuredKey, bpm: measuredBpm } };
+  return { status: "ready", sample: created.sample, measured: { key: measuredKey, bpm: measuredBpm, retunedFrom } };
 }
 
 /** The admin's generated sample goes into the public catalog. */

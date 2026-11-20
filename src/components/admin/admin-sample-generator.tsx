@@ -15,7 +15,7 @@ const field = "min-h-10 w-full rounded-lg border border-[var(--brd-line)] bg-tra
 const chip = (on: boolean) =>
   `min-h-9 rounded-full border px-3 text-sm ${on ? "border-[var(--brd-amber)] bg-[var(--brd-amber)]/15 text-[var(--brd-ink)]" : "border-[var(--brd-line)] text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"}`;
 
-type Generated = CatalogSampleItem & { measuredKey: string | null; measuredBpm: number | null; published: boolean };
+type Generated = CatalogSampleItem & { measuredKey: string | null; measuredBpm: number | null; retunedFrom: string | null; published: boolean };
 
 /**
  * Admin sample generator: instrument, loop or one-shot, tempo (typed or taken from a catalog
@@ -113,7 +113,7 @@ export function AdminSampleGenerator({
               error?: string;
               status?: string;
               sample?: { id: string; title: string; durationMs: number; instrument: string | null };
-              measured?: { key: string | null; bpm: number | null };
+              measured?: { key: string | null; bpm: number | null; retunedFrom?: string | null };
             };
             if (!r.ok || !j.success) throw new Error(j.error || t("blad"));
             if (j.status === "ready" && j.sample) return { s: j.sample, m: j.measured ?? { key: null, bpm: null } };
@@ -140,6 +140,7 @@ export function AdminSampleGenerator({
           platform: true,
           measuredKey: m.key,
           measuredBpm: m.bpm,
+          retunedFrom: m.retunedFrom ?? null,
           published: false,
         })),
         ...prev,
@@ -318,6 +319,7 @@ export function AdminSampleGenerator({
               return (
                 <>
                   {keyNote ? <span className="text-xs text-[var(--brd-mute)]">{keyNote}</span> : null}
+                  {r.retunedFrom ? <span className="text-xs text-[var(--brd-mute)]">{t("przestrojony", { from: r.retunedFrom })}</span> : null}
                   {r.published ? (
                     <span className="text-sm text-[var(--brd-green)]">{t("wydany")}</span>
                   ) : (

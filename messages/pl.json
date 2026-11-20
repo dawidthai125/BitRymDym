@@ -1498,7 +1498,8 @@
       "tonacjaZmierzona": "Zmierzona: {key}",
       "tonacjaInna": "Zmierzona: {key} (inna niż zamówiona)",
       "doKatalogu": "Do katalogu",
-      "wydany": "W katalogu ✓"
+      "wydany": "W katalogu ✓",
+      "przestrojony": "Przestrojony z {from}"
     }
   },
   "auth": {

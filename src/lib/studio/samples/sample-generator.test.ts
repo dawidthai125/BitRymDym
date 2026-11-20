@@ -71,3 +71,23 @@ describe("sample generator", () => {
     expect(decodeWav16(new Uint8Array(10))).toBeNull();
   });
 });
+
+describe("one-shot tuning", () => {
+  const sine = (hz: number, s = 1) => {
+    const x = new Float32Array(Math.round(44100 * s));
+    for (let i = 0; i < x.length; i++) x[i] = 0.5 * Math.sin((2 * Math.PI * hz * i) / 44100) + 0.2 * Math.sin((2 * Math.PI * 2 * hz * i) / 44100);
+    return x;
+  };
+  it("reads a low 808 note that the time-domain tracker misread", async () => {
+    const { oneShotNote, oneShotFundamentalHz } = await import("./sample-generator");
+    expect(oneShotNote(sine(49), 44100)).toBe("G1");
+    expect(oneShotFundamentalHz(sine(110), 44100)).toBeCloseTo(110, 0);
+  });
+  it("retunes G1 to F1 and refuses huge shifts", async () => {
+    const { noteNameToHz, oneShotNote, retuneOneShot } = await import("./sample-generator");
+    const out = retuneOneShot([sine(49)], 49, noteNameToHz("F1")!)!;
+    expect(oneShotNote(out[0]!, 44100)).toBe("F1");
+    expect(retuneOneShot([sine(49)], 49, 200)).toBeNull();
+    expect(noteNameToHz("A4")).toBeCloseTo(440, 5);
+  });
+});
