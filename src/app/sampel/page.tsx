@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
 import { SampleCatalog, type CatalogSampleItem } from "@/components/community/sample-catalog";
+import { SamplePromoFilm } from "@/components/community/sample-promo-film";
 import { AppShell } from "@/components/site/app-shell";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { listPublicSamples, pickSampleOfTheWeek, type CatalogSource } from "@/lib/community/community-service";
@@ -65,6 +66,7 @@ export default async function SampleCatalogPage({
       <main data-surface="tape" className="tape-grain">
         <PageFrame width="wide" className="py-5 sm:py-6">
           <CommunityShelf current="samples" />
+          <SamplePromoFilm />
           <CommunitySource kind="samples" source={source} />
           <div className="mb-4 flex flex-wrap items-stretch gap-3">
             {bestItem && best ? (
