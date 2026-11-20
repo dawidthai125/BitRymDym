@@ -4498,6 +4498,32 @@
       "prizeConflict": "The plan changed at the same moment. Refresh and try again.",
       "prizeWait": "The current plan has to end first.",
       "prizeOff": "The prize turns on after the database update."
+    },
+    "sampleCatalog": {
+      "filtr": "Sample filter",
+      "wszystkie": "All",
+      "wszystkieInstrumenty": "All instruments",
+      "instrument": "Instrument",
+      "bladOdtwarzania": "Could not play the sample. Refresh the page and try again.",
+      "odtworz": "Play: {title}",
+      "pauza": "Pause: {title}",
+      "przewin": "Seek: {title}",
+      "zalogujSie": "Sign in to listen",
+      "edytuj": "Edit",
+      "zamknij": "Close editing",
+      "brakWFiltrze": "No samples in this filter.",
+      "tytul": "Title",
+      "typ": "Type",
+      "takty": "Bars",
+      "tonacja": "Key or note",
+      "zapisz": "Save",
+      "zapisuje": "Saving…",
+      "usun": "Delete sample",
+      "zdejmij": "Remove from the catalog",
+      "usunPewny": "Delete for good? Copies in projects stay.",
+      "zdejmijPewny": "Remove from the catalog? The sample goes back to its author as private.",
+      "tak": "Yes",
+      "nie": "No"
     }
   },
   "maintenance": {

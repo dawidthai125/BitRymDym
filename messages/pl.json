@@ -4498,6 +4498,32 @@
       "prizeConflict": "Plan zmienił się w tej samej chwili. Odśwież i spróbuj jeszcze raz.",
       "prizeWait": "Najpierw musi się skończyć obecny plan.",
       "prizeOff": "Nagroda włączy się po aktualizacji bazy."
+    },
+    "sampleCatalog": {
+      "filtr": "Filtr sampli",
+      "wszystkie": "Wszystkie",
+      "wszystkieInstrumenty": "Wszystkie instrumenty",
+      "instrument": "Instrument",
+      "bladOdtwarzania": "Nie udało się odtworzyć sampla. Odśwież stronę i spróbuj jeszcze raz.",
+      "odtworz": "Odtwórz: {title}",
+      "pauza": "Pauza: {title}",
+      "przewin": "Przewiń: {title}",
+      "zalogujSie": "Zaloguj się, żeby odsłuchać",
+      "edytuj": "Edytuj",
+      "zamknij": "Zamknij edycję",
+      "brakWFiltrze": "W tym filtrze nie ma sampli.",
+      "tytul": "Tytuł",
+      "typ": "Typ",
+      "takty": "Takty",
+      "tonacja": "Tonacja lub nuta",
+      "zapisz": "Zapisz",
+      "zapisuje": "Zapisuję…",
+      "usun": "Usuń sampel",
+      "zdejmij": "Zdejmij z katalogu",
+      "usunPewny": "Usunąć na stałe? Kopii w projektach to nie rusza.",
+      "zdejmijPewny": "Zdjąć z katalogu? Sampel wróci do autora jako prywatny.",
+      "tak": "Tak",
+      "nie": "Nie"
     }
   },
   "maintenance": {

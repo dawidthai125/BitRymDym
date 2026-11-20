@@ -1,24 +1,16 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
-import { SampleListen } from "@/components/community/sample-listen";
-import { SampleTalk } from "@/components/community/sample-talk";
+import { SampleCatalog, type CatalogSampleItem } from "@/components/community/sample-catalog";
 import { AppShell } from "@/components/site/app-shell";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { listPublicSamples, type CatalogSource } from "@/lib/community/community-service";
+import { LIVE_SAMPLE_INSTRUMENTS, SAMPLE_INSTRUMENTS, SAMPLE_TYPES } from "@/lib/studio/samples/sample-policy";
 
 export async function generateMetadata() {
   const t = await getTranslations("community.shelf");
   return { title: t("samples") };
-}
-
-function secondsLabel(durationMs: number): string {
-  const total = Math.max(0, Math.round(durationMs / 1000));
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 export default async function SampleCatalogPage({
@@ -28,46 +20,48 @@ export default async function SampleCatalogPage({
 }) {
   const t = await getTranslations("community.catalog");
   const tl = await getTranslations("studio.sampleLab");
-  const label = (sample: Awaited<ReturnType<typeof listPublicSamples>>[number]) =>
-    [
-      sample.instrument && tl.has(`instrument.${sample.instrument}`) ? tl(`instrument.${sample.instrument}`) : sample.instrument,
-      sample.sampleType && tl.has(`typ.${sample.sampleType}`) ? tl(`typ.${sample.sampleType}`) : null,
-      sample.bpm ? `${Math.round(sample.bpm)} BPM` : null,
-      sample.bars ? tl("taktow", { n: sample.bars }) : null,
-      sample.musicalKey,
-    ].filter(Boolean);
   const params = searchParams ? await searchParams : {};
   const source: CatalogSource = params.zrodlo === "brd" ? "brd" : "user";
   const session = await getCurrentProfile();
+  const isAdmin = session?.profile.role === "ADMIN";
   const samples = await listPublicSamples(source).catch(() => []);
+
+  const instrumentLabel = (id: string | null) => (id && tl.has(`instrument.${id}`) ? tl(`instrument.${id}`) : id);
+  const typeLabel = (id: string | null) => (id && tl.has(`typ.${id}`) ? tl(`typ.${id}`) : null);
+  // Newest first from the service; the catalog number counts from the oldest (#01).
+  const items: CatalogSampleItem[] = samples
+    .map((s, i) => ({
+      id: s.id,
+      no: samples.length - i,
+      title: s.title,
+      author: t("by", { name: s.author }),
+      durationMs: s.durationMs,
+      instrument: s.instrument,
+      instrumentLabel: instrumentLabel(s.instrument),
+      sampleType: s.sampleType,
+      typeLabel: typeLabel(s.sampleType),
+      bpm: s.bpm,
+      bars: s.bars,
+      barsLabel: s.bars ? tl("taktow", { n: s.bars }) : null,
+      musicalKey: s.musicalKey,
+      platform: s.platform,
+    }))
+    .reverse();
+  const instruments = [...SAMPLE_INSTRUMENTS, ...LIVE_SAMPLE_INSTRUMENTS].map((o) => ({ id: o.id, label: instrumentLabel(o.id) ?? o.id }));
+  const types = SAMPLE_TYPES.map((id) => ({ id, label: typeLabel(id) ?? id }));
+
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
         <PageFrame width="wide" className="py-5 sm:py-6">
           <CommunityShelf current="samples" />
           <CommunitySource kind="samples" source={source} />
-          {samples.length === 0 ? (
+          {items.length === 0 ? (
             <p className="text-sm text-[var(--brd-mute)]">
               {source === "brd" ? t("samplesEmptyBrd") : t("samplesEmptyUser")}
             </p>
           ) : (
-            <ul className="space-y-4">
-              {samples.map((sample) => (
-                <li id={sample.id} key={sample.id} className="border-b border-[var(--brd-line)] pb-4">
-                  <p className="text-base text-[var(--brd-ink)]">{sample.title}</p>
-                  <p className="text-sm text-[var(--brd-mute)]">
-                    {t("by", { name: sample.author })} · {secondsLabel(sample.durationMs)}
-                    {label(sample).map((part) => ` · ${part}`).join("")}
-                  </p>
-                  {session ? <SampleListen id={sample.id} /> : (
-                    <Link href="/sign-in" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">
-                      {t("signInListen")}
-                    </Link>
-                  )}
-                  <SampleTalk id={sample.id} signedIn={Boolean(session)} />
-                </li>
-              ))}
-            </ul>
+            <SampleCatalog items={items} signedIn={Boolean(session)} isAdmin={isAdmin} instruments={instruments} types={types} />
           )}
         </PageFrame>
       </main>

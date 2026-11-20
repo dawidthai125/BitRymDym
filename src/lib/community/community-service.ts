@@ -48,6 +48,8 @@ export type PublicSampleCard = {
   bpm: number | null;
   musicalKey: string | null;
   bars: number | null;
+  /** Published by BitRymDym (an admin account), not by a user. */
+  platform: boolean;
 };
 
 export type BoardRow = {
@@ -276,6 +278,7 @@ export async function listPublicSamples(source: CatalogSource): Promise<PublicSa
     bpm: meta.get(work.id)?.bpm ?? null,
     musicalKey: meta.get(work.id)?.musicalKey ?? null,
     bars: meta.get(work.id)?.bars ?? null,
+    platform: work.ownership === "PLATFORM",
   }));
 }
 
