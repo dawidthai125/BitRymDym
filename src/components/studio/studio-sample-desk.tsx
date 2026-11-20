@@ -252,6 +252,9 @@ export function StudioSampleDesk({
     <div className="space-y-2 rounded border border-[var(--brd-line)] p-2" data-testid="studio-sample-desk">
       <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("katalogKlipStudio")}</p>
       <p className="text-[11px] text-[var(--brd-mute)]">{tr("sampleLead")}</p>
+      <a href="/studio/sample" className="inline-flex min-h-9 items-center text-xs font-semibold text-[var(--brd-amber)] underline-offset-4 hover:underline">
+        {tr("pracowniaSampli")}
+      </a>
       {quota ? <p className="text-[11px] text-[var(--brd-mute)]">{quota}</p> : null}
       <div className="grid grid-cols-3 gap-1">
         {(["create", "mine", "catalog"] as const).map((item) => (

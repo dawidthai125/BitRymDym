@@ -79,6 +79,13 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
 
           <div className="flex flex-wrap gap-4 text-sm">
             <Link
+              href="/studio/sample"
+              prefetch
+              className="font-semibold text-[var(--brd-amber)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+            >
+              Pracownia sampli
+            </Link>
+            <Link
               href="/studio/separator"
               prefetch
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"

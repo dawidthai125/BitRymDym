@@ -41,6 +41,7 @@ import {
   sampleCopyTakeTitle,
   sampleObjectKeyMatches,
   type SampleKind,
+  type SampleLabMeta,
   type SampleStatus,
 } from "@/lib/studio/samples/sample-policy";
 import { wavDurationMs } from "@/lib/studio/samples/sample-synth";
@@ -61,6 +62,14 @@ export type StudioSampleDto = {
   publicListing: boolean | null;
   allowComments: boolean | null;
   shareReady: boolean;
+  /** Sample Lab metadata; null until the lab columns exist or when not set. */
+  sampleType: SampleLabMeta["sampleType"] | null;
+  bpm: number | null;
+  musicalKey: string | null;
+  bars: number | null;
+  source: SampleLabMeta["source"] | null;
+  beatId: string | null;
+  createdAt: string | null;
 };
 
 type SampleRow = {
@@ -113,7 +122,39 @@ function toDto(row: SampleRow, viewerId: string): StudioSampleDto {
     publicListing: null,
     allowComments: null,
     shareReady: false,
+    sampleType: null,
+    bpm: null,
+    musicalKey: null,
+    bars: null,
+    source: null,
+    beatId: null,
+    createdAt: null,
   };
+}
+
+/** Lab metadata in a separate read so a DB without the lab columns still lists samples. */
+async function attachLabMeta(admin: AdminClient, samples: StudioSampleDto[]): Promise<StudioSampleDto[]> {
+  if (samples.length === 0) return samples;
+  const loaded = await admin
+    .from(STUDIO_SAMPLES_TABLE)
+    .select("id, sample_type, bpm, musical_key, bars, source, beat_id, created_at")
+    .in("id", samples.map((sample) => sample.id));
+  if (loaded.error) return samples;
+  const rows = new Map(((loaded.data ?? []) as Array<Record<string, unknown>>).map((row) => [String(row.id), row]));
+  return samples.map((sample) => {
+    const row = rows.get(sample.id);
+    if (!row) return sample;
+    return {
+      ...sample,
+      sampleType: (row.sample_type as SampleLabMeta["sampleType"] | null) ?? null,
+      bpm: row.bpm == null ? null : Number(row.bpm),
+      musicalKey: (row.musical_key as string | null) ?? null,
+      bars: row.bars == null ? null : Number(row.bars),
+      source: (row.source as SampleLabMeta["source"] | null) ?? null,
+      beatId: (row.beat_id as string | null) ?? null,
+      createdAt: (row.created_at as string | null) ?? null,
+    };
+  });
 }
 
 function shareColumnMissing(error: { message?: string } | null, column: string): boolean {
@@ -187,7 +228,7 @@ export async function listMyStudioSamples(
   if (error) return { ok: false, error: SAMPLE_TABLE_UNAVAILABLE };
   return {
     ok: true,
-    samples: await attachShareFlags(admin, ((data ?? []) as SampleRow[]).map((row) => toDto(row, context.userId))),
+    samples: await attachLabMeta(admin, await attachShareFlags(admin, ((data ?? []) as SampleRow[]).map((row) => toDto(row, context.userId)))),
   };
 }
 
@@ -207,7 +248,7 @@ export async function listPublishedStudioSamples(
   if (error) return { ok: false, error: SAMPLE_TABLE_UNAVAILABLE };
   return {
     ok: true,
-    samples: await attachShareFlags(admin, ((data ?? []) as SampleRow[]).map((row) => toDto(row, context.userId))),
+    samples: await attachLabMeta(admin, await attachShareFlags(admin, ((data ?? []) as SampleRow[]).map((row) => toDto(row, context.userId)))),
   };
 }
 
@@ -251,6 +292,8 @@ export async function createStudioSample(
     bytes: Uint8Array;
     declaredContentType: string;
     cap: number;
+    /** Sample Lab metadata (only written when given, so the old desk works without the lab columns). */
+    meta?: SampleLabMeta | null;
   },
   admin: AdminClient = createSupabaseAdminClient(),
   sampleId: string = crypto.randomUUID(),
@@ -331,6 +374,16 @@ export async function createStudioSample(
       content_type: sniffed.sniffedContentType,
       byte_size: input.bytes.byteLength,
       duration_ms: durationMs,
+      ...(input.meta
+        ? {
+            sample_type: input.meta.sampleType,
+            bpm: input.meta.bpm,
+            musical_key: input.meta.musicalKey,
+            bars: input.meta.bars,
+            source: input.meta.source,
+            beat_id: input.meta.beatId,
+          }
+        : {}),
     })
     .select(SELECT_ROW)
     .single();
@@ -341,7 +394,8 @@ export async function createStudioSample(
     }
     return { ok: false, error: SAMPLE_COPY_FAILED, details: ["sample row was not saved"] };
   }
-  return { ok: true, sample: toDto(data as SampleRow, context.userId) };
+  const [created] = await attachLabMeta(admin, [toDto(data as SampleRow, context.userId)]);
+  return { ok: true, sample: created };
 }
 
 export async function deleteStudioSample(

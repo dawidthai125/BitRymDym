@@ -4,8 +4,10 @@ import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premiu
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { maxSamplesForTier } from "@/config/plan-policy";
 import {
+  SAMPLE_FORBIDDEN,
   SAMPLE_INVALID,
   SAMPLE_MAX_BYTES,
+  parseSampleLabMeta,
   sampleUserMessage,
   type SampleKind,
 } from "@/lib/studio/samples/sample-policy";
@@ -77,6 +79,23 @@ export async function POST(request: Request) {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const sampleKind: SampleKind = kind === "effect" ? "effect" : "instrument";
     const tier = (await resolveProductEntitlementForAuthContext(auth)).premiumTier;
+    // Sample Lab: metadata only when the lab sends it; live recording is Silver+ (owner decision 2026-11-20).
+    let meta = null;
+    if (form.get("lab") === "1") {
+      const parsed = parseSampleLabMeta({
+        sampleType: form.get("sampleType"),
+        bpm: form.get("bpm"),
+        musicalKey: form.get("musicalKey"),
+        bars: form.get("bars"),
+        source: form.get("source"),
+        beatId: form.get("beatId"),
+      });
+      if (!parsed.ok) return failure(SAMPLE_INVALID, parsed.details);
+      if (parsed.value.source !== "studio" && tier !== "SILVER" && tier !== "GOLD") {
+        return failure(SAMPLE_FORBIDDEN, ["sample lab needs Silver or Gold"]);
+      }
+      meta = parsed.value;
+    }
     const result = await createStudioSample(auth, {
       title: typeof title === "string" ? title : "",
       kind: sampleKind,
@@ -85,6 +104,7 @@ export async function POST(request: Request) {
       bytes,
       declaredContentType: file.type || "application/octet-stream",
       cap: maxSamplesForTier(tier),
+      meta,
     });
     if (!result.ok) return failure(result.error, result.details);
     return NextResponse.json({ sample: result.sample });

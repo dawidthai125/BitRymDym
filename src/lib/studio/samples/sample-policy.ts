@@ -47,7 +47,90 @@ export const SAMPLE_INSTRUMENTS = [
   { id: "riser", kind: "effect" },
 ] as const;
 
-export type SampleInstrumentId = (typeof SAMPLE_INSTRUMENTS)[number]["id"];
+/** Synth voices of the Studio sample desk (it renders these itself). */
+export type SynthSampleInstrumentId = (typeof SAMPLE_INSTRUMENTS)[number]["id"];
+
+/** Real instruments recorded in the Sample Lab (Silver+). */
+export const LIVE_SAMPLE_INSTRUMENTS = [
+  { id: "acoustic_guitar", kind: "instrument" },
+  { id: "electric_guitar", kind: "instrument" },
+  { id: "live_bass", kind: "instrument" },
+  { id: "keys", kind: "instrument" },
+  { id: "strings", kind: "instrument" },
+  { id: "sax", kind: "instrument" },
+  { id: "trumpet", kind: "instrument" },
+  { id: "flute", kind: "instrument" },
+  { id: "vocal", kind: "instrument" },
+  { id: "perc", kind: "effect" },
+  { id: "drums", kind: "effect" },
+  { id: "fx", kind: "effect" },
+] as const;
+
+export type SampleInstrumentId =
+  | SynthSampleInstrumentId
+  | (typeof LIVE_SAMPLE_INSTRUMENTS)[number]["id"];
+
+const ALL_SAMPLE_INSTRUMENTS: readonly { id: string; kind: SampleKind }[] = [
+  ...SAMPLE_INSTRUMENTS,
+  ...LIVE_SAMPLE_INSTRUMENTS,
+];
+
+/** Sample Lab metadata. */
+export const SAMPLE_TYPES = ["oneshot", "loop", "phrase"] as const;
+export type SampleType = (typeof SAMPLE_TYPES)[number];
+export const SAMPLE_SOURCES = ["studio", "live", "import"] as const;
+export type SampleSource = (typeof SAMPLE_SOURCES)[number];
+export const SAMPLE_BPM_MIN = 40;
+export const SAMPLE_BPM_MAX = 240;
+export const SAMPLE_BARS = [1, 2, 4, 8, 16] as const;
+/** "A2" (one-shot note) or "Am" / "F#" (loop key). */
+const MUSICAL_KEY_RE = /^[A-G]#?(m|-?[0-9])?$/;
+
+export type SampleLabMeta = {
+  sampleType: SampleType;
+  bpm: number | null;
+  musicalKey: string | null;
+  bars: number | null;
+  source: SampleSource;
+  beatId: string | null;
+};
+
+/** Validate optional lab metadata from a form. Unknown or empty fields become null. */
+export function parseSampleLabMeta(input: {
+  sampleType?: unknown;
+  bpm?: unknown;
+  musicalKey?: unknown;
+  bars?: unknown;
+  source?: unknown;
+  beatId?: unknown;
+}): { ok: true; value: SampleLabMeta } | { ok: false; details: string[] } {
+  const details: string[] = [];
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const type = str(input.sampleType) || "oneshot";
+  if (!(SAMPLE_TYPES as readonly string[]).includes(type)) details.push("sample type is invalid");
+  const source = str(input.source) || "studio";
+  if (!(SAMPLE_SOURCES as readonly string[]).includes(source)) details.push("source is invalid");
+  let bpm: number | null = null;
+  if (str(input.bpm)) {
+    bpm = Math.round(Number(str(input.bpm)) * 10) / 10;
+    if (!Number.isFinite(bpm) || bpm < SAMPLE_BPM_MIN || bpm > SAMPLE_BPM_MAX) details.push("bpm is out of range");
+  }
+  const key = str(input.musicalKey) || null;
+  if (key && !MUSICAL_KEY_RE.test(key)) details.push("musical key is invalid");
+  let bars: number | null = null;
+  if (str(input.bars)) {
+    bars = Number(str(input.bars));
+    if (!(SAMPLE_BARS as readonly number[]).includes(bars)) details.push("bars is invalid");
+  }
+  if (type === "loop" && (bpm == null || bars == null)) details.push("a loop needs bpm and bars");
+  const beatId = str(input.beatId) || null;
+  if (beatId && !isSampleUuid(beatId)) details.push("beat id is invalid");
+  if (details.length) return { ok: false, details };
+  return {
+    ok: true,
+    value: { sampleType: type as SampleType, bpm, musicalKey: key, bars: type === "loop" ? bars : null, source: source as SampleSource, beatId },
+  };
+}
 
 export const SAMPLE_TABLE_UNAVAILABLE = "SAMPLE_TABLE_UNAVAILABLE";
 export const SAMPLE_SHARE_OFF = "SAMPLE_SHARE_OFF";
@@ -77,12 +160,12 @@ export function sampleObjectKeyMatches(sampleId: string, objectKey: string): boo
 export function isSampleInstrumentId(value: unknown): value is SampleInstrumentId {
   return (
     typeof value === "string" &&
-    SAMPLE_INSTRUMENTS.some((item) => item.id === value)
+    ALL_SAMPLE_INSTRUMENTS.some((item) => item.id === value)
   );
 }
 
 export function instrumentKind(id: SampleInstrumentId): SampleKind {
-  const found = SAMPLE_INSTRUMENTS.find((item) => item.id === id);
+  const found = ALL_SAMPLE_INSTRUMENTS.find((item) => item.id === id);
   return found?.kind ?? "effect";
 }
 
