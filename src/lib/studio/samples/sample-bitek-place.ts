@@ -47,9 +47,13 @@ export async function previewBitekSamplePlacement(
     throw new AuthError("FORBIDDEN", sampleUserMessage("SAMPLE_FORBIDDEN"));
   }
   let projectKey: string | null = null;
+  // "Whole song" ends with the beat, not with the (longer) empty timeline canvas.
+  let songEndMs = document.project.timelineLengthMs;
   if (document.project.beatId) {
-    const { data: beat } = await admin.from("beats").select("key").eq("id", document.project.beatId).maybeSingle();
+    const { data: beat } = await admin.from("beats").select("key, duration_seconds").eq("id", document.project.beatId).maybeSingle();
     projectKey = (beat?.key as string | null) ?? null;
+    const beatMs = Math.round(Number(beat?.duration_seconds ?? 0) * 1000);
+    if (beatMs > 0) songEndMs = Math.min(songEndMs, beatMs);
   }
   const tier = (await resolveProductEntitlementForAuthContext(context)).premiumTier;
   const plan = planSamplePlacement({
@@ -63,7 +67,7 @@ export async function previewBitekSamplePlacement(
     project: {
       bpm: document.project.tempoBpm,
       key: projectKey,
-      timelineLengthMs: document.project.timelineLengthMs,
+      timelineLengthMs: songEndMs,
       beatsPerBar: document.project.timeSignatureNum || 4,
       markers: (document.markers ?? []).map((m) => ({ kind: m.kind, positionMs: m.positionMs })),
     },
