@@ -18,6 +18,7 @@ import {
   type YoutubeRevision,
   type YoutubeStyleDeps,
 } from "@/lib/beats/ai-beat/youtube-style";
+import type { ReferenceMeasure } from "@/lib/beats/ai-beat/reference-tempo";
 
 const UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files";
 const FILES_BASE = "https://generativelanguage.googleapis.com/v1beta";
@@ -269,6 +270,8 @@ export async function reviseBriefFromVideo(params: {
   note: string;
   /** Date.now() when the whole revise request started. */
   startedAt: number;
+  /** Tempo and key measured from the reference file; a revision keeps them. */
+  measured?: ReferenceMeasure | null;
   deps?: {
     env?: Record<string, string | undefined>;
     fetchFn?: FetchFn;
@@ -282,7 +285,7 @@ export async function reviseBriefFromVideo(params: {
   const describe = d.describe ?? describeBeatStyleFromYouTube;
   const prepare = d.prepare ?? prepareBeatAudioForGemini;
   const left = () => REVISE_TOTAL_BUDGET_MS - REVISE_START_RESERVE_MS - (now() - params.startedAt);
-  const base: YoutubeStyleDeps = { env: d.env, fetchFn: d.fetchFn };
+  const base: YoutubeStyleDeps = { env: d.env, fetchFn: d.fetchFn, measured: params.measured ?? null };
   const revision = { previousBrief: params.previousBrief, note: params.note };
 
   if (left() >= PREPARE_AUDIO_TIMEOUT_MS + MIN_USEFUL_WAIT_MS) {

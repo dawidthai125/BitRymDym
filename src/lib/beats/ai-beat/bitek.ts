@@ -19,6 +19,7 @@ import { requireAdminGenerator, startBeatGeneration } from "@/lib/beats/ai-beat/
 import { measureToneFacts, type ToneFacts } from "@/lib/beats/ai-beat/tone-facts";
 import { descriptionFromYoutubeStyle, normalizeBeatHintBpm } from "@/lib/beats/ai-beat/prompt";
 import { reviseBriefFromVideo } from "@/lib/beats/ai-beat/gemini-audio-compare";
+import type { ReferenceMeasure } from "@/lib/beats/ai-beat/reference-tempo";
 import { parseYouTubeWatchUrl } from "@/lib/beats/ai-beat/youtube-style";
 
 const NOT_WAITING = "Tego bitu nie ma w katalogu oczekujących.";
@@ -221,7 +222,7 @@ export async function talkAboutWaitingBeat(
 export async function reviseWaitingBeat(
   beatId: string,
   note: string,
-  source?: { youtubeUrl?: string | null; brief?: string | null },
+  source?: { youtubeUrl?: string | null; brief?: string | null; measured?: ReferenceMeasure | null },
 ) {
   const startedAt = Date.now();
   const row = await loadWaitingGeneratedBeat(beatId);
@@ -241,6 +242,7 @@ export async function reviseWaitingBeat(
       previousBrief: previous,
       note: cleanNote,
       startedAt,
+      measured: source?.measured ?? null,
     });
     console.log("[bitek] revise path", revised ? (revised.usedAudio ? "video+audio" : "video-only") : "text-only");
     if (revised) {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
+import type { ReferenceMeasure } from "@/lib/beats/ai-beat/reference-tempo";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -43,6 +45,7 @@ export function AdminBeatBitek({
   startClosed = false,
   youtubeUrl = "",
   brief = "",
+  measured = null,
   onRevised,
 }: {
   beatId: string;
@@ -50,6 +53,8 @@ export function AdminBeatBitek({
   youtubeUrl?: string;
   /** English brief that made this beat. */
   brief?: string;
+  /** Tempo/key measured from the reference file; a fix keeps them. */
+  measured?: ReferenceMeasure | null;
   autoReview?: boolean;
   startClosed?: boolean;
   onRevised?: (beatId: string, title?: string, description?: string, bpm?: number | null) => void;
@@ -129,7 +134,7 @@ export function AdminBeatBitek({
       const startRes = await fetch("/api/admin/beats/generate/bitek", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", beatId, note: text, youtubeUrl, brief }),
+        body: JSON.stringify({ action: "revise", beatId, note: text, youtubeUrl, brief, measured }),
       });
       const startJson = await readJson(startRes);
       if (!live.current) return;

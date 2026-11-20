@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { sliceBitekMessages } from "@/lib/beats/ai-beat/bitek-review";
 import { reviseWaitingBeat, talkAboutWaitingBeat } from "@/lib/beats/ai-beat/bitek";
+import { parseReferenceMeasure } from "@/lib/beats/ai-beat/reference-tempo";
 import { isUuid } from "@/lib/beats/audio-validation";
 import {
   beatApiBadRequest,
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
     note?: unknown;
     youtubeUrl?: unknown;
     brief?: unknown;
+    measured?: unknown;
   } | null;
 
   if (!isUuid(body?.beatId)) {
@@ -41,6 +43,7 @@ export async function POST(request: Request) {
       const started = await reviseWaitingBeat(body.beatId, body.note, {
         youtubeUrl: typeof body.youtubeUrl === "string" ? body.youtubeUrl : null,
         brief: typeof body.brief === "string" ? body.brief.slice(0, 1000) : null,
+        measured: parseReferenceMeasure(body.measured),
       });
       return NextResponse.json({ success: true, ...started });
     }

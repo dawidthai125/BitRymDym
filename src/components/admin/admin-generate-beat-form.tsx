@@ -8,6 +8,8 @@ import { AdminBeatBitek } from "@/components/admin/admin-beat-bitek";
 import { AdminBeatPlayButton } from "@/components/admin/admin-beat-play-button";
 import { BrdButton } from "@/components/brand/brd-button";
 import { beatGenerationPercent } from "@/lib/beats/ai-beat/generation-progress";
+import { measureReferenceFile } from "@/lib/beats/ai-beat/reference-measure-browser";
+import type { ReferenceMeasure } from "@/lib/beats/ai-beat/reference-tempo";
 import {
   BEAT_DURATION_CHOICES,
   DEFAULT_BEAT_DURATION,
@@ -24,7 +26,7 @@ function formatLength(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-type Phase = "idle" | "describing" | "starting" | "waiting" | "saving" | "ready";
+type Phase = "idle" | "measuring" | "describing" | "starting" | "waiting" | "saving" | "ready";
 
 export function AdminGenerateBeatForm() {
   const t = useTranslations("admin.adminBeatsGeneratePage");
@@ -40,9 +42,40 @@ export function AdminGenerateBeatForm() {
   const [revised, setRevised] = useState(false);
   const [styleLabel, setStyleLabel] = useState<string | null>(null);
   const [bpmHint, setBpmHint] = useState<number | null>(null);
+  const [measure, setMeasure] = useState<ReferenceMeasure | null>(null);
+  const [measureFile, setMeasureFile] = useState<string | null>(null);
+  const [bpmFromFile, setBpmFromFile] = useState(false);
 
   const generating = phase === "starting" || phase === "waiting" || phase === "saving";
-  const busy = generating || phase === "describing";
+  const busy = generating || phase === "describing" || phase === "measuring";
+
+  async function onReferenceFile(file: File | null) {
+    if (!file || busy) return;
+    setError(null);
+    setMeasure(null);
+    setMeasureFile(file.name);
+    setBpmFromFile(false);
+    setPhase("measuring");
+    try {
+      // Let the "measuring" line paint before the decode blocks the main thread.
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      const parsed = await measureReferenceFile(file);
+      setPhase("idle");
+      if (!parsed) {
+        setError(t("plikNieCzytelny"));
+        return;
+      }
+      setMeasure(parsed);
+      // Unsure only means half/double time is open; the film description may still switch it.
+      if (parsed.bpm != null) {
+        setBpm(String(parsed.bpm));
+        setBpmFromFile(true);
+      }
+    } catch {
+      setPhase("idle");
+      setError(t("plikNieCzytelny"));
+    }
+  }
 
   async function onDescribe() {
     if (busy) return;
@@ -60,7 +93,7 @@ export function AdminGenerateBeatForm() {
       const res = await fetch("/api/admin/beats/generate/style", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, measured: measure }),
       });
       const json = (await res.json()) as {
         success?: boolean;
@@ -69,6 +102,7 @@ export function AdminGenerateBeatForm() {
         style?: string;
         prompt?: string;
         bpmHint?: number | null;
+        measured?: boolean;
       };
       if (!res.ok || !json.success || typeof json.opis !== "string") {
         setPhase("idle");
@@ -93,6 +127,7 @@ export function AdminGenerateBeatForm() {
         hinted != null && hinted >= 60 && hinted <= 180 ? hinted : null;
       setBpmHint(tempo);
       if (tempo != null) setBpm(String(tempo));
+      setBpmFromFile(json.measured === true && tempo != null);
       setStyleLabel(style || null);
       setPhase("idle");
     } catch {
@@ -185,7 +220,9 @@ export function AdminGenerateBeatForm() {
   }
 
   const status =
-    phase === "describing"
+    phase === "measuring"
+      ? t("mierze")
+      : phase === "describing"
       ? t("opisujeStyl")
       : phase === "starting"
         ? t("przygotowuje")
@@ -224,6 +261,29 @@ export function AdminGenerateBeatForm() {
           />
         </label>
         <p className="text-muted-foreground">{t("linkPomoc")}</p>
+        <label className="mt-2 flex flex-col gap-2">
+          <span className="font-medium">{t("plikPola")}</span>
+          <input
+            className={`${fieldClass} file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm`}
+            type="file"
+            accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,.mp3,.wav"
+            disabled={busy}
+            onChange={(event) => {
+              void onReferenceFile(event.target.files?.[0] ?? null);
+              event.target.value = "";
+            }}
+          />
+        </label>
+        <p className="text-muted-foreground">{t("plikPomoc")}</p>
+        {measure ? (
+          <p className="rounded-lg border border-border bg-muted/40 px-3 py-2">
+            {measureFile ? <span className="font-medium">{measureFile}: </span> : null}
+            {measure.sure && measure.bpm != null
+              ? t("zmierzoneTempo", { bpm: measure.bpm })
+              : t("zmierzoneTempoNiepewne", { list: measure.candidates.join(" / ") })}
+            {measure.key ? ` ${t("zmierzonaTonacja", { key: measure.key })}` : ` ${t("tonacjaNieznana")}`}
+          </p>
+        ) : null}
         <div>
           <BrdButton type="button" variant="secondary" disabled={busy} onClick={() => void onDescribe()}>
             {t("opiszStyl")}
@@ -266,7 +326,10 @@ export function AdminGenerateBeatForm() {
             className={fieldClass}
             inputMode="numeric"
             value={bpm}
-            onChange={(event) => setBpm(event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
+            onChange={(event) => {
+              setBpm(event.target.value.replace(/[^\d]/g, "").slice(0, 3));
+              setBpmFromFile(false);
+            }}
             placeholder={t("bpmPuste")}
             disabled={busy}
           />
@@ -299,7 +362,9 @@ export function AdminGenerateBeatForm() {
         {!error && !status && phase !== "ready" && styleLabel ? (
           <span className="text-muted-foreground">
             {t("stylZLinku", { style: styleLabel })}
-            {bpmHint != null ? ` ${t("tempoPodpowiedz", { bpm: bpmHint })}` : null}
+            {bpmHint != null
+              ? ` ${bpmFromFile ? t("tempoZPliku", { bpm: bpmHint }) : t("tempoPodpowiedz", { bpm: bpmHint })}`
+              : null}
           </span>
         ) : null}
       </p>
@@ -324,6 +389,7 @@ export function AdminGenerateBeatForm() {
           autoReview
           youtubeUrl={youtubeUrl.trim()}
           brief={description}
+          measured={measure}
           onRevised={(nextId, title, nextDescription, nextBpm) => {
             setBeatId(nextId);
             if (typeof nextBpm === "number") setBpm(String(nextBpm));

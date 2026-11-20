@@ -181,6 +181,37 @@ describe("describeBeatStyleFromYouTube", () => {
     expect(described.prompt).toContain("Bright crisp top end");
   });
 
+  it("uses the tempo and key measured from the file instead of Gemini's guess", async () => {
+    const fetchFn = mockFetch({
+      output_text: JSON.stringify({ ...JSON.parse(payload.output_text), drums: "Hard 161 BPM kick and snare.", bpm: 161, key: "C minor" }),
+    });
+    const described = await describeBeatStyleFromYouTube(CANONICAL, {
+      skipAuth: true,
+      env: { GEMINI_API_KEY: "k" },
+      fetchFn,
+      measured: { bpm: 81, sure: true, candidates: [81, 162], key: "Am" },
+    });
+    expect(described.bpmHint).toBe(81);
+    expect(described.measured).toBe(true);
+    expect(described.prompt).toContain("81 BPM. Key: A minor.");
+    expect(described.prompt).not.toContain("161");
+    const sent = JSON.parse(String(fetchFn.mock.calls[0]![1].body)) as { input: Array<{ type: string; text?: string }> };
+    const text = sent.input.find((p) => p.type === "text")?.text ?? "";
+    expect(text).toContain("MEASURED from the original audio file: tempo 81 BPM, key A minor.");
+  });
+
+  it("lets Gemini only pick between the tempos the file allows when the tracker is unsure", async () => {
+    const fetchFn = mockFetch({ output_text: JSON.stringify({ ...JSON.parse(payload.output_text), bpm: 161 }) });
+    const described = await describeBeatStyleFromYouTube(CANONICAL, {
+      skipAuth: true,
+      env: { GEMINI_API_KEY: "k" },
+      fetchFn,
+      measured: { bpm: 120, sure: false, candidates: [80, 120], key: null },
+    });
+    // 161 is double of 80.5 → the allowed 80, never a free guess.
+    expect(described.bpmHint).toBe(80);
+  });
+
   it("sends the old brief and the listener note when revising", async () => {
     const fetchFn = mockFetch(payload);
     await describeBeatStyleFromYouTube(

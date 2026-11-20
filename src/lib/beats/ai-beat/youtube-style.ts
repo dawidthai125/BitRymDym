@@ -3,6 +3,11 @@ import {
   sanitizeBeatOpis,
   sanitizeBeatStyle,
 } from "@/lib/beats/ai-beat/prompt";
+import {
+  keyForBrief,
+  resolveReferenceTempo,
+  type ReferenceMeasure,
+} from "@/lib/beats/ai-beat/reference-tempo";
 import { BeatRequestError } from "@/lib/beats/request-error";
 
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
@@ -98,6 +103,8 @@ export type YoutubeStyleDeps = {
   skipAuth?: boolean;
   /** Overrides the default Gemini wait, so a caller can keep a total time budget. */
   timeoutMs?: number;
+  /** Tempo and key measured from the uploaded reference track; they replace Gemini's guess. */
+  measured?: ReferenceMeasure | null;
 };
 
 export type BeatStyleFromYouTube = {
@@ -107,7 +114,20 @@ export type BeatStyleFromYouTube = {
   /** English Stable Audio producer brief. */
   prompt: string;
   bpmHint: number | null;
+  /** True when bpmHint and the key come from the measured file, not from Gemini. */
+  measured?: boolean;
 };
+
+/** Tells Gemini the measured facts so the sound description fits the real tempo and key. */
+export function measuredInstruction(m: ReferenceMeasure | null | undefined): string {
+  if (!m) return "";
+  const parts: string[] = [];
+  if (m.sure && m.bpm != null) parts.push(`tempo ${m.bpm} BPM`);
+  else if (m.candidates.length) parts.push(`tempo is one of ${m.candidates.join(" / ")} BPM (pick the one that matches the groove)`);
+  if (m.key) parts.push(`key ${keyForBrief(m.key)}`);
+  if (!parts.length) return "";
+  return `MEASURED from the original audio file: ${parts.join(", ")}. Use these values for bpm and key; do not estimate them yourself. Describe drums and hat subdivision so they sit at this tempo.`;
+}
 
 /**
  * Public watch URL only. Returns https://www.youtube.com/watch?v=ID
@@ -209,7 +229,12 @@ export async function describeBeatStyleFromYouTube(
         ...(revision?.audio
           ? [{ type: "audio", uri: revision.audio.uri, mime_type: revision.audio.mimeType }]
           : []),
-        { type: "text", text: revision ? `${INSTRUCTION} ${revisionInstruction(revision)}` : INSTRUCTION },
+        {
+          type: "text",
+          text: [INSTRUCTION, measuredInstruction(deps.measured), revision ? revisionInstruction(revision) : ""]
+            .filter(Boolean)
+            .join(" "),
+        },
       ],
       response_format: RESPONSE_FORMAT,
     };
@@ -238,7 +263,7 @@ export async function describeBeatStyleFromYouTube(
       }
       throw new BeatRequestError("Nie udało się opisać stylu. Sprawdź link i spróbuj jeszcze raz.");
     }
-    const parsed = parseStylePayload(textFromGemini(await res.json()), videoId);
+    const parsed = parseStylePayload(textFromGemini(await res.json()), videoId, deps.measured ?? null);
     if (!parsed) throw new BeatRequestError("Nie udało się opisać stylu. Spróbuj innego filmu.");
     return parsed;
   } catch (error) {
@@ -310,7 +335,11 @@ function textFromPart(part: unknown): string | null {
   return null;
 }
 
-function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYouTube | null {
+function parseStylePayload(
+  raw: string | null,
+  videoId: string,
+  measured: ReferenceMeasure | null = null,
+): BeatStyleFromYouTube | null {
   if (!raw) return null;
   const trimmed = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   let parsed: unknown;
@@ -332,10 +361,12 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
     bpm?: unknown;
   };
   const style = sanitizeBeatStyle(scrubEcho(stringOf(row.style), videoId));
-  const bpm = bpmHintOf(row.bpm);
-  const keyText = scrubEcho(stringOf(row.key), videoId).slice(0, 30);
+  const bpm = resolveReferenceTempo(measured, bpmHintOf(row.bpm));
+  const keyText = measured?.key ? keyForBrief(measured.key) : scrubEcho(stringOf(row.key), videoId).slice(0, 30);
   const head = [bpm ? `${bpm} BPM.` : "", keyText ? `Key: ${keyText}.` : ""].filter(Boolean).join(" ");
-  const body = composeProducerOpis(row, videoId);
+  // One tempo in the whole brief: a field that names another BPM would pull Stable Audio off it.
+  const composed = composeProducerOpis(row, videoId);
+  const body = bpm != null ? composed.replace(/\b\d{2,3}\s*BPM\b/gi, `${bpm} BPM`) : composed;
   const withHead = body && head ? `${head} ${body}` : body;
   // Fit the balance clause inside the cap so it is never clipped away.
   const tail = `${MIX_BALANCE} ${GENRE_NEGATIVE}`;
@@ -353,6 +384,7 @@ function parseStylePayload(raw: string | null, videoId: string): BeatStyleFromYo
     opis,
     prompt,
     bpmHint: bpm,
+    ...(measured ? { measured: true } : {}),
   };
 }
 

@@ -910,7 +910,16 @@
       "bitekPopraw": "Zrób nową wersję",
       "bitekNowa": "Nowa wersja powstaje obok. Tej nie kasuję.",
       "bitekGotowa": "Nowa wersja jest w katalogu oczekujących.",
-      "bitekBlad": "Bitek nie odpowiedział."
+      "bitekBlad": "Bitek nie odpowiedział.",
+      "plikPola": "Plik utworu (MP3 albo WAV)",
+      "plikPomoc": "Tempo i tonację mierzy nasz analizator z pliku, nie Gemini. Plik nie wychodzi z komputera, do opisu idą tylko liczby. Wgraj plik przed „Opisz styl”.",
+      "mierze": "Mierzę tempo i tonację z pliku.",
+      "zmierzoneTempo": "tempo {bpm} BPM (zmierzone).",
+      "zmierzoneTempoNiepewne": "tempo {list} BPM. Wybierze je opis z filmu.",
+      "zmierzonaTonacja": "Tonacja {key}.",
+      "tonacjaNieznana": "Tonacji nie udało się pewnie odczytać.",
+      "tempoZPliku": "Tempo z pliku: {bpm} BPM.",
+      "plikNieCzytelny": "Nie udało się odczytać pliku. Wgraj MP3 albo WAV z wyraźną perkusją."
     },
     "adminBeatsWaitingPage": {
       "lista": "← Lista",
@@ -3471,24 +3480,29 @@
       "podgladLiczy": "Liczę podgląd…",
       "kartyTytul": "Analiza mastera",
       "streaming": {
-              "tytul": "Gotowość na streaming",
-              "wynik": "{score}/100",
-              "bitek": "Gotowość na streaming: {score}/100.",
-              "serwis": { "spotify": "Spotify", "youtube": "YouTube", "tidal": "Tidal", "apple": "Apple Music" },
-              "akcja": {
-                "down": "ściszy utwór o {db} dB",
-                "up": "podgłośni utwór o {db} dB",
-                "none": "zagra bez zmiany głośności"
-              },
-              "uwagi": {
-                "ok": "Głośność i szczyt są w normie dla wszystkich serwisów. Nic do poprawy.",
-                "tpOver": "Szczyt {tp} dBTP przekracza bezpieczne {ceiling} dBTP. Po kompresji do MP3/AAC może trzaskać. Zmniejsz głośność mastera o 1 krok.",
-                "loud": "Jest głośno ({lufs} LUFS). Serwisy ściszą utwór o około {down} dB, więc głośność nic nie da, a stracisz dynamikę. Zmniejsz głośność o 1–2 kroki.",
-                "quiet": "Jest cicho ({lufs} LUFS). Część serwisów nie podgłośni utworu, więc zabrzmi słabiej od innych. Zwiększ głośność o 1–2 kroki.",
-                "squashed": "Dynamika jest mocno ściśnięta (PLR {plr}). Zmniejsz „ściśnięcie” albo głośność, żeby bit nie był płaski.",
-                "phase": "Korelacja stereo {corr}: na telefonie albo w mono część brzmienia może zniknąć. Zmniejsz szerokość."
-              }
-            },
+        "tytul": "Gotowość na streaming",
+        "wynik": "{score}/100",
+        "bitek": "Gotowość na streaming: {score}/100.",
+        "serwis": {
+          "spotify": "Spotify",
+          "youtube": "YouTube",
+          "tidal": "Tidal",
+          "apple": "Apple Music"
+        },
+        "akcja": {
+          "down": "ściszy utwór o {db} dB",
+          "up": "podgłośni utwór o {db} dB",
+          "none": "zagra bez zmiany głośności"
+        },
+        "uwagi": {
+          "ok": "Głośność i szczyt są w normie dla wszystkich serwisów. Nic do poprawy.",
+          "tpOver": "Szczyt {tp} dBTP przekracza bezpieczne {ceiling} dBTP. Po kompresji do MP3/AAC może trzaskać. Zmniejsz głośność mastera o 1 krok.",
+          "loud": "Jest głośno ({lufs} LUFS). Serwisy ściszą utwór o około {down} dB, więc głośność nic nie da, a stracisz dynamikę. Zmniejsz głośność o 1–2 kroki.",
+          "quiet": "Jest cicho ({lufs} LUFS). Część serwisów nie podgłośni utworu, więc zabrzmi słabiej od innych. Zwiększ głośność o 1–2 kroki.",
+          "squashed": "Dynamika jest mocno ściśnięta (PLR {plr}). Zmniejsz „ściśnięcie” albo głośność, żeby bit nie był płaski.",
+          "phase": "Korelacja stereo {corr}: na telefonie albo w mono część brzmienia może zniknąć. Zmniejsz szerokość."
+        }
+      },
       "zrobMaster": "Zrób master",
       "masterTrwa": "Robię master na serwerze…",
       "masterKolejka": "Czekam w kolejce…",

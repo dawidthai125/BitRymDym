@@ -910,7 +910,16 @@
       "bitekPopraw": "Make a new version",
       "bitekNowa": "The new version is made beside this one. This one stays.",
       "bitekGotowa": "The new version is in the waiting catalogue.",
-      "bitekBlad": "Bitek did not answer."
+      "bitekBlad": "Bitek did not answer.",
+      "plikPola": "Song file (MP3 or WAV)",
+      "plikPomoc": "Our analyzer measures tempo and key from the file, not Gemini. The file never leaves your computer; only the numbers go to the description. Add the file before “Describe the style”.",
+      "mierze": "Measuring tempo and key from the file.",
+      "zmierzoneTempo": "tempo {bpm} BPM (measured).",
+      "zmierzoneTempoNiepewne": "tempo {list} BPM. The film description picks one.",
+      "zmierzonaTonacja": "Key {key}.",
+      "tonacjaNieznana": "The key could not be read reliably.",
+      "tempoZPliku": "Tempo from the file: {bpm} BPM.",
+      "plikNieCzytelny": "Could not read the file. Upload an MP3 or WAV with clear drums."
     },
     "adminBeatsWaitingPage": {
       "lista": "← List",
@@ -3471,24 +3480,29 @@
       "podgladLiczy": "Computing preview…",
       "kartyTytul": "Master analysis",
       "streaming": {
-              "tytul": "Streaming readiness",
-              "wynik": "{score}/100",
-              "bitek": "Streaming readiness: {score}/100.",
-              "serwis": { "spotify": "Spotify", "youtube": "YouTube", "tidal": "Tidal", "apple": "Apple Music" },
-              "akcja": {
-                "down": "turns the track down by {db} dB",
-                "up": "turns the track up by {db} dB",
-                "none": "plays without a level change"
-              },
-              "uwagi": {
-                "ok": "Loudness and peak are fine for every service. Nothing to fix.",
-                "tpOver": "Peak {tp} dBTP is over the safe {ceiling} dBTP. It can crackle after MP3/AAC encoding. Lower the master loudness by 1 step.",
-                "loud": "It is loud ({lufs} LUFS). Services will turn it down by about {down} dB, so the loudness gains nothing and you lose dynamics. Lower the loudness by 1–2 steps.",
-                "quiet": "It is quiet ({lufs} LUFS). Some services will not turn it up, so it will sound weaker than other tracks. Raise the loudness by 1–2 steps.",
-                "squashed": "Dynamics are heavily squashed (PLR {plr}). Reduce the squash or the loudness so the track is not flat.",
-                "phase": "Stereo correlation {corr}: on a phone or in mono part of the sound may vanish. Reduce the width."
-              }
-            },
+        "tytul": "Streaming readiness",
+        "wynik": "{score}/100",
+        "bitek": "Streaming readiness: {score}/100.",
+        "serwis": {
+          "spotify": "Spotify",
+          "youtube": "YouTube",
+          "tidal": "Tidal",
+          "apple": "Apple Music"
+        },
+        "akcja": {
+          "down": "turns the track down by {db} dB",
+          "up": "turns the track up by {db} dB",
+          "none": "plays without a level change"
+        },
+        "uwagi": {
+          "ok": "Loudness and peak are fine for every service. Nothing to fix.",
+          "tpOver": "Peak {tp} dBTP is over the safe {ceiling} dBTP. It can crackle after MP3/AAC encoding. Lower the master loudness by 1 step.",
+          "loud": "It is loud ({lufs} LUFS). Services will turn it down by about {down} dB, so the loudness gains nothing and you lose dynamics. Lower the loudness by 1–2 steps.",
+          "quiet": "It is quiet ({lufs} LUFS). Some services will not turn it up, so it will sound weaker than other tracks. Raise the loudness by 1–2 steps.",
+          "squashed": "Dynamics are heavily squashed (PLR {plr}). Reduce the squash or the loudness so the track is not flat.",
+          "phase": "Stereo correlation {corr}: on a phone or in mono part of the sound may vanish. Reduce the width."
+        }
+      },
       "zrobMaster": "Make the master",
       "masterTrwa": "Mastering on the server…",
       "masterKolejka": "Waiting in the queue…",
