@@ -118,7 +118,7 @@ export default async function AdminIndexPage() {
           <AdminStat label={t("masteryMiesiac")} value={`${people.mastersMonth} · ${exportCount}`} />
         </div>
 
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
+        <div className="grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)] [&>section]:min-w-0">
           <section>
             <div className="mb-4 flex items-baseline justify-between gap-3">
               <SectionLabel>{t("bityPlatformy")}</SectionLabel>
