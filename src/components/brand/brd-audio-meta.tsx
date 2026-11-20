@@ -61,7 +61,7 @@ export function BrdAudioMeta({
   return (
     <p
       className={cn(
-        "flex min-w-0 flex-wrap items-center gap-x-0 truncate text-[11px] leading-relaxed text-[var(--brd-mute)]",
+        "flex min-w-0 flex-wrap items-center gap-x-0 truncate text-xs leading-relaxed text-[var(--brd-ink-soft)]",
         className,
       )}
     >
@@ -99,7 +99,7 @@ export function BrdAudioTime({
   return (
     <span
       className={cn(
-        "brd-meta shrink-0 text-[10px] tabular-nums text-[var(--brd-mute)]",
+        "brd-meta shrink-0 text-xs tabular-nums text-[var(--brd-ink-soft)]",
         className,
       )}
     >
@@ -134,7 +134,7 @@ export function BrdAudioStateLabel({ state, className }: BrdAudioStateProps) {
   return (
     <span
       className={cn(
-        "brd-meta text-[9px] uppercase tracking-[0.14em]",
+        "brd-meta text-xs uppercase tracking-[0.14em]",
         state === "recording"
           ? "text-[var(--brd-audio-rec)]"
           : state === "error"

@@ -234,7 +234,7 @@ export function BrdTakePreviewRail({
       </div>
 
       <div className="space-y-2">
-        <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           {tr("bit")}
         </p>
         <Waveform
@@ -249,7 +249,7 @@ export function BrdTakePreviewRail({
       </div>
 
       <div className="space-y-2">
-        <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           {tr("nagranie")}
         </p>
         <Waveform

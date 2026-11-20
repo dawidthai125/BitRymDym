@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { toggleBeatFavoriteAction } from "@/lib/beats/favorite-actions";
 
@@ -43,9 +43,12 @@ export function BeatCatalogRow({
   const router = useRouter();
   const [saved, setSaved] = useState(favorited);
   const [saving, setSaving] = useState(false);
-  useEffect(() => {
+  // Follow a new `favorited` prop without an effect (React: adjust state during render).
+  const [favoritedProp, setFavoritedProp] = useState(favorited);
+  if (favoritedProp !== favorited) {
+    setFavoritedProp(favorited);
     setSaved(favorited);
-  }, [favorited]);
+  }
   const {
     track,
     phase,
@@ -143,7 +146,7 @@ export function BeatCatalogRow({
 
         <Link href={`/beat/${beat.id}`} className="min-w-0 space-y-0.5">
           {featured ? (
-            <p className="brd-meta text-[9px] uppercase tracking-[0.16em] text-[var(--brd-green)]">
+            <p className="brd-meta text-xs uppercase tracking-[0.16em] text-[var(--brd-green)]">
               {t("wyrozniony")}
             </p>
           ) : null}
@@ -218,7 +221,7 @@ export function BeatCatalogRow({
           />
           <Link href={`/beat/${beat.id}`} className="min-w-0 flex-1 space-y-0.5">
             {featured ? (
-              <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-green)]">
+              <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-green)]">
                 {t("wyrozniony")}
               </p>
             ) : null}

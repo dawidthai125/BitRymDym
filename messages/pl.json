@@ -1350,17 +1350,20 @@
       "anulujIZalogujSie": "Anuluj i zaloguj się"
     },
     "forgotPasswordPage": {
+      "metaTitle": "Nie pamiętasz hasła",
       "resetHasla": "Reset hasła",
       "podajEMailPowiazany": "Podaj e-mail powiązany z kontem. Wyślemy link do ustawienia nowego hasła.",
       "wrocDoLogowania": "Wróć do logowania"
     },
     "signInPage": {
+      "metaTitle": "Logowanie",
       "zalogujSie": "Zaloguj się",
       "zalogujSieAbyKorzystac": "Zaloguj się, aby korzystać ze studia i swoich nagrań.",
       "nieMaszKonta": "Nie masz konta?",
       "zalozKonto": "Załóż konto"
     },
     "signUpPage": {
+      "metaTitle": "Załóż konto",
       "zalozKonto": "Załóż konto",
       "zakladaszKontoTworcyPo": "Zakładasz konto twórcy. Po rejestracji potwierdź swój adres e-mail.",
       "maszJuzKonto": "Masz już konto?",

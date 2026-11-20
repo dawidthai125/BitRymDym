@@ -877,7 +877,7 @@ export function RecordingPanel({
           </div>
 
           <div className="space-y-2">
-            <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+            <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
               {tr("przebiegBitu")}
             </p>
             <Waveform
@@ -890,7 +890,7 @@ export function RecordingPanel({
           </div>
 
           <div className="space-y-2">
-            <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+            <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
               {tr("przebiegMikrofonu")}
             </p>
             <BrdLiveMicWaveform bars={mic.bars} progress={recProgress} />

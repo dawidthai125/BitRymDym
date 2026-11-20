@@ -362,7 +362,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
         <audio ref={audioRef} preload="none" className="hidden" />
 
         <div className="space-y-2">
-          <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+          <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
             {t("bit")}
           </p>
           <Waveform

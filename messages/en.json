@@ -1350,17 +1350,20 @@
       "anulujIZalogujSie": "Cancel and sign in"
     },
     "forgotPasswordPage": {
+      "metaTitle": "Forgot password",
       "resetHasla": "Password reset",
       "podajEMailPowiazany": "Enter the email linked to your account. We will send you a link to set a new password.",
       "wrocDoLogowania": "Back to sign-in"
     },
     "signInPage": {
+      "metaTitle": "Sign in",
       "zalogujSie": "Sign in",
       "zalogujSieAbyKorzystac": "Sign in to use the studio and your recordings.",
       "nieMaszKonta": "Don''t have an account?",
       "zalozKonto": "Create account"
     },
     "signUpPage": {
+      "metaTitle": "Create account",
       "zalozKonto": "Create account",
       "zakladaszKontoTworcyPo": "You are creating a creator account. After signing up, confirm your email address.",
       "maszJuzKonto": "Already have an account?",

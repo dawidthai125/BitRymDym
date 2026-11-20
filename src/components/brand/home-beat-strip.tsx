@@ -95,7 +95,7 @@ function HomeBeatRow({
 
         <Link href={`/beat/${beat.id}`} className="min-w-0 space-y-0.5">
           {featured ? (
-            <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-green)]">
+            <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-green)]">
               {t("polecane")}
             </p>
           ) : null}

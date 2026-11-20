@@ -6,6 +6,11 @@ import { AuthThemeBar } from "@/components/site/auth-theme-bar";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("auth.forgotPasswordPage");
+  return { title: t("metaTitle") };
+}
+
 export default async function ForgotPasswordPage() {
   const t = await getTranslations("auth.forgotPasswordPage");
   const context = await getCurrentProfile();

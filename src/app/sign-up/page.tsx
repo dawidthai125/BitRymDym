@@ -9,6 +9,11 @@ import { getCurrentProfile } from "@/lib/auth/session";
 
 type PageProps = { searchParams?: Promise<{ next?: string | string[] }> };
 
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("auth.signUpPage");
+  return { title: t("metaTitle") };
+}
+
 export default async function SignUpPage({ searchParams }: PageProps) {
   const t = await getTranslations("auth.signUpPage");
   const params = searchParams ? await searchParams : {};

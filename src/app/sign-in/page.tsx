@@ -11,6 +11,11 @@ import { MAINTENANCE_HEADER } from "@/lib/site/maintenance-gate";
 
 type PageProps = { searchParams?: Promise<{ next?: string | string[] }> };
 
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("auth.signInPage");
+  return { title: t("metaTitle") };
+}
+
 export default async function SignInPage({ searchParams }: PageProps) {
   const t = await getTranslations("auth.signInPage");
   const tm = await getTranslations("maintenance.signIn");
