@@ -40,6 +40,8 @@ import {
   normalizeSampleTitle,
   sampleCopyTakeTitle,
   sampleObjectKeyMatches,
+  SAMPLE_DOWNLOAD_BLOCKED,
+  parseSampleCopyTakeTitle,
   type SampleKind,
   type SampleLabMeta,
   type SampleStatus,
@@ -798,4 +800,44 @@ export async function reviewStudioSample(
     return { ok: false, error: SAMPLE_COPY_FAILED, details: ["sample was not marked published"] };
   }
   return { ok: true, status: "PUBLISHED", catalogAssetId };
+}
+
+/**
+ * Download/export guard for takes: a private copy of SOMEONE ELSE'S catalog sample
+ * (title "smp:<id>") may be played and mixed in a project, but never handed out as a file.
+ * Copies of the user's own samples stay downloadable.
+ */
+export async function assertTakeIsNotForeignSampleCopy(
+  takeId: string,
+  userId: string,
+  admin: AdminClient = createSupabaseAdminClient(),
+): Promise<void> {
+  const { data: take } = await admin.from("takes").select("title, owner_id").eq("id", takeId).maybeSingle();
+  const sampleId = parseSampleCopyTakeTitle((take as { title?: string | null } | null)?.title);
+  if (!sampleId) return;
+  const { data: sample } = await admin.from(STUDIO_SAMPLES_TABLE).select("owner_id").eq("id", sampleId).maybeSingle();
+  if (sample && (sample as { owner_id: string }).owner_id === userId) return;
+  throw new AuthError("FORBIDDEN", SAMPLE_DOWNLOAD_BLOCKED);
+}
+
+/**
+ * Bytes of a sample for in-page listening (no storage URL leaves the server).
+ * Owner, moderator or a PUBLISHED sample only.
+ */
+export async function readStudioSampleForListening(
+  actor: { userId: string; moderator: boolean },
+  sampleId: string,
+  admin: AdminClient = createSupabaseAdminClient(),
+): Promise<SampleSuccess<{ bytes: Uint8Array; contentType: string }> | SampleFailure> {
+  if (!isSampleUuid(sampleId)) return { ok: false, error: SAMPLE_NOT_FOUND };
+  const row = await loadOwnedOrPublic(admin, sampleId);
+  if (row === "missing") return { ok: false, error: SAMPLE_TABLE_UNAVAILABLE };
+  if (!row) return { ok: false, error: SAMPLE_NOT_FOUND };
+  const allowed =
+    row.owner_id === actor.userId || actor.moderator || (row.status === "PUBLISHED" && row.catalog_asset_id != null);
+  if (!allowed) return { ok: false, error: SAMPLE_FORBIDDEN };
+  if (!sampleObjectKeyMatches(row.id, row.object_key)) return { ok: false, error: SAMPLE_INVALID };
+  const file = await admin.storage.from(BEAT_AUDIO_BUCKET).download(row.object_key);
+  if (file.error || !file.data) return { ok: false, error: SAMPLE_COPY_FAILED };
+  return { ok: true, bytes: new Uint8Array(await file.data.arrayBuffer()), contentType: row.content_type };
 }

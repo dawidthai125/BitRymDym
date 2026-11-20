@@ -31,7 +31,8 @@ export async function GET(
         { status },
       );
     }
-    return NextResponse.json({ url: result.url });
+    // Access is checked above; the player gets a same-origin stream, never the storage URL.
+    return NextResponse.json({ url: `/api/studio/samples/${sampleId}/stream` });
   } catch (error) {
     if (error instanceof AuthError) {
       const status = error.code === "UNAUTHENTICATED" ? 401 : 403;

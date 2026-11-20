@@ -4,6 +4,7 @@
  */
 
 import "server-only";
+import { assertTakeIsNotForeignSampleCopy } from "@/lib/studio/samples/sample-service";
 
 import { E3_RENDER_JOBS_ENABLED } from "@/config/audio-render";
 import {
@@ -89,6 +90,10 @@ export async function createTakeExportJobFor(
   }
   const tier = renderTierForTakeExportQuality(quality);
 
+  if (typeof input.takeId === "string" && input.takeId.length >= 8) {
+    // Before any artifact reuse: catalog sample copies are never exported as files.
+    await assertTakeIsNotForeignSampleCopy(input.takeId, context.userId);
+  }
   if (typeof input.takeId !== "string" || input.takeId.length < 8) {
     throw new RenderJobDomainError("Invalid takeId.", "INVALID");
   }

@@ -1,4 +1,5 @@
 import "server-only";
+import { assertTakeIsNotForeignSampleCopy } from "@/lib/studio/samples/sample-service";
 
 import {
   TAKE_AUDIO_BUCKET,
@@ -40,6 +41,8 @@ export async function createOwnTakeDownloadSignedUrlFor(
   params: { takeId: string },
 ): Promise<TakeDownloadResult> {
   const admin = createSupabaseAdminClient();
+  // A copy of someone else's catalog sample is usable in Studio but never downloadable.
+  await assertTakeIsNotForeignSampleCopy(params.takeId, context.userId, admin);
 
   const { data: take, error } = await admin
     .from("takes")

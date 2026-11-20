@@ -324,6 +324,17 @@ export function catalogDurationSeconds(durationMs: number): number {
  */
 export const NOT_SAMPLE_COPY_TAKE = "title.is.null,title.not.like.smp:*";
 
+/** Sample id behind a sample-copy take title ("smp:<id>"), or null for a normal take. */
+export function parseSampleCopyTakeTitle(title: string | null | undefined): string | null {
+  if (!title || !title.startsWith("smp:")) return null;
+  const id = title.slice(4);
+  return isSampleUuid(id) ? id.toLowerCase() : null;
+}
+
+/** Catalog samples are for use in songs, not for taking home as files. */
+export const SAMPLE_DOWNLOAD_BLOCKED =
+  "Sampla z katalogu nie można pobrać ani wyeksportować. Możesz go używać w swoich projektach.";
+
 export function sampleCopyTakeTitle(sampleId: string): string {
   return `smp:${sampleId.toLowerCase()}`;
 }
