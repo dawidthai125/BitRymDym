@@ -18,6 +18,11 @@ function formatDownloadedAt(iso: string, tag = "pl-PL"): string {
   });
 }
 
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("account.accountDownloadsPage");
+  return { title: t("mojePobrane") };
+}
+
 export default async function MyDownloadsPage() {
   const tl = await getLibText();
   const t = await getTranslations("account.accountDownloadsPage");

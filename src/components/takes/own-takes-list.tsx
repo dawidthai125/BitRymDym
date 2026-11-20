@@ -175,7 +175,7 @@ export function OwnTakesList({
         </p>
       ) : null}
       {variant === "archive" ? (
-        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           {items.length}{" "}
           {tl(items.length === 1 ? "wpis" : items.length < 5 ? "wpisy" : "wpisów")} {t("dziennikSesji")}
         </p>
@@ -199,7 +199,7 @@ export function OwnTakesList({
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   {variant === "archive" ? (
-                    <span className="brd-meta text-[10px] tabular-nums text-[var(--brd-amber)]">
+                    <span className="brd-meta text-xs tabular-nums text-[var(--brd-amber)]">
                       #{tl(String(items.length - index).padStart(2, "0"))}
                     </span>
                   ) : (
@@ -273,12 +273,12 @@ export function OwnTakesList({
                 ) : null}
                 {variant === "archive" ? (
                   <>
-                    <p className="brd-meta text-[11px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+                    <p className="brd-meta text-xs uppercase tracking-[0.12em] text-[var(--brd-mute)]">
                       {tl(labelTakeStatus(take.displayStatus))}
                       {" · "}
                       {tl(labelRecordingMode(take.recordingMode))}
                     </p>
-                    <p className="brd-meta text-[10px] text-[var(--brd-mute)]">
+                    <p className="brd-meta text-xs text-[var(--brd-mute)]">
                       {t("utworzono")}{" "}{tl(formatWhen(take.createdAt, tag))}
                       {" · "}
                       {t("wygasa")}{" "}{tl(formatWhen(take.expiresAt, tag))}

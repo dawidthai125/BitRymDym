@@ -410,7 +410,7 @@ export function MixPanel({
         <h2 className="brd-display text-lg font-semibold tracking-tight">
           {tr("miksIMaster")}
         </h2>
-        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           {tr("podgladNaZywoEksport")}
         </p>
       </div>
@@ -719,7 +719,7 @@ export function MixPanel({
       </div>
 
       <div className="min-w-0 space-y-3 border-t border-[var(--brd-line)] pt-3">
-        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           {tr("eksport")}
         </p>
         <p className="text-xs text-[var(--brd-mute)] text-pretty">

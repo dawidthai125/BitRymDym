@@ -38,12 +38,12 @@ export function BrdInputMonitor({
       aria-atomic="true"
     >
       <div className="flex items-baseline justify-between gap-2">
-        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           {t("mikrofon")}
         </p>
         <p
           className={cn(
-            "brd-meta text-[11px] uppercase tracking-[0.12em]",
+            "brd-meta text-xs uppercase tracking-[0.12em]",
             danger
               ? "text-[var(--brd-audio-rec)]"
               : level === "good"

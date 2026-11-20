@@ -53,7 +53,7 @@ export function BrdPlaybackTools({
         {muted ? t("wlacz") : t("wycisz")}
       </button>
       <label className="flex min-w-[7.5rem] max-w-[12rem] flex-1 flex-col gap-1 text-[var(--brd-mute)]">
-        <span className="brd-meta text-[10px] uppercase tracking-[0.14em]">{t("glosnosc")}</span>
+        <span className="brd-meta text-xs uppercase tracking-[0.14em]">{t("glosnosc")}</span>
         <input
           type="range"
           min={0}

@@ -222,7 +222,7 @@ export function BrdTakePreviewRail({
       <audio ref={takeRef} preload="none" className="hidden" />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           {tr("podglad")}{" "}{tl(beatTitle)}
         </p>
         <BrdAudioTime
@@ -289,11 +289,11 @@ export function BrdTakePreviewRail({
           onRate={setRate}
         >
           <label className="flex min-w-[7rem] flex-1 flex-col gap-1 text-[var(--brd-mute)]">
-            <span className="brd-meta text-[10px] uppercase tracking-[0.14em]">{tr("glosnoscBitu")}</span>
+            <span className="brd-meta text-xs uppercase tracking-[0.14em]">{tr("glosnoscBitu")}</span>
             <input type="range" min={0} max={1} step={0.01} value={beatMix} disabled={!ready} aria-label={tr("glosnoscBitu")} onChange={(event) => setBeatMix(Number(event.target.value))} className="brd-scrub h-11" />
           </label>
           <label className="flex min-w-[7rem] flex-1 flex-col gap-1 text-[var(--brd-mute)]">
-            <span className="brd-meta text-[10px] uppercase tracking-[0.14em]">{tr("glosnoscNagrania")}</span>
+            <span className="brd-meta text-xs uppercase tracking-[0.14em]">{tr("glosnoscNagrania")}</span>
             <input type="range" min={0} max={1} step={0.01} value={takeMix} disabled={!ready} aria-label={tr("glosnoscNagrania")} onChange={(event) => setTakeMix(Number(event.target.value))} className="brd-scrub h-11" />
           </label>
         </BrdPlaybackTools>

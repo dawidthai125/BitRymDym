@@ -182,7 +182,7 @@ export function StudioBeatPicker({
       >
         <header className="flex items-center justify-between gap-3 border-b border-[var(--brd-line)] px-4 py-3">
           <div>
-            <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+            <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
               {tr("bitWProjekcie")}
             </p>
             <h2 className="brd-display text-lg font-semibold text-[var(--brd-ink)]">

@@ -34,7 +34,7 @@ export default async function AdminWaitingBeatsPage() {
         >
           {t("lista")}
         </Link>
-        <p className="brd-meta text-[11px] uppercase tracking-[0.2em] text-[var(--brd-mute)]">
+        <p className="brd-meta text-xs uppercase tracking-[0.2em] text-[var(--brd-mute)]">
           {ta("panelAdministracyjny")}
         </p>
         <h1 className="brd-display text-3xl font-semibold tracking-tight">{t("tytul")}</h1>

@@ -102,7 +102,7 @@ export default async function AdminIndexPage() {
               <div className="overflow-x-auto border border-[var(--brd-line)]">
                 <table className="w-full min-w-[36rem] text-left text-sm">
                   <thead className="border-b border-[var(--brd-line)] bg-[var(--brd-paper-deep)]/50">
-                    <tr className="brd-meta text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+                    <tr className="brd-meta text-xs uppercase tracking-[0.12em] text-[var(--brd-mute)]">
                       <th className="px-3 py-3 font-medium">{t("tytul")}</th>
                       <th className="px-3 py-3 font-medium">{t("status")}</th>
                       <th className="px-3 py-3 font-medium">{t("audio")}</th>
@@ -219,7 +219,7 @@ function AdminStat({ label, value }: { label: string; value: string }) {
   const tl = useLibText();
   return (
     <div className="bg-[var(--brd-paper)] px-4 py-4">
-      <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+      <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
         {tl(label)}
       </p>
       <p className="mt-2 text-2xl text-[var(--brd-ink)]">{tl(value)}</p>

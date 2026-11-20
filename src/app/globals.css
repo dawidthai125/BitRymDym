@@ -264,7 +264,7 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
 
 .brd-session-step {
   font-family: var(--font-meta), ui-monospace, monospace;
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--brd-mute);

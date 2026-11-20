@@ -39,7 +39,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        "brd-hw-label inline-flex items-center gap-1.5 px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--brd-ink-soft)]",
+        "brd-hw-label inline-flex items-center gap-1.5 px-2 py-0.5 font-mono text-xs uppercase tracking-[0.08em] text-[var(--brd-ink-soft)]",
         className,
       )}
       data-tone={tone}

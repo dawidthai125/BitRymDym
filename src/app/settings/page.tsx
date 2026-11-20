@@ -147,7 +147,7 @@ export default async function SettingsPage() {
               >
                 <h2
                   id={headingId}
-                  className="brd-meta text-[11px] uppercase tracking-[0.18em] text-[var(--brd-mute)]"
+                  className="brd-meta text-xs uppercase tracking-[0.18em] text-[var(--brd-mute)]"
                 >
                   {tc(group.group)}
                 </h2>

@@ -346,7 +346,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             >
               {tl(title)}
             </p>
-            <p className="brd-meta mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--brd-mute)]">
+            <p className="brd-meta mt-1 text-xs uppercase tracking-[0.16em] text-[var(--brd-mute)]">
               {t("nagrywanie")}
             </p>
           </div>

@@ -266,7 +266,7 @@ export function BeatsCatalogClient({
                 {tl(liveResultStatus)}
               </div>
               <p
-                className="brd-meta text-[11px] tracking-[0.04em] text-[var(--brd-mute)]"
+                className="brd-meta text-xs tracking-[0.04em] text-[var(--brd-ink-soft)]"
                 aria-hidden
               >
                 {tCount("count", { count: filtered.length })}
@@ -457,7 +457,7 @@ function FilterPanel({
 
       <FilterGroup title={t("bpm")}>
         <div className="space-y-2 pt-0.5">
-          <p className="brd-meta text-[11px] tabular-nums text-[var(--brd-ink-soft)]">
+          <p className="brd-meta text-xs tabular-nums text-[var(--brd-ink-soft)]">
             {bpmMin}–{bpmMax}
           </p>
           <label className="block">

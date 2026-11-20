@@ -758,7 +758,7 @@ export function RecordingPanel({
           <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
             {tr("quickTake")}
           </p>
-          <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+          <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
             {tr("limit")}{" "}{tl(formatDurationSeconds(maxSeconds))}
             {tl(isAuthenticated ? tr("konto") : tr("gosc"))}
           </p>
@@ -871,7 +871,7 @@ export function RecordingPanel({
                 {tl(formatDurationSeconds(maxSeconds))}
               </span>
             </div>
-            <span className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+            <span className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
               {tr("limitSesji")}
             </span>
           </div>

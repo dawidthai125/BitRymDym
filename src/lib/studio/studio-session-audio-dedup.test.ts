@@ -71,7 +71,8 @@ describe("WAVE 1-B studio session + waveform share", () => {
 
   it("resolveStudioWaveformPeaks with dedup ON fetches Storage once per sourceKey", async () => {
     vi.stubEnv("NEXT_PUBLIC_BRD_AUDIO_SESSION_DEDUP", "1");
-    const OfflineAudioContext = vi.fn().mockImplementation(() => ({
+    const OfflineAudioContext = vi.fn().mockImplementation(function () {
+    return {
       decodeAudioData: async () => ({
         numberOfChannels: 1,
         sampleRate: 44_100,
@@ -82,7 +83,8 @@ describe("WAVE 1-B studio session + waveform share", () => {
         copyToChannel: () => undefined,
       }),
       close: async () => undefined,
-    }));
+    };
+  });
     vi.stubGlobal("OfflineAudioContext", OfflineAudioContext);
 
     let fetches = 0;
@@ -113,7 +115,8 @@ describe("WAVE 1-B studio session + waveform share", () => {
   });
 
   it("studioPeaksFromAudioBytes does not fetch", async () => {
-    const OfflineAudioContext = vi.fn().mockImplementation(() => ({
+    const OfflineAudioContext = vi.fn().mockImplementation(function () {
+    return {
       decodeAudioData: async (_buf: ArrayBuffer) => ({
         numberOfChannels: 1,
         sampleRate: 44_100,
@@ -124,7 +127,8 @@ describe("WAVE 1-B studio session + waveform share", () => {
         copyToChannel: () => undefined,
       }),
       close: async () => undefined,
-    }));
+    };
+  });
     vi.stubGlobal("OfflineAudioContext", OfflineAudioContext);
 
     const bytes = new Uint8Array(32).buffer;

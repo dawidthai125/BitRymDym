@@ -25,7 +25,8 @@ import { studioWaveformSourceKey } from "@/lib/studio/studio-waveform-geometry";
 import { STUDIO_WAVEFORM_PEAKS_PER_SECOND } from "@/lib/studio/studio-waveform-peaks";
 
 function stubDecode() {
-  const OfflineAudioContext = vi.fn().mockImplementation(() => ({
+  const OfflineAudioContext = vi.fn().mockImplementation(function () {
+    return {
     decodeAudioData: async () => ({
       numberOfChannels: 1,
       sampleRate: 44_100,
@@ -36,7 +37,8 @@ function stubDecode() {
       copyToChannel: () => undefined,
     }),
     close: async () => undefined,
-  }));
+  };
+  });
   vi.stubGlobal("OfflineAudioContext", OfflineAudioContext);
 }
 

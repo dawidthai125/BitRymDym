@@ -125,7 +125,7 @@ export default async function AdminBeatsListPage({ searchParams }: PageProps) {
     <main className="mx-auto flex w-full max-w-[var(--brd-max-ops)] flex-col gap-6 px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-16">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--brd-line)] pb-6">
         <div className="space-y-2">
-          <p className="brd-meta text-[11px] uppercase tracking-[0.2em] text-[var(--brd-mute)]">
+          <p className="brd-meta text-xs uppercase tracking-[0.2em] text-[var(--brd-mute)]">
             {t("panelAdministracyjny")}
           </p>
           <h1 className="brd-display text-3xl font-semibold tracking-tight">

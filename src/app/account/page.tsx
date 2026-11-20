@@ -47,6 +47,11 @@ import { labelAccountLevel } from "@/lib/ui/labels";
 /**
  * Artist Studio — action space, not a developer debug panel.
  */
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("account.accountPage");
+  return { title: t("twojeStudio") };
+}
+
 export default async function AccountPage({
   searchParams,
 }: {
