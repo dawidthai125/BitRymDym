@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { removeCatalogSampleAction, updateCatalogSampleAction } from "@/app/sampel/actions";
 import { SampleTalk } from "@/components/community/sample-talk";
@@ -46,12 +46,20 @@ export function SampleCatalog({
   isAdmin,
   instruments,
   types,
+  showTalk = true,
+  showFilters = true,
+  extra,
 }: {
   items: CatalogSampleItem[];
   signedIn: boolean;
   isAdmin: boolean;
   instruments: Option[];
   types: Option[];
+  /** Ratings and comments (catalog only; a private draft has none). */
+  showTalk?: boolean;
+  showFilters?: boolean;
+  /** Extra controls per row, e.g. "Do katalogu" in the admin generator. */
+  extra?: (item: CatalogSampleItem) => ReactNode;
 }) {
   const t = useTranslations("community.sampleCatalog");
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -65,6 +73,7 @@ export function SampleCatalog({
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [instrumentFilter, setInstrumentFilter] = useState<string>("all");
   const [editing, setEditing] = useState<string | null>(null);
+  const [removed, setRemoved] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     const map = blobs.current;
@@ -78,10 +87,11 @@ export function SampleCatalog({
     () =>
       items.filter(
         (s) =>
+          !removed.has(s.id) &&
           (typeFilter === "all" || s.sampleType === typeFilter) &&
           (instrumentFilter === "all" || s.instrument === instrumentFilter),
       ),
-    [items, typeFilter, instrumentFilter],
+    [items, typeFilter, instrumentFilter, removed],
   );
   const typeCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -156,6 +166,7 @@ export function SampleCatalog({
 
   return (
     <div className="space-y-4">
+      {showFilters ? (
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("filtr")}>
         {[
           { id: "all", label: t("wszystkie") },
@@ -192,6 +203,7 @@ export function SampleCatalog({
           </select>
         ) : null}
       </div>
+      ) : null}
 
       {error ? (
         <p className="text-sm text-[var(--brd-rec)]" role="alert">
@@ -280,7 +292,8 @@ export function SampleCatalog({
               )}
 
               <div className="mt-1 flex flex-wrap items-center gap-3 pl-12 sm:pl-[5.25rem]">
-                <SampleTalk id={s.id} signedIn={signedIn} />
+                {showTalk ? <SampleTalk id={s.id} signedIn={signedIn} /> : null}
+                {extra ? extra(s) : null}
                 {isAdmin ? (
                   <button
                     type="button"
@@ -303,6 +316,7 @@ export function SampleCatalog({
                       setCurrent(null);
                     }
                     setEditing(null);
+                    setRemoved((prev) => new Set(prev).add(s.id));
                   }}
                 />
               ) : null}

@@ -84,6 +84,7 @@ export default async function AdminLayout({
       { href: "/admin/beats/new", label: t("nowyBit") },
       { href: "/admin/beats/generate", label: t("generator") },
       { href: "/admin/beats/waiting", label: t("oczekujace") },
+      { href: "/admin/samples/generate", label: t("generatorSampli") },
     );
   }
   if (showModeration) {
