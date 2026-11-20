@@ -2,6 +2,7 @@ import "server-only";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { AuthError } from "@/lib/auth/session";
+import { parseCatalogCopyTakeTitle } from "@/lib/catalog/catalog-originals";
 import type { AuthContext } from "@/lib/auth/types";
 import {
   BEAT_AUDIO_BUCKET,
@@ -813,10 +814,22 @@ export async function assertTakeIsNotForeignSampleCopy(
   admin: AdminClient = createSupabaseAdminClient(),
 ): Promise<void> {
   const { data: take } = await admin.from("takes").select("title, owner_id").eq("id", takeId).maybeSingle();
-  const sampleId = parseSampleCopyTakeTitle((take as { title?: string | null } | null)?.title);
-  if (!sampleId) return;
-  const { data: sample } = await admin.from(STUDIO_SAMPLES_TABLE).select("owner_id").eq("id", sampleId).maybeSingle();
-  if (sample && (sample as { owner_id: string }).owner_id === userId) return;
+  const title = (take as { title?: string | null } | null)?.title;
+  const sampleId = parseSampleCopyTakeTitle(title);
+  if (sampleId) {
+    const { data: sample } = await admin.from(STUDIO_SAMPLES_TABLE).select("owner_id").eq("id", sampleId).maybeSingle();
+    if (sample && (sample as { owner_id: string }).owner_id === userId) return;
+    throw new AuthError("FORBIDDEN", SAMPLE_DOWNLOAD_BLOCKED);
+  }
+  // A published catalog sample is copied as "catalog:<asset>:<project>": same rule.
+  const catalog = parseCatalogCopyTakeTitle(title);
+  if (!catalog) return;
+  const { data: published } = await admin
+    .from(STUDIO_SAMPLES_TABLE)
+    .select("owner_id")
+    .eq("catalog_asset_id", catalog.catalogAssetId)
+    .maybeSingle();
+  if (!published || (published as { owner_id: string }).owner_id === userId) return;
   throw new AuthError("FORBIDDEN", SAMPLE_DOWNLOAD_BLOCKED);
 }
 

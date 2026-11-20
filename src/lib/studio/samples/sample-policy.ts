@@ -325,7 +325,7 @@ export function catalogDurationSeconds(durationMs: number): number {
  * the private take copies a sample makes when it goes on the timeline (title "smp:<id>").
  * Those copies are Studio plumbing, not recordings: they must not show in "Moje nagrania".
  */
-export const NOT_SAMPLE_COPY_TAKE = "title.is.null,title.not.like.smp:*";
+export const NOT_SAMPLE_COPY_TAKE = "title.is.null,and(title.not.like.smp:*,title.not.like.catalog:*)";
 
 /** Sample id behind a sample-copy take title ("smp:<id>"), or null for a normal take. */
 export function parseSampleCopyTakeTitle(title: string | null | undefined): string | null {

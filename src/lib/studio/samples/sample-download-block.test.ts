@@ -14,7 +14,7 @@ describe("catalog samples cannot be downloaded", () => {
     expect(parseSampleCopyTakeTitle(null)).toBeNull();
     expect(parseSampleCopyTakeTitle("Mój wers")).toBeNull();
     expect(parseSampleCopyTakeTitle("smp:nie-uuid")).toBeNull();
-    expect(NOT_SAMPLE_COPY_TAKE).toBe("title.is.null,title.not.like.smp:*");
+    expect(NOT_SAMPLE_COPY_TAKE).toBe("title.is.null,and(title.not.like.smp:*,title.not.like.catalog:*)");
   });
 
   it("guards take download and export before any file is handed out", () => {
