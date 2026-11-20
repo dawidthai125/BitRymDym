@@ -921,7 +921,7 @@
       "tempoZPliku": "Tempo from the file: {bpm} BPM.",
       "plikNieCzytelny": "Could not read the file. Upload an MP3 or WAV with clear drums.",
       "autoPrzycisk": "Make a beat from the link",
-      "autoPomoc": "One button: Gemini listens to the film, 2 variants are generated at once, Gemini compares each with the film twice, the better one stays and the other is removed. A weak result gets one automatic fix. Takes 3–5 minutes and uses 2–3 generations.",
+      "autoPomoc": "One button: Gemini listens to the film, 2 variants are generated at once, Gemini compares each with the film twice, one after another; the better one stays and the other is removed. A weak result gets one automatic fix. Takes 5–8 minutes and uses 2–3 generations. Nothing is removed without a verdict.",
       "autoBlad": "Could not make a beat from the link. Check the link and try again.",
       "autoKrok": {
         "describe": "Gemini listens to the film and writes the description",

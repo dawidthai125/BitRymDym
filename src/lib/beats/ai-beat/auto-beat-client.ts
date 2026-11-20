@@ -104,11 +104,11 @@ async function judgeOnce(beatId: string, youtubeUrl: string, targetKey: string |
   }
 }
 
-/** One more try after a pause: an unjudged variant would be thrown away (live: Gemini 429). */
+/** One more try after a minute: Gemini's per-minute limit clears by then (live: 429). */
 async function judge(beatId: string, youtubeUrl: string, targetKey: string | null): Promise<BeatVerdict | null> {
   const first = await judgeOnce(beatId, youtubeUrl, targetKey);
   if (first) return first;
-  await new Promise((r) => setTimeout(r, 15_000));
+  await new Promise((r) => setTimeout(r, 60_000));
   return judgeOnce(beatId, youtubeUrl, targetKey);
 }
 
@@ -156,10 +156,14 @@ export async function runAutoBeat(params: {
   if (!candidates.length) throw new Error("generate_failed");
 
   onProgress({ step: "judge" });
-  await Promise.all(candidates.map(async (c) => { c.verdict = await judge(c.beatId, youtubeUrl, targetKey); }));
+  // One after another: parallel judging hit Gemini's per-minute limit live.
+  for (const c of candidates) c.verdict = await judge(c.beatId, youtubeUrl, targetKey);
   let winner = pickWinner(candidates);
   const removed: string[] = [];
-  for (const c of candidates) if (c !== winner && (await discard(c.beatId))) removed.push(c.beatId);
+  // Nothing is removed on a guess: only when every variant has a verdict.
+  if (candidates.every((c) => c.verdict)) {
+    for (const c of candidates) if (c !== winner && (await discard(c.beatId))) removed.push(c.beatId);
+  }
 
   let revised = false;
   if (winner.verdict && needsAutoRevision(winner.verdict)) {
@@ -192,10 +196,12 @@ export async function runAutoBeat(params: {
       };
       candidates.push(fixed);
       revised = true;
-      const better = pickWinner([winner, fixed]);
-      const loser = better === winner ? fixed : winner;
-      if (await discard(loser.beatId)) removed.push(loser.beatId);
-      winner = better;
+      if (fixed.verdict) {
+        const better = pickWinner([winner, fixed]);
+        const loser = better === winner ? fixed : winner;
+        if (await discard(loser.beatId)) removed.push(loser.beatId);
+        winner = better;
+      }
     } catch {
       // The first winner stays; a failed revision costs nothing more.
     }

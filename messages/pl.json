@@ -921,7 +921,7 @@
       "tempoZPliku": "Tempo z pliku: {bpm} BPM.",
       "plikNieCzytelny": "Nie udało się odczytać pliku. Wgraj MP3 albo WAV z wyraźną perkusją.",
       "autoPrzycisk": "Zrób bit z linku",
-      "autoPomoc": "Jeden przycisk: Gemini słucha filmu, powstają 2 warianty naraz, Gemini porównuje każdy z filmem dwa razy, lepszy zostaje, słabszy znika. Przy słabym wyniku jest jedna automatyczna poprawka. Trwa 3–5 minut i zużywa 2–3 generowania.",
+      "autoPomoc": "Jeden przycisk: Gemini słucha filmu, powstają 2 warianty naraz, Gemini po kolei porównuje każdy z filmem dwa razy, lepszy zostaje, słabszy znika. Przy słabym wyniku jest jedna automatyczna poprawka. Trwa 5–8 minut i zużywa 2–3 generowania. Bez oceny nic nie jest usuwane.",
       "autoBlad": "Nie udało się zrobić bitu z linku. Sprawdź link i spróbuj jeszcze raz.",
       "autoKrok": {
         "describe": "Gemini słucha filmu i pisze opis",
