@@ -318,6 +318,14 @@ export async function resetAdminUserUsageAction(input: {
 
     const admin = createSupabaseAdminClient();
     const resetAt = new Date().toISOString();
+    const { data: before } = await admin
+      .from("usage_resets")
+      .select("metric, reset_at")
+      .eq("user_id", target.value)
+      .in("metric", metrics);
+    const previous = Object.fromEntries(
+      metrics.map((m) => [m, (before ?? []).find((row) => row.metric === m)?.reset_at ?? null]),
+    );
     const { error } = await admin.from("usage_resets").upsert(
       metrics.map((metric) => ({ user_id: target.value, metric, reset_at: resetAt, reset_by: context.userId })),
       { onConflict: "user_id,metric" },
@@ -330,16 +338,18 @@ export async function resetAdminUserUsageAction(input: {
       .in("id", [context.userId, target.value]);
     const numberOf = (id: string) =>
       toSnapshotNumber((numbers ?? []).find((row) => row.id === id)?.user_number as number | null | undefined);
-    await admin.from("admin_audit_events").insert({
+    // old_value is NOT NULL in admin_audit_events: keep the previous reset times there.
+    const { error: auditError } = await admin.from("admin_audit_events").insert({
       actor_user_id: context.userId,
       target_user_id: target.value,
       actor_user_number: numberOf(context.userId),
       target_user_number: numberOf(target.value),
       action: "USAGE_RESET",
-      old_value: null,
+      old_value: { previous },
       new_value: { metrics, resetAt },
       metadata: { panel: "admin_user_desk" },
     });
+    if (auditError) console.error("[admin] usage reset audit failed", auditError.message);
 
     revalidatePath(`/admin/users/${target.value}`);
     return { success: true, error: null, resetAt };

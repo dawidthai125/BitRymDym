@@ -9,19 +9,31 @@ import type { AdminDeskLimit } from "@/lib/admin/user-desk";
 import { cn } from "@/lib/utils";
 
 /** Quota lines of one user with per-metric and "all" resets (each asks once before acting). */
-export function AdminUserLimits({ userId, limits }: { userId: string; limits: AdminDeskLimit[] }) {
+export function AdminUserLimits({ userId, limits: initial }: { userId: string; limits: AdminDeskLimit[] }) {
   const t = useTranslations("admin.userDesk");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [asking, setAsking] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
+  // Local copy so a reset shows at once; the server render replaces it on refresh.
+  const [limits, setLimits] = useState(initial);
+  const [source, setSource] = useState(initial);
+  if (source !== initial) {
+    setSource(initial);
+    setLimits(initial);
+  }
 
   function reset(metric: string) {
     setAsking(null);
     start(async () => {
       const res = await resetAdminUserUsageAction({ targetUserId: userId, metric });
       setNotice(res.success ? { ok: true, text: t("wyzerowano") } : { ok: false, text: res.error ?? t("bladZerowania") });
-      if (res.success) router.refresh();
+      if (res.success) {
+        setLimits((rows) =>
+          rows.map((row) => (metric === "all" || row.metric === metric ? { ...row, used: 0, resetAt: res.resetAt } : row)),
+        );
+        router.refresh();
+      }
     });
   }
 
