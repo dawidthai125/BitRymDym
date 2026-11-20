@@ -175,7 +175,7 @@ export async function deleteGeminiFile(
 export type MasterAudio = { bytes: Uint8Array; contentType: string };
 
 /** Active MASTER of a beat, as the level reader in bitek.ts finds it. */
-async function loadMasterAudio(beatId: string): Promise<MasterAudio> {
+export async function loadMasterAudio(beatId: string): Promise<MasterAudio> {
   const [{ createSupabaseAdminClient }, { downloadBeatAudioObjectBytes }] = await Promise.all([
     import("@/lib/supabase/admin"),
     import("@/lib/beats/audio-transport"),

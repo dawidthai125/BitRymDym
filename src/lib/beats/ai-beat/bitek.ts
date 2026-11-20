@@ -20,6 +20,7 @@ import { measureToneFacts, type ToneFacts } from "@/lib/beats/ai-beat/tone-facts
 import { descriptionFromYoutubeStyle, normalizeBeatHintBpm } from "@/lib/beats/ai-beat/prompt";
 import { reviseBriefFromVideo } from "@/lib/beats/ai-beat/gemini-audio-compare";
 import type { ReferenceMeasure } from "@/lib/beats/ai-beat/reference-tempo";
+import type { StableAudioSampling } from "@/lib/beats/ai-beat/stability";
 import { parseYouTubeWatchUrl } from "@/lib/beats/ai-beat/youtube-style";
 
 const NOT_WAITING = "Tego bitu nie ma w katalogu oczekujących.";
@@ -222,7 +223,13 @@ export async function talkAboutWaitingBeat(
 export async function reviseWaitingBeat(
   beatId: string,
   note: string,
-  source?: { youtubeUrl?: string | null; brief?: string | null; measured?: ReferenceMeasure | null },
+  source?: {
+    youtubeUrl?: string | null;
+    brief?: string | null;
+    measured?: ReferenceMeasure | null;
+    /** Seed and strictness of the beat being fixed: only the prompt changes. */
+    sampling?: Partial<StableAudioSampling>;
+  },
 ) {
   const startedAt = Date.now();
   const row = await loadWaitingGeneratedBeat(beatId);
@@ -259,6 +266,7 @@ export async function reviseWaitingBeat(
     description,
     duration: nearestBeatDuration(row.duration_seconds),
     bpm,
+    sampling: source?.sampling,
   });
   return { ...started, description, bpm };
 }

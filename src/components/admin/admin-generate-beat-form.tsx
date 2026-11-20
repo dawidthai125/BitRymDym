@@ -8,6 +8,7 @@ import { AdminBeatBitek } from "@/components/admin/admin-beat-bitek";
 import { AdminBeatPlayButton } from "@/components/admin/admin-beat-play-button";
 import { BrdButton } from "@/components/brand/brd-button";
 import { beatGenerationPercent } from "@/lib/beats/ai-beat/generation-progress";
+import { runAutoBeat, type AutoProgress, type AutoResult } from "@/lib/beats/ai-beat/auto-beat-client";
 import { measureReferenceFile } from "@/lib/beats/ai-beat/reference-measure-browser";
 import type { ReferenceMeasure } from "@/lib/beats/ai-beat/reference-tempo";
 import {
@@ -26,7 +27,7 @@ function formatLength(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-type Phase = "idle" | "measuring" | "describing" | "starting" | "waiting" | "saving" | "ready";
+type Phase = "idle" | "measuring" | "describing" | "starting" | "waiting" | "saving" | "auto" | "ready";
 
 export function AdminGenerateBeatForm() {
   const t = useTranslations("admin.adminBeatsGeneratePage");
@@ -45,9 +46,45 @@ export function AdminGenerateBeatForm() {
   const [measure, setMeasure] = useState<ReferenceMeasure | null>(null);
   const [measureFile, setMeasureFile] = useState<string | null>(null);
   const [bpmFromFile, setBpmFromFile] = useState(false);
+  const [autoProgress, setAutoProgress] = useState<AutoProgress | null>(null);
+  const [autoResult, setAutoResult] = useState<AutoResult | null>(null);
 
   const generating = phase === "starting" || phase === "waiting" || phase === "saving";
-  const busy = generating || phase === "describing" || phase === "measuring";
+  const busy = generating || phase === "describing" || phase === "measuring" || phase === "auto";
+
+  async function onAuto() {
+    if (busy) return;
+    const url = youtubeUrl.trim();
+    if (!url) {
+      setError(t("linkWymagany"));
+      return;
+    }
+    setError(null);
+    setBeatId(null);
+    setAutoResult(null);
+    setRevised(false);
+    setPhase("auto");
+    try {
+      const result = await runAutoBeat({
+        youtubeUrl: url,
+        durationSeconds: duration,
+        measured: measure,
+        onProgress: setAutoProgress,
+      });
+      setAutoResult(result);
+      setDescription(result.description);
+      if (result.bpm != null) setBpm(String(result.bpm));
+      setStyleLabel(result.style);
+      setReadyTitle(result.winner.title || "Bit BitRymDym");
+      setBeatId(result.winner.beatId);
+      setPhase("ready");
+    } catch {
+      setPhase("idle");
+      setError(t("autoBlad"));
+    } finally {
+      setAutoProgress(null);
+    }
+  }
 
   async function onReferenceFile(file: File | null) {
     if (!file || busy) return;
@@ -284,11 +321,31 @@ export function AdminGenerateBeatForm() {
             {measure.key ? ` ${t("zmierzonaTonacja", { key: measure.key })}` : ` ${t("tonacjaNieznana")}`}
           </p>
         ) : null}
-        <div>
+        <div className="flex flex-wrap gap-2">
+          <BrdButton type="button" disabled={busy} onClick={() => void onAuto()}>
+            {t("autoPrzycisk")}
+          </BrdButton>
           <BrdButton type="button" variant="secondary" disabled={busy} onClick={() => void onDescribe()}>
             {t("opiszStyl")}
           </BrdButton>
         </div>
+        <p className="text-muted-foreground">{t("autoPomoc")}</p>
+        {autoProgress ? (
+          <ol className="flex flex-col gap-1 rounded-lg border border-border bg-muted/40 px-3 py-2" aria-live="polite">
+            {(["describe", "generate", "judge", "revise", "judgeRevision"] as const).map((step) => {
+              const order = ["describe", "generate", "judge", "revise", "judgeRevision", "done"];
+              const now = order.indexOf(autoProgress.step);
+              const at = order.indexOf(step);
+              if ((step === "revise" || step === "judgeRevision") && now < at) return null;
+              return (
+                <li key={step} className={at === now ? "font-medium" : at < now ? "text-muted-foreground" : "text-muted-foreground/60"}>
+                  {at < now ? "✓ " : at === now ? "… " : "· "}
+                  {t(`autoKrok.${step}`)}
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
       </div>
 
       <label className="flex flex-col gap-2 text-sm">
@@ -382,6 +439,7 @@ export function AdminGenerateBeatForm() {
         </div>
       ) : null}
       {revised ? <p className="text-sm text-muted-foreground">{t("bitekNowa")}</p> : null}
+      {phase === "ready" && autoResult ? <AutoVerdict result={autoResult} /> : null}
       {!error && phase === "ready" && beatId ? (
         <AdminBeatBitek
           key={beatId}
@@ -400,6 +458,32 @@ export function AdminGenerateBeatForm() {
         />
       ) : null}
     </form>
+  );
+}
+
+function AutoVerdict({ result }: { result: AutoResult }) {
+  const t = useTranslations("admin.adminBeatsGeneratePage");
+  const v = result.winner.verdict;
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-border px-3 py-3 text-sm">
+      <p className="font-medium">
+        {t("autoWynik", { title: result.winner.title, label: result.winner.label })}
+        {v ? ` ${t("autoOcena", { score: v.geminiOverall })}` : ` ${t("autoBezOceny")}`}
+      </p>
+      <ul className="flex flex-col gap-1 text-muted-foreground">
+        {result.candidates.map((c) => (
+          <li key={c.beatId}>
+            {c.label}: {c.title} · {c.cfgScale != null ? t("autoScisle", { cfg: c.cfgScale }) : t("autoDomyslnie")}
+            {c.verdict ? ` · ${c.verdict.geminiOverall}/10` : ""}
+            {c.verdict?.keyMeasured ? ` · ${c.verdict.keyMeasured}${c.verdict.keyOk === false ? " ✗" : c.verdict.keyOk ? " ✓" : ""}` : ""}
+            {c.beatId === result.winner.beatId ? ` · ${t("autoZostaje")}` : result.removed.includes(c.beatId) ? ` · ${t("autoUsuniety")}` : ""}
+          </li>
+        ))}
+      </ul>
+      {v?.same.length ? <p>{t("autoZgodne")}: {v.same.join(", ")}</p> : null}
+      {v?.different.length ? <p>{t("autoRozne")}: {v.different.join(", ")}</p> : null}
+      {result.revised ? <p className="text-muted-foreground">{t("autoPoprawka")}</p> : null}
+    </div>
   );
 }
 

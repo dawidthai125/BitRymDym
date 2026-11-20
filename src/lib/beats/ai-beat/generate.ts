@@ -9,8 +9,10 @@ import {
   isStableAudioGenerationId,
   parseStabilityAudio,
   parseStabilityStart,
+  randomStableAudioSeed,
   stableAudioResultUrl,
   type StabilityPoll,
+  type StableAudioSampling,
 } from "@/lib/beats/ai-beat/stability";
 import type { BeatDuration } from "@/lib/beats/ai-beat/prompt";
 
@@ -38,7 +40,9 @@ export async function startBeatGeneration(params: {
   description: string;
   duration: BeatDuration;
   bpm: number | null;
-}): Promise<{ generationId: string; title: string; style: string; opis: string }> {
+  /** Fixed seed (a revision reuses the winner's) and prompt strictness; omitted = model defaults. */
+  sampling?: Partial<StableAudioSampling>;
+}): Promise<{ generationId: string; title: string; style: string; opis: string; seed: number; cfgScale: number | null }> {
   await requireAdminGenerator();
   let rewritten: { title: string; prompt: string; style: string; opis: string };
   try {
@@ -59,6 +63,10 @@ export async function startBeatGeneration(params: {
   form.set("model", STABLE_AUDIO_MODEL);
   form.set("duration", String(params.duration));
   form.set("output_format", "wav");
+  const seed = params.sampling?.seed ?? randomStableAudioSeed();
+  form.set("seed", String(seed));
+  const cfgScale = params.sampling?.cfgScale ?? null;
+  if (cfgScale != null) form.set("cfg_scale", String(cfgScale));
 
   let response: Response;
   try {
@@ -83,6 +91,8 @@ export async function startBeatGeneration(params: {
     title: rewritten.title,
     style: rewritten.style,
     opis: rewritten.opis,
+    seed,
+    cfgScale,
   };
 }
 

@@ -9,6 +9,31 @@ export const STABLE_AUDIO_START_URL =
 
 export const STABLE_AUDIO_MODEL = "stable-audio-3";
 
+/**
+ * Sampling options of stable-audio-3 (docs.stability.ai text-to-audio): seed 0 = random,
+ * cfg_scale 1–25 (default 1; higher follows the prompt more strictly). steps is already at its max (8).
+ */
+export const STABLE_AUDIO_SEED_MAX = 4_294_967_294;
+export const STABLE_AUDIO_CFG_MIN = 1;
+export const STABLE_AUDIO_CFG_MAX = 25;
+
+export type StableAudioSampling = { seed: number | null; cfgScale: number | null };
+
+/** Untrusted request values → safe sampling options (null = model default). */
+export function normalizeStableAudioSampling(seed: unknown, cfgScale: unknown): StableAudioSampling {
+  const s = typeof seed === "number" && Number.isInteger(seed) && seed >= 1 && seed <= STABLE_AUDIO_SEED_MAX ? seed : null;
+  const c =
+    typeof cfgScale === "number" && Number.isFinite(cfgScale) && cfgScale >= STABLE_AUDIO_CFG_MIN && cfgScale <= STABLE_AUDIO_CFG_MAX
+      ? Math.round(cfgScale * 10) / 10
+      : null;
+  return { seed: s, cfgScale: c };
+}
+
+/** A fresh non-zero seed, so a later revision can reuse it and change only the prompt. */
+export function randomStableAudioSeed(): number {
+  return 1 + Math.floor(Math.random() * (STABLE_AUDIO_SEED_MAX - 1));
+}
+
 const GENERATION_ID = /^[a-f0-9]{64}$/;
 
 export function isStableAudioGenerationId(value: unknown): value is string {

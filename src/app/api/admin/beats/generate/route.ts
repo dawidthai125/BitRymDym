@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { startBeatGeneration } from "@/lib/beats/ai-beat/generate";
+import { normalizeStableAudioSampling } from "@/lib/beats/ai-beat/stability";
 import {
   normalizeBeatDescription,
   normalizeBeatDuration,
@@ -15,7 +16,7 @@ export const runtime = "nodejs";
 export const maxDuration = 45;
 
 /**
- * POST JSON { description, durationSeconds, bpm? }
+ * POST JSON { description, durationSeconds, bpm?, seed?, cfgScale? }
  * Starts one Stable Audio instrumental. The file arrives on the result route.
  */
 export async function POST(request: Request) {
@@ -23,6 +24,8 @@ export async function POST(request: Request) {
     description?: unknown;
     durationSeconds?: unknown;
     bpm?: unknown;
+    seed?: unknown;
+    cfgScale?: unknown;
   } | null;
 
   const description = normalizeBeatDescription(body?.description);
@@ -35,13 +38,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    const started = await startBeatGeneration({ description, duration, bpm });
+    const sampling = normalizeStableAudioSampling(body?.seed, body?.cfgScale);
+    const started = await startBeatGeneration({ description, duration, bpm, sampling });
     return NextResponse.json({
       success: true,
       generationId: started.generationId,
       title: started.title,
       style: started.style,
       opis: started.opis,
+      seed: started.seed,
+      cfgScale: started.cfgScale,
     });
   } catch (error) {
     return beatAudioApiErrorResponse(error, "api/admin/beats/generate");

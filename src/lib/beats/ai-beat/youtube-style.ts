@@ -282,7 +282,7 @@ export async function describeBeatStyleFromYouTube(
   }
 }
 
-function textFromGemini(body: unknown): string | null {
+export function textFromGemini(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
   const row = body as {
     output_text?: unknown;
