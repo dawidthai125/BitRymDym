@@ -1486,7 +1486,7 @@
       "metaTitle": "Beats",
       "metaDescription": "The BitRymDym beat catalogue — listen, choose and record.",
       "znajdzSwojBit": "Find your beat.",
-      "bitowSluchajPotemNagraj": "{v0} beats · listen, then record",
+      "bitowSluchajPotemNagraj": "{v0, plural, one {# beat} other {# beats}} · listen, then record",
       "cichoKatalogWDrodze": "Quiet · catalogue on its way",
       "czystaListaBitowBez": "A clean list of beats. No banners, no hustle.",
       "programWindows": "Windows app. Mac coming soon. An account to download and sign in.",
