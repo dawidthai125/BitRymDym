@@ -56,7 +56,7 @@ export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
         <p className="font-poster text-sm font-bold uppercase tracking-[var(--tape-tracking-label)] text-tape-cream-soft">
           {t("brdDeckA")}
         </p>
-        <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-tape-mute">
+        <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.14em] text-tape-mute">
           <span
             aria-hidden="true"
             className={cn(

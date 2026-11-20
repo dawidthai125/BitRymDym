@@ -19,8 +19,11 @@ import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { presentBeats } from "@/lib/ui/demo-beats";
 import type { PremiumTier } from "@/types/premium";
+import { cn } from "@/lib/utils";
 
 const HOME_TIERS: PremiumTier[] = ["FREE", "BRONZE", "SILVER", "GOLD"];
+/** Rows shown on the plan cards; the full table stays one click away. */
+const CARD_ROW_IDS = ["take", "sesje", "sciezki", "stemy", "mastery", "pobieranie"] as const;
 const TIER_LABEL: Record<PremiumTier, string> = {
   FREE: "Free",
   BRONZE: "Bronze",
@@ -317,10 +320,6 @@ export default async function HomePage() {
         {/* CATALOG — side A tracklist */}
         <section aria-labelledby="home-katalog" className="border-b border-tape-line">
           <div className={`${wrap} py-[var(--tape-section-y)]`}>
-            <CommunityShelf current="beats" tone="tape" />
-            <p className="mb-6 max-w-prose text-sm leading-relaxed text-tape-cream-soft sm:text-base">
-              {community("pitch")}
-            </p>
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b-4 border-tape-cream pb-3">
               <h2
                 id="home-katalog"
@@ -335,7 +334,11 @@ export default async function HomePage() {
                 {t("pelnySpis")}{" "}<span aria-hidden="true">→</span>
               </Link>
             </div>
+            <CommunityShelf current="beats" tone="tape" />
             <HomeTracklist beats={strip} />
+            <p className="mt-6 max-w-prose border-l-2 border-tape-amber pl-4 text-sm leading-relaxed text-tape-cream-soft sm:text-base">
+              {community("pitch")}
+            </p>
           </div>
         </section>
 
@@ -403,26 +406,31 @@ export default async function HomePage() {
             >
               {t("jakToDziala")}
             </h2>
-            <HomePromoFilm />
-            <ol className="mt-10 grid gap-y-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4 lg:gap-x-0">
-              {steps.map((step, i) => (
-                <li key={step.title} className="relative lg:pr-8">
-                  <div aria-hidden="true" className="mb-4 flex items-center gap-3">
-                    <span className="size-3 rounded-full border-2 border-tape-amber bg-tape-soot" />
-                    <span className="h-px flex-1 bg-[repeating-linear-gradient(90deg,var(--tape-line-strong)_0_6px,transparent_6px_10px)]" />
-                  </div>
-                  <p className="font-poster text-6xl font-black leading-none text-tape-amber tabular-nums">
-                    {i + 1}
-                  </p>
-                  <h3 className="mt-3 font-poster text-2xl font-bold uppercase leading-none text-tape-cream">
-                    {step.title}
-                  </h3>
-                  <p className="mt-2 max-w-[36ch] text-sm leading-relaxed text-tape-cream-soft sm:text-base">
-                    {step.body}
-                  </p>
-                </li>
-              ))}
-            </ol>
+            <div className="mt-8 grid gap-10 lg:grid-cols-12 lg:items-start lg:gap-12">
+              <div className="lg:sticky lg:top-24 lg:col-span-7">
+                <HomePromoFilm />
+              </div>
+              <ol className="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:col-span-5 lg:grid-cols-1 lg:gap-y-5">
+                {steps.map((step, i) => (
+                  <li
+                    key={step.title}
+                    className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-3 border-b border-tape-line pb-5 last:border-0"
+                  >
+                    <p className="font-poster text-4xl font-black leading-none text-tape-amber tabular-nums">
+                      {i + 1}
+                    </p>
+                    <div>
+                      <h3 className="font-poster text-xl font-bold uppercase leading-none text-tape-cream sm:text-2xl">
+                        {step.title}
+                      </h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-tape-cream-soft sm:text-base">
+                        {step.body}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
             <p className="mt-8 text-sm text-tape-cream-soft sm:text-base">
               <Link href="/jak-nagrac" className="underline underline-offset-4 hover:text-tape-cream" data-testid="home-limits-license-link">
                 {t("limityILicencja")}
@@ -448,7 +456,55 @@ export default async function HomePage() {
               </strong>
               {t("szczegolyHoldICo")}
             </p>
-            <OverflowXScrollRegion className="mt-8 overflow-x-auto border border-tape-line" ariaLabel={t("planTabelaAria")}>
+            <ul
+              aria-label={t("planNajwazniejsze")}
+              className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+              data-testid="home-plan-cards"
+            >
+              {HOME_TIERS.map((tier) => {
+                const price = PLAN_POLICY[tier].price;
+                const save = yearlySavingPercent(price);
+                return (
+                  <li
+                    key={tier}
+                    className={cn(
+                      "flex flex-col rounded-[var(--tape-r-panel)] border bg-tape-panel p-5",
+                      tier === "GOLD" ? "border-tape-amber" : "border-tape-line-strong",
+                    )}
+                  >
+                    <p className="font-poster text-3xl font-black uppercase leading-none text-tape-cream">
+                      {TIER_LABEL[tier]}
+                    </p>
+                    <p className="mt-3 font-poster text-4xl font-black leading-none text-tape-amber">
+                      {price.monthlyPln == null ? t("planCenaFree") : money.format(price.monthlyPln)}{" "}
+                      <span className="font-sans text-base font-normal text-tape-cream-soft">
+                        {price.monthlyPln == null ? t("planBezOplat") : t("planMies")}
+                      </span>
+                    </p>
+                    <p className="mt-1 min-h-5 text-sm text-tape-cream-soft">
+                      {price.monthlyPln != null && save
+                        ? t("planRokTaniej", { y: money.format(price.yearlyPln ?? 0), n: save })
+                        : null}
+                    </p>
+                    <dl className="mt-4 divide-y divide-tape-line border-t border-tape-line text-sm">
+                      {planRows
+                        .filter((row) => (CARD_ROW_IDS as readonly string[]).includes(row.id))
+                        .map((row) => (
+                          <div key={row.id} className="flex items-baseline justify-between gap-3 py-2">
+                            <dt className="text-tape-cream-soft">{row.label}</dt>
+                            <dd className="text-right font-medium text-tape-cream">{row.cell(tier)}</dd>
+                          </div>
+                        ))}
+                    </dl>
+                  </li>
+                );
+              })}
+            </ul>
+            <details className="mt-6">
+              <summary className="inline-flex min-h-11 cursor-pointer items-center gap-2 font-mono text-sm uppercase tracking-[0.08em] text-tape-amber hover:underline">
+                {t("planWszystkie", { n: planRows.length })}
+              </summary>
+            <OverflowXScrollRegion className="mt-4 overflow-x-auto border border-tape-line" ariaLabel={t("planTabelaAria")}>
               <table className="w-full min-w-[44rem] text-left text-sm text-tape-cream" data-testid="home-plan-board">
                 <caption className="sr-only">{t("planTabelaAria")}</caption>
                 <thead className="border-b border-tape-line bg-tape-panel">
@@ -493,6 +549,7 @@ export default async function HomePage() {
               </li>
               <li>{t("planGosc", { s: GUEST_POLICY.previewSeconds })}</li>
             </ul>
+            </details>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/premium" className={ctaPrimary}>
                 {t("szczegolyPremium")}
