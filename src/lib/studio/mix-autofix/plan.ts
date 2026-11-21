@@ -133,6 +133,10 @@ type State = {
   masterGainDb: number;
 };
 
+/** Master gain stays inside this loudness window (LUFS) when autofix moves it. */
+const MASTER_QUIET_FLOOR_LUFS = -24;
+const MASTER_LOUD_CEIL_LUFS = -14;
+
 const VOCALS: readonly StudioTrackRole[] = ["lead_vocal", "adlib", "double", "backing"];
 const BEATS: readonly StudioTrackRole[] = ["beat", "instrument"];
 
@@ -242,9 +246,14 @@ function fixGain(ctx: Ctx): void {
   const tp = ctx.metrics.master.truePeakDbtp;
   const I = ctx.metrics.master.integratedLufs;
   if (!Number.isFinite(tp) || !Number.isFinite(I)) return;
-  const shift = clamp(r1(T.masterPeakDbtp - tp), -12, 6);
+  let shift = clamp(r1(T.masterPeakDbtp - tp), -12, 6);
+  // The track fixes above also change the level, so never push the master into a very quiet mix
+  // (a -12 dB cut on top of them gave -35 LUFS) and let a later pass bring a quiet mix back up.
+  if (shift < 0) shift = Math.max(shift, Math.min(0, MASTER_QUIET_FLOOR_LUFS - I));
+  if (shift > 0) shift = Math.min(shift, Math.max(0, MASTER_LOUD_CEIL_LUFS - I));
+  shift = r1(shift);
   const needDown = tp > -3 && shift <= -1;
-  const needUp = I < -35 && shift >= 1;
+  const needUp = I < MASTER_QUIET_FLOOR_LUFS && tp < T.masterPeakDbtp - 3 && shift >= 1;
   if (needDown || needUp) {
     ctx.state.masterGainDb = clamp(r1(ctx.state.masterGainDb + shift), -24, 12);
     note(ctx, shift < 0 ? "gainMasterDown" : "gainMasterUp", { db: fmtDb(shift) });

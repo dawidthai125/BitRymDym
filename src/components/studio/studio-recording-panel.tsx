@@ -364,6 +364,7 @@ export function StudioRecordingPanel({
     [ackDocumentVersion, enqueuePersistAsync, onTrackCreated, persistVersionTip, projectId],
   );
 
+
   /** Stem import: put the READY take on its track at 0 ms. */
   const placeStemTake = useCallback(
     async (input: { trackId: string; takeId: string }): Promise<{ ok: true } | { ok: false; message: string }> => {
@@ -2336,6 +2337,67 @@ export function StudioRecordingPanel({
   const scratchOpen = !simple && !samplesMode && visiblePane === "scratch";
   const takeOpen = !samplesMode && (simple || visiblePane === "take");
 
+  /**
+   * Samples are not vocals: when the chosen track is a vocal role, put the sample on its own
+   * "instrument" track, so the mix does not treat it like a vocal and loops do not overlap.
+   */
+  const resolveSampleTrackId = useCallback(
+    async (): Promise<{ ok: true; trackId: string } | { ok: false; message: string }> => {
+      if (!trackId) return { ok: false, message: tr("sampleBrakSciezki") };
+      const current = mergedTracks.find((t) => t.id === trackId);
+      const vocalRoles = ["lead_vocal", "adlib", "double", "backing"];
+      if (!current || !vocalRoles.includes(current.trackRole)) return { ok: true, trackId };
+      // Add a SAMPLE track, then give it the "instrument" role (any plan may add samples, so no stem route).
+      let createdId: string | null = null;
+      const result = await enqueuePersistAsync(async () => {
+        try {
+          const post = await fetch(`/api/studio/projects/${projectId}/tracks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ expectedDocumentVersion: persistVersionTip.expected(), trackType: "SAMPLE" }),
+          });
+          const added = (await post.json().catch(() => null)) as {
+            track?: StudioTrackDto;
+            documentVersion?: number;
+            message?: string;
+            error?: string;
+          } | null;
+          if (!post.ok || !added?.track) {
+            return classifyPersistHttpFailure({ status: post.status, message: added?.message || added?.error || "Nie udało się dodać ścieżki." });
+          }
+          let track = added.track;
+          let version = ackDocumentVersion(added.documentVersion);
+          const patch = await fetch(`/api/studio/projects/${projectId}/tracks/${track.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ expectedDocumentVersion: version, trackRole: "instrument" }),
+          });
+          const patched = (await patch.json().catch(() => null)) as { track?: StudioTrackDto; documentVersion?: number } | null;
+          if (patch.ok && patched?.track) {
+            track = patched.track;
+            version = ackDocumentVersion(patched.documentVersion);
+          }
+          const finalTrack = track;
+          return {
+            ok: true as const,
+            documentVersion: version,
+            apply: () => {
+              createdId = finalTrack.id;
+              setLocalTracks((current) => [...current, finalTrack]);
+              onTrackCreated?.(finalTrack, version);
+            },
+          };
+        } catch {
+          return classifyPersistNetworkFailure("Nie udało się dodać ścieżki.");
+        }
+      });
+      return result.ok && createdId
+        ? { ok: true, trackId: createdId }
+        : { ok: false, message: result.ok ? "Nie udało się dodać ścieżki." : result.message };
+    },
+    [trackId, mergedTracks, enqueuePersistAsync, persistVersionTip, ackDocumentVersion, projectId, onTrackCreated, tr],
+  );
+
   // Bitek places a sample: the server plans tempo, key, bar and repeats; apply goes through the persist queue.
   const bitekSamplePreview = useCallback<BitekPreview>(
     async (sampleId, scope) => {
@@ -2357,7 +2419,9 @@ export function StudioRecordingPanel({
   );
   const bitekSampleApply = useCallback<BitekApply>(
     async (sampleId, scope) => {
-      if (!trackId) return { ok: false, message: tr("sampleBrakSciezki") };
+      const target = await resolveSampleTrackId();
+      if (!target.ok) return { ok: false, message: target.message };
+      const placeTrackId = target.trackId;
       setCatalogMessage(null);
       setWorkflowError(null);
       const result = await enqueuePersistAsync(async () => {
@@ -2366,7 +2430,7 @@ export function StudioRecordingPanel({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sampleId,
-            trackId,
+            trackId: placeTrackId,
             scope,
             playheadMs: Math.floor(transport.getPlayheadMs()),
             apply: true,
@@ -2397,7 +2461,7 @@ export function StudioRecordingPanel({
       return { ok: true };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [projectId, trackId, transport, tr],
+    [projectId, trackId, transport, tr, resolveSampleTrackId],
   );
 
   return (
@@ -2740,8 +2804,9 @@ export function StudioRecordingPanel({
         bitekPreview={bitekSamplePreview}
         bitekApply={bitekSampleApply}
         onPlace={async (sampleId) => {
-          if (!trackId) {
-            return { ok: false as const, message: tr("sampleBrakSciezki") };
+          const target = await resolveSampleTrackId();
+          if (!target.ok) {
+            return { ok: false as const, message: target.message };
           }
           setCatalogMessage(null);
           setWorkflowError(null);
@@ -2749,7 +2814,7 @@ export function StudioRecordingPanel({
             const placed = await placeOwnedStudioSample({
               projectId,
               sampleId,
-              trackId,
+              trackId: target.trackId,
               timelineStartMs: Math.floor(transport.getPlayheadMs()),
               expectedDocumentVersion: persistVersionTip.expected(),
             });

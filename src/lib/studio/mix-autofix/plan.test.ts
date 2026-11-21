@@ -166,6 +166,16 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     expect(p.notes.map((n) => n.key)).toEqual(["gainClipTrack", "gainMasterDown"]);
   });
 
+  it("gain staging: a very hot master is not cut into a very quiet mix (−24 LUFS floor)", () => {
+    const m = badMetrics();
+    m.master.truePeakDbtp = 8;
+    m.master.integratedLufs = -20;
+    const p = plan(["gain"], doc(), m);
+    const master = p.ops.find((o) => o.op === "set_master_mix");
+    const db = master && master.op === "set_master_mix" ? master.masterGainDb : 0;
+    expect(db).toBeGreaterThanOrEqual(-4);
+  });
+
   it("balance: buried vocal (−6.5 LU) → +4 dB vocal / −4 dB beat to hit +1.5 LU; side vocals under the lead", () => {
     const p = plan(["balance"]);
     expect(controls(p, LEAD)?.gainDb).toBe(4);
