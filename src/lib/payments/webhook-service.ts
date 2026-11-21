@@ -238,7 +238,18 @@ export async function handlePayuWebhook(rawBody: string, signatureHeader: string
     return { status: 400, body: { ok: false } };
   }
   const note = parsePayuNotification(body);
-  if (!note) return { status: 400, body: { ok: false } };
+  if (!note) {
+    // Refund notifications have a different shape (top-level "refund"). Ack them so PayU stops retrying;
+    // refunds are handled by hand, so leave a trace for the operator.
+    const refund = body && typeof body === "object" ? (body as Record<string, unknown>).refund : null;
+    if (refund && typeof refund === "object") {
+      console.error("[payu] refund notification received — review manually", {
+        orderId: typeof (body as Record<string, unknown>).orderId === "string" ? (body as Record<string, unknown>).orderId : null,
+      });
+      return { status: 200, body: { ok: true, result: "ignored" } };
+    }
+    return { status: 400, body: { ok: false } };
+  }
 
   const action = payuStatusAction(note.status);
   if (action === "ignore") return { status: 200, body: { ok: true, result: "ignored" } };

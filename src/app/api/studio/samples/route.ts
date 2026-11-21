@@ -64,6 +64,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const auth = await requireUser();
+    // Reject oversized bodies before buffering them (formData() reads everything).
+    const declared = Number(request.headers.get("content-length") ?? "0");
+    if (Number.isFinite(declared) && declared > SAMPLE_MAX_BYTES + 512 * 1024) {
+      return failure(SAMPLE_INVALID, ["byte size exceeds the sample cap"]);
+    }
     const form = await request.formData();
     const file = form.get("file");
     const title = form.get("title");

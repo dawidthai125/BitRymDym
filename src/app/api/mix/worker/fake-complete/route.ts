@@ -19,6 +19,10 @@ export const runtime = "nodejs";
  * - drive: QUEUED → CLAIM (incl. FINDING-01 source resolve) → fake SUCCESS
  */
 export async function POST(request: Request) {
+  // Test-only helper: not available in production builds.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
   try {
     assertWorkerSecret(request.headers.get("authorization"));
     const body = (await request.json()) as Record<string, unknown>;

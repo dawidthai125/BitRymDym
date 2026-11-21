@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { runTakesRetentionJanitor } from "@/lib/takes/takes-janitor";
@@ -18,7 +19,9 @@ export async function GET(request: Request) {
   }
 
   const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${secret}`) {
+  const expected = Buffer.from(`Bearer ${secret}`);
+  const given = Buffer.from(auth ?? "");
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 

@@ -19,6 +19,10 @@ export async function POST(request: Request, context: RouteContext) {
     const { projectId } = await context.params;
     const auth = await requireUser();
     const tier = await tierOf(auth);
+    const declared = Number(request.headers.get("content-length") ?? "0");
+    if (Number.isFinite(declared) && declared > BEAT_COVER_MAX_INPUT_BYTES + 512 * 1024) {
+      return NextResponse.json({ success: false, error: "too_big", message: "Grafika może mieć maksymalnie 4 MB." }, { status: 413 });
+    }
     let file: File | null = null;
     try {
       const v = (await request.formData()).get("image");
