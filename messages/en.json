@@ -1308,7 +1308,7 @@
       "nieUdaloSieZapisac": "Could not save.",
       "zapisanoUstawieniaPolitykiNagran": "Recording policy settings saved.",
       "globalnyLimitTechniczny": "Global technical limit:",
-      "n30SSaStale": "(30 s) are system constants — the administrator can only change",
+      "saStaleSystemowo": "are system constants — the administrator can only change",
       "maksymalnyCzasTrwaniaS": "{v0} — maximum duration (s)",
       "zapisywanie": "Saving…",
       "zakres1": "Range 1–"

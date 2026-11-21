@@ -1308,7 +1308,7 @@
       "nieUdaloSieZapisac": "Nie udało się zapisać.",
       "zapisanoUstawieniaPolitykiNagran": "Zapisano ustawienia polityki nagrań.",
       "globalnyLimitTechniczny": "Globalny limit techniczny:",
-      "n30SSaStale": "(30 s) są stałe systemowo — administrator może zmieniać tylko",
+      "saStaleSystemowo": "są stałe systemowo — administrator może zmieniać tylko",
       "maksymalnyCzasTrwaniaS": "{v0} — maksymalny czas trwania (s)",
       "zapisywanie": "Zapisywanie…",
       "zakres1": "Zakres 1–"

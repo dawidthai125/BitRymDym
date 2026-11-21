@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { RECORDING_GLOBAL_MAX_SECONDS } from "@/config/recording";
+import { RECORDING_GLOBAL_MAX_SECONDS, SAMPLE_POLICY_DEFAULTS } from "@/config/recording";
 import { updateSamplePolicySettingsAction } from "@/lib/takes/sample-policy-actions";
 import type { SamplePolicySettingsRow } from "@/lib/takes/sample-policy-settings";
 import { labelPremiumTier, labelSamplePolicyActor } from "@/lib/ui/labels";
@@ -54,8 +54,9 @@ export function AdminSamplePolicyForm({ initial }: AdminSamplePolicyFormProps) {
       <p className="text-sm text-[var(--brd-ink-soft)]">
         {t("globalnyLimitTechniczny")}{" "}
         <strong>{RECORDING_GLOBAL_MAX_SECONDS} s</strong>.{" "}
-        {tl(labelSamplePolicyActor("ANONYMOUS"))} (15 s) i{" "}
-        {tl(labelSamplePolicyActor("FREE"))} {t("n30SSaStale")}{" "}{tl(labelPremiumTier("BRONZE"))} /{" "}
+        {/* Values from SAMPLE_POLICY_DEFAULTS (a hard-coded "15 s" contradicted the 0 s shown above). */}
+        {tl(labelSamplePolicyActor("ANONYMOUS"))} ({SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds} s) i{" "}
+        {tl(labelSamplePolicyActor("FREE"))} ({SAMPLE_POLICY_DEFAULTS.FREE.maxRecordingSeconds} s) {t("saStaleSystemowo")}{" "}{tl(labelPremiumTier("BRONZE"))} /{" "}
         {tl(labelPremiumTier("SILVER"))} / {tl(labelPremiumTier("GOLD"))}.
       </p>
 
