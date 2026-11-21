@@ -22,7 +22,7 @@ import {
 } from "@/lib/community/ranking-policy";
 import { findLiveCatalogWork } from "@/lib/catalog/catalog-service";
 import { claimCommunityReward } from "@/lib/community/reward-apply";
-import { canCommentPublic, publicAuthorName } from "@/lib/community/share-policy";
+import { canCommentPublic, publicAuthorName, type CatalogSource } from "@/lib/community/share-policy";
 import { loadPlanSnapshot } from "@/lib/payments/snapshots";
 import { ANONYMIZED_PUBLIC_AUTHOR } from "@/lib/auth/display-name";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -34,7 +34,7 @@ const REWARDS = "community_rewards";
 type Admin = ReturnType<typeof createSupabaseAdminClient>;
 type DbError = { message?: string; code?: string } | null;
 
-export type CatalogSource = "brd" | "user";
+export type { CatalogSource };
 
 export type PublicSampleCard = {
   id: string;
@@ -50,8 +50,10 @@ export type PublicSampleCard = {
   bars: number | null;
   /** Published by BitRymDym (an admin account), not by a user. */
   platform: boolean;
-  /** ISO time the sample was created (catalog numbers count by this). */
+  /** ISO time the sample was created (fallback numbering before `sampleNumber` existed). */
   createdAt: string | null;
+  /** Stable catalog number (`studio_samples.sample_number`); null before that migration. */
+  sampleNumber: number | null;
   /** Average stars (1 decimal) and number of ratings, all time. */
   ratingAvg: number | null;
   ratingCount: number;
@@ -289,6 +291,7 @@ export async function listPublicSamples(source: CatalogSource): Promise<PublicSa
     bars: meta.get(work.id)?.bars ?? null,
     platform: work.ownership === "PLATFORM",
     createdAt: meta.get(work.id)?.createdAt ?? null,
+    sampleNumber: meta.get(work.id)?.sampleNumber ?? null,
     ratingAvg: stats.get(work.id)?.avg ?? null,
     ratingCount: stats.get(work.id)?.count ?? 0,
     weekAvg: stats.get(work.id)?.weekAvg ?? null,
@@ -360,11 +363,25 @@ export function pickSampleOfTheWeek<T extends { id: string; ratingAvg: number | 
 }
 
 /** Lab metadata in a separate read, so a DB without the lab columns still lists samples. */
-async function sampleLabMeta(ids: string[]): Promise<Map<string, { sampleType: string | null; bpm: number | null; musicalKey: string | null; bars: number | null; createdAt: string | null }>> {
-  const out = new Map<string, { sampleType: string | null; bpm: number | null; musicalKey: string | null; bars: number | null; createdAt: string | null }>();
+type SampleLabMeta = {
+  sampleType: string | null;
+  bpm: number | null;
+  musicalKey: string | null;
+  bars: number | null;
+  createdAt: string | null;
+  sampleNumber: number | null;
+};
+
+async function sampleLabMeta(ids: string[]): Promise<Map<string, SampleLabMeta>> {
+  const out = new Map<string, SampleLabMeta>();
   const admin = adminOrNull();
   if (!admin || ids.length === 0) return out;
-  const { data, error } = await admin.from("studio_samples").select("id, sample_type, bpm, musical_key, bars, created_at").in("id", ids);
+  const columns = "id, sample_type, bpm, musical_key, bars, created_at";
+  const withNumber = await admin.from("studio_samples").select(`${columns}, sample_number`).in("id", ids);
+  // DB before migration 20261121170000 has no sample_number: read the rest, number falls back.
+  const { data, error } = shareColumnMissing(withNumber.error, "sample_number")
+    ? await admin.from("studio_samples").select(columns).in("id", ids)
+    : withNumber;
   if (error) return out;
   for (const row of (data ?? []) as Record<string, unknown>[]) {
     out.set(String(row.id), {
@@ -373,6 +390,7 @@ async function sampleLabMeta(ids: string[]): Promise<Map<string, { sampleType: s
       musicalKey: (row.musical_key as string | null) ?? null,
       bars: row.bars == null ? null : Number(row.bars),
       createdAt: typeof row.created_at === "string" ? row.created_at : null,
+      sampleNumber: row.sample_number == null ? null : Number(row.sample_number),
     });
   }
   return out;

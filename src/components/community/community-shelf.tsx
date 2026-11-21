@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { id: "beats", href: "/beats?zrodlo=brd", label: "beats" },
   { id: "beatRank", href: "/ranking", label: "beatRank" },
-  { id: "samples", href: "/sampel?zrodlo=user", label: "samples" },
+  { id: "samples", href: "/sampel?zrodlo=brd", label: "samples" },
   { id: "sampleRank", href: "/ranking/sampel", label: "sampleRank" },
   { id: "works", href: "/utwory", label: "works" },
   { id: "workRank", href: "/ranking/utwor", label: "workRank" },
