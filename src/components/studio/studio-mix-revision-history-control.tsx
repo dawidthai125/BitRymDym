@@ -180,8 +180,16 @@ export function StudioMixRevisionHistoryControl({
     };
   }, [open, restoreOpen, restoreSubmitting, closeDialog]);
 
+  // Restore focus only after the dialog was really open. On mount (open=false) focusing the trigger
+  // scrolled the transport bar to its end and hid Play/Stop/Record.
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (open) return;
+    if (open) {
+      wasOpenRef.current = true;
+      return;
+    }
+    if (!wasOpenRef.current) return;
+    wasOpenRef.current = false;
     const restore = previouslyFocusedRef.current ?? triggerRef.current;
     previouslyFocusedRef.current = null;
     restore?.focus?.();

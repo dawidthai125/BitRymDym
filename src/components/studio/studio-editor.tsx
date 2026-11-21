@@ -3349,7 +3349,7 @@ function StudioEditorInner({
                   }
                 }}
               >
-                {recordFullView ? tMix("prostyWidok") : tMix("pelnyWidok")}
+                {tMix("pelnyWidok")}
               </Button>
             ) : (
               <span className="max-w-[18rem] text-xs leading-snug text-[var(--brd-mute)]" data-testid="studio-record-simple-only">
