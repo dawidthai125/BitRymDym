@@ -68,7 +68,9 @@ export function buildCsp({ nonce, env = process.env }: BuildCspOptions): string 
     "font-src 'self' data:",
     list("media-src 'self' blob: mediastream: data:", supabaseOrigin, "https://edge.bitrymdym.pl"),
     list(
-      "connect-src 'self'",
+      // blob:/data: — Studio reads its own decoded takes / cached clip audio via fetch(blob:)
+      // (mix analysis, waveforms, tuning). Blocked since CSP_ENFORCE=1 on 2026-11-21.
+      "connect-src 'self' blob: data:",
       supabaseOrigin,
       supabaseWs,
       "https://edge.bitrymdym.pl",

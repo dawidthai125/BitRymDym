@@ -52,6 +52,9 @@ describe("buildCsp", () => {
       "https://edge.bitrymdym.pl",
       "wss://ws-us3.pusher.com",
       "https://vitals.vercel-insights.com",
+      // Studio fetch(blob:) for mix analysis / waveforms (prod regression 2026-11-21).
+      "blob:",
+      "data:",
     ]) {
       expect(connect).toContain(src);
     }
