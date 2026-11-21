@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 — Wygasające nagrania, smoke test produkcji, HMAC bez service-role
+
+- **Studio:** nad edytorem baner, gdy nagranie użyte w klipie wygaśnie w ciągu 3 dni (żółty, z datą w czasie polskim) albo już wygasło (czerwony: eksport WAV i master nie zadziałają). Pliki: `src/lib/studio/studio-take-expiry.ts` (+test), `studio-take-expiry-server.ts`, `src/components/studio/studio-take-expiry-banner.tsx`, `src/app/studio/p/[projectId]/page.tsx`, `messages/*` `studio.takeExpiry`.
+- **Smoke test produkcji:** `scripts/smoke-production.mjs` (12 publicznych kontroli: strona, www, logowanie, reset hasła, Studio→logowanie, Premium, bity, CSP `blob:`+Turnstile, edge audio, sitemap www, webhook PayU bez podpisu ≠ 500). Workflow `.github/workflows/smoke-production.yml` na `deployment_status` Production, ręcznie i codziennie. Pierwszy przebieg po deployu `7057533`: **success**. Nieudany przebieg = mail z GitHub Actions.
+- **Bezpieczeństwo:** `resolveDedicatedSecret` nie używa już klucza service-role (ani do podpisu, ani do weryfikacji). Brak dedykowanego sekretu = fail closed. Linki odsłuchu nadal akceptują stary `STUDIO_LISTEN_LINK_SECRET`. Przed zmianą: 0 aktywnych linków odsłuchu, oba nowe sekrety w Production+Preview.
+- **Studio kod:** pasek kroków + przyciski kroku nagrania → `src/components/studio/studio-step-nav.tsx`; `studio-editor.tsx` 4147 → 4031 linii. Test źródła w `studio-editor-source.ts`.
+- Testy 4928 PASS, tsc OK, build OK.
+
 ## 2026-11-21 — Bezpieczeństwo, Studio czytelniej, przegląd strony
 
 Sesja agenta OpenBot (BitRymDym v3) z GO Ownera. Tip `0e3f973`, deploy READY.

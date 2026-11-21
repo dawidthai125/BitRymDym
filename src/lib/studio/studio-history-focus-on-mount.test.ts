@@ -10,8 +10,8 @@ describe("mix history focus restore", () => {
     expect(src).toMatch(/if \(!wasOpenRef\.current\) return;/);
   });
   it("full-view toggle keeps one label and shows state via aria-pressed", () => {
-    const editor = readFileSync("src/components/studio/studio-editor.tsx", "utf8");
-    expect(editor).not.toMatch(/recordFullView \? tMix\("prostyWidok"\)/);
-    expect(editor).toMatch(/aria-pressed=\{recordFullView\}/);
+    const nav = readFileSync("src/components/studio/studio-step-nav.tsx", "utf8");
+    expect(nav).not.toMatch(/recordFullView \? tMix\("prostyWidok"\)/);
+    expect(nav).toMatch(/aria-pressed=\{recordFullView\}/);
   });
 });

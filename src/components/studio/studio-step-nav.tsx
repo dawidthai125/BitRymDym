@@ -1,0 +1,167 @@
+"use client";
+
+/**
+ * Studio step navigation: 1. Nagranie · Sample · 2. Mix · 3. Mastering, plus the record-step
+ * toolbar (full view, "Przejdź do mixu"). Split out of studio-editor.tsx (2026-11-22);
+ * state stays in the editor, this file only renders and calls back.
+ */
+
+import { useTranslations } from "next-intl";
+
+import { Button } from "@/components/ui/button";
+
+export type StudioStepId = "record" | "mix" | "master";
+
+export function StudioStepNav({
+  studioStep,
+  onSampleTab,
+  recordingLocked,
+  canGoMix,
+  songReady,
+  advancedRecord,
+  recordFullView,
+  onRecord,
+  onSamples,
+  onMix,
+  onToggleFullView,
+}: {
+  studioStep: StudioStepId;
+  onSampleTab: boolean;
+  recordingLocked: boolean;
+  canGoMix: boolean;
+  /** autoMixMasterMaterial(...).ready: beat + vocal are enough for "Zrób utwór". */
+  songReady: boolean;
+  advancedRecord: boolean;
+  recordFullView: boolean;
+  onRecord: () => void;
+  onSamples: () => void;
+  onMix: () => void;
+  onToggleFullView: () => void;
+}) {
+  const tMix = useTranslations("studio.mixStep");
+  return (
+      <nav
+        aria-label={tMix("krokiAria")}
+        data-testid="studio-step-nav"
+        className="flex flex-wrap items-center gap-2 border-b border-[var(--brd-line)] py-1"
+      >
+        <ol className="flex flex-wrap items-center gap-1 text-xs font-semibold tracking-[0.06em]">
+          <li>
+            <button
+              type="button"
+              data-testid="studio-tab-record"
+              aria-current={studioStep === "record" && !onSampleTab ? "step" : undefined}
+              className={
+                studioStep === "record" && !onSampleTab
+                  ? "min-h-11 rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
+                  : "min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)]"
+              }
+              onClick={onRecord}
+            >
+              1. {tMix("krokNagranie")}
+            </button>
+          </li>
+          <li className="flex items-center">
+            <span aria-hidden className="px-0.5 text-[var(--brd-mute)]">·</span>
+            <button
+              type="button"
+              data-testid="studio-tab-samples"
+              aria-current={onSampleTab ? "page" : undefined}
+              disabled={recordingLocked}
+              className={
+                onSampleTab
+                  ? "min-h-11 rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)] disabled:opacity-50"
+                  : "min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] disabled:opacity-50"
+              }
+              onClick={onSamples}
+            >
+              {tMix("krokSample")}
+            </button>
+          </li>
+          {(["mix", "master"] as const).map((s, i) => {
+            const label = `${i + 2}. ${s === "mix" ? tMix("krokMix") : tMix("krokMastering")}`;
+            const active = studioStep === s;
+            // Mix opens from the record step (once there is a vocal) and from Mastering. Mastering opens only from the Mix step.
+            const goMix = s === "mix" && !active && (studioStep === "master" || canGoMix);
+            if (goMix) {
+              return (
+                <li key={s}>
+                  <button
+                    type="button"
+                    data-testid="studio-tab-mix"
+                    title={tMix("krokMixTytul")}
+                    className="min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] underline-offset-4 hover:underline"
+                    onClick={onMix}
+                  >
+                    {label}
+                  </button>
+                </li>
+              );
+            }
+            return (
+              <li
+                key={s}
+                aria-current={active ? "step" : undefined}
+                title={!active && s === "master" ? tMix("krokMasteringTytul") : undefined}
+                data-testid={!active && s === "master" ? "studio-tab-master-locked" : undefined}
+                className={
+                  active
+                    ? "rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
+                    : "flex items-center gap-1 px-2 py-1 text-[var(--brd-mute)]"
+                }
+              >
+                {label}
+                {!active && s === "master" ? (
+                  <>
+                    <span aria-hidden>🔒</span>
+                    <span className="text-[10px] font-normal tracking-normal">{tMix("krokMasteringZamek")}</span>
+                  </>
+                ) : null}
+              </li>
+            );
+          })}
+        </ol>
+        {studioStep === "record" ? (
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 max-sm:w-full">
+            {onSampleTab ? null : advancedRecord ? (
+              <Button
+                type="button"
+                size="sm"
+                variant={recordFullView ? "default" : "outline"}
+                className="min-h-11 px-3"
+                data-testid="studio-record-full-view"
+                aria-pressed={recordFullView}
+                disabled={recordingLocked}
+                title={tMix("pelnyWidokOpis")}
+                onClick={onToggleFullView}
+              >
+                {tMix("pelnyWidok")}
+              </Button>
+            ) : (
+              <span className="max-w-[18rem] text-xs leading-snug text-[var(--brd-mute)]" data-testid="studio-record-simple-only">
+                {tMix("widokUproszczonyPlan")}
+              </span>
+            )}
+            <span id="studio-go-mix-hint" className="text-xs text-[var(--brd-mute)] max-sm:order-last max-sm:basis-full sm:max-w-[22rem]">
+              {songReady
+                ? tMix("przejdzDoMixuUtwor")
+                : canGoMix
+                  ? tMix("przejdzDoMixuOpis")
+                  : tMix("przejdzDoMixuBrakWokalu")}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              className="min-h-11 px-3"
+              data-testid="studio-go-mix"
+              aria-describedby="studio-go-mix-hint"
+              disabled={!canGoMix}
+              onClick={onMix}
+            >
+              {tMix("przejdzDoMixu")} →
+            </Button>
+          </div>
+        ) : null}
+      </nav>
+  );
+}
