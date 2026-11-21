@@ -9,6 +9,8 @@
 --   retried with refund_studio_master_credit).
 -- Additive. Service role only. Same RPC signatures, so the E3 worker needs no change.
 
+set local lock_timeout = '5s';
+
 alter table public.studio_master_jobs
   add column if not exists credit_spent boolean not null default false,
   add column if not exists credit_refunded_at timestamptz;

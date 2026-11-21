@@ -11,7 +11,8 @@
 
 -- Supabase runs each migration in one transaction; the lock holds until it commits.
 -- Block inserts while we backfill and attach the identity, so no row is missed.
-lock table public.studio_samples in share row exclusive mode;
+set local lock_timeout = '5s';
+lock table public.studio_samples in access exclusive mode;
 
 alter table public.studio_samples
   add column if not exists sample_number integer;
@@ -28,6 +29,10 @@ set sample_number = ordered.n + coalesce(
 )
 from ordered
 where s.id = ordered.id;
+
+-- Identity requires NOT NULL first.
+alter table public.studio_samples
+  alter column sample_number set not null;
 
 do $$
 begin
@@ -51,9 +56,6 @@ select setval(
   greatest(coalesce((select max(sample_number) from public.studio_samples), 0), 1),
   coalesce((select max(sample_number) from public.studio_samples), 0) > 0
 );
-
-alter table public.studio_samples
-  alter column sample_number set not null;
 
 create unique index if not exists studio_samples_sample_number_uidx
   on public.studio_samples (sample_number);
