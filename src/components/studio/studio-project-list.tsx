@@ -282,9 +282,8 @@ export function StudioProjectList({
     [projects, selectedIds],
   );
 
-  useEffect(() => {
-    if (page !== safePage) setPage(safePage);
-  }, [page, safePage]);
+  // Page past the end (projects deleted): clamp while rendering, not in an effect.
+  if (page !== safePage) setPage(safePage);
 
   async function createProject(beatId?: string | null) {
     setError(null);

@@ -7,6 +7,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -472,13 +473,16 @@ export function StudioTransportProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount/dispose only
   }, [catalogPlayer]);
 
-  tempoRef.current = tempoBpm;
-  timeSigRef.current = timeSignatureNum;
-  loopRef.current = {
-    enabled: loopEnabled,
-    startMs: loopStartMs,
-    endMs: loopEndMs,
-  };
+  // Latest values for the clock / metronome callbacks; written after render, before paint.
+  useLayoutEffect(() => {
+    tempoRef.current = tempoBpm;
+    timeSigRef.current = timeSignatureNum;
+    loopRef.current = {
+      enabled: loopEnabled,
+      startMs: loopStartMs,
+      endMs: loopEndMs,
+    };
+  }, [tempoBpm, timeSignatureNum, loopEnabled, loopStartMs, loopEndMs]);
 
   useEffect(() => {
     if (!metronomeEnabled) {

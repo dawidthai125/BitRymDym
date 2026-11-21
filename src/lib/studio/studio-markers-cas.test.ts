@@ -90,8 +90,8 @@ describe("Studio markers CAS + Inspector slice", () => {
 
   it("panel and recording chrome ack PATCH documentVersion into the persist tip", () => {
     expect(panel).toMatch(/createStudioPersistVersionTip/);
-    expect(panel).toMatch(/versionTip\.expected\(\)/);
-    expect(panel).toMatch(/ackDocumentVersion\(body\.documentVersion\)/);
+    expect(panel).toMatch(/getVersionTip\(\)\.expected\(\)/);
+    expect(panel).toMatch(/ackDocumentVersion\(result\.documentVersion\)/);
     expect(panel).not.toMatch(
       /expectedDocumentVersion:\s*getExpectedDocumentVersion\(\)/,
     );

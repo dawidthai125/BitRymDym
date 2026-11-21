@@ -310,7 +310,8 @@ describe("A3.2 Mix Working revision UI — loading race + mobile restore layer",
 
   it("sets loading synchronously when opening history", () => {
     expect(control).toMatch(
-      /setOpen\(\(v\) => \{\s*if \(!v\) \{\s*[\s\S]*?setListLoadState\("loading"\)/,
+      // Loading is set in the click handler before the dialog opens (no setState-in-effect).
+      /function openDialog\(\) \{[\s\S]*?setListLoadState\("loading"\)[\s\S]*?setOpen\(true\)/,
     );
   });
 

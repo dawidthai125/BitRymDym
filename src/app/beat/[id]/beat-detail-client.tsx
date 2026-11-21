@@ -91,7 +91,9 @@ export function BeatDetailClient({
   const isCurrentRef = useRef(false);
 
   const isCurrent = track?.beatId === beat.id;
-  isCurrentRef.current = isCurrent;
+  useLayoutEffect(() => {
+    isCurrentRef.current = isCurrent;
+  }, [isCurrent]);
   const playing = isCurrent && phase === "playing";
   const loading = isCurrent && phase === "loading";
   const total =

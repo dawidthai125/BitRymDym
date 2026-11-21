@@ -705,7 +705,7 @@ describe("STUDIO_EXPORT Stage I.3A — dialog keyboard / focus", () => {
 
   it("opening does not enqueue; closeDialog only toggles open", () => {
     expect(control).toMatch(
-      /const closeDialog = useCallback\(\(\) => \{\s*setOpen\(false\);\s*\}, \[\]\);/,
+      /const closeDialog = useCallback\(\(\) => \{\s*setOpen\(false\);\s*setRecovering\(false\);\s*\}, \[\]\);/,
     );
     expect(control).not.toMatch(/closeDialog[\s\S]{0,40}enqueueExport/);
     const a11yEffect = control.match(

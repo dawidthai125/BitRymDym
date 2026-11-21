@@ -4,7 +4,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { planHipHopStructureMarkers } from "@/lib/studio/hiphop-marker-structure";
@@ -36,6 +36,26 @@ type StudioMarkersPanelProps = {
   tempoBpm?: number;
 };
 
+async function fetchStudioMarkers(
+  projectId: string,
+): Promise<
+  | { ok: true; markers: StudioMarkerDto[]; documentVersion: unknown }
+  | { ok: false; error: string | null }
+> {
+  try {
+    const response = await fetch(`/api/studio/projects/${projectId}/markers`);
+    const body = (await response.json().catch(() => null)) as {
+      markers?: StudioMarkerDto[];
+      documentVersion?: unknown;
+      error?: string;
+    } | null;
+    if (!response.ok || !body?.markers) return { ok: false, error: body?.error ?? null };
+    return { ok: true, markers: body.markers, documentVersion: body.documentVersion };
+  } catch {
+    return { ok: false, error: null };
+  }
+}
+
 export function StudioMarkersPanel({
   projectId,
   getExpectedDocumentVersion,
@@ -54,52 +74,43 @@ export function StudioMarkersPanel({
   const [busy, setBusy] = useState<"verse" | "hook" | "remove" | "structure" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const getBaseVersionRef = useRef(getExpectedDocumentVersion);
-  getBaseVersionRef.current = getExpectedDocumentVersion;
+  useLayoutEffect(() => {
+    getBaseVersionRef.current = getExpectedDocumentVersion;
+  }, [getExpectedDocumentVersion]);
+  // One tip per mount, created on first use (callbacks only — never during render).
   const versionTipRef = useRef<StudioPersistVersionTip | null>(null);
-  if (versionTipRef.current === null) {
-    versionTipRef.current = createStudioPersistVersionTip(
-      () => getBaseVersionRef.current(),
-    );
-  }
-  const versionTip = versionTipRef.current;
+  const getVersionTip = useCallback((): StudioPersistVersionTip => {
+    versionTipRef.current ??= createStudioPersistVersionTip(() => getBaseVersionRef.current());
+    return versionTipRef.current;
+  }, []);
   const ackDocumentVersion = useCallback(
     (ack: unknown): number => {
-      const next = versionTip.applyAck(ack);
+      const next = getVersionTip().applyAck(ack);
       onDocumentVersionAck?.(next);
       return next;
     },
-    [onDocumentVersionAck, versionTip],
+    [onDocumentVersionAck, getVersionTip],
   );
 
-  const loadMarkers = useCallback(async () => {
-    setLoadState("loading");
-    try {
-      const response = await fetch(
-        `/api/studio/projects/${projectId}/markers`,
-      );
-      const body = (await response.json().catch(() => null)) as {
-        markers?: StudioMarkerDto[];
-        documentVersion?: unknown;
-        error?: string;
-      } | null;
-      if (!response.ok || !body?.markers) {
+  // Load on mount / project change. State is set only in the fetch callbacks (loadState starts "loading").
+  useEffect(() => {
+    let cancelled = false;
+    fetchStudioMarkers(projectId).then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
         setLoadState("error");
-        setMessage(body?.error || t("nieUdaloSieWczytac"));
+        setMessage(result.error || t("nieUdaloSieWczytac"));
         return;
       }
-      ackDocumentVersion(body.documentVersion);
-      setMarkers(body.markers);
+      ackDocumentVersion(result.documentVersion);
+      setMarkers(result.markers);
       setLoadState("ready");
       setMessage(null);
-    } catch {
-      setLoadState("error");
-      setMessage(t("nieUdaloSieWczytac"));
-    }
-  }, [ackDocumentVersion, projectId]);
-
-  useEffect(() => {
-    void loadMarkers();
-  }, [loadMarkers]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [ackDocumentVersion, projectId, t]);
 
   const persistOp = useCallback(
     async (
@@ -129,7 +140,7 @@ export function StudioMarkersPanel({
                     )
                   : undefined,
               markerId: payload.markerId,
-              expectedDocumentVersion: versionTip.expected(),
+              expectedDocumentVersion: getVersionTip().expected(),
             }),
           },
         );
@@ -166,7 +177,7 @@ export function StudioMarkersPanel({
       if (!result.ok) setMessage(result.message);
       return result;
     },
-    [ackDocumentVersion, enqueuePersistAsync, getPlayheadMs, projectId, versionTip, t],
+    [ackDocumentVersion, enqueuePersistAsync, getPlayheadMs, projectId, getVersionTip, t],
   );
 
   const insertHipHopStructure = useCallback(async () => {

@@ -5,7 +5,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -80,10 +80,13 @@ export function StudioExportControl({
   /** Invalidates in-flight recovery when dialog closes or enqueue starts. */
   const recoverGenRef = useRef(0);
   const projectIdRef = useRef(projectId);
-  projectIdRef.current = projectId;
+  useLayoutEffect(() => {
+    projectIdRef.current = projectId;
+  }, [projectId]);
 
   const closeDialog = useCallback(() => {
     setOpen(false);
+    setRecovering(false);
   }, []);
 
   // Stage I.3A — focus trap / Escape / restore (Mixer/Inspector contract).
@@ -164,15 +167,14 @@ export function StudioExportControl({
 
   // I.45AU — recover latest export on dialog open only (not on re-render / mount).
   useEffect(() => {
+    // recovering is switched on/off by the trigger and closeDialog (not synchronously here).
     if (!open) {
       recoverGenRef.current += 1;
-      setRecovering(false);
       return;
     }
 
     const gen = ++recoverGenRef.current;
     const ac = new AbortController();
-    setRecovering(true);
 
     async function recoverLatest() {
       try {
@@ -762,7 +764,11 @@ export function StudioExportControl({
         aria-haspopup="dialog"
         aria-controls={open ? "studio-export-dialog" : undefined}
         disabled={disabled}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          setRecovering(next);
+        }}
       >
         {t("eksportujWav")}
       </button>

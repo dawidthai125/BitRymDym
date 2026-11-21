@@ -132,10 +132,11 @@ import {
 } from "@/lib/studio/studio-master-mix";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import {
-  readStudioTransportKeyboardMode,
+  DEFAULT_STUDIO_TRANSPORT_KEYBOARD_MODE,
+  readStudioTransportKeyboardModeLive,
+  setStudioTransportKeyboardModeLive,
+  subscribeStudioTransportKeyboardMode,
   resolveStudioTransportKeyAction,
-  writeStudioTransportKeyboardMode,
-  type StudioTransportKeyboardMode,
 } from "@/lib/studio/transport-keyboard-mode";
 import {
   planDoubledClipStartMs,
@@ -453,13 +454,15 @@ function StudioEditorInner({
   /** Top-bar REC presses not yet consumed by StudioRecordingPanel (0 = none). */
   const [transportRecordRequest, setTransportRecordRequest] = useState(0);
   /** Space/R vs Space=Play — Owner GO; default remains Szybki REC. */
-  const [transportKeyboardMode, setTransportKeyboardMode] =
-    useState<StudioTransportKeyboardMode>("quick_rec");
-  useEffect(() => {
-    setTransportKeyboardMode(readStudioTransportKeyboardMode(window.localStorage));
-  }, []);
+  const transportKeyboardMode = useSyncExternalStore(
+    subscribeStudioTransportKeyboardMode,
+    readStudioTransportKeyboardModeLive,
+    () => DEFAULT_STUDIO_TRANSPORT_KEYBOARD_MODE,
+  );
   const transportKeyboardModeRef = useRef(transportKeyboardMode);
-  transportKeyboardModeRef.current = transportKeyboardMode;
+  useLayoutEffect(() => {
+    transportKeyboardModeRef.current = transportKeyboardMode;
+  }, [transportKeyboardMode]);
   /** Scratch session SSOT — survives Record panel unmount. */
   const [lastScratchClipId, setLastScratchClipId] = useState<string | null>(
     null,
@@ -3414,8 +3417,7 @@ function StudioEditorInner({
         }}
         transportKeyboardMode={transportKeyboardMode}
         onTransportKeyboardModeChange={(mode) => {
-          setTransportKeyboardMode(mode);
-          writeStudioTransportKeyboardMode(window.localStorage, mode);
+          setStudioTransportKeyboardModeLive(mode);
         }}
         tempoBpm={doc.project.tempoBpm}
         timeSignatureNum={doc.project.timeSignatureNum}

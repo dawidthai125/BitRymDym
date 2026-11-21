@@ -81,3 +81,26 @@ export function resolveStudioTransportKeyAction(params: {
   if (p) return "play";
   return null;
 }
+
+/* Live store for useSyncExternalStore (audit 2026-11-21: no setState-in-effect on mount). */
+const keyboardModeListeners = new Set<() => void>();
+/** Session value when localStorage refuses writes (private mode / quota). */
+let keyboardModeMemory: StudioTransportKeyboardMode | null = null;
+
+export function subscribeStudioTransportKeyboardMode(listener: () => void): () => void {
+  keyboardModeListeners.add(listener);
+  return () => {
+    keyboardModeListeners.delete(listener);
+  };
+}
+
+export function readStudioTransportKeyboardModeLive(): StudioTransportKeyboardMode {
+  if (keyboardModeMemory) return keyboardModeMemory;
+  return readStudioTransportKeyboardMode(typeof window === "undefined" ? null : window.localStorage);
+}
+
+export function setStudioTransportKeyboardModeLive(mode: StudioTransportKeyboardMode): void {
+  keyboardModeMemory = mode;
+  writeStudioTransportKeyboardMode(typeof window === "undefined" ? null : window.localStorage, mode);
+  for (const listener of keyboardModeListeners) listener();
+}

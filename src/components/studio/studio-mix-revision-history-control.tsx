@@ -4,7 +4,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,8 @@ async function readJson(res: Response): Promise<unknown> {
   }
 }
 
+const noopSubscribe = () => () => {};
+
 export function StudioMixRevisionHistoryControl({
   projectId,
   getExpectedDocumentVersion,
@@ -74,7 +76,8 @@ export function StudioMixRevisionHistoryControl({
   const tl = useLibText();
   const t = useTranslations("studio.studioMixRevisionHistoryControl");
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  // Portal target exists only in the browser (false on the server render).
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const [view, setView] = useState<PanelView>("list");
   const [revisions, setRevisions] = useState<MixRevisionListItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -131,16 +134,14 @@ export function StudioMixRevisionHistoryControl({
   }, []);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (activeProjectIdRef.current === projectId) return;
     activeProjectIdRef.current = projectId;
     setRevisions([]);
     setNextCursor(null);
     setListError(null);
-    setListLoadState(open ? "loading" : "idle");
+    // The list is loaded by openDialog(); a project switch closes an open dialog instead of reloading here.
+    setListLoadState("idle");
+    setOpen(false);
     setSelectedId(null);
     setDetail(null);
     setDiff(null);
@@ -260,8 +261,8 @@ export function StudioMixRevisionHistoryControl({
     [projectId],
   );
 
-  useEffect(() => {
-    if (!open) return;
+  /** Fresh dialog state + first page, from the trigger click (audit 2026-11-21: not an effect). */
+  function openDialog() {
     setView("list");
     setSelectedId(null);
     setDetail(null);
@@ -276,8 +277,9 @@ export function StudioMixRevisionHistoryControl({
     setUndoPreview(null);
     setListLoadState("loading");
     setListError(null);
+    setOpen(true);
     void loadList({ reset: true });
-  }, [open, projectId, loadList]);
+  }
 
   async function ensureSummary(revisionId: string) {
     const idx = revisions.findIndex((r) => r.id === revisionId);
@@ -524,14 +526,8 @@ export function StudioMixRevisionHistoryControl({
         aria-controls={open ? "studio-mix-history-dialog" : undefined}
         disabled={disabled || !projectId}
         onClick={() => {
-          setOpen((v) => {
-            if (!v) {
-              // Synchronous loading before first paint — avoids false empty.
-              setListLoadState("loading");
-              setListError(null);
-            }
-            return !v;
-          });
+          if (open) closeDialog();
+          else openDialog();
         }}
       >
         {t("historiaMiksu")}

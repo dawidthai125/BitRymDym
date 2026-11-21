@@ -35,7 +35,12 @@ export function PlayStudio({ bpm, beatId, canUseAi }: { bpm: number; beatId?: st
 
   useEffect(() => { sessionRef.current = session; loop.current?.setSession(session); }, [session]);
   useEffect(() => () => { engine.current?.allOff(); loop.current?.stop(); }, []);
-  useEffect(() => setSession((s) => ({ ...s, bpm })), [bpm]);
+  // The bpm prop changed: adjust the session while rendering (no effect round-trip).
+  const [sessionBpmProp, setSessionBpmProp] = useState(bpm);
+  if (sessionBpmProp !== bpm) {
+    setSessionBpmProp(bpm);
+    setSession((s) => ({ ...s, bpm }));
+  }
 
   async function prepare(requestedInstrument: PlayInstrumentId = instrument) {
     const e = engine.current ?? new PlayEngine();
