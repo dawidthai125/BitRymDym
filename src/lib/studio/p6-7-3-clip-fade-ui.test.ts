@@ -30,10 +30,9 @@ const clipFixture = (overrides: Partial<StudioClipDto> = {}): StudioClipDto => (
   ...overrides,
 });
 
-const editor = readFileSync(
-  join(process.cwd(), "src/components/studio/studio-editor.tsx"),
-  "utf8",
-);
+const editor = (readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8") +
+    // Transport bar moved to its own file (audit 2026-11-21).
+    readFileSync(join(process.cwd(), "src/components/studio/studio-transport-bar.tsx"), "utf8"));
 const fadeSrc = readFileSync(
   join(process.cwd(), "src/lib/studio/studio-clip-fade.ts"),
   "utf8",
@@ -229,7 +228,9 @@ describe("P6.7.3 UX helpers", () => {
 describe("P6.7.3 mobile + architecture guards", () => {
   it("transport remains reachable (sticky + labels)", () => {
     expect(editor).toMatch(/aria-label="Transport Studio"/);
-    expect(editor).toMatch(/sticky top-14/);
+    // Audit 2026-11-21: sticky from sm; on phones a mini transport docks above the bottom nav.
+    expect(editor).toMatch(/sm:sticky sm:top-2/);
+    expect(editor).toMatch(/data-testid="studio-mobile-mini-transport"/);
     // Visual Parity V2 — Play label may include noBeat “wymaga bitu” suffix.
     expect(editor).toMatch(/aria-label=\{noBeat \? "Odtwórz — wymaga bitu" : "Odtwórz"\}/);
   });

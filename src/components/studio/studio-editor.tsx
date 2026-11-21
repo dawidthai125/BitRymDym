@@ -51,11 +51,9 @@ import type { AutomationParam, StudioAutomationV1 } from "@/lib/studio/studio-au
 import { bassLineAt, drumPatternAt, emptyMidi, hasMidi, midiPhraseAt, reviewPlayedNotes, type StudioMidiV1 } from "@/lib/studio/studio-midi";
 import { fadeEdgePreset } from "@/lib/studio/studio-clip-fade";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
-import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
 import { StudioClipSpectrogram } from "@/components/studio/studio-clip-spectrogram";
-import { StudioFragmentTools } from "@/components/studio/studio-fragment-tools";
-import { StudioMixRevisionHistoryControl } from "@/components/studio/studio-mix-revision-history-control";
+import { StudioTransportBar } from "@/components/studio/studio-transport-bar";
 import { playheadInsideClip } from "@/lib/studio/studio-clip-ops";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
@@ -104,6 +102,7 @@ import {
   createDefaultSnapConfig,
   cycleStudioSnapConfig,
   fitPxPerMs,
+  studioTimelineFitLengthMs,
   msToPx,
   nudgeClipTimelineStartMs,
   pxToMs,
@@ -149,7 +148,7 @@ import {
   shouldShowStudioTrackUpgradeCta,
   countRecordingTracks,
 } from "@/lib/studio/studio-track-capacity";
-import { StudioGlyph, StudioRecLamp } from "@/components/studio/studio-glyphs";
+import { StudioGlyph } from "@/components/studio/studio-glyphs";
 import { StudioTrackLevelMeter } from "@/components/studio/studio-track-level-meter";
 import { STUDIO_MAX_SONG_MS, STUDIO_TRACK_ROLES, isStudioTrackRole } from "@/config/studio";
 import {
@@ -226,25 +225,22 @@ function formatStudioPanShort(
   return v < 0 ? `${labels.left}${Math.abs(v)}` : `${labels.right}${v}`;
 }
 const STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0";
-/**
- * Transport densify — Mobile First: 44px hit area by default;
- * from sm, match Button size=sm (h-8) so timeline gains vertical room.
- */
-const STUDIO_TRANSPORT_KEY =
-  "min-h-11 min-w-11 px-2 sm:min-h-8 sm:min-w-8";
-const STUDIO_TRANSPORT_KEY_WIDE = "min-h-11 px-2 sm:min-h-8";
 /** Track gain bounds — same as Mixer strips. */
 const STUDIO_TRACK_GAIN_DB_MIN = -24;
 const STUDIO_TRACK_GAIN_DB_MAX = 12;
 
 export function StudioEditor({
   initialDocument,
+  initialBeatTitle = null,
   trackCapacity,
 }: {
   initialDocument: StudioProjectDocument;
+  /** Title of the attached beat (the beat track is always named "Bit"). */
+  initialBeatTitle?: string | null;
   trackCapacity: StudioTrackCapacityProps;
 }) {
   const [doc, setDoc] = useState(initialDocument);
+  const [beatTitle, setBeatTitle] = useState<string | null>(initialBeatTitle);
   /** Stage 2 — A/B: "before BITEK" mix plane heard instead of the saved one (playback only). */
   const [mixAbOverride, setMixAbOverride] = useState<StudioProjectDocument | null>(null);
   const beatRef = useMemo(
@@ -329,6 +325,8 @@ export function StudioEditor({
         setDoc={setDoc}
         trackCapacity={trackCapacity}
         onMixAbOverride={setMixAbOverride}
+        beatTitle={beatTitle}
+        onBeatTitle={setBeatTitle}
       />
     </StudioTransportProvider>
   );
@@ -339,11 +337,15 @@ function StudioEditorInner({
   setDoc,
   trackCapacity,
   onMixAbOverride,
+  beatTitle,
+  onBeatTitle,
 }: {
   doc: StudioProjectDocument;
   setDoc: Dispatch<SetStateAction<StudioProjectDocument>>;
   trackCapacity: StudioTrackCapacityProps;
   onMixAbOverride: (before: StudioProjectDocument | null) => void;
+  beatTitle: string | null;
+  onBeatTitle: (title: string | null) => void;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
@@ -1194,6 +1196,12 @@ function StudioEditorInner({
     if (el) el.scrollLeft = nextLeft;
   }, [pxPerMs]);
 
+  /** Fit target: end of the last clip + room (view only), read by the auto-fit observer. */
+  const fitLength = studioTimelineFitLengthMs(length, doc.clips);
+  const fitLengthRef = useRef(fitLength);
+  useLayoutEffect(() => {
+    fitLengthRef.current = fitLength;
+  }, [fitLength]);
   /** Mobile / narrow lane: auto-Fit while the user has not manually zoomed. */
   useEffect(() => {
     let ro: ResizeObserver | null = null;
@@ -1212,7 +1220,7 @@ function StudioEditorInner({
       ) {
         return;
       }
-      const next = fitPxPerMs(length, viewport);
+      const next = fitPxPerMs(fitLengthRef.current, viewport);
       zoomAroundViewportX(next, viewport / 2);
     }
 
@@ -2699,13 +2707,13 @@ function StudioEditorInner({
     ? (error ?? persistSnap?.lastError ?? FX_CHAIN_CONFLICT_UI_PL)
     : persistSnap?.status === "SAVE_FAILED"
       ? (persistSnap.lastError ?? tr("nieZapisano"))
-      : persistSnap
+      : persistSnap && persistSnap.label !== "Gotowe"
         ? persistSnap.label
         : pending
           ? tr("zapisywanie")
           : status
             ? status
-            : "Gotowe";
+            : tr("wszystkoZapisane");
 
   const clipEditHandlers = {
     onClearSelection: () => {
@@ -3224,7 +3232,7 @@ function StudioEditorInner({
       data-studio-visual-parity="v2"
       data-record-view={studioStep === "record" ? (recordSimple ? "simple" : "full") : undefined}
       data-studio-tab={onSampleTab ? "samples" : studioStep}
-      className="studio-desk flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-hidden max-lg:pb-[var(--bitek-dock-h,0px)]"
+      className="studio-desk flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-clip max-lg:pb-[var(--bitek-dock-h,0px)]"
     >
       <header
         data-testid="studio-header"
@@ -3240,10 +3248,14 @@ function StudioEditorInner({
         <span className="studio-gear-label">BIT</span>
         <button
           type="button"
-          className="studio-bit-picker min-h-11 truncate px-2 text-sm"
+          className="studio-bit-picker min-h-11 max-w-full truncate px-2 text-sm"
+          title={tr("zmienBit")}
           onClick={() => setBeatPickerOpen(true)}
         >
-          {tl(doc.tracks.find((t) => t.trackType === "BEAT")?.name || tr("wybierzBit"))} ▾
+          {doc.project.beatId
+            ? tl(beatTitle || doc.tracks.find((t) => t.trackType === "BEAT")?.name || tr("zmienBit"))
+            : tr("wybierzBit")}{" "}
+          ▾
         </button>
       </div>
 
@@ -3252,7 +3264,7 @@ function StudioEditorInner({
         data-testid="studio-step-nav"
         className="flex flex-wrap items-center gap-2 border-b border-[var(--brd-line)] py-1"
       >
-        <ol className="flex flex-wrap items-center gap-1 text-xs uppercase tracking-[0.12em]">
+        <ol className="flex flex-wrap items-center gap-1 text-xs font-semibold tracking-[0.06em]">
           <li>
             <button
               type="button"
@@ -3268,7 +3280,8 @@ function StudioEditorInner({
               1. {tMix("krokNagranie")}
             </button>
           </li>
-          <li>
+          <li className="flex items-center">
+            <span aria-hidden className="px-0.5 text-[var(--brd-mute)]">·</span>
             <button
               type="button"
               data-testid="studio-tab-samples"
@@ -3315,19 +3328,26 @@ function StudioEditorInner({
                 key={s}
                 aria-current={active ? "step" : undefined}
                 title={!active && s === "master" ? tMix("krokMasteringTytul") : undefined}
+                data-testid={!active && s === "master" ? "studio-tab-master-locked" : undefined}
                 className={
                   active
                     ? "rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
-                    : "px-2 py-1 text-[var(--brd-mute)]"
+                    : "flex items-center gap-1 px-2 py-1 text-[var(--brd-mute)]"
                 }
               >
                 {label}
+                {!active && s === "master" ? (
+                  <>
+                    <span aria-hidden>🔒</span>
+                    <span className="text-[10px] font-normal tracking-normal">{tMix("krokMasteringZamek")}</span>
+                  </>
+                ) : null}
               </li>
             );
           })}
         </ol>
         {studioStep === "record" ? (
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 max-sm:w-full">
             {onSampleTab ? null : advancedRecord ? (
               <Button
                 type="button"
@@ -3356,7 +3376,7 @@ function StudioEditorInner({
                 {tMix("widokUproszczonyPlan")}
               </span>
             )}
-            <span id="studio-go-mix-hint" className="basis-full text-xs text-[var(--brd-mute)] sm:basis-auto">
+            <span id="studio-go-mix-hint" className="text-xs text-[var(--brd-mute)] max-sm:order-last max-sm:basis-full sm:max-w-[22rem]">
               {autoMixMasterMaterial({
                 beatId: doc.project.beatId,
                 tracks: doc.tracks,
@@ -3510,7 +3530,8 @@ function StudioEditorInner({
         onClose={() => setBeatPickerOpen(false)}
         getExpectedDocumentVersion={expectedDocumentVersion}
         enqueuePersistAsync={enqueuePersistAsync}
-        onAttached={(document) => {
+        onAttached={(document, beat) => {
+          onBeatTitle(beat.title.trim() || null);
           applyPersistedDoc(() => document);
           setStatus(tr("bitPowiazanyZProjektem"));
           setError(null);
@@ -3776,7 +3797,6 @@ function StudioEditorInner({
         recording={recordingLocked}
         recordContext={studioStep === "record" || recordingContextActive}
         inspectorSheetOpen={inspectorOverlayOpen && !inspectorDesktopRail}
-        autoMixMaster={autoMixMasterAllowed ? { enabled: autoOn, onChange: writeBitekAutoMixMaster } : null}
         chat={
           <StudioBitekChat
             projectId={doc.project.id}
@@ -3824,6 +3844,7 @@ function StudioEditorInner({
           }}
           onListen={() => transport.play()}
           autoEnabled={autoOn}
+          autoToggle={autoMixMasterAllowed ? { enabled: autoOn, onChange: writeBitekAutoMixMaster } : null}
           maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}
           allowSidechain={sidechainForTier(trackCapacity.premiumTier)}
           doc={doc}
@@ -3939,7 +3960,7 @@ function StudioEditorInner({
           const viewport = el?.clientWidth;
           zoomAtViewportCenter(
             fitPxPerMs(
-              length,
+              studioTimelineFitLengthMs(length, doc.clips),
               typeof viewport === "number" && viewport > 0 ? viewport : 360,
             ),
           );
@@ -4066,7 +4087,14 @@ function StudioEditorInner({
                   </div>
                   {isBeat ? (
                     <p className="truncate px-1 text-[11px] leading-tight text-[var(--brd-ink-soft)]">
-                      {tl(track.name)} · {doc.project.tempoBpm} BPM · {tl(formatStudioTimeMs(length))}
+                      {tl(beatTitle ?? track.name)} · {doc.project.tempoBpm} BPM ·{" "}
+                      {tl(
+                        formatStudioTimeMs(
+                          doc.clips
+                            .filter((c) => c.trackId === track.id)
+                            .reduce((end, c) => Math.max(end, c.timelineStartMs + c.durationMs), 0) || length,
+                        ),
+                      )}
                     </p>
                   ) : null}
                   {!recordSimple ? (
@@ -4080,7 +4108,7 @@ function StudioEditorInner({
                         {tr("rolaSciezki", { v0: track.name })}
                       </span>
                       <select
-                        className="studio-track-role-select h-11 w-full min-w-0 max-w-[9.5rem] cursor-pointer truncate rounded-sm font-mono text-[10px] uppercase tracking-[0.08em]"
+                        className="studio-track-role-select h-11 w-full min-w-0 max-w-[11rem] cursor-pointer truncate rounded-sm text-[11px] font-semibold"
                         value={track.trackRole}
                         disabled={pending || recordingLocked}
                         data-testid="studio-track-role"
@@ -4849,512 +4877,6 @@ function ClipEditPanelPlayheadBound(
   return <ClipEditPanel {...props} playheadMs={playheadMs} />;
 }
 
-function StudioTransportBar({
-  projectId,
-  trackNames,
-  tipDocumentVersion,
-  getExpectedDocumentVersion,
-  onDocumentRefreshed,
-  onChooseBeat,
-  onRecord,
-  transportKeyboardMode,
-  onTransportKeyboardModeChange,
-  tempoBpm,
-  timeSignatureNum,
-  timeSignatureDen,
-  durationMs,
-  masterGainDb,
-  pending,
-  saveStatusLabel,
-  saveIsError,
-  conflictActive,
-  onMasterGainLocal,
-  onMasterGainCommit,
-  canUndo,
-  canRedo,
-  showFragmentTools,
-  fragmentEnabled,
-  fragmentConfirmDelete,
-  onFragmentSplit,
-  onFragmentTrimStart,
-  onFragmentTrimEnd,
-  onFragmentNudge,
-  onFragmentDuplicate,
-  onFragmentFade,
-  fragmentReverseOn,
-  onFragmentReverse,
-  fragmentStretch,
-  fragmentPitchCents,
-  fragmentPitchLocked,
-  onFragmentPlayback,
-  fragmentGainDb,
-  onFragmentGain,
-  onFragmentAskDelete,
-  onFragmentDelete,
-  onFragmentCancelDelete,
-  onUndo,
-  onRedo,
-  selectionStartMs,
-  selectionEndMs,
-}: {
-  projectId: string;
-  trackNames: Record<string, string>;
-  tipDocumentVersion: number;
-  getExpectedDocumentVersion: () => number;
-  onDocumentRefreshed: (document: StudioProjectDocument) => void;
-  onChooseBeat: () => void;
-  onRecord: () => void;
-  transportKeyboardMode: StudioTransportKeyboardMode;
-  onTransportKeyboardModeChange: (mode: StudioTransportKeyboardMode) => void;
-  tempoBpm: number;
-  timeSignatureNum: number;
-  timeSignatureDen: number;
-  durationMs: number;
-  masterGainDb: number;
-  pending: boolean;
-  saveStatusLabel: string;
-  saveIsError: boolean;
-  conflictActive: boolean;
-  onMasterGainLocal: (gainDb: number) => void;
-  onMasterGainCommit: (gainDb: number) => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  showFragmentTools: boolean;
-  fragmentEnabled: boolean;
-  fragmentConfirmDelete: boolean;
-  onFragmentSplit: () => void;
-  onFragmentTrimStart: () => void;
-  onFragmentTrimEnd: () => void;
-  onFragmentNudge: (direction: -1 | 1) => void;
-  onFragmentDuplicate: () => void;
-  onFragmentFade: (edge: "in" | "out") => void;
-  fragmentReverseOn: boolean;
-  onFragmentReverse: () => void;
-  fragmentStretch: number;
-  fragmentPitchCents: number;
-  fragmentPitchLocked: boolean;
-  onFragmentPlayback: (next: { stretch: number; pitchCents: number }) => void;
-  fragmentGainDb: number;
-  onFragmentGain: (gainDb: number) => void;
-  onFragmentAskDelete: () => void;
-  onFragmentDelete: () => void;
-  onFragmentCancelDelete: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  selectionStartMs: number | null;
-  selectionEndMs: number | null;
-}) {
-  const tl = useLibText();
-  const tr = useTranslations("studio.studioEditor");
-  const {
-    phase,
-    play,
-    pause,
-    stop,
-    seek,
-    audioState,
-    error,
-    hasBeat,
-    metronomeEnabled,
-    setMetronomeEnabled,
-    loopEnabled,
-    setLoop,
-    tuneBakePendingTrackIds,
-  } = useStudioTransportControls();
-  const { timeLabel } = useStudioTransportPlayhead();
-  const busy = audioState === "loading";
-  const noBeat =
-    audioState === "no_beat" || (!hasBeat && audioState !== "loading");
-  const statusLabel =
-    audioState === "loading"
-      ? tr("ladowanieBitu")
-      : audioState === "idle"
-        ? tr("bitWProjekcie")
-        : audioState === "no_beat"
-          ? tr("nieMaszJeszczeWybranego")
-          : audioState === "error"
-            ? tr("bladOdtwarzania")
-            : audioState === "playing"
-              ? "Odtwarzanie"
-              : audioState === "paused"
-                ? "Pauza"
-                : audioState === "ready"
-                  ? "Gotowy"
-                  : hasBeat
-                    ? tr("bitOczekujeNaZaladowanie")
-                    : tr("nieMaszJeszczeWybranego");
-
-  const beatControlsDisabled = noBeat || busy;
-
-  return (
-    <div
-      className="studio-transport sticky top-14 z-20 shrink-0 px-1 py-0 sm:top-2 sm:px-1.5"
-      role="region"
-      aria-label={tr("transportStudio")}
-      data-testid="studio-transport"
-      data-studio-transport-empty={noBeat ? "true" : "false"}
-    >
-      {/* Mobile: ops then tools (2 rows). lg+: one horizontal strip — timeline gains height. */}
-      <div className="flex flex-col gap-0 lg:flex-row lg:items-center lg:gap-1">
-        <div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin] lg:flex-1">
-          <div
-            className="flex shrink-0 flex-nowrap items-center gap-0.5"
-            data-testid="studio-transport-ops"
-          >
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
-              onClick={() => seek(0)}
-              disabled={noBeat}
-              title={tr("poczatek")}
-              aria-label={tr("poczatek")}
-            >
-              <span className="font-mono text-[13px] font-semibold">|◀</span>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className={`studio-key studio-key-play ${STUDIO_TRANSPORT_KEY}`}
-              onClick={play}
-              disabled={beatControlsDisabled || phase === "playing"}
-              title={tl(noBeat ? tr("odtworzNajpierwWybierzBit") : tr("odtworz"))}
-              aria-label={tl(noBeat ? tr("odtworzWymagaBitu") : tr("odtworz"))}
-            >
-              {busy ? "…" : (
-                <>
-                  <StudioGlyph name="play" />
-                  <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("graj")}</span>
-                </>
-              )}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
-              onClick={stop}
-              disabled={noBeat}
-              title={tr("stop")}
-              aria-label={tr("stop")}
-            >
-              <StudioGlyph name="stop" />
-              <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("stop")}</span>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="studio-rec-button min-h-11 min-w-11 gap-1.5 px-2.5 sm:min-h-8 sm:min-w-8 sm:gap-1 sm:px-2"
-              onClick={onRecord}
-              disabled={noBeat}
-              title={
-                tl(noBeat
-                  ? tr("nagrajNajpierwWybierzBit")
-                  : tr("nagrajOtwieraIstniejacyKontekst"))
-              }
-              aria-label={
-                tl(noBeat
-                  ? tr("nagrajWymagaBitu")
-                  : tr("nagrajOtwieraPanelNagrywania"))
-              }
-              data-testid="studio-transport-record"
-            >
-              <StudioRecLamp />
-              <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("nagraj")}</span>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE}`}
-              data-testid="studio-transport-keyboard-mode"
-              title={
-                transportKeyboardMode === "quick_rec"
-                  ? tr("trybKlawiaturySzybkiRecOpis")
-                  : tr("trybKlawiaturyDawOpis")
-              }
-              aria-label={
-                transportKeyboardMode === "quick_rec"
-                  ? tr("trybKlawiaturySzybkiRec")
-                  : tr("trybKlawiaturyDaw")
-              }
-              onClick={() =>
-                onTransportKeyboardModeChange(
-                  transportKeyboardMode === "quick_rec"
-                    ? "standard_daw"
-                    : "quick_rec",
-                )
-              }
-            >
-              <span className="font-mono text-[10px] font-semibold tracking-[0.06em]">
-                {transportKeyboardMode === "quick_rec"
-                  ? tr("trybKlawiaturySzybkiRecKrotki")
-                  : tr("trybKlawiaturyDawKrotki")}
-              </span>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
-              onClick={onUndo}
-              disabled={!canUndo || pending}
-              title={tr("cofnijSkrot")}
-              aria-label={tr("cofnij")}
-              data-testid="studio-transport-undo"
-            >
-              <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("cofnij")}</span>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
-              onClick={onRedo}
-              disabled={!canRedo || pending}
-              title={tr("ponowSkrot")}
-              aria-label={tr("ponow")}
-              data-testid="studio-transport-redo"
-            >
-              <StudioGlyph name="redo" />
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
-              onClick={pause}
-              disabled={noBeat || phase !== "playing"}
-              title={tr("pauza")}
-              aria-label={tr("pauza")}
-            >
-              <StudioGlyph name="pause" />
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className={
-                loopEnabled
-                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY}`
-                  : `studio-key ${STUDIO_TRANSPORT_KEY}`
-              }
-              disabled={noBeat}
-              aria-pressed={loopEnabled}
-              title={tl(loopEnabled ? tr("loopWlaczony") : tr("loopRegionu"))}
-              aria-label={tl(loopEnabled ? tr("loopWlaczony") : tr("wlaczLoopRegionu"))}
-              data-testid="studio-transport-loop"
-              onClick={() =>
-                setLoop({
-                  enabled: !loopEnabled,
-                  startMs: 0,
-                  endMs: durationMs,
-                })
-              }
-            >
-              <StudioGlyph name="loop" />
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className={
-                metronomeEnabled
-                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY}`
-                  : `studio-key ${STUDIO_TRANSPORT_KEY}`
-              }
-              disabled={noBeat}
-              aria-pressed={metronomeEnabled}
-              title={
-                tl(metronomeEnabled ? tr("metronomWlaczony") : tr("metronomKlikRuntime"))
-              }
-              aria-label={
-                tl(metronomeEnabled ? tr("metronomWlaczony") : tr("wlaczMetronom"))
-              }
-              data-testid="studio-transport-metronome"
-              onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-            >
-              <StudioGlyph name="metronome" />
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className={
-                noBeat
-                  ? `border-[var(--brd-green)] bg-[var(--brd-green)] text-[var(--brd-paper)] hover:opacity-90 ${STUDIO_TRANSPORT_KEY_WIDE}`
-                  : `studio-key ${STUDIO_TRANSPORT_KEY_WIDE}`
-              }
-              variant={noBeat ? "default" : "outline"}
-              onClick={onChooseBeat}
-              title={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
-              aria-label={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
-              data-testid="studio-transport-choose-beat"
-            >
-              {tl(noBeat ? tr("wybierzBit2") : tr("beatButton"))}
-            </Button>
-          </div>
-
-          <div
-            className="studio-counter flex min-h-11 shrink-0 flex-nowrap items-center gap-1.5 px-2 font-mono text-xs tabular-nums sm:min-h-8 sm:gap-1 sm:px-1.5"
-            data-testid="studio-transport-meta"
-          >
-            <span
-              aria-live="polite"
-              className="studio-counter-time text-sm font-medium tracking-tight"
-            >
-              {tl(timeLabel)}
-              <span className="studio-counter-dim"> / </span>
-              {tl(formatStudioTimeMs(durationMs))}
-            </span>
-            <span className="studio-counter-dim" aria-label={tr("tempo")}>
-              {tempoBpm} {tr("bpm")}
-            </span>
-            <span className="studio-counter-dim" aria-label={tr("metrum")}>
-              {timeSignatureNum}/{timeSignatureDen}
-            </span>
-            {tuneBakePendingTrackIds.length > 0 ? (
-              <span
-                role="status"
-                className="inline-flex items-center gap-1 rounded-full border border-[var(--tape-amber)]/40 px-2 py-0.5 font-sans text-[11px] text-[var(--tape-amber)]"
-                title={tr("przeliczamStrojenieTytul")}
-                data-testid="studio-transport-tune-bake"
-              >
-                <span aria-hidden className="inline-block size-1.5 animate-pulse rounded-full bg-[var(--tape-amber)]" />
-                {tr("przeliczamStrojenie")}
-              </span>
-            ) : null}
-          </div>
-
-          <div
-            className="ml-auto flex min-w-[9rem] max-w-[14rem] shrink-0 items-center gap-2 [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]"
-            data-testid="studio-transport-master"
-          >
-            <StudioMixControl
-              label={tr("master")}
-              ariaLabel={tr("glosnoscMaster")}
-              value={masterGainDb}
-              display={tr("db", { v0: masterGainDb.toFixed(1) })}
-              min={STUDIO_MASTER_GAIN_DB_MIN}
-              max={STUDIO_MASTER_GAIN_DB_MAX}
-              step={0.5}
-              compact
-              disabled={pending}
-              onLocalChange={onMasterGainLocal}
-              onCommit={onMasterGainCommit}
-            />
-          </div>
-
-          <p
-            className={`min-h-11 max-w-[12rem] shrink-0 truncate text-xs leading-[2.75rem] sm:min-h-8 sm:leading-8 ${
-              saveIsError || conflictActive
-                ? "text-[var(--brd-warn)]"
-                : "text-[var(--brd-mute)]"
-            }`}
-            role={saveIsError || conflictActive ? "alert" : "status"}
-            data-testid="studio-transport-save"
-          >
-            {tl(saveStatusLabel)}
-            {conflictActive ? (
-              <>
-                {" "}
-                <button
-                  type="button"
-                  className="underline"
-                  onClick={() => window.location.reload()}
-                >
-                  {tr("odswiez")}
-                </button>
-              </>
-            ) : null}
-          </p>
-
-          <StudioMixRevisionHistoryControl
-            projectId={projectId}
-            tipDocumentVersion={tipDocumentVersion}
-            getExpectedDocumentVersion={getExpectedDocumentVersion}
-            onDocumentRefreshed={onDocumentRefreshed}
-            trackNames={trackNames}
-            disabled={pending}
-          />
-          <StudioExportControl
-            projectId={projectId}
-            getExpectedDocumentVersion={getExpectedDocumentVersion}
-          />
-        </div>
-        <div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin] lg:flex-1">
-          <div className="flex shrink-0 flex-nowrap gap-0.5" data-testid="studio-selection-readout">
-            {(
-              [
-                ["poczatek", selectionStartMs],
-                ["koniec", selectionEndMs],
-                [
-                  "dlugoscKrotko",
-                  selectionStartMs != null && selectionEndMs != null
-                    ? Math.max(0, selectionEndMs - selectionStartMs)
-                    : null,
-                ],
-              ] as const
-            ).map(([key, ms]) => (
-              <span key={key} className="studio-sel-cell">
-                <span className="studio-sel-caption">{tr(key)}</span>
-                <span className="studio-sel-value">
-                  {ms == null ? "—" : tl(formatStudioTimeMs(ms))}
-                </span>
-              </span>
-            ))}
-          </div>
-          {showFragmentTools ? (
-            <StudioFragmentTools
-              enabled={fragmentEnabled}
-              pending={pending}
-              confirmDelete={fragmentConfirmDelete}
-              onSplit={onFragmentSplit}
-              onTrimStart={onFragmentTrimStart}
-              onTrimEnd={onFragmentTrimEnd}
-              onNudgeLeft={() => onFragmentNudge(-1)}
-              onNudgeRight={() => onFragmentNudge(1)}
-              onDuplicate={onFragmentDuplicate}
-              onFadeIn={() => onFragmentFade("in")}
-              onFadeOut={() => onFragmentFade("out")}
-              reverseOn={fragmentReverseOn}
-              onReverse={onFragmentReverse}
-              stretch={fragmentStretch}
-              pitchCents={fragmentPitchCents}
-              pitchLocked={fragmentPitchLocked}
-              onPlayback={onFragmentPlayback}
-              gainDb={fragmentGainDb}
-              onGain={onFragmentGain}
-              onAskDelete={onFragmentAskDelete}
-              onDelete={onFragmentDelete}
-              onCancelDelete={onFragmentCancelDelete}
-            />
-          ) : null}
-        </div>
-      </div>
-      {noBeat ? (
-        <p
-          className="mt-0.5 text-[11px] text-[var(--brd-mute)]"
-          role="status"
-          data-testid="studio-transport-nobeat-status"
-        >
-          {tl(statusLabel)} {tr("wybierzBitAbyOdblokowac")}
-        </p>
-      ) : (
-        <p className="sr-only" role="status">
-          {tl(statusLabel)}
-        </p>
-      )}
-      {error ? (
-        <p className="mt-0.5 text-xs text-[var(--brd-warn)]" role="alert">
-          {tl(error)}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 function StudioTimeline({
   tracks,
   clips,
@@ -5577,7 +5099,7 @@ function StudioTimeline({
                   >
                     {track.trackType === "BEAT" ? (
                       <span className="studio-lane-title pointer-events-none sticky left-2 top-1 z-[3]">
-                        BIT · {tl(track.name)}
+                        {track.name.trim().toLowerCase() === "bit" ? "BIT" : `BIT · ${tl(track.name)}`}
                       </span>
                     ) : null}
                     {trackClips.length === 0 && track.trackType !== "BEAT" ? (

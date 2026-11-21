@@ -378,3 +378,25 @@ export function buildTimelineRulerTicks(params: {
   }
   return ticks;
 }
+
+/** Shortest view the Fit button / auto-fit zoom out to when the project is nearly empty. */
+export const STUDIO_TIMELINE_FIT_MIN_MS = 30_000;
+
+/**
+ * Length the Fit button / auto-fit should show: the end of the last clip plus some room,
+ * not the whole project canvas (audit 2026-11-21: a 2:50 beat sat in a 6:00 lane, half the lane empty).
+ * View only — the project timeline length stays unchanged and the rest stays scrollable.
+ */
+export function studioTimelineFitLengthMs(
+  timelineLengthMs: number,
+  clips: ReadonlyArray<{ timelineStartMs: number; durationMs: number }>,
+): number {
+  let end = 0;
+  for (const c of clips) {
+    const e = c.timelineStartMs + c.durationMs;
+    if (Number.isFinite(e) && e > end) end = e;
+  }
+  if (end <= 0) return timelineLengthMs;
+  const padded = Math.round(end + Math.max(8_000, end * 0.08));
+  return Math.min(timelineLengthMs, Math.max(STUDIO_TIMELINE_FIT_MIN_MS, padded));
+}

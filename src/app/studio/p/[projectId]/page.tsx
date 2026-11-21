@@ -10,6 +10,7 @@ import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premiu
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { getStudioProjectDocument } from "@/lib/studio/studio-service";
+import { loadStudioBeatTitle } from "@/lib/studio/studio-beat-title";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("studio.studioPPage");
@@ -43,18 +44,21 @@ export default async function StudioProjectPage({ params }: PageProps) {
     throw error;
   }
 
-  const product = await resolveProductEntitlementForAuthContext(auth);
+  const [product, beatTitle] = await Promise.all([
+    resolveProductEntitlementForAuthContext(auth),
+    loadStudioBeatTitle(document.project.beatId),
+  ]);
 
   return (
     <AppShell tone="studio">
       <main
         data-brd-surface="control-room"
         data-surface="tape"
-        className="min-h-[calc(100dvh-4.5rem)] overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4"
+        className="min-h-[calc(100dvh-4.5rem)] overflow-x-clip pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4"
       >
         <PageFrame
           width="full"
-          className="flex min-h-[calc(100dvh-4.5rem)] flex-col gap-2 overflow-x-hidden py-2 sm:py-3"
+          className="flex min-h-[calc(100dvh-4.5rem)] flex-col gap-2 overflow-x-clip py-2 sm:py-3"
         >
           <div className="flex items-center justify-between gap-2">
             <Link
@@ -66,6 +70,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
           </div>
           <StudioEditor
             initialDocument={document}
+            initialBeatTitle={beatTitle}
             trackCapacity={{
               maxTracks: maxRecordingTracksForTier(product.premiumTier),
               premiumTier: product.premiumTier,

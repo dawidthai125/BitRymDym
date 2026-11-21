@@ -82,7 +82,9 @@ describe("studio editor undo wiring", () => {
   it("records on CAS ack and exposes transport buttons + shortcuts", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
-    const editor = readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8");
+    const editor = (readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8") +
+    // Transport bar moved to its own file (audit 2026-11-21).
+    readFileSync(join(process.cwd(), "src/components/studio/studio-transport-bar.tsx"), "utf8"));
     expect(editor).toMatch(/studioUndoShortcut\(event\)/);
     expect(editor).toMatch(/data-testid="studio-transport-undo"/);
     expect(editor).toMatch(/data-testid="studio-transport-redo"/);

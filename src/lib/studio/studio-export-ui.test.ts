@@ -378,10 +378,9 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     join(ROOT, "src/components/studio/studio-export-control.tsx"),
     "utf8",
   );
-  const editor = readFileSync(
-    join(ROOT, "src/components/studio/studio-editor.tsx"),
-    "utf8",
-  );
+  const editor = (readFileSync(join(ROOT, "src/components/studio/studio-editor.tsx"), "utf8") +
+    // Transport bar moved to its own file (audit 2026-11-21).
+    readFileSync(join(ROOT, "src/components/studio/studio-transport-bar.tsx"), "utf8"));
   const route = readFileSync(
     join(
       ROOT,

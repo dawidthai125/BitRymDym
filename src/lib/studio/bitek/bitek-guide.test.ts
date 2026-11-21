@@ -38,7 +38,8 @@ describe("Stage 1 — BITEK rule-based guide", () => {
 
   it("mix step walks idle → running → red fixes → green master hint", () => {
     const mix = { ...base, step: "mix" as const };
-    expect(bitekRulesGuide(mix)[0].action).toBe("analyze");
+    expect(bitekRulesGuide(mix)[0]).toMatchObject({ key: "mixIntro" });
+    expect(bitekRulesGuide(mix)[0].action).toBeUndefined();
     expect(bitekRulesGuide({ ...mix, analysis: { status: "running", progress: 0.42 } })[0].params?.pct).toBe(42);
     const red = bitekRulesGuide({ ...mix, analysis: { status: "done", stale: false, verdict: verdict({ balance: "red", clipping: "red", noise: "yellow" }) } });
     expect(red.map((m) => m.key)).toEqual(["mixHasRed", "fix.clipping", "fix.balance", "mixRecheck"]);

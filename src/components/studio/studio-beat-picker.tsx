@@ -51,7 +51,7 @@ export function StudioBeatPicker({
   enqueuePersistAsync: (
     executor: StudioPersistExecutor,
   ) => Promise<StudioPersistResult>;
-  onAttached: (document: StudioProjectDocument) => void;
+  onAttached: (document: StudioProjectDocument, beat: { title: string }) => void;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioBeatPicker");
@@ -109,7 +109,7 @@ export function StudioBeatPicker({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  async function attach(beatId: string) {
+  async function attach(beatId: string, beatTitle: string) {
     setAttachingId(beatId);
     setError(null);
     try {
@@ -147,7 +147,7 @@ export function StudioBeatPicker({
             ok: true as const,
             documentVersion: document.project.documentVersion,
             apply: () => {
-              onAttached(document);
+              onAttached(document, { title: beatTitle });
             },
           };
         } catch {
@@ -227,7 +227,7 @@ export function StudioBeatPicker({
                     type="button"
                     className="flex min-h-14 w-full items-center justify-between gap-3 px-2 py-3 text-left hover:bg-[var(--brd-paper-deep)] disabled:opacity-50"
                     disabled={attachingId != null}
-                    onClick={() => void attach(beat.id)}
+                    onClick={() => void attach(beat.id, beat.title)}
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-[var(--brd-ink)]">

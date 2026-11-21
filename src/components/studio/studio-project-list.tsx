@@ -182,14 +182,14 @@ function ProjectRow({
               <div className="flex flex-wrap gap-x-2">
                 <dt className="sr-only">{t("utworzono")}</dt>
                 <dd>
-                  <span className="text-[var(--brd-mute)]">{t("utworzono")}</span>{" "}
+                  <span aria-hidden className="text-[var(--brd-mute)]">{t("utworzono")}</span>{" "}
                   {formatProjectDate(project.createdAt, tag)}
                 </dd>
               </div>
               <div className="flex flex-wrap gap-x-2">
                 <dt className="sr-only">{t("edytowano")}</dt>
                 <dd>
-                  <span className="text-[var(--brd-mute)]">{t("edytowano")}</span>{" "}
+                  <span aria-hidden className="text-[var(--brd-mute)]">{t("edytowano")}</span>{" "}
                   {formatProjectDateTime(project.updatedAt, tag)}
                 </dd>
               </div>
@@ -238,6 +238,7 @@ export function StudioProjectList({
   const tPlan = useTranslations("studio.planLimits");
   const tl = useLibText();
   const t = useTranslations("studio.studioProjectList");
+  const listTag = intlTag(resolveLocale(useLocale()));
   const router = useRouter();
   const selectAllId = useId();
   const [projects, setProjects] = useState(initialProjects);
@@ -291,7 +292,8 @@ export function StudioProjectList({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title: beatId ? t("projektZBitem") : t("nowyProjekt"),
+        // Audit 2026-11-21: many projects were all called "Nowy projekt" — add the creation time.
+        title: `${beatId ? t("projektZBitem") : t("nowyProjekt")} ${formatProjectDateTime(new Date().toISOString(), listTag)}`,
         beatId: beatId ?? null,
       }),
     });

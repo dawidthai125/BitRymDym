@@ -15,10 +15,9 @@ import {
 const root = process.cwd();
 
 describe("P6.6.2 Track meter UI contracts", () => {
-  const editor = readFileSync(
-    join(root, "src/components/studio/studio-editor.tsx"),
-    "utf8",
-  );
+  const editor = (readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8") +
+    // Transport bar moved to its own file (audit 2026-11-21).
+    readFileSync(join(root, "src/components/studio/studio-transport-bar.tsx"), "utf8"));
   const trackMeter = readFileSync(
     join(root, "src/components/studio/studio-track-meter.tsx"),
     "utf8",
@@ -151,7 +150,9 @@ describe("P6.6.2 Track meter UI contracts", () => {
   });
 
   it("transport remains reachable (sticky + labels)", () => {
-    expect(editor).toMatch(/sticky top-14/);
+    // Audit 2026-11-21: sticky from sm; on phones a mini transport docks above the bottom nav.
+    expect(editor).toMatch(/sm:sticky sm:top-2/);
+    expect(editor).toMatch(/data-testid="studio-mobile-mini-transport"/);
     expect(editor).toMatch(/aria-label=\"Transport Studio\"/);
     // Visual Parity V2 — Play label may include noBeat “wymaga bitu” suffix.
     expect(editor).toMatch(/aria-label=\{noBeat \? \"Odtwórz — wymaga bitu\" : \"Odtwórz\"\}/);

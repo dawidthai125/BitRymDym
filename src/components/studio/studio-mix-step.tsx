@@ -134,6 +134,7 @@ export function StudioMixStep({
   onGoMaster,
   onListen,
   autoEnabled = false,
+  autoToggle = null,
   maxEffects,
   allowSidechain,
 }: {
@@ -146,6 +147,8 @@ export function StudioMixStep({
   allowSidechain?: boolean;
   /** Gold switch is on. Off for every other plan, even if a flag was planted. */
   autoEnabled?: boolean;
+  /** Gold: the BITEK auto mix-mastering switch lives here (audit 2026-11-21: it used to float over the tracks). */
+  autoToggle?: { enabled: boolean; onChange: (enabled: boolean) => void } | null;
   doc: StudioProjectDocument;
   resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
   onBack: () => void;
@@ -1047,6 +1050,21 @@ export function StudioMixStep({
             >
               {result ? t("analizujPonownie") : t("analizuj")}
             </Button>
+            {autoToggle ? (
+              <label
+                data-testid="studio-bitek-auto"
+                title={tBitek("dock.autoMixMasterOpis")}
+                className="flex min-h-11 cursor-pointer items-center gap-2 rounded-[2px] border border-[var(--brd-line)] px-3 text-sm"
+              >
+                <input
+                  type="checkbox"
+                  className="size-4 shrink-0"
+                  checked={autoToggle.enabled}
+                  onChange={(event) => autoToggle.onChange(event.target.checked)}
+                />
+                <span>{tBitek("dock.autoMixMaster")}</span>
+              </label>
+            ) : null}
             {running ? (
               <>
                 <progress

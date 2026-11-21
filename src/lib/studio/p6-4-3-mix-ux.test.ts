@@ -66,10 +66,9 @@ describe("P6.4.3 FX entry labels", () => {
 });
 
 describe("P6.4.3 Mix UX integration contracts", () => {
-  const editor = readFileSync(
-    join(process.cwd(), "src/components/studio/studio-editor.tsx"),
-    "utf8",
-  );
+  const editor = (readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8") +
+    // Transport bar moved to its own file (audit 2026-11-21).
+    readFileSync(join(process.cwd(), "src/components/studio/studio-transport-bar.tsx"), "utf8"));
   const sheet = readFileSync(
     join(process.cwd(), "src/components/studio/studio-fx-chain-editor.tsx"),
     "utf8",
@@ -160,7 +159,9 @@ describe("P6.4.3 Mix UX integration contracts", () => {
   });
 
   it("transport sticky + 44px targets + accessible labels", () => {
-    expect(editor).toMatch(/sticky top-14/);
+    // Audit 2026-11-21: sticky from sm; on phones a mini transport docks above the bottom nav.
+    expect(editor).toMatch(/sm:sticky sm:top-2/);
+    expect(editor).toMatch(/data-testid="studio-mobile-mini-transport"/);
     expect(editor).toMatch(/aria-label=\"Transport Studio\"/);
     // Visual Parity V2 — Play label may include noBeat “wymaga bitu” suffix.
     expect(editor).toMatch(/aria-label=\{noBeat \? \"Odtwórz — wymaga bitu\" : \"Odtwórz\"\}/);

@@ -68,7 +68,7 @@ describe("AUD-01 beat attach + picker (source contracts)", () => {
   );
   const pickerRoute = readSrc("src/app/api/studio/beat-picker/route.ts");
   const pickerUi = readSrc("src/components/studio/studio-beat-picker.tsx");
-  const editor = readSrc("src/components/studio/studio-editor.tsx");
+  const editor = (readSrc("src/components/studio/studio-editor.tsx") + readSrc("src/components/studio/studio-transport-bar.tsx"));
 
   it("attachBeat updates studio_projects.beat_id and reseeds BEAT_REF", () => {
     expect(service).toMatch(/attachBeatToStudioProjectFor/);
@@ -266,7 +266,7 @@ describe("AUD-01 architecture + mic lifecycle guards", () => {
   });
 
   it("editor + schedule filter stale BEAT_REF from engine path", () => {
-    const editor = readSrc("src/components/studio/studio-editor.tsx");
+    const editor = (readSrc("src/components/studio/studio-editor.tsx") + readSrc("src/components/studio/studio-transport-bar.tsx"));
     const schedule = readSrc("src/lib/studio/studio-audio-schedule.ts");
     expect(editor).toMatch(/projectBeatId:\s*doc\.project\.beatId/);
     expect(editor).toMatch(/beatRefMatchesProjectSsot/);

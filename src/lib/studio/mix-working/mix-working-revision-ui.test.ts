@@ -192,10 +192,9 @@ describe("A3 Mix Working revision UI — control + editor wiring", () => {
     join(ROOT, "src/components/studio/studio-mix-revision-history-control.tsx"),
     "utf8",
   );
-  const editor = readFileSync(
-    join(ROOT, "src/components/studio/studio-editor.tsx"),
-    "utf8",
-  );
+  const editor = (readFileSync(join(ROOT, "src/components/studio/studio-editor.tsx"), "utf8") +
+    // Transport bar moved to its own file (audit 2026-11-21).
+    readFileSync(join(ROOT, "src/components/studio/studio-transport-bar.tsx"), "utf8"));
 
   it("exposes transport entry and dialog testids", () => {
     expect(control).toMatch(/data-testid="studio-transport-mix-history"/);
@@ -276,10 +275,9 @@ describe("A3.2 Mix Working revision UI — loading race + mobile restore layer",
     join(ROOT, "src/components/site/mobile-bottom-nav.tsx"),
     "utf8",
   );
-  const editor = readFileSync(
-    join(ROOT, "src/components/studio/studio-editor.tsx"),
-    "utf8",
-  );
+  const editor = (readFileSync(join(ROOT, "src/components/studio/studio-editor.tsx"), "utf8") +
+    // Transport bar moved to its own file (audit 2026-11-21).
+    readFileSync(join(ROOT, "src/components/studio/studio-transport-bar.tsx"), "utf8"));
 
   function classesOf(source: string, anchor: RegExp): string {
     const match = anchor.exec(source);

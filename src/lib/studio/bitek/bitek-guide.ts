@@ -82,7 +82,8 @@ export function bitekRulesGuide(state: BitekState): BitekMessage[] {
   }
   const a = state.analysis;
   if (a.status === "idle") {
-    out.push({ id: "mix-intro", key: "mixIntro", tone: "info", action: "analyze" });
+    // No action button: "Analizuj mix" already sits on the page next to the bubble (audit 2026-11-21).
+    out.push({ id: "mix-intro", key: "mixIntro", tone: "info" });
     return out;
   }
   if (a.status === "running") {

@@ -7,10 +7,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
-const editor = readFileSync(
-  join(root, "src/components/studio/studio-editor.tsx"),
-  "utf8",
-);
+const editor = (readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8") +
+    // Transport bar moved to its own file (audit 2026-11-21).
+    readFileSync(join(root, "src/components/studio/studio-transport-bar.tsx"), "utf8"));
 
 describe("Studio Visual Parity V2 — transport empty shell", () => {
   it("keeps full transport chrome in noBeat (not message-only strip)", () => {

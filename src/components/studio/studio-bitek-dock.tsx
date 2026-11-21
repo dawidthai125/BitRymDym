@@ -76,7 +76,6 @@ export function StudioBitekDock({
   recording = false,
   recordContext = false,
   inspectorSheetOpen = false,
-  autoMixMaster = null,
 }: {
   bubble: BitekBubble | null;
   mood: BitekMood;
@@ -93,8 +92,6 @@ export function StudioBitekDock({
   recordContext?: boolean;
   /** Inspector sheet/drawer (< xl) open — dock hides under the modal. */
   inspectorSheetOpen?: boolean;
-  /** Gold only. The parent passes null for every other plan. */
-  autoMixMaster?: { enabled: boolean; onChange: (enabled: boolean) => void } | null;
 }) {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -285,7 +282,7 @@ export function StudioBitekDock({
       className={`pointer-events-none fixed z-40 flex flex-col gap-2 ${
         fitted
           ? "items-start"
-          : `bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-5 ${placement.side === "left" ? "left-3 items-start lg:left-5" : "right-3 items-end lg:right-5"}`
+          : `bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-5 ${placement.side === "left" ? "left-3 items-start lg:left-[20rem]" : "right-3 items-end lg:right-5"}`
       }`}
     >
       <span id={dragHintId} className="sr-only">{t("przesun")}</span>
@@ -444,21 +441,6 @@ export function StudioBitekDock({
       </section>
 
       <div className="pointer-events-auto flex items-center gap-2">
-        {autoMixMaster ? (
-          <label
-            data-testid="studio-bitek-auto"
-            title={t("autoMixMasterOpis")}
-            className="flex max-w-[11rem] cursor-pointer items-center gap-1.5 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 py-1 text-[10px] font-semibold uppercase leading-tight tracking-[0.04em] shadow-lg"
-          >
-            <input
-              type="checkbox"
-              className="size-4 shrink-0"
-              checked={autoMixMaster.enabled}
-              onChange={(event) => autoMixMaster.onChange(event.target.checked)}
-            />
-            {t("autoMixMaster")}
-          </label>
-        ) : null}
         {/* Narrow record step: no text pill (it reached the track M/S/R) — the avatar dot says it. */}
         {hasNews && !(placement.compact && isMobile) ? (
           <button

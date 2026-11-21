@@ -684,7 +684,11 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   border-radius: 2px;
 }
 .studio-desk .studio-lane-title {
+  /* Audit 2026-11-21: dark text sat on a near-black chip — give it its own amber plate. */
   color: #1a1006;
+  background: #f2a93b;
+  border-radius: 2px;
+  padding: 1px 6px;
   font-size: 12px;
   font-weight: 800;
   z-index: 3;
