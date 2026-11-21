@@ -1,5 +1,8 @@
 import "server-only";
 
+// Turnstile is active in production (keys set on Vercel). The check runs on our server; do NOT also
+// enable CAPTCHA in Supabase Auth, because Supabase would then demand its own token on every sign-in.
+
 import { clientIpFromHeaders } from "@/lib/auth/attempt-limit";
 import { headers } from "next/headers";
 
