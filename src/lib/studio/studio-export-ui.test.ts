@@ -344,8 +344,9 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
   it("bounds polling attempts", () => {
     expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS).toBeGreaterThan(0);
     // Still bounded, but must outlast the worker timeout (3 min) — 60 s gave up mid-render (2026-11-21).
-    expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS).toBeLessThanOrEqual(200);
-    expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS * STUDIO_EXPORT_POLL_INTERVAL_MS).toBeGreaterThanOrEqual(180_000);
+    expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS).toBeLessThanOrEqual(400);
+    // Outlast the STUDIO_EXPORT claim timeout (480 s in claim_next_studio_export_job).
+    expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS * STUDIO_EXPORT_POLL_INTERVAL_MS).toBeGreaterThanOrEqual(480_000);
   });
 });
 

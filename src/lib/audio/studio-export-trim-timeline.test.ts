@@ -13,10 +13,13 @@ function doc(timelineLengthMs: number, clipEnds: Array<[number, number]>): Studi
   } as unknown as StudioProjectDocument;
 }
 
-describe("trimStudioExportTimeline (prod 2026-11-21: 6:00 canvas vs 3:00 export cap)", () => {
+describe("trimStudioExportTimeline (export cap = 6:00 song limit)", () => {
   it("renders up to the end of the last clip, not the empty canvas", () => {
     const out = trimStudioExportTimeline(doc(360_000, [[0, 150_000], [10_000, 43_000]]));
     expect(out.project.timelineLengthMs).toBe(150_000);
+  });
+  it("accepts a song over 3:00 (Owner GO 2026-11-21: export up to 6:00)", () => {
+    expect(trimStudioExportTimeline(doc(360_000, [[0, 250_000]])).project.timelineLengthMs).toBe(250_000);
   });
   it("keeps an empty or already short project unchanged", () => {
     const empty = doc(360_000, []);
@@ -26,7 +29,7 @@ describe("trimStudioExportTimeline (prod 2026-11-21: 6:00 canvas vs 3:00 export 
   });
   it("fails fast with a marked LIMIT when the song plus FX tail exceeds the cap", () => {
     try {
-      trimStudioExportTimeline(doc(360_000, [[0, 200_000]]));
+      trimStudioExportTimeline(doc(360_000, [[0, 359_000]]));
       throw new Error("expected LIMIT");
     } catch (e) {
       expect(e).toBeInstanceOf(RenderJobDomainError);

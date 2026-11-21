@@ -306,7 +306,7 @@ export function mapStudioExportHttpResult(input: {
       code: json.code,
       message:
         typeof json.error === "string" && json.error.includes("EXPORT_DURATION_CAP")
-          ? "Eksport WAV obsługuje na razie utwory do ok. 3 minut. Master (krok 3) działa dla utworów do 6 minut."
+          ? "Eksport WAV obsługuje utwory do 6 minut. Skróć utwór i spróbuj ponownie."
           : "Eksport niedostępny (limit lub konflikt). Spróbuj później.",
     };
   }
@@ -471,8 +471,8 @@ export function studioExportPhaseLabel(phase: StudioExportUiPhase): string {
 }
 
 export const STUDIO_EXPORT_POLL_INTERVAL_MS = 1500;
-/** 160 × 1.5 s = 4 min — covers the worker timeout (3 min); 40 gave up after 60 s while a WAV took ~85 s (prod 2026-11-21). */
-export const STUDIO_EXPORT_POLL_MAX_ATTEMPTS = 160;
+/** 340 × 1.5 s = 8.5 min — outlasts the STUDIO_EXPORT claim timeout (8 min, 6:00 songs); 40 gave up after 60 s (prod 2026-11-21). */
+export const STUDIO_EXPORT_POLL_MAX_ATTEMPTS = 340;
 
 /** Phone / preview MP3 — lowest SFM quality on every paid plan (BRONZE+). */
 export const SFM_PHONE_MP3_QUALITY = "MP3_128" as const;

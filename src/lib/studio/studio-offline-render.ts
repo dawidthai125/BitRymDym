@@ -14,7 +14,8 @@
 import { trackParamAt } from "@/lib/studio/studio-automation";
 import type { AcousticBank } from "@/lib/studio/acoustic-bank";
 import { renderMidiNotes } from "@/lib/studio/studio-midi";
-import { AUDIO_CODEC, AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS } from "@/config/audio-render";
+import { AUDIO_CODEC } from "@/config/audio-render";
+import { STUDIO_MAX_SONG_MS } from "@/config/studio";
 import type { DecodedPcmStereo } from "@/lib/audio/render-decode";
 import {
   trackGraphParams,
@@ -44,9 +45,12 @@ export const STUDIO_OFFLINE_RENDER_ENGINE = "studio-offline-pcm-v1" as const;
 export const STUDIO_OFFLINE_RENDER_SAMPLE_RATE = AUDIO_CODEC.WAV_SAMPLE_RATE; // 44100
 export const STUDIO_OFFLINE_RENDER_CHANNELS = AUDIO_CODEC.CHANNELS; // 2
 
-/** Fail-closed max timeline length (ms) — aligns with render source ceiling. */
-export const STUDIO_OFFLINE_RENDER_MAX_DURATION_MS =
-  AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS * 1000;
+/**
+ * Fail-closed max timeline length (ms) = the Studio song limit (6:00, same as Master).
+ * Was the 180 s single-source ceiling, so no song over 3:00 could be exported (Owner GO 2026-11-21).
+ * Single takes / beats keep AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS.
+ */
+export const STUDIO_OFFLINE_RENDER_MAX_DURATION_MS = STUDIO_MAX_SONG_MS;
 
 export type StudioOfflineRenderErrorCode =
   | "STUDIO_RENDER_EMPTY_SESSION"

@@ -326,7 +326,7 @@ async function applyTimeoutIfNeeded(row: RenderJobRow): Promise<RenderJobRow> {
       status: "TIMEOUT",
       finished_at: finishedAt,
       error_code: "TIMEOUT",
-      error_message: "Render job exceeded 180s wall from CLAIM.",
+      error_message: "Render job exceeded its wall-clock limit from CLAIM.",
     })
     .eq("id", row.id)
     .eq("status", "RUNNING")

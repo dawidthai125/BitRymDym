@@ -6,7 +6,6 @@
 import { createHash } from "node:crypto";
 
 import {
-  AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS,
   STUDIO_EXPORT_FX_POST_ROLL_MAX_MS,
   STUDIO_EXPORT_DOCUMENT_SNAPSHOT_SCHEMA_VERSION,
   STUDIO_EXPORT_MAX_CLIPS,
@@ -15,6 +14,7 @@ import {
   STUDIO_EXPORT_MAX_UNIQUE_BEATS,
   STUDIO_EXPORT_MAX_UNIQUE_TAKES,
 } from "@/config/audio-render";
+import { STUDIO_MAX_SONG_MS } from "@/config/studio";
 import { beatRefMatchesProjectSsot } from "@/lib/studio/studio-beat-audio";
 import type { StudioProjectDocument } from "@/lib/studio/studio-types";
 import { RenderJobDomainError } from "@/lib/audio/render-job-core";
@@ -100,7 +100,7 @@ export const STUDIO_EXPORT_DURATION_CAP_MARKER = "EXPORT_DURATION_CAP";
 
 /**
  * Export renders the song, not the empty canvas: every Studio project has a 6:00 timeline
- * (STUDIO_MAX_SONG_MS) while the offline export render caps at AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS
+ * (STUDIO_MAX_SONG_MS); the export render used to cap at 180 s and now caps at STUDIO_MAX_SONG_MS too
  * (prod 2026-11-21: every WAV export failed with "Timeline 360000ms exceeds cap 180000ms").
  * Trim the snapshot timeline to the end of the last clip (never cuts a clip) and fail fast when the
  * song plus the FX tail still does not fit.
@@ -115,7 +115,7 @@ export function trimStudioExportTimeline(document: StudioProjectDocument): Studi
   if (contentEnd <= 0) return document;
   const original = Math.trunc(document.project.timelineLengthMs);
   const trimmed = Math.min(original, Math.max(1000, contentEnd));
-  const capMs = AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS * 1000;
+  const capMs = STUDIO_MAX_SONG_MS;
   if (trimmed + STUDIO_EXPORT_FX_POST_ROLL_MAX_MS > capMs) {
     throw new RenderJobDomainError(
       `${STUDIO_EXPORT_DURATION_CAP_MARKER}: song ${trimmed}ms + FX tail exceeds export cap ${capMs}ms.`,
