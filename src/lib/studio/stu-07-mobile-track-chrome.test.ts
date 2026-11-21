@@ -2,8 +2,6 @@
  * STU-07 — mobile Studio track chrome + timeline fit (narrow viewport).
  * Source contracts; runtime layout verified in browser / CDP.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -12,11 +10,9 @@ import {
   STUDIO_TIMELINE_DEFAULT_PX_PER_MS,
   timelineContentOverflowsViewport,
 } from "@/lib/studio/studio-timeline-view";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
-const root = process.cwd();
-const editor = (readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8") +
-    readFileSync(join(root, "src/components/studio/studio-timeline.tsx"), "utf8") +
-    readFileSync(join(root, "src/components/studio/studio-daw-layout.ts"), "utf8"));
+const editor = readStudioEditorSource();
 
 describe("STU-07-A — track header hit targets on narrow chrome", () => {
   it("keeps a minimum width on the track select control", () => {

@@ -2,9 +2,11 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { bitekDockPlacement } from "@/lib/studio/bitek-dock-placement";
+import { STUDIO_EDITOR_SOURCE_FILES } from "@/test/studio-editor-source";
 
 const read = (p: string) => readFileSync(p, "utf8");
-const editor = read("src/components/studio/studio-editor.tsx");
+// Relative reads stay raw (keys, not resolved pl copy) — this file asserts on t("key") calls.
+const editor = STUDIO_EDITOR_SOURCE_FILES.map((f) => read(f)).join("\n");
 const transport = read("src/components/studio/studio-transport-bar.tsx");
 const dock = read("src/components/studio/studio-bitek-dock.tsx");
 const mixStep = read("src/components/studio/studio-mix-step.tsx");

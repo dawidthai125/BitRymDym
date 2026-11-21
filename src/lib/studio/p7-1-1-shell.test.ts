@@ -5,13 +5,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const root = process.cwd();
-const editor = ((readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8") +
-    readFileSync(join(root, "src/components/studio/studio-timeline.tsx"), "utf8") +
-    readFileSync(join(root, "src/components/studio/studio-daw-layout.ts"), "utf8")) +
-    // Transport bar moved to its own file (audit 2026-11-21).
-    readFileSync(join(root, "src/components/studio/studio-transport-bar.tsx"), "utf8"));
+const editor = readStudioEditorSource();
 const editToolbar = readFileSync(
   join(root, "src/components/studio/studio-edit-toolbar.tsx"),
   "utf8",
@@ -45,7 +42,8 @@ describe("Phase 7.1.1 shell landmarks", () => {
       editor.indexOf("renderTrackHeader"),
       editor.indexOf("data-testid=\"studio-inspector-desktop\""),
     );
-    expect(headerBlock).toMatch(/studio-track-header/);
+    // Header markup lives in studio-track-header.tsx (2026-11-21); the editor renders <StudioTrackHeader>.
+    expect(headerBlock).toMatch(/StudioTrackHeader|studio-track-header/);
     expect(headerBlock).not.toMatch(/data-testid="studio-mix-track"/);
   });
 });

@@ -5,11 +5,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const root = process.cwd();
-const editor = (readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8") +
-    // Transport bar moved to its own file (audit 2026-11-21).
-    readFileSync(join(root, "src/components/studio/studio-transport-bar.tsx"), "utf8"));
+const editor = readStudioEditorSource();
 const mixControl = readFileSync(
   join(root, "src/components/studio/studio-mix-control.tsx"),
   "utf8",

@@ -50,6 +50,7 @@ import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-r
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
 import { StudioClipSpectrogram } from "@/components/studio/studio-clip-spectrogram";
 import { StudioTransportBar } from "@/components/studio/studio-transport-bar";
+import { StudioTrackHeader } from "@/components/studio/studio-track-header";
 import {
   TrackInspectorPanel,
   StudioMasterMeterLive,
@@ -58,8 +59,10 @@ import {
 } from "@/components/studio/studio-inspector-panels";
 import { StudioTimelinePlayheadBound } from "@/components/studio/studio-timeline";
 import {
+  STUDIO_DAW_CHIP_CLASS,
   STUDIO_DAW_LANE_HEIGHT_PX,
-  STUDIO_TRACK_EDGE,
+  STUDIO_TRACK_GAIN_DB_MAX,
+  STUDIO_TRACK_GAIN_DB_MIN,
   type StudioTimelineMode,
 } from "@/components/studio/studio-daw-layout";
 import { playheadInsideClip } from "@/lib/studio/studio-clip-ops";
@@ -94,7 +97,6 @@ import type {
   StudioProjectDocument,
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
-import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import { beatDurationMs } from "@/lib/studio/studio-daw-clock";
 import { studioAdvancedRecordAllowed, studioRecordView } from "@/lib/studio/studio-record-view";
 import {
@@ -147,9 +149,7 @@ import {
   shouldShowStudioTrackUpgradeCta,
   countRecordingTracks,
 } from "@/lib/studio/studio-track-capacity";
-import { StudioGlyph } from "@/components/studio/studio-glyphs";
-import { StudioTrackLevelMeter } from "@/components/studio/studio-track-level-meter";
-import { STUDIO_MAX_SONG_MS, STUDIO_TRACK_ROLES, isStudioTrackRole } from "@/config/studio";
+import { STUDIO_MAX_SONG_MS } from "@/config/studio";
 import {
   EMPTY_STUDIO_UNDO_HISTORY,
   pickStudioPatchBefore,
@@ -204,19 +204,6 @@ export type StudioTrackCapacityProps = {
 };
 
 /** Phase 7.1.1 — primary track chips ≥44px hit area (visual stays compact). */
-/** Track header pan readout: C, L 35, R 100 (mono, fixed width). */
-function formatStudioPanShort(
-  pan: number,
-  labels: { center: string; left: string; right: string },
-): string {
-  const v = Math.round(pan * 100);
-  if (v === 0) return labels.center;
-  return v < 0 ? `${labels.left}${Math.abs(v)}` : `${labels.right}${v}`;
-}
-const STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0";
-/** Track gain bounds — same as Mixer strips. */
-const STUDIO_TRACK_GAIN_DB_MIN = -24;
-const STUDIO_TRACK_GAIN_DB_MAX = 12;
 
 export function StudioEditor({
   initialDocument,
@@ -340,7 +327,6 @@ function StudioEditorInner({
   const tr = useTranslations("studio.studioEditor");
   const { playheadMs } = useStudioTransportPlayhead();
   const tInspector = useTranslations("studio.inspectorTitle");
-  const trRole = useTranslations("studio.trackRole");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [persistSnap, setPersistSnap] = useState<StudioPersistSnapshot>({
@@ -3984,246 +3970,26 @@ function StudioEditorInner({
                 />
               ) : null
             }
-            renderTrackHeader={(track, index) => {
-              const isSelected = activeSelectedTrackId === track.id;
-              const isBeat = track.trackType === "BEAT";
-              const typeLabel = labelStudioTrackType(track.trackType);
-              return (
-                <div
-                  key={track.id}
-                  data-testid="studio-track-header"
-                  data-track-id={track.id}
-                  data-track-type={track.trackType}
-                  data-track-role={track.trackRole}
-                  data-selected={isSelected ? "true" : "false"}
-                  className="studio-track-strip flex items-stretch gap-1 border py-1 pl-1.5 pr-1"
-                  style={{
-                    height: STUDIO_DAW_LANE_HEIGHT_PX,
-                    borderColor: isBeat ? "#b9761e" : STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
-                  }}
-                >
-                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-                  {/*
-                    Phone header is full width, so row 2 can be 44px.
-                    Do not put name + M/S/R + ↑↓⋮ on one row (6×44).
-                    Row1 = name + M/S/R; row2 = role + reorder/menu;
-                    row3 = Vol / Pan, value on the label row.
-                  */}
-                  <div className="flex min-h-11 items-center gap-0.5">
-                    <button
-                      type="button"
-                      className="min-h-11 min-w-[4.5rem] flex-1 truncate rounded-sm px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
-                      aria-pressed={isSelected}
-                      aria-label={
-                        tl(isSelected
-                          ? tr("odznaczSciezke", { v0: track.name })
-                          : tr("wybierzSciezke", { v0: track.name }))
-                      }
-                      data-testid="studio-track-header-select"
-                      title={track.name}
-                      onClick={() =>
-                        setSelectedTrackId(isSelected ? null : track.id)
-                      }
-                    >
-                      <span
-                        className="studio-track-name block truncate text-[13px] font-medium leading-tight text-[var(--brd-ink)]"
-                        data-testid="studio-track-name"
-                      >
-                        {isBeat ? "BIT" : tl(track.name)}
-                      </span>
-                    </button>
-                    <StudioToggleChip
-                      active={track.muted}
-                      label="M"
-                      title={tr("wycisz")}
-                      tone="mute"
-                      className={STUDIO_DAW_CHIP_CLASS}
-                      onClick={() => {
-                        patchTrack(track.id, { muted: !track.muted });
-                      }}
-                    />
-                    <StudioToggleChip
-                      active={track.solo}
-                      label="S"
-                      title={tr("solo")}
-                      tone="solo"
-                      className={STUDIO_DAW_CHIP_CLASS}
-                      onClick={() => {
-                        patchTrack(track.id, { solo: !track.solo });
-                      }}
-                    />
-                    <StudioToggleChip
-                      active={track.recordArmed}
-                      label="R"
-                      title={tr("uzbrojenieNagrywania")}
-                      tone="record"
-                      className={STUDIO_DAW_CHIP_CLASS}
-                      onClick={() => {
-                        patchTrack(track.id, {
-                          recordArmed: !track.recordArmed,
-                        });
-                      }}
-                    />
-                    {!isBeat ? (
-                      <span
-                        aria-hidden
-                        className="studio-track-swatch"
-                        style={{
-                          background: STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                  {isBeat ? (
-                    <p className="truncate px-1 text-[11px] leading-tight text-[var(--brd-ink-soft)]">
-                      {tl(beatTitle ?? track.name)} · {doc.project.tempoBpm} BPM ·{" "}
-                      {tl(
-                        formatStudioTimeMs(
-                          doc.clips
-                            .filter((c) => c.trackId === track.id)
-                            .reduce((end, c) => Math.max(end, c.timelineStartMs + c.durationMs), 0) || length,
-                        ),
-                      )}
-                    </p>
-                  ) : null}
-                  {!recordSimple ? (
-                  <>
-                  <div className="flex min-h-11 min-w-0 items-center gap-0.5">
-                    <label
-                      className="studio-track-role relative flex h-11 min-w-0 flex-1 items-center"
-                      title={`${typeLabel} · ${trRole(track.trackRole)}`}
-                    >
-                      <span className="sr-only">
-                        {tr("rolaSciezki", { v0: track.name })}
-                      </span>
-                      <select
-                        className="studio-track-role-select h-11 w-full min-w-0 max-w-[11rem] cursor-pointer truncate rounded-sm text-[11px] font-semibold"
-                        value={track.trackRole}
-                        disabled={pending || recordingLocked}
-                        data-testid="studio-track-role"
-                        data-track-id={track.id}
-                        aria-label={tr("rolaSciezki", { v0: track.name })}
-                        onChange={(event) => {
-                          const next = event.target.value;
-                          if (!isStudioTrackRole(next) || next === track.trackRole) return;
-                          patchTrack(track.id, { trackRole: next });
-                        }}
-                      >
-                        {STUDIO_TRACK_ROLES.map((role) => (
-                          <option key={role} value={role}>
-                            {trRole(role)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="ghost"
-                      className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7"
-                      disabled={pending || index === 0}
-                      title={tr("przeniesWGore")}
-                      aria-label={tr("przeniesSciezkeWGore")}
-                      onClick={() => {
-                        reorder(track.id, "up");
-                      }}
-                    >
-                      <StudioGlyph name="up" className="size-3.5" />
-                    </Button>
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="ghost"
-                      className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7"
-                      disabled={pending || index === doc.tracks.length - 1}
-                      title={tr("przeniesWDol")}
-                      aria-label={tr("przeniesSciezkeWDol")}
-                      onClick={() => {
-                        reorder(track.id, "down");
-                      }}
-                    >
-                      <StudioGlyph name="down" className="size-3.5" />
-                    </Button>
-                    {!isBeat ? (
-                      <Button
-                        type="button"
-                        size="xs"
-                        variant="ghost"
-                        className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7"
-                        data-testid="studio-track-menu"
-                        data-track-id={track.id}
-                        disabled={recordingLocked || pending}
-                        title={tr("menuSciezki")}
-                        aria-label={tr("menuSciezki2", { v0: track.name })}
-                        aria-expanded={trackMenuId === track.id}
-                        onClick={() =>
-                          setTrackMenuId((prev) =>
-                            prev === track.id ? null : track.id,
-                          )
-                        }
-                      >
-                        <StudioGlyph name="more" className="size-3.5" />
-                      </Button>
-                    ) : null}
-                  </div>
-                  <div className="flex min-h-0 items-center">
-                    <div
-                      className="grid min-w-0 flex-1 grid-cols-2 gap-2 pr-0.5"
-                      data-testid="studio-track-header-mix"
-                    >
-                    <StudioMixControl
-                      label={tr("dbEtykieta")}
-                      ariaLabel={tr("glosnoscSciezki", { v0: track.name })}
-                      value={track.gainDb}
-                      display={`${track.gainDb > 0 ? "+" : ""}${track.gainDb.toFixed(1)} dB`}
-                      min={STUDIO_TRACK_GAIN_DB_MIN}
-                      max={STUDIO_TRACK_GAIN_DB_MAX}
-                      step={0.5}
-                      stacked
-                      disabled={pending}
-                      onLocalChange={(gainDb) =>
-                        setDoc((prev) => ({
-                          ...prev,
-                          tracks: prev.tracks.map((t) =>
-                            t.id === track.id ? { ...t, gainDb } : t,
-                          ),
-                        }))
-                      }
-                      onCommit={(gainDb) => {
-                        patchTrack(track.id, { gainDb });
-                      }}
-                    />
-                    <StudioMixControl
-                      label={tr("panEtykieta")}
-                      ariaLabel={tr("panoramaSciezki", { v0: track.name })}
-                      value={track.pan}
-                      display={formatStudioPanShort(track.pan, { center: tr("panSrodekKrotko"), left: tr("panLewoKrotko"), right: tr("panPrawoKrotko") })}
-                      min={-1}
-                      max={1}
-                      step={0.01}
-                      stacked
-                      disabled={pending}
-                      onLocalChange={(pan) =>
-                        setDoc((prev) => ({
-                          ...prev,
-                          tracks: prev.tracks.map((t) =>
-                            t.id === track.id ? { ...t, pan } : t,
-                          ),
-                        }))
-                      }
-                      onCommit={(pan) => {
-                        patchTrack(track.id, { pan });
-                      }}
-                    />
-                    </div>
-                  </div>
-                  </>
-                  ) : null}
-                  </div>
-                  <StudioTrackLevelMeter trackId={track.id} />
-                </div>
-              );
-            }}
+            renderTrackHeader={(track, index) => (
+              <StudioTrackHeader
+                key={track.id}
+                track={track}
+                index={index}
+                isSelected={activeSelectedTrackId === track.id}
+                doc={doc}
+                beatTitle={beatTitle}
+                timelineLengthMs={length}
+                recordSimple={recordSimple}
+                pending={pending}
+                recordingLocked={recordingLocked}
+                menuOpen={trackMenuId === track.id}
+                onSelect={setSelectedTrackId}
+                onToggleMenu={() => setTrackMenuId((prev) => (prev === track.id ? null : track.id))}
+                patchTrack={patchTrack}
+                reorder={reorder}
+                setDoc={setDoc}
+              />
+            )}
             onSeek={seekSnapped}
             onSelectClip={(id) => {
               if (recordingLocked) return;

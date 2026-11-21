@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { studioAdvancedRecordAllowed, studioRecordView } from "@/lib/studio/studio-record-view";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 describe("studioRecordView", () => {
   it("opens the record step in the simple surface", () => {
@@ -34,7 +35,7 @@ describe("studioRecordView", () => {
 
 describe("record simple surface wiring", () => {
   const root = process.cwd();
-  const editor = readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8");
+  const editor = readStudioEditorSource();
   const panel = readFileSync(join(root, "src/components/studio/studio-recording-panel.tsx"), "utf8");
 
   it("gates the record step on studioRecordView and one recording panel", () => {

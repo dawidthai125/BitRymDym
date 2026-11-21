@@ -5,14 +5,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const root = process.cwd();
 const tokens = readFileSync(join(root, "src/styles/tokens.css"), "utf8");
 const globals = readFileSync(join(root, "src/app/globals.css"), "utf8");
 const layout = readFileSync(join(root, "src/app/layout.tsx"), "utf8");
-const editor = (readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8") +
-    readFileSync(join(root, "src/components/studio/studio-timeline.tsx"), "utf8") +
-    readFileSync(join(root, "src/components/studio/studio-daw-layout.ts"), "utf8"));
+const editor = readStudioEditorSource();
 
 describe("Phase 7.1.2 brand font wiring", () => {
   it("loads Source Serif 4, Schibsted Grotesk, IBM Plex Mono via next/font", () => {

@@ -7,6 +7,7 @@ import {
   defaultStudioTrackRole,
   isStudioTrackRole,
 } from "@/config/studio";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const root = process.cwd();
 const read = (p: string) => readFileSync(join(root, p), "utf8");
@@ -56,7 +57,7 @@ describe("Stage 0 track roles", () => {
   });
 
   it("track header exposes a role picker persisted via patchTrack", () => {
-    const editor = read("src/components/studio/studio-editor.tsx");
+    const editor = readStudioEditorSource();
     expect(editor).toMatch(/data-testid="studio-track-role"/);
     expect(editor).toMatch(/patchTrack\(track\.id, \{ trackRole: next \}\)/);
   });

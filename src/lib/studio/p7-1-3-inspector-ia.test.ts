@@ -122,7 +122,7 @@ describe("Phase 7.1.3 editor IA wiring", () => {
       editor.indexOf('data-testid="studio-track-header-select"'),
       editor.indexOf('data-testid="studio-track-header-select"') + 500,
     );
-    expect(headerSelect).toMatch(/setSelectedTrackId/);
+    expect(headerSelect).toMatch(/setSelectedTrackId|onSelect\(/);
     expect(headerSelect).not.toMatch(/openInspectorOverlay/);
   });
 

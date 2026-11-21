@@ -11,6 +11,7 @@ export const STUDIO_EDITOR_SOURCE_FILES = [
   "src/components/studio/studio-timeline.tsx",
   "src/components/studio/studio-daw-layout.ts",
   "src/components/studio/studio-inspector-panels.tsx",
+  "src/components/studio/studio-track-header.tsx",
 ] as const;
 
 export function readStudioEditorSource(root: string = process.cwd()): string {

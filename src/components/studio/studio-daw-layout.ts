@@ -18,3 +18,17 @@ export const STUDIO_TRACK_EDGE = ["#e8735a", "#f2a93b", "#d9c45a", "#7cc68d", "#
  */
 export const STUDIO_DAW_HEADER_WIDTH_CLASS =
   "w-full border-b sm:h-auto sm:max-h-none sm:w-[272px] sm:border-b-0 sm:border-r";
+
+/** Track header pan readout: C, L 35, R 100 (mono, fixed width). */
+export function formatStudioPanShort(
+  pan: number,
+  labels: { center: string; left: string; right: string },
+): string {
+  const v = Math.round(pan * 100);
+  if (v === 0) return labels.center;
+  return v < 0 ? `${labels.left}${Math.abs(v)}` : `${labels.right}${v}`;
+}
+export const STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0";
+/** Track gain bounds — same as Mixer strips. */
+export const STUDIO_TRACK_GAIN_DB_MIN = -24;
+export const STUDIO_TRACK_GAIN_DB_MAX = 12;
