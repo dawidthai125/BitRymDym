@@ -9,7 +9,7 @@ import { SampleTalk } from "@/components/community/sample-talk";
 
 export type CatalogSampleItem = {
   id: string;
-  /** Catalog number, oldest = 1. */
+  /** Stable catalog number (`studio_samples.sample_number`). */
   no: number;
   title: string;
   author: string;

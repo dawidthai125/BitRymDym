@@ -7,7 +7,8 @@ import { SampleCatalog, type CatalogSampleItem } from "@/components/community/sa
 import { SamplePromoFilm } from "@/components/community/sample-promo-film";
 import { AppShell } from "@/components/site/app-shell";
 import { getCurrentProfile } from "@/lib/auth/session";
-import { listPublicSamples, pickSampleOfTheWeek, type CatalogSource } from "@/lib/community/community-service";
+import { listPublicSamples, pickSampleOfTheWeek } from "@/lib/community/community-service";
+import { catalogSampleNumbers, parseCatalogSource } from "@/lib/community/share-policy";
 import { LIVE_SAMPLE_INSTRUMENTS, SAMPLE_INSTRUMENTS, SAMPLE_TYPES } from "@/lib/studio/samples/sample-policy";
 
 export async function generateMetadata() {
@@ -24,18 +25,15 @@ export default async function SampleCatalogPage({
   const tl = await getTranslations("studio.sampleLab");
   const ts = await getTranslations("community.sampleCatalog");
   const params = searchParams ? await searchParams : {};
-  const source: CatalogSource = params.zrodlo === "brd" ? "brd" : "user";
+  const source = parseCatalogSource(params.zrodlo);
   const session = await getCurrentProfile();
   const isAdmin = session?.profile.role === "ADMIN";
   const samples = await listPublicSamples(source).catch(() => []);
 
   const instrumentLabel = (id: string | null) => (id && tl.has(`instrument.${id}`) ? tl(`instrument.${id}`) : id);
   const typeLabel = (id: string | null) => (id && tl.has(`typ.${id}`) ? tl(`typ.${id}`) : null);
-  // Catalog number counts from the oldest (#01) by creation time, whatever the sort.
-  const byAge = [...samples].sort(
-    (a, b) => (a.createdAt ? Date.parse(a.createdAt) : 0) - (b.createdAt ? Date.parse(b.createdAt) : 0),
-  );
-  const numberOf = new Map(byAge.map((s, i) => [s.id, i + 1]));
+  // Stored catalog number (studio_samples.sample_number): stays the same whatever the sort or filter.
+  const numberOf = catalogSampleNumbers(samples);
   const items: CatalogSampleItem[] = samples
     .map((s, i) => ({
       id: s.id,

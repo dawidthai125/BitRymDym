@@ -17,7 +17,7 @@ export function SiteFooter() {
         <nav aria-label={menu("glowneMenu")} className="flex flex-wrap gap-x-4 gap-y-1">
           <Link href="/beats?zrodlo=brd" className="underline-offset-4 hover:underline">{nav("beats")}</Link>
           <Link href="/ranking" className="underline-offset-4 hover:underline">{shelf("beatRank")}</Link>
-          <Link href="/sampel?zrodlo=user" className="underline-offset-4 hover:underline">{shelf("samples")}</Link>
+          <Link href="/sampel?zrodlo=brd" className="underline-offset-4 hover:underline">{shelf("samples")}</Link>
           <Link href="/ranking/sampel" className="underline-offset-4 hover:underline">{shelf("sampleRank")}</Link>
           <Link href="/utwory" className="underline-offset-4 hover:underline">{shelf("works")}</Link>
           <Link href="/ranking/utwor" className="underline-offset-4 hover:underline">{shelf("workRank")}</Link>
