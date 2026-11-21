@@ -1,8 +1,8 @@
 /**
  * Content-Security-Policy builder (nonce-based, per request).
  *
- * Rolled out as Report-Only first; set CSP_ENFORCE=1 to switch the header to
- * the enforcing `Content-Security-Policy`. Edge-runtime safe (no node imports).
+ * Production runs enforcing (CSP_ENFORCE=1 on Vercel); without the variable the header is
+ * Report-Only. Edge-runtime safe (no node imports).
  */
 
 export const CSP_ENFORCE_HEADER = "Content-Security-Policy";
