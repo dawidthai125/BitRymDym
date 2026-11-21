@@ -176,6 +176,15 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     expect(db).toBeGreaterThanOrEqual(-4);
   });
 
+  it("gain staging: a small over (+0.5 dBTP) is cut in full", () => {
+    const m = badMetrics();
+    m.master.truePeakDbtp = 0.5;
+    m.master.integratedLufs = -23;
+    const p = plan(["gain"], doc(), m);
+    const master = p.ops.find((o) => o.op === "set_master_mix");
+    expect(master && master.op === "set_master_mix" ? master.masterGainDb : null).toBe(-6.5);
+  });
+
   it("balance: buried vocal (−6.5 LU) → +4 dB vocal / −4 dB beat to hit +1.5 LU; side vocals under the lead", () => {
     const p = plan(["balance"]);
     expect(controls(p, LEAD)?.gainDb).toBe(4);

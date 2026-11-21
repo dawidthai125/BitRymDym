@@ -249,10 +249,11 @@ function fixGain(ctx: Ctx): void {
   let shift = clamp(r1(T.masterPeakDbtp - tp), -12, 6);
   // The track fixes above also change the level, so never push the master into a very quiet mix
   // (a -12 dB cut on top of them gave -35 LUFS) and let a later pass bring a quiet mix back up.
-  if (shift < 0) shift = Math.max(shift, Math.min(0, MASTER_QUIET_FLOOR_LUFS - I));
+  // Only an extreme peak is suspect (measured before the track fixes); a small over is cut in full.
+  if (shift < 0 && tp > 3) shift = Math.max(shift, Math.min(0, MASTER_QUIET_FLOOR_LUFS - I));
   if (shift > 0) shift = Math.min(shift, Math.max(0, MASTER_LOUD_CEIL_LUFS - I));
   shift = r1(shift);
-  const needDown = tp > -3 && shift <= -1;
+  const needDown = tp > -3 && shift <= -0.5;
   const needUp = I < MASTER_QUIET_FLOOR_LUFS && tp < T.masterPeakDbtp - 3 && shift >= 1;
   if (needDown || needUp) {
     ctx.state.masterGainDb = clamp(r1(ctx.state.masterGainDb + shift), -24, 12);
