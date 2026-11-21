@@ -358,10 +358,9 @@ describe("Phase 3 split integer ms (playhead precision)", () => {
 });
 
 describe("Phase 3 wiring + architecture", () => {
-  const editor = readFileSync(
-    join(process.cwd(), "src/components/studio/studio-editor.tsx"),
-    "utf8",
-  );
+  const editor = (readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8") +
+    readFileSync(join(process.cwd(), "src/components/studio/studio-timeline.tsx"), "utf8") +
+    readFileSync(join(process.cwd(), "src/components/studio/studio-daw-layout.ts"), "utf8"));
   const waveform = readFileSync(
     join(process.cwd(), "src/components/studio/studio-clip-waveform.tsx"),
     "utf8",

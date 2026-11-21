@@ -1,6 +1,8 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+
+import { StudioMixOverview } from "@/components/studio/studio-mix-overview";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
@@ -1006,6 +1008,8 @@ export function StudioMixStep({
         </Button>
         <h2 className="brd-display text-2xl leading-none tracking-tight">{t("tytul")}</h2>
       </div>
+
+      <StudioMixOverview doc={doc} />
 
       {onApplyAutofix ? (
         <StudioVocalSetsCard

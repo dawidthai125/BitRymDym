@@ -56,7 +56,7 @@ describe("automation lane — document helper", () => {
 });
 
 describe("automation lane — editor wiring", () => {
-  const editor = readFileSync("src/components/studio/studio-editor.tsx", "utf8");
+  const editor = (readFileSync("src/components/studio/studio-editor.tsx", "utf8") + readFileSync("src/components/studio/studio-timeline.tsx", "utf8"));
   it("is Silver/Gold only and saves through the CAS PUT", () => {
     expect(editor).toContain("studioAdvancedRecordAllowed(trackCapacity.premiumTier)");
     expect(editor).toContain("/automation`");

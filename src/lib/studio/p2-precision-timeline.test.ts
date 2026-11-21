@@ -249,10 +249,9 @@ describe("Phase 2 trim / waveform prep helpers", () => {
 });
 
 describe("Phase 2 editor wiring + architecture", () => {
-  const editor = readFileSync(
-    join(process.cwd(), "src/components/studio/studio-editor.tsx"),
-    "utf8",
-  );
+  const editor = (readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8") +
+    readFileSync(join(process.cwd(), "src/components/studio/studio-timeline.tsx"), "utf8") +
+    readFileSync(join(process.cwd(), "src/components/studio/studio-daw-layout.ts"), "utf8"));
   const view = readFileSync(
     join(process.cwd(), "src/lib/studio/studio-timeline-view.ts"),
     "utf8",

@@ -16,7 +16,6 @@ import {
   useState,
   useSyncExternalStore,
   type Dispatch,
-  type ReactNode,
   type SetStateAction,
 } from "react";
 
@@ -28,8 +27,6 @@ import {
 import { StudioMasterMeter } from "@/components/studio/studio-master-meter";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
-import { StudioClipLaneItem } from "@/components/studio/studio-clip-lane";
-import { StudioLiveTakeRegion } from "@/components/studio/studio-live-take-region";
 import {
   deriveStudioInspectorContext,
   studioPreferRecordAfterCaptureReport,
@@ -54,6 +51,12 @@ import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-r
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
 import { StudioClipSpectrogram } from "@/components/studio/studio-clip-spectrogram";
 import { StudioTransportBar } from "@/components/studio/studio-transport-bar";
+import { StudioTimelinePlayheadBound } from "@/components/studio/studio-timeline";
+import {
+  STUDIO_DAW_LANE_HEIGHT_PX,
+  STUDIO_TRACK_EDGE,
+  type StudioTimelineMode,
+} from "@/components/studio/studio-daw-layout";
 import { playheadInsideClip } from "@/lib/studio/studio-clip-ops";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
@@ -95,17 +98,13 @@ import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import { beatDurationMs } from "@/lib/studio/studio-daw-clock";
 import { studioAdvancedRecordAllowed, studioRecordView } from "@/lib/studio/studio-record-view";
 import {
-  buildTimelineRulerTicks,
   clearClipSelection,
   clampPxPerMs,
-  contentWidthPx,
   createDefaultSnapConfig,
   cycleStudioSnapConfig,
   fitPxPerMs,
   studioTimelineFitLengthMs,
-  msToPx,
   nudgeClipTimelineStartMs,
-  pxToMs,
   resolveNudgeStepMs,
   resolveSelectedClipId,
   selectClipId,
@@ -193,7 +192,7 @@ import { buildBitekClientContext } from "@/lib/studio/bitek/chat/client-context"
 import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
 
-type TimelineMode = "seek" | "edit";
+type TimelineMode = StudioTimelineMode;
 type FxPanelTarget =
   | { role: "master" }
   | { role: "track"; trackId: string };
@@ -204,16 +203,6 @@ export type StudioTrackCapacityProps = {
   premiumTier: PremiumTier;
 };
 
-/**
- * Visual Parity V2 — denser DAW lanes (header vol/pan + M/S/R keep min-h-11).
- * Clip geometry SSOT unchanged; height is presentation only.
- */
-const STUDIO_DAW_LANE_HEIGHT_PX = 168;
-/** Same vocal edge colors as the Windows recorder lanes. */
-const STUDIO_TRACK_EDGE = ["#e8735a", "#f2a93b", "#d9c45a", "#7cc68d", "#5fb6c9", "#9b8be0", "#d27fc0", "#e0937a"] as const;
-/** Phone: list above the lane so the lane keeps the full width. From sm, a side column. */
-const STUDIO_DAW_HEADER_WIDTH_CLASS =
-  "h-1/2 w-full max-h-[50%] border-b sm:h-auto sm:max-h-none sm:w-[272px] sm:border-b-0 sm:border-r";
 /** Phase 7.1.1 — primary track chips ≥44px hit area (visual stays compact). */
 /** Track header pan readout: C, L 35, R 100 (mono, fixed width). */
 function formatStudioPanShort(
@@ -4131,7 +4120,7 @@ function StudioEditorInner({
                       type="button"
                       size="xs"
                       variant="ghost"
-                      className="h-11 min-h-11 min-w-11 shrink-0 px-0"
+                      className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7"
                       disabled={pending || index === 0}
                       title={tr("przeniesWGore")}
                       aria-label={tr("przeniesSciezkeWGore")}
@@ -4145,7 +4134,7 @@ function StudioEditorInner({
                       type="button"
                       size="xs"
                       variant="ghost"
-                      className="h-11 min-h-11 min-w-11 shrink-0 px-0"
+                      className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7"
                       disabled={pending || index === doc.tracks.length - 1}
                       title={tr("przeniesWDol")}
                       aria-label={tr("przeniesSciezkeWDol")}
@@ -4160,7 +4149,7 @@ function StudioEditorInner({
                         type="button"
                         size="xs"
                         variant="ghost"
-                        className="h-11 min-h-11 min-w-11 shrink-0 px-0"
+                        className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7"
                         data-testid="studio-track-menu"
                         data-track-id={track.id}
                         disabled={recordingLocked || pending}
@@ -4862,307 +4851,9 @@ function StudioTrackMeterLive({ trackName }: { trackName: string }) {
   return <StudioTrackMeter snapshot={trackMeter} trackName={trackName} />;
 }
 
-/** Phase 7.1.5.1 — playhead leaf for timeline. */
-function StudioTimelinePlayheadBound(
-  props: Omit<Parameters<typeof StudioTimeline>[0], "playheadMs">,
-) {
-  const { playheadMs } = useStudioTransportPlayhead();
-  return <StudioTimeline {...props} playheadMs={playheadMs} />;
-}
-
 function ClipEditPanelPlayheadBound(
   props: Omit<Parameters<typeof ClipEditPanel>[0], "playheadMs">,
 ) {
   const { playheadMs } = useStudioTransportPlayhead();
   return <ClipEditPanel {...props} playheadMs={playheadMs} />;
-}
-
-function StudioTimeline({
-  tracks,
-  clips,
-  timelineLengthMs,
-  playheadMs,
-  pxPerMs,
-  mode,
-  interactionLocked = false,
-  selectedClipId,
-  renderTrackHeader,
-  renderLaneOverlay,
-  scrollContainerRef,
-  onZoomAroundViewport,
-  resolveClipSourceUrl,
-  snapConfig,
-  onSeek,
-  onSelectClip,
-  onCommitClipGeometry,
-}: {
-  tracks: StudioTrackDto[];
-  clips: StudioClipDto[];
-  timelineLengthMs: number;
-  playheadMs: number;
-  pxPerMs: number;
-  mode: TimelineMode;
-  interactionLocked?: boolean;
-  selectedClipId: string | null;
-  renderTrackHeader?: (track: StudioTrackDto, index: number) => ReactNode;
-  /** Silver/Gold automation editor drawn over a track's lane (null = nothing). */
-  renderLaneOverlay?: (track: StudioTrackDto) => ReactNode;
-  scrollContainerRef?: { current: HTMLDivElement | null };
-  onZoomAroundViewport?: (nextPxPerMs: number, viewportOffsetPx: number) => void;
-  resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
-  snapConfig: StudioSnapConfig;
-  onSeek: (ms: number) => void;
-  onSelectClip: (clipId: string) => void;
-  onCommitClipGeometry: (
-    clipId: string,
-    commit: Exclude<StudioClipEditCommit, { kind: "noop" }>,
-  ) => void;
-}) {
-  const tl = useLibText();
-  const tr = useTranslations("studio.studioEditor");
-  const seekEnabled = mode === "seek" && !interactionLocked;
-  const density = clampPxPerMs(pxPerMs);
-  const headerScrollRef = useRef<HTMLDivElement | null>(null);
-  const laneScrollRef = useRef<HTMLDivElement | null>(null);
-  const syncingScroll = useRef(false);
-  const [laneViewportWidthPx, setLaneViewportWidthPx] = useState(0);
-  const widthPx = contentWidthPx(timelineLengthMs, density, {
-    viewportWidthPx:
-      laneViewportWidthPx > 0 ? laneViewportWidthPx : undefined,
-  });
-  const playheadX = msToPx(playheadMs, density);
-  const ticks = buildTimelineRulerTicks({
-    timelineLengthMs,
-    pxPerMs: density,
-  });
-
-  function assignLaneScrollEl(el: HTMLDivElement | null) {
-    laneScrollRef.current = el;
-    if (scrollContainerRef) scrollContainerRef.current = el;
-  }
-
-  useEffect(() => {
-    const el = laneScrollRef.current;
-    if (!el) return;
-    const sync = () => setLaneViewportWidthPx(el.clientWidth);
-    sync();
-    const ro = new ResizeObserver(sync);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [tracks.length]);
-
-  useEffect(() => {
-    const el = laneScrollRef.current;
-    if (!el || !onZoomAroundViewport) return;
-
-    function onWheel(event: WheelEvent) {
-      if (!(event.ctrlKey || event.metaKey)) return;
-      event.preventDefault();
-      const target = laneScrollRef.current;
-      if (!target) return;
-      const rect = target.getBoundingClientRect();
-      const viewportOffsetPx = Math.min(
-        rect.width,
-        Math.max(0, event.clientX - rect.left),
-      );
-      const next =
-        event.deltaY < 0
-          ? zoomInPxPerMs(density)
-          : zoomOutPxPerMs(density);
-      onZoomAroundViewport!(next, viewportOffsetPx);
-    }
-
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [density, onZoomAroundViewport]);
-
-  function syncVerticalScroll(source: "header" | "lane") {
-    if (syncingScroll.current) return;
-    const headerEl = headerScrollRef.current;
-    const laneEl = laneScrollRef.current;
-    if (!headerEl || !laneEl) return;
-    syncingScroll.current = true;
-    if (source === "header") {
-      laneEl.scrollTop = headerEl.scrollTop;
-    } else {
-      headerEl.scrollTop = laneEl.scrollTop;
-    }
-    // Release sync guard after nested scroll handlers settle (no rAF — meter UI contract).
-    queueMicrotask(() => {
-      syncingScroll.current = false;
-    });
-  }
-
-  function seekFromPointer(event: {
-    currentTarget: HTMLDivElement;
-    clientX: number;
-  }) {
-    if (!seekEnabled) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const localX = Math.min(
-      widthPx,
-      Math.max(0, event.clientX - rect.left),
-    );
-    // px → integer ms (no coarse second rounding).
-    onSeek(pxToMs(localX, density));
-  }
-
-  const hasHeaders = typeof renderTrackHeader === "function";
-
-  return (
-    <div
-      className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_3%)] max-sm:h-[min(28rem,calc(100dvh-18rem))] max-sm:min-h-[20rem] max-sm:flex-none"
-      role="region"
-      aria-label={tr("osCzasuProjektu")}
-      data-testid="studio-timeline"
-    >
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col sm:flex-row">
-        {hasHeaders ? (
-          <div
-            className={`${STUDIO_DAW_HEADER_WIDTH_CLASS} flex min-h-0 shrink-0 flex-col border-[var(--brd-line)]`}
-            data-testid="studio-track-list"
-          >
-            <div
-              className="flex h-7 shrink-0 items-center border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_92%,var(--brd-ink)_8%)] px-2 text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]"
-              aria-hidden
-            >
-              {tr("sciezki")}
-            </div>
-            <div
-              ref={headerScrollRef}
-              className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
-              onScroll={() => syncVerticalScroll("header")}
-              data-testid="studio-track-header-scroll"
-            >
-              {tracks.map((track, index) => renderTrackHeader!(track, index))}
-            </div>
-          </div>
-        ) : null}
-
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
-          <div
-            ref={assignLaneScrollEl}
-            className="min-h-0 min-w-0 flex-1 overflow-auto touch-pan-x"
-            data-studio-timeline-scroll="true"
-            data-testid="studio-timeline-scroll"
-            onScroll={() => {
-              if (hasHeaders) syncVerticalScroll("lane");
-            }}
-          >
-            <div
-              className={`relative ${
-                seekEnabled ? "cursor-pointer" : "touch-pan-x"
-              }`}
-              style={{ width: widthPx, minWidth: "100%" }}
-              onClick={seekFromPointer}
-              role="slider"
-              aria-label={
-                tl(interactionLocked
-                  ? tr("osCzasuTrybNagrywania")
-                  : seekEnabled
-                    ? tr("osCzasuKliknijAby")
-                    : tr("osCzasuTrybEdycji"))
-              }
-              aria-valuemin={0}
-              aria-valuemax={timelineLengthMs}
-              aria-valuenow={playheadMs}
-              aria-disabled={interactionLocked || undefined}
-            >
-              <div className="sticky top-0 z-[3] h-7 border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_92%,var(--brd-ink)_8%)]">
-                {ticks.map((tick) => (
-                  <span
-                    key={tick.ms}
-                    className={`absolute top-0 -translate-x-1/2 text-[10px] ${
-                      tick.major
-                        ? "text-[var(--brd-ink)]"
-                        : "text-[var(--brd-mute)]"
-                    }`}
-                    style={{ left: msToPx(tick.ms, density) }}
-                  >
-                    {tl(tick.major ? formatStudioTimeMs(tick.ms) : "·")}
-                  </span>
-                ))}
-              </div>
-              {tracks.map((track, index) => {
-                const trackClips = clips.filter((c) => c.trackId === track.id);
-                return (
-                  <div
-                    key={track.id}
-                    className="studio-lane relative border-b border-[var(--brd-line)]/60"
-                    data-studio-clip-lane={track.id}
-                    data-track-type={track.trackType}
-                    style={{
-                      width: widthPx,
-                      height: STUDIO_DAW_LANE_HEIGHT_PX,
-                      ["--studio-lane-edge" as string]: STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
-                    }}
-                  >
-                    {track.trackType === "BEAT" ? (
-                      <span className="studio-lane-title pointer-events-none sticky left-2 top-1 z-[3]">
-                        {track.name.trim().toLowerCase() === "bit" ? "BIT" : `BIT · ${tl(track.name)}`}
-                      </span>
-                    ) : null}
-                    {trackClips.length === 0 && track.trackType !== "BEAT" ? (
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--brd-mute)]">
-                        {tr("pustaSciezka")}
-                      </span>
-                    ) : null}
-                    {trackClips.map((clip) => (
-                      <StudioClipLaneItem
-                        key={clip.id}
-                        clip={clip}
-                        timelineLengthMs={timelineLengthMs}
-                        pxPerMs={density}
-                        mode={mode}
-                        selected={clip.id === selectedClipId}
-                        interactionLocked={interactionLocked}
-                        laneHeightPx={STUDIO_DAW_LANE_HEIGHT_PX}
-                        snapConfig={snapConfig}
-                        resolveSourceUrl={resolveClipSourceUrl}
-                        onSelectClip={onSelectClip}
-                        onSeek={onSeek}
-                        onCommitGeometry={onCommitClipGeometry}
-                      />
-                    ))}
-                    <StudioLiveTakeRegion
-                      trackId={track.id}
-                      pxPerMs={density}
-                      laneHeightPx={STUDIO_DAW_LANE_HEIGHT_PX}
-                    />
-                    {renderLaneOverlay ? renderLaneOverlay(track) : null}
-                  </div>
-                );
-              })}
-              <div
-                className="pointer-events-none absolute bottom-0 top-6 z-[4] w-0.5 bg-[var(--brd-audio-playhead)] will-change-transform"
-                style={{ transform: `translateX(${playheadX}px)` }}
-                data-testid="studio-playhead"
-                data-playhead-ms={playheadMs}
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute top-6 z-[4] size-2 -translate-x-1/2 rounded-full bg-[var(--brd-rec)]"
-                style={{ left: playheadX }}
-                aria-hidden
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      <label className="block shrink-0 border-t border-[var(--brd-line)] px-2 py-1.5 text-xs text-[var(--brd-mute)]">
-        {tr("playhead2")}{" "}{tl(formatStudioTimeMs(playheadMs))}
-        <input
-          type="range"
-          min={0}
-          max={timelineLengthMs}
-          step={1}
-          value={playheadMs}
-          disabled={interactionLocked}
-          className="mt-1 h-11 w-full"
-          aria-label={tr("pozycjaPlayhead")}
-          onChange={(e) => onSeek(Math.round(Number(e.target.value)))}
-        />
-      </label>
-    </div>
-  );
 }

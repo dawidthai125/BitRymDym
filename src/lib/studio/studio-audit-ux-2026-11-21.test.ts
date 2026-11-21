@@ -49,4 +49,18 @@ describe("Studio UX audit 2026-11-21", () => {
   it("save status says what is ready", () => {
     expect(editor).toMatch(/tr\("wszystkoZapisane"\)/);
   });
+
+  it("Mix step shows a read-only track overview; role select gets room on desktop", () => {
+    const overview = read("src/components/studio/studio-mix-overview.tsx");
+    expect(mixStep).toMatch(/<StudioMixOverview doc=\{doc\} \/>/);
+    expect(overview).toMatch(/studioTimelineFitLengthMs/);
+    expect(overview).toMatch(/STUDIO_TRACK_EDGE/);
+    expect(editor).toMatch(/h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7/);
+  });
+
+  it("timeline and DAW layout constants live outside studio-editor.tsx", () => {
+    expect(editor).not.toMatch(/^function StudioTimeline\(/m);
+    expect(read("src/components/studio/studio-timeline.tsx")).toMatch(/export function StudioTimeline\(/);
+    expect(read("src/components/studio/studio-daw-layout.ts")).toMatch(/export const STUDIO_TRACK_EDGE/);
+  });
 });

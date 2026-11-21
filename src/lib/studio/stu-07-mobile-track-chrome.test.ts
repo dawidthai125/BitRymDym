@@ -14,10 +14,9 @@ import {
 } from "@/lib/studio/studio-timeline-view";
 
 const root = process.cwd();
-const editor = readFileSync(
-  join(root, "src/components/studio/studio-editor.tsx"),
-  "utf8",
-);
+const editor = (readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8") +
+    readFileSync(join(root, "src/components/studio/studio-timeline.tsx"), "utf8") +
+    readFileSync(join(root, "src/components/studio/studio-daw-layout.ts"), "utf8"));
 
 describe("STU-07-A — track header hit targets on narrow chrome", () => {
   it("keeps a minimum width on the track select control", () => {

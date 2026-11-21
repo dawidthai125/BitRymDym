@@ -7,10 +7,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
-const editor = readFileSync(
-  join(root, "src/components/studio/studio-editor.tsx"),
-  "utf8",
-);
+const editor = (readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8") +
+    readFileSync(join(root, "src/components/studio/studio-timeline.tsx"), "utf8") +
+    readFileSync(join(root, "src/components/studio/studio-daw-layout.ts"), "utf8"));
 const shell = readFileSync(
   join(root, "src/components/studio/studio-mixer-shell.tsx"),
   "utf8",
