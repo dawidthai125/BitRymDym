@@ -686,7 +686,8 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
 .studio-desk .studio-lane-title {
   /* Audit 2026-11-21: dark text sat on a near-black chip — give it its own amber plate. */
   color: #1a1006;
-  background: #f2a93b;
+  /* !important: the timeline .sticky rule paints every sticky child near-black. */
+  background: #f2a93b !important;
   border-radius: 2px;
   padding: 1px 6px;
   font-size: 12px;
