@@ -102,7 +102,7 @@ describe("signup emailRedirectTo contract", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
     try {
       expect(getAuthEmailRedirectTo()).toBe(
-        "https://bitrymdym.pl/auth/callback",
+        "https://www.bitrymdym.pl/auth/callback",
       );
       expect(getAuthEmailRedirectTo()).not.toContain("vercel.app");
     } finally {

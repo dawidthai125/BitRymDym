@@ -41,7 +41,7 @@ describe("getSiteUrl", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
     process.env.VERCEL_ENV = "production";
     process.env.VERCEL_URL = "bitrymdym-dawidthai125s-projects.vercel.app";
-    expect(getSiteUrl()).toBe("https://bitrymdym.pl");
+    expect(getSiteUrl()).toBe("https://www.bitrymdym.pl");
   });
 
   it("uses canonical production origin when SITE_URL unset on Vercel production", () => {
@@ -70,7 +70,7 @@ describe("getSiteUrl", () => {
     clearEnv();
     process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
     expect(getAuthEmailRedirectTo()).toBe(
-      "https://bitrymdym.pl/auth/callback",
+      "https://www.bitrymdym.pl/auth/callback",
     );
   });
 });
@@ -81,7 +81,7 @@ describe("getPublicSiteUrl (served origin)", () => {
     clearEnv();
     process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
     expect(getPublicSiteUrl()).toBe("https://www.bitrymdym.pl");
-    expect(getAuthEmailRedirectTo()).toBe("https://bitrymdym.pl/auth/callback");
+    expect(getAuthEmailRedirectTo()).toBe("https://www.bitrymdym.pl/auth/callback");
   });
   it("keeps any other origin", () => {
     clearEnv();

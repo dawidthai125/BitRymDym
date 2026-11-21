@@ -5,7 +5,9 @@
  * Preview may use VERCEL_URL; local uses localhost.
  */
 
-const CANONICAL_PRODUCTION_ORIGIN = "https://bitrymdym.pl";
+/** Vercel serves www; the apex answers 308 (project domains). Supabase allow-list has https://www.bitrymdym.pl/**. */
+const CANONICAL_PRODUCTION_ORIGIN = "https://www.bitrymdym.pl";
+const APEX_PRODUCTION_ORIGIN = "https://bitrymdym.pl";
 
 function stripTrailingSlash(url: string): string {
   return url.replace(/\/+$/, "");
@@ -21,7 +23,9 @@ export function getSiteUrl(): string {
     const withProtocol = explicit.startsWith("http")
       ? explicit
       : `https://${explicit}`;
-    return stripTrailingSlash(withProtocol);
+    const origin = stripTrailingSlash(withProtocol);
+    // NEXT_PUBLIC_SITE_URL may still name the apex: never hand out a URL that answers 308.
+    return origin === APEX_PRODUCTION_ORIGIN ? CANONICAL_PRODUCTION_ORIGIN : origin;
   }
 
   // Production on Vercel: never fall back to NEXT_PUBLIC_VERCEL_URL / VERCEL_URL
@@ -70,15 +74,10 @@ export function getAuthEmailChangeRedirectTo(): string {
 
 export const SITE_URL_CANONICAL_PRODUCTION = CANONICAL_PRODUCTION_ORIGIN;
 
-/** Vercel serves the site on www and answers the apex with a 308 (project domain config). */
-const SERVED_PRODUCTION_ORIGIN = "https://www.bitrymdym.pl";
-
 /**
- * Origin the site is actually served from — for sitemap, robots, canonical metadata, share links
- * and payment provider callbacks (PayU notify/continue), which must not land on a 308 redirect.
- * Auth redirects keep getSiteUrl() (they must match the Supabase allow-list).
+ * Public origin for sitemap, robots, metadata, share links and payment callbacks.
+ * Same as getSiteUrl() now that both resolve to www (kept as the named entry point for those callers).
  */
 export function getPublicSiteUrl(): string {
-  const base = getSiteUrl();
-  return base === CANONICAL_PRODUCTION_ORIGIN ? SERVED_PRODUCTION_ORIGIN : base;
+  return getSiteUrl();
 }

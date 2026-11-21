@@ -297,10 +297,10 @@ describe("password recovery callback contract", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
     try {
       expect(getAuthPasswordResetRedirectTo()).toBe(
-        "https://bitrymdym.pl/auth/callback?flow=recovery",
+        "https://www.bitrymdym.pl/auth/callback?flow=recovery",
       );
       expect(getAuthEmailRedirectTo()).toBe(
-        "https://bitrymdym.pl/auth/callback",
+        "https://www.bitrymdym.pl/auth/callback",
       );
       expect(getAuthEmailRedirectTo()).not.toContain("flow=recovery");
     } finally {
@@ -443,7 +443,7 @@ describe("email template callback contract", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
     try {
       expect(getAuthEmailRedirectTo()).toBe(
-        "https://bitrymdym.pl/auth/callback",
+        "https://www.bitrymdym.pl/auth/callback",
       );
       expect(getAuthEmailRedirectTo()).not.toContain("vercel.app");
     } finally {
