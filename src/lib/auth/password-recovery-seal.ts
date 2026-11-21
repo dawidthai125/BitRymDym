@@ -118,3 +118,20 @@ export function openPasswordRecoveryForSecret(
     signPasswordRecoveryBody(secret, body),
   );
 }
+
+/**
+ * Verify against several keys in order (dedicated PASSWORD_RESET_SEAL_SECRET first,
+ * then the legacy service-role key). Legacy seals stay accepted: they live at most
+ * PASSWORD_RECOVERY_TTL_SECONDS, so the window closes on its own after a deploy.
+ */
+export function openPasswordRecoveryForSecrets(
+  token: string,
+  secrets: readonly string[],
+  nowMs: number,
+): PasswordRecoverySeal | null {
+  for (const secret of secrets) {
+    const opened = openPasswordRecoveryForSecret(token, secret, nowMs);
+    if (opened) return opened;
+  }
+  return null;
+}

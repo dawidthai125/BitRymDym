@@ -5,20 +5,31 @@ import { cookies } from "next/headers";
 import {
   PASSWORD_RECOVERY_COOKIE,
   PASSWORD_RECOVERY_TTL_SECONDS,
-  openPasswordRecoveryForSecret,
+  openPasswordRecoveryForSecrets,
   passwordRecoveryCookieOptions,
   passwordRecoveryUserMatches,
   sealPasswordRecoveryForSecret,
 } from "@/lib/auth/password-recovery-seal";
 
+import { resolveDedicatedSecret } from "@/lib/security/dedicated-secret";
+
 export { PASSWORD_RECOVERY_COOKIE };
-import { getSupabaseServiceRoleKey } from "@/lib/supabase/env";
+
+/**
+ * Seal HMAC key: dedicated PASSWORD_RESET_SEAL_SECRET (security review 2026-11-21).
+ * Missing env → sign with the legacy service-role key + one warning.
+ * Verification also accepts legacy-signed seals (they expire after the TTL anyway).
+ * TODO(2026-12-21): drop the service-role legacy key.
+ */
+function sealSecrets() {
+  return resolveDedicatedSecret("PASSWORD_RESET_SEAL_SECRET");
+}
 
 export function passwordRecoveryCookieValue(
   userId: string,
   nowMs = Date.now(),
 ): string | null {
-  return sealPasswordRecoveryForSecret(userId, getSupabaseServiceRoleKey(), nowMs);
+  return sealPasswordRecoveryForSecret(userId, sealSecrets().signing, nowMs);
 }
 
 export function passwordRecoverySetOptions() {
@@ -35,11 +46,11 @@ export function passwordRecoveryClearOptions() {
 export async function readPasswordRecoverySeal(
   nowMs = Date.now(),
 ): Promise<{ userId: string } | null> {
-  const secret = getSupabaseServiceRoleKey();
-  if (!secret) return null;
+  const { verify } = sealSecrets();
+  if (verify.length === 0) return null;
   const token = (await cookies()).get(PASSWORD_RECOVERY_COOKIE)?.value;
   if (!token) return null;
-  return openPasswordRecoveryForSecret(token, secret, nowMs);
+  return openPasswordRecoveryForSecrets(token, verify, nowMs);
 }
 
 export async function passwordRecoverySealMatches(userId: string): Promise<boolean> {

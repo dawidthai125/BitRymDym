@@ -4,7 +4,7 @@ import { registerPayuOrder, verifyPayuOrder } from "@/lib/payments/payu-client";
 import { isPayuConfigured, payuOrigin, type PayuConfig } from "@/lib/payments/payu-config";
 import { parsePayuNotification, payuStatusAction } from "@/lib/payments/payu-notification";
 import { payuBodyMd5, payuSignatureValid } from "@/lib/payments/payu-sign";
-import { customerIpFromForwarded, isPayuRedirect, isPayuRedirectFor } from "@/lib/payments/payu-url";
+import { isCustomerIp, isPayuRedirect, isPayuRedirectFor } from "@/lib/payments/payu-url";
 
 const config: PayuConfig = { posId: "4510332", clientSecret: "client-secret", md5Key: "md5-key", sandbox: false };
 
@@ -43,11 +43,12 @@ describe("PayU redirect and customer IP", () => {
     expect(isPayuRedirect("https://secure.payu.com.evil.example/pay/")).toBe(false);
   });
 
-  it("keeps only a single public IP hop", () => {
-    expect(customerIpFromForwarded("91.102.183.87, 10.0.0.1")).toBe("91.102.183.87");
-    expect(customerIpFromForwarded("2001:db8::1")).toBe("2001:db8::1");
-    expect(customerIpFromForwarded("")).toBeNull();
-    expect(customerIpFromForwarded("not-an-ip")).toBeNull();
+  it("accepts only a plain IP literal as the customer IP", () => {
+    expect(isCustomerIp("91.102.183.87")).toBe(true);
+    expect(isCustomerIp("2001:db8::1")).toBe(true);
+    expect(isCustomerIp("")).toBe(false);
+    expect(isCustomerIp("not-an-ip")).toBe(false);
+    expect(isCustomerIp("91.102.183.87, 10.0.0.1")).toBe(false);
   });
 });
 

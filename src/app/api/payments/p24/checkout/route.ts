@@ -6,7 +6,8 @@ import { startCheckout } from "@/lib/payments/checkout-service";
 import { isP24Configured } from "@/lib/payments/p24-config";
 import { isP24Redirect } from "@/lib/payments/p24-url";
 import { isPayuConfigured, readPayuConfig } from "@/lib/payments/payu-config";
-import { customerIpFromForwarded, isPayuRedirectFor } from "@/lib/payments/payu-url";
+import { isPayuRedirectFor } from "@/lib/payments/payu-url";
+import { clientIpOrNull } from "@/lib/security/client-ip";
 import { getSiteUrl } from "@/lib/site-url";
 
 export const runtime = "nodejs";
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
   if (!readPlanPaymentsAvailable() || (!payu && !isP24Configured())) {
     return NextResponse.json({ ok: false, code: "PAYMENTS_OFF" }, { status: 403, headers: { "cache-control": "no-store" } });
   }
-  const customerIp = customerIpFromForwarded(request.headers.get("x-forwarded-for"));
+  const customerIp = clientIpOrNull(request.headers);
   if (payu && !customerIp) {
     return NextResponse.json({ ok: false, code: "PROVIDER" }, { status: 502, headers: { "cache-control": "no-store" } });
   }

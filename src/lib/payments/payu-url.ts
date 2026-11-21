@@ -1,3 +1,5 @@
+import { isPlausibleIp } from "@/lib/security/client-ip";
+
 const PAYU_HOSTS = new Set(["secure.payu.com", "secure.snd.payu.com"]);
 
 /** Hosted PayU page. Safe in client components: no secrets, no Node crypto. */
@@ -23,12 +25,7 @@ function payuHost(url: string): string | null {
   }
 }
 
-/** First hop of X-Forwarded-For. Rejects empty, hostnames, and oversized values. */
+/** Customer IP must be a plain IP literal (taken via `clientIpOrNull` in `@/lib/security/client-ip`). */
 export function isCustomerIp(value: string): boolean {
-  return value.length > 0 && value.length <= 64 && /^[0-9a-fA-F:.]+$/.test(value);
-}
-
-export function customerIpFromForwarded(header: string | null): string | null {
-  const first = header?.split(",")[0]?.trim() ?? "";
-  return isCustomerIp(first) ? first : null;
+  return isPlausibleIp(value);
 }
