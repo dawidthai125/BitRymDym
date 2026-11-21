@@ -75,4 +75,10 @@ describe("Studio UX audit 2026-11-21", () => {
     expect(timeline).not.toMatch(/max-sm:h-\[min\(28rem/);
     expect(timeline).toMatch(/overflow-x-hidden sm:overflow-y-auto/);
   });
+
+  it("Mastering: readiness card waits for the first preview; the step scrolls into view", () => {
+    const master = read("src/components/studio/studio-master-step.tsx");
+    expect(master).toMatch(/\{streaming && preview && !\(sm\.phase === "done"/);
+    expect(master).toMatch(/el\.scrollIntoView\(\{ block: "start" \}\)/);
+  });
 });

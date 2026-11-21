@@ -404,6 +404,12 @@ export function StudioMasterStep({
   const useReference = !!refState.gate?.allowed && refState.reference?.status === "ready";
   const measured = preview?.metrics ?? mix?.metrics ?? null;
   const streaming = useMemo(() => (measured ? buildStreamingReadiness(measured) : null), [measured]);
+  // Entering from the bottom of the Mix step left the page scrolled into the empty render area.
+  const stepRootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = stepRootRef.current;
+    if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: "start" });
+  }, []);
   const latest = useRef({ settings, target, verdict, measured });
   useEffect(() => {
     latest.current = { settings, target, verdict, measured };
@@ -755,7 +761,7 @@ export function StudioMasterStep({
   }, [autoArmed, mix, previewFresh, verdict, serverLoaded, sm.phase, mastersLeft, settings, target, locale]);
 
   return (
-    <div data-testid="studio-master-step" className="flex flex-col gap-3 pb-64 lg:pb-48">
+    <div ref={stepRootRef} data-testid="studio-master-step" className="flex scroll-mt-40 flex-col gap-3 pb-64 lg:pb-48">
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={onBackToMix} data-testid="studio-master-back" aria-describedby="studio-master-back-hint">
           ← {t("wrocDoMixu")}
@@ -862,7 +868,8 @@ export function StudioMasterStep({
           ) : null}
 
           {/* Preview-based platform view. Hidden only when the change report (real master numbers) will render in its place. */}
-          {streaming && !(sm.phase === "done" && Number.isFinite(Number(sm.metrics?.after?.lufs))) ? (
+          {/* Audit 2026-11-21: only after the first master preview — the raw mix numbers ("Jest cicho") misled. */}
+          {streaming && preview && !(sm.phase === "done" && Number.isFinite(Number(sm.metrics?.after?.lufs))) ? (
             <section aria-labelledby="studio-master-streaming-title" data-testid="studio-master-streaming" data-score={streaming.score} className="flex flex-col gap-2 rounded-[2px] border border-[var(--brd-line)] border-l-4 bg-[var(--brd-paper)] p-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 id="studio-master-streaming-title" className="brd-display text-base">{t("streaming.tytul")}</h3>
