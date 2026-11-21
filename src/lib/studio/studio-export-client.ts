@@ -471,7 +471,8 @@ export function studioExportPhaseLabel(phase: StudioExportUiPhase): string {
 }
 
 export const STUDIO_EXPORT_POLL_INTERVAL_MS = 1500;
-export const STUDIO_EXPORT_POLL_MAX_ATTEMPTS = 40;
+/** 160 × 1.5 s = 4 min — covers the worker timeout (3 min); 40 gave up after 60 s while a WAV took ~85 s (prod 2026-11-21). */
+export const STUDIO_EXPORT_POLL_MAX_ATTEMPTS = 160;
 
 /** Phone / preview MP3 — lowest SFM quality on every paid plan (BRONZE+). */
 export const SFM_PHONE_MP3_QUALITY = "MP3_128" as const;

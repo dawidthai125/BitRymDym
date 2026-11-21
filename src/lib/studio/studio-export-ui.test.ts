@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   SFM_PHONE_MP3_QUALITY,
+  STUDIO_EXPORT_POLL_INTERVAL_MS,
   STUDIO_EXPORT_POLL_MAX_ATTEMPTS,
   createSfmQualityEncodeIdempotencyKey,
   createStudioExportIdempotencyKey,
@@ -342,7 +343,9 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
 
   it("bounds polling attempts", () => {
     expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS).toBeGreaterThan(0);
-    expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS).toBeLessThanOrEqual(60);
+    // Still bounded, but must outlast the worker timeout (3 min) — 60 s gave up mid-render (2026-11-21).
+    expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS).toBeLessThanOrEqual(200);
+    expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS * STUDIO_EXPORT_POLL_INTERVAL_MS).toBeGreaterThanOrEqual(180_000);
   });
 });
 

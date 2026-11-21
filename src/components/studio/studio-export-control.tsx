@@ -155,6 +155,8 @@ export function StudioExportControl({
       return;
     }
     setPhase(mapped.phase);
+    // A finished export drops any earlier "status not available yet" note.
+    if (mapped.phase === "SUCCEEDED") setMessage(null);
     if (mapped.phase === "FAILED") {
       // I.17 — typed empty-session vs generic FAILED; never show raw API text.
       setMessage(
@@ -296,6 +298,8 @@ export function StudioExportControl({
         return;
       }
       setPhase(mapped.phase);
+      // A finished export drops any earlier "status not available yet" note.
+      if (mapped.phase === "SUCCEEDED") setMessage(null);
       if (mapped.phase === "FAILED") {
         // I.17 — typed empty-session vs generic FAILED; never show raw API text.
         setMessage(
@@ -428,6 +432,8 @@ export function StudioExportControl({
       return;
     }
     setPhase(mapped.phase);
+    // A finished export drops any earlier "status not available yet" note.
+    if (mapped.phase === "SUCCEEDED") setMessage(null);
     pollAttemptsRef.current = 0;
   }
 
