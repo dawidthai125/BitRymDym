@@ -426,8 +426,8 @@ export function StudioMasterStep({
     const now = performance.now();
     if (stepMountedAtRef.current === 0) stepMountedAtRef.current = now;
     if (now - stepMountedAtRef.current > 8000) return;
-    // 150 px: below the site header + sticky transport (scroll-mt-40 keeps it clear).
-    if (el.getBoundingClientRect().top < 150) el.scrollIntoView({ block: "start" });
+    // 230 px: below the sticky site header + sticky transport (scroll-mt-60 keeps it clear).
+    if (el.getBoundingClientRect().top < 230) el.scrollIntoView({ block: "start" });
   }, [hasMix, hasPreview]);
   const latest = useRef({ settings, target, verdict, measured });
   useEffect(() => {
@@ -780,7 +780,7 @@ export function StudioMasterStep({
   }, [autoArmed, mix, previewFresh, verdict, serverLoaded, sm.phase, mastersLeft, settings, target, locale]);
 
   return (
-    <div ref={stepRootRef} data-testid="studio-master-step" className="flex scroll-mt-40 flex-col gap-3 pb-64 lg:pb-48">
+    <div ref={stepRootRef} data-testid="studio-master-step" className="flex scroll-mt-60 flex-col gap-3 pb-64 lg:pb-48">
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={onBackToMix} data-testid="studio-master-back" aria-describedby="studio-master-back-hint">
           ← {t("wrocDoMixu")}

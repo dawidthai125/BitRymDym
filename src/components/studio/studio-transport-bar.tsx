@@ -179,11 +179,21 @@ export function StudioTransportBar({
     io.observe(el);
     return () => io.disconnect();
   }, []);
+  /** Sticky offset = height of the sticky site header (it varies by breakpoint; the bar hid under it). */
+  const [siteHeaderH, setSiteHeaderH] = useState(0);
+  useEffect(() => {
+    const header = document.querySelector("body header");
+    if (!header || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setSiteHeaderH(Math.round(header.getBoundingClientRect().height)));
+    ro.observe(header);
+    return () => ro.disconnect();
+  }, []);
   const hasSelection = selectionStartMs != null || selectionEndMs != null;
 
   return (
     <div
       ref={transportRef}
+      style={siteHeaderH > 0 ? { top: siteHeaderH + 4 } : undefined}
       className="studio-transport z-20 shrink-0 px-1 py-0 sm:sticky sm:top-2 sm:px-1.5"
       role="region"
       aria-label={tr("transportStudio")}

@@ -81,4 +81,8 @@ describe("Studio UX audit 2026-11-21", () => {
     expect(master).toMatch(/\{streaming && preview && !\(sm\.phase === "done"/);
     expect(master).toMatch(/el\.scrollIntoView\(\{ block: "start" \}\)/);
   });
+
+  it("sticky transport sits below the sticky site header", () => {
+    expect(transport).toMatch(/style=\{siteHeaderH > 0 \? \{ top: siteHeaderH \+ 4 \} : undefined\}/);
+  });
 });
