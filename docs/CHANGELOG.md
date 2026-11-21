@@ -6,6 +6,29 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-21 — Bezpieczeństwo, Studio czytelniej, przegląd strony
+
+Sesja agenta OpenBot (BitRymDym v3) z GO Ownera. Tip `0e3f973`, deploy READY.
+
+- **Bezpieczeństwo i płatności:** atomowe limity (AI lyrics/okładka, Sampek, projekty, sample, otwarte płatności), zwroty i pakiety PayU (`refunded`, przegląd ręczny), limity prób logowania + Turnstile, CSP z nonce wymuszone (`CSP_ENFORCE=1`), HSTS, osobne sekrety HMAC (listen-linki, pieczęć resetu), zwrot kredytu po nieudanym masterze, REVOKE na tabelach RLS bez polityk.
+- **Regresja CSP naprawiona:** `connect-src` bez `blob:` blokował `fetch(blob:)` (Analizuj mix → Mastering, strojenie, referencja) — `7bfaa82`.
+- **Studio:** pasek transportu w dwóch zawijanych rzędach, sticky pod nagłówkiem strony (`overflow-x-clip`), mini transport na telefonie, Bitek bez zasłaniania (auto mix-mastering w kroku Mix), Mastering z kłódką i powodem, CAŁOŚĆ do końca klipów, tytuł bitu w wyborze, podgląd ścieżek w Mix, oś telefonu bez zagnieżdżonych scrolli, Mastering bez kotwiczenia przewijania i z kartą gotowości po podglądzie. Podział `studio-editor.tsx` (5646 → 4381 linii): `studio-transport-bar`, `studio-timeline`, `studio-daw-layout`, `studio-inspector-panels`; testy kontraktowe przez `readStudioEditorSource()`.
+- **Jakość:** ESLint 0 błędów / 0 ostrzeżeń (hooki: refy w `useLayoutEffect`, bez setState w efektach), 4915 testów.
+- **Strona:** adres publiczny i auth na `www.bitrymdym.pl` (apex = 308), sitemap/robots/PayU na www, bez globalnego `og:url`, admin polityki nagrań bez sztywnego „15 s”.
+- **Baza:** `rls_auth_uid_initplan` (11 polityk), `fk_covering_indexes` (48 indeksów).
+- **Dane:** prawdziwy master na projekcie testowym PASS (52 s, -14,0 LUFS); usunięte 4 projekty testowe i 4 prywatne sample testowe admina.
+- **NOT VERIFIED:** odsłuch (Owner), Turnstile ludzkim logowaniem, mail resetu z www, prawdziwa płatność PayU i zwrot. ≠ Product GREEN.
+
+## 2026-11-21 — SESSION_BRIDGE §4 archive (batch 32, room for audyt 11-21)
+
+**Status:** documentation · stałe GO Owner · archiwizacja 3 najstarszych living `EXECUTED` (`HOWTO-LICENSE` · `GO-SB-ARCHIVE-27` · `HOWTO-DEDUP`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
+### SESSION_BRIDGE archive (przeniesione wiersze)
+
+| 2026-11-12 | HOWTO-LICENSE | Jak nagrać utwór, limity przy nagraniu, skrót licencji | EXECUTED | PASS | GO Owner: punkty 1 i 2. Nowa strona /jak-nagrac (4 kroki, tabela limitów planów z plan-policy, skrót licencji), link w stopce i sitemap. Skrót licencji (regulamin §7, bez zmiany regulaminu) także na karcie bitu. Pod nagraniem: sesje na dobę i czas trzymania plików. „Nagraj ponownie” już było w widoku uproszczonym. Testy 415/415 plików, eslint i tsc czyste. Sacred PRESERVE. ≠ Product GREEN. | src/app/jak-nagrac · license-summary.tsx · studio-recording-panel.tsx | _(ten commit)_ | NEXT: lista ujęć do wyboru w widoku uproszczonym tylko po GO. NOT VERIFIED: wygląd na www, wersja EN w przeglądarce |
+| 2026-11-12 | GO-SB-ARCHIVE-27 | Archiwizacja §4 → CHANGELOG (room for jak nagrac i licencja) | EXECUTED | PASS | Stałe GO Owner („nowe wpisy zastępują najstarsze”). Przeniesiono 3 najstarsze `EXECUTED` (`NAGRYWARKA-FFPLAY` · `NAGRYWARKA-R2` · `MOBILE-STUDIO-LAYOUT`) → CHANGELOG archive. `P-NEXT-10` BLOCKED zachowany. | docs/CHANGELOG.md · SESSION_BRIDGE §4 | _(ten commit)_ | NEXT: wpisy do 15 |
+| 2026-11-12 | HOWTO-DEDUP | Jak to działa i Jak nagrać: bez duplikatów | EXECUTED | PASS | GO Owner „Zostawić oba i dopracować”. Strona główna zostaje przeglądem (8 kroków, film) i dostaje link „Limity planów i licencja na utwór” do /jak-nagrac. /jak-nagrac traci własne 4 kroki: link do sekcji „Jak to działa”, 4 praktyczne wskazówki, tabela limitów z plan-policy, skrót licencji §7. Testy 415/415 plików, eslint i tsc czyste. Sacred PRESERVE. ≠ Product GREEN. | src/app/page.tsx · src/app/jak-nagrac/page.tsx · messages | _(ten commit)_ | NOT VERIFIED: wygląd na www, EN w przeglądarce |
+
 ## 2026-11-19 — Nagrywarka Windows 2026.11.35
 
 Po teście lokalnego bota na .34 (aktualizacja przyciskiem przeszła, zwrot wysyłki działa). Trzy błędy po nieudanej wysyłce: (1) niedokończone nagranie zostawało w stanie „w toku” i kolejna próba dostawała 409 CONCURRENT_SESSION, teraz program je usuwa (`send_one_take`, `delete_take`); (2) nieudana wysyłka zostawiała pusty projekt, teraz go usuwa (`drop_empty_project`); (3) stan do wznowienia bez ułożonych nagrań nie jest już zapisywany ani wczytywany przy starcie (znikło „0 ścieżek, 0 klipów”). Autotest `_self_test_failed_send_cleanup`. Nie sprawdzono na komputerze użytkownika.
