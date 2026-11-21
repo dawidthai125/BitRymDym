@@ -7,21 +7,27 @@ import { resetDedicatedSecretWarnings, resolveDedicatedSecret } from "@/lib/secu
 describe("dedicated HMAC secret", () => {
   beforeEach(() => resetDedicatedSecretWarnings());
 
-  it("signs with the dedicated env and verifies dedicated first, legacy after", () => {
+  it("signs with the dedicated env and never accepts the service-role key", () => {
     const warn = vi.fn();
     const s = resolveDedicatedSecret("X_SECRET", { env: { X_SECRET: " dedicated " }, warn });
-    expect(s).toEqual({ signing: "dedicated", signingIsLegacy: false, verify: ["dedicated", "service-role"] });
+    expect(s).toEqual({ signing: "dedicated", signingIsLegacy: false, verify: ["dedicated"] });
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it("falls back to the service-role key for signing when env is missing and warns once", () => {
+  it("fails closed without the dedicated env (no service-role fallback)", () => {
     const warn = vi.fn();
     const a = resolveDedicatedSecret("X_SECRET", { env: {}, warn });
-    resolveDedicatedSecret("X_SECRET", { env: { X_SECRET: "  " }, warn });
-    expect(a).toEqual({ signing: "service-role", signingIsLegacy: true, verify: ["service-role"] });
+    expect(a).toEqual({ signing: null, signingIsLegacy: false, verify: [] });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("falls back to an explicit legacy key for signing and warns once", () => {
+    const warn = vi.fn();
+    const a = resolveDedicatedSecret("W_SECRET", { env: {}, legacy: ["old"], warn });
+    resolveDedicatedSecret("W_SECRET", { env: { W_SECRET: "  " }, legacy: ["old"], warn });
+    expect(a).toEqual({ signing: "old", signingIsLegacy: true, verify: ["old"] });
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(String(warn.mock.calls[0]![0])).toContain("X_SECRET");
-    expect(String(warn.mock.calls[0]![0])).not.toContain("service-role");
+    expect(String(warn.mock.calls[0]![0])).toContain("W_SECRET");
   });
 
   it("uses explicit legacy keys in order without duplicates", () => {

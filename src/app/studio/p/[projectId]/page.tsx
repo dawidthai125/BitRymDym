@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { StudioEditor } from "@/components/studio/studio-editor";
+import { StudioTakeExpiryBanner } from "@/components/studio/studio-take-expiry-banner";
 import { AppShell } from "@/components/site/app-shell";
 import { maxRecordingTracksForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
@@ -11,6 +12,7 @@ import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { getStudioProjectDocument } from "@/lib/studio/studio-service";
 import { loadStudioBeatTitle } from "@/lib/studio/studio-beat-title";
+import { loadStudioTakeExpiryNotice } from "@/lib/studio/studio-take-expiry-server";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("studio.studioPPage");
@@ -44,9 +46,10 @@ export default async function StudioProjectPage({ params }: PageProps) {
     throw error;
   }
 
-  const [product, beatTitle] = await Promise.all([
+  const [product, beatTitle, takeExpiry] = await Promise.all([
     resolveProductEntitlementForAuthContext(auth),
     loadStudioBeatTitle(document.project.beatId),
+    loadStudioTakeExpiryNotice(auth.userId, document.clips),
   ]);
 
   return (
@@ -68,6 +71,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
               {t("wszystkieProjekty")}
             </Link>
           </div>
+          <StudioTakeExpiryBanner notice={takeExpiry} />
           <StudioEditor
             initialDocument={document}
             initialBeatTitle={beatTitle}

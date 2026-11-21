@@ -4347,6 +4347,14 @@
       "nagrywanie": "● REC {czas}",
       "zapisywanie": "Zapisywanie nagrania…",
       "zachowajLubOdrzuc": "Nagranie gotowe — zachowaj lub odrzuć"
+    },
+    "takeExpiry": {
+      "wygasloTytul": "{n, plural, one {Jedno nagranie w tym projekcie wygasło.} few {# nagrania w tym projekcie wygasły.} other {# nagrań w tym projekcie wygasło.}}",
+      "wygasloOpis": "Eksport WAV i master nie zadziałają, dopóki nie nagrasz tych partii ponownie albo nie usuniesz ich klipów.",
+      "wkrotceTytul": "{n, plural, one {Nagranie wygaśnie {left}.} few {# nagrania wkrótce wygasną — pierwsze {left}.} other {# nagrań wkrótce wygaśnie — pierwsze {left}.}}",
+      "wkrotceOpis": "Termin: {when}. Zrób eksport WAV albo master przed tym czasem — potem trzeba nagrać ponownie.",
+      "zaDni": "za {n} dni",
+      "zaGodzin": "{n, plural, one {za godzinę} few {za # godziny} other {za # godzin}}"
     }
   },
   "nav": {

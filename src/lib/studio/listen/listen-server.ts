@@ -14,7 +14,6 @@ import { AuthError } from "@/lib/auth/session";
 import { partsOf } from "@/lib/studio/master/parts";
 import { resolveDedicatedSecret } from "@/lib/security/dedicated-secret";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { getSupabaseServiceRoleKey } from "@/lib/supabase/env";
 import type { PremiumTier } from "@/types/premium";
 
 import {
@@ -44,15 +43,14 @@ function check(e: { code?: string; message?: string } | null) {
 
 /**
  * Token HMAC key: dedicated LISTEN_LINK_SECRET (security review 2026-11-21, L2).
- * Legacy keys (old STUDIO_LISTEN_LINK_SECRET name, then the service-role key) are only
+ * Legacy key (old STUDIO_LISTEN_LINK_SECRET name; the service-role key was dropped 2026-11-22) is only
  * used to re-derive URLs of links created before the change, or to sign when the
  * dedicated env is missing (warned once). Public resolve looks up sha256(token) and
  * needs no secret, so links already shared keep working either way.
- * TODO(2026-12-21): drop the service-role legacy key.
  */
 function secrets() {
   const s = resolveDedicatedSecret("LISTEN_LINK_SECRET", {
-    legacy: [process.env.STUDIO_LISTEN_LINK_SECRET, getSupabaseServiceRoleKey()],
+    legacy: [process.env.STUDIO_LISTEN_LINK_SECRET],
   });
   if (!s.signing) throw new Error("listen_secret_missing");
   return { signing: s.signing, verify: s.verify };

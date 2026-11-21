@@ -17,9 +17,7 @@ export { PASSWORD_RECOVERY_COOKIE };
 
 /**
  * Seal HMAC key: dedicated PASSWORD_RESET_SEAL_SECRET (security review 2026-11-21).
- * Missing env → sign with the legacy service-role key + one warning.
- * Verification also accepts legacy-signed seals (they expire after the TTL anyway).
- * TODO(2026-12-21): drop the service-role legacy key.
+ * No service-role fallback (dropped 2026-11-22): missing env → no seal, reset fails closed.
  */
 function sealSecrets() {
   return resolveDedicatedSecret("PASSWORD_RESET_SEAL_SECRET");

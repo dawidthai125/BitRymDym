@@ -1,7 +1,5 @@
 import "server-only";
 
-import { getSupabaseServiceRoleKey } from "@/lib/supabase/env";
-
 /**
  * Dedicated HMAC secrets (security review 2026-11-21, L2).
  * The Supabase service-role key must not double as an HMAC key: its derived
@@ -9,18 +7,17 @@ import { getSupabaseServiceRoleKey } from "@/lib/supabase/env";
  *
  * Rules:
  * - sign with the dedicated env secret;
- * - if that env is missing, sign with the legacy service-role key and warn once
- *   per secret name (a deploy without the new env keeps working);
- * - verify with the dedicated secret first, then the legacy keys (never sign with
- *   a legacy key while the dedicated one exists).
- *
- * TODO(2026-12-21): remove the service-role fallback (signing and verifying)
- * once LISTEN_LINK_SECRET and PASSWORD_RESET_SEAL_SECRET are set everywhere.
+ * - the service-role key is never a fallback (removed 2026-11-22: both dedicated
+ *   secrets are set in production and preview, no active listen link was signed
+ *   with it, and reset seals live minutes);
+ * - explicit legacy keys (e.g. an old env name) are verify-only plus a warned
+ *   signing fallback when the dedicated env is missing;
+ * - nothing configured → signing null; callers fail closed.
  */
 export type DedicatedSecret = {
   /** Key for new signatures; null when nothing is configured. */
   signing: string | null;
-  /** True when `signing` is a legacy key (dedicated env missing). */
+  /** True when `signing` is an explicit legacy key (dedicated env missing). */
   signingIsLegacy: boolean;
   /** Keys accepted on verification, dedicated first, without duplicates. */
   verify: string[];
@@ -31,7 +28,7 @@ const warned = new Set<string>();
 export function resolveDedicatedSecret(
   name: string,
   options: {
-    /** Legacy keys still accepted on verification, in order (service-role last). */
+    /** Explicit legacy keys still accepted on verification, in order. Never the service-role key. */
     legacy?: Array<string | null | undefined>;
     env?: Record<string, string | undefined>;
     warn?: (message: string) => void;
@@ -39,7 +36,7 @@ export function resolveDedicatedSecret(
 ): DedicatedSecret {
   const env = options.env ?? process.env;
   const dedicated = env[name]?.trim() || null;
-  const legacy = (options.legacy ?? [getSupabaseServiceRoleKey()])
+  const legacy = (options.legacy ?? [])
     .map((s) => s?.trim() || null)
     .filter((s): s is string => !!s);
   const verify = [...new Set([...(dedicated ? [dedicated] : []), ...legacy])];

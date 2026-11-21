@@ -4347,6 +4347,14 @@
       "nagrywanie": "● REC {czas}",
       "zapisywanie": "Saving take…",
       "zachowajLubOdrzuc": "Take ready — keep or discard"
+    },
+    "takeExpiry": {
+      "wygasloTytul": "{n, plural, one {One recording in this project has expired.} other {# recordings in this project have expired.}}",
+      "wygasloOpis": "WAV export and master will not work until you record those parts again or remove their clips.",
+      "wkrotceTytul": "{n, plural, one {A recording expires {left}.} other {# recordings expire, the first {left}.}}",
+      "wkrotceOpis": "Deadline: {when}. Export a WAV or master before then — after that you have to record again.",
+      "zaDni": "in {n} days",
+      "zaGodzin": "{n, plural, one {in an hour} other {in # hours}}"
     }
   },
   "nav": {

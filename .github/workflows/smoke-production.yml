@@ -1,0 +1,32 @@
+name: Smoke test produkcji
+
+# Vercel reports each deploy to GitHub; run public checks once production is live.
+on:
+  deployment_status:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * *" # codziennie ~7:17 czasu polskiego
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: >-
+      github.event_name != 'deployment_status' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Poczekaj na przepięcie domeny
+        if: github.event_name == 'deployment_status'
+        run: sleep 20
+      - name: Sprawdź www.bitrymdym.pl
+        run: node scripts/smoke-production.mjs
