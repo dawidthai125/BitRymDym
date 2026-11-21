@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
+import { buildCsp, cspHeaderName, generateNonce, NONCE_HEADER } from "@/lib/security/csp";
 import { userAccessBearer } from "@/lib/supabase/access-bearer";
 
 import {
@@ -94,7 +95,7 @@ export function isGuestBlockedPath(pathname: string): "page" | "api" | null {
  * Route authorization for protected pages is enforced in Server Components / actions;
  * the guest Studio gate here is an early, cheap first line (pages re-check).
  */
-export async function middleware(request: NextRequest) {
+async function handleRequest(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -222,6 +223,24 @@ export async function middleware(request: NextRequest) {
     target.search = `?next=${encodeURIComponent(next)}`;
     return NextResponse.redirect(target);
   }
+  return response;
+}
+
+/**
+ * Entry point: per-request CSP nonce. The nonce + CSP go onto the *request*
+ * headers (Next.js reads the nonce from them while rendering and stamps its own
+ * scripts) and the CSP goes onto every response. Maintenance/auth logic lives
+ * untouched in handleRequest.
+ */
+export async function middleware(request: NextRequest) {
+  const nonce = generateNonce();
+  const headerName = cspHeaderName();
+  const csp = buildCsp({ nonce });
+  const headers = new Headers(request.headers);
+  headers.set(NONCE_HEADER, nonce);
+  headers.set(headerName, csp);
+  const response = await handleRequest(new NextRequest(request, { headers }));
+  response.headers.set(headerName, csp);
   return response;
 }
 

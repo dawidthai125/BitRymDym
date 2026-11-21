@@ -1033,7 +1033,8 @@
       "statusy": {
         "pending": "Waiting for payment",
         "paid": "Paid",
-        "failed": "Failed"
+        "failed": "Failed",
+        "refunded": "Refunded"
       },
       "nadanie": {
         "pending": "Plan not granted yet",

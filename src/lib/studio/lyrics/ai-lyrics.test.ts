@@ -100,10 +100,11 @@ describe("AI lyrics — route and migration wiring", () => {
     expect(src).toContain("tierOf(auth)");
     expect(src).toContain("tier_lyrics");
   });
-  it("server module checks the cap before reserving a slot and never stores the text", () => {
+  it("server module reserves the slot atomically via RPC (no read-then-insert) and never stores the text", () => {
     const src = readFileSync("src/lib/studio/lyrics/ai-lyrics-server.ts", "utf8");
-    expect(src.indexOf("daily_limit")).toBeLessThan(src.indexOf('.insert({'));
-    expect(src).toContain("input_chars: input.text.length");
+    expect(src).toContain("claim_ai_lyrics_usage");
+    expect(src).not.toContain('.insert({');
+    expect(src).toContain("inputChars: input.text.length");
     const sql = readFileSync("supabase/migrations/20261106150000_studio_ai_lyrics.sql", "utf8");
     expect(sql).toContain("enable row level security");
     expect(sql).toContain("revoke all on public.studio_ai_lyrics_usage from anon, authenticated");

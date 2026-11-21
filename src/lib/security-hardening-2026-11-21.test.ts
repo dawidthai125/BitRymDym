@@ -20,7 +20,7 @@ describe("security hardening (review 2026-11-21)", () => {
   });
   it("limits Sampek per user and hides provider errors", () => {
     const r = read("src/app/api/studio/play/sampek/route.ts");
-    expect(r).toContain("SAMPEK_MAX_PER_WINDOW");
+    expect(r).toContain("claim_sampek_usage");
     expect(r).not.toContain("error instanceof Error ? error.message : \"Sampek nie odpowiedział.\"");
   });
   it("acks PayU refund notifications instead of retrying forever", () => {

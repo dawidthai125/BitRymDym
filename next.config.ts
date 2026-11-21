@@ -6,33 +6,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-const supabaseOrigin = (() => {
-  try {
-    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
-  } catch {
-    return "";
-  }
-})();
-const supabaseWs = supabaseOrigin.replace(/^https:/, "wss:");
-
-/** Report-Only first: observe violations before enforcing. */
-const cspReportOnly = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://va.vercel-scripts.com",
-  "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${supabaseOrigin} https://vercel.com https://vercel.live`,
-  "font-src 'self' data:",
-  `media-src 'self' blob: mediastream: data: ${supabaseOrigin} https://edge.bitrymdym.pl`,
-  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://edge.bitrymdym.pl https://vercel.live wss://ws-us3.pusher.com https://vitals.vercel-insights.com`,
-  "worker-src 'self' blob:",
-  "frame-src https://vercel.live",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-]
-  .join("; ")
-  .replace(/\s+/g, " ");
+// CSP (nonce-based, per request) is set in src/middleware.ts via src/lib/security/csp.ts.
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -43,7 +17,6 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "microphone=(self), camera=(), geolocation=(), payment=(), usb=()",
   },
-  { key: "Content-Security-Policy-Report-Only", value: cspReportOnly },
 ];
 
 /** Prebuilt Studio Web Workers (scripts/build-studio-workers.mjs, run by predev/prebuild). */

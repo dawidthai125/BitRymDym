@@ -20,6 +20,7 @@ import {
   updatePasswordAfterResetAction,
   type AuthActionState,
 } from "@/lib/auth/actions";
+import { TurnstileWidget } from "@/lib/auth/turnstile-widget";
 import { AUTH_FIELD_CLASS } from "@/components/auth/auth-field-class";
 import { PasswordFieldWithToggle } from "@/components/auth/password-field-with-toggle";
 import { SignupConsentCheckbox } from "@/components/legal/consent-checkbox";
@@ -51,6 +52,7 @@ export function SignInForm({ next = null }: { next?: string | null } = {}) {
         required
         autoComplete="current-password"
       />
+      <TurnstileWidget />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
           {tl(state.error)}
@@ -118,6 +120,7 @@ export function SignUpForm({ next = null }: { next?: string | null } = {}) {
         hideLabel={t("ukryjPowtorzoneHaslo")}
       />
       <SignupConsentCheckbox />
+      <TurnstileWidget />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
           {tl(state.error)}
@@ -214,6 +217,7 @@ export function ForgotPasswordForm() {
           className={AUTH_FIELD_CLASS}
         />
       </label>
+      <TurnstileWidget />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
           {tl(state.error)}

@@ -87,6 +87,36 @@ export async function aiCoversUsedToday(admin: Admin, ownerId: string): Promise<
   return count ?? 0;
 }
 
+const COVER_BUSY_MESSAGE = "Poprzednia okładka jeszcze się generuje. Poczekaj na wynik i spróbuj ponownie.";
+
+export type AiCoverClaim = { status: "ok" | "daily_limit" | "busy" | "unavailable"; used: number };
+
+/** Reserve one generation through claim_ai_cover_usage; fail-closed on any error. */
+export async function claimAiCoverUsage(
+  admin: Admin,
+  c: { ownerId: string; usageId: string; projectId: string; aspect: string; perDay: number },
+): Promise<AiCoverClaim> {
+  try {
+    const since = await usageWindowStart(c.ownerId, "cover", warsawDayStartIso(), admin);
+    const { data, error } = await admin.rpc("claim_ai_cover_usage", {
+      p_owner: c.ownerId,
+      p_usage_id: c.usageId,
+      p_project_id: c.projectId,
+      p_aspect: c.aspect,
+      p_since: since,
+      p_per_day: c.perDay,
+      p_max_attempts: c.perDay * 3,
+      p_busy_seconds: 300,
+    });
+    if (error) return { status: "unavailable", used: 0 };
+    const row = (Array.isArray(data) ? data[0] : data) as { status?: string; used?: number } | null;
+    if (row?.status === "ok" || row?.status === "daily_limit" || row?.status === "busy") return { status: row.status, used: Number(row.used ?? 0) };
+  } catch {
+    /* fall through */
+  }
+  return { status: "unavailable", used: 0 };
+}
+
 export async function getAiCoverState(p: { ownerId: string; projectId: string; tier: PremiumTier }) {
   if (p.tier !== "GOLD" || !aiCoverEnabled()) return null;
   const admin = createSupabaseAdminClient();
@@ -118,22 +148,24 @@ export async function generateAiCover(p: { ownerId: string; projectId: string; t
   const admin = createSupabaseAdminClient();
   await project(admin, p.ownerId, p.projectId);
   const perDay = aiCoverPerDay();
-  const used = await aiCoversUsedToday(admin, p.ownerId);
-  if (used >= perDay) return { ok: false, error: "daily_limit" };
+
+  // Reserve the slot FIRST (atomic RPC, before the moderation call) — counts toward the cap while generating.
+  // Any RPC failure (e.g. migration not applied) fails closed — the cap is never bypassed.
+  const usageId = randomUUID();
+  const claim = await claimAiCoverUsage(admin, { ownerId: p.ownerId, usageId, projectId: p.projectId, aspect: p.aspect, perDay });
+  if (claim.status === "unavailable") return { ok: false, error: "ai_unavailable", message: AI_COVER_MESSAGES.allFailed };
+  if (claim.status === "busy") return { ok: false, error: "daily_limit", message: COVER_BUSY_MESSAGE };
+  if (claim.status === "daily_limit") return { ok: false, error: "daily_limit" };
+  const used = claim.used - 1;
+  const finish = (patch: Record<string, unknown>) => admin.from("studio_ai_cover_usage").update(patch).eq("id", usageId).then(() => undefined, () => undefined);
 
   const screen = await screenAiCoverPrompt(rules.prompt, { groqKey: process.env.GROQ_API_KEY });
   if (!screen.ok) {
+    await finish({ status: "failed", attempts: `screen:${screen.reason}`.slice(0, 200) });
     return screen.reason === "policy"
       ? { ok: false, error: "prompt_rejected", message: AI_COVER_MESSAGES.promptRejected }
       : { ok: false, error: "prompt_check_down", message: AI_COVER_MESSAGES.promptCheckDown };
   }
-
-  // Reserve the slot first (counts toward the cap while generating).
-  const usageId = randomUUID();
-  const { error: insErr } = await admin.from("studio_ai_cover_usage").insert({ id: usageId, owner_id: p.ownerId, project_id: p.projectId, aspect: p.aspect, status: "pending" });
-  if (missing(insErr)) throw new StudioMasterUnavailable("ai_cover_missing");
-  if (insErr) throw new Error(insErr.message);
-  const finish = (patch: Record<string, unknown>) => admin.from("studio_ai_cover_usage").update(patch).eq("id", usageId).then(() => undefined, () => undefined);
 
   const providers = aiImageProvidersFromEnv(process.env);
   const chain = await runAiImageChain(providers, { prompt: screen.finalPrompt, aspect: p.aspect, seed: randomInt(1, 2_000_000_000) }, {

@@ -4,6 +4,13 @@ const createSupabaseServerClient = vi.fn();
 const signUp = vi.fn();
 const hookProfileCompleted = vi.fn();
 
+vi.mock("@/lib/auth/attempt-limit", () => ({
+  limitSignUp: async () => ({ ok: true }),
+  limitPasswordReset: async () => ({ ok: true }),
+  limitSignIn: async () => ({ ok: true }),
+  limitReauth: async () => ({ ok: true }),
+}));
+
 vi.mock("@/lib/supabase/env", () => ({
   getSupabasePublicEnv: () => ({
     isConfigured: true,

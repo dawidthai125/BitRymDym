@@ -12,14 +12,16 @@ import { checkoutProductFromOrderRow } from "@/lib/payments/money";
 import { verifyP24Transaction } from "@/lib/payments/p24-client";
 import { readP24Config } from "@/lib/payments/p24-config";
 import { notificationSignValid, parseP24Notification } from "@/lib/payments/p24-notification";
-import { verifyPayuOrder } from "@/lib/payments/payu-client";
+import { PLAN_PACK_CATALOG, youtubeUnitsForGrosz } from "@/config/plan-policy";
+import { recordPaymentReview } from "@/lib/payments/payment-reviews";
+import { checkPayuOrder } from "@/lib/payments/payu-client";
 import { readPayuConfig } from "@/lib/payments/payu-config";
-import { parsePayuNotification, payuStatusAction } from "@/lib/payments/payu-notification";
+import { parsePayuNotification, parsePayuRefund, payuRefundAction, payuStatusAction } from "@/lib/payments/payu-notification";
 import { payuSignatureValid } from "@/lib/payments/payu-sign";
 import { loadAddonSnapshot, loadPlanSnapshot } from "@/lib/payments/snapshots";
 
 export type WebhookOutcome =
-  | { status: 200; body: { ok: true; result: "granted" | "skipped" | "already" | "ignored" } }
+  | { status: 200; body: { ok: true; result: "granted" | "skipped" | "already" | "ignored" | "refunded" | "review" } }
   | { status: 400; body: { ok: false } }
   | { status: 403; body: { ok: false; code: "PAYMENTS_OFF" } }
   | { status: 503; body: { ok: false } };
@@ -42,7 +44,7 @@ type OrderRow = {
 function orderLedger(row: OrderRow): OrderLedger | null {
   const product = checkoutProductFromOrderRow(row);
   if (!product) return null;
-  if (row.status !== "pending" && row.status !== "paid" && row.status !== "failed") return null;
+  if (row.status !== "pending" && row.status !== "paid" && row.status !== "failed" && row.status !== "refunded") return null;
   if (row.grant_status !== "pending" && row.grant_status !== "granted" && row.grant_status !== "skipped") return null;
   if (!Number.isSafeInteger(row.amount_grosz)) return null;
   return {
@@ -239,15 +241,9 @@ export async function handlePayuWebhook(rawBody: string, signatureHeader: string
   }
   const note = parsePayuNotification(body);
   if (!note) {
-    // Refund notifications have a different shape (top-level "refund"). Ack them so PayU stops retrying;
-    // refunds are handled by hand, so leave a trace for the operator.
-    const refund = body && typeof body === "object" ? (body as Record<string, unknown>).refund : null;
-    if (refund && typeof refund === "object") {
-      console.error("[payu] refund notification received — review manually", {
-        orderId: typeof (body as Record<string, unknown>).orderId === "string" ? (body as Record<string, unknown>).orderId : null,
-      });
-      return { status: 200, body: { ok: true, result: "ignored" } };
-    }
+    // Refund notifications have a different shape (top-level "refund"). Signature was verified above.
+    const rawRefund = body && typeof body === "object" ? (body as Record<string, unknown>).refund : null;
+    if (rawRefund && typeof rawRefund === "object") return handlePayuRefund(body);
     return { status: 400, body: { ok: false } };
   }
 
@@ -285,20 +281,72 @@ export async function handlePayuWebhook(rawBody: string, signatureHeader: string
     now,
   });
   if (settled.kind === "already") return { status: 200, body: { ok: true, result: "already" } };
+  const wasFailed = loaded.order.status === "failed";
   if (settled.kind === "rejected") {
     if (settled.code === "amount" || settled.code === "currency" || settled.code === "merchant" || settled.code === "pos") {
       console.error("[payu] notification rejected", { sessionId: note.extOrderId, code: settled.code });
+      if (wasFailed) {
+        // A cancelled order that now reports a different payment: a human decides, PayU stops retrying.
+        const stored = await recordPaymentReview(admin, {
+          orderRef: note.extOrderId,
+          reason: "failed_order_rejected",
+          providerRef: note.orderId,
+          details: { code: settled.code },
+        });
+        return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
+      }
       return { status: 400, body: { ok: false } };
     }
     return { status: 503, body: { ok: false } };
   }
 
-  const verified = await verifyPayuOrder(config, {
+  const checked = await checkPayuOrder(config, {
     orderId: note.orderId,
     extOrderId: note.extOrderId,
     amountGrosz: loaded.order.amountGrosz,
   });
-  if (!verified) return { status: 503, body: { ok: false } };
+  if (checked === "unavailable") return { status: 503, body: { ok: false } };
+  if (checked === "mismatch") {
+    if (!wasFailed) return { status: 503, body: { ok: false } };
+    const stored = await recordPaymentReview(admin, {
+      orderRef: note.extOrderId,
+      reason: "failed_order_not_completed",
+      providerRef: note.orderId,
+    });
+    return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
+  }
+
+  if (wasFailed) {
+    // Verified COMPLETED after CANCELED: reopen (failed -> pending) under the row lock, then grant as usual.
+    const reopened = await admin.rpc("reopen_failed_payment_order", { p_session_id: note.extOrderId });
+    if (reopened.error) {
+      console.error("[payu] reopen rpc failed", { sessionId: note.extOrderId });
+      return { status: 503, body: { ok: false } };
+    }
+    const reopenResult = (reopened.data as { result?: string } | null)?.result;
+    if (reopenResult !== "reopened") {
+      const stored = await recordPaymentReview(admin, {
+        orderRef: note.extOrderId,
+        reason: "failed_order_reopen_refused",
+        providerRef: note.orderId,
+        details: { result: reopenResult ?? "empty" },
+      });
+      return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
+    }
+  }
+
+  if (settled.write.action === "skip" && (settled.write.note === "pack_amount" || settled.write.note === "pending_plan")) {
+    // Paid and verified, but there is nothing the RPCs can safely grant. Queue it instead of a 503 loop.
+    const reason = settled.write.note === "pack_amount" ? "unknown_pack_amount" : "pending_plan_conflict";
+    console.error("[payu] paid order cannot be granted automatically", { sessionId: note.extOrderId, reason });
+    const stored = await recordPaymentReview(admin, {
+      orderRef: note.extOrderId,
+      reason,
+      providerRef: note.orderId,
+      details: { amount_grosz: loaded.order.amountGrosz },
+    });
+    return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
+  }
 
   if (loaded.order.product.kind === "beat" && settled.write.action !== "beat") {
     console.error("[payu] beat grant refused", { sessionId: note.extOrderId });
@@ -347,5 +395,60 @@ export async function handlePayuWebhook(rawBody: string, signatureHeader: string
   }
   if (result === "conflict") return { status: 503, body: { ok: false } };
   console.error("[payu] unexpected grant result", { sessionId: note.extOrderId, result: result ?? "empty" });
+  return { status: 503, body: { ok: false } };
+}
+
+function refundUnits(row: { product_kind: string; pack: string | null; amount_grosz: number }): number | null {
+  if (row.product_kind !== "pack") return null;
+  if (row.pack === "take" || row.pack === "master") return PLAN_PACK_CATALOG[row.pack].units;
+  if (row.pack === "youtube") return youtubeUnitsForGrosz(row.amount_grosz);
+  return null;
+}
+
+/** Signature already verified by the caller. The order is located by PayU orderId, never by extOrderId alone. */
+async function handlePayuRefund(body: unknown): Promise<WebhookOutcome> {
+  const refund = parsePayuRefund(body);
+  if (!refund) return { status: 400, body: { ok: false } };
+  console.error("[payu] refund notification received", { orderId: refund.orderId, status: refund.status });
+  if (payuRefundAction(refund.status) === "ignore") return { status: 200, body: { ok: true, result: "ignored" } };
+
+  const admin = createSupabaseAdminClient();
+  const found = await admin
+    .from("payment_orders")
+    .select("session_id, product_kind, pack, amount_grosz")
+    .eq("p24_order_id", refund.orderId)
+    .maybeSingle();
+  if (found.error) return { status: 503, body: { ok: false } };
+  if (!found.data) {
+    console.error("[payu] refund for an unknown order", { orderId: refund.orderId });
+    return { status: 200, body: { ok: true, result: "ignored" } };
+  }
+  const order = found.data as { session_id: string; product_kind: string; pack: string | null; amount_grosz: number };
+  if (refund.extOrderId && refund.extOrderId !== order.session_id) {
+    const stored = await recordPaymentReview(admin, {
+      orderRef: order.session_id,
+      reason: "refund_ext_mismatch",
+      providerRef: refund.refundId,
+    });
+    return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
+  }
+
+  const applied = await admin.rpc("apply_p24_refund", {
+    p_provider_order_id: refund.orderId,
+    p_refund_id: refund.refundId,
+    p_refund_amount: refund.amount,
+    p_currency: refund.currencyCode,
+    p_units: refundUnits(order),
+  });
+  if (applied.error) {
+    console.error("[payu] refund rpc failed", { orderId: refund.orderId });
+    return { status: 503, body: { ok: false } };
+  }
+  const result = (applied.data as { result?: string } | null)?.result;
+  if (result === "refunded") return { status: 200, body: { ok: true, result: "refunded" } };
+  if (result === "review") return { status: 200, body: { ok: true, result: "review" } };
+  if (result === "already") return { status: 200, body: { ok: true, result: "already" } };
+  if (result === "missing") return { status: 200, body: { ok: true, result: "ignored" } };
+  console.error("[payu] unexpected refund result", { orderId: refund.orderId, result: result ?? "empty" });
   return { status: 503, body: { ok: false } };
 }

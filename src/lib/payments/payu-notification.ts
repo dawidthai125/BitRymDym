@@ -59,3 +59,35 @@ export function payuStatusAction(status: string): PayuStatusAction {
   if (status === "CANCELED" || status === "CANCELLED" || status === "REJECTED") return "fail";
   return "retry";
 }
+
+export type PayuRefundNotice = {
+  orderId: string;
+  /** Present only when PayU sent it. Used as a cross-check, never as the lookup key. */
+  extOrderId: string | null;
+  refundId: string;
+  status: string;
+  amount: number;
+  currencyCode: string;
+};
+
+/** Refund notification: top-level orderId/extOrderId plus a `refund` object. Same strictness as the order notice. */
+export function parsePayuRefund(body: unknown): PayuRefundNotice | null {
+  const root = asRecord(body);
+  const refund = asRecord(root?.refund);
+  if (!root || !refund) return null;
+  const orderId = text(root.orderId);
+  const extRaw = text(root.extOrderId);
+  const refundId = text(refund.refundId);
+  const status = text(refund.status).toUpperCase();
+  const currencyCode = (text(refund.currencyCode) || "PLN").toUpperCase();
+  const amount = positiveAmount(refund.amount);
+  if (!ORDER_ID.test(orderId) || !ORDER_ID.test(refundId) || !STATUS.test(status)) return null;
+  if (extRaw && !EXT_ORDER_ID.test(extRaw)) return null;
+  if (!amount || currencyCode !== "PLN") return null;
+  return { orderId, extOrderId: extRaw || null, refundId, status, amount, currencyCode };
+}
+
+/** Only FINALIZED moves money back. PENDING and CANCELED are acked without a change. */
+export function payuRefundAction(status: string): "apply" | "ignore" {
+  return status === "FINALIZED" ? "apply" : "ignore";
+}

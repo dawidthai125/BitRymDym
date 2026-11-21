@@ -116,13 +116,19 @@ export async function registerPayuOrder(
   return { redirectUrl: redirectUri };
 }
 
-export async function verifyPayuOrder(
+export type PayuOrderCheck = "ok" | "mismatch" | "unavailable";
+
+/**
+ * Re-reads the order from PayU (OAuth). `ok`: COMPLETED and orderId/extOrderId/amount/currency/POS agree.
+ * `mismatch`: PayU answered and it does not agree. `unavailable`: no answer or no token (retry later).
+ */
+export async function checkPayuOrder(
   config: PayuConfig,
   input: { orderId: string; extOrderId: string; amountGrosz: number },
   fetchImpl: FetchLike = fetch,
-): Promise<boolean> {
+): Promise<PayuOrderCheck> {
   const token = await accessToken(config, fetchImpl);
-  if (!token) return false;
+  if (!token) return "unavailable";
   let response: Response;
   try {
     response = await fetchImpl(`${payuOrigin(config.sandbox)}/api/v2_1/orders/${encodeURIComponent(input.orderId)}`, {
@@ -132,24 +138,33 @@ export async function verifyPayuOrder(
       cache: "no-store",
     });
   } catch {
-    return false;
+    return "unavailable";
   }
-  if (!response.ok) return false;
+  if (!response.ok) return "unavailable";
   let payload: unknown;
   try {
     payload = await response.json();
   } catch {
-    return false;
+    return "unavailable";
   }
   const record = asRecord(payload);
-  if (asRecord(record?.status)?.statusCode !== "SUCCESS") return false;
+  if (asRecord(record?.status)?.statusCode !== "SUCCESS") return "unavailable";
   const orders = record?.orders;
   const order = Array.isArray(orders) ? asRecord(orders[0]) : null;
-  if (!order) return false;
-  return order.status === "COMPLETED"
+  if (!order) return "mismatch";
+  const same = order.status === "COMPLETED"
     && order.orderId === input.orderId
     && order.extOrderId === input.extOrderId
     && order.currencyCode === "PLN"
     && sameAmount(order.totalAmount, input.amountGrosz)
     && samePos(order.merchantPosId, config.posId);
+  return same ? "ok" : "mismatch";
+}
+
+export async function verifyPayuOrder(
+  config: PayuConfig,
+  input: { orderId: string; extOrderId: string; amountGrosz: number },
+  fetchImpl: FetchLike = fetch,
+): Promise<boolean> {
+  return (await checkPayuOrder(config, input, fetchImpl)) === "ok";
 }

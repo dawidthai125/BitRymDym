@@ -5,6 +5,7 @@ import {
   Schibsted_Grotesk,
   Source_Serif_4,
 } from "next/font/google";
+import { headers } from "next/headers";
 import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
@@ -76,6 +77,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const locale = await getLocale();
   const messages = await publicClientMessages();
   return (
@@ -94,6 +96,7 @@ export default async function RootLayout({
       <body className="min-h-dvh bg-[var(--brd-paper)] pb-[env(safe-area-inset-bottom)] text-[var(--brd-ink)] antialiased">
         <Script
           id="brd-theme-boot"
+          nonce={nonce}
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: BRD_THEME_BOOT_SCRIPT }}
         />

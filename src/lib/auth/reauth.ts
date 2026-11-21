@@ -2,6 +2,7 @@ import "server-only";
 
 import type { User } from "@supabase/supabase-js";
 
+import { limitReauth } from "@/lib/auth/attempt-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type ReauthResult =
@@ -24,6 +25,11 @@ export async function reauthenticateWithPassword(
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user?.email) {
     return { ok: false, error: "Wymagane zalogowanie." };
+  }
+
+  const limited = await limitReauth(userData.user.id);
+  if (!limited.ok) {
+    return { ok: false, error: limited.error };
   }
 
   const email = userData.user.email;

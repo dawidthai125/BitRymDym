@@ -4,27 +4,36 @@ import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premiu
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { runSampekAi, isSampekAiAction } from "@/lib/studio/play/sampek-ai";
 import { parsePlaySession } from "@/lib/studio/play/sampek-edit";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
-// Per-instance guard against cost abuse: one run at a time and a short per-user budget.
-// (A durable per-plan quota needs a DB migration — see the security review.)
-const SAMPEK_WINDOW_MS = 60 * 60 * 1000;
-const SAMPEK_MAX_PER_WINDOW = 20;
-const sampekHits = new Map<string, number[]>();
+// Durable, atomic cost guard: per-tier hourly cap + single-flight via RPC claim_sampek_usage (table sampek_usage).
+// The in-memory set only releases "busy" as soon as a run finishes on the same instance.
+const SAMPEK_PER_HOUR = { BRONZE: 10, SILVER: 30, GOLD: 60, STAFF: 120 } as const;
+const SAMPEK_BUSY_SECONDS = 5;
 const sampekBusy = new Set<string>();
 
-function sampekAllowed(userId: string): boolean {
-  const now = Date.now();
-  const hits = (sampekHits.get(userId) ?? []).filter((t) => now - t < SAMPEK_WINDOW_MS);
-  if (hits.length >= SAMPEK_MAX_PER_WINDOW) {
-    sampekHits.set(userId, hits);
-    return false;
+function sampekPerHour(tier: string, role: string | null | undefined): number {
+  if (role === "ADMIN" || role === "MODERATOR") return SAMPEK_PER_HOUR.STAFF;
+  if (tier === "GOLD") return SAMPEK_PER_HOUR.GOLD;
+  if (tier === "SILVER") return SAMPEK_PER_HOUR.SILVER;
+  return SAMPEK_PER_HOUR.BRONZE;
+}
+
+/** 'ok' | 'rate_limit' | 'busy' | 'unavailable' (RPC error → fail closed). */
+async function claimSampek(userId: string, perHour: number): Promise<"ok" | "rate_limit" | "busy" | "unavailable"> {
+  try {
+    const { data, error } = await createSupabaseAdminClient().rpc("claim_sampek_usage", {
+      p_owner: userId,
+      p_per_hour: perHour,
+      p_busy_seconds: SAMPEK_BUSY_SECONDS,
+    });
+    if (error) return "unavailable";
+    return data === "ok" || data === "rate_limit" || data === "busy" ? data : "unavailable";
+  } catch {
+    return "unavailable";
   }
-  hits.push(now);
-  sampekHits.set(userId, hits);
-  if (sampekHits.size > 5000) sampekHits.clear();
-  return true;
 }
 
 export async function POST(request: Request) {
@@ -39,7 +48,10 @@ export async function POST(request: Request) {
     if (!session || !isSampekAiAction(body.action)) return NextResponse.json({ message: "Nieprawidłowa sesja lub operacja." }, { status: 400 });
     const userId = auth.profile.id;
     if (sampekBusy.has(userId)) return NextResponse.json({ message: "Sampek jeszcze pracuje nad poprzednią prośbą." }, { status: 429 });
-    if (!sampekAllowed(userId)) return NextResponse.json({ message: "Limit użyć Sampeka na godzinę został wykorzystany. Spróbuj później." }, { status: 429 });
+    const claim = await claimSampek(userId, sampekPerHour(tier, auth.profile.role));
+    if (claim === "busy") return NextResponse.json({ message: "Sampek jeszcze pracuje nad poprzednią prośbą." }, { status: 429 });
+    if (claim === "rate_limit") return NextResponse.json({ message: "Limit użyć Sampeka na godzinę został wykorzystany. Spróbuj później." }, { status: 429 });
+    if (claim === "unavailable") return NextResponse.json({ message: "Sampek jest chwilowo niedostępny. Spróbuj za kilka minut." }, { status: 503 });
     sampekBusy.add(userId);
     try {
       const result = await runSampekAi(session, body.action);

@@ -6,6 +6,13 @@ const resetPasswordForEmail = vi.fn();
 const RESET_REDIRECT =
   "http://127.0.0.1:3000/auth/callback?flow=recovery";
 
+vi.mock("@/lib/auth/attempt-limit", () => ({
+  limitSignUp: async () => ({ ok: true }),
+  limitPasswordReset: async () => ({ ok: true }),
+  limitSignIn: async () => ({ ok: true }),
+  limitReauth: async () => ({ ok: true }),
+}));
+
 vi.mock("@/lib/supabase/env", () => ({
   getSupabasePublicEnv: () => ({
     isConfigured: true,

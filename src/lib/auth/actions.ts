@@ -13,6 +13,12 @@ import {
   EMAIL_CHANGE_AWAITING_MESSAGE,
   requestEmailChange,
 } from "@/lib/auth/email-change";
+import {
+  limitPasswordReset,
+  limitSignIn,
+  limitSignUp,
+} from "@/lib/auth/attempt-limit";
+import { verifyTurnstile } from "@/lib/auth/turnstile";
 import { validateNewPassword } from "@/lib/auth/password-policy";
 import {
   clearPasswordRecoverySeal,
@@ -115,6 +121,15 @@ export async function signUpAction(
     return { error: MAINTENANCE_SIGN_UP_ERROR, success: false, message: null };
   }
 
+  const captcha = await verifyTurnstile(formData);
+  if (!captcha.ok) {
+    return { error: captcha.error, success: false, message: null };
+  }
+  const limited = await limitSignUp();
+  if (!limited.ok) {
+    return { error: limited.error, success: false, message: null };
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -182,6 +197,16 @@ export async function signInAction(
 
   if (!email || !password) {
     return { error: "E-mail i hasło są wymagane.", success: false };
+  }
+
+  const captcha = await verifyTurnstile(formData);
+  if (!captcha.ok) {
+    return { error: captcha.error, success: false };
+  }
+  // Generic message; identical whether or not the account exists. Fail-open on RPC error.
+  const limited = await limitSignIn(email);
+  if (!limited.ok) {
+    return { error: limited.error, success: false };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -335,6 +360,16 @@ export async function requestPasswordResetAction(
 
   if (!email) {
     return { error: "Podaj adres e-mail.", success: false };
+  }
+
+  const captcha = await verifyTurnstile(formData);
+  if (!captcha.ok) {
+    return { error: captcha.error, success: false };
+  }
+  // Fail-closed; counts attempts regardless of whether the account exists.
+  const limited = await limitPasswordReset(email);
+  if (!limited.ok) {
+    return { error: limited.error, success: false };
   }
 
   const supabase = await createSupabaseServerClient();

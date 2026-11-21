@@ -1033,7 +1033,8 @@
       "statusy": {
         "pending": "Czeka na wpłatę",
         "paid": "Opłacone",
-        "failed": "Nieudane"
+        "failed": "Nieudane",
+        "refunded": "Zwrócone"
       },
       "nadanie": {
         "pending": "Plan jeszcze nie nadany",

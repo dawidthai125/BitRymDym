@@ -7,7 +7,7 @@ export const ADMIN_PAYMENTS_PAGE_SIZE = 50;
 const TIERS = ["BRONZE", "SILVER", "GOLD"] as const;
 const PACKS = ["take", "master", "youtube"] as const;
 const PERIODS = ["month", "year", "once"] as const;
-const STATUSES = ["pending", "paid", "failed"] as const;
+const STATUSES = ["pending", "paid", "failed", "refunded"] as const;
 const GRANTS = ["pending", "granted", "skipped"] as const;
 
 export type PaymentHistoryTier = (typeof TIERS)[number];

@@ -284,7 +284,7 @@ export function grantWrite(product: CheckoutProduct, plan: PlanSnapshot, addon: 
 }
 
 export type OrderLedger = {
-  status: "pending" | "paid" | "failed";
+  status: "pending" | "paid" | "failed" | "refunded";
   grantStatus: "pending" | "granted" | "skipped";
   amountGrosz: number;
   currency: string;
@@ -345,7 +345,10 @@ export function settleVerifiedNotification(input: {
   if (order.status === "paid" && (order.grantStatus === "granted" || order.grantStatus === "skipped")) {
     return { kind: "already" };
   }
-  if (order.status !== "pending" || order.grantStatus !== "pending") {
+  // A refunded order never grants again, whatever late notice arrives.
+  if (order.status === "refunded") return { kind: "already" };
+  // failed + pending grant: a later verified COMPLETED may still pay it (caller reopens the row first).
+  if ((order.status !== "pending" && order.status !== "failed") || order.grantStatus !== "pending") {
     return { kind: "rejected", code: "state" };
   }
   if (notification.merchantId !== input.merchantId) return { kind: "rejected", code: "merchant" };
