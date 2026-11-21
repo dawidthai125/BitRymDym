@@ -90,3 +90,7 @@ __pycache__/
 
 # Studio Web Workers bundled by scripts/build-studio-workers.mjs
 /public/workers/
+
+# Lokalny stan sesji nagrywarki (dev)
+/desktop/recorder/BitRymDym/
+/.claude/worktrees/

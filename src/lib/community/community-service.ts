@@ -70,6 +70,8 @@ export type BoardRow = {
   score: number;
   count: number;
   prize: { place: number; tier: string; days: number; mode: string } | null;
+  /** True for a user's work (catalog tab "Użytkownicy"). */
+  userOwned: boolean;
 };
 
 export type Board = {
@@ -77,7 +79,7 @@ export type Board = {
   periodKey: string;
   closed: boolean;
   rows: BoardRow[];
-  champion: { targetId: string; title: string; author: string } | null;
+  champion: { targetId: string; title: string; author: string; userOwned: boolean } | null;
 };
 
 export type ThreadComment = {
@@ -568,10 +570,11 @@ async function readBoardAt(kind: TargetKind, periodKind: PeriodKind, now: Date):
         score: row.score,
         count: row.count,
         prize: prizeLabel(prize ? { place: prize.place, tier: prize.tier, days: prize.days, mode: prize.mode } : undefined),
+        userOwned: work?.ownership === "USER",
       };
     }),
     champion: leader && leaderWork
-      ? { targetId: leader.targetId, title: leaderWork.title, author: boardAuthor(leaderWork, names) }
+      ? { targetId: leader.targetId, title: leaderWork.title, author: boardAuthor(leaderWork, names), userOwned: leaderWork.ownership === "USER" }
       : null,
   };
 }

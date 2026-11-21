@@ -5,6 +5,11 @@ import { CommunityShelf } from "@/components/community/community-shelf";
 import { readBoard } from "@/lib/community/community-service";
 import type { PeriodKind, TargetKind } from "@/lib/community/ranking-policy";
 
+/** The catalog opens on the BitRymDym tab by default, so a user's sample needs its tab in the link. */
+function sampleHref(id: string, userOwned: boolean): string {
+  return `/sampel?zrodlo=${userOwned ? "user" : "brd"}#${id}`;
+}
+
 export async function RankingView({
   kind,
   period,
@@ -38,7 +43,7 @@ export async function RankingView({
       {board?.enabled && board.champion ? (
         <p className="mb-4 font-poster text-xl uppercase">
           {championLabel}:{" "}
-          <Link href={kind === "beat" ? `/beat/${board.champion.targetId}` : `/sampel#${board.champion.targetId}`} className="underline underline-offset-4">
+          <Link href={kind === "beat" ? `/beat/${board.champion.targetId}` : sampleHref(board.champion.targetId, board.champion.userOwned)} className="underline underline-offset-4">
             {board.champion.title}
           </Link>
           <span className="ml-2 font-sans text-sm normal-case text-[var(--brd-mute)]">{board.champion.author}</span>
@@ -52,7 +57,7 @@ export async function RankingView({
             <li key={row.targetId} className="border-b border-[var(--brd-line)] pb-3">
               <p className="text-sm text-[var(--brd-mute)]">{rank("place", { place: row.place })}</p>
               <p className="text-base text-[var(--brd-ink)]">
-                <Link href={kind === "beat" ? `/beat/${row.targetId}` : `/sampel#${row.targetId}`} className="underline underline-offset-4">
+                <Link href={kind === "beat" ? `/beat/${row.targetId}` : sampleHref(row.targetId, row.userOwned)} className="underline underline-offset-4">
                   {row.title}
                 </Link>
                 <span className="ml-2 text-sm text-[var(--brd-mute)]">{row.author}</span>
