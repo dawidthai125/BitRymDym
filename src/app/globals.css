@@ -683,11 +683,13 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   background: color-mix(in srgb, var(--studio-lane-edge, #e8735a) 82%, #1a1006) !important;
   border-radius: 2px;
 }
+/* The timeline .sticky rule (higher specificity, !important) paints sticky children near-black. */
+.studio-desk [data-testid="studio-timeline"] .studio-lane-title.sticky {
+  background: #f2a93b !important;
+}
 .studio-desk .studio-lane-title {
   /* Audit 2026-11-21: dark text sat on a near-black chip — give it its own amber plate. */
   color: #1a1006;
-  /* !important: the timeline .sticky rule paints every sticky child near-black. */
-  background: #f2a93b !important;
   border-radius: 2px;
   padding: 1px 6px;
   font-size: 12px;
