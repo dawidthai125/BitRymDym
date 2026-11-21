@@ -6,6 +6,8 @@
 import { createHash } from "node:crypto";
 
 import {
+  AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS,
+  STUDIO_EXPORT_FX_POST_ROLL_MAX_MS,
   STUDIO_EXPORT_DOCUMENT_SNAPSHOT_SCHEMA_VERSION,
   STUDIO_EXPORT_MAX_CLIPS,
   STUDIO_EXPORT_MAX_SNAPSHOT_BYTES,
@@ -91,6 +93,37 @@ function assertNoForbiddenKeys(value: unknown, path: string): void {
     }
     assertNoForbiddenKeys(record[key], `${path}.${key}`);
   }
+}
+
+/** Marker in the LIMIT error message; the export client maps it to a clear Polish message. */
+export const STUDIO_EXPORT_DURATION_CAP_MARKER = "EXPORT_DURATION_CAP";
+
+/**
+ * Export renders the song, not the empty canvas: every Studio project has a 6:00 timeline
+ * (STUDIO_MAX_SONG_MS) while the offline export render caps at AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS
+ * (prod 2026-11-21: every WAV export failed with "Timeline 360000ms exceeds cap 180000ms").
+ * Trim the snapshot timeline to the end of the last clip (never cuts a clip) and fail fast when the
+ * song plus the FX tail still does not fit.
+ */
+export function trimStudioExportTimeline(document: StudioProjectDocument): StudioProjectDocument {
+  let contentEnd = 0;
+  for (const clip of document.clips) {
+    const end = Math.ceil(clip.timelineStartMs + clip.durationMs);
+    if (Number.isFinite(end) && end > contentEnd) contentEnd = end;
+  }
+  // No clips: nothing to trim; the empty-session checks downstream answer that case.
+  if (contentEnd <= 0) return document;
+  const original = Math.trunc(document.project.timelineLengthMs);
+  const trimmed = Math.min(original, Math.max(1000, contentEnd));
+  const capMs = AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS * 1000;
+  if (trimmed + STUDIO_EXPORT_FX_POST_ROLL_MAX_MS > capMs) {
+    throw new RenderJobDomainError(
+      `${STUDIO_EXPORT_DURATION_CAP_MARKER}: song ${trimmed}ms + FX tail exceeds export cap ${capMs}ms.`,
+      "LIMIT",
+    );
+  }
+  if (trimmed === original) return document;
+  return { ...document, project: { ...document.project, timelineLengthMs: trimmed } };
 }
 
 export function assertStudioDocumentWithinExportLimits(

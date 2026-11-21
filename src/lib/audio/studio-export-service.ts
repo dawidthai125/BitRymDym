@@ -33,6 +33,7 @@ import { rejectClientRenderSourceClaims } from "@/lib/audio/render-source-core";
 import {
   buildStudioExportDocumentSnapshot,
   collectStudioExportSourceRefs,
+  trimStudioExportTimeline,
 } from "@/lib/audio/studio-export-document-snapshot";
 import { publicStudioExportFailure } from "@/lib/audio/studio-export-failure-contract";
 import { authorizeStudioExportSourcesForDocument } from "@/lib/audio/studio-export-source-resolution";
@@ -323,11 +324,14 @@ export async function createStudioExportJobFor(
     quotaBytes: quotaBytesForTier(product.premiumTier),
   });
 
+  // Render the song, not the 6:00 canvas (fails fast when it does not fit the export cap).
+  const exportDocument = trimStudioExportTimeline(document);
+
   // Source collection + AuthZ (object keys from DB only).
-  collectStudioExportSourceRefs(document);
+  collectStudioExportSourceRefs(exportDocument);
   await authorizeStudioExportSourcesForDocument({
     jobOwnerId: context.userId,
-    document,
+    document: exportDocument,
     actorRole: context.profile.role,
   });
 
@@ -339,7 +343,7 @@ export async function createStudioExportJobFor(
     projectId: input.projectId,
     documentVersion: expectedDocumentVersion,
     capturedAt,
-    document,
+    document: exportDocument,
   });
 
   // Best-effort TOCTOU: re-check version immediately before insert.

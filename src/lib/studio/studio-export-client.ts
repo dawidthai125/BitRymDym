@@ -7,6 +7,21 @@ import {
   isStudioExportPublicErrorCode,
   studioExportPublicErrorMessage,
 } from "@/lib/audio/studio-export-failure-contract";
+import { STUDIO_TAKE_EXPIRED_ERROR_PL } from "@/lib/studio/studio-audio-errors";
+
+/**
+ * 403 from export enqueue: the render source check (render-source-core) also answers FORBIDDEN for an
+ * expired or deleted take on the timeline — say that instead of "no permission" (prod 2026-11-21).
+ */
+export function studioExportForbiddenMessage(serverError: unknown): string {
+  const text = typeof serverError === "string" ? serverError : "";
+  if (/session expired/i.test(text)) return `${STUDIO_TAKE_EXPIRED_ERROR_PL} Potem eksportuj ponownie.`;
+  if (/take was deleted/i.test(text)) {
+    return "Nagranie na jednej ze ścieżek zostało usunięte. Usuń jego klip albo dodaj nowe ujęcie, potem eksportuj ponownie.";
+  }
+  if (/not READY/i.test(text)) return "Nagranie na jednej ze ścieżek nie jest jeszcze gotowe. Poczekaj chwilę i spróbuj ponownie.";
+  return "Brak uprawnień do eksportu tego projektu.";
+}
 
 export type StudioExportUiPhase =
   | "IDLE"
@@ -258,7 +273,7 @@ export function mapStudioExportHttpResult(input: {
       message:
         httpStatus === 401
           ? "Zaloguj się, aby eksportować projekt."
-          : "Brak uprawnień do eksportu tego projektu.",
+          : studioExportForbiddenMessage(json.error),
     };
   }
 
@@ -289,7 +304,10 @@ export function mapStudioExportHttpResult(input: {
       phase: "FAILED",
       httpStatus,
       code: json.code,
-      message: "Eksport niedostępny (limit lub konflikt). Spróbuj później.",
+      message:
+        typeof json.error === "string" && json.error.includes("EXPORT_DURATION_CAP")
+          ? "Eksport WAV obsługuje na razie utwory do ok. 3 minut. Master (krok 3) działa dla utworów do 6 minut."
+          : "Eksport niedostępny (limit lub konflikt). Spróbuj później.",
     };
   }
 
@@ -382,7 +400,7 @@ export function mapStudioExportLatestHttpResult(input: {
       message:
         httpStatus === 401
           ? "Zaloguj się, aby eksportować projekt."
-          : "Brak uprawnień do eksportu tego projektu.",
+          : studioExportForbiddenMessage(json.error),
     };
   }
 

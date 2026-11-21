@@ -507,7 +507,7 @@ export function StudioBitekChat({
             {t("wyslij")}
           </Button>
         </div>
-        <div className="flex items-center justify-between text-xs text-[var(--brd-mute)]">
+        <div className="flex items-center justify-between gap-2 pr-9 text-xs text-[var(--brd-mute)]">
           <span id={`${inputId}-count`} className={tooLong ? "text-[var(--brd-rec)]" : undefined}>
             {tooLong ? t("zaDlugie", { max: BITEK_LIMITS.messageMaxChars }) : t("licznik", { n: text.length, max: BITEK_LIMITS.messageMaxChars })}
           </span>
