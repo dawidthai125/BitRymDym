@@ -17,6 +17,8 @@ Sesja agenta OpenBot (BitRymDym v3) z GO Ownera. Tip `0e3f973`, deploy READY.
 - **Strona:** adres publiczny i auth na `www.bitrymdym.pl` (apex = 308), sitemap/robots/PayU na www, bez globalnego `og:url`, admin polityki nagrań bez sztywnego „15 s”.
 - **Baza:** `rls_auth_uid_initplan` (11 polityk), `fk_covering_indexes` (48 indeksów).
 - **Dane:** prawdziwy master na projekcie testowym PASS (52 s, -14,0 LUFS); usunięte 4 projekty testowe i 4 prywatne sample testowe admina.
+- **Eksport WAV naprawiony (`d163fa0`, `c47e612`):** każdy eksport padał na workerze („Timeline 360000ms exceeds cap 180000ms”: oś 6:00 > limit renderu 3:00). Zrzut eksportu ucina oś do końca ostatniego klipu; dłuższe niż ~3 min dostają od razu jasny komunikat (limit workera na Contabo = `AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS` 180 s — podniesienie wymaga GO na VPS). Okno eksportu czeka do 4 min (było 60 s), czyści stary komunikat; 403 „Take session expired” pokazuje „To nagranie wygasło…” zamiast „Brak uprawnień”. Zweryfikowane: eksport 2:30 SUCCEEDED (~85 s), UI „Eksport gotowy · Pobierz WAV”.
+- **Studio telefon (`ce61180`):** nagłówek ścieżki nad jej pasem, miejsce pod osią na mini transport; Mastering: kroki + szkielet podczas składania miksu. Czat Bitka: stopka nie pod uchwytem rozmiaru. Link do odsłuchu: utworzenie (www) → strona → cofnięcie → „Ten link nie działa” PASS.
 - **NOT VERIFIED:** odsłuch (Owner), Turnstile ludzkim logowaniem, mail resetu z www, prawdziwa płatność PayU i zwrot. ≠ Product GREEN.
 
 ## 2026-11-21 — SESSION_BRIDGE §4 archive (batch 32, room for audyt 11-21)
