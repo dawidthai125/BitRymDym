@@ -9,6 +9,7 @@ import { AuthError } from "@/lib/auth/session";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import { resolveDuplicateClipPlacement } from "@/lib/studio/studio-clip-ops";
 import { StudioFxCasConflictError } from "@/lib/studio/studio-fx-chain";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const MIGRATION = join(
   process.cwd(),
@@ -128,10 +129,7 @@ describe("PR-03 Duplicate AuthZ / CAS / source contract", () => {
   });
 
   it("UI exposes Powiel without second engine", () => {
-    const editor = readFileSync(
-      join(process.cwd(), "src/components/studio/studio-editor.tsx"),
-      "utf8",
-    );
+    const editor = readStudioEditorSource();
     expect(editor).toMatch(/Powiel/);
     expect(editor).toMatch(/onDuplicate/);
     expect(editor).toMatch(/duplicateSelectedClip/);

@@ -1,0 +1,52 @@
+-- Performance advisor 0001 unindexed_foreign_keys (2026-11-21): one covering index per foreign key.
+-- Faster joins and ON DELETE checks (project / beat / user deletes). Tables are small; plain CREATE INDEX.
+-- Idempotent.
+
+create index if not exists admin_audit_events_actor_user_id_fk_idx on public.admin_audit_events (actor_user_id);
+create index if not exists audio_artifacts_mix_session_id_fk_idx on public.audio_artifacts (mix_session_id);
+create index if not exists beat_access_grants_granted_by_fk_idx on public.beat_access_grants (granted_by);
+create index if not exists beat_audio_assets_replaced_by_asset_id_fk_idx on public.beat_audio_assets (replaced_by_asset_id);
+create index if not exists beat_audio_assets_created_by_fk_idx on public.beat_audio_assets (created_by);
+create index if not exists beat_audio_playback_log_beat_id_fk_idx on public.beat_audio_playback_log (beat_id);
+create index if not exists beat_auto_checks_override_decision_id_fk_idx on public.beat_auto_checks (override_decision_id);
+create index if not exists beat_auto_checks_overridden_by_fk_idx on public.beat_auto_checks (overridden_by);
+create index if not exists beat_auto_checks_master_asset_id_fk_idx on public.beat_auto_checks (master_asset_id);
+create index if not exists beat_blocked_audio_hashes_actor_id_fk_idx on public.beat_blocked_audio_hashes (actor_id);
+create index if not exists beat_download_events_asset_id_fk_idx on public.beat_download_events (asset_id);
+create index if not exists beat_download_reservations_beat_id_fk_idx on public.beat_download_reservations (beat_id);
+create index if not exists beat_download_reservations_asset_id_fk_idx on public.beat_download_reservations (asset_id);
+create index if not exists beat_favorites_beat_id_fk_idx on public.beat_favorites (beat_id);
+create index if not exists beat_moderation_decisions_actor_id_fk_idx on public.beat_moderation_decisions (actor_id);
+create index if not exists beat_rights_basis_actor_id_fk_idx on public.beat_rights_basis (actor_id);
+create index if not exists beat_rights_basis_verifier_id_fk_idx on public.beat_rights_basis (verifier_id);
+create index if not exists beat_rights_reviews_closed_by_fk_idx on public.beat_rights_reviews (closed_by);
+create index if not exists beat_rights_reviews_created_by_fk_idx on public.beat_rights_reviews (created_by);
+create index if not exists catalog_works_project_id_fk_idx on public.catalog_works (project_id);
+create index if not exists catalog_works_owner_id_fk_idx on public.catalog_works (owner_id);
+create index if not exists community_comments_user_id_fk_idx on public.community_comments (user_id);
+create index if not exists community_ratings_user_id_fk_idx on public.community_ratings (user_id);
+create index if not exists payment_orders_beat_id_fk_idx on public.payment_orders (beat_id);
+create index if not exists plan_addon_entitlements_granted_by_fk_idx on public.plan_addon_entitlements (granted_by);
+create index if not exists premium_track_unlocks_credit_period_id_fk_idx on public.premium_track_unlocks (credit_period_id);
+create index if not exists premium_unlock_events_work_id_fk_idx on public.premium_unlock_events (work_id);
+create index if not exists sample_policy_settings_updated_by_fk_idx on public.sample_policy_settings (updated_by);
+create index if not exists site_settings_updated_by_fk_idx on public.site_settings (updated_by);
+create index if not exists studio_ai_cover_usage_project_id_fk_idx on public.studio_ai_cover_usage (project_id);
+create index if not exists studio_ai_lyrics_usage_project_id_fk_idx on public.studio_ai_lyrics_usage (project_id);
+create index if not exists studio_cleanup_jobs_project_id_fk_idx on public.studio_cleanup_jobs (project_id);
+create index if not exists studio_clips_source_artifact_id_fk_idx on public.studio_clips (source_artifact_id);
+create index if not exists studio_clips_source_beat_id_fk_idx on public.studio_clips (source_beat_id);
+create index if not exists studio_download_usage_project_id_fk_idx on public.studio_download_usage (project_id);
+create index if not exists studio_engineer_requests_owner_id_fk_idx on public.studio_engineer_requests (owner_id);
+create index if not exists studio_final_stages_job_id_fk_idx on public.studio_final_stages (job_id);
+create index if not exists studio_final_versions_superseded_by_fk_idx on public.studio_final_versions (superseded_by);
+create index if not exists studio_listen_links_master_job_id_fk_idx on public.studio_listen_links (master_job_id);
+create index if not exists studio_master_jobs_reference_id_fk_idx on public.studio_master_jobs (reference_id);
+create index if not exists studio_mix_working_revisions_restored_from_revision_id_fk_idx on public.studio_mix_working_revisions (restored_from_revision_id);
+create index if not exists studio_mix_working_revisions_parent_revision_id_fk_idx on public.studio_mix_working_revisions (parent_revision_id);
+create index if not exists studio_projects_beat_id_fk_idx on public.studio_projects (beat_id);
+create index if not exists studio_samples_reviewed_by_fk_idx on public.studio_samples (reviewed_by);
+create index if not exists studio_song_completions_project_id_fk_idx on public.studio_song_completions (project_id);
+create index if not exists usage_resets_reset_by_fk_idx on public.usage_resets (reset_by);
+create index if not exists work_half_prizes_user_id_fk_idx on public.work_half_prizes (user_id);
+create index if not exists work_half_prizes_work_id_fk_idx on public.work_half_prizes (work_id);

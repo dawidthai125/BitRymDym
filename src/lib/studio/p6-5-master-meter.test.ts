@@ -29,6 +29,7 @@ import {
   updateClipLatch,
 } from "@/lib/studio/studio-meter";
 import { emptyStudioFxChain } from "@/lib/studio/studio-fx-chain";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 type FakeNode = {
   kind: string;
@@ -518,10 +519,7 @@ describe("P6.5 Master meter UI contracts", () => {
     join(process.cwd(), "src/components/studio/studio-peak-meter.tsx"),
     "utf8",
   );
-  const editor = readFileSync(
-    join(process.cwd(), "src/components/studio/studio-editor.tsx"),
-    "utf8",
-  );
+  const editor = readStudioEditorSource();
   const transport = readFileSync(
     join(process.cwd(), "src/components/studio/studio-transport-provider.tsx"),
     "utf8",

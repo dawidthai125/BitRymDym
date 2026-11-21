@@ -9,6 +9,7 @@ import {
   StudioPersistOrchestrator,
   type StudioPersistResult,
 } from "@/lib/studio/studio-persist-orchestrator";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const root = process.cwd();
 
@@ -446,7 +447,7 @@ describe("P7.1.6 CAS completeness source contracts", () => {
   const placeRoute = read(
     "src/app/api/studio/projects/[projectId]/record/place/route.ts",
   );
-  const editor = read("src/components/studio/studio-editor.tsx");
+  const editor = readStudioEditorSource();
 
   it("track controls require expectedDocumentVersion + RPC CAS", () => {
     // A3.5: allowlisted mix params → Mix Working gateway; name/arm → legacy RPC.

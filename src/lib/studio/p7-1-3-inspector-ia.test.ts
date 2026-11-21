@@ -9,12 +9,10 @@ import {
   deriveStudioInspectorContext,
   studioInspectorContextTitle,
 } from "@/components/studio/studio-inspector-context";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const root = process.cwd();
-const editor = readFileSync(
-  join(root, "src/components/studio/studio-editor.tsx"),
-  "utf8",
-);
+const editor = readStudioEditorSource();
 const recording = readFileSync(
   join(root, "src/components/studio/studio-recording-panel.tsx"),
   "utf8",

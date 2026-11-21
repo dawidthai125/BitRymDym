@@ -6,12 +6,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { createStudioTransportIsolationBus } from "@/components/studio/studio-transport-provider";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const root = process.cwd();
-const editor = readFileSync(
-  join(root, "src/components/studio/studio-editor.tsx"),
-  "utf8",
-);
+const editor = readStudioEditorSource();
 const editToolbar = readFileSync(
   join(root, "src/components/studio/studio-edit-toolbar.tsx"),
   "utf8",

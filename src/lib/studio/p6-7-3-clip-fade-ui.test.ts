@@ -12,6 +12,7 @@ import {
 } from "@/lib/studio/studio-clip-fade";
 import { FX_CHAIN_CONFLICT_UI_PL } from "@/lib/studio/studio-fx-chain";
 import type { StudioClipDto } from "@/lib/studio/studio-types";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const clipFixture = (overrides: Partial<StudioClipDto> = {}): StudioClipDto => ({
   id: "11111111-1111-4111-8111-111111111111",
@@ -30,9 +31,7 @@ const clipFixture = (overrides: Partial<StudioClipDto> = {}): StudioClipDto => (
   ...overrides,
 });
 
-const editor = (readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8") +
-    // Transport bar moved to its own file (audit 2026-11-21).
-    readFileSync(join(process.cwd(), "src/components/studio/studio-transport-bar.tsx"), "utf8"));
+const editor = readStudioEditorSource();
 const fadeSrc = readFileSync(
   join(process.cwd(), "src/lib/studio/studio-clip-fade.ts"),
   "utf8",

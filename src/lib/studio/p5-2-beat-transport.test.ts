@@ -19,6 +19,7 @@ import {
   reduceStudioTransport,
 } from "@/lib/studio/studio-transport";
 import type { StudioClipDto, StudioTrackDto } from "@/lib/studio/studio-types";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const BEAT_ID = "11111111-1111-4111-8111-111111111111";
 const TRACK_ID = "22222222-2222-4222-8222-222222222222";
@@ -210,10 +211,7 @@ describe("P5.2 authorization / unavailable asset / PlayerProvider isolation", ()
     join(process.cwd(), "src/lib/studio/studio-beat-audio.ts"),
     "utf8",
   );
-  const editorSrc = readFileSync(
-    join(process.cwd(), "src/components/studio/studio-editor.tsx"),
-    "utf8",
-  );
+  const editorSrc = readStudioEditorSource();
   const serviceSrc = readFileSync(
     join(process.cwd(), "src/lib/studio/studio-service.ts"),
     "utf8",

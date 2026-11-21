@@ -1,14 +1,10 @@
 /**
  * POST-RECORDING V1 PR-05 — ClipEditPanel capability controls + mobile targets.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
-const editor = readFileSync(
-  join(process.cwd(), "src/components/studio/studio-editor.tsx"),
-  "utf8",
-);
+const editor = readStudioEditorSource();
 
 describe("PR-05 ClipEditPanel UX polish", () => {
   it("exposes Edit capabilities: Gain, Mute, Fade, Trim, Split, Duplicate, Delete", () => {

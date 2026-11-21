@@ -27,6 +27,7 @@ import {
   StudioFxCasConflictError,
   StudioFxChainError,
 } from "@/lib/studio/studio-fx-chain";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const MIGRATION = join(
   process.cwd(),
@@ -294,10 +295,7 @@ describe("PR-01/02 AuthZ / API contract (source)", () => {
   });
 
   it("ClipEditPanel exposes Gain + Mute controls (no second engine)", () => {
-    const editor = readFileSync(
-      join(process.cwd(), "src/components/studio/studio-editor.tsx"),
-      "utf8",
-    );
+    const editor = readStudioEditorSource();
     expect(editor).toMatch(/function ClipEditPanel/);
     expect(editor).toMatch(/Zapisz teraz/);
     expect(editor).toMatch(/onSaveGain\(next\)/);

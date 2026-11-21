@@ -11,13 +11,12 @@ import {
   STUDIO_METER_NEUTRAL,
   buildMeterSnapshot,
 } from "@/lib/studio/studio-meter";
+import { readStudioEditorSource } from "@/test/studio-editor-source";
 
 const root = process.cwd();
 
 describe("P6.6.2 Track meter UI contracts", () => {
-  const editor = (readFileSync(join(root, "src/components/studio/studio-editor.tsx"), "utf8") +
-    // Transport bar moved to its own file (audit 2026-11-21).
-    readFileSync(join(root, "src/components/studio/studio-transport-bar.tsx"), "utf8"));
+  const editor = readStudioEditorSource();
   const trackMeter = readFileSync(
     join(root, "src/components/studio/studio-track-meter.tsx"),
     "utf8",
