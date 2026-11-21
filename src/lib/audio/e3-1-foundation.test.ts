@@ -31,7 +31,8 @@ import {
 
 describe("E3.1 — audio foundation (unit)", () => {
   it("locks source size / timeout / attempts from OAD; render caps from premium matrix SSOT", () => {
-    expect(AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS).toBe(180);
+    // = STUDIO_MAX_SONG_MS / 1000 (Owner GO 2026-11-21: 210 s catalogue beats and 6:00 songs export).
+    expect(AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS).toBe(360);
     expect(AUDIO_RENDER_MAX_TAKE_BYTES).toBe(20 * 1024 * 1024);
     expect(AUDIO_RENDER_MAX_BEAT_BYTES).toBe(50 * 1024 * 1024);
     expect(AUDIO_RENDER_JOB_TIMEOUT_SECONDS).toBe(180);

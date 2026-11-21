@@ -48,7 +48,7 @@ export const STUDIO_OFFLINE_RENDER_CHANNELS = AUDIO_CODEC.CHANNELS; // 2
 /**
  * Fail-closed max timeline length (ms) = the Studio song limit (6:00, same as Master).
  * Was the 180 s single-source ceiling, so no song over 3:00 could be exported (Owner GO 2026-11-21).
- * Single takes / beats keep AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS.
+ * Single sources (takes / beats) use AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS (also 360 s).
  */
 export const STUDIO_OFFLINE_RENDER_MAX_DURATION_MS = STUDIO_MAX_SONG_MS;
 

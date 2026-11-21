@@ -34,8 +34,12 @@ export function parseE3RenderJobsEnabledFlag(
 /** Private durable mix/export bucket (OAD-07). Not take-audio / beat-audio. */
 export const AUDIO_ARTIFACTS_BUCKET = "audio-artifacts";
 
-/** Max source duration (seconds) — existing recording/beat ceiling. */
-export const AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS = 180;
+/**
+ * Max source duration (seconds) a render accepts (take, beat, stem) = the Studio song limit
+ * (STUDIO_MAX_SONG_MS / 1000). Was 180 s: catalogue beats may be 210 s, so those could never be
+ * exported (Owner GO 2026-11-21). Recording length limits live in config/recording, not here.
+ */
+export const AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS = 360;
 
 /** Align take source size cap. */
 export const AUDIO_RENDER_MAX_TAKE_BYTES = 20 * 1024 * 1024;
