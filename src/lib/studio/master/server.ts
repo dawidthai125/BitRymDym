@@ -33,7 +33,7 @@ type Admin = ReturnType<typeof createSupabaseAdminClient>;
 
 export class StudioMasterUnavailable extends Error {}
 const missing = (e: { code?: string } | null) => !!e && (e.code === "42P01" || e.code === "PGRST205");
-/** RPC not deployed yet (plan migration pending) → enforce in the app instead. */
+/** RPC not deployed yet (plan migration pending) → fail closed, never claim in the app. */
 const missingFn = (e: { code?: string } | null) => !!e && (e.code === "PGRST202" || e.code === "42883");
 
 /** Masters this calendar month (Europe/Warsaw); failed/cancelled do not count. */
@@ -199,23 +199,14 @@ export async function commitStudioMaster(p: { ownerId: string; projectId: string
     p_source_document_version: documentVersion, p_month_limit: monthLimit, ...extras,
   });
   if (qe && (qe.message ?? "").includes("MASTER_REFERENCE_INVALID")) return { ok: false as const, error: "reference_invalid" };
-  if (!missingFn(qe)) {
-    check(qe);
-    const row = (Array.isArray(q) ? q[0] : q) as { allowed: boolean; used: number; month_limit: number; reset_at: string } | null;
-    const masters: MasterQuota = { used: Number(row?.used ?? 0), monthLimit: Number(row?.month_limit ?? monthLimit), resetAt: String(row?.reset_at ?? "") };
-    if (!row?.allowed) return { ok: false as const, error: "monthly_limit", masters };
-    return { ok: true as const, jobId: p.jobId, masters };
-  }
-  if (style || referenceId) return { ok: false as const, error: "not_available" };
-  // Fallback until the migration is applied: same rule, checked in the app (not atomic).
-  const before = await masterMonthUsage(admin, p.ownerId, p.tier);
-  if (before.used >= before.monthLimit) return { ok: false as const, error: "monthly_limit", masters: before };
-  const { error } = await admin.from("studio_master_jobs").insert({
-    id: p.jobId, project_id: p.projectId, owner_id: p.ownerId, kind: "master", target: p.target,
-    settings, source_document_version: documentVersion, output_format: "WAV_FLOAT",
-  });
-  check(error);
-  return { ok: true as const, jobId: p.jobId, masters: { ...before, used: before.used + 1 } };
+  // W7: the RPC is the only way to claim a master. No app-side read-then-insert fallback:
+  // a missing RPC fails closed (503) and any other error throws, so nothing is queued or charged.
+  if (missingFn(qe)) return { ok: false as const, error: "quota_unavailable" };
+  check(qe);
+  const row = (Array.isArray(q) ? q[0] : q) as { allowed: boolean; used: number; month_limit: number; reset_at: string } | null;
+  const masters: MasterQuota = { used: Number(row?.used ?? 0), monthLimit: Number(row?.month_limit ?? monthLimit), resetAt: String(row?.reset_at ?? "") };
+  if (!row?.allowed) return { ok: false as const, error: "monthly_limit", masters };
+  return { ok: true as const, jobId: p.jobId, masters };
 }
 
 export async function approveStudioMaster(p: { ownerId: string; projectId: string; jobId: string }) {
