@@ -411,13 +411,23 @@ export function StudioMasterStep({
   const stepMountedAtRef = useRef(0);
   const hasMix = Boolean(mix);
   const hasPreview = Boolean(preview);
+  // Scroll anchoring pinned the page to the footer while the step grew above it (prod 2026-11-21).
+  useEffect(() => {
+    const html = document.documentElement;
+    const prev = html.style.overflowAnchor;
+    html.style.overflowAnchor = "none";
+    return () => {
+      html.style.overflowAnchor = prev;
+    };
+  }, []);
   useEffect(() => {
     const el = stepRootRef.current;
     if (!el) return;
     const now = performance.now();
     if (stepMountedAtRef.current === 0) stepMountedAtRef.current = now;
     if (now - stepMountedAtRef.current > 8000) return;
-    if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: "start" });
+    // 150 px: below the site header + sticky transport (scroll-mt-40 keeps it clear).
+    if (el.getBoundingClientRect().top < 150) el.scrollIntoView({ block: "start" });
   }, [hasMix, hasPreview]);
   const latest = useRef({ settings, target, verdict, measured });
   useEffect(() => {
