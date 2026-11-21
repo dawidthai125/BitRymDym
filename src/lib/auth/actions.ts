@@ -386,6 +386,9 @@ export async function requestPasswordResetAction(
   };
 }
 
+/** Sign-in page shows "password changed" for this query (see sign-in/page.tsx). */
+const PASSWORD_RESET_DONE_PATH = "/sign-in?haslo=zmienione";
+
 export async function updatePasswordAfterResetAction(
   _prev: AuthActionState,
   formData: FormData,
@@ -475,11 +478,8 @@ export async function updatePasswordAfterResetAction(
         success: false,
       };
     }
-    return {
-      error: null,
-      success: true,
-      message: "Hasło zostało ustawione. Możesz się zalogować.",
-    };
+    // Seal cleared, sign-out failed: the password is set — still go to sign-in.
+    redirect(PASSWORD_RESET_DONE_PATH);
   }
 
   if (!cleared) {
@@ -489,11 +489,9 @@ export async function updatePasswordAfterResetAction(
     };
   }
 
-  return {
-    error: null,
-    success: true,
-    message: "Hasło zostało ustawione. Możesz się zalogować.",
-  };
+  // Redirect from the action: returning success made Next re-render /auth/reset-password, which —
+  // with the seal cleared and the session gone — bounced the user to /forgot-password (2026-11-21).
+  redirect(PASSWORD_RESET_DONE_PATH);
 }
 
 export async function requestEmailChangeAction(

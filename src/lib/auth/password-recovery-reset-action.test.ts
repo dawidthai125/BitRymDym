@@ -21,6 +21,11 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+const redirectMock = vi.fn((url: string) => {
+  throw new Error(`NEXT_REDIRECT:${url}`);
+});
+vi.mock("next/navigation", () => ({ redirect: (url: string) => redirectMock(url) }));
+
 vi.mock("@/lib/auth/password-recovery-seal-cookie", () => ({
   passwordRecoverySealMatches: (...args: unknown[]) => readSeal(...args),
   clearPasswordRecoverySeal: () => clearSeal(),
@@ -90,11 +95,10 @@ describe("updatePasswordAfterResetAction", () => {
       order.push("signOut");
     });
 
-    const result = await updatePasswordAfterResetAction(previous, form());
-    expect(result).toMatchObject({
-      success: true,
-      message: "Hasło zostało ustawione. Możesz się zalogować.",
-    });
+    // Success redirects to sign-in with the "password changed" notice (no re-render of the reset page).
+    await expect(updatePasswordAfterResetAction(previous, form())).rejects.toThrow(
+      "NEXT_REDIRECT:/sign-in?haslo=zmienione",
+    );
     expect(order).toEqual(["update", "clear", "signOut"]);
     expect(updateUser).toHaveBeenCalledWith({ password: "longenough" });
   });
@@ -127,8 +131,9 @@ describe("updatePasswordAfterResetAction", () => {
       order.push("signOut");
       throw new Error("sign-out failed");
     });
-    const result = await updatePasswordAfterResetAction(previous, form());
-    expect(result.success).toBe(true);
+    await expect(updatePasswordAfterResetAction(previous, form())).rejects.toThrow(
+      "NEXT_REDIRECT:/sign-in?haslo=zmienione",
+    );
     expect(order).toEqual(["clear", "signOut"]);
   });
 });

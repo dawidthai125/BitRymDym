@@ -9,7 +9,7 @@ import { safeNextPath, signUpPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { MAINTENANCE_HEADER } from "@/lib/site/maintenance-gate";
 
-type PageProps = { searchParams?: Promise<{ next?: string | string[] }> };
+type PageProps = { searchParams?: Promise<{ next?: string | string[]; haslo?: string | string[] }> };
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("auth.signInPage");
@@ -23,6 +23,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
   const maintenance = (await headers()).get(MAINTENANCE_HEADER) === "1";
   const params = searchParams ? await searchParams : {};
   const next = safeNextPath(Array.isArray(params.next) ? params.next[0] : params.next);
+  const passwordChanged = (Array.isArray(params.haslo) ? params.haslo[0] : params.haslo) === "zmienione";
   const context = await getCurrentProfile();
   if (context) {
     redirect(next ?? "/account");
@@ -43,6 +44,15 @@ export default async function SignInPage({ searchParams }: PageProps) {
         >
           <p className="font-semibold">{tm("noticeTitle")}</p>
           <p className="mt-1 text-[var(--tape-cream-soft)]">{tm("noticeBody")}</p>
+        </div>
+      ) : null}
+      {passwordChanged ? (
+        <div
+          role="status"
+          data-testid="password-changed-notice"
+          className="border-l-4 border-[var(--brd-green)] bg-[var(--tape-panel)] px-4 py-3 text-sm text-[var(--tape-cream)]"
+        >
+          {t("hasloZmienione")}
         </div>
       ) : null}
       <SignInForm next={next} />
