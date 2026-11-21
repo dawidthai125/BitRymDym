@@ -18,7 +18,9 @@ import {
   finalizeTakeRecordingFor,
 } from "@/lib/takes/take-transport";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isMissingRpcFunction } from "@/lib/supabase/rpc-errors";
 import {
+  SAMPLE_CAP,
   SAMPLE_COPY_FAILED,
   SAMPLE_FORBIDDEN,
   SAMPLE_INVALID,
@@ -29,6 +31,7 @@ import {
   STUDIO_SAMPLES_TABLE,
   buildUserSampleObjectKey,
   catalogDurationSeconds,
+  effectiveSampleCap,
   evaluateSampleAudioMeta,
   evaluateSampleCreate,
   evaluateSampleDelete,
@@ -363,35 +366,60 @@ export async function createStudioSample(
     return { ok: false, error: SAMPLE_COPY_FAILED, details: ["sample upload failed"] };
   }
 
-  const { data, error } = await admin
-    .from(STUDIO_SAMPLES_TABLE)
-    .insert({
-      id: sampleId,
-      owner_id: context.userId,
-      title,
-      kind: input.kind,
-      instrument: input.instrument,
-      status: "PRIVATE",
-      rights_accepted: true,
-      object_key: objectKey,
-      content_type: sniffed.sniffedContentType,
-      byte_size: input.bytes.byteLength,
-      duration_ms: durationMs,
-      ...(input.meta
-        ? {
-            sample_type: input.meta.sampleType,
-            bpm: input.meta.bpm,
-            musical_key: input.meta.musicalKey,
-            bars: input.meta.bars,
-            source: input.meta.source,
-            beat_id: input.meta.beatId,
-          }
-        : {}),
-    })
-    .select(SELECT_ROW)
-    .single();
-  if (error) {
+  const lab = input.meta
+    ? {
+        sample_type: input.meta.sampleType,
+        bpm: input.meta.bpm,
+        musical_key: input.meta.musicalKey,
+        bars: input.meta.bars,
+        source: input.meta.source,
+        beat_id: input.meta.beatId,
+      }
+    : null;
+  const base = {
+    id: sampleId,
+    owner_id: context.userId,
+    title,
+    kind: input.kind,
+    instrument: input.instrument,
+    status: "PRIVATE",
+    rights_accepted: true,
+    object_key: objectKey,
+    content_type: sniffed.sniffedContentType,
+    byte_size: input.bytes.byteLength,
+    duration_ms: durationMs,
+  };
+  // Count + insert under a per-owner advisory lock (closes the parallel-upload race past the cap).
+  const claimed = await admin.rpc("create_studio_sample_capped", {
+    p_owner: context.userId,
+    p_cap: effectiveSampleCap(input.cap),
+    p_id: sampleId,
+    p_title: base.title,
+    p_kind: base.kind,
+    p_instrument: base.instrument,
+    p_object_key: base.object_key,
+    p_content_type: base.content_type,
+    p_byte_size: base.byte_size,
+    p_duration_ms: base.duration_ms,
+    p_lab: lab,
+  });
+  let data: unknown = Array.isArray(claimed.data) ? claimed.data[0] : claimed.data;
+  let error: { message?: string; code?: string } | null = claimed.error;
+  if (isMissingRpcFunction(error)) {
+    // Migration 20261121150000 not applied yet: previous (non-atomic) insert; the count gate above still applies.
+    const legacy = await admin
+      .from(STUDIO_SAMPLES_TABLE)
+      .insert({ ...base, ...(lab ?? {}) })
+      .select(SELECT_ROW)
+      .single();
+    data = legacy.data;
+    error = legacy.error;
+  }
+  if (error || !data) {
     await admin.storage.from(BEAT_AUDIO_BUCKET).remove([objectKey]);
+    if (error && /SAMPLE_CAP_REACHED/.test(error.message ?? "")) {
+      return { ok: false, error: SAMPLE_CAP, details: ["sample count cap reached"] };
+    }
     if (isMissingRelation(error)) {
       return { ok: false, error: SAMPLE_TABLE_UNAVAILABLE };
     }

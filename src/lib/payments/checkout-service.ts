@@ -1,10 +1,11 @@
 import "server-only";
 
 import type { AuthContext } from "@/lib/auth/types";
-import { PLAN_PACK_CATALOG, readPlanPaymentsAvailable, type PaidTier } from "@/config/plan-policy";
+import { PAYMENT_PENDING_ORDER_LIMITS, PLAN_PACK_CATALOG, readPlanPaymentsAvailable, type PaidTier } from "@/config/plan-policy";
 import { PRIVACY_VERSION, TERMS_VERSION, purchaseConsentCovers, type PurchaseConsentInput } from "@/lib/legal/legal-config";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isMissingRpcFunction } from "@/lib/supabase/rpc-errors";
 
 import { loadBeatSale } from "@/lib/payments/beat-sale";
 import { checkoutBlock, isLivePaid, planStartsLater, type AddonSnapshot, type CheckoutBlock, type PlanSnapshot } from "@/lib/payments/entitlement-grant";
@@ -32,7 +33,43 @@ export type CheckoutResult =
   | { ok: false; code: CheckoutCode };
 
 const HOUR_MS = 60 * 60 * 1000;
-const PENDING_LIMIT = 5;
+
+type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
+
+/**
+ * Insert the pending order under the unfinished-checkout cap (PAYMENT_PENDING_ORDER_LIMITS) atomically
+ * via create_payment_order_capped. Before migration 20261121150100 is applied: previous count + insert.
+ */
+export async function createPendingOrder(
+  admin: AdminClient,
+  order: Record<string, unknown> & { user_id: string },
+  now: Date,
+): Promise<"ok" | "RATE" | "PROVIDER"> {
+  const { perHour, perDay } = PAYMENT_PENDING_ORDER_LIMITS;
+  const claimed = await admin.rpc("create_payment_order_capped", {
+    p_user: order.user_id,
+    p_order: order,
+    p_max_hour: perHour,
+    p_max_day: perDay,
+  });
+  if (!isMissingRpcFunction(claimed.error)) {
+    if (claimed.error) return "PROVIDER";
+    const row = (Array.isArray(claimed.data) ? claimed.data[0] : claimed.data) as { status?: string; order_id?: string } | null;
+    if (row?.status === "ok" && row.order_id) return "ok";
+    if (row?.status === "rate_hour" || row?.status === "rate_day") return "RATE";
+    return "PROVIDER";
+  }
+  const pending = await admin
+    .from("payment_orders")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", order.user_id)
+    .eq("status", "pending")
+    .gte("created_at", new Date(now.getTime() - HOUR_MS).toISOString());
+  if (pending.error) return "PROVIDER";
+  if ((pending.count ?? 0) >= perHour) return "RATE";
+  const inserted = await admin.from("payment_orders").insert(order).select("id").maybeSingle();
+  return inserted.error || !inserted.data ? "PROVIDER" : "ok";
+}
 
 export function p24Description(product: CheckoutProduct, locale: "pl" | "en", beatTitle?: string): string {
   if (product.kind === "beat") {
@@ -115,19 +152,9 @@ export async function startCheckout(input: {
   const buyerTier = isLivePaid(plan, now) ? plan.tier : "FREE";
   const amountGrosz = priceGrosz(product, buyerTier);
   const admin = createSupabaseAdminClient();
-  const since = new Date(now.getTime() - HOUR_MS).toISOString();
-  const pending = await admin
-    .from("payment_orders")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", input.context.userId)
-    .eq("status", "pending")
-    .gte("created_at", since);
-  if (pending.error) return { ok: false, code: "PROVIDER" };
-  if ((pending.count ?? 0) >= PENDING_LIMIT) return { ok: false, code: "RATE" };
-
   const sessionId = crypto.randomUUID();
   const origin = getSiteUrl();
-  const inserted = await admin.from("payment_orders").insert({
+  const order = {
     user_id: input.context.userId,
     session_id: sessionId,
     provider: payu ? "payu" : "p24",
@@ -147,8 +174,9 @@ export async function startCheckout(input: {
     privacy_version: PRIVACY_VERSION,
     terms_accepted_at: now.toISOString(),
     immediate_performance: true,
-  }).select("id").maybeSingle();
-  if (inserted.error || !inserted.data) return { ok: false, code: "PROVIDER" };
+  };
+  const created = await createPendingOrder(admin, order, now);
+  if (created !== "ok") return { ok: false, code: created };
 
   const description = p24Description(product, input.locale, beatTitle);
   const registered = payu
