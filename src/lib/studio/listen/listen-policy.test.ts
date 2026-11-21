@@ -9,6 +9,7 @@ import {
   listenDayOptions,
   listenLinkState,
   listenTokenFor,
+  listenTokenMatching,
 } from "./listen-policy";
 
 describe("listen links — policy", () => {
@@ -19,6 +20,16 @@ describe("listen links — policy", () => {
     expect(await listenTokenFor("s2", "11111111-1111-4111-8111-111111111111")).not.toBe(a);
     expect(await listenTokenFor("s1", "22222222-2222-4222-8222-222222222222")).not.toBe(a);
     expect(await hashListenToken(a)).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("re-derives an existing link with the secret it was created with (new first, legacy fallback)", async () => {
+    const id = "11111111-1111-4111-8111-111111111111";
+    const legacy = await listenTokenFor("service-role", id);
+    const fresh = await listenTokenFor("dedicated", id);
+    expect(await listenTokenMatching(["dedicated", "service-role"], id, await hashListenToken(legacy))).toBe(legacy);
+    expect(await listenTokenMatching(["dedicated", "service-role"], id, await hashListenToken(fresh))).toBe(fresh);
+    expect(await listenTokenMatching(["dedicated"], id, await hashListenToken(legacy))).toBeNull();
+    expect(await listenTokenMatching([], id, await hashListenToken(fresh))).toBeNull();
   });
 
   it("lifetime options are capped by plan retention", () => {

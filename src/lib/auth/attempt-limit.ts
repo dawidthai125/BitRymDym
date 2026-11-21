@@ -4,6 +4,7 @@ import { createHash, createHmac } from "node:crypto";
 
 import { headers } from "next/headers";
 
+import { clientIpFromHeaders } from "@/lib/security/client-ip";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServiceRoleKey } from "@/lib/supabase/env";
 
@@ -51,13 +52,8 @@ export function hashAttemptKey(scope: string, value: string): string {
   return createHash("sha256").update(data).digest("hex");
 }
 
-/** Client IP from platform-set headers only (not the spoofable first x-forwarded-for hop). */
-export function clientIpFromHeaders(h: Pick<Headers, "get">): string {
-  const candidate =
-    h.get("x-vercel-forwarded-for") ?? h.get("x-real-ip") ?? "";
-  const first = candidate.split(",")[0]?.trim() ?? "";
-  return first && first.length <= 64 ? first : "unknown";
-}
+/** Canonical helper lives in `@/lib/security/client-ip`; re-exported for existing callers. */
+export { clientIpFromHeaders };
 
 export async function getClientIp(): Promise<string> {
   try {

@@ -12,6 +12,7 @@ import { listenLinksForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForUserId } from "@/lib/audio/load-premium-entitlement";
 import { AuthError } from "@/lib/auth/session";
 import { partsOf } from "@/lib/studio/master/parts";
+import { resolveDedicatedSecret } from "@/lib/security/dedicated-secret";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServiceRoleKey } from "@/lib/supabase/env";
 import type { PremiumTier } from "@/types/premium";
@@ -25,6 +26,7 @@ import {
   listenLinkState,
   listenPlayKey,
   listenTokenFor,
+  listenTokenMatching,
   type ListenLinkState,
 } from "./listen-policy";
 
@@ -40,10 +42,20 @@ function check(e: { code?: string; message?: string } | null) {
   throw new Error(`listen_db:${e.code ?? "?"}`);
 }
 
-function secret(): string {
-  const s = process.env.STUDIO_LISTEN_LINK_SECRET?.trim() || getSupabaseServiceRoleKey();
-  if (!s) throw new Error("listen_secret_missing");
-  return s;
+/**
+ * Token HMAC key: dedicated LISTEN_LINK_SECRET (security review 2026-11-21, L2).
+ * Legacy keys (old STUDIO_LISTEN_LINK_SECRET name, then the service-role key) are only
+ * used to re-derive URLs of links created before the change, or to sign when the
+ * dedicated env is missing (warned once). Public resolve looks up sha256(token) and
+ * needs no secret, so links already shared keep working either way.
+ * TODO(2026-12-21): drop the service-role legacy key.
+ */
+function secrets() {
+  const s = resolveDedicatedSecret("LISTEN_LINK_SECRET", {
+    legacy: [process.env.STUDIO_LISTEN_LINK_SECRET, getSupabaseServiceRoleKey()],
+  });
+  if (!s.signing) throw new Error("listen_secret_missing");
+  return { signing: s.signing, verify: s.verify };
 }
 
 export type ListenLinkView = {
@@ -51,14 +63,15 @@ export type ListenLinkView = {
   revokedAt: string | null; playCount: number; lastPlayedAt: string | null; state: ListenLinkState;
 };
 
-async function view(r: Record<string, unknown>, origin: string): Promise<ListenLinkView> {
+async function view(r: Record<string, unknown>, origin: string, knownToken?: string): Promise<ListenLinkView> {
   const id = String(r.id);
+  const token = knownToken ?? (typeof r.token_hash === "string" ? await listenTokenMatching(secrets().verify, id, r.token_hash) : null);
   const v = {
     id, title: String(r.title ?? ""), createdAt: String(r.created_at), expiresAt: String(r.expires_at),
     revokedAt: (r.revoked_at as string | null) ?? null, playCount: Number(r.play_count ?? 0),
     lastPlayedAt: (r.last_played_at as string | null) ?? null,
   };
-  return { ...v, url: `${origin}/listen/${await listenTokenFor(secret(), id)}`, state: listenLinkState(v) };
+  return { ...v, url: token ? `${origin}/listen/${token}` : "", state: listenLinkState(v) };
 }
 
 async function assertOwner(admin: Admin, ownerId: string, projectId: string) {
@@ -113,7 +126,8 @@ export async function createListenLink(p: { ownerId: string; projectId: string; 
   const d = decideListenCreate({ tier: p.tier, active: await activeCount(admin, p.ownerId), days: p.days });
   if (!d.allowed) return { ok: false as const, error: d.reason };
   const id = randomUUID();
-  const tokenHash = await hashListenToken(await listenTokenFor(secret(), id));
+  const token = await listenTokenFor(secrets().signing, id);
+  const tokenHash = await hashListenToken(token);
   const { data, error } = await admin.rpc("create_studio_listen_link", {
     p_id: id, p_owner: p.ownerId, p_project: p.projectId, p_master_job: approved.id, p_token_hash: tokenHash,
     p_title: (project.title ?? "").slice(0, 120), p_expires_at: new Date(Date.now() + d.days * 86400_000).toISOString(),
@@ -122,7 +136,7 @@ export async function createListenLink(p: { ownerId: string; projectId: string; 
   if (error && /LISTEN_LINK_LIMIT/.test(error.message ?? "")) return { ok: false as const, error: "limit" };
   check(error);
   const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>;
-  return { ok: true as const, link: await view(row, p.origin) };
+  return { ok: true as const, link: await view(row, p.origin, token) };
 }
 
 export async function revokeListenLink(p: { ownerId: string; projectId: string; linkId: string }) {

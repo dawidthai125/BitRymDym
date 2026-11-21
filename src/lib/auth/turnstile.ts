@@ -3,7 +3,7 @@ import "server-only";
 // Turnstile is active in production (keys set on Vercel). The check runs on our server; do NOT also
 // enable CAPTCHA in Supabase Auth, because Supabase would then demand its own token on every sign-in.
 
-import { clientIpFromHeaders } from "@/lib/auth/attempt-limit";
+import { clientIpFromHeaders } from "@/lib/security/client-ip";
 import { headers } from "next/headers";
 
 const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";

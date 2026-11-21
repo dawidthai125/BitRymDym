@@ -60,15 +60,16 @@ describe("normalizeEmailForLimit / hashing / ip", () => {
     expect(plain).toMatch(/^[0-9a-f]{64}$/);
     expect(plain).not.toBe(keyed);
   });
-  it("uses platform ip headers, not the first x-forwarded-for hop", () => {
+  it("prefers platform ip headers over x-forwarded-for (canonical helper)", () => {
     expect(
       clientIpFromHeaders(
         new Headers({ "x-forwarded-for": "6.6.6.6", "x-real-ip": "10.0.0.1" }),
       ),
     ).toBe("10.0.0.1");
     expect(
-      clientIpFromHeaders(new Headers({ "x-forwarded-for": "6.6.6.6" })),
-    ).toBe("unknown");
+      clientIpFromHeaders(new Headers({ "x-forwarded-for": "6.6.6.6, 1.1.1.1" })),
+    ).toBe("6.6.6.6");
+    expect(clientIpFromHeaders(new Headers())).toBe("unknown");
     expect(
       clientIpFromHeaders(new Headers({ "x-vercel-forwarded-for": "9.9.9.9" })),
     ).toBe("9.9.9.9");

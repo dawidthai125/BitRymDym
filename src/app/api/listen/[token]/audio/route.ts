@@ -8,6 +8,7 @@ import {
   resolveListenToken,
   signListenObject,
 } from "@/lib/studio/listen/listen-server";
+import { clientIpFromHeaders } from "@/lib/security/client-ip";
 import { LISTEN_SIGNED_URL_SECONDS } from "@/lib/studio/listen/listen-policy";
 
 export const runtime = "nodejs";
@@ -15,10 +16,6 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ token: string }> };
 
 const NO_STORE = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" };
-
-function clientIp(request: Request): string {
-  return (request.headers.get("x-forwarded-for")?.split(",")[0] ?? request.headers.get("x-real-ip") ?? "unknown").trim().slice(0, 64);
-}
 
 /**
  * GET — public (no auth) audio of a private listen link. Unknown / expired / revoked → 404.
@@ -29,7 +26,7 @@ export async function GET(request: Request, context: RouteContext) {
   const { token } = await context.params;
   const link = await resolveListenToken(token).catch(() => null);
   if (!link) return NextResponse.json({ error: "not_found" }, { status: 404, headers: NO_STORE });
-  if (!(await allowListenHit(link.linkId, clientIp(request)).catch(() => false))) {
+  if (!(await allowListenHit(link.linkId, clientIpFromHeaders(request.headers)).catch(() => false))) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { ...NO_STORE, "Retry-After": "60" } });
   }
   const range = request.headers.get("range");

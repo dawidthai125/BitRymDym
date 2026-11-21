@@ -23,6 +23,7 @@ import {
   PASSWORD_RECOVERY_TTL_SECONDS,
   openPasswordRecovery,
   openPasswordRecoveryForSecret,
+  openPasswordRecoveryForSecrets,
   passwordRecoveryCookieOptions,
   passwordRecoveryUserMatches,
   sealPasswordRecovery,
@@ -40,6 +41,18 @@ function sign(body: string): string {
 }
 
 describe("password recovery seal", () => {
+  it("accepts a seal from the dedicated secret or the legacy key, nothing else", () => {
+    const fresh = sealPasswordRecoveryForSecret(USER_A, "dedicated", NOW)!;
+    const legacy = sealPasswordRecoveryForSecret(USER_A, "legacy-service-role", NOW)!;
+    const keys = ["dedicated", "legacy-service-role"];
+    expect(openPasswordRecoveryForSecrets(fresh, keys, NOW)).toEqual({ userId: USER_A });
+    expect(openPasswordRecoveryForSecrets(legacy, keys, NOW)).toEqual({ userId: USER_A });
+    expect(openPasswordRecoveryForSecrets(legacy, ["dedicated"], NOW)).toBeNull();
+    expect(openPasswordRecoveryForSecrets(fresh, [], NOW)).toBeNull();
+    const late = NOW + (PASSWORD_RECOVERY_TTL_SECONDS + 1) * 1000;
+    expect(openPasswordRecoveryForSecrets(legacy, keys, late)).toBeNull();
+  });
+
   it("round-trips a seal for the server user id", () => {
     const sealed = sealPasswordRecoveryForSecret(USER_A, SECRET, NOW);
     expect(sealed).toBeTruthy();

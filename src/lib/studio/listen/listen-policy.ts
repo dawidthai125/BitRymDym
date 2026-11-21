@@ -40,6 +40,20 @@ export async function hashListenToken(token: string): Promise<string> {
   return [...new Uint8Array(d)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * Re-derive the shareable token of an existing link: try each secret in order
+ * (dedicated LISTEN_LINK_SECRET first, then legacy keys) and keep the one whose
+ * sha256 equals the stored `token_hash`. Links created before the secret change
+ * keep their old URL. No match → null.
+ */
+export async function listenTokenMatching(secrets: readonly string[], linkId: string, tokenHash: string): Promise<string | null> {
+  for (const s of secrets) {
+    const token = await listenTokenFor(s, linkId);
+    if ((await hashListenToken(token)) === tokenHash) return token;
+  }
+  return null;
+}
+
 /** Lifetime options (days) for a plan: the fixed choices up to the plan cap, plus the cap itself. */
 export function listenDayOptions(tier: PremiumTier): number[] {
   const max = listenLinksForTier(tier).listenLinkMaxDays;
