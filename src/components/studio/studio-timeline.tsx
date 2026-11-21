@@ -5,7 +5,7 @@
  * audit 2026-11-21). Clip geometry SSOT stays integer ms; zoom is view only.
  */
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
 import { StudioClipLaneItem } from "@/components/studio/studio-clip-lane";
@@ -33,6 +33,14 @@ import {
 import type { StudioClipDto, StudioTrackDto } from "@/lib/studio/studio-types";
 
 type TimelineMode = StudioTimelineMode;
+
+/** Phone layout (< sm): each track header sits right above its own lane (audit 2026-11-21). */
+const PHONE_QUERY = "(max-width: 639px)";
+function subscribePhone(onChange: () => void): () => void {
+  const mq = window.matchMedia(PHONE_QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
 
 /** Phase 7.1.5.1 — playhead leaf for timeline. */
 export function StudioTimelinePlayheadBound(
@@ -173,6 +181,13 @@ export function StudioTimeline({
   }
 
   const hasHeaders = typeof renderTrackHeader === "function";
+  const isPhone = useSyncExternalStore(
+    subscribePhone,
+    () => window.matchMedia(PHONE_QUERY).matches,
+    () => false,
+  );
+  /** Phone: headers inline above lanes; from sm: the side column. */
+  const inlineHeaders = hasHeaders && isPhone;
 
   return (
     <div
@@ -182,7 +197,7 @@ export function StudioTimeline({
       data-testid="studio-timeline"
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col sm:flex-row">
-        {hasHeaders ? (
+        {hasHeaders && !inlineHeaders ? (
           <div
             className={`${STUDIO_DAW_HEADER_WIDTH_CLASS} flex min-h-0 shrink-0 flex-col border-[var(--brd-line)]`}
             data-testid="studio-track-list"
@@ -211,7 +226,7 @@ export function StudioTimeline({
             data-studio-timeline-scroll="true"
             data-testid="studio-timeline-scroll"
             onScroll={() => {
-              if (hasHeaders) syncVerticalScroll("lane");
+              if (hasHeaders && !inlineHeaders) syncVerticalScroll("lane");
             }}
           >
             <div
@@ -251,8 +266,20 @@ export function StudioTimeline({
               {tracks.map((track, index) => {
                 const trackClips = clips.filter((c) => c.trackId === track.id);
                 return (
+                  <Fragment key={track.id}>
+                  {inlineHeaders ? (
+                    // Header stays in view while the lane scrolls sideways; its clicks never seek.
+                    <div
+                      className="sticky left-0 z-[5] bg-[var(--brd-paper)]"
+                      style={{ width: laneViewportWidthPx > 0 ? laneViewportWidthPx : "100vw" }}
+                      data-testid="studio-track-header-inline"
+                      onClick={(event) => event.stopPropagation()}
+                      onPointerDown={(event) => event.stopPropagation()}
+                    >
+                      {renderTrackHeader!(track, index)}
+                    </div>
+                  ) : null}
                   <div
-                    key={track.id}
                     className="studio-lane relative border-b border-[var(--brd-line)]/60"
                     data-studio-clip-lane={track.id}
                     data-track-type={track.trackType}
@@ -296,6 +323,7 @@ export function StudioTimeline({
                     />
                     {renderLaneOverlay ? renderLaneOverlay(track) : null}
                   </div>
+                  </Fragment>
                 );
               })}
               <div

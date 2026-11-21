@@ -790,9 +790,23 @@ export function StudioMasterStep({
       </div>
 
       {!mix && !renderFailed ? (
-        <div className="flex items-center gap-2" role="status">
-          <progress className="h-2 w-40 accent-[var(--brd-amber)]" max={100} value={renderPct} aria-label={t("renderuje", { pct: renderPct })} />
-          <span className="font-mono text-xs">{t("renderuje", { pct: renderPct })}</span>
+        <div className="flex flex-col gap-3" data-testid="studio-master-preparing">
+          <div className="flex items-center gap-2" role="status">
+            <progress className="h-2 w-40 accent-[var(--brd-amber)]" max={100} value={renderPct} aria-label={t("renderuje", { pct: renderPct })} />
+            <span className="font-mono text-xs">{t("renderuje", { pct: renderPct })}</span>
+          </div>
+          {/* Audit 2026-11-21: a lone progress bar on an empty page — say what comes next and hold the layout. */}
+          <ol className="flex flex-col gap-1 text-sm text-[var(--brd-ink-soft)]">
+            <li className="font-semibold text-[var(--brd-ink)]">1. {t("przygotowanie.krok1", { n: doc.tracks.length })}</li>
+            <li>2. {t("przygotowanie.krok2")}</li>
+            <li>3. {t("przygotowanie.krok3")}</li>
+          </ol>
+          <div aria-hidden className="grid gap-3 sm:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-16 animate-pulse rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-line)]/20" />
+            ))}
+          </div>
+          <div aria-hidden className="h-40 animate-pulse rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-line)]/20" />
         </div>
       ) : null}
       {renderFailed ? <p role="alert" className="border-l-2 border-l-[var(--brd-rec)] pl-2 text-sm">{t("renderBlad")}</p> : null}

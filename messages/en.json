@@ -3527,6 +3527,11 @@
     "masterStep": {
       "tytul": "Mastering",
       "wrocDoMixu": "Back to Mix",
+      "przygotowanie": {
+        "krok1": "Bouncing the mix of {n} tracks into one stereo track.",
+        "krok2": "Computing the master preview and streaming readiness.",
+        "krok3": "Then you pick where the track will play and compare Mix with Master."
+      },
       "wrocUwaga": "If you go back to Mix and change something, we will master again.",
       "renderuje": "Bouncing your mix into one track… {pct}%",
       "renderBlad": "Couldn't bounce the mix. Go back to Mix and try again.",

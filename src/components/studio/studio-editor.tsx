@@ -3222,7 +3222,7 @@ function StudioEditorInner({
       data-studio-visual-parity="v2"
       data-record-view={studioStep === "record" ? (recordSimple ? "simple" : "full") : undefined}
       data-studio-tab={onSampleTab ? "samples" : studioStep}
-      className="studio-desk flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-clip max-lg:pb-[var(--bitek-dock-h,0px)]"
+      className="studio-desk flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-clip max-lg:pb-[var(--bitek-dock-h,0px)] max-sm:pb-[max(var(--bitek-dock-h,0px),5rem)]"
     >
       <header
         data-testid="studio-header"

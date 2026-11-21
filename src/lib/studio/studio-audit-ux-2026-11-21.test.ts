@@ -85,4 +85,18 @@ describe("Studio UX audit 2026-11-21", () => {
   it("sticky transport sits below the sticky site header", () => {
     expect(transport).toMatch(/style=\{siteHeaderH > 0 \? \{ top: siteHeaderH \+ 4 \} : undefined\}/);
   });
+
+  it("phone: each track header sits above its own lane; page leaves room for the mini transport", () => {
+    const timeline = read("src/components/studio/studio-timeline.tsx");
+    expect(timeline).toMatch(/const inlineHeaders = hasHeaders && isPhone;/);
+    expect(timeline).toMatch(/data-testid="studio-track-header-inline"/);
+    expect(timeline).toMatch(/onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
+    expect(editor).toMatch(/max-sm:pb-\[max\(var\(--bitek-dock-h,0px\),5rem\)\]/);
+  });
+
+  it("Mastering explains the bounce instead of an empty page", () => {
+    const master = read("src/components/studio/studio-master-step.tsx");
+    expect(master).toMatch(/data-testid="studio-master-preparing"/);
+    expect(master).toMatch(/przygotowanie\.krok1/);
+  });
 });

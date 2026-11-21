@@ -3527,6 +3527,11 @@
     "masterStep": {
       "tytul": "Mastering",
       "wrocDoMixu": "Wróć do Mixu",
+      "przygotowanie": {
+        "krok1": "Składam miks z {n} ścieżek w jedną ścieżkę stereo.",
+        "krok2": "Liczę podgląd mastera i gotowość na streaming.",
+        "krok3": "Potem wybierzesz, gdzie ma grać numer, i porównasz Mix z Masterem."
+      },
       "wrocUwaga": "Jeśli wrócisz do Mixu i coś zmienisz, mastering zrobimy od nowa.",
       "renderuje": "Składam Twój mix w jedną ścieżkę… {pct}%",
       "renderBlad": "Nie udało się złożyć mixu. Wróć do Mixu i spróbuj jeszcze raz.",
