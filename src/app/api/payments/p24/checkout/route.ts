@@ -26,6 +26,12 @@ function sameOrigin(request: Request): boolean {
   }
 }
 
+/** Too many unfinished checkouts (PAYMENT_PENDING_ORDER_LIMITS in plan-policy). */
+const CHECKOUT_RATE_MESSAGE = {
+  pl: "Masz za dużo niedokończonych płatności. Dokończ otwartą płatność albo spróbuj ponownie później.",
+  en: "You have too many unfinished payments. Finish an open payment or try again later.",
+} as const;
+
 function localeOf(value: unknown): "pl" | "en" {
   return value === "en" ? "en" : "pl";
 }
@@ -68,7 +74,13 @@ export async function POST(request: Request) {
   try {
     const result = await startCheckout({ context, body, locale, customerIp: customerIp ?? undefined });
     if (!result.ok) {
-      const status = result.code === "RATE" ? 429 : result.code === "PROVIDER" ? 502 : 400;
+      if (result.code === "RATE") {
+        return NextResponse.json(
+          { ok: false, code: "RATE", error: CHECKOUT_RATE_MESSAGE[locale] },
+          { status: 429, headers: { "cache-control": "no-store", "retry-after": "3600" } },
+        );
+      }
+      const status = result.code === "PROVIDER" ? 502 : 400;
       return NextResponse.json({ ok: false, code: result.code }, { status, headers: { "cache-control": "no-store" } });
     }
     const payuConfig = payu ? readPayuConfig() : null;

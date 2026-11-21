@@ -63,6 +63,7 @@ import {
   canCreateStudioProject,
   StudioProjectLimitError,
 } from "@/lib/studio/studio-plan-limits";
+import { insertStudioProjectCapped } from "@/lib/studio/studio-project-create";
 import {
   applyStudioClipScratchCas,
   mapStudioClipScratchFields,
@@ -307,20 +308,16 @@ export async function createStudioProjectFor(
     );
   }
 
-  const { data: project, error: projectError } = await admin
-    .from("studio_projects")
-    .insert({
-      owner_id: context.userId,
-      title,
-      status: "DRAFT",
-      tempo_bpm: tempoBpm,
-      beat_id: beatId,
-      // Hard 4:00 song limit: the timeline is the cap for record/import/place (assertClipPlacement).
-      timeline_length_ms: STUDIO_MAX_SONG_MS,
-    })
-    .select("*")
-    .single();
-  if (projectError) throw new Error(projectError.message);
+  // Atomic re-check of the plan cap + insert (parallel creates cannot pass the cap).
+  const project = await insertStudioProjectCapped(admin, {
+    ownerId: context.userId,
+    tier: planTier,
+    title,
+    tempoBpm,
+    beatId,
+    // Hard 4:00 song limit: the timeline is the cap for record/import/place (assertClipPlacement).
+    timelineLengthMs: STUDIO_MAX_SONG_MS,
+  });
 
   const projectRow = project as ProjectRow;
   const seedTracks: Array<{

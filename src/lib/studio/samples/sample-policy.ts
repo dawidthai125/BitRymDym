@@ -212,6 +212,12 @@ export function evaluateSampleAudioMeta(input: {
   return { ok: true };
 }
 
+/** Effective per-owner sample cap (plan cap bounded by SAMPLE_MAX_COUNT); 0 when the plan cap is invalid. */
+export function effectiveSampleCap(planCap: number): number {
+  if (!Number.isInteger(planCap) || planCap < 1) return 0;
+  return Math.min(SAMPLE_MAX_COUNT, planCap);
+}
+
 export function evaluateSampleCreate(input: {
   rightsAccepted: boolean;
   ownedCount: number;
@@ -230,8 +236,8 @@ export function evaluateSampleCreate(input: {
       details: ["rights confirmation is required"],
     };
   }
-  const cap = Math.min(SAMPLE_MAX_COUNT, input.cap);
-  if (!Number.isInteger(input.cap) || input.cap < 1 || !Number.isInteger(input.ownedCount) || input.ownedCount >= cap) {
+  const cap = effectiveSampleCap(input.cap);
+  if (cap < 1 || !Number.isInteger(input.ownedCount) || input.ownedCount >= cap) {
     return {
       ok: false,
       error: SAMPLE_CAP,

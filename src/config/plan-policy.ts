@@ -438,6 +438,14 @@ export const PLAN_PACK_CATALOG: Record<Exclude<PlanPack, "youtube">, { units: nu
 };
 
 /**
+ * Anti-spam cap on unfinished checkouts (PayU/P24) per user, enforced atomically in
+ * create_payment_order_capped. Counts only orders still `pending` (paid / failed /
+ * canceled-by-provider do not count). perHour: created in the last 60 min;
+ * perDay: created in the last 24 h. Exceeding either → HTTP 429 (code RATE).
+ */
+export const PAYMENT_PENDING_ORDER_LIMITS = { perHour: 5, perDay: 10 } as const;
+
+/**
  * One-off YouTube MP4 pack. Not a subscription.
  * Gold buys 2 more for 9.99. Silver buys 1 for 14.99. Bronze buys 1 for 24.99.
  * The charged amount decides how many units the webhook grants.
