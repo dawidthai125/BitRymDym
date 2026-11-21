@@ -30,7 +30,7 @@ export async function getSiteMetadata(): Promise<Metadata> {
       siteName: siteConfig.name,
       title: siteConfig.name,
       description,
-      url: "/",
+      // No site-wide og:url: it made every shared page point at the homepage.
       images: [{ url: "/brand/bitrymdym-logo.png", alt: siteConfig.name }],
     },
     twitter: {
