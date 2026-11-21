@@ -441,8 +441,8 @@ export function StudioBitekDock({
       </section>
 
       <div className="pointer-events-auto flex items-center gap-2">
-        {/* Narrow record step: no text pill (it reached the track M/S/R) — the avatar dot says it. */}
-        {hasNews && !(placement.compact && isMobile) ? (
+        {/* Record step (compact dock): no text pill — it lay over the lanes; the red avatar dot says it. */}
+        {hasNews && !placement.compact ? (
           <button
             type="button"
             className="bitek-pop rounded-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 py-1.5 text-xs shadow-lg"

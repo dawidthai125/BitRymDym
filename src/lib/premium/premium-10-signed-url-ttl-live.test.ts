@@ -169,7 +169,6 @@ describe.runIf(live)("PREMIUM-10 signed URL TTL — local Storage HTTP", () => {
       expect(gone.error).not.toBeNull();
 
       // Evidence (no token)
-      // eslint-disable-next-line no-console
       console.log(
         JSON.stringify({
           gate: "PREMIUM-10",

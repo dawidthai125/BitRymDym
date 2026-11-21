@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 
 import { StudioMixOverview } from "@/components/studio/studio-mix-overview";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
@@ -166,7 +166,10 @@ export function StudioMixStep({
   const locale = useLocale();
   const t = useTranslations("studio.mixStep");
   /** planMixAutofix limited to what the user's plan can save (otherwise the server rejects the whole fix). */
-  const planForPlan = (args: Parameters<typeof planMixAutofix>[0]) => planMixAutofix({ ...args, maxEffects, allowSidechain });
+  const planForPlan = useCallback(
+    (args: Parameters<typeof planMixAutofix>[0]) => planMixAutofix({ ...args, maxEffects, allowSidechain }),
+    [maxEffects, allowSidechain],
+  );
   const tRole = useTranslations("studio.trackRole");
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -365,6 +368,10 @@ export function StudioMixStep({
       notes: [...texts, ...(tech.length ? [t("autofix.techTytul"), ...tech] : [])],
     });
   };
+  const commitAutofixRef = useRef(commitAutofix);
+  useLayoutEffect(() => {
+    commitAutofixRef.current = commitAutofix;
+  });
 
   const runFix = async (
     fixes: readonly MixPlanFixId[],
@@ -508,7 +515,7 @@ export function StudioMixStep({
         return res.ok ? { ok: true } : { ok: false, reason: "failed" };
       },
     };
-  }, [locale]);
+  }, [locale, planForPlan]);
   useEffect(() => {
     if (!chatContextRef) return;
     chatContextRef.current = getChatContext;
@@ -524,12 +531,12 @@ export function StudioMixStep({
     if (!result || stale || running || result.verdict.canMaster || !Number.isFinite(result.metrics.master.integratedLufs)) return false;
     if (fixSeq >= MAX_FIX_STEPS) return true;
     return planForPlan({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length === 0;
-  }, [result, stale, running, fixSeq, doc]);
+  }, [result, stale, running, fixSeq, doc, planForPlan]);
   /** Bitek still has automatic moves left (and the two-round cap is not reached). */
   const canFixMore = useMemo(() => {
     if (!result || stale || running || !canAutofix || rounds >= MAX_FIX_ROUNDS) return false;
     return planForPlan({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0;
-  }, [result, stale, running, canAutofix, rounds, doc]);
+  }, [result, stale, running, canAutofix, rounds, doc, planForPlan]);
   const canMaster = (Boolean(verdict?.canMaster) || autofixExhausted) && !stale && !running;
 
   // Stage 2b — BITEK bubble (short) instead of long notes on the page.
@@ -891,8 +898,9 @@ export function StudioMixStep({
             id: "applyPropose",
             label: t("autofix.zastosuj"),
             primary: true,
+            // Through the ref: commitAutofix is a fresh function every render (keeps this memo stable).
             onClick: () =>
-              void commitAutofix(panel.ops, panel.notes, panel.key, panel.summary),
+              void commitAutofixRef.current(panel.ops, panel.notes, panel.key, panel.summary),
           },
           {
             id: "cancelPropose",

@@ -78,7 +78,8 @@ describe.runIf(live)("A1 Mix Working apply — API live (local)", () => {
   let otherId = "";
   let projectId = "";
   let trackId = "";
-  let version = 0;
+  // Last acked document version (kept for debugging the live flow).
+  let _version = 0;
 
   beforeAll(async () => {
     if (!integration.enabled) return;
@@ -125,7 +126,7 @@ describe.runIf(live)("A1 Mix Working apply — API live (local)", () => {
       .single();
     if (pErr || !project) throw new Error(pErr?.message ?? "project");
     projectId = project.id;
-    version = Number(project.document_version);
+    _version = Number(project.document_version);
 
     const { data: track, error: tErr } = await admin
       .from("studio_tracks")
@@ -192,7 +193,7 @@ $$;
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     );
     expect(tipVersion()).toBe(before + 1);
-    version = result.documentVersion;
+    _version = result.documentVersion;
   });
 
   it("identical retry replays without bump (including after tip advances)", async () => {
@@ -238,7 +239,7 @@ $$;
     expect(afterTipMove.documentVersion).toBe(first.documentVersion);
     expect(afterTipMove.documentDigest).toBe(first.documentDigest);
     expect(tipVersion()).toBe(advanceBefore + 1);
-    version = tipVersion();
+    _version = tipVersion();
   });
 
   it("IDEMPOTENCY_KEY_REUSE on same key different payload", async () => {
@@ -275,7 +276,7 @@ $$;
       expect(res.status).toBe(409);
     }
     expect(tipVersion()).toBe(after);
-    version = after;
+    _version = after;
   });
 
   it("CAS conflict maps to FX_CHAIN_VERSION_CONFLICT", async () => {

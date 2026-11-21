@@ -1235,7 +1235,6 @@ function StudioEditorInner({
       ro?.disconnect();
     };
     // zoomAroundViewportX uses refs for density; length is the intentional dep.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: length + mount only
   }, [length]);
 
   function applySnap(ms: number, bounds?: { minMs?: number; maxMs?: number }) {

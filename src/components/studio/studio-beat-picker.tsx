@@ -98,7 +98,7 @@ export function StudioBeatPicker({
     return () => {
       cancelled = true;
     };
-  }, [open, tab]);
+  }, [open, tab, tr]);
 
   useEffect(() => {
     if (!open) return;

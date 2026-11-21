@@ -63,4 +63,16 @@ describe("Studio UX audit 2026-11-21", () => {
     expect(read("src/components/studio/studio-timeline.tsx")).toMatch(/export function StudioTimeline\(/);
     expect(read("src/components/studio/studio-daw-layout.ts")).toMatch(/export const STUDIO_TRACK_EDGE/);
   });
+
+  it("selection hint stays visible while clip tools are hidden; record-step BITEK shows only the dot", () => {
+    expect(transport).toMatch(/data-testid="studio-transport-select-hint"/);
+    expect(transport).toMatch(/tr\("zaznaczFragment"\)/);
+    expect(dock).toMatch(/hasNews && !placement\.compact \?/);
+  });
+
+  it("phone timeline has natural height: one sideways scroll, no nested vertical boxes", () => {
+    const timeline = read("src/components/studio/studio-timeline.tsx");
+    expect(timeline).not.toMatch(/max-sm:h-\[min\(28rem/);
+    expect(timeline).toMatch(/overflow-x-hidden sm:overflow-y-auto/);
+  });
 });

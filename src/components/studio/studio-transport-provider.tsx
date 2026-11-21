@@ -526,7 +526,7 @@ export function StudioTransportProvider({
     setError(null);
     setAudioState("loading");
     void engine.play(playheadMsRef.current);
-  }, [hasTimelineAudio]);
+  }, [hasTimelineAudio, t]);
 
   const pause = useCallback(() => {
     if (takePreviewActive) {

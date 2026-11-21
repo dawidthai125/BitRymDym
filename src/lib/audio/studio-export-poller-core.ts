@@ -58,7 +58,6 @@ function defaultSleep(ms: number): Promise<void> {
 }
 
 function defaultLog(fields: SafePollerLogFields): void {
-  // eslint-disable-next-line no-console -- worker process stdout
   console.log(formatSafePollerLog(fields));
 }
 

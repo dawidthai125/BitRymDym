@@ -5,7 +5,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 
@@ -257,10 +257,13 @@ export function StudioRecordingPanel({
   const [trackCreateBusy, setTrackCreateBusy] = useState<
     "SAMPLE" | "SCRATCH" | null
   >(null);
-  const mergedTracks = [
-    ...tracks,
-    ...localTracks.filter((local) => !tracks.some((t) => t.id === local.id)),
-  ];
+  const mergedTracks = useMemo(
+    () => [
+      ...tracks,
+      ...localTracks.filter((local) => !tracks.some((t) => t.id === local.id)),
+    ],
+    [tracks, localTracks],
+  );
   const recordableTracks = mergedTracks.filter((t) => t.trackType !== "BEAT");
 
   const addProductTrack = useCallback(
@@ -314,6 +317,7 @@ export function StudioRecordingPanel({
       onTrackCreated,
       persistVersionTip,
       projectId,
+      tr,
     ],
   );
   /** Stem import: add a named SAMPLE track (server: up to three CAS steps), then show it in the editor. */
@@ -839,6 +843,7 @@ export function StudioRecordingPanel({
     state.phase,
     inputDevices.selectedDeviceId,
     inputDevices.refreshInputs,
+    tr,
   ]);
 
   useEffect(() => {
@@ -970,7 +975,7 @@ export function StudioRecordingPanel({
     return () => {
       track.removeEventListener("ended", onEnded);
     };
-  }, [state.phase, micStream]);
+  }, [state.phase, micStream, tr]);
 
   useEffect(() => {
     captureReportRef.current = {

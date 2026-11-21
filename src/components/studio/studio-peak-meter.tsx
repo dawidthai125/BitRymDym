@@ -57,7 +57,7 @@ export function StudioPeakMeter({
         ? t("samplePeakClipping", { v0: dbLabel })
         : t("samplePeak", { v0: dbLabel }),
     );
-  }, [snapshot.peak, snapshot.clipping, dbLabel]);
+  }, [snapshot.peak, snapshot.clipping, dbLabel, t]);
 
   return (
     <div className="mt-3 min-w-0 space-y-1.5" data-testid={testIdPrefix}>

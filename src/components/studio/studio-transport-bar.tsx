@@ -532,6 +532,10 @@ export function StudioTransportBar({
             />
           ) : null}
         </div>
+        ) : showFragmentTools ? (
+          <p className="px-1 text-[11px] text-[var(--brd-mute)]" data-testid="studio-transport-select-hint">
+            {tr("zaznaczFragment")}
+          </p>
         ) : null}
       </div>
       {transportOffscreen && !noBeat ? (

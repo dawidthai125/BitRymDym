@@ -176,7 +176,7 @@ export function StudioTimeline({
 
   return (
     <div
-      className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_3%)] max-sm:h-[min(28rem,calc(100dvh-18rem))] max-sm:min-h-[20rem] max-sm:flex-none"
+      className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_3%)] max-sm:flex-none"
       role="region"
       aria-label={tr("osCzasuProjektu")}
       data-testid="studio-timeline"
@@ -195,7 +195,7 @@ export function StudioTimeline({
             </div>
             <div
               ref={headerScrollRef}
-              className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+              className="min-h-0 flex-1 overflow-x-hidden sm:overflow-y-auto"
               onScroll={() => syncVerticalScroll("header")}
               data-testid="studio-track-header-scroll"
             >
@@ -207,7 +207,7 @@ export function StudioTimeline({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
           <div
             ref={assignLaneScrollEl}
-            className="min-h-0 min-w-0 flex-1 overflow-auto touch-pan-x"
+            className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden touch-pan-x sm:overflow-y-auto"
             data-studio-timeline-scroll="true"
             data-testid="studio-timeline-scroll"
             onScroll={() => {

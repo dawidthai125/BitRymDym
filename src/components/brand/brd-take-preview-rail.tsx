@@ -145,7 +145,7 @@ export function BrdTakePreviewRail({
       setReady(false);
       setPlaying(false);
     };
-  }, [beatId, takePreviewUrl, takeDurationSeconds]);
+  }, [beatId, takePreviewUrl, takeDurationSeconds, tr]);
 
   useEffect(() => {
     loopRef.current = loop;

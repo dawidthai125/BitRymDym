@@ -92,10 +92,11 @@ export function StudioExportControl({
   // Stage I.3A — focus trap / Escape / restore (Mixer/Inspector contract).
   useEffect(() => {
     if (!open) return;
+    const trigger = triggerRef.current;
     previouslyFocusedRef.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
-        : triggerRef.current;
+        : trigger;
     const panel = dialogRef.current;
     const focusables = panel ? getStudioDialogFocusable(panel) : [];
     const first = focusables[0] ?? panel;
@@ -112,7 +113,7 @@ export function StudioExportControl({
     window.addEventListener("keydown", onKeyDown);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
-      const restore = previouslyFocusedRef.current ?? triggerRef.current;
+      const restore = previouslyFocusedRef.current ?? trigger;
       previouslyFocusedRef.current = null;
       restore?.focus?.();
     };

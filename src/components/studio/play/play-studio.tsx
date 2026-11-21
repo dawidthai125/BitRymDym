@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { PlayEngine, LoopPlayer } from "@/lib/studio/play/instrument-engine";
 import { renderSessionWav } from "@/lib/studio/play/render-session";
@@ -82,16 +82,21 @@ export function PlayStudio({ bpm, beatId, canUseAi }: { bpm: number; beatId?: st
     window.setTimeout(() => strum(chord, direction, 1).forEach((hit) => noteOff(`g-${key}-${hit.string}`)), 180);
   }
 
+  // Latest note handlers for the window key listeners (they are fresh functions every render).
+  const keyHandlers = useRef({ noteOn, noteOff, guitarAction });
+  useLayoutEffect(() => {
+    keyHandlers.current = { noteOn, noteOff, guitarAction };
+  });
   useEffect(() => {
     const down = (ev: KeyboardEvent) => {
       if (ev.repeat) return;
       const code = ev.code;
       if (code === "KeyZ" || code === "KeyX") { setBase((b) => shiftBaseNote(b, octaveShiftForCode(code)!)); return; }
-      if (instrument === "guitar" && (CHORD_CODES as readonly string[]).includes(code)) { guitarAction(code, "down"); return; }
+      if (instrument === "guitar" && (CHORD_CODES as readonly string[]).includes(code)) { keyHandlers.current.guitarAction(code, "down"); return; }
       const n = noteForCode(code, base); if (n == null) return;
-      ev.preventDefault(); noteOn(code, n, ev.shiftKey ? 1 : 0.8);
+      ev.preventDefault(); keyHandlers.current.noteOn(code, n, ev.shiftKey ? 1 : 0.8);
     };
-    const up = (ev: KeyboardEvent) => { if (instrument === "guitar") return; noteOff(ev.code); };
+    const up = (ev: KeyboardEvent) => { if (instrument === "guitar") return; keyHandlers.current.noteOff(ev.code); };
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   }, [base, instrument, recording]);

@@ -8,6 +8,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -106,6 +107,11 @@ export function usePlayerOptional(): PlayerContextValue | null {
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const t = useTranslations("common.playerProvider");
+  // Audio callbacks read the latest translator without re-creating the player wiring.
+  const tRef = useRef(t);
+  useLayoutEffect(() => {
+    tRef.current = t;
+  }, [t]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const expiresAtRef = useRef<string | null>(null);
   const listenMasterRef = useRef(false);
@@ -170,7 +176,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
     const onErr = () => {
       setPhase("error");
-      setError(t("nieUdaloSieOdtworzyc"));
+      setError(tRef.current("nieUdaloSieOdtworzyc"));
     };
 
     audio.addEventListener("timeupdate", onTime);
@@ -212,7 +218,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       !expiresAtRef.current ||
       new Date(expiresAtRef.current).getTime() <= Date.now() + 5000;
     const audio = audioRef.current;
-    if (!audio) throw new Error(t("playerNiedostepny"));
+    if (!audio) throw new Error(tRef.current("playerNiedostepny"));
 
     const dedup = isAudioSessionDedupEnabled();
 
@@ -246,7 +252,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     if (!result.success || !result.url) {
       throw new Error(
-        toSafePlaybackErrorMessage(result.error || t("brakDostepuDoOdsluchu")),
+        toSafePlaybackErrorMessage(result.error || tRef.current("brakDostepuDoOdsluchu")),
       );
     }
     expiresAtRef.current = result.expiresAt ?? null;
@@ -361,7 +367,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setPhase("error");
         setError(
           toSafePlaybackErrorMessage(
-            e instanceof Error ? e.message : t("nieUdaloSieOdtworzyc2"),
+            e instanceof Error ? e.message : tRef.current("nieUdaloSieOdtworzyc2"),
           ),
         );
       }
@@ -396,7 +402,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           setPhase("error");
           setError(
             toSafePlaybackErrorMessage(
-              e instanceof Error ? e.message : t("nieUdaloSieOdtworzyc2"),
+              e instanceof Error ? e.message : tRef.current("nieUdaloSieOdtworzyc2"),
             ),
           );
         }

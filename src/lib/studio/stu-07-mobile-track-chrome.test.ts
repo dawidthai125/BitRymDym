@@ -40,10 +40,10 @@ describe("STU-07-A — track header hit targets on narrow chrome", () => {
 
   it("stacks the track list above a full-width lane on a phone", () => {
     expect(editor).toMatch(/flex-col sm:flex-row/);
-    expect(editor).toMatch(
-      /h-1\/2 w-full max-h-\[50%\] border-b sm:h-auto sm:max-h-none sm:w-\[272px\]/,
-    );
-    expect(editor).toMatch(/max-sm:h-\[min\(28rem,calc\(100dvh-18rem\)\)\]/);
+    // Audit 2026-11-21: natural heights on a phone — only the lane scrolls, sideways.
+    expect(editor).toMatch(/"w-full border-b sm:h-auto sm:max-h-none sm:w-\[272px\]/);
+    expect(editor).not.toMatch(/max-sm:h-\[min\(28rem/);
+    expect(editor).toMatch(/overflow-x-auto overflow-y-hidden touch-pan-x sm:overflow-y-auto/);
     expect(editor).toMatch(/syncVerticalScroll/);
   });
 

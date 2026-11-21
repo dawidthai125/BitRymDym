@@ -689,7 +689,9 @@ describe("STUDIO_EXPORT Stage I.3A — dialog keyboard / focus", () => {
     expect(control).toMatch(/handleStudioDialogKeydown/);
     expect(control).toMatch(/getStudioDialogFocusable/);
     expect(control).toMatch(/previouslyFocusedRef/);
-    expect(control).toMatch(/previouslyFocusedRef\.current \?\? triggerRef/);
+    // Trigger captured when the dialog opens (exhaustive-deps: ref may change before cleanup).
+    expect(control).toMatch(/const trigger = triggerRef\.current;/);
+    expect(control).toMatch(/previouslyFocusedRef\.current \?\? trigger;/);
     expect(control).toMatch(/addEventListener\("keydown", onKeyDown\)/);
     expect(control).toMatch(/removeEventListener\("keydown", onKeyDown\)/);
     expect(control).not.toMatch(
