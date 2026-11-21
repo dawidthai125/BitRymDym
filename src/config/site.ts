@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { getSiteUrl } from "@/lib/site-url";
+import { getPublicSiteUrl } from "@/lib/site-url";
 
 /**
  * Site-level metadata for the application shell.
@@ -22,7 +22,7 @@ export async function getSiteMetadata(): Promise<Metadata> {
       template: `%s · ${siteConfig.name}`,
     },
     description,
-    metadataBase: new URL(getSiteUrl()),
+    metadataBase: new URL(getPublicSiteUrl()),
     applicationName: siteConfig.name,
     openGraph: {
       type: "website",

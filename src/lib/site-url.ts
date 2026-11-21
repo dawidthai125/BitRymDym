@@ -69,3 +69,16 @@ export function getAuthEmailChangeRedirectTo(): string {
 }
 
 export const SITE_URL_CANONICAL_PRODUCTION = CANONICAL_PRODUCTION_ORIGIN;
+
+/** Vercel serves the site on www and answers the apex with a 308 (project domain config). */
+const SERVED_PRODUCTION_ORIGIN = "https://www.bitrymdym.pl";
+
+/**
+ * Origin the site is actually served from — for sitemap, robots, canonical metadata, share links
+ * and payment provider callbacks (PayU notify/continue), which must not land on a 308 redirect.
+ * Auth redirects keep getSiteUrl() (they must match the Supabase allow-list).
+ */
+export function getPublicSiteUrl(): string {
+  const base = getSiteUrl();
+  return base === CANONICAL_PRODUCTION_ORIGIN ? SERVED_PRODUCTION_ORIGIN : base;
+}

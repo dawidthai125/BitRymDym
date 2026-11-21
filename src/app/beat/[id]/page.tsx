@@ -29,7 +29,7 @@ import { loadSamplePolicyDurationOverrides } from "@/lib/takes/sample-policy-set
 import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 import { presentBeat, presentBeats } from "@/lib/ui/demo-beats";
 import { absoluteUrl, clampText } from "@/lib/share/share-links";
-import { getSiteUrl } from "@/lib/site-url";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import {
   canDownloadBeatByOwnerChoice,
   canUseBeatInStudio,
@@ -213,7 +213,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
           </div>
           <LicenseSummary className="mt-6 border-t border-[var(--brd-line)] pt-4" />
           <div className="mt-6 border-t border-[var(--brd-line)] pt-4">
-            <ShareButtons url={absoluteUrl(getSiteUrl(), `/beat/${detail.id}`)} text={`${presented.title} — BitRymDym`} testId="beat-share" />
+            <ShareButtons url={absoluteUrl(getPublicSiteUrl(), `/beat/${detail.id}`)} text={`${presented.title} — BitRymDym`} testId="beat-share" />
           </div>
           {thread?.found ? (
             <CommunityThread

@@ -3,7 +3,7 @@ import "server-only";
 import type { AuthContext } from "@/lib/auth/types";
 import { PAYMENT_PENDING_ORDER_LIMITS, PLAN_PACK_CATALOG, readPlanPaymentsAvailable, type PaidTier } from "@/config/plan-policy";
 import { PRIVACY_VERSION, TERMS_VERSION, purchaseConsentCovers, type PurchaseConsentInput } from "@/lib/legal/legal-config";
-import { getSiteUrl } from "@/lib/site-url";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isMissingRpcFunction } from "@/lib/supabase/rpc-errors";
 
@@ -153,7 +153,7 @@ export async function startCheckout(input: {
   const amountGrosz = priceGrosz(product, buyerTier);
   const admin = createSupabaseAdminClient();
   const sessionId = crypto.randomUUID();
-  const origin = getSiteUrl();
+  const origin = getPublicSiteUrl();
   const order = {
     user_id: input.context.userId,
     session_id: sessionId,

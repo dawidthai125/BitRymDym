@@ -2,6 +2,7 @@ import { describe, expect, it, afterEach } from "vitest";
 
 import {
   getAuthEmailRedirectTo,
+  getPublicSiteUrl,
   getSiteUrl,
   SITE_URL_CANONICAL_PRODUCTION,
 } from "@/lib/site-url";
@@ -71,5 +72,23 @@ describe("getSiteUrl", () => {
     expect(getAuthEmailRedirectTo()).toBe(
       "https://bitrymdym.pl/auth/callback",
     );
+  });
+});
+
+describe("getPublicSiteUrl (served origin)", () => {
+  afterEach(() => restoreEnv());
+  it("maps the apex canonical to www (Vercel answers the apex with 308)", () => {
+    clearEnv();
+    process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
+    expect(getPublicSiteUrl()).toBe("https://www.bitrymdym.pl");
+    expect(getAuthEmailRedirectTo()).toBe("https://bitrymdym.pl/auth/callback");
+  });
+  it("keeps any other origin", () => {
+    clearEnv();
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.bitrymdym.pl/";
+    expect(getPublicSiteUrl()).toBe("https://www.bitrymdym.pl");
+    clearEnv();
+    process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
+    expect(getPublicSiteUrl()).toBe("http://localhost:3000");
   });
 });
