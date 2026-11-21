@@ -404,12 +404,21 @@ export function StudioMasterStep({
   const useReference = !!refState.gate?.allowed && refState.reference?.status === "ready";
   const measured = preview?.metrics ?? mix?.metrics ?? null;
   const streaming = useMemo(() => (measured ? buildStreamingReadiness(measured) : null), [measured]);
-  // Entering from the bottom of the Mix step left the page scrolled into the empty render area.
+  // Entering from the bottom of the Mix step left the page scrolled into the empty render area, and
+  // scroll anchoring kept pushing it down as the mix and the preview arrived. While the step is fresh
+  // (first 8 s), bring its top back into view whenever that content lands.
   const stepRootRef = useRef<HTMLDivElement | null>(null);
+  const stepMountedAtRef = useRef(0);
+  const hasMix = Boolean(mix);
+  const hasPreview = Boolean(preview);
   useEffect(() => {
     const el = stepRootRef.current;
-    if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: "start" });
-  }, []);
+    if (!el) return;
+    const now = performance.now();
+    if (stepMountedAtRef.current === 0) stepMountedAtRef.current = now;
+    if (now - stepMountedAtRef.current > 8000) return;
+    if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: "start" });
+  }, [hasMix, hasPreview]);
   const latest = useRef({ settings, target, verdict, measured });
   useEffect(() => {
     latest.current = { settings, target, verdict, measured };
