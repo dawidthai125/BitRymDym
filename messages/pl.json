@@ -706,7 +706,8 @@
           "pending_plan": "inny niższy plan jest już zaplanowany. Napisz, to oddam tę wpłatę przez PayU.",
           "addon_perpetual": "dodatek jest bez końca i nie skracam go."
         }
-      }
+      },
+      "porownaniePrzesun": "Przesuń tabelę w bok, żeby zobaczyć wszystkie plany →"
     },
     "settingsPage": {
       "metaTitle": "Ustawienia",

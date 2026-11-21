@@ -6,6 +6,13 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (2) — Mail o wygasaniu, pilnowanie kolejki Contabo, telefon
+
+- **Mail „Nagranie wygasa”:** cron `/api/cron/takes-expiry-notice` (`vercel.json`, 07:00 UTC). Nagrania READY użyte w klipie projektu właściciela, wygasające w ≤36 h, jeden mail na właściciela (najbliższy projekt). Rodzaj `take_expiring` (kategoria studio: zgody i wypis jak przy masterze). Atomowy znacznik `takes.expiry_notified_at` (migracja `20261122010000_takes_expiry_notified_at`, zastosowana). Pliki: `src/lib/email/notify/take-expiry-plan.ts` (+test), `take-expiry-notice.ts`, `templates.ts`, `config.ts`. Wspólne sprawdzanie `CRON_SECRET`: `src/lib/cron/cron-auth.ts`.
+- **Kolejka Contabo:** `GET /api/health/queues` (publiczne liczby, bez id i użytkowników; 503 = utknięty eksport/mix/master). `.github/workflows/queue-health.yml` co godzinę (czerwony przebieg = mail z GitHub) + kontrola w `scripts/smoke-production.mjs`. Progi: eksport w kolejce >15 min, RUNNING >10 min po `timeout_at`, master w kolejce >30 min, master bez postępu >30 min (okno 24 h).
+- **Supabase advisors:** bez nowych problemów. INFO „RLS bez polityk” = celowo (tylko service-role). Funkcje SECURITY DEFINER same sprawdzają `auth.uid()` / staff. Nowe indeksy FK „unused” = świeże. 7× multiple permissive policies (beats, beat_rights_*) zostawione: scalanie zmienia semantykę RLS, zysk mały.
+- **Telefon (przegląd 360/390/768, publiczne strony):** brak poziomego przewijania i błędów strony. Poprawki: podpowiedź „Przesuń tabelę w bok” w porównaniu planów `/premium`, linki w stopce `min-h-10`, filtry `/sampel` `min-h-11`. Zrzuty: `Shared/tmp/brd-mobile-2026-11-22/`.
+
 ## 2026-11-22 — Wygasające nagrania, smoke test produkcji, HMAC bez service-role
 
 - **Studio:** nad edytorem baner, gdy nagranie użyte w klipie wygaśnie w ciągu 3 dni (żółty, z datą w czasie polskim) albo już wygasło (czerwony: eksport WAV i master nie zadziałają). Pliki: `src/lib/studio/studio-take-expiry.ts` (+test), `studio-take-expiry-server.ts`, `src/components/studio/studio-take-expiry-banner.tsx`, `src/app/studio/p/[projectId]/page.tsx`, `messages/*` `studio.takeExpiry`.

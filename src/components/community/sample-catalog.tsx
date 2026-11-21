@@ -193,7 +193,7 @@ export function SampleCatalog({
             type="button"
             onClick={() => setSort(id)}
             aria-pressed={sort === id}
-            className={`min-h-9 rounded-full border px-3 text-sm ${
+            className={`min-h-11 rounded-full border px-3 text-sm ${
               sort === id
                 ? "border-[var(--brd-amber)] bg-[var(--brd-amber)]/15 text-[var(--brd-ink)]"
                 : "border-[var(--brd-line)] text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
@@ -215,7 +215,7 @@ export function SampleCatalog({
             type="button"
             onClick={() => setTypeFilter(o.id)}
             aria-pressed={typeFilter === o.id}
-            className={`min-h-9 rounded-full border px-3 text-sm ${
+            className={`min-h-11 rounded-full border px-3 text-sm ${
               typeFilter === o.id
                 ? "border-[var(--brd-amber)] bg-[var(--brd-amber)]/15 text-[var(--brd-ink)]"
                 : "border-[var(--brd-line)] text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
@@ -230,7 +230,7 @@ export function SampleCatalog({
             value={instrumentFilter}
             onChange={(e) => setInstrumentFilter(e.target.value)}
             aria-label={t("instrument")}
-            className="min-h-9 rounded-full border border-[var(--brd-line)] bg-transparent px-3 text-sm text-[var(--brd-ink)]"
+            className="min-h-11 rounded-full border border-[var(--brd-line)] bg-transparent px-3 text-sm text-[var(--brd-ink)]"
           >
             <option value="all">{t("wszystkieInstrumenty")}</option>
             {usedInstruments.map((o) => (

@@ -41,6 +41,17 @@ function body(kind: NotifyKind, d: TemplateData): Body {
       return { subject: `Wideo MP4 gotowe: ${project}`, heading: "Wideo MP4 gotowe", lines: [hi, `wideo MP4 projektu „${project}” jest gotowe do pobrania.`], cta: { label: "Pobierz wideo", path: studio } };
     case "purchase_confirmed":
       return { subject: "Wpłata doszła", heading: "Wpłata doszła", lines: [hi, clean(d.detail, 400) || "Tu BITEK. Włączyłem opłacony plan na Twoim koncie."], cta: { label: "Zobacz plan", path: "/premium" } };
+    case "take_expiring":
+      return {
+        subject: `Nagranie wygasa: ${project}`,
+        heading: "Nagranie wkrótce wygaśnie",
+        lines: [
+          hi,
+          `nagranie w projekcie „${project}” wygaśnie ${clean(d.detail, 160) || "w ciągu doby"}.`,
+          "Zrób eksport WAV albo master przed tym terminem. Potem trzeba będzie nagrać tę partię ponownie.",
+        ],
+        cta: { label: "Otwórz projekt", path: studio },
+      };
     default: {
       const neverKind: never = kind;
       return neverKind;

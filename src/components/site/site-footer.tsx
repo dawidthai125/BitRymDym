@@ -14,24 +14,24 @@ export function SiteFooter() {
     <footer className="border-t border-[var(--brd-line)] px-4 py-6 sm:px-6">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 text-sm text-[var(--brd-ink-soft)]">
         <span>© {siteConfig.name}</span>
-        <nav aria-label={menu("glowneMenu")} className="flex flex-wrap gap-x-4 gap-y-1">
-          <Link href="/beats?zrodlo=brd" className="underline-offset-4 hover:underline">{nav("beats")}</Link>
-          <Link href="/ranking" className="underline-offset-4 hover:underline">{shelf("beatRank")}</Link>
-          <Link href="/sampel?zrodlo=brd" className="underline-offset-4 hover:underline">{shelf("samples")}</Link>
-          <Link href="/ranking/sampel" className="underline-offset-4 hover:underline">{shelf("sampleRank")}</Link>
-          <Link href="/utwory" className="underline-offset-4 hover:underline">{shelf("works")}</Link>
-          <Link href="/ranking/utwor" className="underline-offset-4 hover:underline">{shelf("workRank")}</Link>
-          <Link href="/studio" className="underline-offset-4 hover:underline">{nav("studio")}</Link>
-          <Link href="/mastering" className="underline-offset-4 hover:underline">{nav("mastering")}</Link>
-          <Link href="/nagrywarka" className="underline-offset-4 hover:underline">{nav("recorder")}</Link>
-          <Link href="/jak-nagrac" className="underline-offset-4 hover:underline">{nav("howTo")}</Link>
-          <Link href="/about" className="underline-offset-4 hover:underline">{nav("about")}</Link>
-          <Link href="/premium" className="underline-offset-4 hover:underline">{nav("premium")}</Link>
+        <nav aria-label={menu("glowneMenu")} className="flex flex-wrap gap-x-4 gap-y-0">
+          <Link href="/beats?zrodlo=brd" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{nav("beats")}</Link>
+          <Link href="/ranking" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{shelf("beatRank")}</Link>
+          <Link href="/sampel?zrodlo=brd" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{shelf("samples")}</Link>
+          <Link href="/ranking/sampel" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{shelf("sampleRank")}</Link>
+          <Link href="/utwory" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{shelf("works")}</Link>
+          <Link href="/ranking/utwor" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{shelf("workRank")}</Link>
+          <Link href="/studio" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{nav("studio")}</Link>
+          <Link href="/mastering" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{nav("mastering")}</Link>
+          <Link href="/nagrywarka" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{nav("recorder")}</Link>
+          <Link href="/jak-nagrac" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{nav("howTo")}</Link>
+          <Link href="/about" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{nav("about")}</Link>
+          <Link href="/premium" className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{nav("premium")}</Link>
         </nav>
-        <nav aria-label={t("nawigacja")} className="flex flex-wrap gap-x-4 gap-y-1">
-          <Link href={LEGAL_PATHS.terms} className="underline-offset-4 hover:underline">{t("regulamin")}</Link>
-          <Link href={LEGAL_PATHS.privacy} className="underline-offset-4 hover:underline">{t("prywatnosc")}</Link>
-          <Link href={LEGAL_PATHS.cookies} className="underline-offset-4 hover:underline">{t("cookies")}</Link>
+        <nav aria-label={t("nawigacja")} className="flex flex-wrap gap-x-4 gap-y-0">
+          <Link href={LEGAL_PATHS.terms} className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{t("regulamin")}</Link>
+          <Link href={LEGAL_PATHS.privacy} className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{t("prywatnosc")}</Link>
+          <Link href={LEGAL_PATHS.cookies} className="inline-flex min-h-10 items-center underline-offset-4 hover:underline">{t("cookies")}</Link>
         </nav>
         <LanguageSwitcher />
       </div>

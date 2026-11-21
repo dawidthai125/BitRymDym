@@ -706,7 +706,8 @@
           "pending_plan": "another lower plan is already scheduled. Write to us and I'll return this payment through PayU.",
           "addon_perpetual": "the add-on has no end date and I won't shorten it."
         }
-      }
+      },
+      "porownaniePrzesun": "Swipe the table sideways to see every plan →"
     },
     "settingsPage": {
       "metaTitle": "Settings",

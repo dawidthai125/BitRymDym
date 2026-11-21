@@ -1,0 +1,24 @@
+name: Kolejka eksportu (Contabo)
+
+# Co godzinę: czy eksport WAV / mix / master nie utknął w kolejce. Czerwony przebieg = mail z GitHub.
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  queues:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Sprawdź /api/health/queues
+        run: |
+          code=$(curl -sS -o body.json -w '%{http_code}' --max-time 30 https://www.bitrymdym.pl/api/health/queues || echo 000)
+          cat body.json || true
+          echo
+          if [ "$code" != "200" ]; then
+            echo "::error::Kolejka eksportu/masterów stoi (HTTP $code). Sprawdź workera na Contabo."
+            exit 1
+          fi

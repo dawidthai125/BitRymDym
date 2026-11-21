@@ -4,7 +4,7 @@
  * The same flags work on Vercel (welcome, moderation) and on E3 (master / MP4 ready).
  */
 export type NotifyCategory = "account" | "moderation" | "studio";
-export type NotifyKind = "welcome" | "beat_approved" | "beat_rejected" | "master_ready" | "mp4_ready" | "purchase_confirmed";
+export type NotifyKind = "welcome" | "beat_approved" | "beat_rejected" | "master_ready" | "mp4_ready" | "purchase_confirmed" | "take_expiring";
 
 export const KIND_CATEGORY: Record<NotifyKind, NotifyCategory> = {
   welcome: "account",
@@ -13,6 +13,7 @@ export const KIND_CATEGORY: Record<NotifyKind, NotifyCategory> = {
   master_ready: "studio",
   mp4_ready: "studio",
   purchase_confirmed: "account",
+  take_expiring: "studio",
 };
 
 /** Preference columns in public.notification_preferences (all default true). */

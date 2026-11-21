@@ -9,7 +9,10 @@ describe("security hardening (review 2026-11-21)", () => {
     expect(read("next.config.ts")).toContain("Strict-Transport-Security");
   });
   it("compares the cron secret in constant time", () => {
-    expect(read("src/app/api/cron/takes-janitor/route.ts")).toContain("timingSafeEqual");
+    expect(read("src/lib/cron/cron-auth.ts")).toContain("timingSafeEqual");
+    for (const route of ["takes-janitor", "takes-expiry-notice"]) {
+      expect(read(`src/app/api/cron/${route}/route.ts`)).toContain("cronAuthFailure(request)");
+    }
   });
   it("hides the fake worker route in production", () => {
     expect(read("src/app/api/mix/worker/fake-complete/route.ts")).toContain('NODE_ENV === "production"');

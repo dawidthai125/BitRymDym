@@ -67,6 +67,10 @@ const checks = [
     const r = await get("https://edge.bitrymdym.pl/healthz");
     if (r.status !== 200) throw new Error(`status ${r.status}`);
   }],
+  ["Kolejka eksportu i masterów nie stoi (Contabo)", async () => {
+    const r = await get(`${BASE}/api/health/queues`);
+    if (r.status !== 200) throw new Error(`status ${r.status}: ${r.body.slice(0, 200)}`);
+  }],
   ["Mapa strony na www", async () => {
     const r = await get(`${BASE}/sitemap.xml`);
     if (r.status !== 200) throw new Error(`status ${r.status}`);

@@ -1,6 +1,6 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
+import { cronAuthFailure } from "@/lib/cron/cron-auth";
 import { runTakesRetentionJanitor } from "@/lib/takes/takes-janitor";
 
 export const runtime = "nodejs";
@@ -10,20 +10,8 @@ export const runtime = "nodejs";
  * Authorization: Authorization: Bearer ${CRON_SECRET}
  */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json(
-      { error: "CRON_SECRET is not configured." },
-      { status: 503 },
-    );
-  }
-
-  const auth = request.headers.get("authorization");
-  const expected = Buffer.from(`Bearer ${secret}`);
-  const given = Buffer.from(auth ?? "");
-  if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
+  const denied = cronAuthFailure(request);
+  if (denied) return denied;
 
   try {
     const result = await runTakesRetentionJanitor();
