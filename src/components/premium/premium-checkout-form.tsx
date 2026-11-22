@@ -86,6 +86,7 @@ export function PremiumCheckoutForm({
     const productConsent = product.kind === "plan" ? consent : extraConsent;
     if (product.kind === "plan" ? !consentOk : !nowConsentOk) {
       setError("CONSENT");
+      if (product.kind !== "plan") document.getElementById("pakiety")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     setPending(product.kind === "plan" ? "plan" : product.kind === "addon" ? "addon" : product.pack);
@@ -193,34 +194,14 @@ export function PremiumCheckoutForm({
         )}
       </form>
 
-      {loggedIn ? (
-        <div id="pakiety" className="scroll-mt-24 border-t border-[var(--brd-line)] pt-6" data-testid="premium-extra-consent">
-          <PurchaseConsent value={extraConsent} onChange={setExtraConsent} />
-        </div>
-      ) : null}
-
-      <form
-        className="flex flex-col gap-3 border-t border-[var(--brd-line)] pt-6"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!loggedIn || readFailed || addonBlock || pending) return;
-          void pay({ kind: "addon", addon: "reference_mastering" });
-        }}
-      >
-        <h3 className="text-base font-semibold">{t("dodatekTytul")}</h3>
-        <p className="max-w-[62ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{t("dodatekOpis")}</p>
-        <p className="font-mono text-xl">{addonPrice}<span className="text-sm text-[var(--brd-mute)]"> {t("zaMiesiac")}</span></p>
-        {addonBlock ? <p className="text-sm text-[var(--brd-mute)]">{t(`blok.${addonBlock}`)}</p> : null}
-        {loggedIn ? (
-          <BrdButton type="submit" variant="secondary" disabled={!!addonBlock || readFailed || pending !== null || !nowConsentOk} data-testid="premium-addon-submit">
-            {pending === "addon" ? t("czekam") : t("dodatekPrzycisk")}
-          </BrdButton>
-        ) : null}
-      </form>
-
       <div className="flex flex-col gap-3 border-t border-[var(--brd-line)] pt-6">
         <h3 className="text-base font-semibold">{t("pakietTytul")}</h3>
         <p className="max-w-[62ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{t("pakietOpis")}</p>
+        {loggedIn ? (
+          <div id="pakiety" className="scroll-mt-24" data-testid="premium-extra-consent">
+            <PurchaseConsent value={extraConsent} onChange={setExtraConsent} />
+          </div>
+        ) : null}
         {(["take", "master", "youtube"] as const).map((pack) => {
           const blocked = pack === "youtube" ? youtubeBlock : null;
           return (
@@ -239,7 +220,7 @@ export function PremiumCheckoutForm({
             </p>
             {blocked ? <p className="text-sm text-[var(--brd-mute)]">{t(`blok.${blocked}`)}</p> : null}
             {loggedIn ? (
-              <BrdButton type="submit" variant="secondary" disabled={!!blocked || readFailed || pending !== null || !nowConsentOk} data-testid={`premium-pack-${pack}`}>
+              <BrdButton type="submit" variant="secondary" disabled={!!blocked || readFailed || pending !== null} data-testid={`premium-pack-${pack}`}>
                 {pending === pack ? t("czekam") : t("pakietPrzycisk")}
               </BrdButton>
             ) : null}
@@ -248,6 +229,26 @@ export function PremiumCheckoutForm({
         })}
         {error && errorScope === "extra" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t(`blad.${error}`)}</p> : null}
       </div>
+      <form
+        className="flex flex-col gap-3 border-t border-[var(--brd-line)] pt-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!loggedIn || readFailed || addonBlock || pending) return;
+          void pay({ kind: "addon", addon: "reference_mastering" });
+        }}
+      >
+        <h3 className="text-base font-semibold">{t("dodatekTytul")}</h3>
+        <p className="max-w-[62ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{t("dodatekOpis")}</p>
+        <p className="font-mono text-xl">{addonPrice}<span className="text-sm text-[var(--brd-mute)]"> {t("zaMiesiac")}</span></p>
+        {addonBlock ? <p className="text-sm text-[var(--brd-mute)]">{t(`blok.${addonBlock}`)}</p> : null}
+        {!addonBlock && loggedIn ? <p className="text-xs text-[var(--brd-mute)]">{t("zgodyWyzej")}</p> : null}
+        {loggedIn ? (
+          <BrdButton type="submit" variant="secondary" disabled={!!addonBlock || readFailed || pending !== null} data-testid="premium-addon-submit">
+            {pending === "addon" ? t("czekam") : t("dodatekPrzycisk")}
+          </BrdButton>
+        ) : null}
+      </form>
+
     </div>
   );
 }

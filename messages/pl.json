@@ -672,7 +672,8 @@
           "ADDON_NEEDS_SILVER": "Ten dodatek włączam tylko na Silver.",
           "ADDON_PERPETUAL": "Dodatek jest bez końca — nie skracam go.",
           "PACK_NEEDS_PAID": "Wideo MP4 dokupisz na Bronze, Silver albo Gold."
-        }
+        },
+        "zgodyWyzej": "Zgody zaznaczasz wyżej, przy pakietach."
       },
       "returnPage": {
         "metaTitle": "Płatność — BitRymDym",

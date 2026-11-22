@@ -672,7 +672,8 @@
           "ADDON_NEEDS_SILVER": "I turn this add-on on only for Silver.",
           "ADDON_PERPETUAL": "The add-on has no end date — I won't shorten it.",
           "PACK_NEEDS_PAID": "You can buy a YouTube MP4 on Bronze, Silver or Gold."
-        }
+        },
+        "zgodyWyzej": "Tick the consents above, next to the packs."
       },
       "returnPage": {
         "metaTitle": "Payment — BitRymDym",
