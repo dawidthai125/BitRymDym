@@ -1,10 +1,13 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "pl.bitrymdym.app",
       "sha256_cert_fingerprints": [
+        "97:A4:A5:CD:E0:14:91:C8:D9:6B:F9:0A:79:7A:A6:22:0A:CD:0D:A4:73:32:B4:7C:BC:79:10:FA:7F:02:6A:E9",
         "C6:8D:96:7E:8A:69:5D:24:CC:97:19:3A:EC:A3:3D:36:6B:91:B1:AE:5F:E3:DD:08:B2:49:4F:D6:C0:31:42:0D"
       ]
     }
