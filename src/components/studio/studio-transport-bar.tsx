@@ -404,7 +404,7 @@ export function StudioTransportBar({
           </div>
 
           <div
-            className="studio-counter flex min-h-11 shrink-0 flex-nowrap items-center gap-1.5 px-2 font-mono text-xs tabular-nums sm:min-h-8 sm:gap-1 sm:px-1.5"
+            className="studio-counter flex min-h-11 min-w-0 max-w-full flex-wrap items-center gap-1.5 px-2 sm:shrink-0 sm:flex-nowrap font-mono text-xs tabular-nums sm:min-h-8 sm:gap-1 sm:px-1.5"
             data-testid="studio-transport-meta"
           >
             <span
