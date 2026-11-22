@@ -1,6 +1,8 @@
 /**
  * E3 host: renders personal listen copies (see listen-copy-server.ts) and reads audio for the leak tool.
- * Master → 44.1 kHz stereo float → mark of the copy id → 256 kbps MP3 → beat-audio/listen/{beatId}/{copyId}.mp3.
+ * Master → 44.1 kHz stereo float → mark of the copy id → 256 kbps AAC (M4A) → beat-audio/listen/{beatId}/{copyId}.m4a.
+ * AAC, not MP3: WebKit/GStreamer ignores the LAME gapless header and plays MP3 1105 samples (25 ms) late, which
+ * would shift vocals recorded against it; AAC in M4A decodes sample-exact in Chromium, Firefox and WebKit (test 2026-11-22).
  * Logs never include keys, signed URLs or user ids.
  */
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -27,7 +29,7 @@ export type ListenCopyJob = {
 };
 
 export function listenCopyKey(beatId: string, copyId: string): string {
-  return `listen/${beatId}/${copyId}.mp3`;
+  return `listen/${beatId}/${copyId}.m4a`;
 }
 
 /** ffmpeg: any audio file → raw little-endian float, fixed rate and channel count. */
@@ -35,14 +37,14 @@ export function decodeToFloatArgs(input: string, output: string, channels: numbe
   return ["-nostdin", "-v", "error", "-y", "-i", input, "-vn", "-f", "f32le", "-ac", String(channels), "-ar", String(LISTEN_COPY_SAMPLE_RATE), output];
 }
 
-/** ffmpeg: raw float stereo → CBR MP3 with a gapless (LAME) header, no metadata. */
+/** ffmpeg: raw float stereo → AAC in M4A (edit list carries the encoder priming), no metadata, moov first. */
 export function encodeListenCopyArgs(input: string, output: string): string[] {
   return [
     "-nostdin", "-v", "error", "-y",
     "-f", "f32le", "-ar", String(LISTEN_COPY_SAMPLE_RATE), "-ac", "2", "-i", input,
-    "-map_metadata", "-1", "-c:a", "libmp3lame", "-b:a", LISTEN_COPY_BITRATE,
-    // LAME -q 7: about twice as fast; at 256 kbps the difference is not audible, and a listener waits for this.
-    "-compression_level", "7", "-f", "mp3", output,
+    "-map_metadata", "-1", "-c:a", "aac", "-b:a", LISTEN_COPY_BITRATE,
+    // Fast coder: about twice as fast on the E3 host; inaudible at 256 kbps, and a listener waits for this.
+    "-aac_coder", "fast", "-movflags", "+faststart", "-f", "mp4", output,
   ];
 }
 
@@ -92,14 +94,14 @@ export async function renderListenCopy(admin: SupabaseClient, job: ListenCopyJob
     const marked = embedWatermark(samples, 2, job.id);
     const rawOut = path.join(work, "out.f32");
     await writeFile(rawOut, Buffer.from(marked.buffer, marked.byteOffset, marked.byteLength));
-    const mp3 = path.join(work, "copy.mp3");
-    await runCapture(resolveFfmpegBin(), encodeListenCopyArgs(rawOut, mp3), { timeoutMs: 300_000 });
-    const bytes = await readFile(mp3);
+    const encoded = path.join(work, "copy.m4a");
+    await runCapture(resolveFfmpegBin(), encodeListenCopyArgs(rawOut, encoded), { timeoutMs: 300_000 });
+    const bytes = await readFile(encoded);
     if (bytes.byteLength < 1000) throw new Error("copy_empty");
     const key = listenCopyKey(job.beat_id, job.id);
     const { error: upErr } = await admin.storage
       .from(BEAT_AUDIO_BUCKET)
-      .upload(key, bytes, { contentType: "audio/mpeg", upsert: true });
+      .upload(key, bytes, { contentType: "audio/mp4", upsert: true });
     if (upErr) throw new Error("upload_failed");
     const { error: updErr } = await admin
       .from("beat_listen_copies")
@@ -227,4 +229,25 @@ export async function runLeakCheck(admin: SupabaseClient, job: LeakCheckJob): Pr
   } finally {
     await rm(work, { recursive: true, force: true });
   }
+}
+
+/** Uploaded leak files are kept this long, then deleted; the result stays on /admin/wycieki. */
+export const LEAK_FILE_RETENTION_DAYS = 90;
+
+export async function purgeOldLeakFiles(admin: SupabaseClient, now = Date.now(), limit = 100): Promise<number> {
+  const cutoff = new Date(now - LEAK_FILE_RETENTION_DAYS * 86_400_000).toISOString();
+  const { data, error } = await admin
+    .from("leak_checks")
+    .select("id, object_key")
+    .lt("created_at", cutoff)
+    .is("file_deleted_at", null)
+    .limit(limit);
+  if (error || !data?.length) return 0;
+  const { error: rmErr } = await admin.storage.from("leak-checks").remove(data.map((r) => r.object_key as string));
+  if (rmErr) return 0;
+  const { error: updErr } = await admin
+    .from("leak_checks")
+    .update({ file_deleted_at: new Date(now).toISOString() })
+    .in("id", data.map((r) => r.id as string));
+  return updErr ? 0 : data.length;
 }

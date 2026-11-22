@@ -15,8 +15,36 @@ export const MASTER_RUNNING_STALE_MS = 30 * 60_000;
 export type RenderJobRow = { status: string; queuedAt: string | null; timeoutAt: string | null };
 export type MasterJobRow = { status: string; createdAt: string | null; startedAt: string | null; progressAt: string | null };
 
+/** A personal listen copy (Studio/recording/Windows) waits for the E3 listencopy poller; a listener waits with it. */
+export const LISTEN_PENDING_STALE_MS = 3 * 60_000;
+export const LISTEN_WORKING_STALE_MS = 5 * 60_000;
+
+export type ListenCopyRow = { status: string; createdAt: string | null; claimedAt: string | null };
+export type ListenHealth = { pending: number; working: number; stuck: number; oldestPendingSec: number | null };
+
+/** Pure: stuck listen copies mean the listencopy poller on Contabo is down (Studio cannot open beats). */
+export function evaluateListenCopyHealth(rows: readonly ListenCopyRow[], now = Date.now()): ListenHealth {
+  const h: ListenHealth = { pending: 0, working: 0, stuck: 0, oldestPendingSec: null };
+  for (const j of rows) {
+    if (j.status === "pending") {
+      h.pending += 1;
+      const c = t(j.createdAt);
+      if (Number.isFinite(c)) {
+        h.oldestPendingSec = Math.max(h.oldestPendingSec ?? 0, Math.round((now - c) / 1000));
+        if (now - c > LISTEN_PENDING_STALE_MS) h.stuck += 1;
+      }
+    } else if (j.status === "working") {
+      h.working += 1;
+      const c = t(j.claimedAt);
+      if (Number.isFinite(c) && now - c > LISTEN_WORKING_STALE_MS) h.stuck += 1;
+    }
+  }
+  return h;
+}
+
 export type QueueHealth = {
   ok: boolean;
+  listen?: ListenHealth;
   render: { queued: number; running: number; stuckQueued: number; stuckRunning: number; oldestQueuedSec: number | null };
   master: { queued: number; running: number; stuckQueued: number; stuckRunning: number; oldestQueuedSec: number | null };
 };

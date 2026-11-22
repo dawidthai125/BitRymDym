@@ -29,3 +29,18 @@ describe("evaluateQueueHealth", () => {
     expect(h.master).toMatchObject({ stuckQueued: 1, stuckRunning: 1 });
   });
 });
+
+describe("listen copy health", () => {
+  it("flags a copy waiting over 3 min or working over 5 min", async () => {
+    const { evaluateListenCopyHealth } = await import("@/lib/audio/queue-health");
+    const now = Date.parse("2026-11-22T20:00:00Z");
+    const ago = (ms: number) => new Date(now - ms).toISOString();
+    const h = evaluateListenCopyHealth([
+      { status: "pending", createdAt: ago(30_000), claimedAt: null },
+      { status: "pending", createdAt: ago(4 * 60_000), claimedAt: null },
+      { status: "working", createdAt: ago(60_000), claimedAt: ago(6 * 60_000) },
+      { status: "working", createdAt: ago(60_000), claimedAt: ago(20_000) },
+    ], now);
+    expect(h).toEqual({ pending: 2, working: 2, stuck: 2, oldestPendingSec: 240 });
+  });
+});

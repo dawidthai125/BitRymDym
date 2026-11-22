@@ -3,9 +3,10 @@
  *   npm run listencopy:worker:poll
  * Env: SUPABASE service role env (same as the E3 worker), LISTEN_COPY_POLL_MS (default 700).
  * A listener waits for the first render of a beat, so the queue is polled often; the query is one indexed row.
- * When idle it runs admin leak checks (/admin/wycieki). Once an hour copies unused for 30 days are deleted. Logs never include user ids, keys or URLs.
+ * When idle it runs admin leak checks (/admin/wycieki). Once an hour copies unused for 30 days and leak uploads older than 90 days are deleted. Logs never include user ids, keys or URLs.
  */
 import {
+  purgeOldLeakFiles,
   purgeOldListenCopies,
   renderListenCopy,
   runLeakCheck,
@@ -46,6 +47,8 @@ async function main() {
         lastPurge = Date.now();
         const purged = await purgeOldListenCopies(admin);
         if (purged) console.log(JSON.stringify({ event: "listencopy_purged", count: purged }));
+        const leakFiles = await purgeOldLeakFiles(admin);
+        if (leakFiles) console.log(JSON.stringify({ event: "leakfiles_purged", count: leakFiles }));
       }
     } catch (e) {
       console.log(JSON.stringify({ event: "listencopy_loop_error", message: e instanceof Error ? e.message.slice(0, 120) : "unknown" }));

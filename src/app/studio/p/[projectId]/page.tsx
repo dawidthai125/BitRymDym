@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { StudioEditor } from "@/components/studio/studio-editor";
@@ -11,6 +12,7 @@ import { maxRecordingTracksForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
+import { prewarmListenCopy } from "@/lib/beats/listen-copy/listen-copy-server";
 import { getStudioProjectDocument } from "@/lib/studio/studio-service";
 import { loadStudioBeatTitle } from "@/lib/studio/studio-beat-title";
 import { loadStudioTakeExpiryNotice } from "@/lib/studio/studio-take-expiry-server";
@@ -45,6 +47,13 @@ export default async function StudioProjectPage({ params }: PageProps) {
       redirect("/studio?notice=project-missing");
     }
     throw error;
+  }
+
+  // Personal marked copy of the project's beat: start rendering now so the transport does not wait for it.
+  const projectBeatId = document.project.beatId;
+  if (projectBeatId) {
+    const warmFor = auth.userId;
+    after(() => prewarmListenCopy({ beatId: projectBeatId, userId: warmFor }));
   }
 
   const [product, beatTitle, takeExpiry] = await Promise.all([

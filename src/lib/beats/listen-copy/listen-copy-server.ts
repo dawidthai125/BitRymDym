@@ -5,12 +5,12 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Personal listen copy (Owner 2026-11-22). The clean master never goes to a browser or the Windows program of a
- * listener: they get `listen/{beatId}/{copyId}.mp3`, a 256 kbps MP3 with an inaudible mark of this copy id,
+ * listener: they get `listen/{beatId}/{copyId}.m4a`, a 256 kbps AAC file with an inaudible mark of this copy id,
  * rendered on the E3 host (listen-copy-worker). The first open of a beat waits for the render (a few seconds).
  *
  * Switch: BEAT_LISTEN_COPY=1 turns it on. Off → the previous behaviour (signed master), a one-env rollback.
  */
-export const LISTEN_COPY_CONTENT_TYPE = "audio/mpeg";
+export const LISTEN_COPY_CONTENT_TYPE = "audio/mp4";
 export const LISTEN_COPY_NOT_READY = "Bit jeszcze się przygotowuje. Spróbuj za chwilę.";
 const WAIT_MS = 40_000;
 const POLL_MS = 600;
@@ -88,13 +88,21 @@ export async function resolveListenCopyKey(params: {
 }
 
 /**
- * Background warm-up (beat page of a signed-in listener): queue this account's copy at low priority so the Studio
+ * Background warm-up (beat page or Studio project of a signed-in listener): queue this account's copy at low priority so the Studio
  * opens without waiting. Never throws.
  */
 export async function prewarmListenCopy(params: { beatId: string; userId: string }): Promise<void> {
   try {
     if (!listenCopyEnabled()) return;
     const admin = createSupabaseAdminClient();
+    // Same exemptions as audio-access: staff and the beat's owner hear the master; paid-lane beats are played
+    // by their buyer (master) only. No copy needed for them.
+    const [{ data: beat }, { data: profile }] = await Promise.all([
+      admin.from("beats").select("owner_id, catalog_lane").eq("id", params.beatId).maybeSingle(),
+      admin.from("profiles").select("role").eq("id", params.userId).maybeSingle(),
+    ]);
+    if (!beat || beat.owner_id === params.userId || beat.catalog_lane === "paid") return;
+    if (profile?.role === "ADMIN" || profile?.role === "MODERATOR") return;
     const { data: master } = await admin
       .from("beat_audio_assets")
       .select("id")
