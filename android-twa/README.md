@@ -13,7 +13,7 @@ Nie ma tu własnego kodu Java/Kotlin. `LauncherActivity`, `DelegationService` i 
 | Nazwa | BitRymDym |
 | versionCode / versionName | 1 / 1.0.0 |
 | compileSdk / targetSdk | 36 (Android 16). Google Play wymaga API 36 dla nowych aplikacji i aktualizacji od 31.08.2026 |
-| minSdk | 23 |
+| minSdk | 24 (minimum androidbrowserhelper 2.7.4) |
 | AGP / Gradle | 9.5.2 / 9.9.2 (AGP 9.5 wymaga Gradle 9.6 lub nowszego i JDK 17) |
 | androidbrowserhelper | 2.7.4 |
 | Start URL | `https://www.bitrymdym.pl/?app=android` |
