@@ -9,6 +9,8 @@ export type TemplateData = {
   reason?: string | null;
   projectTitle?: string | null;
   projectId?: string | null;
+  workTitle?: string | null;
+  workId?: string | null;
   /** Server-composed purchase receipt line (already plain text). */
   detail?: string | null;
 };
@@ -89,6 +91,20 @@ function body(kind: NotifyKind, d: TemplateData): Body {
         cta: { label: "Otwórz Studio", path: "/studio" },
         links: [{ label: "Zaproś kolejną osobę", path: "/account#zapros" }],
       };
+    case "work_featured": {
+      const work = clean(d.workTitle) || "Twój utwór";
+      return {
+        subject: `„${work}” to Utwór tygodnia na BitRymDym`,
+        heading: "Masz Utwór tygodnia",
+        lines: [
+          hi,
+          `ekipa BitRymDym wybrała „${work}” na Utwór tygodnia. Do końca tygodnia numer wisi na stronie głównej i każdy może odpalić 45-sekundowy fragment.`,
+          "Podeślij link ziomkom i niech lecą odsłuchy.",
+        ],
+        cta: { label: "Zobacz utwór", path: d.workId ? `/utwor/${encodeURIComponent(d.workId)}` : "/utwory" },
+        links: [{ label: "Strona główna", path: "/" }],
+      };
+    }
     default: {
       const neverKind: never = kind;
       return neverKind;

@@ -774,7 +774,7 @@
       "moderacjaEtykieta": "Beat moderation",
       "moderacjaOpis": "Moderation result for your beats (approved / rejected).",
       "studioEtykieta": "Studio",
-      "studioOpis": "Master and MP4 video ready, recordings about to expire and a reminder to record your first take.",
+      "studioOpis": "Master and MP4 video ready, recordings about to expire, a nudge to make your first recording, and your track being picked as Track of the week.",
       "zapisz": "Save notifications",
       "zapisywanie": "Saving…",
       "zapisano": "Saved.",
@@ -1029,7 +1029,8 @@
       "oczekujace": "Waiting",
       "katalog": "Catalogue",
       "trybPrac": "Maintenance",
-      "generatorSampli": "Sample generator"
+      "generatorSampli": "Sample generator",
+      "utwory": "Tracks"
     },
     "adminPaymentsPage": {
       "tytul": "Payment history",
@@ -1656,6 +1657,32 @@
       "pustoOplacone": "No paid orders in this period.",
       "uwaga": "Paid also counts refunded orders. Bots and link previews are not counted.",
       "blad": "Could not load the data. Refresh the page."
+    },
+    "adminWorksPage": {
+      "metaTitle": "Tracks · Admin",
+      "tytul": "Tracks",
+      "opis": "Published tracks from the catalogue. One track per week (from Monday, Warsaw time) goes on the home page as Track of the week. The artist gets an e-mail unless Studio notifications are off.",
+      "tydzien": "Current week from {date}",
+      "obecny": "Featured this week: {title}",
+      "brakWyroznienia": "Nothing is featured this week.",
+      "pusto": "The track catalogue is still empty. Once someone publishes a track, it shows up here.",
+      "wylaczone": "Featuring is not live yet: the featured_works table is missing (migration 20261122190000).",
+      "katalogWylaczony": "The track catalogue is unavailable.",
+      "wyroznij": "Feature as track of the week",
+      "zamien": "Feature instead of the current one",
+      "cofnij": "Remove feature",
+      "zapiszNotatke": "Save note",
+      "notatka": "Note for the home page (optional)",
+      "notatkaPodpowiedz": "Up to 280 characters, one line.",
+      "czekaj": "One sec…",
+      "zapisano": "Done.",
+      "otworz": "Open",
+      "bledy": {
+        "INVALID": "Something is off with this track. Refresh the page.",
+        "NOT_LIVE": "This track is no longer public.",
+        "OFF": "Featuring is not live yet (migration missing).",
+        "FAILED": "Could not save. Try again."
+      }
     }
   },
   "auth": {
@@ -4980,7 +5007,14 @@
       "prizeSaved": "Turned on.",
       "prizeConflict": "The plan changed at the same moment. Refresh and try again.",
       "prizeWait": "The current plan has to end first.",
-      "prizeOff": "The prize turns on after the database update."
+      "prizeOff": "The prize turns on after the database update.",
+      "featuredBadge": "Track of the week",
+      "featuredTitle": "Track of the week",
+      "featuredLead": "The crew picked this one for the whole week. Play the clip, then head to the track page for more.",
+      "featuredNote": "A word from the crew",
+      "featuredOpen": "Go to the track",
+      "featuredAll": "All tracks",
+      "featuredCover": "Cover: {title}"
     },
     "sampleCatalog": {
       "sortuj": "Sort",

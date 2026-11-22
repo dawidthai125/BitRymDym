@@ -55,6 +55,9 @@ describe("templates (Polish)", () => {
   it("links to the right places", () => {
     expect(buildMail("master_ready", { siteUrl: "https://brd.pl/", projectId: "abc" }, LINKS).text).toContain("https://brd.pl/studio/p/abc");
     expect(buildMail("beat_approved", { siteUrl: "https://brd.pl", beatId: "b1" }, LINKS).text).toContain("https://brd.pl/beat/b1");
+    expect(buildMail("work_featured", { siteUrl: "https://brd.pl", workId: "w1", workTitle: "Numer" }, LINKS).text).toContain("https://brd.pl/utwor/w1");
+    expect(buildMail("work_featured", { siteUrl: "https://brd.pl", workTitle: "Numer" }, LINKS).subject).toContain("Utwór tygodnia");
+    expect(KIND_CATEGORY.work_featured).toBe("studio");
     expect(escapeHtml(`"'&`)).toBe("&quot;&#39;&amp;");
   });
 });

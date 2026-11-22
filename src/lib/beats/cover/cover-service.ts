@@ -12,6 +12,7 @@ import {
   type CoverModerationOutcome,
 } from "@/lib/beats/cover/cover-decision";
 import { assertCoverIsDistinct } from "@/lib/beats/cover/cover-distinct";
+import { beatCoverUrl } from "@/lib/beats/cover/cover-url";
 import { processCoverImage } from "@/lib/beats/cover/cover-image";
 import { moderateCoverImage } from "@/lib/beats/cover/cover-moderation";
 import { BeatRequestError } from "@/lib/beats/request-error";
@@ -335,6 +336,21 @@ export type CoverDownload = {
   /** True when the cover is visible to anyone (public catalogue + approved). */
   publicCache: boolean;
 };
+
+/**
+ * Cover URL for public surfaces (no viewer session): only an approved cover of a beat in the
+ * public catalogue, else null. Same gate as the `publicCache` branch of loadBeatCoverForViewer.
+ */
+export async function publicBeatCoverUrl(
+  beatId: string | null | undefined,
+  size: "full" | "thumb" = "thumb",
+): Promise<string | null> {
+  if (!beatId) return null;
+  const row = await loadCoverRow(beatId).catch(() => null);
+  if (!row || !row.cover_path || !row.cover_thumb_path || row.cover_status !== "approved") return null;
+  if (!isBeatInPublicCatalogue(beatUsageSubjectFromRow(row as unknown as Record<string, unknown>))) return null;
+  return beatCoverUrl({ id: row.id, coverStatus: row.cover_status, coverUpdatedAt: row.cover_updated_at }, size);
+}
 
 /**
  * Serve a cover to a viewer. Approved covers of public catalogue beats are

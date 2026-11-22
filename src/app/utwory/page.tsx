@@ -7,6 +7,7 @@ import { AppShell } from "@/components/site/app-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { pageMetadata } from "@/config/site";
 import { listPublicWorks } from "@/lib/catalog/catalog-service";
+import { currentFeaturedWorkId } from "@/lib/catalog/featured-work-server";
 import { loadWorkClips } from "@/lib/catalog/work-clip-server";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +32,12 @@ export default async function FinishedWorksPage({ searchParams }: Props) {
   const loaded = await listPublicWorks({ limit: WORKS_PAGE_SIZE + 1, offset: (page - 1) * WORKS_PAGE_SIZE }).catch(() => null);
   const works = loaded?.works.slice(0, WORKS_PAGE_SIZE) ?? [];
   const hasOlder = (loaded?.works.length ?? 0) > WORKS_PAGE_SIZE;
-  const clips = works.length > 0 ? await loadWorkClips(works.map((work) => work.id)).catch(() => null) : null;
+  const [clips, featuredId] = works.length > 0
+    ? await Promise.all([
+        loadWorkClips(works.map((work) => work.id)).catch(() => null),
+        currentFeaturedWorkId().catch(() => null),
+      ])
+    : [null, null];
   const cta = cn(buttonVariants({ variant: "default" }), "min-h-11 px-4");
   const ctaAlt = cn(buttonVariants({ variant: "outline" }), "min-h-11 px-4");
   return (
@@ -70,6 +76,14 @@ export default async function FinishedWorksPage({ searchParams }: Props) {
                     <div className="min-w-0 flex-1">
                       <p className="text-base">
                         <Link href={`/utwor/${work.id}`} className="break-words underline underline-offset-4">{work.title}</Link>
+                        {featuredId === work.id ? (
+                          <span
+                            className="ml-2 inline-block border border-[var(--brd-line)] px-1.5 py-0.5 align-middle text-xs font-semibold uppercase tracking-[0.06em]"
+                            data-testid="works-featured-badge"
+                          >
+                            {t("featuredBadge")}
+                          </span>
+                        ) : null}
                       </p>
                       <p className="text-sm text-[var(--brd-mute)]">{catalog("by", { name: work.author })}</p>
                       <p className="text-sm text-[var(--brd-ink-soft)]">
