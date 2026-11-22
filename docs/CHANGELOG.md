@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (9) — Porządki
+
+- Lint całego repo czysty: ignorowane `.cursor/**`, `docs/audits/**`, `public/workers/**` (bundle), `.claude/**`; usunięte zbędne `eslint-disable`.
+- GitHub: usunięty `queue-health.yml`, smoke bez harmonogramu (harmonogramy GitHub nie odpalały) — kolejka i smoke co godzinę z Contabo (`site-watch`).
+- Baza: usunięty zdublowany indeks `desktop_studio_sends_owner_recent_idx` (`20261122080000`).
+- Lejek bez wizyt smoke/admina; logi PayU: sonda bez podpisu = ostrzeżenie, zwrot = info.
+- Teksty: mix (nie miks), nagranie (nie ujęcie/podejście), Nagrywarka (Windows); przegląd ≈320 tekstów pl.
+
 ## 2026-11-22 (8) — Czuwanie, zwroty, przypomnienie o planie, lejek, pierwsze kroki
 
 - **Czuwanie na Contabo:** `scripts/site-watch.mjs` + `bitrymdym-site-watch.timer` (co godzinę :41) uruchamia smoke produkcji i wysyła mail (Resend) tylko przy zmianie stanu. Powód: harmonogramy GitHub Actions nie odpalały się w tym repo. Sprawdzone: awaria i naprawa → 2 maile.

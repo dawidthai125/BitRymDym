@@ -35,7 +35,7 @@ function docker(args) {
 let portLine = "";
 try {
   portLine = docker(["port", container, "5432"]);
-} catch (error) {
+} catch {
   console.log(`BLOCKED BY ENVIRONMENT — container ${container} is not running.`);
   process.exit(2);
 }

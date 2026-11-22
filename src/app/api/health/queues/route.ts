@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Public, read-only: counts of waiting / stuck export and master jobs (no ids, no users).
- * 200 = healthy, 503 = a job is stuck (Contabo worker likely down). Watched by
- * .github/workflows/queue-health.yml.
+ * 200 = healthy, 503 = a job is stuck (Contabo worker likely down). Watched hourly by
+ * scripts/site-watch.mjs on the Contabo host (via scripts/smoke-production.mjs).
  */
 export async function GET() {
   try {

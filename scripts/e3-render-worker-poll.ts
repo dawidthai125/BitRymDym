@@ -36,7 +36,6 @@ async function main() {
   });
 
   if (decision.action === "exit_disabled") {
-    // eslint-disable-next-line no-console -- worker process
     console.log(
       formatSafePollerLog({
         event: decision.event,
@@ -53,7 +52,6 @@ async function main() {
   });
 
   const onSignal = (signal: string) => {
-    // eslint-disable-next-line no-console -- worker process
     console.log(
       JSON.stringify({
         event: "signal",
@@ -67,7 +65,6 @@ async function main() {
   process.on("SIGTERM", () => onSignal("SIGTERM"));
   process.on("SIGINT", () => onSignal("SIGINT"));
 
-  // eslint-disable-next-line no-console -- worker process
   console.log(
     JSON.stringify({
       event: "poller_start",
@@ -83,7 +80,6 @@ async function main() {
 
 main().catch((err) => {
   const message = err instanceof Error ? err.message : String(err);
-  // eslint-disable-next-line no-console -- worker process
   console.error(redactUnsafeLogText(message));
   process.exit(1);
 });

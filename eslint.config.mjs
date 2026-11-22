@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 2026-11-22: not app code — editor tooling (CommonJS), archived audit scratch files,
+    // bundled worker output (scripts/build-studio-workers.mjs) and agent worktrees.
+    ".cursor/**",
+    "docs/audits/**",
+    "public/workers/**",
+    ".claude/**",
   ]),
   {
     // Leading underscore = intentionally unused (omitted rest siblings, unused callback args).

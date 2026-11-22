@@ -4,8 +4,8 @@ name: Smoke test produkcji
 on:
   deployment_status:
   workflow_dispatch:
-  schedule:
-    - cron: "17 6 * * *" # codziennie ~7:17 czasu polskiego
+  # Hourly/daily checks run on the Contabo host (scripts/site-watch.mjs + systemd timer):
+  # GitHub scheduled runs did not fire for this repo (2026-11-22).
 
 permissions:
   contents: read

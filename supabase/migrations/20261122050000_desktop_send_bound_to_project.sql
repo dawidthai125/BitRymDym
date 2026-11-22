@@ -8,8 +8,6 @@ alter table public.desktop_studio_sends
   add column if not exists project_id uuid,
   add column if not exists used_at timestamptz;
 
-create index if not exists desktop_studio_sends_owner_recent_idx
-  on public.desktop_studio_sends (owner_id, created_at desc);
 
 create or replace function public.use_desktop_studio_send(p_owner_id uuid, p_project_id uuid)
 returns boolean
