@@ -32,6 +32,12 @@ import {
   signupBrowserCookieOptions,
 } from "@/lib/auth/confirmation";
 import { postAuthRedirectPath, safeNextPath } from "@/lib/auth/next-path";
+import {
+  normalizeReferralCode,
+  REFERRAL_COOKIE,
+  REFERRAL_METADATA_KEY,
+  referralCookieOptions,
+} from "@/lib/referrals/referral-policy";
 import { reauthenticateWithPassword } from "@/lib/auth/reauth";
 import { AuthError, getCurrentProfile, requireUser } from "@/lib/auth/session";
 import { interpretSignUpResult } from "@/lib/auth/signup-result";
@@ -134,6 +140,13 @@ export async function signUpAction(
   }
 
   const next = safeNextPath(formData.get("next"));
+  // "Zaproś znajomego": code from the brd_ref cookie (set by ?ref= / /r/KOD). Untrusted → normalized.
+  let referralCode: string | null = null;
+  try {
+    referralCode = normalizeReferralCode((await cookies()).get(REFERRAL_COOKIE)?.value);
+  } catch {
+    referralCode = null;
+  }
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -144,6 +157,7 @@ export async function signUpAction(
       data: {
         display_name: ksywka.value,
         ...(next ? { [SIGNUP_NEXT_METADATA_KEY]: next } : {}),
+        ...(referralCode ? { [REFERRAL_METADATA_KEY]: referralCode } : {}),
         // Regulamin + Polityka prywatności accepted at sign-up (version + time).
         ...signupConsent(),
       },
@@ -170,6 +184,22 @@ export async function signUpAction(
       );
     } catch {
       // No request scope: the confirmation will simply end signed out.
+    }
+  }
+
+  // A real new account (an obfuscated duplicate has no identities): store the referral once.
+  // The DB rejects self-referral and accounts older than the code / 7 days. Best-effort.
+  if (referralCode && data.user?.id && (data.user.identities?.length ?? 0) > 0) {
+    try {
+      const { recordReferral } = await import("@/lib/referrals/referral-service");
+      await recordReferral(data.user.id, referralCode);
+      (await cookies()).set(
+        REFERRAL_COOKIE,
+        "",
+        referralCookieOptions(process.env.NODE_ENV === "production", 0),
+      );
+    } catch {
+      // Retried from user_metadata at the confirmation callback.
     }
   }
 

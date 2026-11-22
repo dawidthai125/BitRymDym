@@ -1,6 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  REFERRAL_COOKIE,
+  REFERRAL_QUERY_PARAM,
+  referralCodeToStore,
+  referralCookieOptions,
+} from "@/lib/referrals/referral-policy";
 import { buildCsp, cspHeaderName, generateNonce, NONCE_HEADER } from "@/lib/security/csp";
 import { userAccessBearer } from "@/lib/supabase/access-bearer";
 
@@ -248,6 +254,20 @@ export async function middleware(request: NextRequest) {
   headers.set(headerName, csp);
   const response = await handleRequest(new NextRequest(request, { headers }));
   response.headers.set(headerName, csp);
+  // "Zaproś znajomego": `?ref=KOD` on any page → 30-day cookie, read at sign-up.
+  const referral = referralCodeToStore({
+    method: request.method,
+    pathname: request.nextUrl.pathname,
+    refParam: request.nextUrl.searchParams.get(REFERRAL_QUERY_PARAM),
+    currentCookie: request.cookies.get(REFERRAL_COOKIE)?.value,
+  });
+  if (referral) {
+    response.cookies.set(
+      REFERRAL_COOKIE,
+      referral,
+      referralCookieOptions(process.env.NODE_ENV === "production"),
+    );
+  }
   return response;
 }
 

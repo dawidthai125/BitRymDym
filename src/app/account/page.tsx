@@ -18,6 +18,7 @@ import { DisplayNameForm } from "@/components/auth/display-name-form";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { WorkPrizeDesk } from "@/components/account/work-prize-desk";
 import { OwnStudioTracks } from "@/components/account/own-studio-tracks";
+import { ReferralDesk } from "@/components/account/referral-desk";
 import { RewardDesk } from "@/components/community/reward-desk";
 import { NotificationPreferencesForm } from "@/components/account/notification-preferences-form";
 import { notifyEnv } from "@/lib/email/notify/config";
@@ -354,6 +355,8 @@ export default async function AccountPage({
                   </BrdButton>
                 </form>
               </section>
+
+              <ReferralDesk userId={context.userId} />
             </aside>
           </div>
 

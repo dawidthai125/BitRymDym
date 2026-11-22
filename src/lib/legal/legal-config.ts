@@ -4,7 +4,7 @@
  * LEGAL_PLACEHOLDERS (legal.test.ts enforces that none remain).
  * Bump a version whenever the text changes materially (stored with each consent).
  */
-export const TERMS_VERSION = "2026-11-22.3"; // 2026-11-22.3: § 9 ust. 5 bit z katalogu płatnego na wyłączność (jeden kupujący, znika z katalogu);  2026-11-22.2: § 7 ust. 8 publiczny fragment 45 s utworu z katalogu (Free ze znakiem), § 6 zgłaszanie komentarzy (DSA art. 16); .1: § 9 oferta startowa
+export const TERMS_VERSION = "2026-11-22.4"; // 2026-11-22.4: § 9 ust. 8 program poleceń „Zaproś znajomego” (pakiet 10 nagrań dla obu kont, limit 10/mies., zakaz kont-słupów); 2026-11-22.3: § 9 ust. 5 bit z katalogu płatnego na wyłączność (jeden kupujący, znika z katalogu);  2026-11-22.2: § 7 ust. 8 publiczny fragment 45 s utworu z katalogu (Free ze znakiem), § 6 zgłaszanie komentarzy (DSA art. 16); .1: § 9 oferta startowa
 export const PRIVACY_VERSION = "2026-11-15.1";
 
 /** Effective date shown in the documents (matches the versions above). */

@@ -76,6 +76,19 @@ function body(kind: NotifyKind, d: TemplateData): Body {
           { label: "Jak nagrać utwór", path: "/jak-nagrac" },
         ],
       };
+    case "referral_reward":
+      return {
+        subject: "Ziomek wbił z Twojego linku: +10 nagrań",
+        heading: "Polecenie zaliczone",
+        lines: [
+          hi,
+          "osoba, którą zaprosiłeś, założyła konto z Twojego linku i nagrała pierwszą zwrotkę.",
+          "Na Twoje konto wpadł pakiet 10 nagrań. Twój znajomy dostał taki sam. Nagrania z pakietu wchodzą, gdy skończy się dzienny limit planu.",
+          "Zapraszaj dalej: link znajdziesz na koncie, w sekcji „Zaproś znajomego”.",
+        ],
+        cta: { label: "Otwórz Studio", path: "/studio" },
+        links: [{ label: "Zaproś kolejną osobę", path: "/account#zapros" }],
+      };
     default: {
       const neverKind: never = kind;
       return neverKind;
@@ -92,6 +105,8 @@ export function buildMail(kind: NotifyKind, d: TemplateData, links: { unsubscrib
     ? "Dostajesz tę wiadomość, bo założono konto w BitRymDym."
     : kind === "purchase_confirmed"
       ? "Dostajesz tę wiadomość, bo opłacono zamówienie w BitRymDym."
+      : kind === "referral_reward"
+        ? "Dostajesz tę wiadomość, bo ktoś założył konto w BitRymDym z Twojego linku polecającego."
       : "Dostajesz tę wiadomość, bo masz włączone powiadomienia w BitRymDym.";
   const text = [b.heading, "", ...b.lines, ...(cta ? ["", `${b.cta!.label}: ${cta}`] : []), ...extra.map((l) => `${l.label}: ${l.url}`), "", "—", footer, `Ustawienia powiadomień: ${links.preferences}`, `Wypisz się: ${links.unsubscribe}`].join("\n");
   const p = (s: string) => `<p style="margin:0 0 12px">${escapeHtml(s)}</p>`;
