@@ -8,8 +8,15 @@
  *   studio-master/{owner}/{project}/{masterJob}/out/master_clip.mp3
  * Served only through GET /api/catalog/works/[id]/clip (live work, rate limited, 302 to a
  * short signed URL) — never a public bucket.
+ *
+ * Free watermark (owner decision 2026-11-22): when the owner is on Free at the moment of the cut,
+ * the clip comes from the watermarked `master_preview.mp3` (or the master watermarked on the fly
+ * with the same preview functions). Paid plans get a clean clip. The plan is read once, at the cut —
+ * a later plan change does not re-cut the clip.
  */
 import { BEAT_PREVIEW_BITRATE, buildPreviewFfmpegArgs } from "@/lib/beats/preview/beat-preview";
+import { previewKeyFor } from "@/lib/studio/master/preview";
+import type { PremiumTier } from "@/types/premium";
 
 /** Clip length (s) for a normal song. Short songs get at most half of their length. */
 export const WORK_CLIP_SECONDS = 45;
@@ -49,6 +56,28 @@ export function workClipKeyFor(masterKey: string): string | null {
   return /^studio-master\/[^/]+\/[^/]+\/[^/]+\/out\/master\.flac$/.test(masterKey)
     ? masterKey.replace(/\/master\.flac$/, "/master_clip.mp3")
     : null;
+}
+
+/**
+ * Where the clip is cut from:
+ *   - `clean`           — paid plan: the approved master as is;
+ *   - `stored_preview`  — Free (or unknown plan, fail closed): the existing watermarked `master_preview.mp3`;
+ *   - `watermark_master`— Free without a stored preview: the master, watermarked on the fly first.
+ * Never a clean source for Free.
+ */
+export type WorkClipSource =
+  | { kind: "clean"; key: string }
+  | { kind: "stored_preview"; key: string }
+  | { kind: "watermark_master"; key: string };
+
+export function workClipNeedsWatermark(tier: PremiumTier | null): boolean {
+  return tier === null || tier === "FREE";
+}
+
+export function workClipSourceFor(p: { masterKey: string; tier: PremiumTier | null; previewExists: boolean }): WorkClipSource {
+  if (!workClipNeedsWatermark(p.tier)) return { kind: "clean", key: p.masterKey };
+  const preview = previewKeyFor(p.masterKey);
+  return preview && p.previewExists ? { kind: "stored_preview", key: preview } : { kind: "watermark_master", key: p.masterKey };
 }
 
 const ms = (n: number) => Math.round(n * 1000) / 1000;

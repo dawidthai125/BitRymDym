@@ -18,7 +18,7 @@ describe("legal documents", () => {
   it("final documents: no placeholders left, operator data + 16+ age filled", () => {
     for (const d of [TERMS, PRIVACY, COOKIES]) expect(text(d).match(PLACEHOLDER_RE) ?? []).toEqual([]);
     expect(LEGAL_PLACEHOLDERS).toEqual([]);
-    expect(TERMS_VERSION).toBe("2026-11-22.1");
+    expect(TERMS_VERSION).toBe("2026-11-22.2");
     const all = text(TERMS) + text(PRIVACY);
     for (const s of ["8952035524", "dawid.thai@int.pl", "7 listopada 2026", "PayU S.A.", "Poznaniu", "12 miesięcy", "AcoustID", "Bit Rym Dym", "Plik ze znakiem wodnym", "24 godziny", "84 godziny"]) expect(all).toContain(s);
     expect(all).not.toContain("PayPro");
@@ -34,6 +34,11 @@ describe("legal documents", () => {
     expect(text(TERMS)).toContain("ukończyła 16 lat");
     expect(text(PRIVACY)).toContain("ukończyły 16 lat");
     expect(text(TERMS)).not.toContain("tel.");
+  });
+  it("published work: public 45 s clip with the catalogue beat, comment reports (2026-11-22.2)", () => {
+    const t = text(TERMS);
+    for (const s of ["Katalog utworów: publikując w katalogu utwór", "fragment tego utworu do 45 sekund, razem z użytym Bitem z katalogu", "także osobom bez Konta", "Pełny utwór pozostaje u autora", "po wycofaniu utworu z katalogu", "nie jest udostępnianiem samego Bitu", "przyciskiem „Zgłoś”", "właściciel utworu może ukryć komentarz"]) expect(t).toContain(s);
+    expect(t).not.toContain("Czystego mastera nie odtwarzamy w przeglądarce");
   });
   it("catalogue licence allows credited monetisation, keeps Content ID / sync / beat resale behind consent", () => {
     const t = text(TERMS);

@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { ShareButtons } from "@/components/share/share-buttons";
 import { Button } from "@/components/ui/button";
+import { LEGAL_PATHS } from "@/lib/legal/legal-config";
 import { absoluteUrl } from "@/lib/share/share-links";
 
 type Entry = {
@@ -129,8 +131,12 @@ export function CatalogPublishPanel({
     <section aria-labelledby="catalog-publish-title" data-testid="catalog-publish" className="flex flex-col gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3">
       <h3 id="catalog-publish-title" className="brd-display text-lg">{t("publishTitle")}</h3>
       <p className="text-sm">{t("publishLead")}</p>
-      <p className="text-xs text-[var(--brd-mute)]">{t("publishNoPlayer")}</p>
-      <label className="flex min-h-11 items-center gap-2 text-sm">
+      <p className="text-xs text-[var(--brd-mute)]">
+        {t("publishNoPlayer")}{" "}
+        <Link href={`${LEGAL_PATHS.terms}#s7`} className="underline">{t("publishTerms")}</Link>
+      </p>
+      {/* The publish box is the consent to the public 45 s clip (terms § 7 ust. 8). */}
+      <label className="flex min-h-11 items-center gap-2 text-sm" data-testid="catalog-publish-consent">
         <input type="checkbox" checked={publish} onChange={(event) => setPublish(event.target.checked)} />
         {t("publish")}
       </label>

@@ -16,7 +16,8 @@ import path from "node:path";
 
 import { resolveFfmpegBin, runCapture } from "@/lib/audio/native-ffmpeg";
 import { probeAudioDurationSeconds } from "@/lib/beats/preview/beat-preview-service";
-import { WORK_CLIP_CONTENT_TYPE, workClipFfmpegArgs, workClipKeyFor, workClipWindow } from "@/lib/catalog/work-clip";
+import { resolveProductEntitlementForUserId } from "@/lib/audio/load-premium-entitlement";
+import { WORK_CLIP_CONTENT_TYPE, workClipFfmpegArgs, workClipKeyFor, workClipSourceFor, workClipWindow } from "@/lib/catalog/work-clip";
 import { notifyStudioJobReady } from "@/lib/email/notify/server";
 import { renderYoutubeVideo } from "@/lib/studio/video/render";
 import { isYoutubeVideoSpec } from "@/lib/studio/video/youtube-video";
@@ -264,6 +265,19 @@ async function fetchReference(cfg: RunConfig, job: ClaimedMasterJob, referenceId
   return wav;
 }
 
+/** Master → `master_preview.mp3` with the voice tag every 15 s (the one watermark recipe: master preview + Free clip). */
+async function watermarkLikePreview(
+  cfg: RunConfig, dir: string, master: string,
+  out = path.join(dir, "master_preview.mp3"), timeoutMs = Math.min(cfg.timeoutMs, 300_000),
+): Promise<string> {
+  const tag = path.join(dir, "tag.wav");
+  const cycle = path.join(dir, "tag15.wav");
+  await writeFile(tag, Buffer.from(PREVIEW_TAG_WAV_BASE64, "base64"));
+  await runCapture(resolveFfmpegBin(), tagCycleArgs(tag, cycle), { timeoutMs: 60_000 });
+  await runCapture(resolveFfmpegBin(), previewMixArgs(master, cycle, out), { timeoutMs });
+  return out;
+}
+
 export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob): Promise<"succeeded" | "failed"> {
   const admin = createSupabaseAdminClient();
   const dir = await mkdtemp(path.join(tmpdir(), "studio-master-"));
@@ -384,11 +398,7 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
         if (job.settings?.watermark === 1) {
           // Free download: the voice watermark is mixed into the file. Fails closed — never a clean fallback.
           if (job.output_format !== "MP3_128" || path.extname(out) !== ".mp3") throw new Error("watermark_format");
-          const tag = path.join(dir, "wm_tag.wav");
-          const cycle = path.join(dir, "wm_tag15.wav");
-          await writeFile(tag, Buffer.from(PREVIEW_TAG_WAV_BASE64, "base64"));
-          await runCapture(resolveFfmpegBin(), tagCycleArgs(tag, cycle), { timeoutMs: 60_000 });
-          await runCapture(resolveFfmpegBin(), previewMixArgs(cur, cycle, out), { timeoutMs: cfg.timeoutMs });
+          await watermarkLikePreview(cfg, dir, cur, out, cfg.timeoutMs);
         } else {
           await runCapture(resolveFfmpegBin(), ["-hide_banner", "-loglevel", "error", "-y", "-i", cur, ...s.args, out], { timeoutMs: cfg.timeoutMs });
         }
@@ -408,13 +418,7 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
       const previewKey = previewKeyFor(resultKey);
       if (previewKey) {
         try {
-          const tag = path.join(dir, "tag.wav");
-          const cycle = path.join(dir, "tag15.wav");
-          const preview = path.join(dir, "master_preview.mp3");
-          await writeFile(tag, Buffer.from(PREVIEW_TAG_WAV_BASE64, "base64"));
-          await runCapture(resolveFfmpegBin(), tagCycleArgs(tag, cycle), { timeoutMs: 60_000 });
-          await runCapture(resolveFfmpegBin(), previewMixArgs(cur, cycle, preview), { timeoutMs: Math.min(cfg.timeoutMs, 300_000) });
-          await uploadFile(previewKey, preview, "audio/mpeg");
+          await uploadFile(previewKey, await watermarkLikePreview(cfg, dir, cur), "audio/mpeg");
         } catch {
           /* preview is optional */
         }
@@ -467,7 +471,8 @@ export async function claimNextWorkClip(cfg: RunConfig): Promise<ClaimedWorkClip
 /**
  * Cut the public clip from the approved master (owner decision 2026-11-22): start = min(30 s, 25 %),
  * 45 s (≤ half the song), fade in/out 1 s, 128 kbps MP3 → `…/out/master_clip.mp3` next to the
- * master. Only the clean approved master of this very work is ever read; nothing comes from the browser.
+ * master. Only files of this very work's approved master folder are read; nothing comes from the browser.
+ * Owner on Free at the cut → cut from the watermarked preview (workClipSourceFor); paid → clean master.
  */
 export async function runWorkClipJob(cfg: RunConfig, job: ClaimedWorkClip): Promise<"ready" | "failed"> {
   const dir = await mkdtemp(path.join(tmpdir(), "work-clip-"));
@@ -481,8 +486,18 @@ export async function runWorkClipJob(cfg: RunConfig, job: ClaimedWorkClip): Prom
     const clipKey = workClipKeyFor(masterKey);
     // The master key must be this work's own master folder (never another owner's file).
     if (!clipKey || !masterKey.startsWith(`${prefix}/out/`)) throw new Error("input_invalid");
-    const src = path.join(dir, `master${path.extname(masterKey)}`);
-    await download(masterKey.slice(0, masterKey.lastIndexOf("/")), masterKey.slice(masterKey.lastIndexOf("/") + 1), src);
+    // Free at the moment of the cut → watermarked source (stored preview, else watermark the master now).
+    // The plan is read once here; a later plan change does not re-cut. Lookup error → retry, never a guess.
+    const tier = await resolveProductEntitlementForUserId(job.owner_id).then((e) => e.premiumTier, () => { throw new Error("plan_lookup"); });
+    const outDir = masterKey.slice(0, masterKey.lastIndexOf("/"));
+    const names = await listNames(outDir);
+    const source = workClipSourceFor({ masterKey, tier, previewExists: partsOf(names, "master_preview.mp3").length > 0 });
+    const srcKey = source.key;
+    let src = path.join(dir, `source${path.extname(srcKey)}`);
+    await download(outDir, srcKey.slice(srcKey.lastIndexOf("/") + 1), src, names);
+    if (source.kind === "watermark_master") {
+      src = await watermarkLikePreview(cfg, dir, src).catch(() => { throw new Error("watermark_failed"); });
+    }
     const window = workClipWindow(await probeAudioDurationSeconds(src));
     if (!window) throw new Error("too_short");
     const out = path.join(dir, "clip.mp3");

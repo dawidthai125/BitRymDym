@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (13) — Fragment utworu: znak wodny Free, regulamin 2026-11-22.2
+
+- **Fragment 45 s:** worker czyta plan właściciela w chwili cięcia (`resolveProductEntitlementForUserId`). Free / nieznany → tnie z `master_preview.mp3`, a bez niego najpierw nakłada znak wodny tą samą funkcją co podgląd (`watermarkLikePreview`); płatne → czysty master. Błąd odczytu planu → `plan_lookup` (ponowna próba). Zmiana planu nie przecina fragmentu. Przed zmianą nie było żadnych gotowych fragmentów, więc nie trzeba ich ciąć ponownie.
+- **Regulamin 2026-11-22.2:** § 7 ust. 8 (publiczny fragment z bitem, zgoda przy publikacji), § 6 zgłaszanie komentarzy (DSA art. 16), § 3 doprecyzowanie czystego mastera, poprawione odsyłacze w § 7 ust. 4 i 7. Bez wymuszonej ponownej akceptacji (wersja zapisywana tylko przy rejestracji i zakupie).
+- **Panel publikacji:** checkbox „Wrzucam do katalogu” = zgoda na publiczny fragment 45 s (z bitem), link do § 7.
+
 ## 2026-11-22 (12) — Rejestracja, fragment utworu, moderacja komentarzy, szybkość
 
 - **Rejestracja:** po potwierdzeniu maila sesja zostaje (tylko w przeglądarce rejestracji, ciasteczko `brd_signup_browser` przeciw login CSRF) i wraca na `next` albo `/studio`; `next` też w metadanych `signup_next`; `/studio?beatId` i `/library` niosą `next`.
