@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export function RecorderSessionCard({ tier }: Props) {
+  const t = useTranslations("studio.recorderSession");
   const [session, setSession] = useState<RecorderSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -32,7 +34,7 @@ export function RecorderSessionCard({ tier }: Props) {
     if (!file) return;
     if (file.size > 2_000_000) {
       setSession(null);
-      setError("Plik sesji jest za duży. Wybierz sesja.brd.json, nie plik WAV.");
+      setError(t("plikZaDuzy"));
       return;
     }
     const reader = new FileReader();
@@ -41,14 +43,14 @@ export function RecorderSessionCard({ tier }: Props) {
         const parsed = parseRecorderSession(JSON.parse(String(reader.result)));
         if (!parsed || parsed.tracks.length === 0) {
           setSession(null);
-          setError("To nie jest sesja z programu (sesja.brd.json) albo nie ma w niej ścieżek.");
+          setError(t("toNieJestSesja"));
           return;
         }
         setSession(parsed);
         setError(null);
       } catch {
         setSession(null);
-        setError("Nie dało się odczytać pliku.");
+        setError(t("nieDaloSieOdczytac"));
       }
     };
     reader.readAsText(file);
@@ -70,12 +72,12 @@ export function RecorderSessionCard({ tier }: Props) {
         code?: string;
       };
       if (!res.ok || !json.document?.project.id) {
-        setError(json.code === "PROJECT_LIMIT_REACHED" ? "Masz już limit projektów w tym planie." : (json.error ?? "Nie udało się utworzyć projektu."));
+        setError(json.code === "PROJECT_LIMIT_REACHED" ? t("limitProjektow") : (json.error ?? t("nieUdaloSieUtworzyc")));
         return;
       }
       setProjectId(json.document.project.id);
     } catch {
-      setError("Nie udało się utworzyć projektu.");
+      setError(t("nieUdaloSieUtworzyc"));
     } finally {
       setPending(false);
     }
@@ -88,7 +90,7 @@ export function RecorderSessionCard({ tier }: Props) {
       setCopied(true);
     } catch {
       setCopied(false);
-      setError("Nie dało się skopiować ściągi.");
+      setError(t("nieDaloSieSkopiowac"));
     }
   }
 
@@ -98,13 +100,13 @@ export function RecorderSessionCard({ tier }: Props) {
   return (
     <section className="space-y-3 border border-[var(--brd-line)] bg-[var(--brd-paper-deep,#f3efe6)]/40 px-4 py-4 sm:px-5" data-testid="recorder-session-card">
       <div className="space-y-1">
-        <h2 className="font-poster text-xl font-bold uppercase tracking-[0.06em] text-[var(--brd-ink)]">Sesja z programu</h2>
+        <h2 className="font-poster text-xl font-bold uppercase tracking-[0.06em] text-[var(--brd-ink)]">{t("naglowek")}</h2>
         <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-          Studio Offline (Premium Gold) zapisuje u Ciebie stemy i plik sesja.brd.json. Tu widać kolejność ścieżek, miejsce na osi, głośność i balans lewo–prawo. Bit z pliku nie jedzie na stronę.
+          {t("opis")}
         </p>
       </div>
       <label className="inline-flex min-h-11 cursor-pointer items-center border border-[var(--brd-ink-soft)] px-4 font-poster text-base font-bold uppercase tracking-[0.08em] text-[var(--brd-ink)] hover:bg-[var(--brd-paper)]">
-        Wczytaj sesja.brd.json
+        {t("wczytaj")}
         <input
           type="file"
           accept="application/json,.json"
@@ -120,7 +122,15 @@ export function RecorderSessionCard({ tier }: Props) {
       {session ? (
         <div className="space-y-3">
           <p className="text-sm text-[var(--brd-ink)]">
-            {session.title}. Bit: {session.beatFileName || "niepodany"} ({clockText(session.beatSeconds)}). Ścieżek w sesji: {session.tracks.length}. W programie jest {OFFLINE_VOCALS} wokali i {OFFLINE_EXTRAS} podbić. Na stronie Gold mieści {SITE_GOLD_TRACKS} ścieżek nagrania, więc najpierw idą wokale.
+            {t("podsumowanie", {
+              title: session.title,
+              beat: session.beatFileName || t("niepodany"),
+              clock: clockText(session.beatSeconds),
+              tracks: session.tracks.length,
+              vocals: OFFLINE_VOCALS,
+              extras: OFFLINE_EXTRAS,
+              gold: SITE_GOLD_TRACKS,
+            })}
           </p>
           <ol className="space-y-2">
             {session.tracks.map((track) => (
@@ -128,7 +138,7 @@ export function RecorderSessionCard({ tier }: Props) {
                 <p className="text-sm text-[var(--brd-ink)]">
                   {String(track.order).padStart(2, "0")}. {track.name}{" "}
                   <span className="text-[var(--brd-mute)]">
-                    {track.role === "podbicie" ? "podbicie / adlib" : "wokal"} · {track.gainDb >= 0 ? "+" : ""}
+                    {track.role === "podbicie" ? t("rolaPodbicie") : t("rolaWokal")} · {track.gainDb >= 0 ? "+" : ""}
                     {Math.round(track.gainDb)} dB · {panText(track.pan)} · {track.stem}
                   </span>
                 </p>
@@ -150,19 +160,19 @@ export function RecorderSessionCard({ tier }: Props) {
           <p className="max-w-prose text-sm text-[var(--brd-mute)]">{session.rightsNote}</p>
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
             {gold
-              ? "Utwórz projekt i otwórz sesję. Tam jest „Importuj stemy”: każdy plik kładzie się od początku osi. Stemy są nagrane od 0:00, więc siedzą tak jak przy nagrywaniu. Głośność i balans lewo–prawo ustaw według ściągi."
-              : "Odczyt sesji jest dla każdego. Wrzucenie stemów w sesji studia jest od planu Silver."}
+              ? t("wskazowkaGold")
+              : t("wskazowkaInne")}
           </p>
           <div className="flex flex-wrap gap-3">
             <BrdButton type="button" variant="secondary" onClick={() => void copyList()}>
-              {copied ? "Skopiowane" : "Kopiuj ściągę"}
+              {copied ? t("skopiowane") : t("kopiujSciage")}
             </BrdButton>
             <BrdButton type="button" variant="primary" disabled={pending} onClick={() => void createProject()}>
-              {pending ? "Tworzę…" : "Utwórz projekt"}
+              {pending ? t("tworze") : t("utworzProjekt")}
             </BrdButton>
             {projectId ? (
               <BrdLink href={`/studio/p/${projectId}`} variant="secondary">
-                Otwórz sesję studia
+                {t("otworzSesje")}
               </BrdLink>
             ) : null}
           </div>

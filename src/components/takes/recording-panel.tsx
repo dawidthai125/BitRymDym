@@ -54,9 +54,6 @@ import {
 } from "@/lib/takes/take-recording-recovery-idb";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 
-const LOCALLY_SECURED_SUFFIX_PL =
-  " Nagranie jest zabezpieczone lokalnie — możesz je odzyskać.";
-
 type RecordingPanelProps = {
   beatId: string;
   beatTitle?: string;
@@ -72,6 +69,7 @@ type RecordingPanelProps = {
 async function fetchTakePreviewUrl(
   takeId: string,
   anonymous: boolean,
+  fallbackError: string,
 ): Promise<string> {
   const res = await fetch(
     anonymous ? "/api/takes/anon/preview" : "/api/takes/preview",
@@ -87,7 +85,7 @@ async function fetchTakePreviewUrl(
     error?: string;
   };
   if (!res.ok || !json.success || !json.url) {
-    throw new Error(json.error ?? "Nie udało się otworzyć podglądu.");
+    throw new Error(json.error ?? fallbackError);
   }
   return json.url;
 }
@@ -410,6 +408,7 @@ export function RecordingPanel({
           previewUrl = await fetchTakePreviewUrl(
             uploaded.takeId,
             !isAuthenticatedRef.current,
+            tr("nieUdaloSieOtworzycPodgladu"),
           );
         } catch {
           previewUrl = null;
@@ -441,9 +440,10 @@ export function RecordingPanel({
             error instanceof Error
               ? error.message
               : tr("nieUdaloSiePrzeslac");
-          const message =
-            toUserFacingTakeUploadError(raw) +
-            (locallySecured ? LOCALLY_SECURED_SUFFIX_PL : "");
+          const userMessage = toUserFacingTakeUploadError(raw);
+          const message = locallySecured
+            ? tr("zabezpieczoneLokalnie", { v0: userMessage })
+            : userMessage;
           if (/expired|wygas/i.test(raw) || /wygas/i.test(message)) {
             dispatch({ type: "EXPIRED", message });
           } else if (
@@ -640,6 +640,7 @@ export function RecordingPanel({
         previewUrl = await fetchTakePreviewUrl(
           uploaded.takeId,
           !isAuthenticatedRef.current,
+          tr("nieUdaloSieOtworzycPodgladu"),
         );
       } catch {
         previewUrl = null;
@@ -666,14 +667,16 @@ export function RecordingPanel({
           await writer.release();
           bumpRecoveryList();
         }
+        const userMessage = toUserFacingTakeUploadError(
+          error instanceof Error
+            ? error.message
+            : tr("nieUdaloSieZastapic"),
+        );
         dispatch({
           type: "UPLOAD_FAILED",
-          message:
-            toUserFacingTakeUploadError(
-              error instanceof Error
-                ? error.message
-                : tr("nieUdaloSieZastapic"),
-            ) + (writer ? LOCALLY_SECURED_SUFFIX_PL : ""),
+          message: writer
+            ? tr("zabezpieczoneLokalnie", { v0: userMessage })
+            : userMessage,
         });
       }
     } finally {
@@ -688,7 +691,7 @@ export function RecordingPanel({
     setReplaceCandidates(null);
     let previewUrl: string | null = null;
     try {
-      previewUrl = await fetchTakePreviewUrl(takeId, !isAuthenticatedRef.current);
+      previewUrl = await fetchTakePreviewUrl(takeId, !isAuthenticatedRef.current, tr("nieUdaloSieOtworzycPodgladu"));
     } catch {
       previewUrl = null;
     }
@@ -708,6 +711,7 @@ export function RecordingPanel({
       const url = await fetchTakePreviewUrl(
         state.takeId,
         !isAuthenticatedRef.current,
+        tr("nieUdaloSieOtworzycPodgladu"),
       );
       dispatch({ type: "PREVIEW_URL", previewUrl: url });
     } catch (error) {

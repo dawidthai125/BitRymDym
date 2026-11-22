@@ -52,13 +52,13 @@ function formatProjectDateTime(iso: string, tag = "pl-PL"): string {
   }
 }
 
-async function deleteProjectRequest(projectId: string): Promise<void> {
+async function deleteProjectRequest(projectId: string, fallbackError: string): Promise<void> {
   const res = await fetch(`/api/studio/projects/${projectId}`, {
     method: "DELETE",
   });
   const json = (await res.json()) as { success?: boolean; error?: string };
   if (!res.ok || !json.success) {
-    throw new Error(json.error ?? "Nie udało się usunąć projektu.");
+    throw new Error(json.error ?? fallbackError);
   }
 }
 
@@ -359,7 +359,7 @@ export function StudioProjectList({
     setDeleteError(null);
     startTransition(async () => {
       try {
-        await deleteProjectRequest(target.id);
+        await deleteProjectRequest(target.id, t("nieUdaloSieUsunac"));
         setProjects((prev) => prev.filter((p) => p.id !== target.id));
         setSelectedIds((prev) => {
           const next = new Set(prev);
@@ -387,7 +387,7 @@ export function StudioProjectList({
       try {
         for (const project of targets) {
           failedTitle = project.title;
-          await deleteProjectRequest(project.id);
+          await deleteProjectRequest(project.id, t("nieUdaloSieUsunac"));
           deleted.push(project.id);
           failedTitle = null;
         }

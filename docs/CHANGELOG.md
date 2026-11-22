@@ -6,6 +6,13 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (4) — Poprawki po przeglądzie + tłumaczenia Studio
+
+- Telefon: nagłówek ścieżki ma wolny pas na Bitka (`max-lg:pr-14`), więc M/S/R nie lądują pod awatarem. Tytuł bitu w liście nagrań ma większe pole dotyku (bez zmiany wyglądu). Pole pliku w Master only ma etykietę.
+- Tłumaczenia: 128 kluczy (pl+en) zamiast tekstów na sztywno w `recorder-session-card`, `studio-clip-spectrogram`, `studio-clip-inspect`, `play-studio`, `sampek-panel`, optymalizator i separator (strony + panele), `recording-panel` (dopisek o zabezpieczeniu lokalnym), awaryjne komunikaty błędów list. Zostało po polsku: tekst budowany w bibliotekach (`panText`, `sessionChecklist`, `rightsNote`, listy zmian Sampka) i komunikaty z API.
+- Przegląd dostępności (21 stron po zalogowaniu): jeden h1 na stronę, przyciski z nazwami, obrazy z alt, brak powtórzonych id. Szybkość: odpowiedź serwera ~11 ms, JS 330–570 KB (Studio największe).
+- Zostawione celowo: brakujące `/beat/…`, `/utwor/…` → 200 + `noindex` (streaming z `app/loading.tsx`; prawdziwe 404 wymagałoby zdjęcia ekranu ładowania z całej strony albo zapytania do bazy w proxy).
+
 ## 2026-11-22 (3) — Pełny przegląd po zalogowaniu (konto Ownera, tylko odczyt)
 
 - Przegląd 43 stron na komputerze i 18 na telefonie 390 px (konto Gold + admin), edytor Studio: krok Nagranie, Sample, Mix, panel boczny, mikser, Historia miksu, menu ścieżki. Bez odtwarzania, bez eksportu, bez zmian w projekcie. Baner wygasania na żywo **PASS**.

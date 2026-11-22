@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -21,6 +22,7 @@ function cssColor(name: string, fallback: string): string {
 }
 
 export function StudioClipInspect({ samples, sampleRate, onApply }: StudioClipInspectProps) {
+  const t = useTranslations("studio.clipInspect");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const columns = useMemo(
@@ -76,7 +78,7 @@ export function StudioClipInspect({ samples, sampleRate, onApply }: StudioClipIn
       onApply(out);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
-      setError(msg.startsWith("NOISE_TOO_SHORT") ? "Zaznaczenie jest za krótkie." : "Nie udało się zastosować profilu.");
+      setError(msg.startsWith("NOISE_TOO_SHORT") ? t("zaznaczenieZaKrotkie") : t("nieUdaloSieZastosowac"));
     }
   }
 
@@ -86,7 +88,7 @@ export function StudioClipInspect({ samples, sampleRate, onApply }: StudioClipIn
         data-testid="studio-clip-inspect"
         className="border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 text-sm text-[var(--brd-ink)]"
       >
-        <p>Zaznacz fragment klipu.</p>
+        <p>{t("zaznaczFragment")}</p>
       </section>
     );
   }
@@ -100,14 +102,14 @@ export function StudioClipInspect({ samples, sampleRate, onApply }: StudioClipIn
         ref={canvasRef}
         className="h-32 w-full border border-[var(--brd-line)]"
         role="img"
-        aria-label="Spektrogram klipu"
+        aria-label={t("spektrogramKlipu")}
       />
       <button
         type="button"
         onClick={applyProfile}
         className="inline-flex min-h-11 items-center border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 text-sm text-[var(--brd-ink)]"
       >
-        Zastosuj profil szumu
+        {t("zastosujProfil")}
       </button>
       {error ? (
         <p role="status" className="text-xs text-[var(--brd-ink)]">

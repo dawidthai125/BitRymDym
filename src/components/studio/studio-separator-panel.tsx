@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -12,17 +13,11 @@ type Job = {
   stems: Partial<Record<StemName, string>> | null;
 };
 
-const LABELS: Record<StemName, string> = {
-  vocals: "Wokal",
-  drums: "Bębny",
-  bass: "Bas",
-  other: "Reszta",
-};
-
-const QUEUED =
-  "Jest w kolejce. Pliki pojawią się, gdy rozcinanie się skończy. Samo kliknięcie jeszcze ich nie daje.";
+/** Display order; labels → studio.separator.stem.* */
+const STEMS: StemName[] = ["vocals", "drums", "bass", "other"];
 
 export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: ProjectOpt[]; canEnqueue: boolean }) {
+  const t = useTranslations("studio.separator");
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -67,18 +62,18 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
       if (res.status === 202 && json.accepted === true) {
         setJob({ id: "pending", status: "queued", errorCode: null, stems: null });
       } else if (res.status === 409) {
-        setNote("To zgłoszenie już czeka albo jest w trakcie.");
+        setNote(t("juzCzeka"));
       } else if (res.status === 404) {
-        setNote("Nie ma zatwierdzonego mastera ani bitu w tym projekcie.");
+        setNote(t("brakMastera"));
       } else if (res.status === 503) {
-        setNote("Rozcinanie jest chwilowo wyłączone.");
+        setNote(t("wylaczone"));
       } else if (res.status === 403) {
-        setNote("Pliki z rozcięcia są od Silver.");
+        setNote(t("plikiZRozcieciaOdSilver"));
       } else {
-        setNote("Nie udało się przyjąć zgłoszenia.");
+        setNote(t("nieUdaloSiePrzyjac"));
       }
     } catch {
-      setNote("Nie udało się przyjąć zgłoszenia.");
+      setNote(t("nieUdaloSiePrzyjac"));
     } finally {
       setBusy(false);
     }
@@ -87,7 +82,7 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
   return (
     <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm text-[var(--brd-ink-soft)]">
-        Projekt
+        {t("projekt")}
         <select
           name="projectId"
           value={projectId}
@@ -95,7 +90,7 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
           disabled={projects.length === 0}
           className="border border-[var(--brd-line)] bg-transparent px-3 py-2 text-[var(--brd-ink)]"
         >
-          {projects.length === 0 ? <option value="">Brak projektów</option> : null}
+          {projects.length === 0 ? <option value="">{t("brakProjektow")}</option> : null}
           {projects.map((project) => (
             <option key={project.id} value={project.id}>
               {project.title}
@@ -109,30 +104,30 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
           disabled={busy || !projectId}
           className="w-fit border border-[var(--brd-line)] px-3 py-2 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)] disabled:opacity-50"
         >
-          {busy ? "Wysyłanie…" : "Oddaj do rozcięcia"}
+          {busy ? t("wysylanie") : t("oddajDoRozciecia")}
         </button>
       ) : (
         <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-          Pliki są od Silver.{" "}
+          {t("plikiOdSilver")}{" "}
           <Link href="/premium" className="underline underline-offset-4">
-            Zobacz plany
+            {t("zobaczPlany")}
           </Link>
         </p>
       )}
       {note ? <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{note}</p> : null}
       {job?.status === "queued" || job?.status === "running" ? (
-        <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{QUEUED}</p>
+        <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("wKolejce")}</p>
       ) : null}
       {job?.status === "failed" ? (
-        <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">Rozcięcie nie doszło do końca ({job.errorCode ?? "błąd"}).</p>
+        <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("nieDoszlo", { code: job.errorCode ?? t("blad") })}</p>
       ) : null}
       {job?.status === "succeeded" && job.stems ? (
         <ul className="flex flex-col gap-2 text-sm">
-          {(Object.keys(LABELS) as StemName[]).map((name) =>
+          {STEMS.map((name) =>
             job.stems?.[name] ? (
               <li key={name}>
                 <a href={job.stems[name]} className="underline-offset-4 hover:underline">
-                  {LABELS[name]}
+                  {t(`stem.${name}`)}
                 </a>
               </li>
             ) : null,

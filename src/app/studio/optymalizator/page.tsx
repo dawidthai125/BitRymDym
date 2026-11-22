@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -8,9 +9,15 @@ import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listStudioProjects } from "@/lib/studio/studio-service";
 
-export const metadata = { title: "Sprawdź głośność" };
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("studio.optimizer");
+  return {
+    title: t("metaTitle"),
+  };
+}
 
 export default async function StudioBeatOptimizerPage() {
+  const t = await getTranslations("studio.optimizer");
   try {
     await requireUser();
   } catch (error) {
@@ -29,9 +36,9 @@ export default async function StudioBeatOptimizerPage() {
       >
         <PageFrame className="flex flex-col gap-8 py-10 sm:py-12">
           <header className="space-y-2 border-b border-[var(--brd-line)] pb-6">
-            <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">Sprawdź głośność</h1>
+            <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">{t("tytul")}</h1>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-              Patrzy, czy bit nie jest za głośny albo za cichy. Pliku nie rusza.
+              {t("lead")}
             </p>
           </header>
           <StudioOptimizerPanel projects={(await listStudioProjects()).map((project) => ({ id: project.id, title: project.title }))} />
@@ -40,13 +47,13 @@ export default async function StudioBeatOptimizerPage() {
               href="/studio"
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline"
             >
-              Studio
+              {t("studio")}
             </Link>
             <Link
               href="/studio/separator"
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline"
             >
-              Rozetnij bit
+              {t("rozetnijBit")}
             </Link>
           </div>
         </PageFrame>

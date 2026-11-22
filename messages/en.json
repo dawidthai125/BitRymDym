@@ -2971,7 +2971,9 @@
       "wokalZaimportowanyNaOs": "Vocal imported to the timeline.",
       "nieUdaloSieZaimportowac": "Could not import the audio file.",
       "nieUdaloSieUsunac2": "Could not delete the recording.",
-      "nieUdaloSieWczytac2": "Could not load the recordings."
+      "nieUdaloSieWczytac2": "Could not load the recordings.",
+      "nieUdaloSieDodacSciezki": "Could not add the track.",
+      "nieUdaloSiePolozycStemu": "Could not place the stem on the timeline."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch DJ v1",
@@ -3016,7 +3018,8 @@
       "usun": "Delete",
       "podgladNiedostepny": "Preview unavailable.",
       "usuwanieNiePowiodloSie": "Deleting failed.",
-      "nieUdaloSieZapisac": "Could not save the title."
+      "nieUdaloSieZapisac": "Could not save the title.",
+      "operacjaNiePowiodlaSie": "The operation failed."
     },
     "recordingPanel": {
       "nagrywanieNieJestWspierane": "Recording is not supported in this browser.",
@@ -3066,7 +3069,9 @@
       "bladZatrzymaniaNagrania": "Error stopping the recording.",
       "nieUdaloSieZaczac": "Could not start the recording.",
       "nieUdaloSieZastapic": "Could not replace the recording.",
-      "podgladNiedostepny": "Preview unavailable."
+      "podgladNiedostepny": "Preview unavailable.",
+      "zabezpieczoneLokalnie": "{v0} The recording is saved locally — you can recover it.",
+      "nieUdaloSieOtworzycPodgladu": "Could not open the preview."
     },
     "takeDownloadMenu": {
       "statusEksportu": "Export status: {v0}",
@@ -4359,6 +4364,149 @@
       "wkrotceOpis": "Deadline: {when}. Export a WAV or master before then — after that you have to record again.",
       "zaDni": "in {n} days",
       "zaGodzin": "{n, plural, one {in an hour} other {in # hours}}"
+    },
+    "recorderSession": {
+      "plikZaDuzy": "The session file is too large. Choose sesja.brd.json, not a WAV file.",
+      "toNieJestSesja": "This is not a session from the app (sesja.brd.json), or it has no tracks.",
+      "nieDaloSieOdczytac": "Could not read the file.",
+      "limitProjektow": "You have reached the project limit for this plan.",
+      "nieUdaloSieUtworzyc": "Could not create the project.",
+      "nieDaloSieSkopiowac": "Could not copy the cheat sheet.",
+      "naglowek": "Session from the app",
+      "opis": "Studio Offline (Premium Gold) saves the stems and a sesja.brd.json file on your computer. Here you can see the track order, timeline position, volume and left–right balance. The beat from the file is not uploaded to the site.",
+      "wczytaj": "Load sesja.brd.json",
+      "podsumowanie": "{title}. Beat: {beat} ({clock}). Tracks in the session: {tracks}. The app has {vocals} vocal and {extras} double tracks. Gold on the site holds {gold} recording tracks, so vocals go first.",
+      "niepodany": "not given",
+      "rolaPodbicie": "double / adlib",
+      "rolaWokal": "vocal",
+      "wskazowkaGold": "Create a project and open the session. There you will find “Import stems”: each file is placed at the start of the timeline. The stems are recorded from 0:00, so they line up as they did when recording. Set volume and left–right balance using the cheat sheet.",
+      "wskazowkaInne": "Anyone can read a session. Uploading stems into a studio session starts with the Silver plan.",
+      "skopiowane": "Copied",
+      "kopiujSciage": "Copy cheat sheet",
+      "tworze": "Creating…",
+      "utworzProjekt": "Create project",
+      "otworzSesje": "Open studio session"
+    },
+    "clipSpectrogram": {
+      "podgladLokalnie": "The preview plays locally. Saving is a separate button.",
+      "liczeniePelnego": "Processing the full recording…",
+      "nieUdaloSieOdczytacNagrania": "Could not read the recording.",
+      "dluzszeNiz6Minut": "The recording is longer than 6 minutes. Not saving.",
+      "innaDlugosc": "The result has a different length than the recording. Not saving.",
+      "nieGotoweDoPodmiany": "This recording is not ready to be replaced.",
+      "nieUdaloSiePrzygotowac": "Could not prepare the save.",
+      "nieUdaloSieWyslac": "Could not upload the file.",
+      "plikKrotszy": "The file was shorter than the recording. Not replacing it.",
+      "nieUdaloSieZapisac": "Could not save the cleanup.",
+      "zapisane": "Saved. Playback will use the full-length cleaned recording.",
+      "liczeSpektrogram": "Computing spectrogram…",
+      "nieUdaloSieOdczytacKlipu": "Could not read the clip for the spectrogram.",
+      "zapisuje": "Saving…",
+      "zapiszCzyszczenie": "Save cleanup to project",
+      "tylkoWokal": "Saving the cleanup is only available for vocal recordings."
+    },
+    "clipInspect": {
+      "zaznaczenieZaKrotkie": "The selection is too short.",
+      "nieUdaloSieZastosowac": "Could not apply the profile.",
+      "zaznaczFragment": "Select part of the clip.",
+      "spektrogramKlipu": "Clip spectrogram",
+      "zastosujProfil": "Apply noise profile"
+    },
+    "playStudio": {
+      "instrumenty": {
+        "piano": "Piano",
+        "epiano": "E-piano",
+        "guitar": "Guitar",
+        "synthLead": "Lead synth",
+        "synthPad": "Pad",
+        "synthBass": "Bass synth",
+        "hiphop": "Hip-hop drums"
+      },
+      "instrumentGotowy": "Instrument ready.",
+      "nieUdaloSieWczytac": "Could not load the instrument.",
+      "odliczanie": "Count-in and recording…",
+      "renderuje": "Rendering WAV…",
+      "domyslnyTytul": "Play · {instrument}",
+      "nieUdaloSieZapisac": "Could not save.",
+      "zapisany": "Sample saved to your samples.",
+      "tytul": "Play — build a sample by hand",
+      "opis": "Several keys at once, the mouse and real instrument recordings. Sampek only polishes what you play.",
+      "bpmTakty": "{bpm} BPM · {bars, plural, one {# bar} other {# bars}}",
+      "instrument": "Instrument",
+      "takty": "Bars",
+      "wczytuje": "Loading…",
+      "wlaczInstrument": "Turn on instrument",
+      "skroty": "Piano: A S D F G H J K L · black keys W E T Y U · Z/X change octave. Guitar: 1–8 pick a chord, space replaces the strum.",
+      "zatrzymajNagrywanie": "■ Stop recording",
+      "nagrajPetle": "● Record loop",
+      "stop": "■ Stop",
+      "odtworz": "▶ Play",
+      "szybkaPoprawa": "Quick fix",
+      "zagrajKilkaNut": "Play a few notes to unlock Sampek's fixes and saving.",
+      "nazwaSampla": "Sample name",
+      "nazwaPlaceholder": "e.g. Rhodes after a night walk",
+      "mamPrawa": "I have the rights to the recordings used.",
+      "zapiszSample": "Save sample"
+    },
+    "sampekPanel": {
+      "aiOdBronze": "Sampek AI is available from the Bronze plan. Manual fixes work for everyone.",
+      "nieOdpowiedzial": "Sampek did not respond.",
+      "tytul": "Sampek — polish your sample",
+      "opis": "Listen to the preview first. Changes apply only after you click the button.",
+      "stopPodgladu": "Stop preview",
+      "szybkaPoprawa": "Quick fix",
+      "pracuje": "Working…",
+      "akcja": {
+        "chords": "Add chords",
+        "bass": "Add bass",
+        "counter": "Add countermelody",
+        "variation": "Make a variation"
+      }
+    },
+    "optimizer": {
+      "metaTitle": "Check loudness",
+      "tytul": "Check loudness",
+      "lead": "Checks whether the beat is too loud or too quiet. The file is not changed.",
+      "studio": "Studio",
+      "rozetnijBit": "Split the beat",
+      "projekt": "Project",
+      "brakProjektow": "No projects",
+      "sprawdzam": "Checking…",
+      "sprawdzGlosnosc": "Check loudness",
+      "brakMastera": "This project has no approved master or beat.",
+      "nieUdaloSieOdczytac": "Could not read the recording from the project.",
+      "nieUdaloSieSprawdzic": "Could not check the loudness.",
+      "poradaDomyslna": "Loudest moment {peak} dB, average {rms} dB. The file stays unchanged.",
+      "poradaGlosny": "The beat is too loud. Turn it down by about {db} dB to leave room for the vocal. The file stays unchanged.",
+      "poradaCichy": "The beat is quiet. I don't turn it up myself.",
+      "poradaBas": "Lots of bass. Turn the bass down so the words can be heard. The file stays unchanged.",
+      "pomiar": "Peak {peak} dB · average {rms} dB"
+    },
+    "separator": {
+      "metaTitle": "Split the beat",
+      "tytul": "Split the beat",
+      "lead": "Splits the beat into vocals, drums, bass and the rest. You get the files from Silver. Clicking alone does not give them to you yet.",
+      "studio": "Studio",
+      "stem": {
+        "vocals": "Vocals",
+        "drums": "Drums",
+        "bass": "Bass",
+        "other": "Other"
+      },
+      "wKolejce": "It is in the queue. The files will appear when splitting finishes. Clicking alone does not give them to you yet.",
+      "juzCzeka": "This request is already waiting or in progress.",
+      "brakMastera": "This project has no approved master or beat.",
+      "wylaczone": "Splitting is temporarily turned off.",
+      "plikiZRozcieciaOdSilver": "Split files are available from Silver.",
+      "nieUdaloSiePrzyjac": "Could not accept the request.",
+      "projekt": "Project",
+      "brakProjektow": "No projects",
+      "wysylanie": "Sending…",
+      "oddajDoRozciecia": "Send for splitting",
+      "plikiOdSilver": "Files are available from Silver.",
+      "zobaczPlany": "See plans",
+      "nieDoszlo": "Splitting did not finish ({code}).",
+      "blad": "error"
     }
   },
   "nav": {

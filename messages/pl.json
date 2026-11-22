@@ -2971,7 +2971,9 @@
       "wokalZaimportowanyNaOs": "Wokal zaimportowany na oś czasu.",
       "nieUdaloSieZaimportowac": "Nie udało się zaimportować pliku audio.",
       "nieUdaloSieUsunac2": "Nie udało się usunąć nagrania.",
-      "nieUdaloSieWczytac2": "Nie udało się wczytać nagrań."
+      "nieUdaloSieWczytac2": "Nie udało się wczytać nagrań.",
+      "nieUdaloSieDodacSciezki": "Nie udało się dodać ścieżki.",
+      "nieUdaloSiePolozycStemu": "Nie udało się położyć stemu na osi."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch DJ v1",
@@ -3016,7 +3018,8 @@
       "usun": "Usuń",
       "podgladNiedostepny": "Podgląd niedostępny.",
       "usuwanieNiePowiodloSie": "Usuwanie nie powiodło się.",
-      "nieUdaloSieZapisac": "Nie udało się zapisać tytułu."
+      "nieUdaloSieZapisac": "Nie udało się zapisać tytułu.",
+      "operacjaNiePowiodlaSie": "Operacja nie powiodła się."
     },
     "recordingPanel": {
       "nagrywanieNieJestWspierane": "Nagrywanie nie jest wspierane w tej przeglądarce.",
@@ -3066,7 +3069,9 @@
       "bladZatrzymaniaNagrania": "Błąd zatrzymania nagrania.",
       "nieUdaloSieZaczac": "Nie udało się zacząć nagrania.",
       "nieUdaloSieZastapic": "Nie udało się zastąpić nagrania.",
-      "podgladNiedostepny": "Podgląd niedostępny."
+      "podgladNiedostepny": "Podgląd niedostępny.",
+      "zabezpieczoneLokalnie": "{v0} Nagranie jest zabezpieczone lokalnie — możesz je odzyskać.",
+      "nieUdaloSieOtworzycPodgladu": "Nie udało się otworzyć podglądu."
     },
     "takeDownloadMenu": {
       "statusEksportu": "Status eksportu: {v0}",
@@ -4359,6 +4364,149 @@
       "wkrotceOpis": "Termin: {when}. Zrób eksport WAV albo master przed tym czasem — potem trzeba nagrać ponownie.",
       "zaDni": "za {n} dni",
       "zaGodzin": "{n, plural, one {za godzinę} few {za # godziny} other {za # godzin}}"
+    },
+    "recorderSession": {
+      "plikZaDuzy": "Plik sesji jest za duży. Wybierz sesja.brd.json, nie plik WAV.",
+      "toNieJestSesja": "To nie jest sesja z programu (sesja.brd.json) albo nie ma w niej ścieżek.",
+      "nieDaloSieOdczytac": "Nie dało się odczytać pliku.",
+      "limitProjektow": "Masz już limit projektów w tym planie.",
+      "nieUdaloSieUtworzyc": "Nie udało się utworzyć projektu.",
+      "nieDaloSieSkopiowac": "Nie dało się skopiować ściągi.",
+      "naglowek": "Sesja z programu",
+      "opis": "Studio Offline (Premium Gold) zapisuje u Ciebie stemy i plik sesja.brd.json. Tu widać kolejność ścieżek, miejsce na osi, głośność i balans lewo–prawo. Bit z pliku nie jedzie na stronę.",
+      "wczytaj": "Wczytaj sesja.brd.json",
+      "podsumowanie": "{title}. Bit: {beat} ({clock}). Ścieżek w sesji: {tracks}. W programie jest {vocals} wokali i {extras} podbić. Na stronie Gold mieści {gold} ścieżek nagrania, więc najpierw idą wokale.",
+      "niepodany": "niepodany",
+      "rolaPodbicie": "podbicie / adlib",
+      "rolaWokal": "wokal",
+      "wskazowkaGold": "Utwórz projekt i otwórz sesję. Tam jest „Importuj stemy”: każdy plik kładzie się od początku osi. Stemy są nagrane od 0:00, więc siedzą tak jak przy nagrywaniu. Głośność i balans lewo–prawo ustaw według ściągi.",
+      "wskazowkaInne": "Odczyt sesji jest dla każdego. Wrzucenie stemów w sesji studia jest od planu Silver.",
+      "skopiowane": "Skopiowane",
+      "kopiujSciage": "Kopiuj ściągę",
+      "tworze": "Tworzę…",
+      "utworzProjekt": "Utwórz projekt",
+      "otworzSesje": "Otwórz sesję studia"
+    },
+    "clipSpectrogram": {
+      "podgladLokalnie": "Podgląd gra lokalnie. Zapis jest osobnym przyciskiem.",
+      "liczeniePelnego": "Liczenie pełnego nagrania…",
+      "nieUdaloSieOdczytacNagrania": "Nie udało się odczytać nagrania.",
+      "dluzszeNiz6Minut": "Nagranie jest dłuższe niż 6 minut. Nie zapisuję.",
+      "innaDlugosc": "Wynik ma inną długość niż nagranie. Nie zapisuję.",
+      "nieGotoweDoPodmiany": "To nagranie nie jest gotowe do podmiany.",
+      "nieUdaloSiePrzygotowac": "Nie udało się przygotować zapisu.",
+      "nieUdaloSieWyslac": "Nie udało się wysłać pliku.",
+      "plikKrotszy": "Plik był krótszy niż nagranie. Nie podmieniam go.",
+      "nieUdaloSieZapisac": "Nie udało się zapisać czyszczenia.",
+      "zapisane": "Zapisane. Odtwarzanie użyje oczyszczonego nagrania w pełnej długości.",
+      "liczeSpektrogram": "Liczę spektrogram…",
+      "nieUdaloSieOdczytacKlipu": "Nie udało się odczytać klipu do spektrogramu.",
+      "zapisuje": "Zapisuję…",
+      "zapiszCzyszczenie": "Zapisz czyszczenie w projekcie",
+      "tylkoWokal": "Zapis czyszczenia jest tylko dla nagrania wokalu."
+    },
+    "clipInspect": {
+      "zaznaczenieZaKrotkie": "Zaznaczenie jest za krótkie.",
+      "nieUdaloSieZastosowac": "Nie udało się zastosować profilu.",
+      "zaznaczFragment": "Zaznacz fragment klipu.",
+      "spektrogramKlipu": "Spektrogram klipu",
+      "zastosujProfil": "Zastosuj profil szumu"
+    },
+    "playStudio": {
+      "instrumenty": {
+        "piano": "Pianino",
+        "epiano": "E-piano",
+        "guitar": "Gitara",
+        "synthLead": "Syntezator lead",
+        "synthPad": "Pad",
+        "synthBass": "Syntezator basu",
+        "hiphop": "Bębny hip-hop"
+      },
+      "instrumentGotowy": "Instrument gotowy.",
+      "nieUdaloSieWczytac": "Nie udało się wczytać instrumentu.",
+      "odliczanie": "Odliczanie i nagrywanie…",
+      "renderuje": "Renderuję WAV…",
+      "domyslnyTytul": "Graj · {instrument}",
+      "nieUdaloSieZapisac": "Nie udało się zapisać.",
+      "zapisany": "Sampel zapisany w Twoich samplach.",
+      "tytul": "Graj — zbuduj sample ręcznie",
+      "opis": "Kilka klawiszy naraz, myszka i prawdziwe nagrania instrumentów. Sampek poprawi dopiero to, co zagrasz.",
+      "bpmTakty": "{bpm} BPM · {bars, plural, one {# takt} few {# takty} many {# taktów} other {# taktu}}",
+      "instrument": "Instrument",
+      "takty": "Takty",
+      "wczytuje": "Wczytuję…",
+      "wlaczInstrument": "Włącz instrument",
+      "skroty": "Pianino: A S D F G H J K L · czarne klawisze W E T Y U · Z/X zmiana oktawy. Gitara: 1–8 wybór akordu, przeciągnięcie zastępuje spacja.",
+      "zatrzymajNagrywanie": "■ Zatrzymaj nagrywanie",
+      "nagrajPetle": "● Nagraj pętlę",
+      "stop": "■ Stop",
+      "odtworz": "▶ Odtwórz",
+      "szybkaPoprawa": "Szybka poprawa",
+      "zagrajKilkaNut": "Zagraj kilka nut, żeby pojawiły się poprawki Sampeka i zapis.",
+      "nazwaSampla": "Nazwa sampla",
+      "nazwaPlaceholder": "np. Rhodes po nocnym spacerze",
+      "mamPrawa": "Mam prawa do użytych nagrań.",
+      "zapiszSample": "Zapisz sample"
+    },
+    "sampekPanel": {
+      "aiOdBronze": "Sampek AI jest dostępny od planu Bronze. Poprawki ręczne działają dla każdego.",
+      "nieOdpowiedzial": "Sampek nie odpowiedział.",
+      "tytul": "Sampek — dopracuj sample",
+      "opis": "Najpierw odsłuchaj podgląd. Zmiany wejdą dopiero po kliknięciu przycisku.",
+      "stopPodgladu": "Stop podglądu",
+      "szybkaPoprawa": "Szybka poprawa",
+      "pracuje": "Pracuję…",
+      "akcja": {
+        "chords": "Dodaj akordy",
+        "bass": "Dodaj bas",
+        "counter": "Dodaj kontrmelodię",
+        "variation": "Zrób wariant"
+      }
+    },
+    "optimizer": {
+      "metaTitle": "Sprawdź głośność",
+      "tytul": "Sprawdź głośność",
+      "lead": "Patrzy, czy bit nie jest za głośny albo za cichy. Pliku nie rusza.",
+      "studio": "Studio",
+      "rozetnijBit": "Rozetnij bit",
+      "projekt": "Projekt",
+      "brakProjektow": "Brak projektów",
+      "sprawdzam": "Sprawdzam…",
+      "sprawdzGlosnosc": "Sprawdź głośność",
+      "brakMastera": "Nie ma zatwierdzonego mastera ani bitu w tym projekcie.",
+      "nieUdaloSieOdczytac": "Nie udało się odczytać nagrania z projektu.",
+      "nieUdaloSieSprawdzic": "Nie udało się sprawdzić głośności.",
+      "poradaDomyslna": "Najgłośniejszy moment {peak} dB, średnio {rms} dB. Plik zostaje bez zmian.",
+      "poradaGlosny": "Bit jest za głośny. Ścisz go o około {db} dB, żeby wokal miał miejsce. Plik zostaje bez zmian.",
+      "poradaCichy": "Bit jest cichy. Sam go nie podgłaśniam.",
+      "poradaBas": "Dużo basu. Ścisz bas, żeby było słychać słowa. Plik zostaje bez zmian.",
+      "pomiar": "Najgłośniej {peak} dB · średnio {rms} dB"
+    },
+    "separator": {
+      "metaTitle": "Rozetnij bit",
+      "tytul": "Rozetnij bit",
+      "lead": "Dzieli bit na wokal, bębny, bas i resztę. Pliki dostajesz od Silver. Samo kliknięcie jeszcze ich nie daje.",
+      "studio": "Studio",
+      "stem": {
+        "vocals": "Wokal",
+        "drums": "Bębny",
+        "bass": "Bas",
+        "other": "Reszta"
+      },
+      "wKolejce": "Jest w kolejce. Pliki pojawią się, gdy rozcinanie się skończy. Samo kliknięcie jeszcze ich nie daje.",
+      "juzCzeka": "To zgłoszenie już czeka albo jest w trakcie.",
+      "brakMastera": "Nie ma zatwierdzonego mastera ani bitu w tym projekcie.",
+      "wylaczone": "Rozcinanie jest chwilowo wyłączone.",
+      "plikiZRozcieciaOdSilver": "Pliki z rozcięcia są od Silver.",
+      "nieUdaloSiePrzyjac": "Nie udało się przyjąć zgłoszenia.",
+      "projekt": "Projekt",
+      "brakProjektow": "Brak projektów",
+      "wysylanie": "Wysyłanie…",
+      "oddajDoRozciecia": "Oddaj do rozcięcia",
+      "plikiOdSilver": "Pliki są od Silver.",
+      "zobaczPlany": "Zobacz plany",
+      "nieDoszlo": "Rozcięcie nie doszło do końca ({code}).",
+      "blad": "błąd"
     }
   },
   "nav": {

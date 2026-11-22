@@ -315,7 +315,7 @@ describe("STU-15 recovery — Quick Take and remaining scenarios", () => {
       upload: { stage: "SESSION_CREATED", takeId: TAKE },
     });
     expect(takeRecoveryOutcomePl(outcome)).toMatch(/Lokalna kopia została zachowana/);
-    expect(quickTake).toMatch(/LOCALLY_SECURED_SUFFIX_PL/);
+    expect(quickTake).toMatch(/Nagranie jest zabezpieczone lokalnie — możesz je odzyskać\./);
   });
 
   it("22. connection back: banner reloads on `online`; retry confirms the known take before any new upload", async () => {

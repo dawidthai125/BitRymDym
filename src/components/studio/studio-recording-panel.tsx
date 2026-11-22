@@ -345,7 +345,7 @@ export function StudioRecordingPanel({
           if (!response.ok || !body?.track) {
             return classifyPersistHttpFailure({
               status: response.status,
-              message: body?.message || body?.error || "Nie udało się dodać ścieżki.",
+              message: body?.message || body?.error || tr("nieUdaloSieDodacSciezki"),
               code: body?.code,
             });
           }
@@ -360,12 +360,12 @@ export function StudioRecordingPanel({
             },
           };
         } catch {
-          return classifyPersistNetworkFailure("Nie udało się dodać ścieżki.");
+          return classifyPersistNetworkFailure(tr("nieUdaloSieDodacSciezki"));
         }
       });
-      return result.ok && createdId ? { ok: true, trackId: createdId } : { ok: false, message: result.ok ? "Nie udało się dodać ścieżki." : result.message };
+      return result.ok && createdId ? { ok: true, trackId: createdId } : { ok: false, message: result.ok ? tr("nieUdaloSieDodacSciezki") : result.message };
     },
-    [ackDocumentVersion, enqueuePersistAsync, onTrackCreated, persistVersionTip, projectId],
+    [ackDocumentVersion, enqueuePersistAsync, onTrackCreated, persistVersionTip, projectId, tr],
   );
 
 
@@ -394,7 +394,7 @@ export function StudioRecordingPanel({
           if (!response.ok || !body?.clip) {
             return classifyPersistHttpFailure({
               status: response.status,
-              message: body?.error || "Nie udało się położyć stemu na osi.",
+              message: body?.error || tr("nieUdaloSiePolozycStemu"),
               code: body?.code,
             });
           }
@@ -407,12 +407,12 @@ export function StudioRecordingPanel({
             },
           };
         } catch {
-          return classifyPersistNetworkFailure("Nie udało się położyć stemu na osi.");
+          return classifyPersistNetworkFailure(tr("nieUdaloSiePolozycStemu"));
         }
       });
       return result.ok ? { ok: true } : { ok: false, message: result.message };
     },
-    [ackDocumentVersion, enqueuePersistAsync, onClipCreated, persistVersionTip, projectId],
+    [ackDocumentVersion, enqueuePersistAsync, onClipCreated, persistVersionTip, projectId, tr],
   );
   const trackChoices =
     recordableTracks.length > 0 ? recordableTracks : tracks;
@@ -2368,7 +2368,7 @@ export function StudioRecordingPanel({
             error?: string;
           } | null;
           if (!post.ok || !added?.track) {
-            return classifyPersistHttpFailure({ status: post.status, message: added?.message || added?.error || "Nie udało się dodać ścieżki." });
+            return classifyPersistHttpFailure({ status: post.status, message: added?.message || added?.error || tr("nieUdaloSieDodacSciezki") });
           }
           let track = added.track;
           let version = ackDocumentVersion(added.documentVersion);
@@ -2393,12 +2393,12 @@ export function StudioRecordingPanel({
             },
           };
         } catch {
-          return classifyPersistNetworkFailure("Nie udało się dodać ścieżki.");
+          return classifyPersistNetworkFailure(tr("nieUdaloSieDodacSciezki"));
         }
       });
       return result.ok && createdId
         ? { ok: true, trackId: createdId }
-        : { ok: false, message: result.ok ? "Nie udało się dodać ścieżki." : result.message };
+        : { ok: false, message: result.ok ? tr("nieUdaloSieDodacSciezki") : result.message };
     },
     [trackId, mergedTracks, enqueuePersistAsync, persistVersionTip, ackDocumentVersion, projectId, onTrackCreated, tr],
   );

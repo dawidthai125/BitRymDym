@@ -33,6 +33,7 @@ function formatWhen(iso: string, tag = "pl-PL"): string {
 async function fetchSignedUrl(
   path: "/api/takes/preview",
   takeId: string,
+  fallbackError: string,
 ): Promise<string> {
   const res = await fetch(path, {
     method: "POST",
@@ -45,7 +46,7 @@ async function fetchSignedUrl(
     error?: string;
   };
   if (!res.ok || !json.success || !json.url) {
-    throw new Error(json.error ?? "Operacja nie powiodła się.");
+    throw new Error(json.error ?? fallbackError);
   }
   return json.url;
 }
@@ -77,7 +78,7 @@ export function OwnTakesList({
     setError(null);
     setBusyId(take.id);
     try {
-      const url = await fetchSignedUrl("/api/takes/preview", take.id);
+      const url = await fetchSignedUrl("/api/takes/preview", take.id, t("operacjaNiePowiodlaSie"));
       setPlayingId(take.id);
       setPlayUrl(url);
     } catch (e) {

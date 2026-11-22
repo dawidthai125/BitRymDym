@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { measureBeatWindow, type BeatMeasure } from "@/lib/studio/analysis/measure";
@@ -7,6 +8,7 @@ import { measureBeatWindow, type BeatMeasure } from "@/lib/studio/analysis/measu
 type ProjectOpt = { id: string; title: string };
 
 export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
+  const t = useTranslations("studio.optimizer");
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -22,12 +24,12 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
       const res = await fetch(`/api/studio/projects/${projectId}/analysis-audio`);
       const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (!res.ok || !json.url) {
-        setNote("Nie ma zatwierdzonego mastera ani bitu w tym projekcie.");
+        setNote(t("brakMastera"));
         return;
       }
       const audioRes = await fetch(json.url);
       if (!audioRes.ok) {
-        setNote("Nie udało się odczytać nagrania z projektu.");
+        setNote(t("nieUdaloSieOdczytac"));
         return;
       }
       const ctx = new AudioContext();
@@ -39,7 +41,7 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
       await ctx.close().catch(() => undefined);
       setMeasure(measureBeatWindow(samples, decoded.sampleRate));
     } catch {
-      setNote("Nie udało się sprawdzić głośności.");
+      setNote(t("nieUdaloSieSprawdzic"));
     } finally {
       setBusy(false);
     }
@@ -48,7 +50,7 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
   return (
     <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm text-[var(--brd-ink-soft)]">
-        Projekt
+        {t("projekt")}
         <select
           name="projectId"
           value={projectId}
@@ -56,7 +58,7 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
           disabled={projects.length === 0}
           className="border border-[var(--brd-line)] bg-transparent px-3 py-2 text-[var(--brd-ink)]"
         >
-          {projects.length === 0 ? <option value="">Brak projektów</option> : null}
+          {projects.length === 0 ? <option value="">{t("brakProjektow")}</option> : null}
           {projects.map((project) => (
             <option key={project.id} value={project.id}>
               {project.title}
@@ -69,7 +71,7 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
         disabled={busy || !projectId}
         className="w-fit border border-[var(--brd-line)] px-3 py-2 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)] disabled:opacity-50"
       >
-        {busy ? "Sprawdzam…" : "Sprawdź głośność"}
+        {busy ? t("sprawdzam") : t("sprawdzGlosnosc")}
       </button>
       {note ? <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{note}</p> : null}
       {measure ? <Measurement measure={measure} /> : null}
@@ -78,19 +80,20 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
 }
 
 function Measurement({ measure }: { measure: BeatMeasure }) {
+  const t = useTranslations("studio.optimizer");
   const peak = measure.peakDb.toFixed(1);
   const rms = measure.rmsDb.toFixed(1);
-  let advice = `Najgłośniejszy moment ${peak} dB, średnio ${rms} dB. Plik zostaje bez zmian.`;
+  let advice = t("poradaDomyslna", { peak, rms });
   if (measure.suggestion === "hot") {
-    advice = `Bit jest za głośny. Ścisz go o około ${measure.lowerByDb} dB, żeby wokal miał miejsce. Plik zostaje bez zmian.`;
+    advice = t("poradaGlosny", { db: String(measure.lowerByDb) });
   } else if (measure.suggestion === "quiet") {
-    advice = `Bit jest cichy. Sam go nie podgłaśniam.`;
+    advice = t("poradaCichy");
   } else if (measure.suggestion === "mud") {
-    advice = `Dużo basu. Ścisz bas, żeby było słychać słowa. Plik zostaje bez zmian.`;
+    advice = t("poradaBas");
   }
   return (
     <div className="max-w-prose space-y-2 text-sm text-[var(--brd-ink-soft)]" data-testid="studio-optimizer-measure">
-      <p>Najgłośniej {peak} dB · średnio {rms} dB</p>
+      <p>{t("pomiar", { peak, rms })}</p>
       <p>{advice}</p>
     </div>
   );

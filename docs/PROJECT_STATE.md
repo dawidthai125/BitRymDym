@@ -2,7 +2,9 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-11-22 (noc, 3) — pełny przegląd po zalogowaniu (43 strony desktop, 18 telefon, Studio) · naprawiony pasek transportu na telefonie · h1, scroll-padding · [CHANGELOG 2026-11-22 (3)](./CHANGELOG.md)
+**Updated:** 2026-11-22 (noc, 4) — poprawki po przeglądzie (Bitek vs M/S/R, pola dotyku, etykieta pliku) · 128 tłumaczeń Studio · [CHANGELOG 2026-11-22 (4)](./CHANGELOG.md)
+
+**Prior (2026-11-22 noc, 3):** pełny przegląd po zalogowaniu (43 strony desktop, 18 telefon, Studio) · naprawiony pasek transportu na telefonie · h1, scroll-padding · [CHANGELOG 2026-11-22 (3)](./CHANGELOG.md)
 
 **Prior (2026-11-22 noc, 2):** mail „Nagranie wygasa” (cron 07:00 UTC, `takes.expiry_notified_at`) · `/api/health/queues` + workflow co godzinę · poprawki dotyku na telefonie · [CHANGELOG 2026-11-22 (2)](./CHANGELOG.md)
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { StudioClipInspect } from "@/components/studio/studio-clip-inspect";
@@ -54,6 +55,7 @@ function StudioClipSpectrogramBody({
   takeId: string | null;
   resolveUrl: () => Promise<string | null>;
 }) {
+  const t = useTranslations("studio.clipSpectrogram");
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [heard, setHeard] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -99,29 +101,29 @@ function StudioClipSpectrogramBody({
       void ctx.close().catch(() => undefined);
     };
     source.start();
-    setHeard("Podgląd gra lokalnie. Zapis jest osobnym przyciskiem.");
+    setHeard(t("podgladLokalnie"));
   }
 
   async function save() {
     if (!takeId || saving) return;
     setSaving(true);
-    setHeard("Liczenie pełnego nagrania…");
+    setHeard(t("liczeniePelnego"));
     try {
       const url = await resolveRef.current();
       if (!url) {
-        setHeard("Nie udało się odczytać nagrania.");
+        setHeard(t("nieUdaloSieOdczytacNagrania"));
         return;
       }
       const full = await decodeUrl(url);
       if (full.samples.length > Math.floor(full.sampleRate * MAX_SECONDS)) {
-        setHeard("Nagranie jest dłuższe niż 6 minut. Nie zapisuję.");
+        setHeard(t("dluzszeNiz6Minut"));
         return;
       }
       const profileFrom = full.samples.subarray(0, Math.min(full.samples.length, Math.floor(full.sampleRate * PREVIEW_SECONDS)));
       const profile = noiseProfileFromSelection(profileFrom, full.sampleRate);
       const cleaned = applyNoiseProfile(full.samples, full.sampleRate, profile, 0.6);
       if (cleaned.length !== full.samples.length) {
-        setHeard("Wynik ma inną długość niż nagranie. Nie zapisuję.");
+        setHeard(t("innaDlugosc"));
         return;
       }
       const wav = encodeMonoWav16(cleaned, full.sampleRate);
@@ -132,7 +134,7 @@ function StudioClipSpectrogramBody({
       });
       const prep = (await prepRes.json().catch(() => ({}))) as { ok?: boolean; path?: string; token?: string; jobId?: string; error?: string };
       if (!prepRes.ok || !prep.ok || !prep.path || !prep.token || !prep.jobId) {
-        setHeard(prep.error === "take_unavailable" ? "To nagranie nie jest gotowe do podmiany." : "Nie udało się przygotować zapisu.");
+        setHeard(prep.error === "take_unavailable" ? t("nieGotoweDoPodmiany") : t("nieUdaloSiePrzygotowac"));
         return;
       }
       const supabase = createSupabaseBrowserClient();
@@ -141,7 +143,7 @@ function StudioClipSpectrogramBody({
         contentType: "audio/wav",
       });
       if (uploadError) {
-        setHeard("Nie udało się wysłać pliku.");
+        setHeard(t("nieUdaloSieWyslac"));
         return;
       }
       const commitRes = await fetch(`/api/studio/projects/${projectId}/clips/${clipId}/noise`, {
@@ -151,13 +153,13 @@ function StudioClipSpectrogramBody({
       });
       const commit = (await commitRes.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!commitRes.ok || !commit.ok) {
-        setHeard(commit.error === "truncated" ? "Plik był krótszy niż nagranie. Nie podmieniam go." : "Nie udało się zapisać czyszczenia.");
+        setHeard(commit.error === "truncated" ? t("plikKrotszy") : t("nieUdaloSieZapisac"));
         return;
       }
       emitStudioTakeSourceChanged(takeId);
-      setHeard("Zapisane. Odtwarzanie użyje oczyszczonego nagrania w pełnej długości.");
+      setHeard(t("zapisane"));
     } catch {
-      setHeard("Nie udało się zapisać czyszczenia.");
+      setHeard(t("nieUdaloSieZapisac"));
     } finally {
       setSaving(false);
     }
@@ -165,9 +167,9 @@ function StudioClipSpectrogramBody({
 
   return (
     <div className="flex flex-col gap-2" data-testid="studio-clip-spectrogram">
-      {load.status === "loading" ? <p className="text-sm text-[var(--brd-ink-soft)]">Liczę spektrogram…</p> : null}
+      {load.status === "loading" ? <p className="text-sm text-[var(--brd-ink-soft)]">{t("liczeSpektrogram")}</p> : null}
       {load.status === "empty" || load.status === "error" ? (
-        <p className="text-sm text-[var(--brd-ink-soft)]">Nie udało się odczytać klipu do spektrogramu.</p>
+        <p className="text-sm text-[var(--brd-ink-soft)]">{t("nieUdaloSieOdczytacKlipu")}</p>
       ) : null}
       {load.status === "ready" ? (
         <StudioClipInspect samples={load.samples} sampleRate={load.sampleRate} onApply={(out) => void preview(out)} />
@@ -180,10 +182,10 @@ function StudioClipSpectrogramBody({
           onClick={() => void save()}
           className="w-fit border border-[var(--brd-line)] px-3 py-2 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)] disabled:opacity-50"
         >
-          {saving ? "Zapisuję…" : "Zapisz czyszczenie w projekcie"}
+          {saving ? t("zapisuje") : t("zapiszCzyszczenie")}
         </button>
       ) : (
-        <p className="text-xs text-[var(--brd-ink-soft)]">Zapis czyszczenia jest tylko dla nagrania wokalu.</p>
+        <p className="text-xs text-[var(--brd-ink-soft)]">{t("tylkoWokal")}</p>
       )}
       {heard ? <p className="text-xs text-[var(--brd-ink-soft)]">{heard}</p> : null}
     </div>
