@@ -786,6 +786,16 @@
       "wypisanoBladTytul": "Nie udało się wypisać",
       "wypisanoBladOpis": "Link jest nieprawidłowy albo wysyłka jest wyłączona. Zmień ustawienia po zalogowaniu.",
       "przejdzDoUstawien": "Ustawienia powiadomień"
+    },
+    "referral": {
+      "tytul": "Zaproś znajomego",
+      "opis": "Wyślij ziomkowi swój link. Gdy założy z niego konto, potwierdzi e-mail i nagra pierwszą zwrotkę, obaj dostajecie pakiet {units} nagrań.",
+      "twojLink": "Twój link",
+      "tekstUdostepnienia": "Wbijaj do BitRymDym: darmowe bity i studio w przeglądarce. Załóż konto z mojego linku, nagraj pierwszą zwrotkę i obaj dostajemy po 10 nagrań.",
+      "tytulUdostepnienia": "BitRymDym: nagrywaj ze mną",
+      "zaproszeni": "Zaproszeni",
+      "nagrodzeni": "Nagrodzeni",
+      "zasady": "Liczą się tylko nowe konta z Twojego linku. Nagradzamy do {cap} poleceń w miesiącu, kolejne czekają na następny miesiąc. Konta-słupy i polecanie samego siebie nie przechodzą. Szczegóły w Regulaminie, § 9."
     }
   },
   "admin": {

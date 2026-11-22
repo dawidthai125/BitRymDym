@@ -786,6 +786,16 @@
       "wypisanoBladTytul": "Could not unsubscribe",
       "wypisanoBladOpis": "The link is invalid or sending is disabled. Change your settings after signing in.",
       "przejdzDoUstawien": "Notification settings"
+    },
+    "referral": {
+      "tytul": "Invite a friend",
+      "opis": "Send your link to a friend. Once they sign up with it, confirm their e-mail and record their first verse, you both get a pack of {units} recordings.",
+      "twojLink": "Your link",
+      "tekstUdostepnienia": "Pull up to BitRymDym: free beats and a studio in your browser. Sign up with my link, record your first verse and we both get 10 recordings.",
+      "tytulUdostepnienia": "BitRymDym: record with me",
+      "zaproszeni": "Invited",
+      "nagrodzeni": "Rewarded",
+      "zasady": "Only new accounts from your link count. We reward up to {cap} referrals a month; the rest wait for the next month. Fake accounts and referring yourself don't count. Details in the Terms, § 9."
     }
   },
   "admin": {

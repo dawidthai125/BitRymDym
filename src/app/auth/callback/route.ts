@@ -32,6 +32,7 @@ import {
 import { postAuthRedirectPath, safeNextPath, SIGN_IN_NEXT_PARAM } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { sendWelcomeOnce } from "@/lib/email/notify/server";
+import { normalizeReferralCode, REFERRAL_METADATA_KEY } from "@/lib/referrals/referral-policy";
 import { readSiteMaintenanceForViewer } from "@/lib/site/maintenance-settings";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -152,6 +153,20 @@ export async function GET(request: NextRequest) {
       confirmedUser = confirmed.user ?? null;
       const newUserId = confirmed.user?.email_confirmed_at ? confirmed.user.id : null;
       if (newUserId) after(() => sendWelcomeOnce(newUserId).then(() => {}));
+      // Referral: (re)record from metadata (idempotent; the DB rejects old accounts) and pay it
+      // if the first recording is already there (e.g. a claimed guest take).
+      const referralCode = normalizeReferralCode(confirmed.user?.user_metadata?.[REFERRAL_METADATA_KEY]);
+      if (newUserId && referralCode) {
+        after(async () => {
+          try {
+            const { recordReferral, settleReferralReward } = await import("@/lib/referrals/referral-service");
+            await recordReferral(newUserId, referralCode);
+            await settleReferralReward(newUserId);
+          } catch {
+            // Best-effort; the daily sweep retries.
+          }
+        });
+      }
     }
 
     if (decision.signOut) {

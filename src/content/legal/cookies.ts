@@ -14,6 +14,7 @@ export const COOKIES: LegalDoc = {
       ["brd_email_change", "komunikat po zmianie e-maila", "kilka minut"],
       ["brd_dl_aid", "limit pobrań bez konta (losowy identyfikator, bez danych osobowych)", "do 400 dni"],
       ["brd_tk_aid", "dawne nagrania bez konta (losowy identyfikator)", "do 2 godzin"],
+      ["brd_ref", "kod polecający z linku „Zaproś znajomego” (tylko kod, bez danych osobowych), odczytywany przy zakładaniu Konta", "do 30 dni"],
       ["NEXT_LOCALE", "wybrany język", "do zmiany"],
     ] } }] },
     { id: "c2", h: "2. Pamięć przeglądarki", blocks: [

@@ -58,7 +58,12 @@ export function hookTakeReadyAuth(params: {
   ownerUserId: string;
   takeId: string;
 }): Promise<void> {
-  return ignoreAwardErrors(() => awardTakeReady(params));
+  return ignoreAwardErrors(async () => {
+    await ignoreAwardErrors(() => awardTakeReady(params));
+    // "Zaproś znajomego": a first READY take may complete this account's referral.
+    const { settleReferralReward } = await import("@/lib/referrals/referral-service");
+    await settleReferralReward(params.ownerUserId);
+  });
 }
 
 /** First export + render success (idempotent / capped independently). */

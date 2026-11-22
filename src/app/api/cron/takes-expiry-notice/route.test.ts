@@ -8,6 +8,8 @@ vi.mock("@/lib/email/notify/take-expiry-notice", () => ({ runTakeExpiryNotices: 
 vi.mock("@/lib/email/notify/plan-expiry-notice", () => ({ runPlanExpiryNotices: () => plans() }));
 vi.mock("@/lib/email/notify/no-recording-notice", () => ({ runNoRecordingNotices: () => nudges() }));
 vi.mock("@/lib/reports/owner-weekly-report-run", () => ({ runOwnerWeeklyReport: () => report() }));
+const referrals = vi.fn();
+vi.mock("@/lib/referrals/referral-service", () => ({ runReferralRewardSweep: () => referrals() }));
 
 import { GET } from "./route";
 
@@ -20,6 +22,7 @@ describe("GET /api/cron/takes-expiry-notice", () => {
     plans.mockReset();
     nudges.mockReset().mockResolvedValue({ candidates: 0, mails: 0, results: {} });
     report.mockReset().mockResolvedValue({ status: "not_monday" });
+    referrals.mockReset().mockResolvedValue({ candidates: 0, results: {} });
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
   it("rejects without the cron secret", async () => {
@@ -44,6 +47,7 @@ describe("GET /api/cron/takes-expiry-notice", () => {
       plans: { candidates: 3, mails: 2, results: { sent: 2 } },
       noRecording: { candidates: 5, mails: 4, results: { sent: 4 } },
       ownerReport: { status: "sent", period: "2026-11-23", recipients: 1 },
+      referrals: { candidates: 0, results: {} },
     });
   });
   it("a nudge or report failure does not fail the run or the other steps", async () => {
@@ -57,6 +61,14 @@ describe("GET /api/cron/takes-expiry-notice", () => {
     expect(body.noRecording).toEqual({ error: "No-recording notice failed." });
     expect(body.ownerReport).toEqual({ error: "Owner weekly report failed." });
     expect(body.plans).toEqual({ candidates: 0, mails: 0, results: {} });
+  });
+  it("a referral sweep failure does not fail the run", async () => {
+    takes.mockResolvedValue({ candidates: 0, mails: 0, results: {} });
+    plans.mockResolvedValue({ candidates: 0, mails: 0, results: {} });
+    referrals.mockRejectedValue(new Error("rpc"));
+    const res = await GET(req("Bearer s3cret"));
+    expect(res.status).toBe(200);
+    expect((await res.json()).referrals).toEqual({ error: "Referral sweep failed." });
   });
   it("a plan failure does not fail the take result", async () => {
     takes.mockResolvedValue({ candidates: 0, mails: 0, results: {} });
