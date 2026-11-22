@@ -358,6 +358,10 @@
       "ogOdsluch": "Prywatny odsłuch",
       "ogUtwor": "Gotowy kawałek",
       "ogMarka": "Darmowe bity · Studio online"
+    },
+    "pwa": {
+      "zainstaluj": "Zainstaluj aplikację",
+      "iosPodpowiedz": "Na iPhonie: Udostępnij → Do ekranu początkowego. Ikonka BRD ląduje obok reszty apek."
     }
   },
   "account": {
@@ -444,7 +448,8 @@
       "usuwanieKonta": "Usuwanie konta",
       "tworca": "Twórca",
       "twojePobrania": "Twoje pobrania",
-      "wgraneIWModeracji": "Wgrane i w moderacji"
+      "wgraneIWModeracji": "Wgrane i w moderacji",
+      "kupioneBitySklep": "Twoje bity na wyłączność"
     },
     "accountSharedPage": {
       "metaTitle": "Bity udostępnione",
@@ -726,7 +731,12 @@
           "addon_perpetual": "dodatek jest bezterminowy i nie skracam go."
         }
       },
-      "porownaniePrzesun": "Przesuń tabelę w bok, żeby zobaczyć wszystkie plany →"
+      "porownaniePrzesun": "Przesuń tabelę w bok, żeby zobaczyć wszystkie plany →",
+      "sklep": {
+        "tytul": "Plan i pakiety",
+        "opis": "Plan i pakiety zmienisz na stronie bitrymdym.pl w przeglądarce.",
+        "wAplikacji": "Tutaj nagrywasz, słuchasz i miksujesz na planie, który już masz."
+      }
     },
     "settingsPage": {
       "metaTitle": "Ustawienia",
@@ -1828,7 +1838,8 @@
         "missing": "Plik WAV nie jest gotowy.",
         "SOLD": "Ten bit ktoś już kupił na wyłączność.",
         "RESERVED": "Ktoś właśnie płaci za ten bit. Jeśli nie dokończy płatności, bit wróci do sprzedaży w ciągu godziny."
-      }
+      },
+      "sklep": "Bit z płatnego katalogu. Odsłuchasz go tutaj, a jak jest Twój, pobierzesz WAV i nagrasz na nim w Studiu."
     },
     "beatsPage": {
       "katalogiAria": "Katalogi bitów",
@@ -1852,7 +1863,8 @@
       "cicho": "Cicho.",
       "nieMaJeszczeOpublikowanych": "Nie ma jeszcze opublikowanych bitów.",
       "gatunkiAria": "Darmowe bity według gatunku",
-      "gatunki": "Gatunki:"
+      "gatunki": "Gatunki:",
+      "platnyOpisSklep": "Bity na wyłączność. Odsłuchasz je tutaj. Te, które są Twoje, znajdziesz w swoim katalogu: pobierasz WAV i nagrywasz na nich w Studiu."
     },
     "genrePage": {
       "metaTitle": "Darmowe bity {genre} — odsłuch i nagrywanie online",
@@ -1896,7 +1908,8 @@
       "pobraneBity": "Pobrane bity",
       "zapisaneBity": "Zapisane bity",
       "wkrotce": "Zapisane bity",
-      "bityOdInnych": "Bity od innych"
+      "bityOdInnych": "Bity od innych",
+      "kupioneBitySklep": "Twoje bity na wyłączność"
     },
     "autoCheckCard": {
       "brakAutomatycznegoSprawdzeniaDla": "Brak automatycznego sprawdzenia dla tego bitu. Zatwierdzenie jest zablokowane.",
@@ -4549,7 +4562,10 @@
         "okladkaUstawiona": "Ustawiono jako okładkę bitu.",
         "okladkaDoMod": "Okładka bitu czeka na akceptację moderatora.",
         "okladkaBlad": "Nie udało się ustawić okładki bitu."
-      }
+      },
+      "limitSklep": "Na ten tydzień wykorzystano 2 wideo. Kolejne od poniedziałku.",
+      "limitJednorazowoSklep": "W tym planie nie masz teraz wolnego wideo.",
+      "tylkoGoldSklep": "Wideo MP4 pod YouTube jest w planach Bronze, Silver i Gold."
     },
     "studioLiveTake": {
       "nagrywanie": "● REC {czas}",

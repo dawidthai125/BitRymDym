@@ -8,6 +8,8 @@ import { isP24Redirect } from "@/lib/payments/p24-url";
 import { isPayuConfigured, readPayuConfig } from "@/lib/payments/payu-config";
 import { isPayuRedirectFor } from "@/lib/payments/payu-url";
 import { clientIpOrNull } from "@/lib/security/client-ip";
+import { STORE_APP_CHECKOUT_CODE } from "@/lib/site/store-app";
+import { isStoreAppRequest } from "@/lib/site/store-app-server";
 import { getSiteUrl } from "@/lib/site-url";
 
 export const runtime = "nodejs";
@@ -37,6 +39,10 @@ function localeOf(value: unknown): "pl" | "en" {
 }
 
 export async function POST(request: Request) {
+  // Store app (Google Play / App Store, `brd_app` cookie): no payments in the app — store rules.
+  if (isStoreAppRequest(request)) {
+    return NextResponse.json({ ok: false, code: STORE_APP_CHECKOUT_CODE }, { status: 403, headers: { "cache-control": "no-store" } });
+  }
   const payu = isPayuConfigured();
   if (!readPlanPaymentsAvailable() || (!payu && !isP24Configured())) {
     return NextResponse.json({ ok: false, code: "PAYMENTS_OFF" }, { status: 403, headers: { "cache-control": "no-store" } });
@@ -72,7 +78,7 @@ export async function POST(request: Request) {
 
   const locale = localeOf(body && typeof body === "object" ? (body as { locale?: unknown }).locale : null);
   try {
-    const result = await startCheckout({ context, body, locale, customerIp: customerIp ?? undefined });
+    const result = await startCheckout({ context, body, locale, customerIp: customerIp ?? undefined, storeApp: isStoreAppRequest(request) });
     if (!result.ok) {
       if (result.code === "RATE") {
         return NextResponse.json(
@@ -81,7 +87,7 @@ export async function POST(request: Request) {
         );
       }
       // PROMO: the starter discount the page showed is no longer available (409, the page reloads prices).
-      const status = result.code === "PROVIDER" ? 502 : result.code === "PROMO" ? 409 : 400;
+      const status = result.code === "PROVIDER" ? 502 : result.code === "PROMO" ? 409 : result.code === STORE_APP_CHECKOUT_CODE ? 403 : 400;
       return NextResponse.json({ ok: false, code: result.code }, { status, headers: { "cache-control": "no-store" } });
     }
     const payuConfig = payu ? readPayuConfig() : null;

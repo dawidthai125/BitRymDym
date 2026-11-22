@@ -1,5 +1,6 @@
 "use client";
 
+import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -333,9 +334,11 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
         <div className={cn(panel, "text-center")}>
           <p className="text-lg font-semibold">{t("zablokowaneTytul")}</p>
           <p className="mx-auto mt-2 max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("zablokowaneOpis")}</p>
-          <Link href="/premium" className="mt-4 inline-flex min-h-11 items-center rounded-md bg-[var(--brd-amber)] px-5 font-semibold text-[var(--brd-on-media)]">
-            {t("zobaczPlany")}
-          </Link>
+          <StoreAppHidden>
+            <Link href="/premium" className="mt-4 inline-flex min-h-11 items-center rounded-md bg-[var(--brd-amber)] px-5 font-semibold text-[var(--brd-on-media)]">
+              {t("zobaczPlany")}
+            </Link>
+          </StoreAppHidden>
         </div>
         <MySamples refreshKey={refreshKey} />
       </div>

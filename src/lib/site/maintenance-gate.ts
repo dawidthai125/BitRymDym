@@ -57,6 +57,9 @@ const EXEMPT_EXACT = new Set<string>([
   "/icon.png",
   "/apple-icon.png",
   "/manifest.webmanifest",
+  // PWA: service worker + its offline page (static, no data) must stay reachable.
+  "/sw.js",
+  "/offline",
   "/api/health",
   "/api/email/unsubscribe",
   "/email/wypisano",
@@ -78,6 +81,7 @@ const EXEMPT_PREFIXES = [
   "/bitek/",
   "/brand/",
   "/demo/",
+  "/icons/",
 ] as const;
 
 /** Share-card images only: /beat/<id>/(opengraph|twitter)-image, /listen/<token>/… */

@@ -7,6 +7,7 @@ import { AppShell } from "@/components/site/app-shell";
 import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { isStoreApp } from "@/lib/site/store-app-server";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -87,6 +88,7 @@ export default async function SettingsPage() {
   const tl = await getTranslations("language");
   const session = await getCurrentProfile();
   if (!session) redirect("/sign-in");
+  const storeApp = await isStoreApp();
 
   return (
     <AppShell tone="studio">
@@ -152,7 +154,8 @@ export default async function SettingsPage() {
                   {tc(group.group)}
                 </h2>
                 <ul className="mt-3 divide-y divide-[var(--brd-line)] border border-[var(--brd-line)]">
-                  {group.items.map((item) => (
+                  {/* Store app: no Premium (plans / buying) entry. */}
+                  {group.items.filter((item) => !(storeApp && item.href === "/premium")).map((item) => (
                     <li key={item.href}>
                       <Link
                         href={item.href}

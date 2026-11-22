@@ -15,6 +15,7 @@ import {
   readPlanUsageCache,
   writePlanUsageCache,
 } from "@/lib/plans/plan-usage-refresh";
+import { useStoreApp } from "@/components/site/store-app-context";
 import { cn } from "@/lib/utils";
 import type { PremiumTier } from "@/types/premium";
 
@@ -44,6 +45,8 @@ const TIER_CLASS: Record<PremiumTier, string> = {
  */
 export function PlanBadge({ userKey }: { userKey: string }) {
   const t = useTranslations("common.planUsage");
+  // Store app: usage only, no "+" pack links and no plans link.
+  const storeApp = useStoreApp();
   const locale = useLocale();
   const [usage, setUsage] = useState<PlanUsage | null>(null);
   const [failed, setFailed] = useState(false);
@@ -222,7 +225,7 @@ export function PlanBadge({ userKey }: { userKey: string }) {
                       {item.locked ? "🔒 " : ""}
                       {value(item)}
                     </span>
-                    {BUYABLE_ITEMS.has(item.id) && (!item.locked || item.id === "video") ? (
+                    {!storeApp && BUYABLE_ITEMS.has(item.id) && (!item.locked || item.id === "video") ? (
                       // Owner 2026-11-22: limits that packs top up get a gold "+" to the packs.
                       <Link
                         href="/premium#pakiety"
@@ -240,13 +243,15 @@ export function PlanBadge({ userKey }: { userKey: string }) {
                 ))}
               </ul>
               <p className="mt-2 text-xs text-[var(--brd-mute)]">{t("dobaUtc")}</p>
-              <Link
-                href="/premium"
-                onClick={() => setOpen(false)}
-                className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-[var(--brd-green)] underline underline-offset-4"
-              >
-                {t("plany")}
-              </Link>
+              {storeApp ? null : (
+                <Link
+                  href="/premium"
+                  onClick={() => setOpen(false)}
+                  className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-[var(--brd-green)] underline underline-offset-4"
+                >
+                  {t("plany")}
+                </Link>
+              )}
             </>
           ) : (
             <p className="text-sm text-[var(--brd-mute)]">{t("wczytuje")}</p>

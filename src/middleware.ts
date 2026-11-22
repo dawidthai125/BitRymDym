@@ -8,6 +8,7 @@ import {
   referralCookieOptions,
 } from "@/lib/referrals/referral-policy";
 import { buildCsp, cspHeaderName, generateNonce, NONCE_HEADER } from "@/lib/security/csp";
+import { decideStoreAppEntry, STORE_APP_COOKIE, storeAppCookieOptions } from "@/lib/site/store-app";
 import { userAccessBearer } from "@/lib/supabase/access-bearer";
 
 import {
@@ -249,6 +250,20 @@ export async function middleware(request: NextRequest) {
   const nonce = generateNonce();
   const headerName = cspHeaderName();
   const csp = buildCsp({ nonce });
+  // Store app entry (`/?app=android|ios`): remember the platform (cookie) and drop the param.
+  const storeEntry = decideStoreAppEntry({ method: request.method, url: request.nextUrl });
+  if (storeEntry) {
+    const redirect = NextResponse.redirect(storeEntry.redirectTo);
+    redirect.headers.set("Cache-Control", "no-store");
+    redirect.headers.set(headerName, csp);
+    const secure = process.env.NODE_ENV === "production";
+    if (storeEntry.kind === "set") {
+      redirect.cookies.set(STORE_APP_COOKIE, storeEntry.platform, storeAppCookieOptions(secure));
+    } else {
+      redirect.cookies.set(STORE_APP_COOKIE, "", { ...storeAppCookieOptions(secure), maxAge: 0 });
+    }
+    return redirect;
+  }
   const headers = new Headers(request.headers);
   headers.set(NONCE_HEADER, nonce);
   headers.set(headerName, csp);
@@ -273,6 +288,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|workers/|favicon.ico|api/beats/[^/]+/cover$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|wav|ogg|m4a)$).*)",
+    // sw.js + manifest.webmanifest: static PWA files, no redirect / rewrite / maintenance gate.
+    "/((?!_next/static|_next/image|workers/|favicon.ico|sw\\.js$|manifest\\.webmanifest$|api/beats/[^/]+/cover$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|wav|ogg|m4a)$).*)",
   ],
 };

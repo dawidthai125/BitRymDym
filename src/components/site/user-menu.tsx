@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useStoreApp } from "@/components/site/store-app-context";
 import { signOutAction } from "@/lib/auth/actions";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ export function UserMenu({
 }: UserMenuProps) {
   const tl = useLibText();
   const t = useTranslations("nav.userMenu");
+  const storeApp = useStoreApp();
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -103,9 +105,11 @@ export function UserMenu({
             <AccountNavLink href="/studio" onNavigate={() => setOpen(false)}>
               {t("studio")}
             </AccountNavLink>
-            <AccountNavLink href="/premium" onNavigate={() => setOpen(false)}>
-              {t("premium")}
-            </AccountNavLink>
+            {storeApp ? null : (
+              <AccountNavLink href="/premium" onNavigate={() => setOpen(false)}>
+                {t("premium")}
+              </AccountNavLink>
+            )}
             <AccountNavLink href="/library" onNavigate={() => setOpen(false)}>
               {t("biblioteka")}
             </AccountNavLink>

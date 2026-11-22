@@ -17,6 +17,7 @@ import { readPayuConfig } from "@/lib/payments/payu-config";
 import { isCustomerIp } from "@/lib/payments/payu-url";
 import { loadAddonSnapshot, loadPlanSnapshot } from "@/lib/payments/snapshots";
 import { loadStarterOffer } from "@/lib/payments/starter-offer";
+import { STORE_APP_CHECKOUT_CODE } from "@/lib/site/store-app";
 
 export type CheckoutCode =
   | "PAYMENTS_OFF"
@@ -30,6 +31,8 @@ export type CheckoutCode =
   | "SOLD"
   | "RESERVED"
   | "PROMO"
+  /** Request from the Google Play / App Store app (`brd_app` cookie): no payments there. */
+  | typeof STORE_APP_CHECKOUT_CODE
   | CheckoutBlock;
 
 export type CheckoutResult =
@@ -126,7 +129,10 @@ export async function startCheckout(input: {
   locale: "pl" | "en";
   customerIp?: string;
   now?: Date;
+  /** Store app request (isStoreAppRequest): refused before anything else — defence in depth. */
+  storeApp?: boolean;
 }): Promise<CheckoutResult> {
+  if (input.storeApp) return { ok: false, code: STORE_APP_CHECKOUT_CODE };
   const payu = readPayuConfig();
   const config = payu ? null : readP24Config();
   if (!readPlanPaymentsAvailable() || (!payu && !config)) return { ok: false, code: "PAYMENTS_OFF" };

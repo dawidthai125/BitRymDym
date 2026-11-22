@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { useStoreApp } from "@/components/site/store-app-context";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { cn } from "@/lib/utils";
 import type { PremiumTier } from "@/types/premium";
@@ -61,6 +62,8 @@ export function LockedAction({
   dataAttrs,
 }: LockedActionProps) {
   const t = useTranslations("common.planLocks");
+  // Store app: the limit message stays, the plan (purchase) link goes.
+  const storeApp = useStoreApp();
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLSpanElement | null>(null);
@@ -153,7 +156,7 @@ export function LockedAction({
             >
               {t("guestLink")}
             </Link>
-          ) : reason === "unavailable" || reason === "owner" ? null : (
+          ) : reason === "unavailable" || reason === "owner" || storeApp ? null : (
             <Link
               href="/premium"
               className="font-medium text-[var(--brd-green)] underline underline-offset-2"

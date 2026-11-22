@@ -358,6 +358,10 @@
       "ogOdsluch": "Private listen",
       "ogUtwor": "Finished track",
       "ogMarka": "Free beats · Online studio"
+    },
+    "pwa": {
+      "zainstaluj": "Install the app",
+      "iosPodpowiedz": "On iPhone: Share → Add to Home Screen. The BRD icon lands next to your other apps."
     }
   },
   "account": {
@@ -444,7 +448,8 @@
       "usuwanieKonta": "Delete account",
       "tworca": "Creator",
       "twojePobrania": "Your downloads",
-      "wgraneIWModeracji": "Uploaded and in moderation"
+      "wgraneIWModeracji": "Uploaded and in moderation",
+      "kupioneBitySklep": "Your exclusive beats"
     },
     "accountSharedPage": {
       "metaTitle": "Shared beats",
@@ -726,7 +731,12 @@
           "addon_perpetual": "the add-on has no end date and I won't shorten it."
         }
       },
-      "porownaniePrzesun": "Swipe the table sideways to see every plan →"
+      "porownaniePrzesun": "Swipe the table sideways to see every plan →",
+      "sklep": {
+        "tytul": "Plan and packs",
+        "opis": "You can change your plan and packs on bitrymdym.pl in a browser.",
+        "wAplikacji": "Here you record, listen and mix on the plan you already have."
+      }
     },
     "settingsPage": {
       "metaTitle": "Settings",
@@ -1828,7 +1838,8 @@
         "missing": "The wav is not ready.",
         "SOLD": "Someone has already bought this beat exclusively.",
         "RESERVED": "Someone is paying for this beat right now. If they don't finish, it goes back on sale within an hour."
-      }
+      },
+      "sklep": "Beat from the paid catalog. Listen here; if it is yours, download the WAV and record on it in the Studio."
     },
     "beatsPage": {
       "katalogiAria": "Beat catalogues",
@@ -1852,7 +1863,8 @@
       "cicho": "Quiet.",
       "nieMaJeszczeOpublikowanych": "There are no published beats yet.",
       "gatunkiAria": "Free beats by genre",
-      "gatunki": "Genres:"
+      "gatunki": "Genres:",
+      "platnyOpisSklep": "Exclusive beats. Listen to them here. The ones that are yours are in your catalog: download the WAV and record on them in the Studio."
     },
     "genrePage": {
       "metaTitle": "Free {genre} beats — listen and record online",
@@ -1896,7 +1908,8 @@
       "pobraneBity": "Downloaded beats",
       "zapisaneBity": "Saved beats",
       "wkrotce": "Saved beats",
-      "bityOdInnych": "Beats from others"
+      "bityOdInnych": "Beats from others",
+      "kupioneBitySklep": "Your exclusive beats"
     },
     "autoCheckCard": {
       "brakAutomatycznegoSprawdzeniaDla": "There is no automatic check for this beat. Approval is blocked.",
@@ -4549,7 +4562,10 @@
         "okladkaUstawiona": "Set as the beat cover.",
         "okladkaDoMod": "The beat cover is waiting for moderator approval.",
         "okladkaBlad": "Couldn't set the beat cover."
-      }
+      },
+      "limitSklep": "This week's 2 videos are used. More from Monday.",
+      "limitJednorazowoSklep": "No free video on your plan right now.",
+      "tylkoGoldSklep": "YouTube MP4 is on Bronze, Silver and Gold."
     },
     "studioLiveTake": {
       "nagrywanie": "● REC {czas}",

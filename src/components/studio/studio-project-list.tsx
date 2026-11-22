@@ -1,5 +1,6 @@
 "use client";
 
+import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useLibText } from "@/i18n/use-lib-text";
 
 
@@ -480,9 +481,11 @@ export function StudioProjectList({
             {atLimit ? ` — ${tPlan(projects.length > plan.maxProjects ? "projektyPonadLimit" : "projektyLimit")}` : ""}
           </span>
           {atLimit && plan.tier !== "GOLD" ? (
-            <BrdLink href="/premium" className="self-start text-sm sm:self-auto">
-              {tPlan("zobaczPlany")}
-            </BrdLink>
+            <StoreAppHidden>
+              <BrdLink href="/premium" className="self-start text-sm sm:self-auto">
+                {tPlan("zobaczPlany")}
+              </BrdLink>
+            </StoreAppHidden>
           ) : null}
         </div>
       ) : null}

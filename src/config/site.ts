@@ -24,6 +24,8 @@ export async function getSiteMetadata(): Promise<Metadata> {
     description,
     metadataBase: new URL(getPublicSiteUrl()),
     applicationName: siteConfig.name,
+    // PWA on iPhone (Add to Home Screen): own title + full-screen launch (manifest: src/app/manifest.ts).
+    appleWebApp: { capable: true, title: siteConfig.name, statusBarStyle: "black" },
     openGraph: {
       type: "website",
       locale: t("ogLocale"),

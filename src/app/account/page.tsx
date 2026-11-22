@@ -37,6 +37,7 @@ import { readEmailChangeNotice } from "@/lib/auth/email-change-notice";
 import { canAccessAdminNav } from "@/lib/auth/permissions";
 import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
+import { isStoreApp } from "@/lib/site/store-app-server";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import {
   countOwnActiveTakes,
@@ -60,6 +61,7 @@ export default async function AccountPage({
 }) {
   const tl = await getLibText();
   const tr = await getTranslations("account.accountPage");
+  const storeApp = await isStoreApp();
   const env = getSupabasePublicEnv();
   if (!env.isConfigured) {
     return (
@@ -258,7 +260,7 @@ export default async function AccountPage({
                   <LibraryRow
                     href="/beats?katalog=moj"
                     title={tr("kupione")}
-                    meta={tr("kupioneBity")}
+                    meta={tr(storeApp ? "kupioneBitySklep" : "kupioneBity")}
                   />
                   <LibraryRow
                     href="/account/beats"

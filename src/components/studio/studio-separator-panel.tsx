@@ -1,5 +1,6 @@
 "use client";
 
+import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -109,9 +110,11 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
       ) : (
         <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
           {t("plikiOdSilver")}{" "}
-          <Link href="/premium" className="underline underline-offset-4">
-            {t("zobaczPlany")}
-          </Link>
+          <StoreAppHidden>
+            <Link href="/premium" className="underline underline-offset-4">
+              {t("zobaczPlany")}
+            </Link>
+          </StoreAppHidden>
         </p>
       )}
       {note ? <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{note}</p> : null}

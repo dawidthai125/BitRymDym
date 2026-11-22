@@ -4,6 +4,7 @@
  * Gaps P1 — private listen links to the approved master (owner panel in the master step).
  * Create (lifetime ≤ plan cap, active-link cap per plan), copy, revoke. Listen only.
  */
+import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -89,7 +90,7 @@ export function StudioListenLinks({ projectId }: { projectId: string }) {
       {limitReached ? (
         <p role="status" className="flex flex-col gap-1 border-l-4 border-l-[var(--brd-amber)] px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between" data-testid="studio-share-limit-reached">
           <span>{t("limitOsiagniety")}</span>
-          <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a>
+          <StoreAppHidden><a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a></StoreAppHidden>
         </p>
       ) : null}
       {msg ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{msg}</p> : null}

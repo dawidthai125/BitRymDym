@@ -50,6 +50,16 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: securityHeaders },
       // Content-hashed worker bundles.
       { source: "/workers/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+      // PWA service worker (public/sw.js): always revalidated so an update ships on the next visit;
+      // own CSP (the worker only fetches same-origin pages and icons).
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
     ];
   },
   async redirects() {

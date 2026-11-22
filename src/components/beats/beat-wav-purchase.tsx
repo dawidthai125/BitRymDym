@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
 import Link from "next/link";
 import { PurchaseConsent } from "@/components/legal/consent-checkbox";
+import { useStoreApp } from "@/components/site/store-app-context";
 import { requestPurchasedBeatWavAction } from "@/lib/beats/purchased-wav-action";
 import { isPayuRedirect } from "@/lib/payments/payu-url";
 
@@ -33,6 +34,8 @@ export function BeatWavPurchase({
   locale: "pl" | "en";
 }) {
   const t = useTranslations("beats.beatWav");
+  // Store app: no price and no buy button; an owned WAV still downloads and records.
+  const storeApp = useStoreApp();
   const [consent, setConsent] = useState({ acceptTerms: false, immediatePerformance: false });
   const [pending, setPending] = useState<"pay" | "file" | null>(null);
   const [error, setError] = useState<PayCode | null>(null);
@@ -94,8 +97,14 @@ export function BeatWavPurchase({
 
   return (
     <div id="zakup" data-testid="beat-wav-purchase" className="max-w-xl space-y-3 border border-[var(--brd-line)] p-4">
-      <p className="text-sm font-semibold text-[var(--brd-ink)]">{price}</p>
-      <p className="text-sm leading-relaxed text-[var(--brd-ink-soft)]">{t("opis", { cena: price })}</p>
+      {storeApp ? (
+        <p className="text-sm leading-relaxed text-[var(--brd-ink-soft)]">{t("sklep")}</p>
+      ) : (
+        <>
+          <p className="text-sm font-semibold text-[var(--brd-ink)]">{price}</p>
+          <p className="text-sm leading-relaxed text-[var(--brd-ink-soft)]">{t("opis", { cena: price })}</p>
+        </>
+      )}
       {owned ? (
         <div className="space-y-2">
           <p className="text-sm text-[var(--brd-ink)]">{t("masz")}</p>
@@ -111,7 +120,7 @@ export function BeatWavPurchase({
             </Link>
           </div>
         </div>
-      ) : !fileReady ? (
+      ) : storeApp ? null : !fileReady ? (
         <p className="text-sm text-[var(--brd-mute)]">{t("brakPliku")}</p>
       ) : !signedIn ? (
         <BrdLink href={signInHref}>{t("zaloguj")}</BrdLink>

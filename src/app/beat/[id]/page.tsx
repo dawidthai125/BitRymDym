@@ -43,6 +43,7 @@ import { signInPathWithNext } from "@/lib/auth/next-path";
 import { loadBeatSale } from "@/lib/payments/beat-sale";
 import { prewarmListenCopy } from "@/lib/beats/listen-copy/listen-copy-server";
 import { formatBeatWavPrice } from "@/lib/payments/money";
+import { isStoreApp } from "@/lib/site/store-app-server";
 import { isPayuConfigured } from "@/lib/payments/payu-config";
 import { readPlanPaymentsAvailable } from "@/config/plan-policy";
 
@@ -173,11 +174,13 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   }
 
   const locale = await getLocale();
+  // Store app: no price and no checkout in the HTML (owned WAVs still download).
+  const storeApp = await isStoreApp();
   const wavSale = sale
     ? {
-        price: formatBeatWavPrice(locale),
+        price: storeApp ? "" : formatBeatWavPrice(locale),
         owned: sale.owned,
-        paymentsOn: readPlanPaymentsAvailable() && isPayuConfigured(),
+        paymentsOn: !storeApp && readPlanPaymentsAvailable() && isPayuConfigured(),
         fileReady: sale.fileReady,
         signInHref: signInPathWithNext(`/beat/${beat.id}#zakup`),
         locale: locale === "en" ? ("en" as const) : ("pl" as const),

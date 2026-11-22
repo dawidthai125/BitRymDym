@@ -13,7 +13,9 @@ import { getLocale } from "next-intl/server";
 import { publicClientMessages } from "@/i18n/client-messages";
 import { ClientProviders } from "@/components/site/client-providers";
 import { MaintenanceAdminBanner } from "@/components/site/maintenance-admin-banner";
+import { PwaServiceWorker } from "@/components/site/pwa-install";
 import { getSiteMetadata } from "@/config/site";
+import { isStoreApp } from "@/lib/site/store-app-server";
 import { BRD_THEME_BOOT_SCRIPT } from "@/lib/ui/theme";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +82,7 @@ export default async function RootLayout({
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   const locale = await getLocale();
   const messages = await publicClientMessages();
+  const storeApp = await isStoreApp();
   return (
     <html
       lang={locale}
@@ -101,7 +104,8 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: BRD_THEME_BOOT_SCRIPT }}
         />
         <NextIntlClientProvider messages={messages}>
-          <ClientProviders>
+          <ClientProviders storeApp={storeApp}>
+            <PwaServiceWorker />
             <MaintenanceAdminBanner />
             {children}
           </ClientProviders>

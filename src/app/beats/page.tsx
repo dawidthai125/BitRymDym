@@ -15,6 +15,7 @@ import { listPurchasedCatalog } from "@/lib/beats/purchased-catalog";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { isStoreApp } from "@/lib/site/store-app-server";
 import { presentBeats } from "@/lib/ui/demo-beats";
 import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 
@@ -37,6 +38,7 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const paid = !mine && params.katalog === "platny";
   const lane = paid ? "paid" : "free";
   const session = await getCurrentProfile();
+  const storeApp = await isStoreApp();
   if (mine && !session) redirect(signInPathWithNext("/beats?katalog=moj"));
   const [listed, purchased] = await Promise.all([
     mine ? Promise.resolve([]) : listPublishedBeats({ catalogLane: lane, ownershipType: source }),
@@ -132,9 +134,16 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
             <div className="space-y-6">
               <div className="border border-[var(--brd-line)] px-5 py-5" data-testid="beats-paid-catalog">
                 <p className="brd-display text-xl font-semibold">{t("platnyTytul")}</p>
-                <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--brd-mute)]">{t("platnyOpis")}</p>
-                <p className="mt-3 text-sm font-semibold">{t("platnyWkrotce")}</p>
-                <p className="mt-3 text-sm text-[var(--brd-mute)]">{t("platnyZakup")}</p>
+                {storeApp ? (
+                  // Store app: no price, no PayU (store rules).
+                  <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--brd-mute)]">{t("platnyOpisSklep")}</p>
+                ) : (
+                  <>
+                    <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--brd-mute)]">{t("platnyOpis")}</p>
+                    <p className="mt-3 text-sm font-semibold">{t("platnyWkrotce")}</p>
+                    <p className="mt-3 text-sm text-[var(--brd-mute)]">{t("platnyZakup")}</p>
+                  </>
+                )}
               </div>
               {beats.length > 0 ? (
                 <BeatsCatalogClient
