@@ -59,8 +59,12 @@ export async function sendNotification(p: { userId: string; kind: NotifyKind; da
       headers: { "List-Unsubscribe": `<${links.unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
       tags: [{ name: "kind", value: p.kind }],
     });
+    // 2026-11-22: one line per mail (kind + result, never the address) so a missing mail can be traced.
+    if (error) console.error("[notify] send failed", { kind: p.kind });
+    else console.info("[notify] sent", { kind: p.kind });
     return error ? "failed" : "sent";
   } catch {
+    console.error("[notify] send threw", { kind: p.kind });
     return "failed";
   }
 }
