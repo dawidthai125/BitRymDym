@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark theme of the site: --brd-paper (src/styles/tokens.css). -->
+    <!-- Dark theme of the site: brd-paper token (src/styles/tokens.css). -->
     <color name="brdBackground">#0E0C0A</color>
 </resources>
