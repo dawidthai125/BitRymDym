@@ -58,8 +58,13 @@ export function PremiumCheckoutForm({
   const [tier, setTier] = useState<PaidTier>(TIERS.find((item) => tierBlock[item] === null) ?? "GOLD");
   const [period, setPeriod] = useState<"month" | "year">("month");
   const [consent, setConsent] = useState({ acceptTerms: false, immediatePerformance: false });
+  // 2026-11-22: add-on and packs have their own consent next to their buttons. Before, they
+  // read the plan's consent far above, and with a "starts later" plan selected the
+  // immediate-performance box was hidden, so packs could never be bought.
+  const [extraConsent, setExtraConsent] = useState({ acceptTerms: false, immediatePerformance: false });
   const [pending, setPending] = useState<"plan" | "addon" | PlanPack | null>(null);
   const [error, setError] = useState<Code | null>(null);
+  const [errorScope, setErrorScope] = useState<"plan" | "extra">("plan");
 
   const planBlocked = tierBlock[tier];
   const change = planChangeKind(livePlan, tier, new Date());
@@ -68,7 +73,7 @@ export function PremiumCheckoutForm({
     return planChangeKind(livePlan, item, new Date());
   }
   const consentOk = consent.acceptTerms && (startsLater || consent.immediatePerformance);
-  const nowConsentOk = consent.acceptTerms && consent.immediatePerformance;
+  const nowConsentOk = extraConsent.acceptTerms && extraConsent.immediatePerformance;
 
   async function pay(
     product:
@@ -77,7 +82,9 @@ export function PremiumCheckoutForm({
       | { kind: "pack"; pack: PlanPack },
   ) {
     setError(null);
-    if (!consentOk) {
+    setErrorScope(product.kind === "plan" ? "plan" : "extra");
+    const productConsent = product.kind === "plan" ? consent : extraConsent;
+    if (product.kind === "plan" ? !consentOk : !nowConsentOk) {
       setError("CONSENT");
       return;
     }
@@ -86,7 +93,7 @@ export function PremiumCheckoutForm({
       const response = await fetch("/api/payments/p24/checkout", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify({ product, consent, locale }),
+        body: JSON.stringify({ product, consent: productConsent, locale }),
       });
       const payload = (await response.json()) as { ok?: boolean; code?: Code; redirectUrl?: string };
       if (!response.ok || !payload.ok || !payload.redirectUrl || (!isP24Redirect(payload.redirectUrl) && !isPayuRedirect(payload.redirectUrl))) {
@@ -175,7 +182,7 @@ export function PremiumCheckoutForm({
 
         <PurchaseConsent value={consent} onChange={setConsent} startsLater={startsLater} />
 
-        {error ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t(`blad.${error}`)}</p> : null}
+        {error && errorScope === "plan" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t(`blad.${error}`)}</p> : null}
 
         {loggedIn ? (
           <BrdButton type="submit" disabled={!!planBlocked || readFailed || pending !== null || !consentOk} data-testid="premium-checkout-submit">
@@ -185,6 +192,12 @@ export function PremiumCheckoutForm({
           <BrdLink href={signInHref} data-testid="premium-checkout-signin">{t("zalogujSie")}</BrdLink>
         )}
       </form>
+
+      {loggedIn ? (
+        <div className="border-t border-[var(--brd-line)] pt-6" data-testid="premium-extra-consent">
+          <PurchaseConsent value={extraConsent} onChange={setExtraConsent} />
+        </div>
+      ) : null}
 
       <form
         className="flex flex-col gap-3 border-t border-[var(--brd-line)] pt-6"
@@ -233,6 +246,7 @@ export function PremiumCheckoutForm({
           </form>
           );
         })}
+        {error && errorScope === "extra" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t(`blad.${error}`)}</p> : null}
       </div>
     </div>
   );

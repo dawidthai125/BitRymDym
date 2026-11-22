@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/site/app-shell";
+import { GuestSignUpLink } from "@/components/auth/guest-sign-up-link";
 import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 
@@ -38,9 +39,7 @@ export default function AboutPage() {
             <BrdLink href="/nagrywarka" variant="secondary">
               {t("programWindows")}
             </BrdLink>
-            <BrdLink href="/sign-up" variant="secondary">
-              {t("zalozKonto")}
-            </BrdLink>
+            <GuestSignUpLink>{t("zalozKonto")}</GuestSignUpLink>
           </div>
         </PageFrame>
       </main>

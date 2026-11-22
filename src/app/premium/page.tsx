@@ -3,6 +3,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
+import { GuestSignUpLink } from "@/components/auth/guest-sign-up-link";
 import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-region";
@@ -262,7 +263,7 @@ export default function PremiumPage() {
             <p className="mt-4 max-w-[60ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{tr("poziomGdyPlatnosci")}</p>
             <div className="mt-6 flex flex-wrap gap-2">
               <BrdLink href="/beats">{tr("idzDoKatalogu")}</BrdLink>
-              <BrdLink href="/sign-up" variant="secondary">{tr("zalozKonto")}</BrdLink>
+              <GuestSignUpLink>{tr("zalozKonto")}</GuestSignUpLink>
               <Link href="/about" className="inline-flex min-h-11 items-center px-2 text-sm text-[var(--brd-green)] underline-offset-4 hover:underline">
                 {tr("oBitrymdym")}
               </Link>
