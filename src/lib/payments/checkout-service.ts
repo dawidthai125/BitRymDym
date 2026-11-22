@@ -27,6 +27,8 @@ export type CheckoutCode =
   | "PROVIDER"
   | "OWNED"
   | "OPEN"
+  | "SOLD"
+  | "RESERVED"
   | "PROMO"
   | CheckoutBlock;
 
@@ -153,6 +155,8 @@ export async function startCheckout(input: {
     if (!sale?.fileReady) return { ok: false, code: "INVALID" };
     if (sale.owned) return { ok: false, code: "OWNED" };
     if (sale.open) return { ok: false, code: "OPEN" };
+    if (sale.sold) return { ok: false, code: "SOLD" };
+    if (sale.reserved) return { ok: false, code: "RESERVED" };
     beatTitle = sale.title;
   }
 

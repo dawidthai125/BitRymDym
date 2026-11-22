@@ -1128,6 +1128,9 @@ export async function listPublishedBeats(options?: {
     // User beats 2026-10-30: private beats never enter the public catalogue
     // (RLS also hides them; the owner-select policy would otherwise list them).
     .eq("visibility", "public")
+    // Exclusive sale (2026-11-22): a sold paid beat leaves the catalogue, also for its buyer
+    // (the buyer finds it under purchased beats).
+    .is("sold_at", null)
     .order("created_at", { ascending: false });
   // catalogLaneOf treats only the string "paid" as paid. Null and anything else stay free.
   if (lane === "paid") query = query.eq("catalog_lane", "paid");

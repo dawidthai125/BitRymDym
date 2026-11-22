@@ -191,6 +191,16 @@ export async function handleP24Webhook(body: unknown, now = new Date()): Promise
   }
   const result = (applied.data as { result?: string } | null)?.result;
   if (result === "already") return { status: 200, body: { ok: true, result: "already" } };
+  if (result === "sold") {
+    // Exclusive sale: someone else bought this beat first. Paid but not granted → refund queue.
+    console.error("[p24] beat already sold to another buyer", { sessionId: note.sessionId });
+    const stored = await recordPaymentReview(admin, {
+      orderRef: note.sessionId,
+      reason: "beat_sold_to_other",
+      providerRef: String(note.orderId),
+    });
+    return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
+  }
   if (result === "granted" || result === "skipped") {
     await sendNotification({
       userId,
@@ -463,6 +473,16 @@ async function settlePayuNotice(note: PayuOrderNotice, config: PayuConfig, now: 
   }
   const result = (applied.data as { result?: string } | null)?.result;
   if (result === "already") return { status: 200, body: { ok: true, result: "already" } };
+  if (result === "sold") {
+    // Exclusive sale: someone else bought this beat first. Paid but not granted → refund queue.
+    console.error("[payu] beat already sold to another buyer", { sessionId: note.extOrderId });
+    const stored = await recordPaymentReview(admin, {
+      orderRef: note.extOrderId,
+      reason: "beat_sold_to_other",
+      providerRef: note.orderId,
+    });
+    return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
+  }
   if (result === "granted" || result === "skipped") {
     await sendNotification({
       userId: loaded.userId,

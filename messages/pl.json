@@ -337,7 +337,7 @@
       "cookies": "Cookies",
       "zgodaRejestracja": "Akceptuję <regulamin>Regulamin</regulamin> i zapoznałem(-am) się z <prywatnosc>Polityką prywatności</prywatnosc>.",
       "zakupRegulamin": "Akceptuję <regulamin>Regulamin</regulamin> (jednorazowa płatność za wybrany okres, bez zapisu karty).",
-      "zakupRegulaminBit": "Akceptuję <regulamin>Regulamin</regulamin> (jednorazowa płatność 19,99 zł za plik wav tego bitu w Twoim katalogu i nagranie na nim w Studiu, bez zapisu karty).",
+      "zakupRegulaminBit": "Akceptuję <regulamin>Regulamin</regulamin> (jednorazowa płatność 19,99 zł za bit na wyłączność: plik wav w Twoim katalogu i nagrywanie na nim w Studiu, bez zapisu karty).",
       "zakupNatychmiast": "Żądam rozpoczęcia świadczenia przed upływem 14 dni na odstąpienie od umowy i przyjmuję do wiadomości, że w przypadku treści cyfrowych tracę prawo odstąpienia z chwilą ich dostarczenia.",
       "zakupWymagane": "Zaznacz obie zgody, aby przejść do płatności.",
       "zakupPozniej": "Ten niższy plan włączy się dopiero w dniu końca obecnego. Przez 14 dni od zapłaty, nie później niż do jego startu, możesz odstąpić mailem na adres z regulaminu.",
@@ -986,7 +986,7 @@
       "wydaje": "Wydaję…",
       "wydano": "Wydano.",
       "potrzebaOkladki": "Okładka jest potrzebna przed wydaniem do któregokolwiek katalogu.",
-      "zakup": "Katalog płatny sprzedaje plik WAV za 19,99 zł przez PayU. Po zakupie bit trafia do katalogu kupującego: pobiera WAV i nagrywa na nim w Studiu. W katalogu darmowym tego bitu nie ma.",
+      "zakup": "Katalog płatny sprzedaje bity na wyłączność za 19,99 zł przez PayU. Po zakupie bit znika z katalogu i trafia do katalogu kupującego: pobiera WAV i nagrywa na nim w Studiu. Nikt inny nie może go już kupić.",
       "pobierzMp3": "Pobierz MP3",
       "mp3Czeka": "Contabo robi MP3…",
       "mp3Nota": "MP3 powstaje na Contabo z mastera WAV (bez znaku wodnego). Pierwsze kliknięcie może chwilę poczekać.",
@@ -1563,6 +1563,7 @@
         "refund_amount_mismatch": "Zwrot większy niż wpłata.",
         "refund_needs_manual_review": "Zwrot przyszedł, ale zakupu nie udało się zdjąć automatycznie.",
         "refund_unpaid_order": "Zwrot do zamówienia, które nie było opłacone.",
+        "beat_sold_to_other": "Bit sprzedany wcześniej komuś innemu. Zwróć całą wpłatę.",
         "refund_ext_mismatch": "Zwrot nie pasuje do zamówienia.",
         "unknown_pack_amount": "Opłacony pakiet ma nieznaną kwotę.",
         "pending_plan_conflict": "Nie udało się włączyć opłaconego planu.",
@@ -1734,7 +1735,7 @@
       "beatUnavailable": "Bit niedostępny"
     },
     "beatWav": {
-      "opis": "Jednorazowo {cena} przez PayU. Po wpłacie bit jest w Twoim katalogu: pobierasz WAV i nagrywasz na nim w Studiu.",
+      "opis": "Na wyłączność, jednorazowo {cena} przez PayU. Po wpłacie bit znika z katalogu i jest tylko Twój: pobierasz WAV i nagrywasz na nim w Studiu i w programie na Windows.",
       "katalog": "Otwórz w moim katalogu",
       "nagraj": "Nagraj w Studiu",
       "kup": "Kup WAV",
@@ -1755,7 +1756,9 @@
         "OPEN": "Płatność za ten WAV już czeka. Dokończ ją albo spróbuj za godzinę.",
         "LOGIN": "Zaloguj się i otworzę płatność.",
         "denied": "Nie mogę udostępnić tego pliku.",
-        "missing": "Plik WAV nie jest gotowy."
+        "missing": "Plik WAV nie jest gotowy.",
+        "SOLD": "Ten bit ktoś już kupił na wyłączność.",
+        "RESERVED": "Ktoś właśnie płaci za ten bit. Jeśli nie dokończy płatności, bit wróci do sprzedaży w ciągu godziny."
       }
     },
     "beatsPage": {
@@ -1767,7 +1770,7 @@
       "mojPusto": "Nie masz jeszcze kupionych bitów.",
       "nagrajWStudio": "Nagraj w Studiu",
       "platnyTytul": "Płatny katalog bitów",
-      "platnyOpis": "Każdy bit w tym katalogu kosztuje 19,99 zł. Po płatności PayU zalogowany kupujący dostaje ten bit do swojego katalogu. Stamtąd pobiera plik WAV i nagrywa na nim w Studiu. Licencja jest niewyłączna. Bez zakupu nagranie w Studiu zostaje wyłączone.",
+      "platnyOpis": "Każdy bit w tym katalogu kosztuje 19,99 zł. Kupujesz na wyłączność: po płatności PayU bit znika z katalogu i trafia tylko do Twojego katalogu. Stamtąd pobierasz plik WAV i nagrywasz na nim w Studiu oraz w programie na Windows. Bez zakupu nagranie w Studiu zostaje wyłączone.",
       "platnyWkrotce": "19,99 zł · plik WAV",
       "platnyZakup": "Płatność idzie przez PayU. Po zakupie bit jest w katalogu kupującego, nie w katalogu darmowym.",
       "metaTitle": "Darmowe bity do rapu",

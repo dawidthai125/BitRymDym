@@ -13,6 +13,7 @@ const REASONS = [
   "refund_needs_manual_review",
   "refund_unpaid_order",
   "refund_ext_mismatch",
+  "beat_sold_to_other",
   "unknown_pack_amount",
   "pending_plan_conflict",
   "failed_order_rejected",

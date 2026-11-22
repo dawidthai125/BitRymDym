@@ -8,7 +8,8 @@ export type PaymentReviewReason =
   | "failed_order_not_completed"
   | "failed_order_rejected"
   | "failed_order_reopen_refused"
-  | "refund_ext_mismatch";
+  | "refund_ext_mismatch"
+  | "beat_sold_to_other";
 
 /**
  * Queue a payment for a human. Idempotent per (order_ref, reason, provider_ref): a PayU retry does not

@@ -12,6 +12,10 @@ export type BeatSaleState = {
   owned: boolean;
   /** A pending order for this beat opened inside the last hour. */
   open: boolean;
+  /** Exclusive sale (Owner 2026-11-22): another user already bought it. */
+  sold: boolean;
+  /** Another user has a payment for it open inside the last hour. */
+  reserved: boolean;
 };
 
 /**
@@ -23,7 +27,7 @@ export async function loadBeatSale(beatId: string, userId: string | null, now = 
   const admin = createSupabaseAdminClient();
   const beat = await admin
     .from("beats")
-    .select("id, title, status, ownership_type, catalog_lane")
+    .select("id, title, status, ownership_type, catalog_lane, sold_to")
     .eq("id", beatId)
     .maybeSingle();
   if (beat.error || !beat.data) return null;
@@ -33,6 +37,7 @@ export async function loadBeatSale(beatId: string, userId: string | null, now = 
     status?: string;
     ownership_type?: string;
     catalog_lane?: string | null;
+    sold_to?: string | null;
   };
   if (row.id !== beatId || row.status !== "PUBLISHED" || row.ownership_type !== "PLATFORM" || catalogLaneOf(row.catalog_lane) !== "paid") {
     return null;
@@ -68,11 +73,32 @@ export async function loadBeatSale(beatId: string, userId: string | null, now = 
     open = (pending.data ?? []).length > 0;
   }
 
+  const soldTo = typeof row.sold_to === "string" ? row.sold_to : null;
+  const sold = soldTo !== null && soldTo !== userId;
+  let reserved = false;
+  if (!sold && !owned) {
+    const since = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+    let others = admin
+      .from("payment_orders")
+      .select("id")
+      .eq("beat_id", beatId)
+      .eq("product_kind", "beat")
+      .eq("status", "pending")
+      .gte("created_at", since)
+      .limit(1);
+    if (userId && isUuid(userId)) others = others.neq("user_id", userId);
+    const held = await others;
+    if (held.error) return null;
+    reserved = (held.data ?? []).length > 0;
+  }
+
   return {
     id: beatId,
     title: typeof row.title === "string" ? row.title.trim() : "",
     fileReady,
     owned,
     open,
+    sold,
+    reserved,
   };
 }
