@@ -1,9 +1,10 @@
 /**
  * Catalog PREVIEW assets (pure helpers, no IO).
  *
- * Free lane / guests: short 20 s MP3 from MASTER — never a signed URL to the
- * full clean file. Paid lane (non-buyers): full-length MP3 with the voice
- * watermark mixed in; buyers get MASTER / purchased wav elsewhere.
+ * Both lanes (free since 2026-11-22): full-length MP3 with the voice watermark
+ * mixed in — never a signed URL to the full clean file. Guests on the free lane
+ * are capped at 20 s by audio-access; paid buyers get MASTER elsewhere. The old
+ * clean 20 s cut (`preview-20s-of-…`) is stale and gets replaced by the sweep.
  * Stored as purpose PREVIEW under the canonical private key layout.
  */
 import { GUEST_POLICY } from "@/config/plan-policy";

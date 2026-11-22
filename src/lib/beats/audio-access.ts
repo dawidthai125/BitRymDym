@@ -49,8 +49,8 @@ export type BeatAudioAccessResult = {
   assetId: string;
   remainingToday?: number;
   /**
-   * Client stop at N seconds. Set for free-lane short PREVIEW (guests and
-   * catalog `previewOnly`). Paid-lane watermarked full PREVIEW and buyer
+   * Client stop at N seconds. Set for free-lane guests and for a stale clean
+   * 20 s cut. Signed-in listeners (watermarked full PREVIEW) and buyer
    * MASTER leave this empty. Studio / recording / Windows omit previewOnly.
    */
   previewLimitSeconds?: number;
@@ -300,8 +300,8 @@ export async function requestBeatAudioAccess(params: {
   }
 
   // Guests never receive the clean full file. Catalog / take-rail pass
-  // previewOnly. Free lane → short PREVIEW + client cap. Paid lane →
-  // watermarked full PREVIEW for everyone until purchase; buyers get MASTER.
+  // previewOnly. Both lanes → watermarked full PREVIEW until purchase (free-lane
+  // guests capped at 20 s); paid buyers get MASTER.
   // Studio, recording, and the Windows program omit previewOnly.
   if (params.previewOnly === true && params.purpose !== "PLAYBACK") {
     throw new AuthError("FORBIDDEN", "Invalid access purpose.");
@@ -364,10 +364,11 @@ export async function requestBeatAudioAccess(params: {
       profileContext ? "Short preview is not ready." : BEAT_PREVIEW_LOGIN_REQUIRED,
     );
   }
-  // Free lane always caps. Paid WM full has no cap; stale paid 20 s cut still caps.
+  // Guests on the free lane cap at 20 s. Signed-in listeners hear the watermarked full
+  // file (both lanes). A stale clean 20 s cut always caps.
   const clientPreviewCap =
     shortListen &&
-    (beat.catalogLane !== "paid" ||
+    ((beat.catalogLane !== "paid" && !profileContext) ||
       isGuestShortPreviewFilename(asset.original_filename));
 
   let reservationId: string | null = null;

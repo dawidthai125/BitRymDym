@@ -191,6 +191,23 @@ describe("guest beat preview gate (server-enforced)", () => {
     expect(state.purposesQueried).toEqual(["PREVIEW"]);
   });
 
+  it("free catalog (2026-11-22): signed-in hears the watermarked full PREVIEW, no cap", async () => {
+    state.profile = { userId: "u1", profile: { role: "USER" } };
+    state.assets = [MASTER, PREVIEW_WM];
+    const r = await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK", previewOnly: true });
+    expect(r.assetId).toBe("p2");
+    expect(r.previewLimitSeconds).toBeUndefined();
+    expect(state.signedKeys).toEqual(["platform/b1/p2/preview.bin"]);
+  });
+
+  it("free catalog: guest gets the watermarked PREVIEW capped at 20 s", async () => {
+    state.assets = [MASTER, PREVIEW_WM];
+    const r = await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK" });
+    expect(r.assetId).toBe("p2");
+    expect(r.previewLimitSeconds).toBe(20);
+    expect(state.signedKeys).toEqual(["platform/b1/p2/preview.bin"]);
+  });
+
   it("paid catalog: guest gets watermarked PREVIEW with no 20 s cap", async () => {
     state.catalogLane = "paid";
     state.assets = [MASTER, PREVIEW_WM];

@@ -25,7 +25,6 @@ import {
   paidWatermarkPreviewSourceMarker,
   previewSourceMarker,
 } from "@/lib/beats/preview/beat-preview";
-import { catalogLaneOf } from "@/lib/beats/catalog-lane";
 import {
   previewMixArgs,
   tagCycleArgs,
@@ -87,6 +86,11 @@ export async function probeAudioDurationSeconds(file: string): Promise<number | 
   }
 }
 
+/** Every catalog lane gets the watermarked full preview (free since 2026-11-22). */
+export function previewKindForLane(_catalogLane: string | null): "paidWm" | "short" {
+  return "paidWm";
+}
+
 function fail(beatId: string, errorCode: string): PreviewResult {
   return { beatId, outcome: "failed", errorCode };
 }
@@ -105,8 +109,10 @@ export async function ensureBeatPreviewAsset(
     .maybeSingle();
   if (beatErr) return fail(beatId, "beat_load_failed");
   if (!beat) return fail(beatId, "beat_missing");
-  const paidWm = catalogLaneOf(beat.catalog_lane as string | null) === "paid";
-  const previewKind = paidWm ? ("paidWm" as const) : ("short" as const);
+  // Both lanes: full length with the voice tag every 15 s (Owner 2026-11-22: the free-lane clean
+  // 20 s cut is gone). Guests are still capped at 20 s by audio-access.
+  const previewKind = previewKindForLane(beat.catalog_lane as string | null);
+  const paidWm = previewKind === "paidWm";
 
   const { data: master, error: mErr } = await admin
     .from("beat_audio_assets")
@@ -261,12 +267,7 @@ export async function listBeatsNeedingPreview(
   if (rows.length === 0) return [];
   const ids = rows.map((b) => b.id as string);
   const laneById = new Map(
-    rows.map((b) => [
-      b.id as string,
-      catalogLaneOf(b.catalog_lane as string | null) === "paid"
-        ? ("paidWm" as const)
-        : ("short" as const),
-    ]),
+    rows.map((b) => [b.id as string, previewKindForLane(b.catalog_lane as string | null)]),
   );
 
   const { data: assets, error: aErr } = await admin

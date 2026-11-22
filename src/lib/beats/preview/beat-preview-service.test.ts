@@ -21,7 +21,10 @@ function master(id = "m1"): FakeAsset {
   return { id, beat_id: BEAT, purpose: "MASTER", status: "READY", is_active: true, object_key: MKEY, storage_bucket: "beat-audio", original_filename: "x.wav" };
 }
 function preview(id: string, of: string): FakeAsset {
-  return { id, beat_id: BEAT, purpose: "PREVIEW", status: "READY", is_active: true, object_key: `platform/${BEAT}/${id}/preview.bin`, storage_bucket: "beat-audio", original_filename: previewSourceMarker(of) };
+  return { id, beat_id: BEAT, purpose: "PREVIEW", status: "READY", is_active: true, object_key: `platform/${BEAT}/${id}/preview.bin`, storage_bucket: "beat-audio", original_filename: paidWatermarkPreviewSourceMarker(of) };
+}
+function cleanShort(id: string, of: string): FakeAsset {
+  return { ...preview(id, of), original_filename: previewSourceMarker(of) };
 }
 const fakeFfmpeg = async (args: string[]) => {
   await writeFile(args.at(-1)!, Buffer.from("ID3fake-mp3-bytes"));
@@ -38,7 +41,7 @@ describe("ensureBeatPreviewAsset", () => {
     const r = await ensureBeatPreviewAsset(deps(f.admin), { beatId: BEAT });
     expect(r.outcome).toBe("created");
     const row = f.assets.find((a) => a.purpose === "PREVIEW")!;
-    expect(row).toMatchObject({ is_active: true, status: "READY", content_type: "audio/mpeg", original_filename: previewSourceMarker("m1") });
+    expect(row).toMatchObject({ is_active: true, status: "READY", content_type: "audio/mpeg", original_filename: paidWatermarkPreviewSourceMarker("m1") });
     expect(row.object_key).toBe(`platform/${BEAT}/${row.id}/preview.bin`);
     expect(f.log[0]).toMatch(/^upload:platform\/.+\/preview\.bin:audio\/mpeg$/);
     expect(f.log[1]).toBe(`insert:${row.id}`);
@@ -92,6 +95,16 @@ describe("ensureBeatPreviewAsset", () => {
     expect(g.log).toEqual([]);
   });
 
+  it("free lane (2026-11-22): mixes the voice tag into the full file; the old clean 20 s cut is stale", async () => {
+    const f = createFakeAdmin({ beats: [{ id: BEAT, ownership_type: "PLATFORM", owner_id: null, catalog_lane: "free" }], assets: [master(), cleanShort("p0", "m1")], objects: { [MKEY]: Buffer.from("wav") } });
+    const calls: string[][] = [];
+    const r = await ensureBeatPreviewAsset({ ...deps(f.admin), runFfmpeg: async (a) => { calls.push(a); await fakeFfmpeg(a); } }, { beatId: BEAT });
+    expect(r.outcome).toBe("replaced");
+    expect(calls.some((a) => a.join(" ").includes("amix=inputs=2"))).toBe(true);
+    expect(calls.some((a) => a.includes("-t"))).toBe(false);
+    expect(f.assets.find((a) => a.id === r.previewAssetId)!.original_filename).toBe(paidWatermarkPreviewSourceMarker("m1"));
+  });
+
   it("listBeatsNeedingPreview: published beats with a master and a missing/stale preview", async () => {
     const B2 = "22222222-2222-4222-8222-222222222222";
     const f = createFakeAdmin({
@@ -115,7 +128,7 @@ describe("ensureBeatPreviewAsset", () => {
           catalog_lane: "paid",
         },
       ],
-      assets: [master("m1"), preview("p1", "m1")],
+      assets: [master("m1"), cleanShort("p1", "m1")],
       objects: { [MKEY]: Buffer.from("wav") },
     });
     expect(await listBeatsNeedingPreview(f.admin as unknown as SupabaseClient)).toEqual([
