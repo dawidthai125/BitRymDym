@@ -52,6 +52,13 @@ function body(kind: NotifyKind, d: TemplateData): Body {
         ],
         cta: { label: "Otwórz projekt", path: studio },
       };
+    case "plan_expiring":
+      return {
+        subject: "Twój plan kończy się za 3 dni",
+        heading: "Plan wkrótce się skończy",
+        lines: [hi, `Twój plan kończy się ${clean(d.detail, 160) || "za 3 dni"}.`, "Przedłuż go, żeby dalej korzystać z limitów planu."],
+        cta: { label: "Przedłuż plan", path: "/premium" },
+      };
     default: {
       const neverKind: never = kind;
       return neverKind;
