@@ -120,6 +120,8 @@ export function labelAdminAuditAction(action: string): string {
       return "Odebranie dodatku do planu";
     case "USAGE_RESET":
       return "Zerowanie limitów";
+    case "PAYMENT_REVIEW_RESOLVE":
+      return "Zamknięcie sprawy zwrotu";
     case "BEAT_COVER_REVIEW":
       return "Moderacja okładki bitu";
     case "BEAT_OWNER_UPDATE":

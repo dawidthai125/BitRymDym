@@ -1513,6 +1513,51 @@
       "doKatalogu": "Do katalogu",
       "wydany": "W katalogu ✓",
       "przestrojony": "Przestrojony z {from}"
+    },
+    "adminPaymentReviews": {
+      "tytul": "Zwroty do sprawdzenia",
+      "opis": "Sprawy, których system nie zamknął sam. Najnowsze na górze.",
+      "blad": "Nie udało się odczytać spraw.",
+      "pusto": "Nic nie czeka.",
+      "kiedy": "Kiedy",
+      "kto": "Kto",
+      "co": "Co",
+      "kwota": "Zapłacono",
+      "zwrot": "Zwrócono",
+      "powod": "Powód",
+      "dalej": "Co zrobić",
+      "powody": {
+        "refund_partial": "Zwrot mniejszy niż wpłata (np. przez prowizję).",
+        "refund_amount_mismatch": "Zwrot większy niż wpłata.",
+        "refund_needs_manual_review": "Zwrot przyszedł, ale zakupu nie dało się zdjąć samemu.",
+        "refund_unpaid_order": "Zwrot do zamówienia, które nie było opłacone.",
+        "refund_ext_mismatch": "Zwrot nie pasuje do zamówienia.",
+        "unknown_pack_amount": "Opłacony pakiet ma nieznaną kwotę.",
+        "pending_plan_conflict": "Opłacony plan nie dał się włączyć.",
+        "failed_order_rejected": "Płatność odrzucona.",
+        "failed_order_not_completed": "Płatność nie została dokończona.",
+        "failed_order_reopen_refused": "Płatność przyszła po anulowaniu."
+      },
+      "powodInny": "Inny powód ({kod})",
+      "zdejmij": "Zdejmij zakup i zamknij",
+      "zamknij": "Zamknij bez zmian",
+      "pytanieZdejmij": "Zdjąć zakup tak jak przy pełnym zwrocie i zamknąć sprawę?",
+      "pytanieZamknij": "Zamknąć sprawę bez zmian w koncie?",
+      "tak": "Tak",
+      "anuluj": "Anuluj",
+      "czekaj": "Chwila…",
+      "nowaSprawa": "Zrobione. Część trzeba sprawdzić ręcznie: pojawiła się nowa sprawa.",
+      "bledy": {
+        "FORBIDDEN": "Nie masz do tego uprawnień.",
+        "UNAUTHENTICATED": "Zaloguj się ponownie.",
+        "INVALID_INPUT": "Zła sprawa.",
+        "NOT_FOUND": "Nie ma takiej sprawy albo zamówienia.",
+        "ALREADY_CLOSED": "Ta sprawa jest już zamknięta.",
+        "NOT_REVOCABLE": "Tego zakupu nie da się zdjąć jednym kliknięciem.",
+        "NO_PROVIDER_ID": "Zamówienie nie ma numeru z PayU.",
+        "REFUND_FAILED": "Nie udało się zdjąć zakupu. Spróbuj ponownie.",
+        "RESOLVE_FAILED": "Nie udało się zamknąć sprawy. Spróbuj ponownie."
+      }
     }
   },
   "auth": {

@@ -12,7 +12,7 @@ import {
 } from "@/lib/admin/payment-history-present";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const ORDER_SELECT =
+export const ORDER_SELECT =
   "id, user_id, created_at, paid_at, buyer_email, product_kind, plan_tier, addon, pack, period, amount_grosz, currency, status, grant_status, granted_until" as const;
 
 export type AdminPaymentHistoryRow = PaymentHistoryOrderInput & {
@@ -53,7 +53,7 @@ export function adminPaymentHistoryAccessDenial(
   return null;
 }
 
-type OrderRecord = {
+export type OrderRecord = {
   id: string;
   user_id: string;
   created_at: string;
@@ -71,7 +71,7 @@ type OrderRecord = {
   granted_until: string | null;
 };
 
-function asOrder(value: unknown): OrderRecord | null {
+export function asOrder(value: unknown): OrderRecord | null {
   if (!value || typeof value !== "object") return null;
   const row = value as Partial<OrderRecord>;
   if (typeof row.id !== "string" || typeof row.user_id !== "string") return null;
