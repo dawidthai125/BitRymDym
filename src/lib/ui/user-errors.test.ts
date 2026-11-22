@@ -175,7 +175,7 @@ describe("playback / download mappers", () => {
 describe("mix / render user-facing errors", () => {
   it("maps mix capability to Polish", () => {
     expect(toUserFacingMixError("Mix is not enabled (E3_MIX_ENABLED).")).toBe(
-      "Miks jest chwilowo niedostępny.",
+      "Mix jest chwilowo niedostępny.",
     );
   });
 

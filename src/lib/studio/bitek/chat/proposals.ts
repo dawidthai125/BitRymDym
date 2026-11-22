@@ -112,7 +112,7 @@ export function buildBitekProposalWhy(
   }
   return value
     ? pl ? `Wyciszam ${name}, żebyś usłyszał resztę bez niego.` : `I'm muting ${name} so you can hear the rest without it.`
-    : pl ? `Włączam ${name} z powrotem do miksu.` : `I'm bringing ${name} back into the mix.`;
+    : pl ? `Włączam ${name} z powrotem do mixu.` : `I'm bringing ${name} back into the mix.`;
 }
 
 /** Model "why" → one clean sentence (≤ whyMaxChars), or null when unusable. */

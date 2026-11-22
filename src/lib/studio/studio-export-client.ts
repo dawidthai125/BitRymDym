@@ -17,7 +17,7 @@ export function studioExportForbiddenMessage(serverError: unknown): string {
   const text = typeof serverError === "string" ? serverError : "";
   if (/session expired/i.test(text)) return `${STUDIO_TAKE_EXPIRED_ERROR_PL} Potem eksportuj ponownie.`;
   if (/take was deleted/i.test(text)) {
-    return "Nagranie na jednej ze ścieżek zostało usunięte. Usuń jego klip albo dodaj nowe ujęcie, a potem wyeksportuj ponownie.";
+    return "Nagranie na jednej ze ścieżek zostało usunięte. Usuń jego klip albo dodaj nowe nagranie, a potem wyeksportuj ponownie.";
   }
   if (/not READY/i.test(text)) return "Nagranie na jednej ze ścieżek nie jest jeszcze gotowe. Poczekaj chwilę i spróbuj ponownie.";
   return "Brak uprawnień do eksportu tego projektu.";

@@ -98,7 +98,7 @@ export function studioProjectDocumentUrl(projectId: string): string {
 export function mixRevisionKindLabel(kind: MixRevisionKind | string): string {
   switch (kind) {
     case "tip_apply":
-      return "Zmiana miksu";
+      return "Zmiana mixu";
     case "restored":
       return "Przywrócenie";
     case "baseline":
@@ -255,14 +255,14 @@ function mapHttpFailure(input: {
   const raw =
     typeof input.error === "string" && input.error.length > 0
       ? input.error
-      : "Operacja historii miksu nie powiodła się.";
+      : "Operacja historii mixu nie powiodła się.";
 
   if (input.httpStatus === 401 || code === "UNAUTHENTICATED") {
     return {
       ok: false,
       httpStatus: input.httpStatus,
       code,
-      message: "Musisz być zalogowany, aby przeglądać historię miksu.",
+      message: "Musisz być zalogowany, aby przeglądać historię mixu.",
       kind: "unauthenticated",
     };
   }
@@ -271,7 +271,7 @@ function mapHttpFailure(input: {
       ok: false,
       httpStatus: input.httpStatus,
       code,
-      message: "Brak uprawnień do tej historii miksu.",
+      message: "Brak uprawnień do tej historii mixu.",
       kind: "forbidden",
     };
   }
@@ -290,7 +290,7 @@ function mapHttpFailure(input: {
       httpStatus: input.httpStatus,
       code,
       message:
-        "Miks zmienił się w międzyczasie. Odśwież projekt i ponów przywrócenie.",
+        "Mix zmienił się w międzyczasie. Odśwież projekt i ponów przywrócenie.",
       kind: "conflict_cas",
     };
   }
@@ -313,7 +313,7 @@ function mapHttpFailure(input: {
       httpStatus: input.httpStatus,
       code,
       message: tipMatch
-        ? "Wybrana rewizja odpowiada już bieżącemu stanowi miksu — brak zmian do przywrócenia."
+        ? "Wybrana rewizja odpowiada już bieżącemu stanowi mixu — brak zmian do przywrócenia."
         : "Rewizja jest nieprawidłowa lub nie może być użyta do tej operacji.",
       kind: "revision_invalid",
     };

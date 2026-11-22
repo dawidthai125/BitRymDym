@@ -84,7 +84,7 @@ describe("P6.4.3 Mix UX integration contracts", () => {
 
   it("Track Mix: channel-strip order Meter → Level → Pan → M/S/R → FX (Visual Shell)", () => {
     expect(editor).toMatch(/studioFxEntryLabel/);
-    expect(editor).toMatch(/aria-label=\"Miks\"/);
+    expect(editor).toMatch(/aria-label=\"Mix\"/);
     // Headers + mixer both expose M/S/R; strip order is Visual Shell OD freeze.
     const muteIdx = editor.indexOf('title="Wycisz"');
     const soloIdx = editor.indexOf('title="Solo"');

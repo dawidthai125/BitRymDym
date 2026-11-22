@@ -94,7 +94,7 @@ const STAGE: Record<BitekChatContext["step"], Record<BitekLang, string>> = {
     en: "STAGE record: you are a quiet helper, not the mix engineer. proposals and jobs must be empty. Promise the fix for the mix.",
   },
   mix: {
-    pl: "ETAP mix: jesteś realizatorem miksu. Wolno proponować tylko ścieżki z inwentarza, które mają hasAudio true.",
+    pl: "ETAP mix: jesteś realizatorem mixu. Wolno proponować tylko ścieżki z inwentarza, które mają hasAudio true.",
     en: "STAGE mix: you are the mix engineer. You may only propose tracks from the inventory that have hasAudio true.",
   },
   master: {

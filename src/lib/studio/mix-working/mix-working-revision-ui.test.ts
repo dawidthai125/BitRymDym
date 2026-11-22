@@ -50,12 +50,12 @@ describe("A3 Mix Working revision UI — client", () => {
   });
 
   it("labels kinds/authors without inventing unknown as empty", () => {
-    expect(mixRevisionKindLabel("tip_apply")).toBe("Zmiana miksu");
+    expect(mixRevisionKindLabel("tip_apply")).toBe("Zmiana mixu");
     expect(mixRevisionKindLabel("restored")).toBe("Przywrócenie");
     expect(mixRevisionAuthorLabel("USER")).toBe("Ty");
     expect(mixRevisionAuthorLabel("AI")).toBe("BITEK");
     expect(mixRevisionRowLabel({ kind: "accepted", author: "AI" })).toBe("Poprawki BITKA");
-    expect(mixRevisionRowLabel({ kind: "tip_apply", author: "USER" })).toBe("Zmiana miksu");
+    expect(mixRevisionRowLabel({ kind: "tip_apply", author: "USER" })).toBe("Zmiana mixu");
     expect(mixRevisionKindLabel("custom_kind")).toBe("custom_kind");
   });
 
@@ -211,7 +211,7 @@ describe("A3 Mix Working revision UI — control + editor wiring", () => {
       /data-testid="studio-mix-history-migration-notice"/,
     );
     expect(control).toMatch(/data-brd-mix-history-migration-notice="a35"/);
-    expect(control).toMatch(/Tu są starsze ustawienia miksu: głośność, panorama, wyciszenie, solo i efekty/);
+    expect(control).toMatch(/Tu są starsze ustawienia mixu: głośność, panorama, wyciszenie, solo i efekty/);
     expect(control).toMatch(/Starsze zmiany, sprzed tej listy, mogą się nie pokazać/);
     expect(control).not.toMatch(/featureFlag.*migration-notice/i);
     expect(control).not.toMatch(/setTimeout\([^)]*migration/i);
@@ -239,7 +239,7 @@ describe("A3 Mix Working revision UI — control + editor wiring", () => {
   it("uses dialog focus helpers and Polish restore copy", () => {
     expect(control).toMatch(/handleStudioDialogKeydown/);
     expect(control).toMatch(/getStudioDialogFocusable/);
-    expect(control).toMatch(/Przywrócić tę wersję miksu\?/);
+    expect(control).toMatch(/Przywrócić tę wersję mixu\?/);
     expect(control).toMatch(/Anuluj/);
     expect(control).toMatch(/Nie cofam plików dźwięku ani mastera/);
   });

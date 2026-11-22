@@ -198,7 +198,7 @@
   "tpl": true
  },
  {
-  "src": "{0} — odsłuch, nagrania i podstawowy miks. Wyższe jakości eksportu odblokujesz z Premium.",
+  "src": "{0} — odsłuch, nagrania i podstawowy mix. Wyższe jakości eksportu odblokujesz z Premium.",
   "en": "{0} — listening, recordings and a basic mix. Unlock higher export quality with Premium.",
   "tpl": true
  },
@@ -448,7 +448,7 @@
   "en": "You don't have permission to download this artifact."
  },
  {
-  "src": "Brak uprawnień do tej historii miksu.",
+  "src": "Brak uprawnień do tej historii mixu.",
   "en": "You don't have permission to view this mix history."
  },
  {
@@ -518,7 +518,7 @@
   "en": "The Studio document changed. Refresh the project and start the export again."
  },
  {
-  "src": "Miks zmienił się w międzyczasie. Odśwież projekt i ponów przywrócenie.",
+  "src": "Mix zmienił się w międzyczasie. Odśwież projekt i ponów przywrócenie.",
   "en": "The mix document changed since the operation started. Refresh the project state and confirm the restore again."
  },
  {
@@ -766,7 +766,7 @@
   "en": "The microphone was disconnected during recording."
  },
  {
-  "src": "Miks jest chwilowo niedostępny.",
+  "src": "Mix jest chwilowo niedostępny.",
   "en": "Mix is temporarily unavailable."
  },
  {
@@ -778,7 +778,7 @@
   "en": "The retention module is not available in the local database yet."
  },
  {
-  "src": "Musisz być zalogowany, aby przeglądać historię miksu.",
+  "src": "Musisz być zalogowany, aby przeglądać historię mixu.",
   "en": "You must be signed in to view mix history."
  },
  {
@@ -1122,7 +1122,7 @@
   "en": "Couldn't complete the sign-in operation. Try again."
  },
  {
-  "src": "Nie udało się wykonać operacji miksu. Spróbuj ponownie.",
+  "src": "Nie udało się wykonać operacji mixu. Spróbuj ponownie.",
   "en": "Couldn't complete the mix operation. Try again."
  },
  {
@@ -1362,7 +1362,7 @@
   "en": "The audio operation failed. Try again."
  },
  {
-  "src": "Operacja historii miksu nie powiodła się.",
+  "src": "Operacja historii mixu nie powiodła się.",
   "en": "The mix history operation failed."
  },
  {
@@ -1748,7 +1748,7 @@
   "en": "Analog tape"
  },
  {
-  "src": "Ten bit nie jest dostępny do miksu.",
+  "src": "Ten bit nie jest dostępny do mixu.",
   "en": "This beat is not available for mixing."
  },
  {
@@ -1916,7 +1916,7 @@
   "en": "Choose a valid BPM from the values suggested by the system."
  },
  {
-  "src": "Wybrana rewizja odpowiada już bieżącemu stanowi miksu — brak zmian do przywrócenia.",
+  "src": "Wybrana rewizja odpowiada już bieżącemu stanowi mixu — brak zmian do przywrócenia.",
   "en": "The selected revision already matches the current mix — nothing to restore."
  },
  {
@@ -2605,7 +2605,7 @@
   "en": "Accepted"
  },
  {
-  "src": "Zmiana miksu",
+  "src": "Zmiana mixu",
   "en": "Mix change"
  },
  {

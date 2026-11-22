@@ -67,7 +67,7 @@ export function watchMixManual(input: WatchMixInput): ManualIssue | null {
     return {
       key: "mute-vocal",
       text: pl
-        ? `Nie tak — „${name}” jest wyciszony, a to jedyny wokal z nagraniem. Reszta miksu gra bez głosu.`
+        ? `Nie tak — „${name}” jest wyciszony, a to jedyny wokal z nagraniem. Reszta mixu gra bez głosu.`
         : `Not like that — “${name}” is muted and it's the only vocal with audio. The mix is playing without the voice.`,
       fix: { kind: "controls", trackId: vocals[0]!.id, muted: false },
     };

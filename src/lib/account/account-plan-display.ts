@@ -67,7 +67,7 @@ export function formatAccountPlanDisplay(
   if (effectiveTier === "FREE") {
     return {
       tierLabel,
-      summary: `${tierLabel} — odsłuch, nagrania i podstawowy miks. Wyższe jakości eksportu odblokujesz z Premium.`,
+      summary: `${tierLabel} — odsłuch, nagrania i podstawowy mix. Wyższe jakości eksportu odblokujesz z Premium.`,
       premiumActive: false,
       verified: true,
     };

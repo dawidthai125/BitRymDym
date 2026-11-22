@@ -51,7 +51,7 @@ export const STUDIO_TAKE_PLAYBACK_ERROR_PL =
 
 /** Take still on the timeline after retention ended (/api/takes/preview 403). */
 export const STUDIO_TAKE_EXPIRED_ERROR_PL =
-  "To nagranie wygasło. Nagraj ponownie albo dodaj świeże ujęcie na ścieżkę.";
+  "To nagranie wygasło. Nagraj ponownie albo wstaw na ścieżkę inne nagranie.";
 
 /** Map /api/takes/preview failure body to stable Studio copy. */
 export function takePreviewFailureMessage(error: string | null | undefined): string {

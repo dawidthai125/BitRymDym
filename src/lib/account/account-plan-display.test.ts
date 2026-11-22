@@ -156,7 +156,7 @@ describe("account page Premium plan wiring (source contract)", () => {
     expect(page).toContain("resolveProductEntitlementForAuthContext");
     expect(page).toContain("formatAccountPlanDisplay");
     expect(page).not.toMatch(
-      /Darmowy — odsłuch, nagrania i podstawowy miks/,
+      /Darmowy — odsłuch, nagrania i podstawowy mix/,
     );
   });
 });

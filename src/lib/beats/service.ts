@@ -1036,7 +1036,7 @@ export async function archiveBeat(beatId: string): Promise<Beat> {
 }
 
 export const BEAT_DELETE_IN_USE =
-  "Ten bit jest użyty w nagraniu, miksie albo projekcie. Zarchiwizuj go, zamiast kasować.";
+  "Ten bit jest użyty w nagraniu, mixie albo projekcie. Zarchiwizuj go, zamiast kasować.";
 
 export async function deleteBeat(beatId: string): Promise<void> {
   await requireAdminPlatformOps();

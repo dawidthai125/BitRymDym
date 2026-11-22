@@ -22,7 +22,7 @@ const GENERIC_BY_DOMAIN: Record<UserFacingErrorDomain, string> = {
   playback: "Nie udało się odtworzyć audio.",
   download: "Nie udało się pobrać pliku.",
   recording: "Nie udało się nagrać. Spróbuj ponownie.",
-  mix: "Nie udało się wykonać operacji miksu. Spróbuj ponownie.",
+  mix: "Nie udało się wykonać operacji mixu. Spróbuj ponownie.",
   render: "Nie udało się wykonać eksportu. Spróbuj ponownie.",
   grant: "Nie udało się zarządzać dostępem. Spróbuj ponownie.",
   upload: "Nie udało się przesłać pliku. Spróbuj ponownie.",
@@ -363,13 +363,13 @@ export function toUserFacingError(
     lower.includes("mix is not enabled") ||
     lower.includes("e3_mix_enabled")
   ) {
-    return "Miks jest chwilowo niedostępny.";
+    return "Mix jest chwilowo niedostępny.";
   }
   if (
     lower.includes("public free audio is not released") ||
     lower.includes("e3_public_audio")
   ) {
-    return "Miks jest chwilowo niedostępny.";
+    return "Mix jest chwilowo niedostępny.";
   }
   if (
     lower.includes("render jobs are not enabled") ||
@@ -418,7 +418,7 @@ export function toUserFacingError(
     return "Osiągnięto limit miejsca na eksporty. Usuń stare pliki lub spróbuj później.";
   }
   if (lower.includes("beat is not available for mix")) {
-    return "Ten bit nie jest dostępny do miksu.";
+    return "Ten bit nie jest dostępny do mixu.";
   }
   if (lower.includes("artifact not found")) {
     return "Plik eksportu jest niedostępny.";
