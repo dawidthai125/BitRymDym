@@ -70,7 +70,9 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
         amountGrosz = extra.error || !extra.data ? null : ((extra.data as { amount_grosz?: number | null }).amount_grosz ?? null);
       }
       const full = { ...row, pack };
-      if (row.product_kind === "beat") {
+      // 2026-11-22: refunded orders showed "not found" (plans) or "payment in progress" (beats).
+      if (row.status === "refunded") state = { status: "refunded" };
+      else if (row.product_kind === "beat") {
         const extra = await admin.from("payment_orders").select("beat_id").eq("session_id", sessionId).eq("user_id", context.userId).maybeSingle();
         const beatId = extra.error || !extra.data ? null : ((extra.data as { beat_id?: string | null }).beat_id ?? null);
         const href = isUuid(beatId) ? `/beat/${beatId}` : "/beats?katalog=platny";

@@ -683,6 +683,7 @@
         "pakietGotowy": "Wpłata doszła. Dodałem {co}. Zostają, aż je wykorzystasz.",
         "pominiete": "Wpłatę mam, ale planu nie zmieniłem: {powod}",
         "nieudane": "Ta płatność nie doszła. Nic nie włączyłem.",
+        "zwrocone": "Ta płatność została zwrócona. Zakup jest wycofany.",
         "brak": "Nie znajduję tego zamówienia na Twoim koncie.",
         "wroc": "Wróć do planów",
         "bitCzekam": "Czekam na potwierdzenie z PayU. Jak wpłata dojdzie, plik wav tego bitu będzie do pobrania. Możesz zostać na tej stronie.",

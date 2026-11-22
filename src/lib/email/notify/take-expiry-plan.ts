@@ -7,6 +7,17 @@
 /** Cron runs once a day; 36 h catches every take at least once before expiry (retention ≥ 2 days). */
 export const TAKE_EXPIRY_NOTICE_WINDOW_MS = 36 * 60 * 60 * 1000;
 
+/** Upper bound on candidate takes scanned per run (paged by expires_at, id). */
+export const TAKE_EXPIRY_CANDIDATE_CAP = 2000;
+
+/** Split ids into chunks (keeps PostgREST `.in()` URLs bounded). */
+export function chunkIds<T>(ids: readonly T[], size: number): T[][] {
+  const n = Math.max(1, Math.floor(size));
+  const out: T[][] = [];
+  for (let i = 0; i < ids.length; i += n) out.push(ids.slice(i, i + n));
+  return out;
+}
+
 export type TakeExpiryCandidate = { takeId: string; ownerId: string; expiresAt: string };
 export type TakeProjectLink = { takeId: string; projectId: string; projectTitle: string; projectOwnerId: string };
 export type TakeExpiryMail = { ownerId: string; projectId: string; projectTitle: string; expiresAt: string; takeIds: string[]; otherProjects: number };

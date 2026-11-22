@@ -52,28 +52,40 @@ export async function openLabEngine(opts: { deviceId?: string; stereo: boolean }
       sampleRate: { ideal: 48_000 },
     },
   });
-  const ctx = new AudioContext({ latencyHint: "interactive", sampleRate: 48_000 });
-  const url = URL.createObjectURL(new Blob([RECORDER_WORKLET], { type: "application/javascript" }));
-  try {
-    await ctx.audioWorklet.addModule(url);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-  const source = ctx.createMediaStreamSource(stream);
-  const analyser = ctx.createAnalyser();
-  analyser.fftSize = 4096;
   const channelCount = opts.stereo ? 2 : 1;
-  const recorder = new AudioWorkletNode(ctx, "brd-lab-recorder", {
-    numberOfInputs: 1,
-    numberOfOutputs: 0,
-    channelCount,
-    channelCountMode: "explicit",
-  });
-  const monitor = ctx.createGain();
-  monitor.gain.value = 0;
-  source.connect(analyser);
-  source.connect(recorder);
-  source.connect(monitor).connect(ctx.destination);
+  let ctx: AudioContext | null = null;
+  let source: MediaStreamAudioSourceNode;
+  let analyser: AnalyserNode;
+  let recorder: AudioWorkletNode;
+  let monitor: GainNode;
+  try {
+    ctx = new AudioContext({ latencyHint: "interactive", sampleRate: 48_000 });
+    const url = URL.createObjectURL(new Blob([RECORDER_WORKLET], { type: "application/javascript" }));
+    try {
+      await ctx.audioWorklet.addModule(url);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+    source = ctx.createMediaStreamSource(stream);
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 4096;
+    recorder = new AudioWorkletNode(ctx, "brd-lab-recorder", {
+      numberOfInputs: 1,
+      numberOfOutputs: 0,
+      channelCount,
+      channelCountMode: "explicit",
+    });
+    monitor = ctx.createGain();
+    monitor.gain.value = 0;
+    source.connect(analyser);
+    source.connect(recorder);
+    source.connect(monitor).connect(ctx.destination);
+  } catch (error) {
+    // Setup failed after the mic was granted: release it so the browser's mic indicator turns off.
+    stream.getTracks().forEach((track) => track.stop());
+    await ctx?.close().catch(() => undefined);
+    throw error;
+  }
 
   let chunks: Float32Array[][] = [];
   let firstFrame = 0;

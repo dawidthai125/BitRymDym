@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 import { canDeleteAdminUsers, canMutateAdminUsers } from "@/lib/admin/users-authz";
 import { parseAdminUsersMutationInput } from "@/lib/admin/users-mutate";
@@ -239,6 +239,9 @@ export async function applyAdminUserManagementAction(input: {
     // Plan policy: upgrade → live takes get the new plan's validity.
     await extendTakeRetentionForTier(parsed.value.targetUserId, parsed.value.premiumTier);
 
+    // 2026-11-22: the profile/role is cached for 60 s (session.ts) — a demoted admin
+    // kept admin access until it expired. Expire the target's cache now.
+    updateTag(`auth-profile-${parsed.value.targetUserId}`);
     revalidatePath("/admin/users");
     return { success: true, error: null, code: null };
   } catch (error) {

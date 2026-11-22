@@ -444,6 +444,26 @@ describe("P6.3 Master insert topology", () => {
     expect(asFake(gain).connections).not.toContain(asFake(master?.masterInput));
     engine.dispose();
   });
+
+  it("Take preview resumes a suspended AudioContext before playing", async () => {
+    const played: string[] = [];
+    const { host, contexts } = createTrackingHost(played);
+    const ctx = contexts[0] as unknown as { state: string; resume: () => Promise<void> };
+    ctx.state = "suspended";
+    let resumed = 0;
+    ctx.resume = async () => {
+      resumed += 1;
+      ctx.state = "running";
+    };
+    const { engine } = engineWith(host);
+    engine.initialize();
+    engine.setDocument(documentOf([track("vocal")]));
+    await engine.previewTake(TAKE_A, "https://cdn.example/preview.wav");
+    expect(resumed).toBe(1);
+    expect(ctx.state).toBe("running");
+    expect(played).toContain("https://cdn.example/preview.wav");
+    engine.dispose();
+  });
 });
 
 describe("P6.3 Master bypass / rebuild / params", () => {

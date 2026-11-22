@@ -9,6 +9,7 @@ import { CHORD_CODES, chordIndexForCode, noteForCode, octaveShiftForCode, shiftB
 import { DEFAULT_CHORD_SET, findChord, strum } from "@/lib/studio/play/guitar-chords";
 import { quickFix } from "@/lib/studio/play/sampek-edit";
 import { SampekPanel } from "@/components/studio/play/sampek-panel";
+import { isTypingTarget } from "@/components/studio/studio-play-keys";
 import type { PlayInstrumentId, PlayLayer, PlaySession, SampekResult } from "@/lib/studio/play/play-types";
 import { cn } from "@/lib/utils";
 
@@ -96,14 +97,14 @@ export function PlayStudio({ bpm, beatId, canUseAi }: { bpm: number; beatId?: st
   });
   useEffect(() => {
     const down = (ev: KeyboardEvent) => {
-      if (ev.repeat) return;
+      if (ev.repeat || isTypingTarget(ev.target)) return;
       const code = ev.code;
       if (code === "KeyZ" || code === "KeyX") { setBase((b) => shiftBaseNote(b, octaveShiftForCode(code)!)); return; }
       if (instrument === "guitar" && (CHORD_CODES as readonly string[]).includes(code)) { keyHandlers.current.guitarAction(code, "down"); return; }
       const n = noteForCode(code, base); if (n == null) return;
       ev.preventDefault(); keyHandlers.current.noteOn(code, n, ev.shiftKey ? 1 : 0.8);
     };
-    const up = (ev: KeyboardEvent) => { if (instrument === "guitar") return; keyHandlers.current.noteOff(ev.code); };
+    const up = (ev: KeyboardEvent) => { if (instrument === "guitar" || isTypingTarget(ev.target)) return; keyHandlers.current.noteOff(ev.code); };
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   }, [base, instrument, recording]);

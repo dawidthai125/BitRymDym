@@ -9,6 +9,7 @@ import "server-only";
  * (Supabase 50 MB object cap) and joined in the browser. Logs never include URLs or keys.
  */
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { appendFile, copyFile, mkdir, mkdtemp, open, readdir, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
@@ -57,13 +58,30 @@ function mixCacheDir(): string {
   return process.env.STUDIO_MASTER_MIX_CACHE_DIR || path.join(homedir(), ".cache", "studio-mix");
 }
 
-function mixCacheFile(job: ClaimedMasterJob): string {
-  // ids are validated uuids (studioMasterJobPrefix) — safe as a file name.
-  return path.join(mixCacheDir(), `${job.owner_id}_${job.project_id}_v${Number(job.source_document_version)}_${MIX_CACHE_TAG}.wav`);
+/**
+ * 2026-11-22: applying a vocal cleanup does not bump the project document version, so
+ * the cache key also carries a fingerprint of the owner's applied cleanup jobs —
+ * otherwise a re-master after "Wyczyść wokal" reused the old, uncleaned mix.
+ */
+export function mixCacheCleanupTag(appliedCleanupIds: readonly string[]): string {
+  if (appliedCleanupIds.length === 0) return "c0";
+  return `c${createHash("sha1").update([...appliedCleanupIds].sort().join(",")).digest("hex").slice(0, 12)}`;
 }
 
-async function mixCacheHit(job: ClaimedMasterJob): Promise<string | null> {
-  const f = mixCacheFile(job);
+async function loadMixCacheCleanupTag(ownerId: string): Promise<string | null> {
+  const { data, error } = await createSupabaseAdminClient()
+    .from("studio_cleanup_jobs").select("id").eq("owner_id", ownerId).eq("applied", true).limit(1000);
+  if (error) return null; // unknown → skip the cache (re-render) instead of risking a stale mix
+  return mixCacheCleanupTag(((data ?? []) as { id: string }[]).map((r) => r.id));
+}
+
+function mixCacheFile(job: ClaimedMasterJob, cleanupTag: string): string {
+  // ids are validated uuids (studioMasterJobPrefix) — safe as a file name.
+  return path.join(mixCacheDir(), `${job.owner_id}_${job.project_id}_v${Number(job.source_document_version)}_${cleanupTag}_${MIX_CACHE_TAG}.wav`);
+}
+
+async function mixCacheHit(job: ClaimedMasterJob, cleanupTag: string): Promise<string | null> {
+  const f = mixCacheFile(job, cleanupTag);
   try {
     const st = await stat(f);
     if (Date.now() - st.mtimeMs > MIX_CACHE_TTL_MS) return null;
@@ -75,11 +93,11 @@ async function mixCacheHit(job: ClaimedMasterJob): Promise<string | null> {
   }
 }
 
-async function mixCacheStore(job: ClaimedMasterJob, file: string): Promise<void> {
+async function mixCacheStore(job: ClaimedMasterJob, cleanupTag: string, file: string): Promise<void> {
   try {
     const dir = mixCacheDir();
     await mkdir(dir, { recursive: true, mode: 0o700 });
-    const dst = mixCacheFile(job);
+    const dst = mixCacheFile(job, cleanupTag);
     await copyFile(file, `${dst}.tmp`);
     await rm(dst, { force: true });
     await copyFile(`${dst}.tmp`, dst);
@@ -274,7 +292,8 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
     } else {
       // Full mix (master / mix delivery): reuse this version's rendered mix if E3 has it.
       const mixKind = job.kind === "master" || job.kind === "transcode";
-      const cached = mixKind ? await mixCacheHit(job) : null;
+      const cleanupTag = mixKind ? await loadMixCacheCleanupTag(job.owner_id) : null;
+      const cached = mixKind && cleanupTag ? await mixCacheHit(job, cleanupTag) : null;
       if (cached) {
         await assertServerDocVersion({ ownerId: job.owner_id, projectId: job.project_id, expectedVersion: job.source_document_version });
         cur = cached;
@@ -318,7 +337,7 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
           // FX chains dominate the CPU → tracks render in parallel worker threads.
           const mix = job.kind === "raw_sum" ? renderMixStereo(input, { raw: true }) : await renderMixStereoParallel(input, {}, undefined, (f) => progress.report("render", f));
           await writeWavFloat(cur, mix);
-          if (mixKind) await mixCacheStore(job, cur);
+          if (mixKind && cleanupTag) await mixCacheStore(job, cleanupTag, cur);
         }
         timing.renderMs = Date.now() - r0;
         timing.lengthMs = input.lengthMs;

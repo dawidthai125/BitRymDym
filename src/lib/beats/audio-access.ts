@@ -311,8 +311,18 @@ export async function requestBeatAudioAccess(params: {
   const catalogOrGuestPreview =
     params.purpose === "PLAYBACK" &&
     (guestPreview || params.previewOnly === true);
+  // 2026-11-22: a signed-in non-buyer calling PLAYBACK without previewOnly
+  // (e.g. POST /api/beats/audio/playback) got the clean MASTER of a paid
+  // platform beat. Paid lane is watermarked for every non-staff non-buyer.
+  const paidPlatformPlayback =
+    params.purpose === "PLAYBACK" &&
+    beat.catalogLane === "paid" &&
+    beat.ownershipType === "PLATFORM" &&
+    actor !== "ADMIN" &&
+    actor !== "MODERATOR";
+  const previewGate = catalogOrGuestPreview || paidPlatformPlayback;
   const purchasedPaid =
-    catalogOrGuestPreview &&
+    previewGate &&
     beat.catalogLane === "paid" &&
     profileContext
       ? await viewerPurchasedPaidBeat(
@@ -327,13 +337,13 @@ export async function requestBeatAudioAccess(params: {
         )
       : false;
   // Serve PREVIEW (not MASTER) whenever catalog/guest listen is unpaid.
-  const shortListen = catalogOrGuestPreview && !purchasedPaid;
+  const shortListen = previewGate && !purchasedPaid;
   let asset: BeatAudioAssetRow;
   if (shortListen) {
     try {
       asset = await resolveGuestPreviewAsset(params.beatId);
     } catch (error) {
-      if (params.previewOnly === true && profileContext) {
+      if ((params.previewOnly === true || paidPlatformPlayback) && profileContext) {
         throw new AuthError("NOT_FOUND", "Short preview is not ready.");
       }
       throw error;

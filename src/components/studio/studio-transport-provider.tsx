@@ -665,6 +665,9 @@ export function StudioTransportProvider({
       setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
       throw new Error(STUDIO_TAKE_PLAYBACK_ERROR_PL);
     }
+    // Resume inside the user gesture (before any await) — iOS ignores later resume() calls.
+    const ctx = engine.getContextForAux();
+    if (ctx && ctx.state !== "running") void ctx.resume().catch(() => undefined);
     engine.pause();
     phaseRef.current = "paused";
     setPhase("paused");

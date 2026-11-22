@@ -73,6 +73,18 @@ describe("ranking score", () => {
     expect(prizesFor("month", ranked).map((prize) => prize.tier)).toEqual(["GOLD", "SILVER", "BRONZE"]);
     expect(prizesFor("week", ranked).some((prize) => prize.targetId === "house" || prize.targetId === "thin")).toBe(false);
   });
+
+  it("keeps admin-owned platform works on the board but never gives them a prize", () => {
+    const period = warsawPeriod(NOW, "week");
+    const votes = ["b", "c", "d"].flatMap((userId) => [
+      { targetId: "brd", ownerId: "admin", ownership: "PLATFORM" as const, userId, stars: 5, at: "2026-11-03T10:00:00.000Z" },
+      { targetId: "mine", ownerId: "u1", ownership: "USER" as const, userId, stars: 4, at: "2026-11-03T10:00:00.000Z" },
+    ]);
+    votes.push({ targetId: "brd", ownerId: "admin", ownership: "PLATFORM", userId: "admin", stars: 5, at: "2026-11-03T10:00:00.000Z" });
+    const ranked = rankTargets(aggregateRatings(votes, period.start, period.end));
+    expect(ranked.map((row) => [row.targetId, row.count])).toEqual([["brd", 3], ["mine", 3]]);
+    expect(prizesFor("week", ranked).map((prize) => [prize.place, prize.targetId])).toEqual([[1, "mine"]]);
+  });
 });
 
 describe("reward claim", () => {

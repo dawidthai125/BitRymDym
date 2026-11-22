@@ -272,6 +272,8 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   }
   const { data: q, error: qe } = await admin.rpc("consume_studio_download", {
     p_owner_id: p.ownerId, p_project_id: p.projectId, p_kind: kind, p_format: format, p_tier: p.tier, p_week_limit: d.weeklyLimit,
+    // 2026-11-22: the slot is tied to the job (idempotent retry; given back if the job fails).
+    p_job_id: p.jobId,
   });
   check(qe);
   const quota = (Array.isArray(q) ? q[0] : q) as { allowed: boolean; used: number; week_limit: number | null; reset_at: string | null };
@@ -285,6 +287,11 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
     // The E3 worker mixes the voice watermark into this encode (fails closed if it cannot).
     ...(d.watermark ? { settings: { watermark: 1 } } : {}),
   });
+  if (error && (error as { code?: string }).code === "23505") {
+    // Retried commit (network retry / double tap): the job already exists for this owner.
+    const { data: dup } = await admin.from("studio_master_jobs").select("id").eq("id", p.jobId).eq("owner_id", p.ownerId).eq("project_id", p.projectId).maybeSingle();
+    if (dup) return { ok: true as const, jobId: p.jobId, usage: withDay(false) };
+  }
   check(error);
   return { ok: true as const, jobId: p.jobId, usage: withDay(true) };
 }

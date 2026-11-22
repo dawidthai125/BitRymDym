@@ -75,6 +75,8 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
   const [countBeat, setCountBeat] = useState(0);
   const stopClicks = useRef<(() => void) | null>(null);
   const stopTimer = useRef<number | null>(null);
+  const countTimers = useRef<number[]>([]);
+  const mounted = useRef(true);
   const beatAudio = useRef<HTMLAudioElement | null>(null);
   const plan = useRef<{ loopStartSec: number; firstFrameSec: number } | null>(null);
 
@@ -118,9 +120,28 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
     return () => cancelAnimationFrame(raf);
   }, [status]);
 
-  useEffect(() => () => {
-    void engine.current?.close();
-    void playCtx.current?.close();
+  useEffect(() => {
+    mounted.current = true;
+    const countIns = countTimers.current;
+    return () => {
+      mounted.current = false;
+      if (stopTimer.current) window.clearTimeout(stopTimer.current);
+      stopTimer.current = null;
+      countIns.forEach((id) => window.clearTimeout(id));
+      countIns.length = 0;
+      stopClicks.current?.();
+      stopClicks.current = null;
+      const audio = beatAudio.current;
+      if (audio) {
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+      }
+      beatAudio.current = null;
+      void engine.current?.close();
+      engine.current = null;
+      void playCtx.current?.close();
+    };
   }, []);
 
   useEffect(() => {
@@ -132,12 +153,19 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
     setStatus("starting");
     try {
       await engine.current?.close();
-      engine.current = await openLabEngine({ deviceId: deviceId || undefined, stereo });
+      const opened = await openLabEngine({ deviceId: deviceId || undefined, stereo });
+      if (!mounted.current) {
+        // Unmounted while the mic was opening: release it instead of leaking a live input.
+        void opened.close();
+        return;
+      }
+      engine.current = opened;
       engine.current.setMonitor(monitor);
       setInputs(await listLabInputs());
       setStatus("ready");
     } catch {
       engine.current = null;
+      if (!mounted.current) return;
       setStatus("off");
       setError(t("bladMikrofonu"));
     }
@@ -161,7 +189,9 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
     setSaved(null);
     if (e.ctx.state === "suspended") await e.ctx.resume();
     const audio = await prepareBeat().catch(() => null);
+    if (!mounted.current) return;
     const firstFrameSec = await e.startCapture();
+    if (!mounted.current) return;
     if (!usesClock) {
       plan.current = { loopStartSec: firstFrameSec, firstFrameSec };
       setStatus("recording");
@@ -177,17 +207,19 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
     // What the player hears arrives late at the mic: shift the cut by the output latency.
     plan.current = { loopStartSec: barOne + e.latency(), firstFrameSec };
     setStatus("countin");
+    countTimers.current.forEach((id) => window.clearTimeout(id));
+    countTimers.current.length = 0;
     for (let i = 0; i < countIn; i++) {
-      window.setTimeout(() => setCountBeat(countIn - i), Math.max(0, (t0 + i * spb - e.ctx.currentTime) * 1000));
+      countTimers.current.push(window.setTimeout(() => setCountBeat(countIn - i), Math.max(0, (t0 + i * spb - e.ctx.currentTime) * 1000)));
     }
-    window.setTimeout(() => {
+    countTimers.current.push(window.setTimeout(() => {
       setCountBeat(0);
       setStatus("recording");
       if (audio) {
         audio.currentTime = 0;
         void audio.play().catch(() => undefined);
       }
-    }, Math.max(0, (barOne - e.ctx.currentTime) * 1000));
+    }, Math.max(0, (barOne - e.ctx.currentTime) * 1000)));
     const endSec = type === "loop" ? barOne + recordBeats * spb + e.latency() + 0.2 : barOne + SAMPLE_MAX_MS / 1000;
     stopTimer.current = window.setTimeout(() => void stop(), Math.max(0, (endSec - e.ctx.currentTime) * 1000));
   }
@@ -197,6 +229,8 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
     if (!e) return;
     if (stopTimer.current) window.clearTimeout(stopTimer.current);
     stopTimer.current = null;
+    countTimers.current.forEach((id) => window.clearTimeout(id));
+    countTimers.current.length = 0;
     stopClicks.current?.();
     stopClicks.current = null;
     beatAudio.current?.pause();

@@ -1,6 +1,8 @@
 /**
  * Community ranking. One vote per person per beat or sample, counted in the
- * Europe/Warsaw week or month when it was first cast. Own work does not count.
+ * Europe/Warsaw week or month when it was last cast (a re-rate moves it to the
+ * current period, so closed periods never change). Own work does not count.
+ * Platform (admin-owned) works rank but take no prize.
  * A prize needs three different raters. Weekly prizes are extra premium days.
  * Monthly prizes are one billing month: Gold, Silver, Bronze.
  */
@@ -157,9 +159,13 @@ export function bayesianScore(sum: number, count: number): number {
   return (PRIOR_COUNT * PRIOR_MEAN + sum) / (PRIOR_COUNT + count);
 }
 
+/** Who owns the work. PLATFORM (admin-owned) works rank but take no prize. Absent = legacy USER. */
+export type WorkOwnership = "USER" | "PLATFORM";
+
 export type RatingInput = {
   targetId: string;
   ownerId: string | null;
+  ownership?: WorkOwnership;
   userId: string;
   stars: number;
   at: string;
@@ -168,6 +174,7 @@ export type RatingInput = {
 export type Aggregate = {
   targetId: string;
   ownerId: string | null;
+  ownership?: WorkOwnership;
   sum: number;
   count: number;
 };
@@ -184,6 +191,7 @@ export function aggregateRatings(rows: readonly RatingInput[], start: Date, end:
     const current = map.get(row.targetId) ?? {
       targetId: row.targetId,
       ownerId: row.ownerId,
+      ...(row.ownership ? { ownership: row.ownership } : {}),
       sum: 0,
       count: 0,
     };
@@ -220,9 +228,14 @@ export type Prize = {
   days: number;
 };
 
-/** Top three works that have an owner and at least MIN_RATERS. Platform rows stay on the board and take no prize. */
+/**
+ * Top three user-owned works that have an owner and at least MIN_RATERS. Platform rows
+ * (no owner, or admin-owned with ownership PLATFORM) stay on the board and take no prize.
+ */
 export function prizesFor(kind: PeriodKind, ranked: readonly Ranked[]): Prize[] {
-  const eligible = ranked.filter((row) => row.ownerId && row.count >= MIN_RATERS);
+  const eligible = ranked.filter(
+    (row) => row.ownerId && (row.ownership ?? "USER") === "USER" && row.count >= MIN_RATERS,
+  );
   return eligible.slice(0, 3).map((row, index) => {
     if (kind === "week") {
       return {

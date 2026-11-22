@@ -39,6 +39,38 @@ type SwapRpcRow = {
 };
 
 /**
+ * PENDING_UPLOAD → FAILED, guarded on status so a retried/racing finalize
+ * can never overwrite a READY take. When the transition actually happened and
+ * `removeObject` is set, the (already binding-validated) uploaded object is
+ * removed best-effort; the janitor sweeps FAILED rows as a safety net.
+ * Returns whether this call performed the transition.
+ */
+export async function markPendingTakeFailed(params: {
+  takeId: string;
+  failureReason: string;
+  objectKey?: string | null;
+  removeObject?: boolean;
+}): Promise<boolean> {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("takes")
+    .update({ status: "FAILED", failure_reason: params.failureReason })
+    .eq("id", params.takeId)
+    .eq("status", "PENDING_UPLOAD")
+    .select("id");
+  const transitioned = !error && Array.isArray(data) && data.length > 0;
+  const key = params.objectKey;
+  if (transitioned && params.removeObject && typeof key === "string" && key.endsWith(".bin")) {
+    try {
+      await admin.storage.from(TAKE_AUDIO_BUCKET).remove([key]);
+    } catch {
+      // best-effort — janitor safety net
+    }
+  }
+  return transitioned;
+}
+
+/**
  * Atomic PENDING→READY (+ optional old→DELETED). Storage cleanup is after commit.
  */
 export async function invokeFinalizeTakeReadySwap(params: {

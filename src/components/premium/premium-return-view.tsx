@@ -10,6 +10,7 @@ export type ReturnState =
   | { status: "paid"; product: string; until: string | null; scheduled?: boolean }
   | { status: "skipped"; reason: "perpetual" | "downgrade" | "pending_plan" | "addon_perpetual" }
   | { status: "failed" }
+  | { status: "refunded" }
   | { status: "missing" }
   | { status: "beat_pending"; href: string }
   | { status: "beat_paid"; href: string }
@@ -33,6 +34,7 @@ export function PremiumReturnView({ state }: { state: ReturnState }) {
   }
   if (state.status === "skipped") body = t("pominiete", { powod: t(`powod.${state.reason}`) });
   if (state.status === "failed") body = t("nieudane");
+  if (state.status === "refunded") body = t("zwrocone");
 
   return (
     <AppShell tone="public">

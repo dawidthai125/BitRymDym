@@ -427,6 +427,7 @@ function storedToInputs(rows: readonly StoredRating[], works: Map<string, Work>)
     return [{
       targetId: row.target_id,
       ownerId: work.ownerId,
+      ownership: work.ownership,
       userId: row.user_id,
       stars: Number(row.stars),
       at: row.created_at,
@@ -691,8 +692,11 @@ export async function rateTarget(userId: string, kind: TargetKind | "work", id: 
   if (work.ownerId === userId) return "own";
   const admin = adminOrNull();
   if (!admin) return "off";
+  // A re-rate counts in the period it is cast: ranking windows key on created_at, so
+  // moving it to now keeps closed periods frozen and lets a re-vote count this period.
+  const at = new Date().toISOString();
   const saved = await admin.from(RATINGS).upsert(
-    { target_kind: kind, target_id: id, user_id: userId, stars, updated_at: new Date().toISOString() },
+    { target_kind: kind, target_id: id, user_id: userId, stars, created_at: at, updated_at: at },
     { onConflict: "target_kind,target_id,user_id" },
   );
   if (missingCommunity(saved.error)) return "off";

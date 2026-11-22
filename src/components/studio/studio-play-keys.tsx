@@ -52,6 +52,13 @@ const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", 
 
 let previewCtx: AudioContext | undefined;
 
+/** True when a key event comes from a text field, select or contentEditable (the user is typing). */
+export function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
+}
+
 function noteName(semi: number): string {
   return NOTE_NAMES[((semi % 12) + 12) % 12] ?? "C";
 }
@@ -198,11 +205,7 @@ export function StudioPlayKeys({
     if (!root) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
-      const target = event.target;
-      if (target instanceof HTMLElement) {
-        const tag = target.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
-      }
+      if (isTypingTarget(event.target)) return;
       const surface = instrumentRef.current;
       const nudge = octaveNudge(event.code);
       if (nudge && surface !== "drums") {

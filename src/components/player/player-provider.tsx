@@ -91,6 +91,14 @@ class GuestPreviewUnavailableError extends Error {
   }
 }
 
+/** A newer activation/toggle superseded this load: drop it silently. */
+class StalePlaybackRequestError extends Error {
+  constructor() {
+    super("stale playback request");
+    this.name = "StalePlaybackRequestError";
+  }
+}
+
 const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 export function usePlayer(): PlayerContextValue {
@@ -117,6 +125,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const listenMasterRef = useRef(false);
   /** Session cache key for the current blob:/bytes (WAVE 1-A). */
   const sessionKeyRef = useRef<string | null>(null);
+  /** Bumped on every activation / toggle-load; a load whose id is no longer current is stale. */
+  const requestIdRef = useRef(0);
   const durationRef = useRef(0);
   const [track, setTrack] = useState<PlayerTrack | null>(null);
   const [phase, setPhase] = useState<PlayerPhase>("idle");
@@ -213,7 +223,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     audio.playbackRate = playbackRate;
   }, [volume, muted, loop, playbackRate]);
 
-  const ensureUrl = useCallback(async (beatId: string): Promise<string> => {
+  const ensureUrl = useCallback(async (beatId: string, requestId: number): Promise<string> => {
+    const isStale = () => requestId !== requestIdRef.current;
     const expired =
       !expiresAtRef.current ||
       new Date(expiresAtRef.current).getTime() <= Date.now() + 5000;
@@ -247,6 +258,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       purpose: PUBLIC_PLAYBACK_PURPOSE,
       previewOnly: !listenMasterRef.current,
     });
+    // A later click owns the element now: do not touch its src, expiry or preview cap.
+    if (isStale()) throw new StalePlaybackRequestError();
     if (!result.success && result.code === "PREVIEW_UNAVAILABLE") {
       throw new GuestPreviewUnavailableError();
     }
@@ -256,8 +269,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       );
     }
     expiresAtRef.current = result.expiresAt ?? null;
-    audio.dataset.beatId = beatId;
-    audio.dataset.listen = listen;
     const limit =
       typeof result.previewLimitSeconds === "number" && result.previewLimitSeconds > 0
         ? result.previewLimitSeconds
@@ -270,6 +281,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         invalidateSessionAudio(sessionKeyRef.current);
         sessionKeyRef.current = null;
       }
+      audio.dataset.beatId = beatId;
+      audio.dataset.listen = listen;
       audio.src = result.url;
       audio.load();
       return result.url;
@@ -294,9 +307,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         enabled: true,
       }));
     } catch {
-      sessionKeyRef.current = null;
+      if (!isStale()) sessionKeyRef.current = null;
+    }
+    if (isStale()) {
+      // Release the blob this stale load created unless the current request uses the same key.
+      if (objectUrl && sessionKeyRef.current !== sessionKey) invalidateSessionAudio(sessionKey);
+      throw new StalePlaybackRequestError();
     }
     const playable = objectUrl ?? result.url;
+    audio.dataset.beatId = beatId;
+    audio.dataset.listen = listen;
     if (audio.src !== playable) {
       audio.src = playable;
       audio.load();
@@ -328,6 +348,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const autoplay = options?.autoplay ?? true;
       const audio = audioRef.current;
       if (!audio) return;
+      const requestId = ++requestIdRef.current;
 
       setError(null);
       setTrack(next);
@@ -344,11 +365,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           setCurrentTime(0);
         }
 
-        await ensureUrl(next.beatId);
+        await ensureUrl(next.beatId, requestId);
 
         if (autoplay) {
           restartFromStartIfNeeded(audio);
           await audio.play();
+          if (requestId !== requestIdRef.current) return;
           setPhase("playing");
           return;
         }
@@ -359,6 +381,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setPhase("paused");
         setCurrentTime(audio.currentTime);
       } catch (e) {
+        if (e instanceof StalePlaybackRequestError || requestId !== requestIdRef.current) return;
         if (e instanceof GuestPreviewUnavailableError) {
           setPhase("idle");
           setPreviewUnavailable(true);
@@ -386,14 +409,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const audio = audioRef.current;
     if (!audio || !track) return;
     if (audio.paused) {
+      const requestId = ++requestIdRef.current;
       void (async () => {
         try {
           setPhase("loading");
           setPreviewEnded(false);
-          await ensureUrl(track.beatId);
+          await ensureUrl(track.beatId, requestId);
           restartFromStartIfNeeded(audio);
           await audio.play();
         } catch (e) {
+          if (e instanceof StalePlaybackRequestError || requestId !== requestIdRef.current) return;
           if (e instanceof GuestPreviewUnavailableError) {
             setPhase("idle");
             setPreviewUnavailable(true);

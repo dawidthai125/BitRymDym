@@ -31,7 +31,10 @@ import {
   recordingModeForMaxSeconds,
   type SamplePolicy,
 } from "@/lib/takes/entitlement";
-import { invokeFinalizeTakeReadySwap } from "@/lib/takes/finalize-swap";
+import {
+  invokeFinalizeTakeReadySwap,
+  markPendingTakeFailed,
+} from "@/lib/takes/finalize-swap";
 import { listAnonReplaceableTakesFor } from "@/lib/takes/list-replaceable-takes";
 import {
   buildAnonTakeObjectKey,
@@ -241,13 +244,10 @@ export async function createAnonTakeRecordingSessionFor(
     .createSignedUploadUrl(objectKey);
 
   if (signError || !signed) {
-    await admin
-      .from("takes")
-      .update({
-        status: "FAILED",
-        failure_reason: "SIGNED_UPLOAD_URL_FAILED",
-      })
-      .eq("id", takeId);
+    await markPendingTakeFailed({
+      takeId,
+      failureReason: "SIGNED_UPLOAD_URL_FAILED",
+    });
     throw new Error(
       signError?.message ?? "Failed to create take upload URL.",
     );
@@ -358,25 +358,21 @@ export async function finalizeAnonTakeRecordingFor(
     .download(take.object_key as string);
 
   if (dlError || !blob) {
-    await admin
-      .from("takes")
-      .update({
-        status: "FAILED",
-        failure_reason: "OBJECT_MISSING",
-      })
-      .eq("id", take.id);
+    await markPendingTakeFailed({
+      takeId: take.id as string,
+      failureReason: "OBJECT_MISSING",
+    });
     throw new AuthError("FORBIDDEN", "Take audio object missing.");
   }
 
   const bytes = new Uint8Array(await blob.arrayBuffer());
   if (bytes.byteLength <= 0 || bytes.byteLength > TAKE_AUDIO_MAX_BYTES) {
-    await admin
-      .from("takes")
-      .update({
-        status: "FAILED",
-        failure_reason: "INVALID_SIZE",
-      })
-      .eq("id", take.id);
+    await markPendingTakeFailed({
+      takeId: take.id as string,
+      failureReason: "INVALID_SIZE",
+      objectKey: take.object_key as string,
+      removeObject: true,
+    });
     throw new AuthError("FORBIDDEN", "Invalid take byte size.");
   }
 
@@ -386,13 +382,12 @@ export async function finalizeAnonTakeRecordingFor(
     byteSize: bytes.byteLength,
   });
   if (!meta.ok) {
-    await admin
-      .from("takes")
-      .update({
-        status: "FAILED",
-        failure_reason: "INVALID_MIME",
-      })
-      .eq("id", take.id);
+    await markPendingTakeFailed({
+      takeId: take.id as string,
+      failureReason: "INVALID_MIME",
+      objectKey: take.object_key as string,
+      removeObject: true,
+    });
     throw new AuthError("FORBIDDEN", meta.errors.join("; "));
   }
 
@@ -401,13 +396,12 @@ export async function finalizeAnonTakeRecordingFor(
     contentTypeHint: meta.contentType,
   });
   if (!probe.ok) {
-    await admin
-      .from("takes")
-      .update({
-        status: "FAILED",
-        failure_reason: "DURATION_PROBE_FAILED",
-      })
-      .eq("id", take.id);
+    await markPendingTakeFailed({
+      takeId: take.id as string,
+      failureReason: "DURATION_PROBE_FAILED",
+      objectKey: take.object_key as string,
+      removeObject: true,
+    });
     throw new AuthError(
       "FORBIDDEN",
       "Duration could not be verified (fail-closed).",
@@ -416,13 +410,12 @@ export async function finalizeAnonTakeRecordingFor(
 
   const maxAllowed = take.recording_max_seconds_snapshot as number;
   if (probe.durationSeconds > maxAllowed + DURATION_TOLERANCE_SECONDS) {
-    await admin
-      .from("takes")
-      .update({
-        status: "FAILED",
-        failure_reason: "DURATION_EXCEEDED",
-      })
-      .eq("id", take.id);
+    await markPendingTakeFailed({
+      takeId: take.id as string,
+      failureReason: "DURATION_EXCEEDED",
+      objectKey: take.object_key as string,
+      removeObject: true,
+    });
     throw new AuthError(
       "FORBIDDEN",
       `Duration ${probe.durationSeconds}s exceeds max ${maxAllowed}s.`,

@@ -1189,6 +1189,9 @@ export class StudioAudioEngine {
     this.stopMetering({ reset: false });
     if (this.lifecycle === "playing") this.setLifecycle("paused");
 
+    // After a reload the context starts suspended; without resume the preview is silent.
+    if (this.ctx.state !== "running") await this.ctx.resume().catch(() => undefined);
+
     this.disposeVoice(PREVIEW_VOICE_ID);
     const element = this.host.createMediaElement();
     element.crossOrigin = "anonymous";

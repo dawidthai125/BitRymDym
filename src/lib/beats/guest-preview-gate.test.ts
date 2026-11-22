@@ -229,6 +229,33 @@ describe("guest beat preview gate (server-enforced)", () => {
     expect(state.signedKeys).toEqual(["platform/b1/m1/master.bin"]);
   });
 
+  it("paid catalog: non-buyer signed-in PLAYBACK without previewOnly still gets WM PREVIEW (2026-11-22)", async () => {
+    state.catalogLane = "paid";
+    state.assets = [MASTER, PREVIEW_WM];
+    state.profile = { userId: "u1", profile: { role: "USER" } };
+    const r = await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK" });
+    expect(r.assetId).toBe("p2");
+    expect(state.signedKeys).toEqual(["platform/b1/p2/preview.bin"]);
+  });
+
+  it("paid catalog: non-buyer without any preview never falls back to MASTER", async () => {
+    state.catalogLane = "paid";
+    state.assets = [MASTER];
+    state.profile = { userId: "u1", profile: { role: "USER" } };
+    await expect(
+      requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK" }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(state.signedKeys).toEqual([]);
+  });
+
+  it("paid catalog: admin PLAYBACK gets MASTER", async () => {
+    state.catalogLane = "paid";
+    state.assets = [MASTER, PREVIEW_WM];
+    state.profile = { userId: "a1", profile: { role: "ADMIN" } };
+    const r = await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK" });
+    expect(r.assetId).toBe("m1");
+  });
+
   it("paid catalog with stale short PREVIEW still returns the 20 s cap until backfill", async () => {
     state.catalogLane = "paid";
     state.assets = [MASTER, PREVIEW_SHORT];

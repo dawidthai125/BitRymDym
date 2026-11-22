@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (6) — Pełny przegląd kodu (6 obszarów) i poprawki
+
+- **Płatny bit:** zalogowany bez zakupu dostawał czysty MASTER przez `/api/beats/audio/playback` (bez `previewOnly`). Teraz paid lane PLATFORM → WM PREVIEW dla każdego poza staff i kupującym (`audio-access.ts` + testy).
+- **Kolejki (migracja `20261122030000_studio_jobs_stale_sweep_refunds`, zastosowana):** master po śmierci workera nie wisi w `running` (reclaim po 45 min bez postępu, po 3 próbach `worker_lost` + zwrot); separacja/czyszczenie po 3. crashu nie blokują projektu; zwrot kredytu YouTube przy porażce; slot pobrania powiązany z `job_id` (ponowienie nie liczy 2×, porażka oddaje slot).
+- **Worker masterów:** klucz cache miksu zawiera odcisk zastosowanych czyszczeń wokalu (wcześniej re-master po „Wyczyść wokal” brał stary miks).
+- **Studio (przeglądarka):** klawiatura „Graj” nie zjada liter w polach; mikrofon Sample Lab zamykany po błędzie i przy wyjściu; odsłuch nagrania wznawia uśpiony AudioContext; globalny odtwarzacz ignoruje spóźnione ładowanie po szybkim kliknięciu innego bitu; A/B mastera bez fałszywego „stop”; Sample Lab czyści timery i bit przy wyjściu.
+- **Nagrania:** nieudany finalize nie nadpisuje READY; pliki odrzuconych nagrań usuwane; janitor sprząta wszystkie FAILED i przesuwa kursor. Mail o wygasaniu: kolejność po `expires_at`, porcje po 100.
+- **Ranking:** sample platformy nie zabierają nagród; ponowna ocena liczy się w bieżącym okresie.
+- **Admin:** degradacja admina działa od razu (`updateTag`); adresy wyników generowania sprawdzają admina przed cache.
+- **Płatności:** zwrócone zamówienie ma własny komunikat; data końca planu w strefie Europe/Warsaw. Stability: limity czasu 15 s / 60 s.
+- Kontrole: tsc, eslint src, 4949 testów, `next build` — OK.
+
 ## 2026-11-22 (5) — Szukanie błędów: logi, zadania, dane
 
 - Vercel runtime errors: 0. Supabase logi: tylko złe hasła i wygasłe sesje. Nieudane zadania 7 dni: eksporty WAV sprzed naprawy 6:00 (21.11) i 1× master `transcode` `upload_failed` (19.11, jednorazowy błąd Storage).

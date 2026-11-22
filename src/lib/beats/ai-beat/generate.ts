@@ -78,6 +78,8 @@ export async function startBeatGeneration(params: {
         ...CLIENT_HEADERS,
       },
       body: form,
+      // 2026-11-22: rewrite (≤25 s) + start must stay under the route's 45 s limit.
+      signal: AbortSignal.timeout(15_000),
     });
   } catch {
     throw new BeatRequestError("Nie udało się połączyć z modelem. Spróbuj jeszcze raz.");
@@ -110,6 +112,8 @@ export async function pollBeatGeneration(generationId: string): Promise<Stabilit
         Accept: "audio/*",
         ...CLIENT_HEADERS,
       },
+      // Poll route allows 120 s; a hung connection must not use it all.
+      signal: AbortSignal.timeout(60_000),
     });
   } catch {
     throw new BeatRequestError("Nie udało się odebrać bitu. Spróbuj jeszcze raz.");
@@ -118,7 +122,12 @@ export async function pollBeatGeneration(generationId: string): Promise<Stabilit
   if (response.status === 202) return { status: "pending" };
 
   if (response.status === 200) {
-    const bytes = new Uint8Array(await response.arrayBuffer());
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(await response.arrayBuffer());
+    } catch {
+      throw new BeatRequestError("Nie udało się odebrać bitu. Spróbuj jeszcze raz.");
+    }
     return parseStabilityAudio(200, response.headers.get("content-type"), bytes);
   }
 

@@ -30,6 +30,7 @@ function formatExpiryPl(iso: string): string | null {
   if (!Number.isFinite(ms)) return null;
   try {
     return new Date(ms).toLocaleDateString("pl-PL", {
+      timeZone: "Europe/Warsaw",
       year: "numeric",
       month: "long",
       day: "numeric",

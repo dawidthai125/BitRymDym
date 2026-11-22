@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatTakeExpiryWhen, planTakeExpiryMails } from "@/lib/email/notify/take-expiry-plan";
+import { chunkIds, formatTakeExpiryWhen, planTakeExpiryMails } from "@/lib/email/notify/take-expiry-plan";
 import { buildMail } from "@/lib/email/notify/templates";
 
 const A = "owner-a";
@@ -44,5 +44,14 @@ describe("take_expiring mail", () => {
     expect(m.subject).toBe("Nagranie wygasa: Studio");
     expect(m.text).toContain("wygaśnie jutro (23 listopada) o 08:54");
     expect(m.text).toContain("https://www.bitrymdym.pl/studio/p/p1");
+  });
+});
+
+describe("chunkIds", () => {
+  it("splits ids into bounded chunks for .in() queries", () => {
+    const ids = Array.from({ length: 250 }, (_, i) => `t${i}`);
+    expect(chunkIds(ids, 100).map((c) => c.length)).toEqual([100, 100, 50]);
+    expect(chunkIds(ids, 100).flat()).toEqual(ids);
+    expect(chunkIds([], 100)).toEqual([]);
   });
 });

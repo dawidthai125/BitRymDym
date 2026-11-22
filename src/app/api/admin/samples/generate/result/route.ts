@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireRole } from "@/lib/auth/session";
 import { isStableAudioGenerationId } from "@/lib/beats/ai-beat/stability";
 import { isUuid } from "@/lib/beats/audio-validation";
 import { beatApiBadRequest, beatAudioApiErrorResponse } from "@/lib/beats/beat-operation-error";
@@ -19,6 +20,12 @@ export async function POST(request: Request) {
   const parsed = parseSampleGenBody(body);
   if (!parsed.ok) return beatApiBadRequest(parsed.error);
   const generationId = body.generationId;
+  // 2026-11-22: check the admin before answering from the in-memory cache.
+  try {
+    await requireRole(["ADMIN"]);
+  } catch (error) {
+    return beatAudioApiErrorResponse(error, "api/admin/samples/generate/result");
+  }
   const done = saved.get(generationId);
   if (done) return NextResponse.json({ success: true, status: "ready", ...done });
   if (saving.has(generationId)) return NextResponse.json({ success: true, status: "pending" });

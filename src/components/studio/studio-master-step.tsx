@@ -265,6 +265,8 @@ export function StudioMasterStep({
     const a = audioRef.current;
     audioRef.current = null;
     if (a) {
+      // Detach first: the old source's async onended must not flip "playing" off for the next one.
+      a.src.onended = null;
       try { a.src.stop(); } catch { /* already stopped */ }
       void a.ctx.close();
     }
@@ -282,7 +284,9 @@ export function StudioMasterStep({
     const src = ctx.createBufferSource();
     src.buffer = stereoToAudioBuffer(ctx, s, gain);
     src.connect(ctx.destination);
-    src.onended = () => setPlaying(false);
+    src.onended = () => {
+      if (audioRef.current?.src === src) setPlaying(false);
+    };
     src.start();
     audioRef.current = { ctx, src };
     setPlaying(true);

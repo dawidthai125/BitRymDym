@@ -683,6 +683,7 @@
         "pakietGotowy": "The payment arrived. I added {co}. They stay until you use them.",
         "pominiete": "I have the payment, but I didn't change the plan: {powod}",
         "nieudane": "This payment didn't go through. I didn't turn anything on.",
+        "zwrocone": "This payment was refunded. The purchase has been withdrawn.",
         "brak": "I can't find this order on your account.",
         "wroc": "Back to plans",
         "bitCzekam": "I'm waiting for PayU to confirm. When the payment arrives, the wav of this beat will be ready to download. You can stay on this page.",

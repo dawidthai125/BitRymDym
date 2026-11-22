@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { pollBeatGeneration } from "@/lib/beats/ai-beat/generate";
+import { pollBeatGeneration, requireAdminGenerator } from "@/lib/beats/ai-beat/generate";
 import { ingestGeneratedBeat } from "@/lib/beats/ai-beat/ingest";
 import {
   normalizeBeatDescription,
@@ -47,6 +47,12 @@ export async function POST(request: Request) {
   }
 
   const generationId = body.generationId;
+  // 2026-11-22: check the admin before answering from the in-memory cache.
+  try {
+    await requireAdminGenerator();
+  } catch (error) {
+    return beatAudioApiErrorResponse(error, "api/admin/beats/generate/result");
+  }
   const already = saved.get(generationId);
   if (already) {
     return NextResponse.json({ success: true, status: "ready", ...already });
