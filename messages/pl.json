@@ -461,11 +461,11 @@
       "metaDescription": "Plany BitRymDym: Free, Bronze, Silver i Gold. Ceny, limity nagrań, projektów, masterów i pobierania — w jednym miejscu.",
       "premium": "Premium",
       "naglowek": "Nagrywasz za darmo. Płacisz, kiedy kawałek ma wyjść.",
-      "lead": "Free wystarczy, żeby sprawdzić bit, nagrać zwrotkę i zrobić master. Wyżej dochodzą dłuższe nagrania, pliki z rozcięcia bitu, wysokość klipu, stemy, pobieranie, wideo na YouTube, własne brzmienia, edytor nut i referencja.",
+      "lead": "Free wystarczy, żeby sprawdzić bit, nagrać zwrotkę i zrobić master. Wyżej dochodzą dłuższe nagrania, pliki z rozcięcia bitu, wysokość klipu, stemy, pobieranie, wideo na YouTube, własne brzmienia, edytor nut i mastering pod wybrany utwór.",
       "programLinia": "Program do nagrywania jest na Windows. Pobranie i logowanie wymagają konta. Na Maca i Apple wersja wkrótce.",
       "programLink": "Strona programu",
       "platnosciWkrotce": "Płatności PayU są włączone.",
-      "platnosciOpis": "Plan, dodatek referencji i pakiety kupujesz na tej stronie, jednorazowo na miesiąc albo na rok. Przycisk jest, gdy są klucze operatora.",
+      "platnosciOpis": "Plan, dodatek „mastering pod wybrany utwór” i pakiety kupujesz na tej stronie, jednorazowo na miesiąc albo na rok. Przycisk jest, gdy są klucze operatora.",
       "plany": "Plany",
       "dlaKogo": {
         "FREE": "na start i na próbę",
@@ -503,9 +503,9 @@
         "wysokosc": "Tempo i wysokość klipu",
         "tempo": "Tempo klipu. Wysokość od Silver",
         "referencja": {
-          "addon": "Mastering z referencją — płatny dodatek",
-          "addonKup": "Mastering z referencją — płatny dodatek",
-          "included": "Mastering z referencją w cenie"
+          "addon": "Mastering pod wybrany utwór — płatny dodatek",
+          "addonKup": "Mastering pod wybrany utwór — płatny dodatek",
+          "included": "Mastering pod wybrany utwór w cenie"
         }
       },
       "jakosc": {
@@ -559,7 +559,7 @@
         "wideoYtJednorazowo": "jednorazowo {cena}",
         "przechowywanie": "Przechowywanie plików",
         "dni": "{n, plural, one {# dzień} other {# dni}}",
-        "referencja": "Mastering z referencją",
+        "referencja": "Mastering pod wybrany utwór",
         "bity": "Pobrania bitów / dzień",
         "aktywne": "Gotowe nagrania naraz",
         "presety": "Własne brzmienia wokalu",
@@ -599,13 +599,13 @@
         "nuty": "Głośność i panorama na osi czasu oraz nuty (pianino, gitara, bas, perkusja, a także gładki, ostry i brzęczący dźwięk) są na każdym planie. Suwak wysokości klipu jest od Silver. Tempo klipu zostaje na każdym planie. Edytor nut, którym korygujesz wysokość słowo po słowie, jest tylko w Gold.",
         "bramki": "Pliki z rozcięcia bitu są od Silver. Teksty z AI: Free {freeLyrics} dziennie, Bronze {bronzeLyrics}, Silver {silverLyrics}, Gold {goldLyrics}. Od Silver jest też ściszanie pod bit: wokal na chwilę cichnie, gdy bit uderza. Wtedy też wolno podnieść albo obniżyć całe nagranie i mieć {longFx} efektów naraz. Free i Bronze mają {shortFx}. Sprawdzenie głośności i zwykła korekta zostają u wszystkich. Miks i master robi Bitek.",
         "znak": "Podgląd mastera ma znak wodny głosowy „Bit Rym Dym” na każdym planie. Miesza się co kilkanaście sekund.",
-        "referencja": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek na miesiąc. Kupujesz go przez PayU na stronie Premium.",
-        "referencjaKup": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek na miesiąc."
+        "referencja": "Mastering pod wybrany utwór: wgrywasz piosenkę, która brzmi tak, jak chcesz, a mastering dopasuje do niej Twój utwór. W Gold w cenie, w Silver jako płatny dodatek na miesiąc. Kupujesz go przez PayU na stronie Premium.",
+        "referencjaKup": "Mastering pod wybrany utwór: wgrywasz piosenkę, która brzmi tak, jak chcesz, a mastering dopasuje do niej Twój utwór. W Gold w cenie, w Silver jako płatny dodatek na miesiąc."
       },
       "wPrzygotowaniu": "W przygotowaniu",
       "platnosciTytul": "Płatności w aplikacji",
       "platnosciPlan": "miesięcznie albo rocznie, bez okresu próbnego. Kupujesz przez PayU.",
-      "referencjaTytul": "Mastering z referencją",
+      "referencjaTytul": "Mastering pod wybrany utwór",
       "jakDostacPremiumDzis": "Jak dostać Premium dziś",
       "poziomNadajeSiePo": "Plan kupujesz powyżej, na miesiąc albo na rok, przez PayU. Administrator nadal może nadać plan ręcznie — ze śladem zmian.",
       "poziomGdyPlatnosci": "Plan kupujesz powyżej, na miesiąc albo na rok. Administrator nadal może nadać plan ręcznie — ze śladem zmian.",
@@ -639,9 +639,9 @@
         "place": "Płacę przez PayU",
         "czekam": "Otwieram PayU…",
         "zalogujSie": "Zaloguj się — wtedy otworzę płatność",
-        "dodatekTytul": "Dokupuję mastering z referencją",
-        "dodatekOpis": "Miesiąc dodatku na Silver. Na Gold masz to w cenie, na Free i Bronze ten dodatek nic nie odblokuje.",
-        "dodatekPrzycisk": "Dokupuję referencję",
+        "dodatekTytul": "Mastering pod wybrany utwór",
+        "dodatekOpis": "Wgrywasz piosenkę, która brzmi tak, jak chcesz, a mastering dopasuje do niej Twój utwór: głośność, bas i jasność. Miesiąc dodatku na Silver. Na Gold masz to w cenie, na Free i Bronze ten dodatek nic nie odblokuje.",
+        "dodatekPrzycisk": "Dokupuję mastering pod utwór",
         "pakietTytul": "Dokupuję nagrania albo mastery",
         "pakietOpis": "Jednorazowo, nie co miesiąc. Nagrania i mastery schodzą po limicie planu. Wideo MP4 na Gold: najpierw 2 w tygodniu, potem pakiet 2 sztuk. Na Bronze i Silver tylko kupione sztuki.",
         "pakietTake": "10 nagrań",
@@ -651,7 +651,7 @@
         "blok": {
           "PENDING_PLAN": "Masz już zaplanowany inny niższy plan. Poczeka, aż wystartuje.",
           "PERPETUAL": "Masz dostęp bez końca — nie skracam go płatnością.",
-          "ADDON_INCLUDED": "Na Gold masz referencję w cenie.",
+          "ADDON_INCLUDED": "Na Gold masz mastering pod wybrany utwór w cenie.",
           "ADDON_NEEDS_SILVER": "Ten dodatek włączam tylko na Silver.",
           "ADDON_PERPETUAL": "Dodatek jest bez końca — nie skracam go.",
           "PACK_NEEDS_PAID": "Wideo MP4 dokupisz na Bronze, Silver albo Gold."
@@ -667,7 +667,7 @@
           "LOGIN": "Zaloguj się, to otworzę płatność.",
           "PENDING_PLAN": "Inny niższy plan jest już zaplanowany. Tego nie przyjmę, dopóki tamten nie wystartuje.",
           "PERPETUAL": "Masz dostęp bez końca — nie skracam go płatnością.",
-          "ADDON_INCLUDED": "Na Gold masz referencję w cenie.",
+          "ADDON_INCLUDED": "Na Gold masz mastering pod wybrany utwór w cenie.",
           "ADDON_NEEDS_SILVER": "Ten dodatek włączam tylko na Silver.",
           "ADDON_PERPETUAL": "Dodatek jest bez końca — nie skracam go.",
           "PACK_NEEDS_PAID": "Wideo MP4 dokupisz na Bronze, Silver albo Gold."
@@ -695,7 +695,7 @@
         "otworzBit": "Otwórz bit",
         "bezDaty": "koniec okresu jest na koncie",
         "produkt": {
-          "referencja": "mastering z referencją",
+          "referencja": "mastering pod wybrany utwór",
           "plan": "plan",
           "take": "{n} dodatkowych nagrań",
           "master": "{n} dodatkowych masterów",
@@ -1949,7 +1949,7 @@
       "planBrak": "brak",
       "planYt": "Wideo MP4 na YouTube",
       "planYtTydzien": "{n} / tydzień",
-      "planReferencja": "Mastering z referencją",
+      "planReferencja": "Mastering pod wybrany utwór",
       "planRef": {
         "none": "—",
         "addon": "dodatek",
@@ -3326,7 +3326,7 @@
           "mix": "Mix",
           "master": "Master",
           "listenAria": "Odsłuch suchy, mix albo master",
-          "listenOpis": "Suchy to wokal i bit bez efektów. Mix to ten etap. Master to plik po masteringu, z barwą referencji jeśli ją wgrałeś."
+          "listenOpis": "Suchy to wokal i bit bez efektów. Mix to ten etap. Master to plik po masteringu, z brzmieniem utworu wzorcowego, jeśli go wgrałeś."
         },
         "notes": {
           "chainFull": "Na ścieżce „{track}” jest już 8 efektów, więc nic tam nie dokładałem.",
@@ -3691,11 +3691,11 @@
         },
         "tonal": {
           "title": "Balans tonalny",
-          "ok": "Blisko referencji hip-hop.",
-          "dark": "Ciemno: {band} {delta} dB vs referencja.",
-          "harsh": "Ostro: {band} +{delta} dB vs referencja.",
-          "thin": "Cienko: {band} {delta} dB vs referencja.",
-          "muddy": "Zamulone: {band} +{delta} dB vs referencja."
+          "ok": "Blisko typowego brzmienia hip-hopu.",
+          "dark": "Ciemno: {band} {delta} dB względem wzorca.",
+          "harsh": "Ostro: {band} +{delta} dB względem wzorca.",
+          "thin": "Cienko: {band} {delta} dB względem wzorca.",
+          "muddy": "Zamulone: {band} +{delta} dB względem wzorca."
         },
         "lowEnd": {
           "title": "Dół",
@@ -3741,7 +3741,7 @@
           "download": "Pobieram zatwierdzony master — {pct}%.",
           "decode": "Wczytuję Twoje ślady — {pct}%.",
           "render": "Miksuję ślady — {pct}%.",
-          "reference": "Wczytuję Twoją referencję — {pct}%.",
+          "reference": "Wczytuję Twój utwór wzorcowy — {pct}%.",
           "master": "Robię master — {pct}%. Zaraz posłuchasz.",
           "encode": "Koduję plik — {pct}%.",
           "upload": "Wysyłam gotowy plik — {pct}%.",
@@ -3760,7 +3760,7 @@
         "download": "Pobieram master",
         "decode": "Wczytuję ślady",
         "render": "Miksuję ślady",
-        "reference": "Wczytuję referencję",
+        "reference": "Wczytuję utwór wzorcowy",
         "master": "Robię master",
         "encode": "Koduję plik",
         "upload": "Wysyłam plik",
@@ -3782,43 +3782,43 @@
         "intensywnosc": "Intensywność"
       },
       "referencja": {
-        "tytul": "Mastering pod referencję",
+        "tytul": "Mastering pod wybrany utwór",
         "opis": "Wgraj numer, który brzmi tak, jak chcesz. Dopasuję do niego barwę, głośność i szerokość stereo.",
         "wPlanie": "W planie Gold",
         "dodatekAktywny": "Dodatek aktywny",
-        "wgraj": "Wgraj referencję (MP3 lub WAV, do {min} min)",
-        "wgrywa": "Wysyłam referencję — {pct}%",
+        "wgraj": "Wgraj utwór wzorcowy — piosenkę, która brzmi tak, jak chcesz (MP3 lub WAV, do {min} min)",
+        "wgrywa": "Wysyłam utwór wzorcowy — {pct}%",
         "usun": "Usuń",
         "intensywnosc": "Siła dopasowania",
-        "podglad": "Podgląd w przeglądarce nie uwzględnia referencji — dopasowanie usłyszysz w masterze z serwera.",
+        "podglad": "Podgląd w przeglądarce nie uwzględnia utworu wzorcowego — dopasowanie usłyszysz w masterze z serwera.",
         "prywatnosc": "Plik jest prywatny — słucha go tylko serwer masteringu. Usuwam go zaraz po masterze, najpóźniej po 24 h.",
-        "zablokowana": "Mastering pod referencję jest w planie Gold (w Silver jako dodatek).",
+        "zablokowana": "Mastering pod wybrany utwór jest w planie Gold (w Silver jako dodatek).",
         "dodatek": "W Silver to płatny dodatek ({price} zł / mies.). Kupujesz go na stronie Premium.",
         "dodatekKontakt": "Pytanie o dodatek:",
-        "mailTemat": "Dodatek: mastering pod referencję",
-        "niedostepna": "Mastering pod referencję jeszcze nie jest włączony na serwerze.",
+        "mailTemat": "Dodatek: mastering pod wybrany utwór",
+        "niedostepna": "Mastering pod wybrany utwór jeszcze nie jest włączony na serwerze.",
         "bledy": {
           "bad_format": "Tylko MP3 albo WAV.",
           "too_big": "Plik jest za duży (maks. 200 MB).",
-          "too_long": "Referencja może mieć maksymalnie 10 minut.",
-          "too_short": "Referencja jest za krótka (min. 1 s).",
+          "too_long": "Utwór wzorcowy może mieć maksymalnie 10 minut.",
+          "too_short": "Utwór wzorcowy jest za krótki (min. 1 s).",
           "bad_request": "Nie mogę odczytać tego pliku.",
           "odczyt": "Nie mogę odczytać tego pliku.",
           "upload": "Nie udało się wysłać pliku. Spróbuj jeszcze raz.",
-          "locked": "Twój plan nie ma masteringu pod referencję."
+          "locked": "Twój plan nie ma masteringu pod wybrany utwór."
         },
         "bitek": {
-          "gotowe": "Dopasowałem master do Twojej referencji. Co zrobiłem:",
+          "gotowe": "Dopasowałem master do Twojego utworu wzorcowego. Co zrobiłem:",
           "eqBoost": "Podbiłem {band} o {db} dB.",
           "eqCut": "Przyciąłem {band} o {db} dB.",
-          "eqFlat": "Barwa była już blisko referencji — EQ prawie nie ruszałem.",
-          "louder": "Podniosłem głośność do {lufs} LUFS, bliżej referencji ({refLufs} LUFS).",
-          "quieter": "Zostawiłem więcej dynamiki: {lufs} LUFS, bliżej referencji ({refLufs} LUFS).",
-          "sameLoudness": "Głośność zostawiłem przy celu: {lufs} LUFS (referencja: {refLufs} LUFS).",
+          "eqFlat": "Barwa była już blisko utworu wzorcowego — EQ prawie nie ruszałem.",
+          "louder": "Podniosłem głośność do {lufs} LUFS, bliżej utworu wzorcowego ({refLufs} LUFS).",
+          "quieter": "Zostawiłem więcej dynamiki: {lufs} LUFS, bliżej utworu wzorcowego ({refLufs} LUFS).",
+          "sameLoudness": "Głośność zostawiłem przy celu: {lufs} LUFS (utwór wzorcowy: {refLufs} LUFS).",
           "wider": "Poszerzyłem stereo o {pct}% — tylko powyżej 150 Hz, bas zostaje w środku.",
-          "narrower": "Zwęziłem stereo o {pct}%, jak w referencji.",
+          "narrower": "Zwęziłem stereo o {pct}%, jak w utworze wzorcowym.",
           "sameWidth": "Szerokość stereo była podobna — nie ruszałem.",
-          "intensity": "Wszystko z siłą {pct}% — suwakiem zmienisz, jak mocno idę za referencją."
+          "intensity": "Wszystko z siłą {pct}% — suwakiem zmienisz, jak mocno idę za utworem wzorcowym."
         },
         "pasma": {
           "sub": "sub (20–60 Hz)",

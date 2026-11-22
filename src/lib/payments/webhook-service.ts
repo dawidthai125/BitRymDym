@@ -67,7 +67,7 @@ function receiptLine(write: GrantWrite): string {
   if (write.action === "schedule") {
     return `Tu BITEK. ${write.pendingTier} włączy się ${polishWhen(write.expectedExpiresAt)} i potrwa do ${polishWhen(write.pendingExpiresAt)}. Do tego dnia zostaje ${write.expectedTier}.`;
   }
-  if (write.action === "addon") return `Tu BITEK. Włączyłem mastering z referencją do ${polishWhen(write.endsAt)}.`;
+  if (write.action === "addon") return `Tu BITEK. Włączyłem mastering pod wybrany utwór do ${polishWhen(write.endsAt)}.`;
   if (write.action === "pack") {
     const what = write.pack === "take" ? "nagrań" : write.pack === "youtube" ? "wideo MP4" : "masterów";
     return `Tu BITEK. Dodałem ${write.units} ${what}. Zostają, aż je wykorzystasz.`;

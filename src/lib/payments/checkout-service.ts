@@ -90,7 +90,7 @@ export function p24Description(product: CheckoutProduct, locale: "pl" | "en", be
   if (product.kind === "addon") {
     return locale === "en"
       ? "BitRymDym reference mastering, 1 month"
-      : "BitRymDym mastering z referencją, 1 miesiąc";
+      : "BitRymDym mastering pod wybrany utwór, 1 miesiąc";
   }
   const period = product.period === "year" ? (locale === "en" ? "1 year" : "1 rok") : locale === "en" ? "1 month" : "1 miesiąc";
   return `BitRymDym ${product.tier}, ${period}`;
