@@ -7,6 +7,7 @@ import "server-only";
  * how many different Bits one account pulls per hour (a catalogue scraper), and a log of who got which full file.
  * Short catalogue/guest previews are not counted.
  */
+import { checkScrapingAfterPlayback, raisePlaybackAlarm } from "@/lib/beats/playback-alarm";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const PLAYBACK_MAX_PER_HOUR = 60;
@@ -41,7 +42,11 @@ export async function checkFullPlaybackAllowed(userId: string, beatId: string): 
     if (error) return { allowed: true }; // table missing or transient error: never break the Studio
     const decision = decidePlaybackGuard((data as PlaybackLogRow[] | null) ?? [], beatId);
     // Alarm: a user hitting the limit is a scraping signal; visible in Vercel runtime logs (search "playback_guard_denied").
-    if (!decision.allowed) console.warn(`playback_guard_denied reason=${decision.reason} user=${userId}`);
+    if (!decision.allowed) {
+      console.warn(`playback_guard_denied reason=${decision.reason} user=${userId}`);
+      const recent = new Set(((data as PlaybackLogRow[] | null) ?? []).map((r) => r.beat_id)).size;
+      await raisePlaybackAlarm(userId, "playback_limit", recent);
+    }
     return decision;
   } catch {
     return { allowed: true };
@@ -52,6 +57,7 @@ export async function logFullPlayback(userId: string, beatId: string, assetId: s
   try {
     const admin = createSupabaseAdminClient();
     await admin.from("beat_audio_playback_log").insert({ user_id: userId, beat_id: beatId, asset_id: assetId });
+    await checkScrapingAfterPlayback(userId);
     if (Math.random() < 1 / PURGE_EVERY) {
       const cutoff = new Date(Date.now() - PLAYBACK_LOG_RETENTION_DAYS * 86_400_000).toISOString();
       await admin.from("beat_audio_playback_log").delete().lt("created_at", cutoff);

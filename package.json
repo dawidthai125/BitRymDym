@@ -29,6 +29,8 @@
     "far01:backfill:dry-run": "tsx scripts/far01-backfill-dry-run.ts",
     "far01:backfill:prod-dry-run": "tsx scripts/far01-backfill-prod-dry-run.ts",
     "autocheck:worker:poll": "tsx --import ./scripts/register-server-only-stub.mjs scripts/beat-auto-check-worker-poll.ts",
+    "listencopy:worker:poll": "tsx --import ./scripts/register-server-only-stub.mjs scripts/beat-listen-copy-worker-poll.ts",
+    "leak:identify": "tsx --import ./scripts/register-server-only-stub.mjs scripts/beat-leak-identify.ts",
     "master:worker:poll": "tsx --import ./scripts/register-server-only-stub.mjs scripts/studio-master-worker-poll.ts",
     "cleanup:worker:poll": "tsx --import ./scripts/register-server-only-stub.mjs scripts/studio-cleanup-worker-poll.ts",
     "separate:worker:poll": "tsx --import ./scripts/register-server-only-stub.mjs scripts/studio-separate-worker-poll.ts",

@@ -37,6 +37,10 @@ import { isGuestShortPreviewFilename } from "@/lib/beats/preview/beat-preview";
 import { canDownloadBeatByOwnerChoice } from "@/lib/beats/usage/beat-usage-policy";
 import { viewerPurchasedPaidBeat } from "@/lib/beats/usage/beat-usage-server";
 import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
+import {
+  listenCopyEnabled,
+  resolveListenCopyKey,
+} from "@/lib/beats/listen-copy/listen-copy-server";
 import { checkFullPlaybackAllowed, logFullPlayback } from "@/lib/beats/playback-guard";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -417,11 +421,23 @@ export async function requestBeatAudioAccess(params: {
     }
   }
 
+  // Owner 2026-11-22: a listener (not staff, not the beat's owner, not its paid buyer) never gets the clean master.
+  // Studio / recording / Windows play a personal MP3 with an inaudible mark of this account (listen-copy).
+  let signKey = asset.object_key;
+  if (guardFullPlayback && profileContext && !purchasedPaid && listenCopyEnabled()) {
+    const copy = await resolveListenCopyKey({
+      beatId: params.beatId,
+      userId: profileContext.userId,
+      masterAssetId: asset.id,
+    });
+    signKey = copy.objectKey;
+  }
+
   const ttl = signedUrlTtlSeconds(params.purpose);
   const admin = createSupabaseAdminClient();
   const { data: signed, error: signedError } = await admin.storage
     .from(BEAT_AUDIO_BUCKET)
-    .createSignedUrl(asset.object_key, ttl);
+    .createSignedUrl(signKey, ttl);
 
   if (signedError || !signed?.signedUrl) {
     if (reservationId) {

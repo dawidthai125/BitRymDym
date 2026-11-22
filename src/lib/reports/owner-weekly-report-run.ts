@@ -21,7 +21,7 @@ export type OwnerWeeklyReportResult =
 type Admin = ReturnType<typeof createSupabaseAdminClient>;
 
 /** OWNER_REPORT_EMAIL first; otherwise the confirmed e-mails of ADMIN accounts (max 3). */
-async function reportRecipients(admin: Admin): Promise<string[]> {
+export async function reportRecipients(admin: Admin): Promise<string[]> {
   const fromEnv = parseReportRecipients(process.env.OWNER_REPORT_EMAIL);
   if (fromEnv.length) return fromEnv;
   const { data, error } = await admin.from("profiles").select("id").eq("role", "ADMIN").order("created_at", { ascending: true }).limit(3);

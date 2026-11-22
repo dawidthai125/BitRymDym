@@ -2,6 +2,7 @@ import { getLibText } from "@/i18n/get-lib-text";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 
 import { BeatDetailClient } from "@/app/beat/[id]/beat-detail-client";
 import { CommunityShelf } from "@/components/community/community-shelf";
@@ -40,6 +41,7 @@ import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
 import { catalogLaneOf } from "@/lib/beats/catalog-lane";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { loadBeatSale } from "@/lib/payments/beat-sale";
+import { prewarmListenCopy } from "@/lib/beats/listen-copy/listen-copy-server";
 import { formatBeatWavPrice } from "@/lib/payments/money";
 import { isPayuConfigured } from "@/lib/payments/payu-config";
 import { readPlanPaymentsAvailable } from "@/config/plan-policy";
@@ -112,6 +114,11 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     hasActiveGrant: viewerHasGrant,
     hasPurchasedWav: Boolean(sale?.owned),
   }).allowed;
+  // A listener who may record here gets a personal marked copy; start rendering it now (Studio opens faster).
+  if (viewerId && !viewerIsStaff && beat.ownerId !== viewerId && studioUseAllowed && !(paidLane && sale?.owned)) {
+    const warmFor = viewerId;
+    after(() => prewarmListenCopy({ beatId: beat.id, userId: warmFor }));
+  }
   const downloadByOwner = canDownloadBeatByOwnerChoice(usageSubject, {
     userId: viewerId,
     isStaff: viewerIsStaff,

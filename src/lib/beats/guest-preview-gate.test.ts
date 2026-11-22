@@ -20,6 +20,16 @@ const state = vi.hoisted(() => ({
   signedKeys: [] as string[],
   catalogLane: "free" as "free" | "paid",
   purchased: false,
+  listenCopy: false,
+  copyRequests: [] as Array<{ beatId: string; userId: string; masterAssetId: string }>,
+}));
+
+vi.mock("@/lib/beats/listen-copy/listen-copy-server", () => ({
+  listenCopyEnabled: () => state.listenCopy,
+  resolveListenCopyKey: vi.fn(async (p: { beatId: string; userId: string; masterAssetId: string }) => {
+    state.copyRequests.push(p);
+    return { copyId: "c1", objectKey: `listen/${p.beatId}/c1.mp3` };
+  }),
 }));
 
 vi.mock("@/lib/auth/session", async (orig) => {
@@ -142,6 +152,8 @@ beforeEach(() => {
   state.signedKeys = [];
   state.catalogLane = "free";
   state.purchased = false;
+  state.listenCopy = false;
+  state.copyRequests = [];
 });
 
 describe("guest beat preview gate (server-enforced)", () => {
@@ -279,5 +291,26 @@ describe("guest beat preview gate (server-enforced)", () => {
     const r = await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK" });
     expect(r.assetId).toBe("p1");
     expect(r.previewLimitSeconds).toBe(20);
+  });
+
+  it("listen copy ON: signed-in Studio/Windows PLAYBACK signs the personal marked MP3, never the master", async () => {
+    state.listenCopy = true;
+    state.profile = { userId: "u1", profile: { role: "USER" } };
+    const r = await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK" });
+    expect(state.copyRequests).toEqual([{ beatId: "b1", userId: "u1", masterAssetId: "m1" }]);
+    expect(state.signedKeys).toEqual(["listen/b1/c1.mp3"]);
+    expect(r.previewLimitSeconds).toBeUndefined();
+  });
+
+  it("listen copy ON: staff still get the master; catalog previews are untouched", async () => {
+    state.listenCopy = true;
+    state.profile = { userId: "a1", profile: { role: "ADMIN" } };
+    await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK" });
+    expect(state.signedKeys).toEqual(["platform/b1/m1/master.bin"]);
+    state.profile = { userId: "u1", profile: { role: "USER" } };
+    state.signedKeys = [];
+    await requestBeatAudioAccess({ beatId: "b1", purpose: "PLAYBACK", previewOnly: true });
+    expect(state.signedKeys).toEqual(["platform/b1/p1/preview.bin"]);
+    expect(state.copyRequests).toEqual([]);
   });
 });
