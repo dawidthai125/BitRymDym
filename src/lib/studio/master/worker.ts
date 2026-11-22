@@ -15,6 +15,8 @@ import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 
 import { resolveFfmpegBin, runCapture } from "@/lib/audio/native-ffmpeg";
+import { probeAudioDurationSeconds } from "@/lib/beats/preview/beat-preview-service";
+import { WORK_CLIP_CONTENT_TYPE, workClipFfmpegArgs, workClipKeyFor, workClipWindow } from "@/lib/catalog/work-clip";
 import { notifyStudioJobReady } from "@/lib/email/notify/server";
 import { renderYoutubeVideo } from "@/lib/studio/video/render";
 import { isYoutubeVideoSpec } from "@/lib/studio/video/youtube-video";
@@ -442,4 +444,62 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
   // "Master / MP4 ready" e-mail (off unless EMAIL_NOTIFICATIONS_ENABLED + Resend env on E3); never fails the job.
   if (status === "succeeded") await notifyStudioJobReady(job).catch(() => {});
   return status;
+}
+
+// ---------------------------------------------------------------- public work clip
+
+/** A published catalogue work whose 45 s public clip is due (claim RPC, migration 20261122140000). */
+export type ClaimedWorkClip = { id: string; owner_id: string; project_id: string; master_job_id: string; result_object_key: string };
+
+/** Claim RPC missing (migration not applied) → null, quietly: the poller just backs off. */
+export class WorkClipQueueUnavailable extends Error {}
+
+export async function claimNextWorkClip(cfg: RunConfig): Promise<ClaimedWorkClip | null> {
+  const { data, error } = await createSupabaseAdminClient().rpc("claim_next_work_preview_clip", { p_worker_ref: cfg.workerRef });
+  if (error) {
+    if (error.code === "PGRST202" || error.code === "42883") throw new WorkClipQueueUnavailable("work_clip_rpc_missing");
+    throw new Error(`work_clip_claim_failed:${error.code ?? "?"}`);
+  }
+  const row = (Array.isArray(data) ? data[0] : data) as ClaimedWorkClip | null;
+  return row?.id ? row : null;
+}
+
+/**
+ * Cut the public clip from the approved master (owner decision 2026-11-22): start = min(30 s, 25 %),
+ * 45 s (≤ half the song), fade in/out 1 s, 128 kbps MP3 → `…/out/master_clip.mp3` next to the
+ * master. Only the clean approved master of this very work is ever read; nothing comes from the browser.
+ */
+export async function runWorkClipJob(cfg: RunConfig, job: ClaimedWorkClip): Promise<"ready" | "failed"> {
+  const dir = await mkdtemp(path.join(tmpdir(), "work-clip-"));
+  let ok = false;
+  let key: string | null = null;
+  let seconds: number | null = null;
+  let errorCode: string | null = null;
+  try {
+    const prefix = studioMasterJobPrefix(job.owner_id, job.project_id, job.master_job_id);
+    const masterKey = job.result_object_key;
+    const clipKey = workClipKeyFor(masterKey);
+    // The master key must be this work's own master folder (never another owner's file).
+    if (!clipKey || !masterKey.startsWith(`${prefix}/out/`)) throw new Error("input_invalid");
+    const src = path.join(dir, `master${path.extname(masterKey)}`);
+    await download(masterKey.slice(0, masterKey.lastIndexOf("/")), masterKey.slice(masterKey.lastIndexOf("/") + 1), src);
+    const window = workClipWindow(await probeAudioDurationSeconds(src));
+    if (!window) throw new Error("too_short");
+    const out = path.join(dir, "clip.mp3");
+    await runCapture(resolveFfmpegBin(), workClipFfmpegArgs({ input: src, output: out, ...window }), { timeoutMs: Math.min(cfg.timeoutMs, 180_000) })
+      .catch(() => { throw new Error("ffmpeg_failed"); });
+    await uploadFile(clipKey, out, WORK_CLIP_CONTENT_TYPE);
+    key = clipKey;
+    seconds = window.length;
+    ok = true;
+  } catch (e) {
+    errorCode = (e instanceof Error ? e.message : "unknown").replace(/[^\w:.-]/g, "_").slice(0, 80);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+  const { error } = await createSupabaseAdminClient().rpc("complete_work_preview_clip", {
+    p_work_id: job.id, p_worker_ref: cfg.workerRef, p_ok: ok, p_key: key, p_seconds: seconds, p_error: errorCode,
+  });
+  if (error) throw new Error(`work_clip_complete_failed:${error.code ?? "?"}`);
+  return ok ? "ready" : "failed";
 }

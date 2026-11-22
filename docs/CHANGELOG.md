@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (12) — Rejestracja, fragment utworu, moderacja komentarzy, szybkość
+
+- **Rejestracja:** po potwierdzeniu maila sesja zostaje (tylko w przeglądarce rejestracji, ciasteczko `brd_signup_browser` przeciw login CSRF) i wraca na `next` albo `/studio`; `next` też w metadanych `signup_next`; `/studio?beatId` i `/library` niosą `next`.
+- **Fragment utworu 45 s:** worker masterów tnie `master_clip.mp3` z zatwierdzonego mastera po publikacji; `GET /api/catalog/works/[id]/clip` (tylko live, limit, podpisany URL); player na `/utwor/[id]` i w `/utwory` (+ stronicowanie `?strona=`, pusty stan). Migracja `20261122140000`.
+- **Komentarze:** usuwanie własnych, ukrywanie przez właściciela/staff, zgłoszenia (DSA art. 16), auto-ukrycie przy 3 zgłoszeniach, kolejka w `/admin/moderation`. Migracja `20261122130000`.
+- **Szybkość:** supabase-js poza wspólnym layoutem, tylko `account.premiumPage.checkout` z `account` na stronach publicznych, `cache()` na `getPublishedBeat`/`findLiveCatalogWork`; Studio: `next/dynamic` dla Mix/Master/BITKA/FX/teksty/Sample (GO Ownera na `studio-editor.tsx`), `/studio/p/[id]` 506 → 368 KB gzip.
+- **Poprawki:** aktywna zakładka rankingu, „r..” w dokumentach, „mix” w dokumentach, „Sam mastering”, `/mastering` gość → 307, metadane/canonical/OG wszystkich stron publicznych i karta OG domyślna + gatunku, 404 title, przyciski ≥ 44 px, gość na `/premium` widzi „Załóż konto: -30%”, nagłówki Premium w trybie rozkazującym.
+
 ## 2026-11-22 (11) — SEO, udostępnianie, maile, oferta startowa, Nagrywarka
 
 - **SEO:** sitemap z bitami, utworami i stronami gatunków; JSON-LD `MusicRecording` na `/beat/[id]` i `/utwor/[id]` (`src/lib/seo`); `/beats/gatunek/[slug]` + rząd „Gatunki:” w darmowym katalogu; prywatne bity `noindex`.

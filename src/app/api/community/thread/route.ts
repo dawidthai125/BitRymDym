@@ -12,7 +12,12 @@ export async function GET(request: Request) {
   const kind = engageKind(raw);
   const id = url.searchParams.get("id") ?? "";
   if (!kind) return NextResponse.json({ result: "invalid" }, { status: 400 });
-  const session = await getCurrentProfile();
-  const thread = await loadThread(kind, id, session?.userId ?? null);
-  return NextResponse.json(thread);
+  try {
+    const session = await getCurrentProfile();
+    const thread = await loadThread(kind, id, session?.userId ?? null);
+    return NextResponse.json(thread);
+  } catch (error) {
+    console.error("[api/community/thread] load failed:", error instanceof Error ? error.message : error);
+    return NextResponse.json({ result: "error" }, { status: 500 });
+  }
 }

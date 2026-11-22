@@ -3,6 +3,7 @@
 import { signupConsent } from "@/lib/legal/legal-config";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { isDeleteConfirmWord } from "@/i18n/config";
@@ -25,7 +26,12 @@ import {
   passwordRecoverySealMatches,
 } from "@/lib/auth/password-recovery-seal-cookie";
 import { assertNoPrivilegeEscalationInPayload } from "@/lib/auth/permissions";
-import { safeNextPath } from "@/lib/auth/next-path";
+import {
+  SIGNUP_BROWSER_COOKIE,
+  SIGNUP_NEXT_METADATA_KEY,
+  signupBrowserCookieOptions,
+} from "@/lib/auth/confirmation";
+import { postAuthRedirectPath, safeNextPath } from "@/lib/auth/next-path";
 import { reauthenticateWithPassword } from "@/lib/auth/reauth";
 import { AuthError, getCurrentProfile, requireUser } from "@/lib/auth/session";
 import { interpretSignUpResult } from "@/lib/auth/signup-result";
@@ -41,10 +47,7 @@ import {
 import { readSiteMaintenanceForViewer } from "@/lib/site/maintenance-settings";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import {
-  accountClaimRedirectPath,
-  tryClaimAnonTakeAfterAuth,
-} from "@/lib/takes/anon-account-claim";
+import { tryClaimAnonTakeAfterAuth } from "@/lib/takes/anon-account-claim";
 import {
   mapSignInAuthError,
   toUserFacingAuthError,
@@ -130,13 +133,17 @@ export async function signUpAction(
     return { error: limited.error, success: false, message: null };
   }
 
+  const next = safeNextPath(formData.get("next"));
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: getAuthEmailRedirectTo(),
+      // Return path survives the confirmation mail (query for RedirectTo/PKCE links,
+      // metadata for the TokenHash template that links SiteURL) — see confirmation.ts.
+      emailRedirectTo: getAuthEmailRedirectTo(next),
       data: {
         display_name: ksywka.value,
+        ...(next ? { [SIGNUP_NEXT_METADATA_KEY]: next } : {}),
         // Regulamin + Polityka prywatności accepted at sign-up (version + time).
         ...signupConsent(),
       },
@@ -153,6 +160,19 @@ export async function signUpAction(
     return { error: outcome.error, success: false, message: null };
   }
 
+  if (data.user?.id && outcome.kind !== "session") {
+    // Bind the pending confirmation to this browser (see SIGNUP_BROWSER_COOKIE).
+    try {
+      (await cookies()).set(
+        SIGNUP_BROWSER_COOKIE,
+        data.user.id,
+        signupBrowserCookieOptions(process.env.NODE_ENV === "production"),
+      );
+    } catch {
+      // No request scope: the confirmation will simply end signed out.
+    }
+  }
+
   if (data.user?.id) {
     const { hookProfileCompleted } = await import(
       "@/lib/creator-progress/award-hooks"
@@ -162,14 +182,10 @@ export async function signUpAction(
 
   if (outcome.kind === "session") {
     revalidatePath("/");
-    const next = safeNextPath(formData.get("next"));
     const context = await getCurrentProfile();
-    if (context) {
-      const claim = await tryClaimAnonTakeAfterAuth(context);
-      // Same rule as sign-in: a claimed guest take wins, else go back.
-      redirect(claim.ux === "none" && next ? next : accountClaimRedirectPath(claim));
-    }
-    redirect(next ?? "/account");
+    const claim = context ? await tryClaimAnonTakeAfterAuth(context) : null;
+    // Same rule as sign-in: a claimed guest take wins, else go back.
+    redirect(postAuthRedirectPath(claim, next, "/account"));
   }
 
   return {
@@ -227,15 +243,11 @@ export async function signInAction(
   }
 
   revalidatePath("/");
-  const next = safeNextPath(formData.get("next"));
   const context = await getCurrentProfile();
-  if (context) {
-    const claim = await tryClaimAnonTakeAfterAuth(context);
-    // A claimed guest take wins (its banner lives on /account); otherwise
-    // go back where the guest came from (e.g. /studio).
-    redirect(claim.ux === "none" && next ? next : accountClaimRedirectPath(claim));
-  }
-  redirect(next ?? "/account");
+  const claim = context ? await tryClaimAnonTakeAfterAuth(context) : null;
+  // A claimed guest take wins (its banner lives on /account); otherwise
+  // go back where the guest came from (e.g. /studio).
+  redirect(postAuthRedirectPath(claim, formData.get("next"), "/account"));
 }
 
 export async function signOutAction(): Promise<void> {

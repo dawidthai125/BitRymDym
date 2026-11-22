@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import type { Beat, BeatStatus } from "@/types/domain";
 import {
   AuthError,
@@ -1188,7 +1190,13 @@ export async function listPublishedBeatBoardKeys(): Promise<
   });
 }
 
-export async function getPublishedBeat(beatId: string): Promise<Beat | null> {
+/**
+ * Request-deduped (React `cache`): `/beat/[id]` reads it in `generateMetadata`
+ * and in the page; one Supabase round trip per request.
+ */
+export const getPublishedBeat = cache(async function getPublishedBeat(
+  beatId: string,
+): Promise<Beat | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
@@ -1206,7 +1214,7 @@ export async function getPublishedBeat(beatId: string): Promise<Beat | null> {
   const beat = mapPublicBeatRow(data as BeatRow);
   const [enriched] = await withPublicAuthors([beat]);
   return enriched ?? beat;
-}
+});
 
 export async function listPlatformBeatsForAdmin(): Promise<
   PlatformBeatAdminListItem[]

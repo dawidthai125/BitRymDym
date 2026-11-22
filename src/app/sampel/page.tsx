@@ -6,6 +6,7 @@ import { CommunityShelf, CommunitySource } from "@/components/community/communit
 import { SampleCatalog, type CatalogSampleItem } from "@/components/community/sample-catalog";
 import { SamplePromoFilm } from "@/components/community/sample-promo-film";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { listPublicSamples, pickSampleOfTheWeek } from "@/lib/community/community-service";
 import { catalogSampleNumbers, parseCatalogSource } from "@/lib/community/share-policy";
@@ -13,7 +14,8 @@ import { LIVE_SAMPLE_INSTRUMENTS, SAMPLE_INSTRUMENTS, SAMPLE_TYPES } from "@/lib
 
 export async function generateMetadata() {
   const t = await getTranslations("community.shelf");
-  return { title: t("samples") };
+  const m = await getTranslations("meta.pages");
+  return pageMetadata({ title: t("samples"), description: m("samplesDescription"), path: "/sampel" });
 }
 
 export default async function SampleCatalogPage({

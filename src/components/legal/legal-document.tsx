@@ -39,7 +39,7 @@ export function LegalDocument({ doc, englishNote }: { doc: LegalDoc; englishNote
         {englishNote ? <p className="text-sm text-[var(--brd-mute)]" lang="en">{englishNote}</p> : null}
       </header>
       <nav aria-label="Spis treści" className="text-sm">
-        <ol className="flex flex-col gap-1">{doc.sections.map((s) => <li key={s.id}><a href={`#${s.id}`} className="underline-offset-4 hover:underline">{s.h}</a></li>)}</ol>
+        <ol className="flex flex-col">{doc.sections.map((s) => <li key={s.id}><a href={`#${s.id}`} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">{s.h}</a></li>)}</ol>
       </nav>
       {doc.sections.map((s) => (
         <section key={s.id} id={s.id} className="scroll-mt-24 space-y-3">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 import { LicenseSummary } from "@/components/site/license-summary";
 import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
@@ -10,7 +11,7 @@ import { FREE_WATERMARK_PER_DAY, freeWatermarkDownloadEnabled } from "@/lib/stud
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("common.howToPage");
-  return { title: t("metaTitle"), description: t("metaDescription") };
+  return pageMetadata({ title: t("metaTitle"), description: t("metaDescription"), path: "/jak-nagrac" });
 }
 
 const PLANS = ["FREE", "BRONZE", "SILVER", "GOLD"] as const;

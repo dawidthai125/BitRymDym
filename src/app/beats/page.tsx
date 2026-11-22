@@ -7,6 +7,7 @@ import { PurchasedCatalogList } from "@/components/beats/purchased-catalog-list"
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { catalogLaneOf } from "@/lib/beats/catalog-lane";
 import { listFavoriteBeatIds } from "@/lib/beats/favorites";
@@ -19,10 +20,7 @@ import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("beats.beatsPage");
-  return {
-  title: t("metaTitle"),
-  description: t("metaDescription"),
-};
+  return pageMetadata({ title: t("metaTitle"), description: t("metaDescription"), path: "/beats" });
 }
 
 type BeatsPageProps = {

@@ -20,10 +20,17 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+// Panels hidden on first open (Mix/Mastering steps, BITKA chat, FX sheet, spectrogram) load lazily.
 import {
+  StudioBitekChat,
+  StudioClipSpectrogram,
   StudioFxChainEditor,
   StudioFxSheet,
-} from "@/components/studio/studio-fx-chain-editor";
+  StudioLazyPanelsIdlePrefetch,
+  StudioMasterStep,
+  StudioMixStep,
+  prefetchStudioStepPanels,
+} from "@/components/studio/studio-lazy-panels";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
 import {
@@ -48,7 +55,6 @@ import { bassLineAt, drumPatternAt, emptyMidi, hasMidi, midiPhraseAt, reviewPlay
 import { fadeEdgePreset } from "@/lib/studio/studio-clip-fade";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
-import { StudioClipSpectrogram } from "@/components/studio/studio-clip-spectrogram";
 import { StudioTransportBar } from "@/components/studio/studio-transport-bar";
 import { StudioStepNav } from "@/components/studio/studio-step-nav";
 import { StudioTrackHeader } from "@/components/studio/studio-track-header";
@@ -172,7 +178,6 @@ import {
   type StudioApiCall,
   type StudioStructuralUndoOp,
 } from "@/lib/studio/studio-undo-structural";
-import { StudioBitekChat } from "@/components/studio/studio-bitek-chat";
 import { StudioBitekDock, type BitekBubble, type BitekMood } from "@/components/studio/studio-bitek-dock";
 import { useBitekProject } from "@/components/studio/use-bitek-project";
 import { bitekAutoMixMasterForTier } from "@/config/plan-policy";
@@ -187,8 +192,6 @@ import {
 import { bitekRulesGuide, type BitekAction } from "@/lib/studio/bitek/bitek-guide";
 import { parseBitekBubbleState, type BitekBubbleState } from "@/lib/studio/bitek/store/messages";
 import type { BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
-import { StudioMixStep } from "@/components/studio/studio-mix-step";
-import { StudioMasterStep } from "@/components/studio/studio-master-step";
 import { buildBitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
@@ -3238,6 +3241,7 @@ function StudioEditorInner({
 
       <StudioStepNav
         studioStep={studioStep}
+        onStepIntent={prefetchStudioStepPanels}
         onSampleTab={onSampleTab}
         recordingLocked={recordingLocked}
         canGoMix={canGoMix}
@@ -3956,8 +3960,9 @@ function StudioEditorInner({
       </>
       ) : null}
 
+      {fxPanel !== null ? (
       <StudioFxSheet
-        open={fxPanel !== null}
+        open
         onClose={() => setFxPanel(null)}
       >
         {fxPanel?.role === "master" ? (
@@ -4026,6 +4031,8 @@ function StudioEditorInner({
           />
         ) : null}
       </StudioFxSheet>
+      ) : null}
+      <StudioLazyPanelsIdlePrefetch />
     </div>
   );
 }

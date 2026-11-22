@@ -14,11 +14,10 @@ import { Button } from "@/components/ui/button";
 import { StudioMarkersPanel } from "@/components/studio/studio-markers-panel";
 import { StudioScratchPanel } from "@/components/studio/studio-scratch-panel";
 import { useStudioTransport } from "@/components/studio/studio-transport-provider";
-import { StudioLyricsCard } from "@/components/studio/studio-lyrics-card";
 import { StudioStemImport } from "@/components/studio/studio-stem-import";
 import { StudioQuotaLine } from "@/components/studio/studio-quota-line";
-import { StudioPlayKeys } from "@/components/studio/studio-play-keys";
-import { StudioSampleDesk } from "@/components/studio/studio-sample-desk";
+// Lyrics card (setup pane) and Sample Lab desk / play keys (Sample tab) are hidden on first open.
+import { StudioLyricsCard, StudioPlayKeys, StudioSampleDesk } from "@/components/studio/studio-lazy-panels";
 import type { BitekApply, BitekPreview } from "@/components/studio/sample-bitek-card";
 import type { SamplePlacementPlan } from "@/lib/studio/samples/sample-bitek-plan";
 import type { StudioMidiV1 } from "@/lib/studio/studio-midi";

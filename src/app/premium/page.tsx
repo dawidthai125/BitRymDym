@@ -8,6 +8,7 @@ import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-region";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 import {
   GUEST_POLICY,
   PLAN_PACK_CATALOG,
@@ -29,7 +30,7 @@ import { aiCoverEnabled, aiCoverPerDay } from "@/lib/studio/video/ai-cover/confi
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("account.premiumPage");
-  return { title: t("metaTitle"), description: t("metaDescription") };
+  return pageMetadata({ title: t("metaTitle"), description: t("metaDescription"), path: "/premium" });
 }
 
 const TIERS: PremiumTier[] = ["FREE", "BRONZE", "SILVER", "GOLD"];

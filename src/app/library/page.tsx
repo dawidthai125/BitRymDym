@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/site/app-shell";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 export default async function LibraryPage() {
   const t = await getTranslations("beats.libraryPage");
   const session = await getCurrentProfile();
-  if (!session) redirect("/sign-in");
+  if (!session) redirect(signInPathWithNext("/library"));
 
   return (
     <AppShell tone="studio">

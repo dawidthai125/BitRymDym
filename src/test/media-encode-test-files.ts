@@ -7,6 +7,7 @@ export const MEDIA_ENCODE_TEST_FILES = [
   "src/lib/audio/e3-6-c-mp3-encode.test.ts",
   "src/lib/audio/e3-7-c-hq-mp3-encode.test.ts",
   "src/lib/beats/preview/beat-preview-encode.test.ts",
+  "src/lib/catalog/work-clip-encode.test.ts",
   "src/lib/studio/master/free-watermark.media.test.ts",
 ] as const;
 

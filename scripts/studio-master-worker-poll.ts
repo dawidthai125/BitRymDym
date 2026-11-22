@@ -7,10 +7,14 @@
  * Logs never include secrets or signed URLs.
  */
 import { sweepExpiredStudioReferences } from "../src/lib/studio/master/reference-store";
-import { claimNextStudioMasterJob, runStudioMasterJob } from "../src/lib/studio/master/worker";
+import { claimNextStudioMasterJob, claimNextWorkClip, runStudioMasterJob, runWorkClipJob, WorkClipQueueUnavailable } from "../src/lib/studio/master/worker";
 
 /** Reference tracks older than 24 h (unused / abandoned uploads) are deleted from the idle loop. */
 const REFERENCE_SWEEP_MS = 10 * 60_000;
+/** Public 45 s work clips (catalog publish) are cut when no master job waits; checked at most every 15 s. */
+const WORK_CLIP_POLL_MS = 15_000;
+/** Clip RPC not deployed yet (migration 20261122140000) → ask again only every 10 min. */
+const WORK_CLIP_MISSING_BACKOFF_MS = 10 * 60_000;
 import { decideStudioMasterWorkerConfig } from "../src/lib/studio/master/worker-env";
 
 async function main() {
@@ -23,6 +27,7 @@ async function main() {
   for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => { stop = true; });
   console.log(JSON.stringify({ event: "studio_master_started", workerRef: cfg.workerRef }));
   let lastSweep = 0;
+  let nextClipAt = 0;
   while (!stop) {
     if (Date.now() - lastSweep > REFERENCE_SWEEP_MS) {
       lastSweep = Date.now();
@@ -43,6 +48,22 @@ async function main() {
       }
     } catch (e) {
       console.log(JSON.stringify({ event: "studio_master_loop_error", message: e instanceof Error ? e.message.slice(0, 120) : "unknown" }));
+    }
+    if (Date.now() >= nextClipAt) {
+      nextClipAt = Date.now() + WORK_CLIP_POLL_MS;
+      try {
+        const clip = await claimNextWorkClip(cfg);
+        if (clip) {
+          const t0 = Date.now();
+          const status = await runWorkClipJob(cfg, clip);
+          console.log(JSON.stringify({ event: "work_clip_done", workId: clip.id, status, ms: Date.now() - t0 }));
+          nextClipAt = 0;
+          continue;
+        }
+      } catch (e) {
+        if (e instanceof WorkClipQueueUnavailable) nextClipAt = Date.now() + WORK_CLIP_MISSING_BACKOFF_MS;
+        else console.log(JSON.stringify({ event: "work_clip_loop_error", message: e instanceof Error ? e.message.slice(0, 120) : "unknown" }));
+      }
     }
     await new Promise((r) => setTimeout(r, cfg.pollMs));
   }

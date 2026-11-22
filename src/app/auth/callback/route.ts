@@ -7,6 +7,11 @@ import {
   decideAuthCallbackRoute,
   isEmailChangeCallback,
   isRecoveryCallback,
+  resolveSignupNextPath,
+  SIGNUP_BROWSER_COOKIE,
+  SIGNUP_CONFIRMED_DEFAULT_PATH,
+  signupBrowserCookieOptions,
+  signupBrowserMatches,
 } from "@/lib/auth/confirmation";
 import {
   classifyEmailChangeVerification,
@@ -24,9 +29,13 @@ import {
   passwordRecoveryCookieValue,
   passwordRecoverySetOptions,
 } from "@/lib/auth/password-recovery-seal-cookie";
+import { postAuthRedirectPath, safeNextPath, SIGN_IN_NEXT_PARAM } from "@/lib/auth/next-path";
+import { getCurrentProfile } from "@/lib/auth/session";
 import { sendWelcomeOnce } from "@/lib/email/notify/server";
+import { readSiteMaintenanceForViewer } from "@/lib/site/maintenance-settings";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { tryClaimAnonTakeAfterAuth } from "@/lib/takes/anon-account-claim";
 
 function redirectAbsolute(request: NextRequest, path: string) {
   try {
@@ -74,7 +83,12 @@ function redirectPasswordRecovery(request: NextRequest, userId: string) {
  * - PKCE: ?code=…&flow=recovery (from getAuthPasswordResetRedirectTo) → keep session → /auth/reset-password
  * - The reset form also needs a server-signed brd_password_recovery cookie for that user.
  *   No user or no seal → /forgot-password, and this branch does not call signOut.
- * Signup / other confirms: sign out → /auth/confirmed
+ * Signup confirm (OTP signup/email, plain PKCE code): keep the session (owner decision)
+ *   only when the brd_signup_browser cookie (set at sign-up) names the verified user
+ *   (login-CSRF guard; other browser/device → sign out → /auth/confirmed?…&next=…)
+ *   → claimed guest take (/account?claim=…) or safe `next` (query, else user_metadata
+ *   signup_next) or /studio. No user / maintenance (non-admin) → /auth/confirmed?status=success&next=…
+ * Other confirms (magic link / invite, unused): sign out → /auth/confirmed
  * Email change (type=email_change or flow=email_change): keep any session.
  *   The notice is a signed cookie, not a query param.
  *   No session after a successful email-change OTP is the first secure confirmation (1/2).
@@ -89,9 +103,11 @@ export async function GET(request: NextRequest) {
     type: url.searchParams.get("type"),
     flow: url.searchParams.get("flow"),
   });
+  // Untrusted; only ever used through safeNextPath (same-origin relative path).
+  const queryNext = safeNextPath(url.searchParams.get(SIGN_IN_NEXT_PARAM));
 
   if (classified.kind === "missing") {
-    return redirectAbsolute(request, confirmationResultPath("error"));
+    return redirectAbsolute(request, confirmationResultPath("error", queryNext));
   }
 
   const recovery = isRecoveryCallback(classified);
@@ -130,8 +146,10 @@ export async function GET(request: NextRequest) {
     });
 
     // Welcome e-mail once per account, after a confirmed sign-up (off unless notifications are enabled).
+    let confirmedUser: { id: string; user_metadata?: Record<string, unknown> } | null = null;
     if (exchangeOk && !recovery && !isEmailChangeCallback(classified)) {
       const { data: confirmed } = await supabase.auth.getUser();
+      confirmedUser = confirmed.user ?? null;
       const newUserId = confirmed.user?.email_confirmed_at ? confirmed.user.id : null;
       if (newUserId) after(() => sendWelcomeOnce(newUserId).then(() => {}));
     }
@@ -158,6 +176,37 @@ export async function GET(request: NextRequest) {
     if (decision.kind === "email_change_failed") {
       return redirectEmailChange(request, "invalid", false);
     }
+    if (decision.kind === "signed_in") {
+      const next = resolveSignupNextPath({
+        queryNext,
+        userMetadata: confirmedUser?.user_metadata ?? null,
+      });
+      // Login-CSRF guard: keep the session only in the browser that signed up.
+      const boundBrowser = signupBrowserMatches(
+        request.cookies.get(SIGNUP_BROWSER_COOKIE)?.value,
+        confirmedUser?.id,
+      );
+      // Same gate as signInAction: during maintenance only ADMIN keeps a session.
+      const maintenance = boundBrowser
+        ? await readSiteMaintenanceForViewer(supabase)
+        : null;
+      if (!boundBrowser || (maintenance?.enabled && !maintenance.viewerIsAdmin)) {
+        await supabase.auth.signOut();
+        return redirectAbsolute(request, confirmationResultPath("success", next));
+      }
+      const context = await getCurrentProfile();
+      const claim = context ? await tryClaimAnonTakeAfterAuth(context) : null;
+      const response = redirectAbsolute(
+        request,
+        postAuthRedirectPath(claim, next, SIGNUP_CONFIRMED_DEFAULT_PATH),
+      );
+      response.cookies.set(
+        SIGNUP_BROWSER_COOKIE,
+        "",
+        signupBrowserCookieOptions(process.env.NODE_ENV === "production", 0),
+      );
+      return response;
+    }
     if (decision.kind === "email_change") {
       const { data } = await supabase.auth.getUser();
       const user = data.user ?? null;
@@ -173,7 +222,7 @@ export async function GET(request: NextRequest) {
       });
       return redirectEmailChange(request, status, Boolean(user));
     }
-    return redirectAbsolute(request, confirmationResultPath(decision.status));
+    return redirectAbsolute(request, confirmationResultPath(decision.status, queryNext));
   } catch {
     // Fail closed on signup. Do not wipe a recovery or email-change session.
     const emailChange = isEmailChangeCallback(classified);
@@ -191,6 +240,6 @@ export async function GET(request: NextRequest) {
     if (emailChange) {
       return redirectEmailChange(request, "unknown", false);
     }
-    return redirectAbsolute(request, confirmationResultPath("error"));
+    return redirectAbsolute(request, confirmationResultPath("error", queryNext));
   }
 }

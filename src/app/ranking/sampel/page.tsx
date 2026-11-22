@@ -4,10 +4,12 @@ import { PageFrame } from "@/components/brand/chrome";
 import { RankingView } from "@/components/community/ranking-view";
 import { readBoard } from "@/lib/community/community-service";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 
 export async function generateMetadata() {
   const t = await getTranslations("community.shelf");
-  return { title: t("sampleRank") };
+  const m = await getTranslations("meta.pages");
+  return pageMetadata({ title: t("sampleRank"), description: m("sampleRankDescription"), path: "/ranking/sampel" });
 }
 
 export default async function SampleRankingPage({

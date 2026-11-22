@@ -5,6 +5,8 @@
  * Preview may use VERCEL_URL; local uses localhost.
  */
 
+import { SIGN_IN_NEXT_PARAM, safeNextPath } from "@/lib/auth/next-path";
+
 /** Vercel serves www; the apex answers 308 (project domains). Supabase allow-list has https://www.bitrymdym.pl/**. */
 const CANONICAL_PRODUCTION_ORIGIN = "https://www.bitrymdym.pl";
 const APEX_PRODUCTION_ORIGIN = "https://bitrymdym.pl";
@@ -49,10 +51,13 @@ export function getSiteUrl(): string {
 
 /**
  * Absolute URL for Auth emailRedirectTo (must be on Supabase allow-list).
- * Lands on the PKCE/OTP callback, which then routes to /auth/confirmed.
+ * Lands on the PKCE/OTP callback, which keeps the new session and returns to `next`.
+ * `next` passes safeNextPath (same-origin relative path) or is dropped.
  */
-export function getAuthEmailRedirectTo(): string {
-  return `${getSiteUrl()}/auth/callback`;
+export function getAuthEmailRedirectTo(next?: string | null): string {
+  const safe = safeNextPath(next);
+  const base = `${getSiteUrl()}/auth/callback`;
+  return safe ? `${base}?${SIGN_IN_NEXT_PARAM}=${encodeURIComponent(safe)}` : base;
 }
 
 /**

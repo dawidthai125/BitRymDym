@@ -6,7 +6,6 @@
  */
 
 import { requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { toUserFacingError } from "@/lib/ui/user-errors";
 import type { ReplaceableTakeSummary } from "@/lib/takes/claim-errors";
@@ -219,6 +218,8 @@ async function runTakeUploadTransport(params: {
   // The day counter counts the row created with the session.
   requestPlanUsageRefresh();
 
+  // Lazy: keeps supabase-js out of the recorder's first-load JS (/beat/[id]).
+  const { createSupabaseBrowserClient } = await import("@/lib/supabase/client");
   const supabase = createSupabaseBrowserClient();
   const { error: uploadError } = await supabase.storage
     .from(TAKE_AUDIO_BUCKET)

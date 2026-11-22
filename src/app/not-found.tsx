@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const m = await getTranslations("meta.pages");
+  return { title: { absolute: m("notFoundTitle") } };
+}
 
 export default function NotFound() {
   const t = useTranslations("common.notFound");

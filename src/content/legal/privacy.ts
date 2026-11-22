@@ -6,14 +6,14 @@ import type { LegalDoc } from "./types";
 export const PRIVACY: LegalDoc = {
   title: "Polityka prywatności BitRymDym",
   version: PRIVACY_VERSION,
-  lead: `Wyjaśniamy, jakie dane przetwarzamy, po co, jak długo i komu je powierzamy. Obowiązuje od ${LEGAL_EFFECTIVE_DATE}.`,
+  lead: `Wyjaśniamy, jakie dane przetwarzamy, po co, jak długo i komu je powierzamy. Obowiązuje od ${LEGAL_EFFECTIVE_DATE}`,
   sections: [
     { id: "p1", h: "1. Administrator", blocks: [
       `Administratorem danych jest ${O.name}, ${O.address}, NIP ${O.nip} („my”). Kontakt w sprawach danych: ${O.privacyEmail}. Nie wyznaczyliśmy inspektora ochrony danych.`,
     ] },
     { id: "p2", h: "2. Jakie dane przetwarzamy", blocks: [{ list: [
       "Konto: adres e-mail, zaszyfrowane hasło (przechowuje je dostawca uwierzytelniania), ksywka, numer użytkownika, Plan, data końca Planu, nazwa i data końca zaplanowanego następnego Planu (jeśli został opłacony), data rejestracji, wersja zaakceptowanego Regulaminu i Polityki.",
-      "Treści: wgrane Bity, okładki, Nagrania (Twój głos lub instrument), projekty Studia, teksty, utwory referencyjne do masteringu, wygenerowane miksy, mastery i wideo.",
+      "Treści: wgrane Bity, okładki, Nagrania (Twój głos lub instrument), projekty Studia, teksty, utwory referencyjne do masteringu, wygenerowane mixy, mastery i wideo.",
       "Aktywność: odsłuchy, pobrania, polubienia, linki do odsłuchu i liczba ich odtworzeń, historia moderacji i odwołań.",
       "Dane techniczne: adres IP, typ przeglądarki, logi serwera i błędów, identyfikatory sesji w plikach cookie.",
       "Odcisk dźwięku wgrywanego Bitu (chromaprint) i jego czas trwania. Sam plik audio do usługi AcoustID nie trafia.",
@@ -36,7 +36,7 @@ export const PRIVACY: LegalDoc = {
       { table: { head: ["Dostawca", "Do czego", "Gdzie"], rows: [
         ["Supabase", "baza danych, logowanie, przechowywanie plików", "UE (Irlandia)"],
         ["Vercel", "hosting strony i API, logi", "USA / globalnie"],
-        ["Serwer obliczeniowy E3", "miks, mastering, transkodowanie, wideo MP4, kontrola plików", "UE (Contabo GmbH; centrum danych w Lauterbourg, Francja)"],
+        ["Serwer obliczeniowy E3", "mix, mastering, transkodowanie, wideo MP4, kontrola plików", "UE (Contabo GmbH; centrum danych w Lauterbourg, Francja)"],
         ["Google (Gemini API)", "asystent BITEK, moderacja obrazów", "USA"],
         ["Groq", "asystent BITEK, kontrola i doprecyzowanie opisów okładek AI", "USA"],
         ["xAI (Grok)", "generowanie okładek AI — tylko opis tekstowy", "USA"],
@@ -51,7 +51,7 @@ export const PRIVACY: LegalDoc = {
     { id: "p6", h: "6. Jak długo przechowujemy dane", blocks: [{ list: [
       "Konto i opublikowane treści — do usunięcia Konta; po usunięciu kasujemy je bez zbędnej zwłoki (kopie zapasowe wygasają w cyklu dostawcy).",
       "Nagranie (głos lub instrument) — Free 24 godziny, Bronze 36 godzin, Silver 60 godzin, Gold 84 godziny; potem jest usuwane automatycznie. To krócej niż pliki robocze Studia.",
-      "Pliki robocze Studia (miksy, mastery, eksporty, wideo) — zależnie od Planu: Free 2 dni, Bronze 7 dni, Silver 30 dni, Gold 45 dni; potem są usuwane automatycznie.",
+      "Pliki robocze Studia (mixy, mastery, eksporty, wideo) — zależnie od Planu: Free 2 dni, Bronze 7 dni, Silver 30 dni, Gold 45 dni; potem są usuwane automatycznie.",
       "Utwór referencyjny do masteringu — usuwany zaraz po zakończeniu zadania.",
       "Linki do odsłuchu — do wygaśnięcia (maksymalnie zgodnie z Planem) lub wyłączenia.",
       "Historia moderacji i zgłoszeń — przez czas istnienia treści i do 3 lat po jej usunięciu (ustalenie, dochodzenie lub obrona roszczeń — m.in. art. 442¹ Kodeksu cywilnego; obowiązki z aktu o usługach cyfrowych), a gdy toczy się konkretne postępowanie lub spór — do jego zakończenia.",

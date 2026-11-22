@@ -9,7 +9,7 @@ import { StudioProjectList } from "@/components/studio/studio-project-list";
 import { AppShell } from "@/components/site/app-shell";
 import { maxProjectsForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
-import { signInPathWithNext } from "@/lib/auth/next-path";
+import { pathWithKeptQuery, signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { planFirstSteps } from "@/lib/studio/first-steps";
 import { listStudioProjects } from "@/lib/studio/studio-service";
@@ -28,20 +28,21 @@ type PageProps = {
 /** OD-P5-03 — Studio hub = project list (Quick Record remains on beat detail). */
 export default async function StudioProjectsPage({ searchParams }: PageProps) {
   const t = await getTranslations("studio.studioPage");
+  const params: { beatId?: string; notice?: string } = searchParams ? await searchParams : {};
   let auth: Awaited<ReturnType<typeof requireUser>>;
   try {
     auth = await requireUser();
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
-      redirect(signInPathWithNext("/studio"));
+      // Keep the chosen beat through sign-in / sign-up (+ e-mail confirmation).
+      redirect(signInPathWithNext(pathWithKeptQuery("/studio", params, ["beatId"])));
     }
     redirect("/account");
   }
 
-  const [projects, entitlement, params] = await Promise.all([
+  const [projects, entitlement] = await Promise.all([
     listStudioProjects(),
     resolveProductEntitlementForAuthContext(auth),
-    searchParams ? searchParams : Promise.resolve({} as { beatId?: string; notice?: string }),
   ]);
   const tier = entitlement.premiumTier;
   const seedBeatId =

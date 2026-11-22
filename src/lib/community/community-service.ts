@@ -22,10 +22,12 @@ import {
 } from "@/lib/community/ranking-policy";
 import { findLiveCatalogWork } from "@/lib/catalog/catalog-service";
 import { claimCommunityReward } from "@/lib/community/reward-apply";
+import { canDeleteComment, hideRole } from "@/lib/community/comment-moderation-policy";
 import { canCommentPublic, publicAuthorName, type CatalogSource } from "@/lib/community/share-policy";
 import { loadPlanSnapshot } from "@/lib/payments/snapshots";
 import { ANONYMIZED_PUBLIC_AUTHOR } from "@/lib/auth/display-name";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import type { SystemRole } from "@/types/domain";
 
 const RATINGS = "community_ratings";
 const COMMENTS = "community_comments";
@@ -87,6 +89,10 @@ export type ThreadComment = {
   author: string;
   body: string;
   createdAt: string;
+  /** The viewer wrote it, so they may delete it. */
+  mine: boolean;
+  /** The viewer owns the work or is staff, so they may hide it. */
+  canHide: boolean;
 };
 
 export type Thread = {
@@ -609,7 +615,7 @@ async function findPublishedBeat(id: string): Promise<Work | null> {
   };
 }
 
-async function findWork(kind: TargetKind | "work", id: string): Promise<Work | null> {
+export async function findWork(kind: TargetKind | "work", id: string): Promise<Work | null> {
   if (kind === "work") {
     const card = await findLiveCatalogWork(id);
     if (!card) return null;
@@ -648,13 +654,12 @@ export async function loadThread(kind: TargetKind | "work", id: string, viewerId
   const own = viewerId !== null && viewerId === work.ownerId;
   const admin = adminOrNull();
   if (!admin) return { ...blank, found: true, own, commentsOpen, ratingsOpen };
-  const [ratings, comments] = await Promise.all([
+  const [ratings, comments, viewerRole] = await Promise.all([
     ratingsOpen
       ? admin.from(RATINGS).select("user_id, stars").eq("target_kind", kind).eq("target_id", id)
       : Promise.resolve({ data: [], error: null }),
-    commentsOpen
-      ? admin.from(COMMENTS).select("id, user_id, body, created_at").eq("target_kind", kind).eq("target_id", id).order("created_at", { ascending: false }).limit(40)
-      : Promise.resolve({ data: [], error: null }),
+    commentsOpen ? loadVisibleComments(admin, kind, id) : Promise.resolve({ data: [], error: null }),
+    commentsOpen && viewerId ? loadViewerRole(admin, viewerId) : Promise.resolve(null),
   ]);
   if (missingCommunity(ratings.error) || missingCommunity(comments.error)) {
     return { ...blank, found: true, own, commentsOpen, ratingsOpen };
@@ -680,8 +685,41 @@ export async function loadThread(kind: TargetKind | "work", id: string, viewerId
       author: publicAuthorName({ ownership: "USER", displayName: names.get(row.user_id) }),
       body: row.body,
       createdAt: row.created_at,
+      mine: canDeleteComment(viewerId, row.user_id),
+      canHide: hideRole({ viewerId, workOwnerId: work.ownerId, role: viewerRole }) !== null,
     })),
   };
+}
+
+/**
+ * Newest 40 comments a visitor may see: deleted and hidden ones never leave the server.
+ * A DB before migration 20261122130000 has no moderation columns, so it reads unfiltered.
+ */
+async function loadVisibleComments(admin: Admin, kind: TargetKind | "work", id: string) {
+  const columns = "id, user_id, body, created_at";
+  const filtered = await admin
+    .from(COMMENTS)
+    .select(columns)
+    .eq("target_kind", kind)
+    .eq("target_id", id)
+    .is("deleted_at", null)
+    .is("hidden_at", null)
+    .order("created_at", { ascending: false })
+    .limit(40);
+  if (!shareColumnMissing(filtered.error, "deleted_at") && !shareColumnMissing(filtered.error, "hidden_at")) return filtered;
+  return admin
+    .from(COMMENTS)
+    .select(columns)
+    .eq("target_kind", kind)
+    .eq("target_id", id)
+    .order("created_at", { ascending: false })
+    .limit(40);
+}
+
+async function loadViewerRole(admin: Admin, viewerId: string): Promise<SystemRole | null> {
+  const { data, error } = await admin.from("profiles").select("role").eq("id", viewerId).maybeSingle();
+  if (error || !data) return null;
+  return (data as { role?: SystemRole }).role ?? null;
 }
 
 export async function rateTarget(userId: string, kind: TargetKind | "work", id: string, stars: number): Promise<"ok" | "own" | "missing" | "invalid" | "off" | "closed"> {
@@ -704,23 +742,28 @@ export async function rateTarget(userId: string, kind: TargetKind | "work", id: 
   return "ok";
 }
 
-export async function commentTarget(userId: string, kind: TargetKind | "work", id: string, body: unknown): Promise<"ok" | "missing" | "closed" | "invalid" | "limit" | "off"> {
+export type CommentResult = "ok" | "missing" | "closed" | "invalid" | "limit" | "off";
+
+/** `id` is the new comment, so its author can delete it without a reload. */
+export async function commentTarget(userId: string, kind: TargetKind | "work", id: string, body: unknown): Promise<{ result: CommentResult; id?: string }> {
   const text = cleanComment(body);
-  if (!text || text.length > COMMENT_MAX) return "invalid";
-  if (!isUuid(id)) return "invalid";
+  if (!text || text.length > COMMENT_MAX) return { result: "invalid" };
+  if (!isUuid(id)) return { result: "invalid" };
   const work = await findWork(kind, id);
-  if (!work) return "missing";
-  if (!canCommentPublic({ published: true, listed: true, allowComments: work.allowComments })) return "closed";
+  if (!work) return { result: "missing" };
+  if (!canCommentPublic({ published: true, listed: true, allowComments: work.allowComments })) return { result: "closed" };
   const admin = adminOrNull();
-  if (!admin) return "off";
+  if (!admin) return { result: "off" };
   const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  // Deleted and hidden comments still count, so delete-and-repost cannot dodge the limit.
   const recent = await admin.from(COMMENTS).select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", since);
-  if (missingCommunity(recent.error)) return "off";
-  if ((recent.count ?? 0) >= 20) return "limit";
-  const saved = await admin.from(COMMENTS).insert({ target_kind: kind, target_id: id, user_id: userId, body: text });
-  if (missingCommunity(saved.error)) return "off";
-  if (saved.error) return "invalid";
-  return "ok";
+  if (missingCommunity(recent.error)) return { result: "off" };
+  if ((recent.count ?? 0) >= 20) return { result: "limit" };
+  const saved = await admin.from(COMMENTS).insert({ target_kind: kind, target_id: id, user_id: userId, body: text }).select("id").maybeSingle();
+  if (missingCommunity(saved.error)) return { result: "off" };
+  if (saved.error) return { result: "invalid" };
+  const newId = (saved.data as { id?: unknown } | null)?.id;
+  return typeof newId === "string" ? { result: "ok", id: newId } : { result: "ok" };
 }
 
 export async function listMyRewards(userId: string, now = new Date()): Promise<{ enabled: boolean; rewards: RewardView[] }> {

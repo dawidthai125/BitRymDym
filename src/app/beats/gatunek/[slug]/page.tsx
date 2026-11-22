@@ -8,6 +8,7 @@ import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { listFavoriteBeatIds } from "@/lib/beats/favorites";
 import { toPublicCatalogItem } from "@/lib/beats/public";
@@ -37,12 +38,7 @@ export async function generateMetadata({ params }: GenrePageProps): Promise<Meta
   const path = genrePagePath(genre.slug);
   const title = t("metaTitle", { genre: genre.label });
   const description = t("metaDescription", { genre: genre.label });
-  return {
-    title,
-    description,
-    alternates: { canonical: path },
-    openGraph: { type: "website", title, description, url: path },
-  };
+  return pageMetadata({ title, description, path, image: { url: `${path}/opengraph-image`, width: 1200, height: 630, alt: title } });
 }
 
 export default async function BeatsGenrePage({ params }: GenrePageProps) {

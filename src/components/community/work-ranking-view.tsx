@@ -22,7 +22,7 @@ export async function WorkRankingView({ period }: { period: WorkBoardPeriod }) {
       <p className="mb-4 max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("rankLead")}</p>
       <nav aria-label={t("rankTitle")} className="mb-4 flex flex-wrap gap-2">
         {tabs.map((tab) => (
-          <Link key={tab.id} href={tab.href} aria-current={period === tab.id ? "page" : undefined} className="inline-flex min-h-11 items-center border border-[var(--brd-line)] px-3 text-sm">
+          <Link key={tab.id} href={tab.href} aria-current={period === tab.id ? "page" : undefined} className="inline-flex min-h-11 items-center border border-[var(--brd-line)] px-3 text-sm aria-[current=page]:border-tape-amber-deep aria-[current=page]:bg-tape-amber aria-[current=page]:font-semibold aria-[current=page]:text-tape-on-amber">
             {tab.label}
           </Link>
         ))}

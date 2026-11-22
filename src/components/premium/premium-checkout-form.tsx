@@ -48,6 +48,7 @@ export type StarterPackView = {
 export function PremiumCheckoutForm({
   loggedIn,
   signInHref,
+  signUpHref,
   locale,
   prices,
   addonPrice,
@@ -64,6 +65,8 @@ export function PremiumCheckoutForm({
 }: {
   loggedIn: boolean;
   signInHref: string;
+  /** Guest CTA: new account → starter discount on the first pack (no amounts here — Omnibus). */
+  signUpHref: string;
   locale: "pl" | "en";
   prices: Record<PaidTier, { month: string; year: string }>;
   addonPrice: string;
@@ -216,7 +219,10 @@ export function PremiumCheckoutForm({
             {pending === "plan" ? t("czekam") : change === "extend" ? t("placePrzedluz") : change === "upgrade" ? t("placeWyzej") : change === "later" ? t("placeNizej") : t("place")}
           </BrdButton>
         ) : (
-          <BrdLink href={signInHref} data-testid="premium-checkout-signin">{t("zalogujSie")}</BrdLink>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <BrdLink href={signInHref} className="py-2 text-center" data-testid="premium-checkout-signin">{t("zalogujSie")}</BrdLink>
+            <BrdLink href={signUpHref} variant="secondary" className="py-2 text-center" data-testid="premium-checkout-signup">{t("zalozKontoStart")}</BrdLink>
+          </div>
         )}
       </form>
 

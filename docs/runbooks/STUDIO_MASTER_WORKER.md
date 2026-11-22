@@ -46,3 +46,10 @@ Nie restartuje istniejących workerów; nie otwiera portów (tylko wychodzące d
 ## Wyłączenie
 `STUDIO_MASTER_ENABLED=false` + `systemctl restart bitrymdym-master-worker-poll` (proces kończy się bez claimu).
 Zadania w `running` po awarii: `update studio_master_jobs set status='queued' where status='running' and started_at < now()-interval '30 min';`
+
+## Fragment utworu z katalogu (od 2026-11-22)
+Ten sam poller, gdy nie czeka żaden master (najwyżej co 15 s), bierze z `catalog_works` utwór z `preview_clip_status='pending'`
+(RPC `claim_next_work_preview_clip`, migracja `20261122140000_work_preview_clip.sql`), pobiera zatwierdzony master FLAC,
+`ffprobe` → okno start = min(30 s, 25 %), długość = min(45 s, połowa utworu), fade in/out 1 s, MP3 128 kbps 44,1 kHz →
+`…/out/master_clip.mp3` obok mastera (prywatny `audio-artifacts`) → `complete_work_preview_clip`. Logi: `work_clip_done` / `work_clip_loop_error`.
+Bez migracji RPC nie istnieje: poller pyta raz na 10 min i nic nie loguje. Max 3 próby; potem `failed` (ponowny zapis publikacji po 1 h kolejkuje znowu).

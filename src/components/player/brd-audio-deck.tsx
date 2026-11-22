@@ -24,13 +24,15 @@ type BrdAudioDeckProps = {
   testId: string;
   seed?: string;
   className?: string;
+  /** "none": nothing is fetched before Play (public work clip). Default "metadata". */
+  preload?: "none" | "metadata";
 };
 
 /**
  * BitRymDym listen deck for a URL we already hold (share link, finished master).
  * Hidden engine, no native controls, no download.
  */
-export function BrdAudioDeck({ src, title, testId, seed, className }: BrdAudioDeckProps) {
+export function BrdAudioDeck({ src, title, testId, seed, className, preload = "metadata" }: BrdAudioDeckProps) {
   const tl = useLibText();
   const t = useTranslations("common.playbackShell");
   const labelId = useId();
@@ -171,7 +173,7 @@ export function BrdAudioDeck({ src, title, testId, seed, className }: BrdAudioDe
         </p>
         <BrdAudioTime current={state.currentTime} total={duration} format={formatDurationSeconds} className="text-xs" />
       </div>
-      <audio ref={audioRef} preload="metadata" className="hidden" />
+      <audio ref={audioRef} preload={preload} className="hidden" />
       <Waveform
         seed={seed || src}
         progress={progress}

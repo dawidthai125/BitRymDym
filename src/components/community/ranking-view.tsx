@@ -34,10 +34,10 @@ export async function RankingView({
       <h1 className="sr-only">{shelf(kind === "beat" ? "beatRank" : "sampleRank")}</h1>
       <CommunityShelf current={kind === "beat" ? "beatRank" : "sampleRank"} />
       <nav aria-label={rank("week")} className="mb-4 flex flex-wrap gap-2">
-        <Link href={base} aria-current={period === "week" ? "page" : undefined} className="inline-flex min-h-11 items-center border border-[var(--brd-line)] px-3 text-sm">
+        <Link href={base} aria-current={period === "week" ? "page" : undefined} className="inline-flex min-h-11 items-center border border-[var(--brd-line)] px-3 text-sm aria-[current=page]:border-tape-amber-deep aria-[current=page]:bg-tape-amber aria-[current=page]:font-semibold aria-[current=page]:text-tape-on-amber">
           {rank("week")}
         </Link>
-        <Link href={`${base}?okres=miesiac`} aria-current={period === "month" ? "page" : undefined} className="inline-flex min-h-11 items-center border border-[var(--brd-line)] px-3 text-sm">
+        <Link href={`${base}?okres=miesiac`} aria-current={period === "month" ? "page" : undefined} className="inline-flex min-h-11 items-center border border-[var(--brd-line)] px-3 text-sm aria-[current=page]:border-tape-amber-deep aria-[current=page]:bg-tape-amber aria-[current=page]:font-semibold aria-[current=page]:text-tape-on-amber">
           {rank("month")}
         </Link>
       </nav>

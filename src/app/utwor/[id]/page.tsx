@@ -4,10 +4,13 @@ import { notFound } from "next/navigation";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { CommunityThread } from "@/components/community/community-thread";
+import { BrdAudioDeck } from "@/components/player/brd-audio-deck";
 import { ShareButtons } from "@/components/share/share-buttons";
 import { AppShell } from "@/components/site/app-shell";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { findLiveCatalogWork } from "@/lib/catalog/catalog-service";
+import { workClipSrc } from "@/lib/catalog/work-clip";
+import { loadWorkClips } from "@/lib/catalog/work-clip-server";
 import { loadThread } from "@/lib/community/community-service";
 import { absoluteUrl, clampText } from "@/lib/share/share-links";
 import { getPublicSiteUrl } from "@/lib/site-url";
@@ -37,7 +40,11 @@ export default async function FinishedWorkPage({ params }: Props) {
   const work = await findLiveCatalogWork(id).catch(() => null);
   if (!work) notFound();
   const session = await getCurrentProfile();
-  const thread = await loadThread("work", id, session?.userId ?? null).catch(() => null);
+  const [thread, clips] = await Promise.all([
+    loadThread("work", id, session?.userId ?? null).catch(() => null),
+    loadWorkClips([work.id]).catch(() => null),
+  ]);
+  const clip = clips?.get(work.id) ?? { state: "pending" as const };
   const t = await getTranslations("community.works");
   const catalog = await getTranslations("community.catalog");
   return (
@@ -57,7 +64,14 @@ export default async function FinishedWorkPage({ params }: Props) {
           <CommunityShelf current="works" />
           <h1 className="font-poster text-2xl font-bold uppercase">{work.title}</h1>
           <p className="mt-2 text-sm text-[var(--brd-mute)]">{catalog("by", { name: work.author })}</p>
-          <p className="mt-3 max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("noPlayer")}</p>
+          {clip.state === "ready" ? (
+            <div className="mt-4 flex max-w-2xl flex-col gap-2">
+              <BrdAudioDeck src={workClipSrc(work.id)} title={work.title} seed={work.id} testId="work-clip-player" preload="none" />
+              <p className="text-sm text-[var(--brd-ink-soft)]">{t("clipNote", { seconds: clip.seconds })}</p>
+            </div>
+          ) : (
+            <p className="mt-3 max-w-prose text-sm text-[var(--brd-ink-soft)]" data-testid="work-clip-pending">{t("clipPending")}</p>
+          )}
           <p className="mt-2 text-sm text-[var(--brd-ink-soft)]">
             {work.allowRatings ? t("ratingsOn") : t("ratingsOff")}
             {" · "}

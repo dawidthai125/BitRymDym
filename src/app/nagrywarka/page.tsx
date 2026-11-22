@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { BrdLink } from "@/components/brand/brd-button";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getSessionUser } from "@/lib/auth/session";
 import { PLAN_POLICY } from "@/config/plan-policy";
@@ -21,10 +22,7 @@ function lines(value: unknown): string[] {
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("common.recorderPage");
-  return {
-    title: t("metaTitle"),
-    description: t("metaDescription"),
-  };
+  return pageMetadata({ title: t("metaTitle"), description: t("metaDescription"), path: "/nagrywarka" });
 }
 
 export default async function RecorderPage() {

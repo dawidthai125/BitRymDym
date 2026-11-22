@@ -3,11 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { PageFrame } from "@/components/brand/chrome";
 import { WorkRankingView } from "@/components/community/work-ranking-view";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 import type { WorkBoardPeriod } from "@/lib/catalog/catalog-policy";
 
 export async function generateMetadata() {
   const t = await getTranslations("community.shelf");
-  return { title: t("workRank") };
+  const m = await getTranslations("meta.pages");
+  return pageMetadata({ title: t("workRank"), description: m("workRankDescription"), path: "/ranking/utwor" });
 }
 
 export default async function WorkRankingPage({

@@ -7,12 +7,14 @@ import { redirect } from "next/navigation";
 import { StatusPill } from "@/components/brand/chrome";
 import { AutoCheckBadge } from "@/components/beats/auto-check-card";
 import { CoverReviewQueue, type CoverReviewItem } from "@/components/beats/cover-review-queue";
+import { CommentReportQueue } from "@/components/community/comment-report-queue";
 import { checkAccess } from "@/lib/auth/access-denial";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { loadAdminProfileIdentities } from "@/lib/auth/user-number";
 import { loadLatestAutoChecks, type AutoCheckRow } from "@/lib/beats/auto-check/records";
 import { listPendingBeatCovers } from "@/lib/beats/cover/cover-service";
+import { listOpenCommentReports, type CommentReportQueue as ReportQueue } from "@/lib/community/comment-moderation";
 import {
   listApprovedForModeration,
   listAutoRejectedForModeration,
@@ -155,11 +157,15 @@ export default async function AdminModerationQueuePage() {
   if (denial === "UNAUTHENTICATED") redirect("/sign-in");
   if (denial === "FORBIDDEN") return null;
 
-  const [pending, approved, autoRejected, context] = await Promise.all([
+  const [pending, approved, autoRejected, context, reports] = await Promise.all([
     listPendingReviewForModeration(),
     listApprovedForModeration(),
     listAutoRejectedForModeration(),
     getCurrentProfile(),
+    listOpenCommentReports().catch((error: unknown): ReportQueue => {
+      console.error("[admin/moderation] comment reports failed", error);
+      return { enabled: false, items: [] };
+    }),
   ]);
 
   const isAdmin = context?.profile.role === "ADMIN";
@@ -186,9 +192,10 @@ export default async function AdminModerationQueuePage() {
   const checks = await loadLatestAutoChecks(
     [...pending, ...approved, ...autoRejected].map((b) => b.id),
   );
-  const ownerIds = [...pending, ...approved, ...autoRejected]
-    .map((b) => b.ownerId)
-    .filter((id): id is string => Boolean(id));
+  const ownerIds = [
+    ...[...pending, ...approved, ...autoRejected].map((b) => b.ownerId),
+    ...reports.items.map((item) => item.authorId),
+  ].filter((id): id is string => Boolean(id));
   const identities = isAdmin
     ? await loadAdminProfileIdentities(ownerIds)
     : new Map();
@@ -225,6 +232,21 @@ export default async function AdminModerationQueuePage() {
       />
 
       <CoverReviewQueue items={coverItems} />
+
+      <CommentReportQueue
+        enabled={reports.enabled}
+        items={reports.items.map((item) => ({
+          commentId: item.commentId,
+          body: item.body,
+          author: ownerLabel(item.authorId, identities, Boolean(isAdmin)),
+          threadHref: item.threadHref,
+          state: item.state,
+          reporters: item.reporters,
+          reasons: item.reasons,
+          details: item.details,
+          lastReportedAt: item.lastReportedAt,
+        }))}
+      />
 
       <QueueSection
         title={t("odrzuconePrzezFiltr")}

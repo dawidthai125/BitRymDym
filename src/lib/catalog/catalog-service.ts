@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { isUuid } from "@/lib/beats/audio-validation";
 import { loadPublicAuthorDisplayNames } from "@/lib/beats/public-author";
 import {
@@ -14,6 +16,7 @@ import { WORK_ALL_PLACES } from "@/lib/catalog/catalog-prize";
 import { aggregateRatings, MIN_RATERS, previousPeriod, rankTargets, warsawPeriod } from "@/lib/community/ranking-policy";
 import { publicAuthorName } from "@/lib/community/share-policy";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { queueWorkClip } from "@/lib/catalog/work-clip-server";
 
 const TABLE = "catalog_works";
 const RATINGS = "community_ratings";
@@ -115,21 +118,62 @@ async function cardsOf(rows: Row[]): Promise<CatalogCard[]> {
   return rows.map((row) => toCard(row, names));
 }
 
-export async function listPublicWorks(): Promise<{ enabled: boolean; works: CatalogCard[] }> {
+const PUBLIC_WORKS_PAGE = 100;
+const SITEMAP_WORKS_MAX = 5000;
+
+function pageWindow(limit: number | undefined, offset: number | undefined, fallback: number) {
+  const size = Number.isFinite(limit) && (limit as number) > 0 ? Math.floor(limit as number) : fallback;
+  const from = Number.isFinite(offset) && (offset as number) > 0 ? Math.floor(offset as number) : 0;
+  return { from, to: from + size - 1 };
+}
+
+/** Newest-first public works. Defaults to the first 100 (`limit`/`offset` page it). */
+export async function listPublicWorks(
+  options: { limit?: number; offset?: number } = {},
+): Promise<{ enabled: boolean; works: CatalogCard[] }> {
   const admin = adminOrNull();
   if (!admin) return { enabled: false, works: [] };
+  const { from, to } = pageWindow(options.limit, options.offset, PUBLIC_WORKS_PAGE);
   const loaded = await admin
     .from(TABLE)
     .select("id, owner_id, project_id, master_job_id, title, allow_ratings, allow_comments, in_rankings, published_at, withdrawn_at")
     .is("withdrawn_at", null)
     .order("published_at", { ascending: false })
-    .limit(100);
+    .range(from, to);
   if (missingRelation(loaded.error, TABLE)) return { enabled: false, works: [] };
   if (loaded.error) return { enabled: true, works: [] };
   return { enabled: true, works: await cardsOf((loaded.data ?? []) as Row[]) };
 }
 
-export async function findLiveCatalogWork(id: string): Promise<CatalogCard | null> {
+/**
+ * Sitemap feed: id + publish date of live works only (no author lookup),
+ * newest first, up to 5000 — same visibility gate as {@link listPublicWorks}.
+ */
+export async function listPublicWorkSitemapEntries(): Promise<
+  Array<{ id: string; publishedAt: string }>
+> {
+  const admin = adminOrNull();
+  if (!admin) return [];
+  const loaded = await admin
+    .from(TABLE)
+    .select("id, published_at")
+    .is("withdrawn_at", null)
+    .order("published_at", { ascending: false })
+    .range(0, SITEMAP_WORKS_MAX - 1);
+  if (loaded.error) return [];
+  return ((loaded.data ?? []) as Array<{ id: string; published_at: string }>).map((row) => ({
+    id: row.id,
+    publishedAt: row.published_at,
+  }));
+}
+
+/**
+ * Request-deduped (React `cache`): `/utwor/[id]` reads it in metadata, page,
+ * the community thread and the OG image; one round trip per request.
+ */
+export const findLiveCatalogWork = cache(async function findLiveCatalogWork(
+  id: string,
+): Promise<CatalogCard | null> {
   if (!isUuid(id)) return null;
   const admin = adminOrNull();
   if (!admin) return null;
@@ -142,7 +186,7 @@ export async function findLiveCatalogWork(id: string): Promise<CatalogCard | nul
   if (loaded.error || !loaded.data) return null;
   const [card] = await cardsOf([loaded.data as Row]);
   return card ?? null;
-}
+});
 
 export async function loadOwnerCatalogEntry(
   userId: string,
@@ -249,6 +293,8 @@ export async function saveOwnerCatalog(input: {
     : await admin.from(TABLE).insert({ ...patch, published_at: new Date().toISOString() });
   if (missingRelation(saved.error, TABLE)) return "off";
   if (saved.error) return "invalid";
+  // Public 45 s clip: queue the E3 cut (best effort; never fails the publish).
+  await queueWorkClip(admin, input.userId, input.masterJobId);
   return "ok";
 }
 

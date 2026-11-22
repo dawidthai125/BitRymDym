@@ -72,7 +72,8 @@ async function defaultRunFfmpeg(args: string[]): Promise<void> {
   await runCapture(resolveFfmpegBin(), args, { timeoutMs: 180_000 });
 }
 
-async function defaultProbeDuration(file: string): Promise<number | null> {
+/** ffprobe container duration in seconds, or null (also reused by the work clip cut on E3). */
+export async function probeAudioDurationSeconds(file: string): Promise<number | null> {
   try {
     const out = await runCapture(
       resolveFfprobeBin(),
@@ -145,7 +146,7 @@ export async function ensureBeatPreviewAsset(
 
   const work = await mkdtemp(path.join(tmpdir(), "brd-preview-"));
   const runFfmpeg = deps.runFfmpeg ?? defaultRunFfmpeg;
-  const probe = deps.probeDuration ?? defaultProbeDuration;
+  const probe = deps.probeDuration ?? probeAudioDurationSeconds;
   let uploadedKey: string | null = null;
   try {
     const { data: blob, error: dErr } = await admin.storage

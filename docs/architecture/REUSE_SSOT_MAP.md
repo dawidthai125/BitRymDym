@@ -30,6 +30,7 @@
 | Mixer chrome | Mixer shell (reuses engine/doc) | Studio chrome | `studio-mixer-shell.tsx` |
 | Inspector chrome | Inspector shell | Studio chrome | `studio-inspector-shell.tsx` |
 | Catalog / public playback | `PlayerProvider` | Global player | `src/components/player/player-provider.tsx` |
+| Public 45 s clip of a published work (/utwor, /utwory) | E3 master poller cuts it from the approved master (queue = `catalog_works.preview_clip_*`, migration `20261122140000`) | Catalogue works | pure `src/lib/catalog/work-clip.ts` (window, key, ffmpeg via `buildPreviewFfmpegArgs`) · app `src/lib/catalog/work-clip-server.ts` · cut `runWorkClipJob` in `src/lib/studio/master/worker.ts` · serve `GET /api/catalog/works/[id]/clip` (live only, `studio_listen_hit`, 302 signed URL) · deck `BrdAudioDeck` / list `src/app/utwory/work-clip-button.tsx` · **no** public bucket, **no** browser upload |
 | E3 Mix / Master / Render | E3 product graph + jobs | E3 modules | `src/lib` E3 surfaces · Contabo worker for export |
 | Durable media | Supabase Storage | Storage buckets | `beat-audio` · `take-audio` · `audio-artifacts` |
 | Metadata / AuthZ | Supabase PostgreSQL + RLS | DB + server | Supabase project `rzzxrgcdogkybkiidqgw` |

@@ -82,9 +82,11 @@ function hasAuthSessionCookie(request: NextRequest): boolean {
     .some((cookie) => cookie.name.includes("-auth-token"));
 }
 
-/** Guests have no Studio (Owner 2026-10-29): pages → sign-in, APIs → 401. */
+/** Guests have no Studio (Owner 2026-10-29) nor Master only: pages → sign-in, APIs → 401. */
 export function isGuestBlockedPath(pathname: string): "page" | "api" | null {
   if (pathname === "/studio" || pathname.startsWith("/studio/")) return "page";
+  // Master only lives on the Studio plane: same early sign-in redirect (the page re-checks).
+  if (pathname === "/mastering") return "page";
   if (pathname.startsWith("/api/studio/")) return "api";
   if (pathname.startsWith("/api/takes/anon/")) return "api";
   return null;

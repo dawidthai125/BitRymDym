@@ -8,7 +8,51 @@
  *   - PKCE: code + flow=recovery (server redirectTo marker)
  */
 
+import { SIGN_IN_NEXT_PARAM, safeNextPath } from "@/lib/auth/next-path";
+
 export type ConfirmationStatus = "success" | "invalid" | "error";
+
+/** Where a freshly confirmed account lands when no `next` survived (Studio shows "Pierwsze kroki"). */
+export const SIGNUP_CONFIRMED_DEFAULT_PATH = "/studio";
+
+/**
+ * user_metadata key holding the sign-up return path. The Confirm signup template links
+ * `{{ .SiteURL }}/auth/callback?token_hash=…&type=signup` (no RedirectTo), so the query
+ * `next` on emailRedirectTo never reaches the callback — metadata does, on any device.
+ * User-writable: always re-validated with safeNextPath on read.
+ */
+export const SIGNUP_NEXT_METADATA_KEY = "signup_next";
+
+/**
+ * Browser binding for "stay signed in after confirming" (login-CSRF guard).
+ * signUpAction sets this HttpOnly cookie to the new user id; the callback keeps the
+ * session only when the confirming browser carries the id of the user it just verified.
+ * Someone else's confirmation link (or one opened on another device) → old behaviour:
+ * sign out → /auth/confirmed (with next). An attacker cannot plant this cookie for our origin.
+ */
+export const SIGNUP_BROWSER_COOKIE = "brd_signup_browser";
+/** Covers the confirmation link lifetime (Supabase default 24h) with margin. */
+export const SIGNUP_BROWSER_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+
+export function signupBrowserCookieOptions(secure: boolean, maxAge = SIGNUP_BROWSER_COOKIE_MAX_AGE_SECONDS) {
+  return {
+    httpOnly: true,
+    secure,
+    sameSite: "lax" as const,
+    path: "/auth/callback",
+    maxAge,
+  };
+}
+
+export function signupBrowserMatches(
+  cookieValue: string | null | undefined,
+  userId: string | null | undefined,
+): boolean {
+  return Boolean(cookieValue && userId && cookieValue === userId);
+}
+
+/** OTP types that confirm a new account's e-mail (GoTrue: `signup`, newer `email`). */
+const SIGNUP_CONFIRM_OTP_TYPES = new Set(["signup", "email"]);
 
 /** Path pattern for Supabase Confirm signup template (SiteURL + this). */
 export const CONFIRMATION_EMAIL_CALLBACK_PATH =
@@ -102,6 +146,28 @@ export function isEmailChangeCallback(classified: AuthCallbackKind): boolean {
   return false;
 }
 
+/** Sign-up e-mail confirmation (OTP signup/email, or a PKCE code that is neither recovery nor email change). */
+export function isSignupConfirmationCallback(classified: AuthCallbackKind): boolean {
+  if (classified.kind === "otp") return SIGNUP_CONFIRM_OTP_TYPES.has(classified.type);
+  if (classified.kind === "pkce") return !classified.recovery && classified.emailChange !== true;
+  return false;
+}
+
+/**
+ * Return path after a sign-up confirmation: callback query `next` (emailRedirectTo /
+ * a RedirectTo-based template) wins, then the path stored at sign-up in user_metadata.
+ * Both are untrusted input → safeNextPath (same-origin relative path only).
+ */
+export function resolveSignupNextPath(input: {
+  queryNext: unknown;
+  userMetadata?: Record<string, unknown> | null;
+}): string | null {
+  return (
+    safeNextPath(input.queryNext) ??
+    safeNextPath(input.userMetadata?.[SIGNUP_NEXT_METADATA_KEY])
+  );
+}
+
 /**
  * Pure post-exchange routing decision (testable without Next / Supabase I/O).
  */
@@ -110,6 +176,8 @@ export type AuthCallbackRouteDecision =
   | { kind: "forgot_password"; signOut: false }
   | { kind: "email_change"; signOut: false }
   | { kind: "email_change_failed"; signOut: false }
+  /** Sign-up confirmed: keep the new session and go back to `next` (else Studio). */
+  | { kind: "signed_in"; signOut: false }
   | {
       kind: "confirmed";
       status: ConfirmationStatus;
@@ -150,7 +218,12 @@ export function decideAuthCallbackRoute(params: {
     return { kind: "reset_password", signOut: false };
   }
 
-  // Signup / other confirms: end signed-out at confirmed success.
+  // Owner decision: a confirmed sign-up stays signed in and returns where it started.
+  if (isSignupConfirmationCallback(classified)) {
+    return { kind: "signed_in", signOut: false };
+  }
+
+  // Other confirms (magic link / invite — not sent by the product): end signed-out.
   return { kind: "confirmed", status: "success", signOut: true };
 }
 
@@ -163,8 +236,13 @@ export function parseConfirmationStatus(
   return "error";
 }
 
-export function confirmationResultPath(status: ConfirmationStatus): string {
-  return `/auth/confirmed?status=${status}`;
+export function confirmationResultPath(
+  status: ConfirmationStatus,
+  next?: string | null,
+): string {
+  const safe = safeNextPath(next);
+  const base = `/auth/confirmed?status=${status}`;
+  return safe ? `${base}&${SIGN_IN_NEXT_PARAM}=${encodeURIComponent(safe)}` : base;
 }
 
 /**

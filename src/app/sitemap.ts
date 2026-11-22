@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { catalogLaneOf } from "@/lib/beats/catalog-lane";
 import { listPublishedBeats } from "@/lib/beats/service";
-import { listPublicWorks } from "@/lib/catalog/catalog-service";
+import { listPublicWorkSitemapEntries } from "@/lib/catalog/catalog-service";
 import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
@@ -19,8 +19,6 @@ const PUBLIC_PATHS = [
   "/jak-nagrac",
   "/nagrywarka",
   "/premium",
-  "/sign-in",
-  "/sign-up",
 ];
 
 function date(value: string | null | undefined): Date | undefined {
@@ -41,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // must not take the static part of the sitemap down.
   const [beats, works] = await Promise.all([
     listPublishedBeats({ catalogLane: "all" }).catch(() => []),
-    listPublicWorks().catch(() => ({ enabled: false, works: [] })),
+    listPublicWorkSitemapEntries().catch(() => []),
   ]);
 
   const beatEntries: MetadataRoute.Sitemap = beats.map((beat) => ({
@@ -61,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  const workEntries: MetadataRoute.Sitemap = works.works.map((work) => ({
+  const workEntries: MetadataRoute.Sitemap = works.map((work) => ({
     url: `${base}/utwor/${work.id}`,
     lastModified: date(work.publishedAt),
     changeFrequency: "monthly",

@@ -201,32 +201,33 @@ describe("password recovery callback contract", () => {
     expect(decision).toEqual({ kind: "reset_password", signOut: false });
   });
 
-  it("signup confirmation success still signs out → confirmed", () => {
-    const decision = decideAuthCallbackRoute({
-      classified: {
-        kind: "otp",
-        tokenHash: "h",
-        type: "signup",
-      },
-      exchangeOk: true,
-    });
-    expect(decision).toEqual({
-      kind: "confirmed",
-      status: "success",
-      signOut: true,
-    });
+  it("signup confirmation success keeps the session → signed_in (owner decision)", () => {
+    for (const type of ["signup", "email"]) {
+      const decision = decideAuthCallbackRoute({
+        classified: { kind: "otp", tokenHash: "h", type },
+        exchangeOk: true,
+      });
+      expect(decision).toEqual({ kind: "signed_in", signOut: false });
+    }
   });
 
-  it("non-recovery PKCE success still signs out → confirmed", () => {
+  it("non-recovery PKCE success keeps the session → signed_in", () => {
     const decision = decideAuthCallbackRoute({
       classified: { kind: "pkce", code: "c", recovery: false },
       exchangeOk: true,
     });
-    expect(decision).toEqual({
-      kind: "confirmed",
-      status: "success",
-      signOut: true,
-    });
+    expect(decision).toEqual({ kind: "signed_in", signOut: false });
+  });
+
+  it("unused magic link / invite confirms still sign out → confirmed", () => {
+    for (const type of ["magiclink", "invite"]) {
+      expect(
+        decideAuthCallbackRoute({
+          classified: { kind: "otp", tokenHash: "h", type },
+          exchangeOk: true,
+        }),
+      ).toEqual({ kind: "confirmed", status: "success", signOut: true });
+    }
   });
 
   it("failed recovery routes to forgot_password without signOut", () => {
@@ -395,16 +396,12 @@ describe("email change callback does not capture signup or recovery", () => {
     expect(decision).toEqual({ kind: "email_change_failed", signOut: false });
   });
 
-  it("signup OTP success is unchanged", () => {
+  it("signup OTP success stays distinct from email change (signed_in)", () => {
     const decision = decideAuthCallbackRoute({
       classified: { kind: "otp", tokenHash: "h", type: "signup" },
       exchangeOk: true,
     });
-    expect(decision).toEqual({
-      kind: "confirmed",
-      status: "success",
-      signOut: true,
-    });
+    expect(decision).toEqual({ kind: "signed_in", signOut: false });
   });
 
   it("email-change redirect is distinct from signup and recovery", () => {

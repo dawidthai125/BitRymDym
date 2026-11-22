@@ -8,6 +8,7 @@ import { CommunityShelf } from "@/components/community/community-shelf";
 import { HomeTracklist } from "@/components/home/home-tracklist";
 import { TapeDeck } from "@/components/home/tape-deck";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 import {
   GUEST_POLICY,
   PLAN_POLICY,
@@ -79,6 +80,11 @@ const ctaPrimary =
 
 const ctaSecondary =
   "inline-flex min-h-12 items-center justify-center rounded-[var(--tape-r-panel)] border border-tape-cream-soft px-6 font-poster text-lg font-bold uppercase tracking-[0.1em] text-tape-cream transition-colors duration-[var(--tape-dur-fast)] hover:border-tape-cream hover:bg-tape-panel";
+
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const m = await getTranslations("meta.pages");
+  return pageMetadata({ title: m("homeTitle"), description: m("homeDescription"), path: "/", absoluteTitle: true });
+}
 
 export default async function HomePage() {
   const t = await getTranslations("home.page");

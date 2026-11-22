@@ -328,7 +328,7 @@ export function SampleCatalog({
                 </div>
               ) : (
                 <p className="mt-2 pl-12">
-                  <Link href="/sign-in" className="text-sm underline underline-offset-4">
+                  <Link href="/sign-in" className="-my-3 inline-flex min-h-11 items-center text-sm underline underline-offset-4">
                     {t("zalogujSie")}
                   </Link>
                 </p>

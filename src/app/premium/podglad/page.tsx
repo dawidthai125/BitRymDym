@@ -42,6 +42,7 @@ export default async function PaymentPreviewPage({ searchParams }: { searchParam
           <PremiumCheckoutForm
             loggedIn
             signInHref="/sign-in?next=%2Fpremium"
+            signUpHref="/sign-up?next=%2Fpremium%23pakiety"
             locale="pl"
             prices={{
               BRONZE: { month: "14,99 zł", year: "119 zł" },

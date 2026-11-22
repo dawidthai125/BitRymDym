@@ -87,33 +87,50 @@ export function buildPreviewObjectKey(params: {
   });
 }
 
-/** ffmpeg: first N s, short fade-out, stereo 44.1 kHz MP3 CBR, no metadata. */
+/**
+ * ffmpeg: first N s, short fade-out, stereo 44.1 kHz MP3 CBR, no metadata.
+ * Optional `startSeconds` (input seek) + `fadeInSeconds` cut a window from the
+ * middle (catalogue work clip, src/lib/catalog/work-clip.ts). Defaults keep the
+ * beat preview args unchanged.
+ */
 export function buildPreviewFfmpegArgs(params: {
   input: string;
   output: string;
   seconds?: number;
   fadeSeconds?: number;
   sourceDurationSeconds?: number | null;
+  startSeconds?: number;
+  fadeInSeconds?: number;
 }): string[] {
   const seconds = params.seconds ?? BEAT_PREVIEW_SECONDS;
   const fade = params.fadeSeconds ?? BEAT_PREVIEW_FADE_SECONDS;
+  const start =
+    typeof params.startSeconds === "number" && Number.isFinite(params.startSeconds) && params.startSeconds > 0
+      ? params.startSeconds
+      : 0;
   const src = params.sourceDurationSeconds;
   const length =
     typeof src === "number" && Number.isFinite(src) && src > 0
-      ? Math.min(seconds, src)
+      ? Math.max(0, Math.min(seconds, src - start))
       : seconds;
   const fadeStart = Math.max(0, length - fade);
+  const fadeIn =
+    typeof params.fadeInSeconds === "number" && Number.isFinite(params.fadeInSeconds) && params.fadeInSeconds > 0
+      ? Math.min(params.fadeInSeconds, length)
+      : 0;
+  const fadeOut = `afade=t=out:st=${fadeStart.toFixed(3)}:d=${Math.min(fade, length).toFixed(3)}`;
   return [
     "-nostdin",
     "-v",
     "error",
     "-y",
+    ...(start > 0 ? ["-ss", start.toFixed(3)] : []),
     "-i",
     params.input,
     "-t",
     String(length),
     "-af",
-    `afade=t=out:st=${fadeStart.toFixed(3)}:d=${Math.min(fade, length).toFixed(3)}`,
+    fadeIn > 0 ? `afade=t=in:st=0:d=${fadeIn.toFixed(3)},${fadeOut}` : fadeOut,
     "-ac",
     "2",
     "-ar",

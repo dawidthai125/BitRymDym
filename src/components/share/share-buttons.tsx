@@ -16,7 +16,7 @@ export function ShareButtons({ url, text, title, testId = "share-buttons", compa
   const [copied, setCopied] = useState(false);
   // Client-only capability; false on the server so hydration matches.
   const canNative = useSyncExternalStore(noop, () => typeof navigator.share === "function", () => false);
-  const btn = "inline-flex min-h-9 items-center justify-center rounded-[2px] border border-[var(--brd-line)] px-3 text-sm font-medium hover:border-[var(--brd-ink)]";
+  const btn = "inline-flex min-h-11 items-center justify-center rounded-[2px] border border-[var(--brd-line)] px-3 text-sm font-medium hover:border-[var(--brd-ink)]";
 
   async function copy() {
     try {

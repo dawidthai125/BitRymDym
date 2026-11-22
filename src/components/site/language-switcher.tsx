@@ -69,7 +69,7 @@ export function LanguageSwitcher({
             aria-label={t("switchTo", { name: t(code) })}
             title={t(code)}
             className={cn(
-              "min-h-9 min-w-9 px-1.5 font-medium uppercase outline-none transition-colors",
+              "min-h-11 min-w-11 px-1.5 font-medium uppercase outline-none transition-colors",
               "focus-visible:ring-2 focus-visible:ring-[var(--brd-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brd-paper)]",
               active
                 ? "text-[var(--brd-ink)] underline decoration-[var(--tape-amber)] decoration-2 underline-offset-4"

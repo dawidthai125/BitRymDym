@@ -4,7 +4,6 @@
  * overlapping readwrite transactions across tabs, which makes claims atomic.
  */
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   TakeRecoveryStoreError,
   type TakeRecoveryMutation,
@@ -246,6 +245,8 @@ export async function getTakeRecoveryViewerUserId(
 ): Promise<string | null | undefined> {
   if (!authenticated) return null;
   try {
+    // Lazy: keeps supabase-js out of the recorder's first-load JS.
+    const { createSupabaseBrowserClient } = await import("@/lib/supabase/client");
     const { data } = await createSupabaseBrowserClient().auth.getSession();
     const userId = data.session?.user?.id;
     return typeof userId === "string" && userId.length > 0 ? userId : undefined;

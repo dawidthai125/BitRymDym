@@ -180,7 +180,11 @@ describe("P3 — migration / source contracts", () => {
       "utf8",
     );
     expect(actions).toMatch(/tryClaimAnonTakeAfterAuth/);
-    expect(actions).toMatch(/accountClaimRedirectPath/);
+    // Claim-first redirect rule lives in postAuthRedirectPath (shared with /auth/callback).
+    expect(actions).toMatch(/postAuthRedirectPath\(claim/);
+    expect(
+      readFileSync(resolve(process.cwd(), "src/lib/auth/next-path.ts"), "utf8"),
+    ).toMatch(/accountClaimRedirectPath/);
     expect(middleware).not.toMatch(/claimAnon|brd_tk_aid|anon-account-claim/);
     expect(panel).not.toMatch(/bez transferu/);
     expect(panel).toMatch(/zapiszesz na Twoim koncie|zapisane na Twoim koncie|zapisane na koncie/i);

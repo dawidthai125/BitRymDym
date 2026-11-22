@@ -20,7 +20,11 @@ export async function coverDataUrl(bytes: Uint8Array | null | undefined): Promis
   }
 }
 
+const BRAND = "BitRymDym";
+
 export function shareCard(p: { title: string; kicker: string; meta?: string | null; cover: string | null }) {
+  // One brand mark per card: skip the footer when the title or meta already says it (e.g. "… · BitRymDym" producer).
+  const showBrand = ![p.title, p.meta ?? "", p.kicker].some((s) => s.includes(BRAND));
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", gap: 56, padding: 56, background: "#16130f", color: "#f3ebdd" }}>
@@ -34,7 +38,7 @@ export function shareCard(p: { title: string; kicker: string; meta?: string | nu
           <div style={{ fontSize: 28, letterSpacing: 6, textTransform: "uppercase", color: "#d39b3a" }}>{p.kicker}</div>
           <div style={{ fontSize: p.title.length > 40 ? 52 : 68, lineHeight: 1.08, fontWeight: 700 }}>{p.title}</div>
           {p.meta ? <div style={{ fontSize: 30, color: "#b9ad99" }}>{p.meta}</div> : null}
-          <div style={{ marginTop: 24, fontSize: 30, fontWeight: 700 }}>BitRymDym</div>
+          {showBrand ? <div style={{ marginTop: 24, fontSize: 30, fontWeight: 700 }}>{BRAND}</div> : null}
         </div>
       </div>
     ),

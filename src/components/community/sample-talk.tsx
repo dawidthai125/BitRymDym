@@ -12,7 +12,7 @@ type Loaded = {
   average: number | null;
   count: number;
   mine: number | null;
-  comments: { id: string; author: string; body: string; createdAt: string }[];
+  comments: { id: string; author: string; body: string; createdAt: string; mine?: boolean; canHide?: boolean }[];
 };
 
 export function SampleTalk({ id, signedIn }: { id: string; signedIn: boolean }) {
@@ -24,7 +24,8 @@ export function SampleTalk({ id, signedIn }: { id: string; signedIn: boolean }) 
     if (!loaded) {
       const response = await fetch(`/api/community/thread?kind=sample&id=${encodeURIComponent(id)}`);
       const payload = (await response.json().catch(() => null)) as Loaded | null;
-      if (payload) setLoaded(payload);
+      // An error answer is `{ result }`, not a thread.
+      if (payload && typeof payload.enabled === "boolean" && Array.isArray(payload.comments)) setLoaded(payload);
     }
     setOpen((value) => !value);
   }

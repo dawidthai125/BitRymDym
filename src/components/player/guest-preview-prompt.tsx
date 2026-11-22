@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { signInPathWithNext, signUpPathWithNext } from "@/lib/auth/next-path";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /**
  * Free-lane preview cap reached (GUEST_POLICY.previewSeconds). Fixed bubble
@@ -31,8 +30,12 @@ export function GuestPreviewPrompt({
 
   useEffect(() => {
     let cancelled = false;
-    void createSupabaseBrowserClient()
-      .auth.getSession()
+    // Lazy: the bubble lives in the root layout (PlayerProvider), so a static
+    // import would ship supabase-js (GoTrue/Realtime) on every public page.
+    void import("@/lib/supabase/client")
+      .then(({ createSupabaseBrowserClient }) =>
+        createSupabaseBrowserClient().auth.getSession(),
+      )
       .then(({ data }) => {
         if (!cancelled) setSignedIn(Boolean(data.session?.user));
       })

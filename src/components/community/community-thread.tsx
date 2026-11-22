@@ -4,11 +4,17 @@ import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 
+import { REPORT_DETAILS_MAX, REPORT_REASONS, type ReportReason } from "@/lib/community/comment-moderation-policy";
+
 type ThreadComment = {
   id: string;
   author: string;
   body: string;
   createdAt: string;
+  /** Viewer wrote it: may delete. */
+  mine?: boolean;
+  /** Viewer owns the work or is staff: may hide. */
+  canHide?: boolean;
 };
 
 type Props = {
@@ -37,6 +43,64 @@ export function CommunityThread(props: Props) {
   const [note, setNote] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const [reporting, setReporting] = useState<string | null>(null);
+  const [reason, setReason] = useState<ReportReason>("spam");
+  const [details, setDetails] = useState("");
+
+  async function moderate(comment: ThreadComment, action: "delete" | "hide") {
+    if (!window.confirm(action === "delete" ? t("deleteConfirm") : t("hideConfirm"))) return;
+    setBusy(true);
+    setNote(null);
+    const response = await fetch("/api/community/comment", {
+      method: action === "delete" ? "DELETE" : "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(action === "delete" ? { id: comment.id } : { id: comment.id, action: "hide" }),
+    }).catch(() => null);
+    const payload = (await response?.json().catch(() => ({})) ?? {}) as { result?: string };
+    setBusy(false);
+    if (payload.result === "ok") {
+      setComments((current) => current.filter((item) => item.id !== comment.id));
+      setNote(action === "delete" ? t("deleted") : t("hidden"));
+      return;
+    }
+    setNote(payload.result === "forbidden" ? t("forbidden") : payload.result === "off" ? off("off") : t("actionFailed"));
+  }
+
+  function openReport(id: string) {
+    setNote(null);
+    setReason("spam");
+    setDetails("");
+    setReporting((current) => (current === id ? null : id));
+  }
+
+  async function sendReport(event: FormEvent, commentId: string) {
+    event.preventDefault();
+    setBusy(true);
+    setNote(null);
+    const response = await fetch("/api/community/report", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: commentId, reason, details: details.trim() || null }),
+    }).catch(() => null);
+    const payload = (await response?.json().catch(() => ({})) ?? {}) as { result?: string };
+    setBusy(false);
+    if (payload.result === "ok" || payload.result === "already") {
+      setReporting(null);
+      setNote(payload.result === "ok" ? t("reported") : t("reportedAlready"));
+      return;
+    }
+    setNote(
+      payload.result === "limit"
+        ? t("reportLimit")
+        : payload.result === "own"
+          ? t("reportOwn")
+          : payload.result === "missing"
+            ? t("reportGone")
+            : payload.result === "off"
+              ? off("off")
+              : t("actionFailed"),
+    );
+  }
 
   async function rate(value: number) {
     setBusy(true);
@@ -82,12 +146,18 @@ export function CommunityThread(props: Props) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ kind: props.kind, id: props.targetId, body }),
     });
-    const payload = (await response.json().catch(() => ({}))) as { result?: string };
+    const payload = (await response.json().catch(() => ({}))) as { result?: string; id?: string };
     setBusy(false);
     if (payload.result === "ok") {
       setComments((current) => [
         ...current,
-        { id: `local-${current.length}`, author: t("you"), body: body.trim(), createdAt: new Date().toISOString() },
+        {
+          id: payload.id ?? `local-${current.length}`,
+          author: t("you"),
+          body: body.trim(),
+          createdAt: new Date().toISOString(),
+          mine: Boolean(payload.id),
+        },
       ]);
       setBody("");
       setNote(t("saved"));
@@ -140,7 +210,7 @@ export function CommunityThread(props: Props) {
         </fieldset>
       ) : !props.signedIn && (ratingsOpen || props.commentsOpen) ? (
         <p className="text-sm">
-          <Link href="/sign-in" className="underline underline-offset-4">{t("signIn")}</Link>
+          <Link href="/sign-in" className="-my-3 inline-flex min-h-11 items-center underline underline-offset-4">{t("signIn")}</Link>
         </p>
       ) : null}
       {props.own && ratingsOpen ? <p className="text-sm text-[var(--brd-mute)]">{props.kind === "work" ? t("ownWork") : t("own")}</p> : null}
@@ -164,12 +234,74 @@ export function CommunityThread(props: Props) {
       {note ? <p role="status" className="text-sm">{note}</p> : null}
       {props.commentsOpen && comments.length > 0 ? (
         <ul className="space-y-3">
-          {comments.map((comment) => (
-            <li key={comment.id} className="border-b border-[var(--brd-line)] pb-3">
-              <p className="text-xs text-[var(--brd-mute)]">{comment.author}</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--brd-ink)]">{comment.body}</p>
-            </li>
-          ))}
+          {comments.map((comment) => {
+            const saved = !comment.id.startsWith("local-");
+            return (
+              <li key={comment.id} className="border-b border-[var(--brd-line)] pb-3">
+                <p className="text-xs text-[var(--brd-mute)]">{comment.author}</p>
+                <p className="mt-1 whitespace-pre-wrap break-words text-sm text-[var(--brd-ink)]">{comment.body}</p>
+                {saved ? (
+                  <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-[var(--brd-mute)]">
+                    {comment.mine ? (
+                      <button type="button" disabled={busy} onClick={() => void moderate(comment, "delete")} className="inline-flex min-h-11 items-center underline underline-offset-4 disabled:opacity-50">
+                        {t("delete")}
+                      </button>
+                    ) : null}
+                    {comment.canHide && !comment.mine ? (
+                      <button type="button" disabled={busy} onClick={() => void moderate(comment, "hide")} className="inline-flex min-h-11 items-center underline underline-offset-4 disabled:opacity-50">
+                        {t("hide")}
+                      </button>
+                    ) : null}
+                    {comment.mine ? null : props.signedIn ? (
+                      <button type="button" disabled={busy} aria-expanded={reporting === comment.id} onClick={() => openReport(comment.id)} className="inline-flex min-h-11 items-center underline underline-offset-4 disabled:opacity-50">
+                        {t("report")}
+                      </button>
+                    ) : (
+                      <Link href="/sign-in" className="inline-flex min-h-11 items-center underline underline-offset-4">
+                        {t("signInToReport")}
+                      </Link>
+                    )}
+                  </div>
+                ) : null}
+                {reporting === comment.id ? (
+                  <form onSubmit={(event) => void sendReport(event, comment.id)} className="mt-2 space-y-2 border border-[var(--brd-line)] p-3">
+                    <fieldset className="space-y-1">
+                      <legend className="text-sm">{t("reportTitle")}</legend>
+                      {REPORT_REASONS.map((value) => (
+                        <label key={value} className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
+                          <input
+                            type="radio"
+                            name={`report-${comment.id}`}
+                            value={value}
+                            checked={reason === value}
+                            onChange={() => setReason(value)}
+                          />
+                          {t(`reason.${value}`)}
+                        </label>
+                      ))}
+                    </fieldset>
+                    <label className="block text-sm" htmlFor={`report-details-${comment.id}`}>{t("reportDetails")}</label>
+                    <textarea
+                      id={`report-details-${comment.id}`}
+                      value={details}
+                      maxLength={REPORT_DETAILS_MAX}
+                      rows={2}
+                      onChange={(event) => setDetails(event.target.value)}
+                      className="w-full border border-[var(--brd-line)] bg-transparent px-3 py-2 text-sm text-[var(--brd-ink)]"
+                    />
+                    <div className="flex flex-wrap gap-3">
+                      <button type="submit" disabled={busy} className="inline-flex min-h-11 items-center px-3 text-sm underline underline-offset-4 disabled:opacity-50">
+                        {t("reportSend")}
+                      </button>
+                      <button type="button" onClick={() => setReporting(null)} className="inline-flex min-h-11 items-center px-3 text-sm text-[var(--brd-mute)] underline underline-offset-4">
+                        {t("cancel")}
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
     </section>

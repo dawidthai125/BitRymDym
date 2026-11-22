@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { PLAN_ADDON_PRICE_PLN, PLAN_PACK_CATALOG, PLAN_POLICY, youtubePackOffer, type PaidTier, type PlanPack } from "@/config/plan-policy";
 import { PremiumCheckoutForm, type StarterPackView } from "@/components/premium/premium-checkout-form";
-import { signInPathWithNext } from "@/lib/auth/next-path";
+import { signInPathWithNext, signUpPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { tierBlocks } from "@/lib/payments/checkout-service";
 import { checkoutBlock, isLivePaid } from "@/lib/payments/entitlement-grant";
@@ -76,6 +76,7 @@ export async function PremiumPurchaseSection() {
     <PremiumCheckoutForm
       loggedIn={!!context}
       signInHref={signInPathWithNext("/premium")}
+      signUpHref={signUpPathWithNext("/premium#pakiety")}
       locale={lang}
       prices={prices}
       addonPrice={format.format(PLAN_ADDON_PRICE_PLN.reference_mastering.monthlyPln)}

@@ -73,6 +73,17 @@ describe("getSiteUrl", () => {
       "https://www.bitrymdym.pl/auth/callback",
     );
   });
+
+  it("adds only a safe next to the auth email redirect", () => {
+    clearEnv();
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.bitrymdym.pl";
+    expect(getAuthEmailRedirectTo("/studio?beatId=b1")).toBe(
+      "https://www.bitrymdym.pl/auth/callback?next=%2Fstudio%3FbeatId%3Db1",
+    );
+    for (const bad of ["//evil.com", "https://evil.com", "/\\evil.com", null, undefined]) {
+      expect(getAuthEmailRedirectTo(bad)).toBe("https://www.bitrymdym.pl/auth/callback");
+    }
+  });
 });
 
 describe("getPublicSiteUrl (served origin)", () => {

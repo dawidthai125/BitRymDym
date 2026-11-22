@@ -5,11 +5,15 @@ import { getTranslations } from "next-intl/server";
 import { PageFrame } from "@/components/brand/chrome";
 import { MasterOnlyPanel } from "@/components/mastering/master-only-panel";
 import { AppShell } from "@/components/site/app-shell";
+import { pageMetadata } from "@/config/site";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 
-export const metadata = { title: "Master only" };
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const m = await getTranslations("meta.pages");
+  return pageMetadata({ title: m("masteringTitle"), description: m("masteringDescription"), path: "/mastering" });
+}
 
 export default async function MasteringPage() {
   let tier: "FREE" | "BRONZE" | "SILVER" | "GOLD" = "FREE";

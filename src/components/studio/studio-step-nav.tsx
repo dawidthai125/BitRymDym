@@ -24,6 +24,7 @@ export function StudioStepNav({
   onSamples,
   onMix,
   onToggleFullView,
+  onStepIntent,
 }: {
   studioStep: StudioStepId;
   onSampleTab: boolean;
@@ -37,12 +38,17 @@ export function StudioStepNav({
   onSamples: () => void;
   onMix: () => void;
   onToggleFullView: () => void;
+  /** Hover / focus / touch on the nav: warm the lazily loaded step panels before the click. */
+  onStepIntent?: () => void;
 }) {
   const tMix = useTranslations("studio.mixStep");
   return (
       <nav
         aria-label={tMix("krokiAria")}
         data-testid="studio-step-nav"
+        onPointerEnter={onStepIntent}
+        onPointerDownCapture={onStepIntent}
+        onFocusCapture={onStepIntent}
         className="flex flex-wrap items-center gap-2 border-b border-[var(--brd-line)] py-1"
       >
         <ol className="flex flex-wrap items-center gap-1 text-xs font-semibold tracking-[0.06em]">
