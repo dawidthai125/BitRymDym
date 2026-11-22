@@ -312,7 +312,8 @@
         "week": "ostatnie 7 dni",
         "month": "w tym miesiącu",
         "total": "razem",
-        "perProject": "bit się nie liczy"
+        "perProject": "bit się nie liczy",
+        "calendarWeek": "w tym tygodniu"
       },
       "dokup": "Dokup: {co}"
     },

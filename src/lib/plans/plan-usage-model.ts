@@ -22,7 +22,7 @@ export type PlanUsageItemId =
   | "samples"
   | "tracks";
 
-export type PlanUsagePeriod = "day" | "week" | "month" | "total" | "perProject";
+export type PlanUsagePeriod = "day" | "week" | "calendarWeek" | "month" | "total" | "perProject";
 
 export type PlanUsageItem = {
   id: PlanUsageItemId;
@@ -166,7 +166,7 @@ function extraItems(
       id: "video",
       used: videosUsed,
       limit: videoLimit,
-      period: "week",
+      period: "calendarWeek",
       // Bronze/Silver: only bought pieces. Locked until a pack is bought (the "+" still shows).
       locked: videoPlan === 0 && videoCredits === 0,
       resetAt: videoPlan > 0 ? (params.warsawWeekResetAt ?? null) : null,

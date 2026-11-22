@@ -312,7 +312,8 @@
         "week": "last 7 days",
         "month": "this month",
         "total": "total",
-        "perProject": "the beat does not count"
+        "perProject": "the beat does not count",
+        "calendarWeek": "this week"
       },
       "dokup": "Buy more: {co}"
     },
