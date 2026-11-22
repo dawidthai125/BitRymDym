@@ -1513,6 +1513,51 @@
       "doKatalogu": "To the catalog",
       "wydany": "In the catalog ✓",
       "przestrojony": "Retuned from {from}"
+    },
+    "adminPaymentReviews": {
+      "tytul": "Refunds to check",
+      "opis": "Cases the system could not close by itself. Newest first.",
+      "blad": "Could not load the cases.",
+      "pusto": "Nothing waiting.",
+      "kiedy": "When",
+      "kto": "Who",
+      "co": "What",
+      "kwota": "Paid",
+      "zwrot": "Refunded",
+      "powod": "Reason",
+      "dalej": "Next step",
+      "powody": {
+        "refund_partial": "Refund smaller than the payment (e.g. fees).",
+        "refund_amount_mismatch": "Refund larger than the payment.",
+        "refund_needs_manual_review": "Refund arrived, but the purchase could not be removed automatically.",
+        "refund_unpaid_order": "Refund for an order that was not paid.",
+        "refund_ext_mismatch": "Refund does not match the order.",
+        "unknown_pack_amount": "Paid pack has an unknown amount.",
+        "pending_plan_conflict": "Paid plan could not be switched on.",
+        "failed_order_rejected": "Payment rejected.",
+        "failed_order_not_completed": "Payment not completed.",
+        "failed_order_reopen_refused": "Payment arrived after cancelling."
+      },
+      "powodInny": "Other reason ({kod})",
+      "zdejmij": "Remove purchase and close",
+      "zamknij": "Close without changes",
+      "pytanieZdejmij": "Remove the purchase like a full refund and close the case?",
+      "pytanieZamknij": "Close the case without changing the account?",
+      "tak": "Yes",
+      "anuluj": "Cancel",
+      "czekaj": "One moment…",
+      "nowaSprawa": "Done. Part of it needs a manual check: a new case was added.",
+      "bledy": {
+        "FORBIDDEN": "You do not have permission.",
+        "UNAUTHENTICATED": "Sign in again.",
+        "INVALID_INPUT": "Invalid case.",
+        "NOT_FOUND": "No such case or order.",
+        "ALREADY_CLOSED": "This case is already closed.",
+        "NOT_REVOCABLE": "This purchase cannot be removed with one click.",
+        "NO_PROVIDER_ID": "The order has no PayU number.",
+        "REFUND_FAILED": "Could not remove the purchase. Try again.",
+        "RESOLVE_FAILED": "Could not close the case. Try again."
+      }
     }
   },
   "auth": {
