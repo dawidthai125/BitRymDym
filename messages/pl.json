@@ -3052,7 +3052,11 @@
       "nieUdaloSieUsunac2": "Nie udało się usunąć nagrania.",
       "nieUdaloSieWczytac2": "Nie udało się wczytać nagrań.",
       "nieUdaloSieDodacSciezki": "Nie udało się dodać ścieżki.",
-      "nieUdaloSiePolozycStemu": "Nie udało się położyć stemu na osi."
+      "nieUdaloSiePolozycStemu": "Nie udało się położyć stemu na osi.",
+      "niewstawioneNagranie": "Masz niewstawione nagranie z tego projektu ({s} s). Wstawić je na ścieżkę tam, gdzie je nagrałeś?",
+      "niewstawioneWstaw": "Wstaw na ścieżkę",
+      "niewstawioneNieTeraz": "Nie teraz",
+      "niewstawioneZostajeWArchiwum": "Nagranie zostaje w Archiwum nagrań. Wstawisz je stamtąd, kiedy zechcesz."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch DJ v1",

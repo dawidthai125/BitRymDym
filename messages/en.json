@@ -3052,7 +3052,11 @@
       "nieUdaloSieUsunac2": "Could not delete the recording.",
       "nieUdaloSieWczytac2": "Could not load the recordings.",
       "nieUdaloSieDodacSciezki": "Could not add the track.",
-      "nieUdaloSiePolozycStemu": "Could not place the stem on the timeline."
+      "nieUdaloSiePolozycStemu": "Could not place the stem on the timeline.",
+      "niewstawioneNagranie": "You have a recording from this project that is not on a track yet ({s} s). Put it back where you recorded it?",
+      "niewstawioneWstaw": "Put on track",
+      "niewstawioneNieTeraz": "Not now",
+      "niewstawioneZostajeWArchiwum": "The recording stays in your recordings archive. You can place it from there any time."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch DJ v1",
