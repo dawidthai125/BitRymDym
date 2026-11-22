@@ -59,6 +59,7 @@ describe("isLikelyBot", () => {
     expect(isLikelyBot("")).toBe(true);
     expect(isLikelyBot("Googlebot/2.1")).toBe(true);
     expect(isLikelyBot("curl/8.0")).toBe(true);
+    expect(isLikelyBot("BitRymDym-smoke/1")).toBe(true);
     expect(isLikelyBot("Mozilla/5.0 HeadlessChrome/130")).toBe(true);
     expect(isLikelyBot(UA)).toBe(false);
   });

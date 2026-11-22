@@ -233,7 +233,9 @@ export async function handlePayuWebhook(rawBody: string, signatureHeader: string
   if (!config) return { status: 403, body: { ok: false, code: "PAYMENTS_OFF" } };
   if (!payuSignatureValid(rawBody, signatureHeader, config.md5Key)) {
     // 2026-11-22: rejections were silent; log the reason (never the key or the body).
-    console.error("[payu] notification signature invalid", { hasHeader: !!signatureHeader, length: rawBody.length });
+    // No signature header = not PayU (smoke check, probe): warn only, keep the error list clean.
+    const log = signatureHeader ? console.error : console.warn;
+    log("[payu] notification signature invalid", { hasHeader: !!signatureHeader, length: rawBody.length });
     return { status: 400, body: { ok: false } };
   }
 
@@ -485,7 +487,7 @@ function refundUnits(row: { product_kind: string; pack: string | null; amount_gr
 async function handlePayuRefund(body: unknown): Promise<WebhookOutcome> {
   const refund = parsePayuRefund(body);
   if (!refund) return { status: 400, body: { ok: false } };
-  console.error("[payu] refund notification received", { orderId: refund.orderId, status: refund.status });
+  console.info("[payu] refund notification received", { orderId: refund.orderId, status: refund.status });
   if (payuRefundAction(refund.status) === "ignore") return { status: 200, body: { ok: true, result: "ignored" } };
 
   const admin = createSupabaseAdminClient();

@@ -12,7 +12,7 @@ export type FunnelTier = (typeof FUNNEL_TIERS)[number];
 export type FunnelClick = { event: "buy_click"; product: FunnelProduct; tier: FunnelTier | null };
 
 const BOT_UA =
-  /bot|crawl|spider|slurp|preview|headless|lighthouse|pingdom|monitor|curl|wget|python|httpclient|axios|node-fetch|go-http|java\/|facebookexternalhit|embedly|vercel-screenshot/i;
+  /bot|crawl|spider|slurp|preview|headless|lighthouse|pingdom|monitor|curl|wget|python|httpclient|axios|node-fetch|go-http|java\/|facebookexternalhit|embedly|vercel-screenshot|smoke|bitrymdym-/i;
 
 /** True for empty or obviously automated user agents. */
 export function isLikelyBot(userAgent: string | null | undefined): boolean {
