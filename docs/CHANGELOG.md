@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (14) — Ochrona bitów, wyłączność, polecenia, Utwór tygodnia
+
+- **Podgląd darmowych bitów:** pełny plik ze znakiem wodnym głosowym (zalogowani bez limitu, goście 20 s); 24 podglądy przegenerowane na E3.
+- **Katalog płatny na wyłączność:** `beats.sold_to/sold_at`, unique `beat_purchases.beat_id`, sprzedany bit znika z katalogu (RLS `beats_select_published` + `beats_select_buyer`), druga wpłata → `grant_payu_beat_wav` zwraca `sold` → kolejka zwrotów `beat_sold_to_other`; zwrot przywraca bit. Regulamin 2026-11-22.3 (§ 9 ust. 5).
+- **Kopie odsłuchowe (BEAT_LISTEN_COPY=1):** Studio / nagrywanie / program Windows dostają osobistą kopię AAC 256k (M4A) z niesłyszalnym znakiem konta (−44 dB, `src/lib/beats/listen-copy/watermark.ts`); render na E3 (`bitrymdym-listencopy-worker-poll`, tabela `beat_listen_copies`, priorytet 0/1, przygotowanie z `/beat/[id]` i `/studio/p/[id]`). Staff, właściciel bitu i kupujący płatny bit dostają master. AAC zamiast MP3: WebKit/GStreamer gra MP3 1105 próbek później (test Chromium/Firefox/WebKit). Czuwanie: `/api/health/queues` → `listen`.
+- **Wycieki:** `/admin/wycieki` + `leak_checks` (bucket `leak-checks`, pliki kasowane po 90 dniach) i CLI `npm run leak:identify` — wskazuje konto po znaku (z ≥ 10).
+- **Alarm zbieraczy:** mail do właściciela przy ≥ 20 różnych bitach/24 h albo limicie godzinnym (`owner_alerts`).
+- **Polecenia:** `referral_codes`, `referrals`, `?ref=` / `/r/KOD` → ciasteczko `brd_ref`, nagroda 10 nagrań dla obu po potwierdzeniu e-maila i pierwszym nagraniu READY, limit 10/mies.; sekcja `/account#zapros`, mail `referral_reward`. Regulamin 2026-11-22.4 (§ 9 ust. 8).
+- **Utwór tygodnia:** `featured_works`, `/admin/utwory`, sekcja na stronie głównej z fragmentem 45 s, znaczek w `/utwory`, mail `work_featured`.
+- **SEO:** opisy 33 bitów pod wyszukiwanie (kopia: Shared/tmp/brd-beat-descriptions-backup-2026-11-22.json), Google Search Console zweryfikowane (plik HTML w `public/`), sitemap przyjęta (48 stron).
+- **Katalog:** 6 szkiców opracowanych (metadane, okładki), nieopublikowane — decyzja Ownera.
+
 ## 2026-11-22 (13) — Fragment utworu: znak wodny Free, regulamin 2026-11-22.2
 
 - **Fragment 45 s:** worker czyta plan właściciela w chwili cięcia (`resolveProductEntitlementForUserId`). Free / nieznany → tnie z `master_preview.mp3`, a bez niego najpierw nakłada znak wodny tą samą funkcją co podgląd (`watermarkLikePreview`); płatne → czysty master. Błąd odczytu planu → `plan_lookup` (ponowna próba). Zmiana planu nie przecina fragmentu. Przed zmianą nie było żadnych gotowych fragmentów, więc nie trzeba ich ciąć ponownie.
