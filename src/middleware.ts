@@ -87,6 +87,11 @@ export function isGuestBlockedPath(pathname: string): "page" | "api" | null {
   if (pathname === "/studio" || pathname.startsWith("/studio/")) return "page";
   // Master only lives on the Studio plane: same early sign-in redirect (the page re-checks).
   if (pathname === "/mastering") return "page";
+  // Account areas: early sign-in redirect that keeps the address (?next=), e.g. the mail link
+  // /account#powiadomienia. Pages still re-check the session and roles (admin).
+  for (const area of ["/account", "/settings", "/library", "/admin"]) {
+    if (pathname === area || pathname.startsWith(`${area}/`)) return "page";
+  }
   if (pathname.startsWith("/api/studio/")) return "api";
   if (pathname.startsWith("/api/takes/anon/")) return "api";
   return null;

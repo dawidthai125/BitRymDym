@@ -146,8 +146,6 @@ describe("middleware — maintenance ON", () => {
   it.each([
     ["/sign-in", "GET"],
     ["/sign-in", "POST"],
-    ["/admin", "GET"],
-    ["/admin/site", "POST"],
     ["/auth/callback", "GET"],
     ["/robots.txt", "GET"],
     ["/api/cron/takes-janitor", "GET"],
@@ -160,6 +158,18 @@ describe("middleware — maintenance ON", () => {
     const res = await middleware(req(path, { method }));
     expect(res.status).toBe(200);
     expect(rewriteOf(res)).toBeNull();
+  });
+
+  it.each([
+    ["/admin", "GET"],
+    ["/admin/site", "POST"],
+  ])("guest on exempt %s %s goes to sign-in with next (no maintenance page)", async (path, method) => {
+    signedIn(null);
+    maintenance(true);
+    const res = await middleware(req(path, { method }));
+    expect(res.status).toBe(307);
+    expect(rewriteOf(res)).toBeNull();
+    expect(res.headers.get("location")).toContain(`/sign-in?next=${encodeURIComponent(path)}`);
   });
 
   it("sign-in page gets the maintenance header (notice, no sign-up link)", async () => {

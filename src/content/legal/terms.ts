@@ -35,7 +35,7 @@ export const TERMS: LegalDoc = {
     { id: "s5", h: "§ 5. Konto", blocks: [
       `Konto może założyć wyłącznie osoba, która ukończyła ${MINIMUM_AGE} lat. Osoba niepełnoletnia (od ${MINIMUM_AGE} do 18 lat) może zawrzeć umowę o Plan płatny lub Dodatek tylko za zgodą przedstawiciela ustawowego.`,
       "Użytkownik podaje prawdziwy adres e-mail, nie udostępnia Konta osobom trzecim i dba o poufność hasła. Ksywka nie może naruszać praw innych osób ani wprowadzać w błąd.",
-      "Użytkownik może w każdej chwili usunąć Konto w ustawieniach (Konto → Usuwanie konta) — jest to wypowiedzenie umowy ze skutkiem natychmiastowym. Treści Użytkownika są wtedy usuwane, z zastrzeżeniem § 9 ust. 4 i Polityki prywatności.",
+      "Użytkownik może w każdej chwili usunąć Konto w ustawieniach (Konto → Usuwanie konta) — jest to wypowiedzenie umowy ze skutkiem natychmiastowym. Treści Użytkownika są wtedy usuwane, z zastrzeżeniem § 9 ust. 7 i Polityki prywatności.",
     ] },
     { id: "s6", h: "§ 6. Treści Użytkownika i moderacja", blocks: [
       "Użytkownik oświadcza, że ma prawa do Treści Użytkownika (w tym do sampli, wokali i okładek) i że ich publikacja nie narusza praw osób trzecich ani prawa.",
