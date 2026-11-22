@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (10) — Stare bity w katalogu, kaseta, porządki
+
+- **17 bitów z 5.10 (darmowy katalog):** analiza kodem strony (BPM ensemble + Krumhansl key, druga opinia librosa) i odsłuch Gemini; nowe nazwy (Komitywa I–III, Zimna Ulica, Nocne Rozkminy, Stare Aleje, Gryź się ze mną, Nikt nie zatrzyma nas, Suchy Klawisz + remiksy), tempo (Gryź 95→96), tonacja z trybem, gatunek, styl, opis, tagi, producent; okładki xAI → `processCoverImage` → moderacja Gemini (17/17 approve) → `beat-covers/platform/<id>/…`.
+- **Katalog:** tonacja z trybem (Am / C) w liście, filtrze, kasecie i na stronie bitu (`presentKey`).
+- **Strona główna:** kaseta — szpule kręcą się przy odtwarzaniu, taśma przechodzi z lewej na prawą wg postępu, prędkość ∝ 1/promień (`cassette-reels.ts`).
+- **Limit nagrań:** jedna funkcja `count_active_loose_takes` (luźne własne nagrania bez kopii sampli) dla serwera, ekranu nagrywania i menu (GO Ownera na plik chroniony).
+- **Studio:** baner niewstawionego nagrania po odświeżeniu przed „Zachowaj”.
+- **Dane:** na prośbę Ownera usunięte wszystkie projekty i nagrania (10 projektów, 23 nagrania, 98 plików).
+
 ## 2026-11-22 (9) — Porządki
 
 - Lint całego repo czysty: ignorowane `.cursor/**`, `docs/audits/**`, `public/workers/**` (bundle), `.claude/**`; usunięte zbędne `eslint-disable`.
