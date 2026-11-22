@@ -323,7 +323,7 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   background: radial-gradient(circle at 35% 35%, #8a7a66, #3a3028 70%);
   box-shadow: inset 0 0 0 1px #0006;
 }
-/* The one authored motion: reels turn and the VU needle rides while playing. */
+/* The one authored motion: reels turn (rAF in tape-deck.tsx) and the VU needle rides while playing. */
 .tape-needle {
   transform-box: view-box;
   transform: rotate(-48deg);
@@ -333,16 +333,8 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   transform: rotate(18deg);
 }
 @media (prefers-reduced-motion: no-preference) {
-  .tape-deck[data-playing="true"] .tape-reel {
-    animation: tape-spin var(--tape-reel-spin) linear infinite;
-  }
   .tape-deck[data-playing="true"] .tape-needle {
     animation: tape-ride 0.9s var(--tape-ease-out) infinite alternate;
-  }
-}
-@keyframes tape-spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 @keyframes tape-ride {

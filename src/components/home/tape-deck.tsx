@@ -1,10 +1,17 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { usePlayer } from "@/components/player/player-provider";
 import { formatDurationSeconds } from "@/lib/beats/public";
+import {
+  DECK_REEL_GEOMETRY,
+  approachSpeed,
+  estimatePosition,
+  reelAngularSpeeds,
+  reelRadii,
+} from "@/lib/ui/cassette-reels";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
 import { cn } from "@/lib/utils";
 
@@ -13,10 +20,12 @@ import { cn } from "@/lib/utils";
  * Prev / play / next and the tape list switch beats; the tape pack moves from the
  * left reel to the right one with playback progress, and the bar seeks.
  * Reels spin and the VU needle rides only while a deck beat plays (motion allowed).
+ * Reel physics (pack radii, ω ∝ 1/r) live in `@/lib/ui/cassette-reels`; a rAF loop
+ * writes transforms only, runs only while playing / braking and the tab is visible.
  */
 export function TapeDeck({ beats }: { beats: PresentedBeat[] }) {
   const t = useTranslations("home.tapeDeck");
-  const { track, phase, playTrack, toggle, seek, currentTime, duration } = usePlayer();
+  const { track, phase, playTrack, toggle, seek, currentTime, duration, playbackRate } = usePlayer();
   const [cued, setCued] = useState(0);
 
   const playingIndex = beats.findIndex((b) => b.id === track?.beatId);
@@ -28,6 +37,7 @@ export function TapeDeck({ beats }: { beats: PresentedBeat[] }) {
   const total = isCurrent && duration > 0 ? duration : (beat?.durationSeconds ?? 0);
   const position = isCurrent ? Math.min(currentTime, total || currentTime) : 0;
   const progress = total > 0 ? Math.min(1, Math.max(0, position / total)) : 0;
+  const reels = useCassetteReels({ playing, position, total, rate: playbackRate });
 
   function start(target: PresentedBeat) {
     void playTrack({
@@ -120,11 +130,11 @@ export function TapeDeck({ beats }: { beats: PresentedBeat[] }) {
 
           {/* Window: tape pack moves left → right with progress */}
           <div className="absolute inset-x-[14%] bottom-[9%] flex h-[40%] items-center justify-between rounded-full border border-tape-line-strong bg-[#0a0806] px-[5%] shadow-[inset_0_2px_8px_#000]">
-            <Reel pack={1 - progress} />
+            <Reel pack={reelRadii(progress).supply} packRef={reels.supplyPack} hubRef={reels.supplyHub} />
             <div aria-hidden="true" className="mx-2 flex h-[34%] flex-1 items-center rounded-sm bg-[#2b2016]">
               <div className="h-px w-full bg-tape-amber/40" />
             </div>
-            <Reel pack={progress} />
+            <Reel pack={reelRadii(progress).takeUp} packRef={reels.takeUpPack} hubRef={reels.takeUpHub} />
           </div>
         </div>
       </div>
@@ -241,17 +251,136 @@ function TransportButton({
   );
 }
 
-/** `pack` 0..1 = how much tape is wound on this reel. */
-function Reel({ pack }: { pack: number }) {
-  const r = 9 + pack * 9;
+type ReelsInput = { playing: boolean; position: number; total: number; rate: number };
+
+const TAU = Math.PI * 2;
+
+/**
+ * Drives both reels from the shared player state. `timeupdate` is coarse (~4 Hz),
+ * so the loop extrapolates position between events; hubs turn clockwise at
+ * ω = v / r with a light flutter, spin up / brake exponentially, and the packs
+ * scale with progress. Reduced motion: no loop (packs still follow React renders).
+ */
+function useCassetteReels(input: ReelsInput) {
+  const supplyHub = useRef<SVGGElement>(null);
+  const takeUpHub = useRef<SVGGElement>(null);
+  const supplyPack = useRef<SVGCircleElement>(null);
+  const takeUpPack = useRef<SVGCircleElement>(null);
+  const live = useRef({ ...input, at: 0 });
+  const kick = useRef<() => void>(() => {});
+
+  const { playing, position, total, rate } = input;
+  useEffect(() => {
+    live.current = { playing, position, total, rate, at: performance.now() };
+    kick.current();
+  }, [playing, position, total, rate]);
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let raf = 0;
+    let last = 0;
+    let speed = 0;
+    let angleSupply = 0;
+    let angleTakeUp = 0;
+
+    const shouldRun = () =>
+      document.visibilityState === "visible" && !reduce.matches && (live.current.playing || speed > 0);
+
+    const frame = (now: number) => {
+      raf = 0;
+      const s = live.current;
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+      last = now;
+
+      const pos = s.playing ? estimatePosition(s.position, (now - s.at) / 1000, s.rate, s.total) : s.position;
+      const p = s.total > 0 ? pos / s.total : 0;
+      const radii = reelRadii(p);
+      const full = DECK_REEL_GEOMETRY.full;
+      if (supplyPack.current) supplyPack.current.style.transform = `scale(${radii.supply / full})`;
+      if (takeUpPack.current) takeUpPack.current.style.transform = `scale(${radii.takeUp / full})`;
+
+      speed = approachSpeed(speed, s.playing ? 1 : 0, dt, s.playing ? 0.18 : 0.35);
+      if (speed > 0 && dt > 0) {
+        const w = reelAngularSpeeds(p, s.rate);
+        const t = now / 1000;
+        // Wow & flutter: tiny, slightly irregular speed wobble.
+        const flutter = 1 + 0.012 * Math.sin(t * TAU * 0.9) + 0.006 * Math.sin(t * TAU * 6.3);
+        angleSupply = (angleSupply + w.supply * speed * flutter * dt) % 360;
+        angleTakeUp = (angleTakeUp + w.takeUp * speed * flutter * dt) % 360;
+        if (supplyHub.current) supplyHub.current.style.transform = `rotate(${angleSupply}deg)`;
+        if (takeUpHub.current) takeUpHub.current.style.transform = `rotate(${angleTakeUp}deg)`;
+      }
+
+      if (shouldRun()) raf = requestAnimationFrame(frame);
+    };
+
+    const start = () => {
+      if (raf || !shouldRun()) return;
+      last = 0;
+      raf = requestAnimationFrame(frame);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible" && raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      } else start();
+    };
+    const onReduce = () => {
+      if (reduce.matches) {
+        speed = 0;
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+      } else start();
+    };
+
+    kick.current = start;
+    document.addEventListener("visibilitychange", onVisibility);
+    reduce.addEventListener("change", onReduce);
+    start();
+    return () => {
+      kick.current = () => {};
+      if (raf) cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", onVisibility);
+      reduce.removeEventListener("change", onReduce);
+    };
+  }, []);
+
+  return { supplyHub, takeUpHub, supplyPack, takeUpPack };
+}
+
+/** `pack` = pack radius in viewBox units (hub 9 … full 18), from `reelRadii`. */
+function Reel({
+  pack,
+  packRef,
+  hubRef,
+}: {
+  pack: number;
+  packRef: React.RefObject<SVGCircleElement | null>;
+  hubRef: React.RefObject<SVGGElement | null>;
+}) {
+  const full = DECK_REEL_GEOMETRY.full;
   return (
     <svg aria-hidden="true" viewBox="0 0 40 40" className="h-[86%] w-auto">
-      <circle cx="20" cy="20" r={r} fill="#2b2016" stroke="#3a2a1b" strokeWidth="0.8" />
-      <g className="tape-reel" style={{ transformOrigin: "20px 20px" }}>
+      <circle
+        ref={packRef}
+        cx="20"
+        cy="20"
+        r={full}
+        fill="#2b2016"
+        stroke="#3a2a1b"
+        strokeWidth="0.8"
+        vectorEffect="non-scaling-stroke"
+        style={{ transformOrigin: "20px 20px", transform: `scale(${pack / full})` }}
+      />
+      <g ref={hubRef} className="tape-reel" style={{ transformOrigin: "20px 20px" }}>
         <circle cx="20" cy="20" r="8.5" fill="none" stroke="var(--tape-cream-soft)" strokeWidth="1.6" />
         <circle cx="20" cy="20" r="2.6" fill="var(--tape-amber)" />
         {[0, 60, 120, 180, 240, 300].map((deg) => (
           <rect key={deg} x="19.1" y="12" width="1.8" height="4" rx="0.6" fill="var(--tape-cream-soft)" transform={`rotate(${deg} 20 20)`} />
+        ))}
+        {/* Drive-hub teeth: make the turn readable at small sizes. */}
+        {[30, 150, 270].map((deg) => (
+          <rect key={deg} x="19.4" y="17.2" width="1.2" height="1.6" rx="0.3" fill="#120e0b" transform={`rotate(${deg} 20 20)`} />
         ))}
       </g>
     </svg>
