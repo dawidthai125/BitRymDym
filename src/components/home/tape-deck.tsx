@@ -71,9 +71,11 @@ export function TapeDeck({ beats }: { beats: PresentedBeat[] }) {
     else start(target);
   }
 
-  const meta = beat
-    ? [beat.bpm > 0 ? t("bpm", { v0: beat.bpm }) : null, beat.key, beat.genre].filter(Boolean).join(" · ")
-    : "";
+  const metaBefore = beat ? [beat.bpm > 0 ? t("bpm", { v0: beat.bpm }) : null].filter(Boolean).join(" · ") : "";
+  const metaAfter = beat ? [beat.genre].filter(Boolean).join(" · ") : "";
+  // Key keeps its case ("Bm", not "BM") inside the uppercase meta line.
+  const metaKey = beat?.key ?? null;
+  const meta = [metaBefore, metaKey, metaAfter].filter(Boolean).join(" · ");
 
   return (
     <div
@@ -119,7 +121,13 @@ export function TapeDeck({ beats }: { beats: PresentedBeat[] }) {
             <span className="font-poster text-[clamp(0.75rem,1.6vw,0.9rem)] font-extrabold uppercase tracking-[0.18em] text-tape-amber">
               {t("stronaA")}
             </span>
-            <span className="truncate font-mono text-xs uppercase text-tape-cream-soft">{meta || "—"}</span>
+            <span className="truncate font-mono text-xs uppercase text-tape-cream-soft">{meta ? (
+              <>
+                {metaBefore}
+                {metaKey ? <>{metaBefore ? " · " : ""}<span className="normal-case">{metaKey}</span></> : null}
+                {metaAfter ? <>{metaBefore || metaKey ? " · " : ""}{metaAfter}</> : null}
+              </>
+            ) : "—"}</span>
           </div>
           <p className="mt-1.5 truncate font-[family-name:var(--font-display)] text-[clamp(1.05rem,2.6vw,1.5rem)] italic leading-tight">
             {beat?.title ?? t("katalogCzekaNaPierwszy")}

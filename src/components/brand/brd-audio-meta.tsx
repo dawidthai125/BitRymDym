@@ -36,7 +36,7 @@ export function BrdAudioMeta({
   }
   if (keyLabel) {
     parts.push(
-      <span key="key" className="brd-meta">
+      <span key="key" className="brd-meta normal-case">
         {tl(keyLabel)}
       </span>,
     );

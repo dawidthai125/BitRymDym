@@ -284,7 +284,7 @@ export function BeatDetailClient({
             </span>
             <span>
               <span className="text-[var(--brd-mute)]">{t("tonacja")}{" "}</span>
-              <span className="text-[var(--brd-ink)]">{tl(beat.key ?? "—")}</span>
+              <span className="normal-case text-[var(--brd-ink)]">{tl(beat.key ?? "—")}</span>
             </span>
             <span aria-hidden="true" className="text-[var(--brd-line)]">
               ·
