@@ -6,6 +6,13 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (5) — Szukanie błędów: logi, zadania, dane
+
+- Vercel runtime errors: 0. Supabase logi: tylko złe hasła i wygasłe sesje. Nieudane zadania 7 dni: eksporty WAV sprzed naprawy 6:00 (21.11) i 1× master `transcode` `upload_failed` (19.11, jednorazowy błąd Storage).
+- **Worker masterów:** wysyłka części pliku ponawiana 3× (2 s, 4 s) zamiast porażki całego zadania przy pierwszym błędzie (`src/lib/studio/master/worker.ts`). Wdrożone na Contabo: podmiana pliku (hash = repo), backup `_backup_upload_retry_20261122T002407Z`, restart `bitrymdym-master-worker-poll` przy pustej kolejce → `studio_master_started`.
+- Spójność danych: brak utkniętych zadań (render, master, separator, cleanup, Bitek), brak wiszących płatności, janitor nagrań na bieżąco. 5 klipów w aktywnych projektach wskazuje wygasłe nagrania; baner w projekcie to pokazuje.
+- Bez zmian: teksty składane w logice (`sampek-edit.ts`, `recorder-session.ts`) zostają po polsku.
+
 ## 2026-11-22 (4) — Poprawki po przeglądzie + tłumaczenia Studio
 
 - Telefon: nagłówek ścieżki ma wolny pas na Bitka (`max-lg:pr-14`), więc M/S/R nie lądują pod awatarem. Tytuł bitu w liście nagrań ma większe pole dotyku (bez zmiany wyglądu). Pole pliku w Master only ma etykietę.

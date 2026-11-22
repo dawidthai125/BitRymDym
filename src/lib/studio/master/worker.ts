@@ -176,6 +176,10 @@ async function download(dir: string, base: string, file: string, names?: string[
   }
 }
 
+const UPLOAD_PART_ATTEMPTS = 3;
+const UPLOAD_RETRY_DELAY_MS = 2000;
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 /** Upload `file` as `key`, or as ≤40 MB `key.pNNN` parts when larger (Supabase 50 MB cap). */
 async function uploadFile(key: string, file: string, contentType: string, onProgress?: (fraction: number) => void) {
   const size = (await stat(file)).size;
@@ -186,8 +190,15 @@ async function uploadFile(key: string, file: string, contentType: string, onProg
       const len = Math.min(PART_BYTES, size - i * PART_BYTES);
       const buf = Buffer.alloc(len);
       await fh.read(buf, 0, len, i * PART_BYTES);
-      const { error } = await createSupabaseAdminClient().storage.from(BUCKET).upload(n === 1 ? key : partName(key, i), buf, { contentType, upsert: true });
-      if (error) throw new Error("upload_failed");
+      // 2026-11-22: one transient Storage error failed a whole job (transcode 19.11). Retry each part 3× (upsert is idempotent).
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt < UPLOAD_PART_ATTEMPTS; attempt++) {
+        if (attempt > 0) await sleep(UPLOAD_RETRY_DELAY_MS * attempt);
+        const { error } = await createSupabaseAdminClient().storage.from(BUCKET).upload(n === 1 ? key : partName(key, i), buf, { contentType, upsert: true });
+        lastError = error;
+        if (!error) break;
+      }
+      if (lastError) throw new Error("upload_failed");
       onProgress?.((i + 1) / n);
     }
   } finally {
