@@ -103,6 +103,7 @@ export default async function AdminLayout({
           { href: "/admin/users", label: t("uzytkownicy") },
           { href: "/admin/platnosci", label: t("platnosci") },
           { href: "/admin/lejek", label: tFunnel("navLabel") },
+          { href: "/admin/wycieki", label: t("wycieki") },
         ],
       },
       {

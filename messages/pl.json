@@ -995,6 +995,7 @@
       "doGeneratora": "Otwórz generator"
     },
     "adminLayout": {
+      "wycieki": "Wycieki",
       "grupaPrzeglad": "Przegląd",
       "grupaTresci": "Treści",
       "grupaLudzie": "Ludzie i płatności",
@@ -1591,6 +1592,37 @@
         "REFUND_FAILED": "Nie udało się zdjąć zakupu. Spróbuj ponownie.",
         "RESOLVE_FAILED": "Nie udało się zamknąć sprawy. Spróbuj ponownie."
       }
+    },
+    "adminLeaksPage": {
+      "metaTitle": "Wycieki",
+      "tytul": "Wycieki bitów",
+      "opis": "Wrzuć plik, który znalazłeś w sieci (np. z YouTube, TikToka albo cudzego numeru). Porównam go ze wszystkimi kopiami tego bitu, które dostali użytkownicy w Studiu i programie, i powiem, z czyjej kopii pochodzi.",
+      "bit": "Bit",
+      "wybierzBit": "Wybierz bit…",
+      "kopii": "kopii",
+      "plik": "Plik audio albo wideo",
+      "plikPodpowiedz": "Do 50 MB. Wystarczy fragment, najlepiej co najmniej 30 sekund z bitem.",
+      "sprawdz": "Sprawdź plik",
+      "wysylanie": "Wysyłam…",
+      "bladDuzy": "Plik ma więcej niż 50 MB. Wytnij fragment i spróbuj jeszcze raz.",
+      "bladWysylki": "Nie udało się wysłać pliku. Spróbuj jeszcze raz.",
+      "wyslano": "Plik wysłany. Wynik pojawi się poniżej za około minutę.",
+      "historia": "Ostatnie sprawdzenia",
+      "pusto": "Jeszcze nic nie sprawdzano.",
+      "status": {
+        "uploading": "wysyłanie",
+        "pending": "w kolejce",
+        "working": "sprawdzam",
+        "done": "gotowe",
+        "failed": "błąd"
+      },
+      "nieUdalo": "Nie udało się sprawdzić pliku",
+      "brakKopii": "Nikt jeszcze nie dostał kopii tego bitu, więc nie ma z czym porównać.",
+      "znaleziono": "To kopia konta:",
+      "bezNazwy": "bez nazwy",
+      "pewnosc": "pewność {z} (od 10 to pewne trafienie)",
+      "nieZnaleziono": "Nie pasuje do żadnej kopii (najwyższy wynik {z}, trafienie od 10). Plik może pochodzić z nagrania z głośników albo innego bitu.",
+      "uwaga": "Wynik od 10 w górę to pewne trafienie, obce kopie mają wynik bliski 0. Plik nagrany mikrofonem z głośników może nie dać wyniku."
     },
     "adminFunnelPage": {
       "navLabel": "Lejek zakupu",

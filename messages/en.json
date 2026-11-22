@@ -995,6 +995,7 @@
       "doGeneratora": "Open the generator"
     },
     "adminLayout": {
+      "wycieki": "Leaks",
       "grupaPrzeglad": "Overview",
       "grupaTresci": "Content",
       "grupaLudzie": "People and payments",
@@ -1591,6 +1592,37 @@
         "REFUND_FAILED": "Could not remove the purchase. Try again.",
         "RESOLVE_FAILED": "Could not close the case. Try again."
       }
+    },
+    "adminLeaksPage": {
+      "metaTitle": "Leaks",
+      "tytul": "Beat leaks",
+      "opis": "Upload a file you found online (YouTube, TikTok or someone else's track). I compare it with every copy of this beat that users got in the Studio and the program, and tell you whose copy it came from.",
+      "bit": "Beat",
+      "wybierzBit": "Choose a beat…",
+      "kopii": "copies",
+      "plik": "Audio or video file",
+      "plikPodpowiedz": "Up to 50 MB. A fragment is enough, ideally at least 30 seconds with the beat.",
+      "sprawdz": "Check file",
+      "wysylanie": "Uploading…",
+      "bladDuzy": "The file is over 50 MB. Cut a fragment and try again.",
+      "bladWysylki": "Upload failed. Try again.",
+      "wyslano": "File uploaded. The result shows up below in about a minute.",
+      "historia": "Recent checks",
+      "pusto": "Nothing checked yet.",
+      "status": {
+        "uploading": "uploading",
+        "pending": "queued",
+        "working": "checking",
+        "done": "done",
+        "failed": "error"
+      },
+      "nieUdalo": "Could not check the file",
+      "brakKopii": "Nobody has received a copy of this beat yet, so there is nothing to compare.",
+      "znaleziono": "This is the copy of:",
+      "bezNazwy": "no name",
+      "pewnosc": "score {z} (10 or more is a sure match)",
+      "nieZnaleziono": "Matches no copy (best score {z}, a match starts at 10). It may be a recording from speakers or another beat.",
+      "uwaga": "A score of 10 or more is a sure match; other copies score near 0. A file recorded with a microphone from speakers may give no result."
     },
     "adminFunnelPage": {
       "navLabel": "Purchase funnel",
