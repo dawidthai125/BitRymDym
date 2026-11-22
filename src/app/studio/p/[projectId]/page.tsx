@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { PageFrame } from "@/components/brand/chrome";
 import { StudioEditor } from "@/components/studio/studio-editor";
 import { StudioTakeExpiryBanner } from "@/components/studio/studio-take-expiry-banner";
+import { StudioUnplacedTakeBanner } from "@/components/studio/studio-unplaced-take-banner";
 import { AppShell } from "@/components/site/app-shell";
 import { maxRecordingTracksForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
@@ -72,6 +73,12 @@ export default async function StudioProjectPage({ params }: PageProps) {
             </Link>
           </div>
           <StudioTakeExpiryBanner notice={takeExpiry} />
+          <StudioUnplacedTakeBanner
+            projectId={document.project.id}
+            documentVersion={document.project.documentVersion}
+            trackIds={document.tracks.filter((tr) => tr.trackType !== "BEAT").map((tr) => tr.id)}
+            placedTakeIds={document.clips.map((c) => c.sourceTakeId).filter((id): id is string => !!id)}
+          />
           <StudioEditor
             initialDocument={document}
             initialBeatTitle={beatTitle}

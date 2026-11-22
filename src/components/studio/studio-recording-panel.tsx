@@ -133,12 +133,7 @@ import {
   getTakeRecoveryTabClaimant,
   getTakeRecoveryViewerUserId,
 } from "@/lib/takes/take-recording-recovery-idb";
-import {
-  clearUnplacedTakeMemo,
-  readUnplacedTakeMemo,
-  writeUnplacedTakeMemo,
-  type UnplacedTakeMemo,
-} from "@/lib/studio/unplaced-take-memo";
+import { clearUnplacedTakeMemo, writeUnplacedTakeMemo } from "@/lib/studio/unplaced-take-memo";
 import {
   classifyPersistHttpFailure,
   classifyPersistNetworkFailure,
@@ -447,8 +442,6 @@ export function StudioRecordingPanel({
   const [workflowError, setWorkflowError] = useState<string | null>(null);
   const [workflowBusy, setWorkflowBusy] = useState<WorkflowActionBusy>(null);
   const [keptMessage, setKeptMessage] = useState<string | null>(null);
-  /** 2026-11-22: READY take from this project that was never kept (e.g. page reloaded). */
-  const [unplacedMemo, setUnplacedMemo] = useState<UnplacedTakeMemo | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(simple);
   const [libraryTakes, setLibraryTakes] = useState<StudioPlaceableTakeDto[]>([]);
   const [libraryError, setLibraryError] = useState<string | null>(null);
@@ -573,12 +566,6 @@ export function StudioRecordingPanel({
       clearUnplacedTakeMemo(projectId);
     }
   }, [projectId, state.phase, state.takeId, state.takeDurationSeconds]);
-
-  // On open: offer a take left unplaced in this project.
-  useEffect(() => {
-    const memo = readUnplacedTakeMemo(projectId);
-    if (memo && !placedTakeIdsRef.current.has(memo.takeId)) setUnplacedMemo(memo);
-  }, [projectId]);
 
   const meterStream =
     state.phase === "RECORDING" || state.phase === "READY"
@@ -2023,28 +2010,6 @@ export function StudioRecordingPanel({
     }
   }
 
-  async function onPlaceUnplacedTake() {
-    const memo = unplacedMemo;
-    if (!memo || keepInFlightRef.current || isRecordingBusy(state.phase)) return;
-    recordStartMsRef.current = memo.startMs;
-    captureTrackIdRef.current = mergedTracks.some((t) => t.id === memo.trackId) ? memo.trackId : trackIdRef.current;
-    const ok = await placeReadyTakeOnTimeline({
-      takeId: memo.takeId,
-      busy: "place",
-      successMessage: tr("nagranieZachowaneNaOsi"),
-    });
-    if (ok) {
-      clearUnplacedTakeMemo(projectId, memo.takeId);
-      setUnplacedMemo(null);
-    }
-  }
-
-  function onDismissUnplacedTake() {
-    if (unplacedMemo) clearUnplacedTakeMemo(projectId, unplacedMemo.takeId);
-    setUnplacedMemo(null);
-    setKeptMessage(tr("niewstawioneZostajeWArchiwum"));
-  }
-
   async function onKeepWorkflowTake() {
     if (!state.takeId || keepInFlightRef.current) return;
     await placeReadyTakeOnTimeline({
@@ -2763,26 +2728,6 @@ export function StudioRecordingPanel({
           </p>
         ) : null}
       </div>
-      ) : null}
-
-      {!samplesMode && !showWorkflow && unplacedMemo && !isRecordingBusy(state.phase) ? (
-        <div
-          className="space-y-2 rounded border border-[var(--brd-amber)] p-2"
-          role="status"
-          data-testid="studio-unplaced-take"
-        >
-          <p className="text-sm text-[var(--brd-ink)]">
-            {tr("niewstawioneNagranie", { s: Math.round(unplacedMemo.durationSeconds ?? 0) })}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" disabled={workflowBusy !== null} onClick={() => void onPlaceUnplacedTake()}>
-              {tl(workflowBusy === "place" ? tr("zapisywanie") : tr("niewstawioneWstaw"))}
-            </Button>
-            <Button type="button" size="sm" variant="outline" disabled={workflowBusy !== null} onClick={onDismissUnplacedTake}>
-              {tr("niewstawioneNieTeraz")}
-            </Button>
-          </div>
-        </div>
       ) : null}
 
       {!samplesMode && showWorkflow ? (
