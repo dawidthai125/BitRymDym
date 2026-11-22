@@ -73,6 +73,8 @@ export async function DELETE(request: Request) {
       .eq("id", sendId)
       .eq("owner_id", context.userId)
       .gte("created_at", since)
+      // 2026-11-22: a send already used for a project (record/place) is not refundable.
+      .is("used_at", null)
       .select("id");
     if (error) throw new Error(error.message);
     return NextResponse.json({ success: true, refunded: (data ?? []).length > 0 }, { headers: NO_STORE });

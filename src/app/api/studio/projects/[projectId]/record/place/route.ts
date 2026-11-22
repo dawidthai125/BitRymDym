@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { getCurrentProfile } from "@/lib/auth/session";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { requestUserAccessBearer } from "@/lib/supabase/server";
 import { placeReadyTakeAsStudioClip } from "@/lib/studio/studio-record-service";
 
 export const runtime = "nodejs";
@@ -59,6 +62,14 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
+    // 2026-11-22: the Windows recorder (bearer auth; the site uses cookies) must have a
+    // daily send (POST /api/desktop/studio-send). The first place binds it to the project,
+    // so it can no longer be refunded. Before the place, so nothing lands without a send.
+    if (await requestUserAccessBearer()) {
+      const denied = await desktopSendDenied(projectId);
+      if (denied) return denied;
+    }
+
     const result = await placeReadyTakeAsStudioClip({
       projectId,
       trackId: body.trackId,
@@ -84,4 +95,23 @@ export async function POST(request: Request, context: RouteContext) {
   } catch (error) {
     return studioApiErrorResponse(error);
   }
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function desktopSendDenied(projectId: string): Promise<NextResponse | null> {
+  const profile = await getCurrentProfile();
+  // No session / bad id: the service below answers with its own auth / not-found error.
+  if (!profile || !UUID.test(projectId)) return null;
+  const admin = createSupabaseAdminClient();
+  const { data: project } = await admin.from("studio_projects").select("id").eq("id", projectId).eq("owner_id", profile.userId).maybeSingle();
+  if (!project) return null;
+  const { data, error } = await admin.rpc("use_desktop_studio_send", { p_owner_id: profile.userId, p_project_id: projectId });
+  if (error) {
+    return NextResponse.json({ error: "Nie udało się sprawdzić limitu wysyłek." }, { status: 500 });
+  }
+  if (data !== true) {
+    return NextResponse.json({ error: "desktop_send_limit", code: "DESKTOP_SEND_REQUIRED" }, { status: 429 });
+  }
+  return null;
 }

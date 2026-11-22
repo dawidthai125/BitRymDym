@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (7) — Zwrot planu i limit wysyłek programu Windows (GO Ownera)
+
+- **Zwrot przedłużenia / ulepszenia planu (`20261122040000_refund_restores_previous_order`, zastosowana):** pełny zwrot nie kasuje już czasu z wcześniejszego opłaconego zamówienia — plan wraca do poziomu i daty końca poprzedniego trwającego zamówienia; bez takiego kończy się teraz (jak dotąd). To samo dla dodatku referencji.
+- **Limit „Wrzuć do Studia” (program Windows) po stronie serwera (`20261122050000_desktop_send_bound_to_project`, zastosowana):** `record/place` z tokenem programu (bearer) wymaga wysyłki z ostatnich 24 h; pierwsze wstawienie przypina ją do projektu (`used_at`), a użytej wysyłki nie da się zwrócić (`DELETE /api/desktop/studio-send`). Strona (ciasteczka) bez zmian. Test `desktop-send-place-gate.test.ts`.
+
 ## 2026-11-22 (6) — Pełny przegląd kodu (6 obszarów) i poprawki
 
 - **Płatny bit:** zalogowany bez zakupu dostawał czysty MASTER przez `/api/beats/audio/playback` (bez `previewOnly`). Teraz paid lane PLATFORM → WM PREVIEW dla każdego poza staff i kupującym (`audio-access.ts` + testy).
