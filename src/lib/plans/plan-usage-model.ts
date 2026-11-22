@@ -15,6 +15,11 @@ export type PlanUsageItemId =
   | "recordingsToday"
   | "activeTakes"
   | "masters"
+  | "video"
+  | "lyrics"
+  | "cleanup"
+  | "cover"
+  | "samples"
   | "tracks";
 
 export type PlanUsagePeriod = "day" | "week" | "month" | "total" | "perProject";
@@ -45,6 +50,12 @@ export type PlanUsageCounts = {
   takesToday: number;
   activeReadyTakes: number;
   mastersMonth: number;
+  /** 2026-11-22: the rest of the plan's counted limits (Owner: the menu missed MP4 etc.). */
+  videosWeek?: number;
+  lyricsToday?: number;
+  cleanupToday?: number;
+  coversToday?: number;
+  samples?: number;
 };
 
 export function nextUtcMidnightIso(now: Date): string {
@@ -61,6 +72,12 @@ export function buildPlanUsage(params: {
   /** Unused one-off packs. Zero keeps the plan cap. */
   takeCredits?: number;
   masterCredits?: number;
+  youtubeCredits?: number;
+  /** AI covers per day (Gold, only when the feature is on); 0 hides the row. */
+  coverPerDay?: number;
+  /** Europe/Warsaw windows used by video / lyrics / cleanup / cover counters. */
+  warsawDayResetAt?: string | null;
+  warsawWeekResetAt?: string | null;
 }): PlanUsage {
   const p = PLAN_POLICY[params.tier];
   const c = params.counts;
@@ -121,6 +138,7 @@ export function buildPlanUsage(params: {
         locked: false,
         resetAt: params.monthResetAt,
       },
+      ...extraItems(p, c, params),
       {
         id: "tracks",
         used: null,
@@ -131,6 +149,49 @@ export function buildPlanUsage(params: {
       },
     ],
   };
+}
+
+function extraItems(
+  p: (typeof PLAN_POLICY)[PremiumTier],
+  c: PlanUsageCounts,
+  params: { youtubeCredits?: number; coverPerDay?: number; warsawDayResetAt?: string | null; warsawWeekResetAt?: string | null },
+): PlanUsageItem[] {
+  const day = params.warsawDayResetAt ?? null;
+  const videosUsed = c.videosWeek ?? 0;
+  const videoPlan = p.downloads.youtubeVideosPerWeek;
+  const videoCredits = Math.max(0, Math.floor(params.youtubeCredits ?? 0));
+  const videoLimit = masterQuotaWithCredits(videosUsed, videoPlan, videoCredits);
+  const items: PlanUsageItem[] = [
+    {
+      id: "video",
+      used: videosUsed,
+      limit: videoLimit,
+      period: "week",
+      // Bronze/Silver: only bought pieces. Locked until a pack is bought (the "+" still shows).
+      locked: videoPlan === 0 && videoCredits === 0,
+      resetAt: videoPlan > 0 ? (params.warsawWeekResetAt ?? null) : null,
+    },
+    {
+      id: "lyrics",
+      used: c.lyricsToday ?? 0,
+      limit: p.tools.aiLyricsPerDay,
+      period: "day",
+      locked: p.tools.aiLyricsPerDay === 0,
+      resetAt: day,
+    },
+    {
+      id: "cleanup",
+      used: c.cleanupToday ?? 0,
+      limit: p.tools.vocalCleanup.perDay,
+      period: "day",
+      locked: p.tools.vocalCleanup.perDay === 0,
+      resetAt: day,
+    },
+  ];
+  const cover = Math.max(0, Math.floor(params.coverPerDay ?? 0));
+  if (cover > 0) items.push({ id: "cover", used: c.coversToday ?? 0, limit: cover, period: "day", locked: false, resetAt: day });
+  items.push({ id: "samples", used: c.samples ?? 0, limit: p.studio.maxSamples, period: "total", locked: p.studio.maxSamples === 0, resetAt: null });
+  return items;
 }
 
 /** True when a counted item has no room left (badge turns amber). */

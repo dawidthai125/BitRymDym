@@ -291,7 +291,7 @@
       "naProjekt": "maks. {n}",
       "bezLimitu": "{used} · bez limitu",
       "odnowienie": "od nowa {kiedy}",
-      "dobaUtc": "Dzienne limity liczą się od północy UTC.",
+      "dobaUtc": "Nagrania i pobrania bitów liczą się od północy UTC, reszta dziennych od północy czasu polskiego. Tydzień wideo zaczyna się w poniedziałek.",
       "plany": "Plany i limity",
       "pozycja": {
         "beatDownloads": "Pobrania bitów",
@@ -300,7 +300,12 @@
         "recordingsToday": "Nagrania",
         "activeTakes": "Zapisane ujęcia",
         "masters": "Mastery",
-        "tracks": "Ścieżki nagrań w projekcie"
+        "tracks": "Ścieżki nagrań w projekcie",
+        "video": "Wideo MP4 na YouTube",
+        "lyrics": "Teksty od AI",
+        "cleanup": "Czyszczenie wokalu",
+        "cover": "Okładki AI",
+        "samples": "Twoje sample"
       },
       "okres": {
         "day": "dziś",
@@ -586,7 +591,9 @@
         "wysokosc": "Wysokość klipu",
         "sciszanie": "Ściszanie pod bit (wokal cichnie)",
         "efekty": "Efekty naraz",
-        "naMiesiac": "{n} / miesiąc"
+        "naMiesiac": "{n} / miesiąc",
+        "okladki": "Okładki AI do wideo",
+        "naDzien": "{n} / dzień"
       },
       "przypis": {
         "gosc": "Bez konta: odsłuch {s} s każdego bitu. Nagrywanie, pobieranie i Studio wymagają konta.",

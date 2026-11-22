@@ -18,8 +18,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { PremiumTier } from "@/types/premium";
 
-/** Usage rows a one-off pack tops up (PLAN_PACK_CATALOG: take, master). */
-const BUYABLE_ITEMS = new Set(["recordingsToday", "masters"]);
+/** Usage rows a one-off pack tops up (PLAN_PACK_CATALOG: take, master, youtube). */
+const BUYABLE_ITEMS = new Set(["recordingsToday", "masters", "video"]);
 
 export { invalidatePlanUsageCache, requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
 
@@ -222,7 +222,7 @@ export function PlanBadge({ userKey }: { userKey: string }) {
                       {item.locked ? "🔒 " : ""}
                       {value(item)}
                     </span>
-                    {BUYABLE_ITEMS.has(item.id) && !item.locked ? (
+                    {BUYABLE_ITEMS.has(item.id) && (!item.locked || item.id === "video") ? (
                       // Owner 2026-11-22: limits that packs top up get a gold "+" to the packs.
                       <Link
                         href="/premium#pakiety"

@@ -1,6 +1,5 @@
 import "server-only";
 
-import { PLAN_POLICY } from "@/config/plan-policy";
 import { addonStatusFromRow, type AdminAddonStatus } from "@/lib/admin/users-addons";
 import { assembleAdminUserRow, type AdminUserRow } from "@/lib/admin/users-assemble";
 import { requireAdminUsersListAccess } from "@/lib/admin/users-list";
@@ -8,12 +7,8 @@ import type { PremiumEntitlementSnapshot } from "@/lib/audio/effective-entitleme
 import { isUuid } from "@/lib/beats/audio-validation";
 import { loadPlanUsage } from "@/lib/plans/plan-usage";
 import { loadUsageResets } from "@/lib/plans/usage-resets";
-import { windowStartAfterReset, type UsageResetMetric } from "@/lib/plans/usage-resets-model";
+import type { UsageResetMetric } from "@/lib/plans/usage-resets-model";
 import { NOT_SAMPLE_COPY_TAKE } from "@/lib/studio/samples/sample-policy";
-import { countsTowardCleanupQuota } from "@/lib/studio/cleanup/cleanup-core";
-import { warsawDayStartIso } from "@/lib/studio/cleanup/cleanup-server";
-import { aiCoverPerDay } from "@/lib/studio/video/ai-cover/config";
-import { warsawWeekStartIso } from "@/lib/studio/video/youtube-video";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isPremiumTier } from "@/types/premium";
 import type { AccountLevel, SystemRole } from "@/types/domain";
@@ -46,11 +41,6 @@ type Admin = ReturnType<typeof createSupabaseAdminClient>;
 type Res<T> = { data: T[] | null; error: { message: string } | null };
 const rows = <T,>(res: Res<T>): T[] => (res.error ? [] : (res.data ?? []));
 const str = (v: unknown): string | null => (typeof v === "string" ? v : null);
-
-async function headCount(q: PromiseLike<{ count: number | null; error: { code?: string } | null }>): Promise<number> {
-  const { count, error } = await q;
-  return error ? 0 : (count ?? 0);
-}
 
 export async function loadAdminUserDesk(userId: string): Promise<AdminUserDesk | null> {
   const viewer = await requireAdminUsersListAccess();
@@ -173,19 +163,7 @@ export async function loadAdminUserDesk(userId: string): Promise<AdminUserDesk |
 
 /** Quota lines with the user's current usage (admin resets already applied). */
 async function loadDeskLimits(admin: Admin, userId: string, tier: AdminUserRow["premiumTier"]): Promise<AdminDeskLimit[]> {
-  const policy = PLAN_POLICY[tier];
   const [usage, resets] = await Promise.all([loadPlanUsage({ userId, tier }), loadUsageResets(userId, admin)]);
-  const day = warsawDayStartIso();
-  const week = warsawWeekStartIso();
-  const head = { count: "exact" as const, head: true };
-  const [lyrics, cleanup, cover, video] = await Promise.all([
-    headCount(admin.from("studio_ai_lyrics_usage").select("id", head).eq("owner_id", userId).gte("created_at", windowStartAfterReset(day, resets.lyrics)).neq("status", "failed")),
-    // Same rule as the cleanup quota: automatic clip-noise passes do not count.
-    admin.from("studio_cleanup_jobs").select("settings").eq("owner_id", userId).gte("created_at", windowStartAfterReset(day, resets.cleanup)).not("status", "in", "(failed,cancelled)")
-      .then((r) => (r.error ? 0 : (r.data ?? []).filter((row) => countsTowardCleanupQuota((row as { settings: unknown }).settings)).length)),
-    headCount(admin.from("studio_ai_cover_usage").select("id", head).eq("owner_id", userId).gte("created_at", windowStartAfterReset(day, resets.cover)).neq("status", "failed")),
-    headCount(admin.from("studio_master_jobs").select("id", head).eq("owner_id", userId).eq("kind", "youtube_video").gte("created_at", windowStartAfterReset(week, resets.video)).not("status", "in", "(failed,cancelled)")),
-  ]);
   const item = (id: string) => usage.items.find((i) => i.id === id);
   const fromUsage = (id: string, metric: UsageResetMetric, period: AdminDeskLimit["period"]): AdminDeskLimit => {
     const it = item(id);
@@ -196,9 +174,10 @@ async function loadDeskLimits(admin: Admin, userId: string, tier: AdminUserRow["
     fromUsage("masters", "masters", "month"),
     fromUsage("beatDownloads", "downloads", "day"),
     fromUsage("studioExports", "downloads", "week"),
-    { id: "video", metric: "video", used: video, limit: policy.downloads.youtubeVideosPerWeek, period: "week", resetAt: resets.video ?? null },
-    { id: "lyrics", metric: "lyrics", used: lyrics, limit: policy.tools.aiLyricsPerDay, period: "day", resetAt: resets.lyrics ?? null },
-    { id: "cleanup", metric: "cleanup", used: cleanup, limit: policy.tools.vocalCleanup.perDay, period: "day", resetAt: resets.cleanup ?? null },
-    { id: "cover", metric: "cover", used: cover, limit: tier === "GOLD" ? aiCoverPerDay() : 0, period: "day", resetAt: resets.cover ?? null },
+    fromUsage("video", "video", "week"),
+    fromUsage("lyrics", "lyrics", "day"),
+    fromUsage("cleanup", "cleanup", "day"),
+    // Cover row only exists when AI covers are on for a Gold user; otherwise 0 (not in plan).
+    item("cover") ? fromUsage("cover", "cover", "day") : { id: "cover", metric: "cover", used: 0, limit: 0, period: "day", resetAt: resets.cover ?? null },
   ];
 }

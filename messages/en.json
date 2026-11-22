@@ -291,7 +291,7 @@
       "naProjekt": "max {n}",
       "bezLimitu": "{used} · no limit",
       "odnowienie": "resets {kiedy}",
-      "dobaUtc": "Daily limits reset at midnight UTC.",
+      "dobaUtc": "Recordings and beat downloads reset at midnight UTC, other daily limits at midnight Polish time. The video week starts on Monday.",
       "plany": "Plans and limits",
       "pozycja": {
         "beatDownloads": "Beat downloads",
@@ -300,7 +300,12 @@
         "recordingsToday": "Recordings",
         "activeTakes": "Saved recordings",
         "masters": "Masters",
-        "tracks": "Recording tracks per project"
+        "tracks": "Recording tracks per project",
+        "video": "YouTube MP4 videos",
+        "lyrics": "AI lyrics",
+        "cleanup": "Vocal cleanup",
+        "cover": "AI covers",
+        "samples": "Your samples"
       },
       "okres": {
         "day": "today",
@@ -586,7 +591,9 @@
         "wysokosc": "Clip pitch",
         "sciszanie": "Ducking under the beat (vocal dips)",
         "efekty": "Effects at once",
-        "naMiesiac": "{n} / month"
+        "naMiesiac": "{n} / month",
+        "okladki": "AI covers for videos",
+        "naDzien": "{n} / day"
       },
       "przypis": {
         "gosc": "Without an account: a {s}-second preview of every beat. Recording, downloads and Studio need an account.",

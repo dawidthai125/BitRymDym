@@ -24,6 +24,7 @@ import { isP24Configured } from "@/lib/payments/p24-config";
 import { isPayuConfigured } from "@/lib/payments/payu-config";
 import { OWN_TAKE_RAW_DOWNLOADS_DAILY } from "@/config/recording";
 import type { PremiumTier } from "@/types/premium";
+import { aiCoverEnabled, aiCoverPerDay } from "@/lib/studio/video/ai-cover/config";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("account.premiumPage");
@@ -82,6 +83,8 @@ export default function PremiumPage() {
         return offer ? tr("tab.wideoYtJednorazowo", { cena: money.format(offer.pricePln) }) : "—";
       },
     },
+    // 2026-11-22: AI covers for the MP4 were missing from the table (Gold, when the feature is on).
+    ...(aiCoverEnabled() ? [{ id: "okladki", label: tr("tab.okladki"), cell: (x: PremiumTier) => (x === "GOLD" ? tr("tab.naDzien", { n: aiCoverPerDay() }) : "—") }] : []),
     { id: "przechowywanie", label: tr("tab.przechowywanie"), cell: (x) => tr("tab.dni", { n: PLAN_POLICY[x].retentionDays }) },
     { id: "referencja", label: tr("tab.referencja"), cell: (x) => tr(`referencja.${PLAN_POLICY[x].mastering.referenceMastering}`) },
     { id: "bity", label: tr("tab.bity"), cell: (x) => (PLAN_POLICY[x].downloads.beatsPerDay > 0 ? String(PLAN_POLICY[x].downloads.beatsPerDay) : tr("tab.brakPobierania")) },

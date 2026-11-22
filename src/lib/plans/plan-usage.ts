@@ -6,7 +6,11 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildPlanUsage, type PlanUsage } from "@/lib/plans/plan-usage-model";
 import { loadUsageResets } from "@/lib/plans/usage-resets";
 import { windowStartAfterReset } from "@/lib/plans/usage-resets-model";
-import { NOT_SAMPLE_COPY_TAKE } from "@/lib/studio/samples/sample-policy";
+import { NOT_SAMPLE_COPY_TAKE, STUDIO_SAMPLES_TABLE } from "@/lib/studio/samples/sample-policy";
+import { countsTowardCleanupQuota } from "@/lib/studio/cleanup/cleanup-core";
+import { warsawDayStartIso } from "@/lib/studio/cleanup/cleanup-server";
+import { aiCoverEnabled, aiCoverPerDay } from "@/lib/studio/video/ai-cover/config";
+import { warsawWeekStartIso } from "@/lib/studio/video/youtube-video";
 import type { PremiumTier } from "@/types/premium";
 
 type HeadResult = { count: number | null; error: { message?: string; code?: string } | null };
@@ -44,6 +48,10 @@ export async function loadPlanUsage(params: {
   const dlWeekStart = windowStartAfterReset(weekStart, resets.downloads);
   const recDayStart = windowStartAfterReset(dayStart, resets.recordings);
   const masterStart = windowStartAfterReset(month.startIso, resets.masters);
+  // Same windows as the enforcing code: video (Warsaw week), lyrics / cleanup / cover (Warsaw day).
+  const wDay = warsawDayStartIso(now);
+  const wWeek = warsawWeekStartIso(now);
+  const coverPerDay = params.tier === "GOLD" && aiCoverEnabled() ? aiCoverPerDay() : 0;
 
   const [downloads, exports, projects, takesToday, activeTakes, masters, takeCredits, masterCredits] =
     await Promise.all([
@@ -57,6 +65,18 @@ export async function loadPlanUsage(params: {
       studioQuotaRemaining(params.userId, "take"),
       studioQuotaRemaining(params.userId, "master"),
     ]);
+  const [videos, lyrics, cleanup, covers, samples, youtubeCredits] = await Promise.all([
+    admin.from("studio_master_jobs").select("id", head).eq("owner_id", params.userId).eq("kind", "youtube_video").gte("created_at", windowStartAfterReset(wWeek, resets.video)).not("status", "in", "(failed,cancelled)"),
+    admin.from("studio_ai_lyrics_usage").select("id", head).eq("owner_id", params.userId).gte("created_at", windowStartAfterReset(wDay, resets.lyrics)).neq("status", "failed"),
+    // Automatic clip-noise passes do not count (same rule as the cleanup quota).
+    admin.from("studio_cleanup_jobs").select("settings").eq("owner_id", params.userId).gte("created_at", windowStartAfterReset(wDay, resets.cleanup)).not("status", "in", "(failed,cancelled)")
+      .then((r) => (r.error ? 0 : (r.data ?? []).filter((row) => countsTowardCleanupQuota((row as { settings: unknown }).settings)).length)),
+    coverPerDay > 0
+      ? admin.from("studio_ai_cover_usage").select("id", head).eq("owner_id", params.userId).gte("created_at", windowStartAfterReset(wDay, resets.cover)).neq("status", "failed")
+      : Promise.resolve({ count: 0, error: null }),
+    admin.from(STUDIO_SAMPLES_TABLE).select("id", head).eq("owner_id", params.userId),
+    studioQuotaRemaining(params.userId, "youtube"),
+  ]);
 
   return buildPlanUsage({
     tier: params.tier,
@@ -64,6 +84,10 @@ export async function loadPlanUsage(params: {
     monthResetAt: month.resetIso,
     takeCredits,
     masterCredits,
+    youtubeCredits,
+    coverPerDay,
+    warsawDayResetAt: warsawDayStartIso(new Date(Date.parse(wDay) + 36 * 3600_000)),
+    warsawWeekResetAt: warsawWeekStartIso(new Date(Date.parse(wWeek) + 8.5 * 864e5)),
     counts: {
       beatDownloadsToday: countOf(downloads as HeadResult),
       studioExportsWeek: countOf(exports as HeadResult),
@@ -71,6 +95,11 @@ export async function loadPlanUsage(params: {
       takesToday: countOf(takesToday as HeadResult),
       activeReadyTakes: countOf(activeTakes as HeadResult),
       mastersMonth: countOf(masters as HeadResult),
+      videosWeek: countOf(videos as HeadResult),
+      lyricsToday: countOf(lyrics as HeadResult),
+      cleanupToday: cleanup,
+      coversToday: countOf(covers as HeadResult),
+      samples: countOf(samples as HeadResult),
     },
   });
 }
