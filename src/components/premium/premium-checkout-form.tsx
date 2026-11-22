@@ -12,6 +12,21 @@ import { isPayuRedirect } from "@/lib/payments/payu-url";
 
 const TIERS: PaidTier[] = ["BRONZE", "SILVER", "GOLD"];
 
+/** Anonymous funnel counter (/admin/lejek). Fire-and-forget: never delays or blocks payment. */
+function countBuyClick(body: { product: "plan" | "addon" | PlanPack; tier?: PaidTier }) {
+  try {
+    void fetch("/api/funnel", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ event: "buy_click", ...body }),
+      keepalive: true,
+      credentials: "omit",
+    }).catch(() => {});
+  } catch {
+    // Counting is best effort.
+  }
+}
+
 type Code =
   | "PAYMENTS_OFF"
   | "CONSENT"
@@ -90,6 +105,7 @@ export function PremiumCheckoutForm({
       return;
     }
     setPending(product.kind === "plan" ? "plan" : product.kind === "addon" ? "addon" : product.pack);
+    countBuyClick(product.kind === "plan" ? { product: "plan", tier: product.tier } : { product: product.kind === "addon" ? "addon" : product.pack });
     try {
       const response = await fetch("/api/payments/p24/checkout", {
         method: "POST",

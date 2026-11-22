@@ -31,6 +31,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("admin.adminLayout");
+  const tFunnel = await getTranslations("admin.adminFunnelPage");
   let context: Awaited<ReturnType<typeof requireRole>>;
   try {
     // Single chrome gate: nested ADMIN-only layouts narrow further; profile is React cache()'d.
@@ -101,6 +102,7 @@ export default async function AdminLayout({
         items: [
           { href: "/admin/users", label: t("uzytkownicy") },
           { href: "/admin/platnosci", label: t("platnosci") },
+          { href: "/admin/lejek", label: tFunnel("navLabel") },
         ],
       },
       {
