@@ -2170,7 +2170,10 @@
       "nocnaDeskaOtworzProjekt": "Open a project, get back to the mix or delete old sketches. You can record in the Windows app or on the beat page. Downloading the app and signing in use this account. A Mac version is coming soon.",
       "programWindows": "Windows app",
       "archiwumNagran": "Recording archive",
-      "konto": "← Account"
+      "konto": "← Account",
+      "pracowniaSampli": "Sample workshop",
+      "rozetnijBit": "Split a beat",
+      "sprawdzGlosnosc": "Check loudness"
     },
     "mixPanel": {
       "miksIMaster": "Mix and master",

@@ -1003,3 +1003,11 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
     transform: translateY(-3px);
   }
 }
+
+/* Audit 2026-11-22: from sm the Studio transport is sticky under the site header (~87 px + ~125 px).
+   Keyboard focus / scrollIntoView landed under it (WCAG 2.4.11 focus not obscured). */
+@media (min-width: 640px) {
+  html:has(main[data-brd-surface="control-room"] [data-testid="studio-transport"]) {
+    scroll-padding-top: 14rem;
+  }
+}

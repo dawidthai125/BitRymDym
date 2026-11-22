@@ -205,7 +205,7 @@ export function StudioTransportBar({
       <div className="flex flex-col gap-1">
         <div className="flex min-w-0 flex-wrap items-center gap-1" data-testid="studio-transport-row-main">
           <div
-            className="flex shrink-0 flex-nowrap items-center gap-0.5"
+            className="flex min-w-0 max-w-full flex-wrap items-center gap-0.5 sm:shrink-0 sm:flex-nowrap"
             data-testid="studio-transport-ops"
           >
             <Button

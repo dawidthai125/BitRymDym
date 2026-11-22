@@ -44,7 +44,7 @@ export function StudioMixOverview({ doc }: { doc: StudioProjectDocument }) {
             </span>
             <button
               type="button"
-              className="relative h-5 w-full cursor-pointer rounded-[2px] bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_8%)]"
+              className="relative h-8 w-full cursor-pointer sm:h-5 rounded-[2px] bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_8%)]"
               aria-label={t("podgladSciezkiPrzewin", { v0: tl(track.name) })}
               onClick={(event) => {
                 const r = event.currentTarget.getBoundingClientRect();

@@ -6,6 +6,13 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (3) — Pełny przegląd po zalogowaniu (konto Ownera, tylko odczyt)
+
+- Przegląd 43 stron na komputerze i 18 na telefonie 390 px (konto Gold + admin), edytor Studio: krok Nagranie, Sample, Mix, panel boczny, mikser, Historia miksu, menu ścieżki. Bez odtwarzania, bez eksportu, bez zmian w projekcie. Baner wygasania na żywo **PASS**.
+- **Błąd (telefon):** w pasku transportu Cofnij, Ponów, Pauza, Pętla, Metronom i Zmień bit były poza ekranem (`studio-transport-ops` `flex-nowrap`). Teraz zawija się poniżej `sm`.
+- **Dostępność:** od `sm` przyklejony pasek transportu zasłaniał fokus i przewijanie do elementu → `scroll-padding-top: 14rem` (`globals.css`). Brak h1 na `/ranking`, `/ranking/sampel`, `/sampel` → niewidoczny h1. Wiersze podglądu ścieżek w Mix 32 px na telefonie. Linki pod listą projektów `/studio` `min-h-10` i tłumaczenia (były na sztywno po polsku).
+- Bez zmian, odnotowane: brakujące `/beat/…`, `/utwor/…`, `/premium/podglad` zwracają 200 z `noindex` (streaming Next.js); linki z tytułem bitu w listach nagrań 18 px; FX na 1265 px otwiera się jako panel z tłem (Escape zamyka).
+
 ## 2026-11-22 (2) — Mail o wygasaniu, pilnowanie kolejki Contabo, telefon
 
 - **Mail „Nagranie wygasa”:** cron `/api/cron/takes-expiry-notice` (`vercel.json`, 07:00 UTC). Nagrania READY użyte w klipie projektu właściciela, wygasające w ≤36 h, jeden mail na właściciela (najbliższy projekt). Rodzaj `take_expiring` (kategoria studio: zgody i wypis jak przy masterze). Atomowy znacznik `takes.expiry_notified_at` (migracja `20261122010000_takes_expiry_notified_at`, zastosowana). Pliki: `src/lib/email/notify/take-expiry-plan.ts` (+test), `take-expiry-notice.ts`, `templates.ts`, `config.ts`. Wspólne sprawdzanie `CRON_SECRET`: `src/lib/cron/cron-auth.ts`.

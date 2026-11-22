@@ -77,46 +77,46 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
             plan={{ tier, maxProjects: maxProjectsForTier(tier) }}
           />
 
-          <div className="flex flex-wrap gap-4 text-sm">
+          <div className="flex flex-wrap gap-x-4 gap-y-0 text-sm">
             <Link
               href="/studio/sample"
               prefetch
-              className="font-semibold text-[var(--brd-amber)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+              className="inline-flex min-h-10 items-center font-semibold text-[var(--brd-amber)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
-              Pracownia sampli
+              {t("pracowniaSampli")}
             </Link>
             <Link
               href="/studio/separator"
               prefetch
-              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+              className="inline-flex min-h-10 items-center text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
-              Rozetnij bit
+              {t("rozetnijBit")}
             </Link>
             <Link
               href="/studio/optymalizator"
               prefetch
-              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+              className="inline-flex min-h-10 items-center text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
-              Sprawdź głośność
+              {t("sprawdzGlosnosc")}
             </Link>
             <Link
               href="/nagrywarka"
               prefetch
-              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+              className="inline-flex min-h-10 items-center text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               {t("programWindows")}
             </Link>
             <Link
               href="/account/takes"
               prefetch
-              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+              className="inline-flex min-h-10 items-center text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               {t("archiwumNagran")}
             </Link>
             <Link
               href="/account"
               prefetch
-              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+              className="inline-flex min-h-10 items-center text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               {t("konto")}
             </Link>

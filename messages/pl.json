@@ -2170,7 +2170,10 @@
       "nocnaDeskaOtworzProjekt": "Otwórz projekt, wróć do miksu albo skasuj stare szkice. Nagrać możesz w programie Windows albo na stronie bitu. Pobranie programu i logowanie używają tego konta. Na Maca wersja wkrótce.",
       "programWindows": "Program Windows",
       "archiwumNagran": "Archiwum nagrań",
-      "konto": "← Konto"
+      "konto": "← Konto",
+      "pracowniaSampli": "Pracownia sampli",
+      "rozetnijBit": "Rozetnij bit",
+      "sprawdzGlosnosc": "Sprawdź głośność"
     },
     "mixPanel": {
       "miksIMaster": "Miks i master",

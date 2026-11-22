@@ -24,6 +24,7 @@ export default async function SampleCatalogPage({
   const t = await getTranslations("community.catalog");
   const tl = await getTranslations("studio.sampleLab");
   const ts = await getTranslations("community.sampleCatalog");
+  const shelfT = await getTranslations("community.shelf");
   const params = searchParams ? await searchParams : {};
   const source = parseCatalogSource(params.zrodlo);
   const session = await getCurrentProfile();
@@ -63,6 +64,7 @@ export default async function SampleCatalogPage({
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
         <PageFrame width="wide" className="py-5 sm:py-6">
+          <h1 className="sr-only">{shelfT("samples")}</h1>
           <CommunityShelf current="samples" />
           <SamplePromoFilm />
           <CommunitySource kind="samples" source={source} />

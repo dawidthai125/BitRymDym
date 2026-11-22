@@ -18,9 +18,10 @@ export async function RankingView({
   period: PeriodKind;
 }) {
   const boardPromise = readBoard(kind, period).catch(() => null);
-  const [t, rank, board] = await Promise.all([
+  const [t, rank, shelf, board] = await Promise.all([
     getTranslations("community"),
     getTranslations("community.rank"),
+    getTranslations("community.shelf"),
     boardPromise,
   ]);
   const base = kind === "beat" ? "/ranking" : "/ranking/sampel";
@@ -29,6 +30,8 @@ export async function RankingView({
     : (period === "week" ? rank("sampleWeek") : rank("sampleMonth"));
   return (
     <section>
+      {/* Audit 2026-11-22: the page had no h1 (the shelf names it visually). */}
+      <h1 className="sr-only">{shelf(kind === "beat" ? "beatRank" : "sampleRank")}</h1>
       <CommunityShelf current={kind === "beat" ? "beatRank" : "sampleRank"} />
       <nav aria-label={rank("week")} className="mb-4 flex flex-wrap gap-2">
         <Link href={base} aria-current={period === "week" ? "page" : undefined} className="inline-flex min-h-11 items-center border border-[var(--brd-line)] px-3 text-sm">
