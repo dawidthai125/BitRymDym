@@ -1,5 +1,6 @@
 "use client";
 
+import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -933,7 +934,7 @@ export function StudioMasterStep({
             {server.tier === "FREE" && !freeWatermark && sm.phase !== "done" && !approved ? (
               <p data-testid="studio-master-free-heads-up" role="note" className="border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] px-3 py-2 text-sm">
                 {t("freeUprzedzenie")}{" "}
-                <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a>
+                <StoreAppHidden><a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a></StoreAppHidden>
               </p>
             ) : null}
             {sm.phase !== "done" && !approved ? (
@@ -952,7 +953,7 @@ export function StudioMasterStep({
                 {sm.phase === "failed" && sm.code === "monthly_limit" ? (
                   <p role="alert" data-testid="studio-master-limit" className="text-sm text-[var(--brd-rec)]">
                     {t("masteryLimit")}{" "}
-                    {server.tier !== "GOLD" ? <a href="/premium" className="underline underline-offset-4">{t("zobaczPlany")}</a> : null}
+                    {server.tier !== "GOLD" ? <StoreAppHidden><a href="/premium" className="underline underline-offset-4">{t("zobaczPlany")}</a></StoreAppHidden> : null}
                   </p>
                 ) : sm.phase === "failed" && sm.code === "no_own_track" ? (
                   <p role="alert" data-testid="studio-master-no-own-track" className="text-sm text-[var(--brd-rec)]">{t("masterBezNagrania")}</p>
@@ -1008,7 +1009,7 @@ export function StudioMasterStep({
                 {server.tier === "FREE" ? (
                   <p data-testid="studio-master-dl-free" role="status" className="flex flex-col gap-1 border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
                     <span>{freeWatermark ? t("freeZeZnakiem", { n: FREE_WATERMARK_PER_DAY }) : t("freeBezPobierania")}</span>
-                    <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a>
+                    <StoreAppHidden><a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a></StoreAppHidden>
                   </p>
                 ) : null}
                 {usage?.dailyLimit != null ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import { StoreAppHidden, useStoreApp } from "@/components/site/store-app-context";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -94,6 +95,8 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
   initialState?: State;
 }) {
   const t = useTranslations("studio.youtubeVideo");
+  // Store app: no plan / pack links and no prices (store rules).
+  const storeApp = useStoreApp();
   const locale = useLocale();
   const money = new Intl.NumberFormat(locale === "en" ? "en-GB" : "pl-PL", { style: "currency", currency: "PLN", minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const uid = useId();
@@ -285,7 +288,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       {!allowed ? (
         <div data-testid="studio-yt-locked" className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <LockedAction reason="plan" minTier="GOLD" action="video" testId="studio-yt-make" buttonClassName="px-3">{t("zrob")}</LockedAction>
-          <span className="text-sm">{t("tylkoGold")} <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a></span>
+          <span className="text-sm">{t(storeApp ? "tylkoGoldSklep" : "tylkoGold")} <StoreAppHidden><a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a></StoreAppHidden></span>
         </div>
       ) : (
         <>
@@ -425,11 +428,11 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
           </div>
           {run.phase === "working" && prog ? <JobProgressBar value={prog} label={t(`etap.${prog.stage}`)} ariaLabel={t("postepAria")} testId="studio-yt-progress" /> : null}
           {run.phase === "done" ? <p role="status" className="text-sm">{t("gotowe")}</p> : null}
-          {run.phase === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{run.code === "unavailable" ? t("niedostepne") : run.code === "video_soon" ? t("wkrotce") : run.code === "weekly_limit" || run.code === "daily_limit" ? t(state?.usage?.perWeek ? "limit" : "limitJednorazowo") : t("blad", { code: run.code })}</p> : null}
+          {run.phase === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{run.code === "unavailable" ? t("niedostepne") : run.code === "video_soon" ? t("wkrotce") : run.code === "weekly_limit" || run.code === "daily_limit" ? t(state?.usage?.perWeek ? (storeApp ? "limitSklep" : "limit") : storeApp ? "limitJednorazowoSklep" : "limitJednorazowo") : t("blad", { code: run.code })}</p> : null}
           {limitReached && run.phase !== "error" ? (
             <p role="status" className="text-sm">
-              {t(state?.usage?.perWeek ? "limit" : "limitJednorazowo")}
-              {state?.usage?.pack ? <> <a href="/premium" className="font-semibold underline underline-offset-4">{t("kupPakiet", { n: state.usage.pack.units, cena: money.format(state.usage.pack.pricePln) })}</a></> : null}
+              {t(state?.usage?.perWeek ? (storeApp ? "limitSklep" : "limit") : storeApp ? "limitJednorazowoSklep" : "limitJednorazowo")}
+              {state?.usage?.pack && !storeApp ? <> <a href="/premium" className="font-semibold underline underline-offset-4">{t("kupPakiet", { n: state.usage.pack.units, cena: money.format(state.usage.pack.pricePln) })}</a></> : null}
             </p>
           ) : null}
         </>

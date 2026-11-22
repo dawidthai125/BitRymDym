@@ -45,6 +45,8 @@
 | Studio CRUD / attach / CAS writers | `studio-service` | Studio server | `src/lib/studio/studio-service.ts` · `/api/studio/projects/**` |
 | Compute (FFmpeg export) | Contabo EXTERNAL COMPUTE | Worker host | Contabo · **STOPPED/DISABLED** after P4.6 E2E (capability GREEN ≠ always-on) |
 | App hosting | Vercel Production | Deploy | https://www.bitrymdym.pl |
+| PWA (manifest, ikony, service worker, „Zainstaluj aplikację”) | `src/app/manifest.ts` · `public/sw.js` (cache **tylko** `/offline` + `/icons/*`) | Site chrome | ikony `public/icons/*` + `src/app/apple-icon.png` · rejestracja SW + `beforeinstallprompt` `src/components/site/pwa-install.tsx` (layout + stopka) · `/offline` `src/app/offline/page.tsx` · nagłówki `/sw.js` w `next.config.ts` · **no** cache API/audio/stron z danymi |
+| Tryb aplikacji ze sklepu (Google Play / App Store, bez kupowania) | cookie `brd_app` (`?app=android\|ios` → middleware, `?app=web` czyści) | Site / Payments | reguły `src/lib/site/store-app.ts` · serwer `isStoreApp()` / `isStoreAppRequest()` `src/lib/site/store-app-server.ts` · klient `useStoreApp()` / `StoreAppHidden` `src/components/site/store-app-context.tsx` · checkout odmawia `STORE_APP` (route + `startCheckout`) · **no** własnych detekcji UA / drugiej flagi |
 
 ---
 

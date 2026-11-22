@@ -1,5 +1,6 @@
 "use client";
 
+import { StoreAppHidden, useStoreApp } from "@/components/site/store-app-context";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -66,6 +67,8 @@ export function StudioMasterStyleReference({
   disabled?: boolean;
 }) {
   const t = useTranslations("studio.masterStep");
+  // Store app: no plan / pack links and no prices (store rules).
+  const storeApp = useStoreApp();
   const ids = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [upload, setUpload] = useState<{ pct: number } | null>(null);
@@ -171,7 +174,7 @@ export function StudioMasterStyleReference({
         {!refState.loaded ? null : !refState.available ? (
           <p className="text-sm text-[var(--brd-mute)]">{t("referencja.niedostepna")}</p>
         ) : gate && !gate.allowed ? (
-          gate.reason === "addon_missing" ? (
+          gate.reason === "addon_missing" && !storeApp ? (
             <div data-testid="studio-master-reference-addon" className="flex flex-col gap-1 border-l-4 border-l-[var(--brd-amber)] pl-2 text-sm">
               <p>{t("referencja.dodatek", { price })}</p>
               <p>
@@ -185,7 +188,9 @@ export function StudioMasterStyleReference({
           ) : (
             <div data-testid="studio-master-reference-locked" className="flex flex-col gap-1 border-l-4 border-l-[var(--brd-amber)] pl-2 text-sm sm:flex-row sm:items-center sm:justify-between">
               <span>{t("referencja.zablokowana")}</span>
-              <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a>
+              <StoreAppHidden>
+                <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a>
+              </StoreAppHidden>
             </div>
           )
         ) : refState.reference ? (

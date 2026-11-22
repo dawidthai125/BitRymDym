@@ -21,15 +21,18 @@ import {
 } from "@/config/plan-policy";
 import { studioAdvancedRecordAllowed } from "@/lib/studio/studio-record-view";
 import { PremiumPurchaseSection } from "@/components/premium/premium-purchase-section";
+import { PremiumStoreAppNotice } from "@/components/premium/premium-store-app-notice";
 import { PremiumViewCounter } from "@/components/premium/premium-view-counter";
 import { isP24Configured } from "@/lib/payments/p24-config";
 import { isPayuConfigured } from "@/lib/payments/payu-config";
+import { isStoreApp } from "@/lib/site/store-app-server";
 import { OWN_TAKE_RAW_DOWNLOADS_DAILY } from "@/config/recording";
 import type { PremiumTier } from "@/types/premium";
 import { aiCoverEnabled, aiCoverPerDay } from "@/lib/studio/video/ai-cover/config";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("account.premiumPage");
+  if (await isStoreApp()) return pageMetadata({ title: t("sklep.tytul"), description: t("sklep.opis"), path: "/premium" });
   return pageMetadata({ title: t("metaTitle"), description: t("metaDescription"), path: "/premium" });
 }
 
@@ -43,7 +46,12 @@ function bestQuality(tier: PremiumTier): PlanDownloadQuality | null {
   return BEST_QUALITY_ORDER.find((x) => q.includes(x)) ?? null;
 }
 
-export default function PremiumPage() {
+export default async function PremiumPage() {
+  if (await isStoreApp()) return <PremiumStoreAppNotice />;
+  return <PremiumPriceList />;
+}
+
+function PremiumPriceList() {
   const tr = useTranslations("account.premiumPage");
   const locale = useLocale();
   const money = new Intl.NumberFormat(locale === "en" ? "en-GB" : "pl-PL", { style: "currency", currency: "PLN", minimumFractionDigits: 0, maximumFractionDigits: 2 });

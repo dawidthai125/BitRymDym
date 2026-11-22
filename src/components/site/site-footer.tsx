@@ -1,15 +1,20 @@
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 import { LanguageSwitcher } from "@/components/site/language-switcher";
+import { InstallAppButton } from "@/components/site/pwa-install";
 import { siteConfig } from "@/config/site";
 import { LEGAL_PATHS } from "@/lib/legal/legal-config";
+import { isStoreApp } from "@/lib/site/store-app-server";
 
-export function SiteFooter() {
-  const t = useTranslations("common.legal");
-  const nav = useTranslations("nav.items");
-  const shelf = useTranslations("community.shelf");
-  const menu = useTranslations("nav.siteMainNav");
+export async function SiteFooter() {
+  const [t, nav, shelf, menu, storeApp] = await Promise.all([
+    getTranslations("common.legal"),
+    getTranslations("nav.items"),
+    getTranslations("community.shelf"),
+    getTranslations("nav.siteMainNav"),
+    isStoreApp(),
+  ]);
   return (
     <footer className="border-t border-[var(--brd-line)] px-4 py-6 sm:px-6">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 text-sm text-[var(--brd-ink-soft)]">
@@ -26,7 +31,11 @@ export function SiteFooter() {
           <Link href="/nagrywarka" className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{nav("recorder")}</Link>
           <Link href="/jak-nagrac" className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{nav("howTo")}</Link>
           <Link href="/about" className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{nav("about")}</Link>
-          <Link href="/premium" className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{nav("premium")}</Link>
+          {/* Store app: no plan / purchase links (store rules). */}
+          {storeApp ? null : (
+            <Link href="/premium" className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{nav("premium")}</Link>
+          )}
+          <InstallAppButton />
         </nav>
         <nav aria-label={t("nawigacja")} className="flex flex-wrap gap-x-4 gap-y-0">
           <Link href={LEGAL_PATHS.terms} className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{t("regulamin")}</Link>

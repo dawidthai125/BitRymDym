@@ -20,6 +20,7 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { loadFeaturedWorkOfWeek } from "@/lib/catalog/featured-work-server";
+import { isStoreApp } from "@/lib/site/store-app-server";
 import { presentBeats } from "@/lib/ui/demo-beats";
 import type { PremiumTier } from "@/types/premium";
 import { cn } from "@/lib/utils";
@@ -102,6 +103,7 @@ export default async function HomePage() {
   // Null (no feature this week / work withdrawn / table missing) → the section is not rendered.
   const featuredPromise = loadFeaturedWorkOfWeek().catch(() => null);
   const session = await getCurrentProfile();
+  const storeApp = await isStoreApp();
   const steps = [
     { title: tc("wybierzBit"), body: t("krokBit", { s: GUEST_POLICY.previewSeconds }) },
     { title: tc("zalozKonto"), body: tc("doNagraniaIStudio") },
@@ -452,7 +454,8 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* PREMIUM — the one neon sign */}
+        {/* PREMIUM — the one neon sign. Store app: no plans / prices (store rules). */}
+        {storeApp ? null : (
         <section id="premium" aria-labelledby="home-premium" className="border-b border-tape-line bg-[#0a0807]">
           <div className={`${wrap} py-[var(--tape-section-y)]`}>
             <h2
@@ -578,6 +581,7 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+        )}
 
         {/* CLOSING POSTER */}
         <section aria-labelledby="home-cta">

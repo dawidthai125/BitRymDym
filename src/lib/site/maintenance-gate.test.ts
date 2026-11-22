@@ -53,6 +53,12 @@ describe("classifyMaintenancePath", () => {
     ["/regulamin", "exempt"],
     ["/polityka-prywatnosci", "exempt"],
     ["/cookies", "exempt"],
+    // PWA: worker, manifest, offline page and icons keep working during maintenance.
+    ["/sw.js", "exempt"],
+    ["/manifest.webmanifest", "exempt"],
+    ["/offline", "exempt"],
+    ["/icons/icon-192.png", "exempt"],
+    ["/offline/x", "page"],
     ["/regulamin/x", "page"],
     ["/polityka-prywatnosci-x", "page"],
     ["/cookies/x", "page"],

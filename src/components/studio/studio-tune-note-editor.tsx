@@ -1,5 +1,6 @@
 "use client";
 
+import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
@@ -166,9 +167,11 @@ export function StudioTuneNoteEditor({
         <p className="font-semibold text-[var(--brd-ink)]">🔒 {t("tytul")}</p>
         <MiniRollTeaser />
         <p>{t("lock")}</p>
-        <a href="/premium" className="inline-flex min-h-9 items-center font-semibold text-[var(--brd-ink)] underline underline-offset-4">
-          {t("zobaczGold")}
-        </a>
+        <StoreAppHidden>
+          <a href="/premium" className="inline-flex min-h-9 items-center font-semibold text-[var(--brd-ink)] underline underline-offset-4">
+            {t("zobaczGold")}
+          </a>
+        </StoreAppHidden>
       </div>
     );
   }

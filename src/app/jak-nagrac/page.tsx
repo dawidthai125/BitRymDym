@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/site/app-shell";
 import { pageMetadata } from "@/config/site";
@@ -7,6 +6,7 @@ import { LicenseSummary } from "@/components/site/license-summary";
 import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { PLAN_POLICY } from "@/config/plan-policy";
+import { isStoreApp } from "@/lib/site/store-app-server";
 import { FREE_WATERMARK_PER_DAY, freeWatermarkDownloadEnabled } from "@/lib/studio/deliver/policy";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -16,8 +16,9 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 
 const PLANS = ["FREE", "BRONZE", "SILVER", "GOLD"] as const;
 
-export default function HowToRecordPage() {
-  const t = useTranslations("common.howToPage");
+export default async function HowToRecordPage() {
+  const t = await getTranslations("common.howToPage");
+  const storeApp = await isStoreApp();
   const download = (tier: (typeof PLANS)[number]) => {
     const q = PLAN_POLICY[tier].downloads.qualities;
     if (tier === "FREE" && freeWatermarkDownloadEnabled()) return t("pobranieZnak", { n: FREE_WATERMARK_PER_DAY });
@@ -87,7 +88,7 @@ export default function HowToRecordPage() {
 
           <div className="mt-8 flex flex-wrap gap-2">
             <BrdLink href="/beats">{t("przegladajBity")}</BrdLink>
-            <BrdLink href="/premium" variant="secondary">{t("zobaczPlany")}</BrdLink>
+            {storeApp ? null : <BrdLink href="/premium" variant="secondary">{t("zobaczPlany")}</BrdLink>}
           </div>
         </PageFrame>
       </main>

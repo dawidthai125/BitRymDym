@@ -1,5 +1,6 @@
 "use client";
 
+import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -102,9 +103,11 @@ export function StudioAiLyricsPanel({ projectId, currentText, onInsert }: Props)
     return (
       <p data-testid="studio-ai-lyrics-locked" className="rounded border border-[var(--brd-line)] p-2 text-xs text-[var(--brd-mute)]">
         {t("odSilver")}{" "}
-        <Link href="/premium" className="underline">
-          {t("zobaczPlany")}
-        </Link>
+        <StoreAppHidden>
+          <Link href="/premium" className="underline">
+            {t("zobaczPlany")}
+          </Link>
+        </StoreAppHidden>
       </p>
     );
   }

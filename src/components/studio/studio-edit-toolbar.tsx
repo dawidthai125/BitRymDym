@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { LockedAction } from "@/components/plans/locked-action";
+import { useStoreApp } from "@/components/site/store-app-context";
 import { Button } from "@/components/ui/button";
 import {
   formatStudioTrackCapacityLabel,
@@ -70,6 +71,8 @@ export type StudioEditToolbarProps = {
 export function StudioEditToolbar(props: StudioEditToolbarProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioEditToolbar");
+  // Store app: no "change plan" link.
+  const storeApp = useStoreApp();
   const [toolbarMoreOpen, setToolbarMoreOpen] = useState(false);
   const moreButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -233,7 +236,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
             ))}
           </span>
         </span>
-        {props.showUpgradeCta ? (
+        {props.showUpgradeCta && !storeApp ? (
           <Link
             href={STUDIO_TRACK_UPGRADE_HREF}
             data-testid="studio-track-upgrade-cta"

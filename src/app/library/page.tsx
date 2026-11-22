@@ -7,6 +7,7 @@ import { AppShell } from "@/components/site/app-shell";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { isStoreApp } from "@/lib/site/store-app-server";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("beats.libraryPage");
@@ -17,6 +18,7 @@ export default async function LibraryPage() {
   const t = await getTranslations("beats.libraryPage");
   const session = await getCurrentProfile();
   if (!session) redirect(signInPathWithNext("/library"));
+  const storeApp = await isStoreApp();
 
   return (
     <AppShell tone="studio">
@@ -34,7 +36,7 @@ export default async function LibraryPage() {
               title={t("ulubione")}
               meta={t("zapisaneBity")}
             />
-            <LibLink href="/beats?katalog=moj" title={t("kupione")} meta={t("kupioneBity")} />
+            <LibLink href="/beats?katalog=moj" title={t("kupione")} meta={t(storeApp ? "kupioneBitySklep" : "kupioneBity")} />
             <LibLink href="/account/shared" title={t("udostepnione")} meta={t("bityOdInnych")} />
           </ul>
         </PageFrame>

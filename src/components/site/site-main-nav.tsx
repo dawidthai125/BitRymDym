@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useStoreApp } from "@/components/site/store-app-context";
 import {
   isSiteNavHrefActive,
   siteNavLinkClass,
@@ -27,13 +28,16 @@ export function SiteMainNav() {
   const t = useTranslations("nav.siteMainNav");
   const tItem = useTranslations("nav.items");
   const pathname = usePathname();
+  // Store app: no Premium (purchase) entry.
+  const storeApp = useStoreApp();
+  const visible = storeApp ? items.filter((item) => item.href !== "/premium") : items;
 
   return (
     <nav
       className="hidden min-w-0 flex-nowrap items-center lg:flex"
       aria-label={t("glowneMenu")}
     >
-      {items.map((item) => {
+      {visible.map((item) => {
         const active = isSiteNavHrefActive(pathname, item.href);
         return (
           <Link
