@@ -308,7 +308,8 @@
         "month": "w tym miesiącu",
         "total": "razem",
         "perProject": "bit się nie liczy"
-      }
+      },
+      "dokup": "Dokup: {co}"
     },
     "guestPreview": {
       "tytul": "To był {s}-sekundowy podgląd",

@@ -18,6 +18,9 @@ import {
 import { cn } from "@/lib/utils";
 import type { PremiumTier } from "@/types/premium";
 
+/** Usage rows a one-off pack tops up (PLAN_PACK_CATALOG: take, master). */
+const BUYABLE_ITEMS = new Set(["recordingsToday", "masters"]);
+
 export { invalidatePlanUsageCache, requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
 
 const TIER_LABEL: Record<PremiumTier, string> = {
@@ -205,6 +208,7 @@ export function PlanBadge({ userKey }: { userKey: string }) {
                           : ""}
                       </span>
                     </span>
+                    <span className="flex shrink-0 items-baseline gap-2">
                     <span
                       className={cn(
                         "shrink-0 font-mono text-sm tabular-nums",
@@ -217,6 +221,20 @@ export function PlanBadge({ userKey }: { userKey: string }) {
                     >
                       {item.locked ? "🔒 " : ""}
                       {value(item)}
+                    </span>
+                    {BUYABLE_ITEMS.has(item.id) && !item.locked ? (
+                      // Owner 2026-11-22: limits that packs top up get a gold "+" to the packs.
+                      <Link
+                        href="/premium#pakiety"
+                        onClick={() => setOpen(false)}
+                        aria-label={t("dokup", { co: t(`pozycja.${item.id}`) })}
+                        title={t("dokup", { co: t(`pozycja.${item.id}`) })}
+                        data-testid={`plan-usage-buy-${item.id}`}
+                        className="inline-flex size-7 items-center justify-center self-center rounded-full border border-[var(--brd-amber)] font-mono text-base font-bold leading-none text-[var(--brd-amber)] hover:bg-[var(--brd-amber)] hover:text-[var(--brd-paper)]"
+                      >
+                        +
+                      </Link>
+                    ) : null}
                     </span>
                   </li>
                 ))}

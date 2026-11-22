@@ -308,7 +308,8 @@
         "month": "this month",
         "total": "total",
         "perProject": "the beat does not count"
-      }
+      },
+      "dokup": "Buy more: {co}"
     },
     "guestPreview": {
       "tytul": "That was a {s}-second preview",

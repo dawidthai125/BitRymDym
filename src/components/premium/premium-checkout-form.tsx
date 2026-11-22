@@ -194,7 +194,7 @@ export function PremiumCheckoutForm({
       </form>
 
       {loggedIn ? (
-        <div className="border-t border-[var(--brd-line)] pt-6" data-testid="premium-extra-consent">
+        <div id="pakiety" className="scroll-mt-24 border-t border-[var(--brd-line)] pt-6" data-testid="premium-extra-consent">
           <PurchaseConsent value={extraConsent} onChange={setExtraConsent} />
         </div>
       ) : null}
