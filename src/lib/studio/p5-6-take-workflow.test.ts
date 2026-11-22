@@ -81,7 +81,7 @@ describe("P5.6 auto-place decoupling", () => {
 
   it("READY_TAKE Keep block sits above catalog chrome and asks for Zachowaj", () => {
     const panel = readFileSync(panelPath, "utf8");
-    const workflowIdx = panel.indexOf('aria-label="Przebieg nagrania w Studio"');
+    const workflowIdx = panel.indexOf('aria-label="Przebieg nagrania w Studiu"');
     const catalogIdx = panel.indexOf("<StudioSampleDesk");
     expect(workflowIdx).toBeGreaterThan(-1);
     expect(catalogIdx).toBeGreaterThan(workflowIdx);
@@ -89,7 +89,7 @@ describe("P5.6 auto-place decoupling", () => {
       /Nagranie gotowe — kliknij „Zachowaj”, żeby wstawić je na ścieżkę\./,
     );
     expect(panel).toMatch(/takeWorkflowRef\.current\?\.scrollIntoView/);
-    expect(panel).toMatch(/aria-label="Przebieg nagrania w Studio"/);
+    expect(panel).toMatch(/aria-label="Przebieg nagrania w Studiu"/);
   });
 
   it("Keep places via existing place endpoint; Discard uses /api/takes/delete", () => {
@@ -223,7 +223,7 @@ describe("P5.6 preview / transport isolation", () => {
     expect(panel).toMatch(/stopTakePreview/);
     expect(panel).not.toMatch(/PlayerProvider/);
     expect(panel).toMatch(/Moje nagrania/);
-    expect(panel).toMatch(/Umieść w Studio/);
+    expect(panel).toMatch(/Umieść w Studiu/);
   });
 });
 

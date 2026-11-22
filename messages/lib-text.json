@@ -514,7 +514,7 @@
   "en": "The expiry date must be in the future."
  },
  {
-  "src": "Projekt w Studio się zmienił. Odśwież go i uruchom eksport ponownie.",
+  "src": "Projekt w Studiu się zmienił. Odśwież go i uruchom eksport ponownie.",
   "en": "The Studio document changed. Refresh the project and start the export again."
  },
  {
@@ -666,7 +666,7 @@
   "en": "The account was deleted. The history entry could not be saved."
  },
  {
-  "src": "Kopia nagrania jest gotowa, ale nie udało się umieścić klipu w Studio.",
+  "src": "Kopia nagrania jest gotowa, ale nie udało się umieścić klipu w Studiu.",
   "en": "The TAKE copy is ready, but the clip could not be placed in Studio."
  },
  {
@@ -1752,7 +1752,7 @@
   "en": "This beat is not available for mixing."
  },
  {
-  "src": "Ten bit nie jest dostępny do użycia w Studio.",
+  "src": "Ten bit nie jest dostępny do użycia w Studiu.",
   "en": "This beat is not available for use in Studio."
  },
  {
@@ -1764,7 +1764,7 @@
   "en": "This file is blocked. It went to manual verification and can't be published."
  },
  {
-  "src": "Ten projekt nie ma bitu. Dodaj bit, aby nagrywać w Studio.",
+  "src": "Ten projekt nie ma bitu. Dodaj bit, aby nagrywać w Studiu.",
   "en": "This project has no beat. Add a beat to record in Studio."
  },
  {
@@ -1804,7 +1804,7 @@
   "en": "This request was already used with different data. No further change was made."
  },
  {
-  "src": "Trwa nagrywanie albo zapis. Jeśli teraz wyjdziesz ze studia, nagranie się urwie, a niezapisany kawałek może przepaść.",
+  "src": "Trwa nagrywanie albo zapis. Jeśli teraz wyjdziesz ze Studia, nagranie się urwie, a niezapisany kawałek może przepaść.",
   "en": "A recording is in progress or saving. If you leave Studio now, it stops and an unsaved piece may be lost."
  },
  {
@@ -2060,7 +2060,7 @@
   "en": "Expiry date change"
  },
  {
-  "src": "Zostań w Studio",
+  "src": "Zostań w Studiu",
   "en": "Stay in Studio"
  },
  {

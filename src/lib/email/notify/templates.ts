@@ -30,7 +30,7 @@ function body(kind: NotifyKind, d: TemplateData): Body {
   const studio = d.projectId ? `/studio/p/${encodeURIComponent(d.projectId)}` : "/studio";
   switch (kind) {
     case "welcome":
-      return { subject: "Witaj w BitRymDym", heading: "Konto gotowe", lines: [hi, "dzięki za założenie konta w BitRymDym. Możesz już słuchać bitów, nagrywać w Studio i wgrywać własne podkłady."], cta: { label: "Otwórz Studio", path: "/studio" } };
+      return { subject: "Witaj w BitRymDym", heading: "Konto gotowe", lines: [hi, "dzięki za założenie konta w BitRymDym. Możesz już słuchać bitów, nagrywać w Studiu i wgrywać własne podkłady."], cta: { label: "Otwórz Studio", path: "/studio" } };
     case "beat_approved":
       return { subject: `Bit „${beat}” został opublikowany`, heading: "Bit zatwierdzony", lines: [hi, `moderacja zatwierdziła bit „${beat}”. Jest już widoczny w katalogu.`], cta: { label: "Zobacz bit", path: d.beatId ? `/beat/${encodeURIComponent(d.beatId)}` : "/account/beats" } };
     case "beat_rejected":

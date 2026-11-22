@@ -244,7 +244,7 @@ export async function resolveStudioRecordingBeatIdFor(
   if (!beatId) {
     throw new AuthError(
       "FORBIDDEN",
-      "Ten projekt nie ma bitu. Dodaj bit, aby nagrywać w Studio.",
+      "Ten projekt nie ma bitu. Dodaj bit, aby nagrywać w Studiu.",
     );
   }
   return {

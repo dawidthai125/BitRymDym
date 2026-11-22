@@ -119,7 +119,7 @@ export async function copyCatalogAndPlaceStudioClip(
       status: placeRes.status || 500,
       error: readErrorMessage(
         placeBody,
-        "Kopia nagrania jest gotowa, ale nie udało się umieścić klipu w Studio.",
+        "Kopia nagrania jest gotowa, ale nie udało się umieścić klipu w Studiu.",
       ),
     };
   }
@@ -217,7 +217,7 @@ export async function placeOwnedStudioSample(
       status: placeRes.status || 500,
       error: readErrorMessage(
         placeBody,
-        "Sampel jest gotowy, ale nie udało się umieścić klipu w Studio.",
+        "Sampel jest gotowy, ale nie udało się umieścić klipu w Studiu.",
       ),
     };
   }

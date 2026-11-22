@@ -241,7 +241,7 @@ describe("STU-12 B — stay / leave", () => {
     const { win, intents } = setup();
     const link = fakeAnchor(win, "/library");
     link.userClick();
-    // dialog "Zostań w Studio" just drops the intent — nothing is replayed
+    // dialog "Zostań w Studiu" just drops the intent — nothing is replayed
     expect(link.anchor.click).not.toHaveBeenCalled();
     expect(win.location.assign).not.toHaveBeenCalled();
     link.userClick();

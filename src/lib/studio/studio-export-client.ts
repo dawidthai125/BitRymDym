@@ -294,7 +294,7 @@ export function mapStudioExportHttpResult(input: {
       httpStatus,
       code: "CONFLICT",
       message:
-        "Projekt w Studio się zmienił. Odśwież go i uruchom eksport ponownie.",
+        "Projekt w Studiu się zmienił. Odśwież go i uruchom eksport ponownie.",
     };
   }
 

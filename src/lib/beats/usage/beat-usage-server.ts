@@ -74,7 +74,7 @@ export async function viewerPurchasedPaidBeat(
 export const BEAT_RECORD_NOT_ALLOWED = "Recording is not allowed on this beat.";
 
 export const BEAT_STUDIO_USE_DENIED_MESSAGE =
-  "Ten bit nie jest dostępny do użycia w Studio.";
+  "Ten bit nie jest dostępny do użycia w Studiu.";
 
 /**
  * Studio attach / project create / take recording AuthZ for a signed-in user
