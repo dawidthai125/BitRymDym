@@ -47,6 +47,18 @@ export function artworkVariantForId(beatId: string): number {
   return (h >>> 0) % 12;
 }
 
+/**
+ * 2026-11-22: catalog showed only the root ("A"), so minor and major looked the same.
+ * Short musical label like the key detector ("Am" = a-moll, "C" = C-dur).
+ */
+export function presentKey(key: string | null | undefined, scale: string | null | undefined): string | null {
+  const root = key?.trim();
+  if (!root) return null;
+  const s = scale?.trim().toLowerCase();
+  const minor = s === "minor" || s === "moll" || s === "m";
+  return minor && !root.endsWith("m") ? `${root}m` : root;
+}
+
 function toPresented(raw: PresentableInput): PresentedBeat {
   const title = raw.title?.trim() ?? "";
   const producer = raw.producer?.trim() || "—";
@@ -56,7 +68,7 @@ function toPresented(raw: PresentableInput): PresentedBeat {
     producer,
     genre: raw.genre?.trim() || null,
     mood: null,
-    key: raw.key?.trim() || null,
+    key: presentKey(raw.key, raw.scale),
     bpm: Number.isFinite(raw.bpm) ? raw.bpm : 0,
     durationSeconds: Number.isFinite(raw.durationSeconds)
       ? Math.max(0, raw.durationSeconds)

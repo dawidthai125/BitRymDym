@@ -212,3 +212,16 @@ describe("presentBeats — real catalog read path", () => {
     }).artworkVariant).toBe(artworkVariantForId(id));
   });
 });
+
+import { presentKey } from "@/lib/ui/demo-beats";
+
+describe("presentKey (catalog key label)", () => {
+  it("adds m for minor, leaves major and empty alone", () => {
+    expect(presentKey("A", "minor")).toBe("Am");
+    expect(presentKey("G#", "minor")).toBe("G#m");
+    expect(presentKey("C", "major")).toBe("C");
+    expect(presentKey("E", null)).toBe("E");
+    expect(presentKey(null, "minor")).toBeNull();
+    expect(presentKey("Am", "minor")).toBe("Am");
+  });
+});
