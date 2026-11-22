@@ -347,7 +347,7 @@
       "tytul": "Share",
       "kopiuj": "Copy link",
       "skopiowano": "Copied ✓",
-      "wiecej": "More…",
+      "natywnie": "Share…",
       "udostepnijW": "Share on {serwis}",
       "serwis": {
         "facebook": "Facebook",
@@ -355,7 +355,9 @@
         "whatsapp": "WhatsApp"
       },
       "ogBit": "Beat",
-      "ogOdsluch": "Private listen"
+      "ogOdsluch": "Private listen",
+      "ogUtwor": "Finished track",
+      "ogMarka": "Free beats · Online studio"
     }
   },
   "account": {
@@ -657,6 +659,10 @@
         "pakietMaster": "5 masters",
         "pakietYoutube": "{n} YouTube MP4s",
         "pakietPrzycisk": "Buy this pack",
+        "startOdznaka": "-30% to start",
+        "startLinia": "New account, so one pack is 30% off. {h} h left.",
+        "startOmnibus": "Lowest price in the 30 days before the discount: {cena}",
+        "startRegularna": "Regular price:",
         "blok": {
           "PENDING_PLAN": "Another lower plan is already scheduled. It waits until that one starts.",
           "PERPETUAL": "You already have access with no end date — a payment won't shorten it.",
@@ -674,6 +680,7 @@
           "PROVIDER": "PayU didn't accept the order. I didn't charge anything — try again.",
           "ORIGIN": "That request didn't come from the BitRymDym site.",
           "LOGIN": "Sign in and I'll open the payment.",
+          "PROMO": "The starter discount no longer applies to this account. Refresh the page to see the current price.",
           "PENDING_PLAN": "A different lower plan is already scheduled. I won't take this one until that plan starts.",
           "PERPETUAL": "You already have access with no end date — a payment won't shorten it.",
           "ADDON_INCLUDED": "On Gold, reference mastering is included.",
@@ -766,7 +773,7 @@
       "moderacjaEtykieta": "Beat moderation",
       "moderacjaOpis": "Moderation result for your beats (approved / rejected).",
       "studioEtykieta": "Studio",
-      "studioOpis": "Master ready and MP4 video ready.",
+      "studioOpis": "Master and MP4 video ready, recordings about to expire and a reminder to record your first take.",
       "zapisz": "Save notifications",
       "zapisywanie": "Saving…",
       "zapisano": "Saved.",
@@ -1746,7 +1753,19 @@
       "czystaListaBitowBez": "A clean list of beats. No banners, no hustle.",
       "programWindows": "Windows app. Mac coming soon. An account to download and sign in.",
       "cicho": "Quiet.",
-      "nieMaJeszczeOpublikowanych": "There are no published beats yet."
+      "nieMaJeszczeOpublikowanych": "There are no published beats yet.",
+      "gatunkiAria": "Free beats by genre",
+      "gatunki": "Genres:"
+    },
+    "genrePage": {
+      "metaTitle": "Free {genre} beats — listen and record online",
+      "metaDescription": "Free {genre} beats for rap. Listen for free, pick a beat and record your verse in the BitRymDym online Studio, right in the browser.",
+      "notFoundTitle": "No such genre",
+      "h1": "Free {genre} beats",
+      "lead": "Only {genre} beats, all free. Listen, pick one, and when it clicks, record your verse in the online Studio. Nothing to install, no hassle.",
+      "licznik": "{count, plural, one {# beat} other {# beats}} · listen, then record",
+      "wszystkieBity": "← All beats",
+      "inneGatunki": "Other genres"
     },
     "beatsUploadPage": {
       "metaTitle": "Add beat",
@@ -4789,6 +4808,8 @@
       "commentsOn": "Comments on",
       "commentsOff": "No comments",
       "inRank": "In the rankings",
+      "shareDescription": "“{title}” — {author}. A finished track after mix and master, made in BitRymDym Studio. Come check it out.",
+      "shareText": "“{title}” — {author}. Check out this track on BitRymDym",
       "rankTitle": "Track ranking",
       "rankLead": "Week, month, and Top100 All Time, Europe/Warsaw. You cannot rate your own track. A ranking entry requires the owner to allow both ratings and comments.",
       "week": "Week",
@@ -4818,6 +4839,7 @@
       "saving": "Saving",
       "saved": "Saved.",
       "withdrawn": "The track left the catalogue.",
+      "shareLead": "Your track is in the catalogue. Send the link to your crew:",
       "invalid": "Check the title (1–80 characters) and try again.",
       "off": "The finished-track catalogue turns on after the database update.",
       "missing": "Approve the master first.",

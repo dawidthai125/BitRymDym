@@ -80,7 +80,8 @@ export async function POST(request: Request) {
           { status: 429, headers: { "cache-control": "no-store", "retry-after": "3600" } },
         );
       }
-      const status = result.code === "PROVIDER" ? 502 : 400;
+      // PROMO: the starter discount the page showed is no longer available (409, the page reloads prices).
+      const status = result.code === "PROVIDER" ? 502 : result.code === "PROMO" ? 409 : 400;
       return NextResponse.json({ ok: false, code: result.code }, { status, headers: { "cache-control": "no-store" } });
     }
     const payuConfig = payu ? readPayuConfig() : null;

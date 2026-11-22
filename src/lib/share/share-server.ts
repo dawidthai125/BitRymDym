@@ -7,6 +7,7 @@ import "server-only";
 import { loadBeatCoverForViewer } from "@/lib/beats/cover/cover-service";
 import { toPublicBeatDetail } from "@/lib/beats/public";
 import { getPublishedBeat } from "@/lib/beats/service";
+import { findLiveCatalogWork } from "@/lib/catalog/catalog-service";
 import { resolveListenToken } from "@/lib/studio/listen/listen-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { presentBeat } from "@/lib/ui/demo-beats";
@@ -35,10 +36,29 @@ export async function beatShareData(beatId: string): Promise<ShareCardData | nul
 export async function listenShareData(token: string): Promise<ShareCardData | null> {
   const link = await resolveListenToken(token).catch(() => null);
   if (!link) return null;
+  return { title: clampText(link.title, 70), meta: null, cover: await publicCover(await projectBeatId(link.projectId)) };
+}
+
+/** Beat behind a Studio project (its cover goes on the card, still only when public). */
+async function projectBeatId(projectId: string | null | undefined): Promise<string | null> {
+  if (!projectId || !UUID.test(projectId)) return null;
+  const { data } = await createSupabaseAdminClient().from("studio_projects").select("beat_id").eq("id", projectId).maybeSingle();
+  return ((data as { beat_id?: string | null } | null)?.beat_id ?? null) as string | null;
+}
+
+/**
+ * Finished track (/utwor/[id]). Visibility = `findLiveCatalogWork` (same gate as the page):
+ * withdrawn or unknown → null → neutral brand card. Cover = the track's beat cover, only when public.
+ */
+export async function workShareData(workId: string): Promise<ShareCardData | null> {
+  const work = await findLiveCatalogWork(workId).catch(() => null);
+  if (!work) return null;
   let beatId: string | null = null;
-  if (link.projectId) {
-    const { data } = await createSupabaseAdminClient().from("studio_projects").select("beat_id").eq("id", link.projectId).maybeSingle();
-    beatId = ((data as { beat_id?: string | null } | null)?.beat_id ?? null) as string | null;
+  try {
+    const { data } = await createSupabaseAdminClient().from("catalog_works").select("project_id").eq("id", work.id).maybeSingle();
+    beatId = await projectBeatId((data as { project_id?: string | null } | null)?.project_id);
+  } catch {
+    beatId = null;
   }
-  return { title: clampText(link.title, 70), meta: null, cover: await publicCover(beatId) };
+  return { title: clampText(work.title, 70), meta: clampText(work.author, 60) || null, cover: await publicCover(beatId) };
 }

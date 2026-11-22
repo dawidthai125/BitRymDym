@@ -49,6 +49,7 @@ from account_upload import (
     SITE,
     SiteClient,
     UploadState,
+    forget_spent_send,
     friendly_upload_error,
     give_back_send,
     drop_empty_project,
@@ -4218,6 +4219,11 @@ class RecorderWindow:
                     if kept is not self._pending and kept is not None:
                         self._pending = kept
                         save_pending(kept)
+                # The held send expired or is bound elsewhere: the next try claims a fresh one.
+                cleared = forget_spent_send(self._pending, message)
+                if cleared is not self._pending and cleared is not None:
+                    self._pending = cleared
+                    save_pending(cleared)
             self.root.after(0, lambda: self._upload_done(None, message))
             return
         self.root.after(0, lambda: self._upload_done(project, ""))

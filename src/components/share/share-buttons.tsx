@@ -3,12 +3,15 @@
 import { useTranslations } from "next-intl";
 import { useState, useSyncExternalStore } from "react";
 
-import { SHARE_TARGETS, shareUrl } from "@/lib/share/share-links";
+import { SHARE_TARGETS, shareUrl, tryNativeShare } from "@/lib/share/share-links";
 
 const noop = () => () => {};
 
-/** Copy link + Facebook / X / WhatsApp (+ the system share sheet on phones). Plain links, no SDKs. */
-export function ShareButtons({ url, text, testId = "share-buttons", compact = false }: { url: string; text: string; testId?: string; compact?: boolean }) {
+/**
+ * System share sheet first on phones (Web Share API → Instagram, WhatsApp, Messenger…), then copy link
+ * + Facebook / X / WhatsApp. If the share sheet fails, the link is copied instead. Plain links, no SDKs.
+ */
+export function ShareButtons({ url, text, title, testId = "share-buttons", compact = false }: { url: string; text: string; title?: string; testId?: string; compact?: boolean }) {
   const t = useTranslations("common.share");
   const [copied, setCopied] = useState(false);
   // Client-only capability; false on the server so hydration matches.
@@ -25,19 +28,24 @@ export function ShareButtons({ url, text, testId = "share-buttons", compact = fa
     }
   }
 
+  async function share() {
+    const r = await tryNativeShare(navigator, { url, text, ...(title ? { title } : {}) });
+    if (r === "unsupported" || r === "failed") await copy();
+  }
+
   return (
     <div className="flex flex-col gap-2" data-testid={testId}>
       {!compact ? <p className="text-sm font-semibold">{t("tytul")}</p> : null}
       <div className="flex flex-wrap gap-2">
+        {canNative ? (
+          <button type="button" className={`${btn} border-[var(--brd-ink)] font-semibold`} onClick={() => void share()} data-testid={`${testId}-native`}>{t("natywnie")}</button>
+        ) : null}
         <button type="button" className={btn} onClick={() => void copy()} data-testid={`${testId}-copy`} aria-live="polite">{copied ? t("skopiowano") : t("kopiuj")}</button>
         {SHARE_TARGETS.map((s) => (
           <a key={s} href={shareUrl(s, url, text)} target="_blank" rel="noopener noreferrer" className={btn} data-testid={`${testId}-${s}`} aria-label={t("udostepnijW", { serwis: t(`serwis.${s}`) })}>
             {t(`serwis.${s}`)}
           </a>
         ))}
-        {canNative ? (
-          <button type="button" className={btn} onClick={() => void navigator.share({ url, text }).catch(() => {})} data-testid={`${testId}-native`}>{t("wiecej")}</button>
-        ) : null}
       </div>
     </div>
   );

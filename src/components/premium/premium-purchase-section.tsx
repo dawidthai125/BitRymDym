@@ -1,11 +1,13 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { PLAN_ADDON_PRICE_PLN, PLAN_PACK_CATALOG, PLAN_POLICY, youtubePackOffer, type PaidTier, type PlanPack } from "@/config/plan-policy";
-import { PremiumCheckoutForm } from "@/components/premium/premium-checkout-form";
+import { PremiumCheckoutForm, type StarterPackView } from "@/components/premium/premium-checkout-form";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { tierBlocks } from "@/lib/payments/checkout-service";
 import { checkoutBlock, isLivePaid } from "@/lib/payments/entitlement-grant";
+import { checkoutPrice } from "@/lib/payments/money";
+import { loadStarterOffer } from "@/lib/payments/starter-offer";
 import { loadAddonSnapshot, loadPlanSnapshot } from "@/lib/payments/snapshots";
 
 const TIERS: PaidTier[] = ["BRONZE", "SILVER", "GOLD"];
@@ -49,6 +51,21 @@ export async function PremiumPurchaseSection() {
   const now = new Date();
   const live = isLivePaid(plan, now) ? plan : null;
   const youtubeOffer = youtubePackOffer(live?.tier ?? null);
+  // Starter offer: logged in, account under 48 h, no discounted order yet. Same server price as checkout.
+  const offer = context && !readFailed ? await loadStarterOffer(context.userId, now) : null;
+  const starter: StarterPackView | null = offer
+    ? {
+        hoursLeft: offer.hoursLeft,
+        packs: Object.fromEntries(
+          (["take", "master", "youtube"] as const)
+            .filter((pack) => pack !== "youtube" || youtubeOffer)
+            .map((pack) => {
+              const price = checkoutPrice({ kind: "pack", pack }, live?.tier ?? "FREE", true);
+              return [pack, { price: format.format(price.amountGrosz / 100), regular: format.format((price.regularAmountGrosz ?? price.amountGrosz) / 100) }];
+            }),
+        ) as StarterPackView["packs"],
+      }
+    : null;
   const currentLine = live
     ? live.expiresAt
       ? tr("maszDo", { plan: live.tier, data: formatDate(live.expiresAt, lang) })
@@ -68,6 +85,7 @@ export async function PremiumPurchaseSection() {
         youtube: youtubeOffer ? format.format(youtubeOffer.pricePln) : "",
       } satisfies Record<PlanPack, string>}
       youtubeUnits={youtubeOffer?.units ?? 0}
+      starter={starter}
       youtubeBlock={context && !readFailed && !youtubeOffer ? "PACK_NEEDS_PAID" : null}
       tierBlock={context && !readFailed ? tierBlocks(plan, addon, now) : { BRONZE: null, SILVER: null, GOLD: null }}
       addonBlock={context && !readFailed ? checkoutBlock({ kind: "addon", addon: "reference_mastering", period: "month" }, plan, addon, now) : null}

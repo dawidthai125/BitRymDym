@@ -405,11 +405,12 @@ def upload_vocals(
             track_ids=[vocal_track_id(document)],
             track_of=lanes if clip_mode else [],
             starts_ms=starts if clip_mode else [],
+            send_id=send_id,
         )
         saved(state)
     else:
         say(f"Dokańczam wysyłkę: {resume.summary()}.")
-        state = resume
+        state = _with_send(resume, send_id)
     pid = state.project_id
     try:
         while len(state.track_ids) < track_count:
@@ -430,6 +431,7 @@ def upload_vocals(
                     "sourceOffsetMs": 0,
                     "durationMs": wav_duration_ms(wav),
                     "expectedDocumentVersion": state.version,
+                    **_send_field(state.send_id),
                 },
             )
             state.version = _version(placed)
@@ -465,7 +467,7 @@ def _upload_timeline(
     send_id: str = "",
 ) -> str:
     """One recorder send: project, tracks, then each take uploaded and placed at once."""
-    state = resume or UploadState(
+    state = _with_send(resume, send_id) if resume is not None else UploadState(
         project_id="",
         beat_id=beat_id,
         title=title,
@@ -508,6 +510,7 @@ def _upload_timeline(
                     "sourceOffsetMs": 0,
                     "durationMs": wav_duration_ms(wav),
                     "expectedDocumentVersion": state.version,
+                    **_send_field(state.send_id),
                 },
             )
             state.version = _version(placed)
@@ -525,8 +528,34 @@ def _upload_timeline(
     return pid
 
 
+def _send_field(send_id: str) -> dict[str, str]:
+    """record/place binds exactly this daily send (site 2026-11-22). Empty id: field left out."""
+    return {"sendId": send_id} if send_id else {}
+
+
+def _with_send(state: UploadState, send_id: str) -> UploadState:
+    """A resumed send that just claimed a fresh daily send carries that id from now on."""
+    if send_id and state.send_id != send_id:
+        state.send_id = send_id
+    return state
+
+
+def forget_spent_send(state: "UploadState | None", message: str) -> "UploadState | None":
+    """record/place said DESKTOP_SEND_REQUIRED: the held send expired or is bound elsewhere.
+    The resume state keeps its clips but drops the id, so the next send claims a fresh one."""
+    if state is None or not state.send_id or "DESKTOP_SEND_REQUIRED" not in message:
+        return state
+    return replace(state, send_id="")
+
+
 def friendly_upload_error(text: str) -> str:
     """Site limit codes in plain Polish. Other text stays as it is."""
+    if "DESKTOP_SEND_REQUIRED" in text:
+        return (
+            "Ta wysyłka do Studia wygasła albo poszła już do innego projektu. "
+            "Kliknij jeszcze raz Gotowe i Wrzuć do Studia: program weźmie nową wysyłkę z dziennego limitu "
+            "i dokończy ten projekt."
+        )
     if "desktop_send_limit" in text:
         return "Na dziś wysyłki do Studia z programu są wykorzystane. Nagrania zostają w programie; wyślij je jutro."
     if "SESSION_DAY_CAP" in text:
@@ -619,6 +648,7 @@ class _FakeSite:
 
     def __init__(self) -> None:
         self.calls: list[object] = []
+        self.send_ids: list[object] = []
 
     def create_project(self, title: str, beat_id: str) -> dict[str, Any]:
         self.calls.append(("create", title, beat_id))
@@ -648,6 +678,7 @@ class _FakeSite:
 
     def place(self, project: str, body: dict[str, Any]) -> dict[str, Any]:
         self.calls.append(("place", project, body["trackId"], body["expectedDocumentVersion"], body["timelineStartMs"]))
+        self.send_ids.append(body.get("sendId"))
         return {"documentVersion": int(body["expectedDocumentVersion"]) + 1}
 
     def apply_track_fx(self, project: str, track_id: str, version: int, chain: dict[str, Any]) -> dict[str, Any]:
@@ -808,10 +839,40 @@ def _self_test_clips() -> None:
     state = UploadState.from_json({**states_first(fake), "send_id": "s1"})
     if state is None or state.send_id != "s1":
         raise SystemExit("limit wysyłek: zapis send_id")
+    _self_test_send_id_on_place(clips)
     for clip in clips:
         clip.unlink(missing_ok=True)
     _self_test_send_refund()
     _self_test_failed_send_cleanup()
+
+
+def _self_test_send_id_on_place(clips: list[Path]) -> None:
+    """Every record/place carries the claimed daily send; a resume takes over a fresh one."""
+    sid = "0f0e0d0c-0b0a-4908-8706-050403020100"
+    fake = _FakeSite()
+    last: list[UploadState] = []
+    upload_vocals(fake, title="K", beat_id="b1", wav_paths=clips, track_of=[0, 0, 1], starts_ms=[0, 1, 2], send_id=sid, on_state=last.append)  # type: ignore[arg-type]
+    if fake.send_ids != [sid, sid, sid] or last[-1].send_id != sid:
+        raise SystemExit(f"limit wysyłek: sendId przy wstawianiu {fake.send_ids}")
+    fake = _FakeSite()
+    upload_vocals(fake, title="K", beat_id="b1", wav_paths=clips, track_of=[0, 0, 1], starts_ms=[0, 1, 2])  # type: ignore[arg-type]
+    if fake.send_ids != [None, None, None]:
+        raise SystemExit("limit wysyłek: bez identyfikatora pole sendId nie jedzie")
+    fresh = "11111111-2222-4333-8444-555555555555"
+    stale = replace(last[-1], placed=1, send_id="")
+    fake = _FakeSite()
+    upload_vocals(fake, title="K", beat_id="b1", wav_paths=clips, track_of=[0, 0, 1], starts_ms=[0, 1, 2], resume=stale, send_id=fresh)  # type: ignore[arg-type]
+    if fake.send_ids != [fresh, fresh]:
+        raise SystemExit(f"limit wysyłek: wznowienie z nową wysyłką {fake.send_ids}")
+    held = replace(last[-1], send_id=sid)
+    gone = forget_spent_send(held, 'POST /x/record/place -> 429 {"error":"desktop_send_limit","code":"DESKTOP_SEND_REQUIRED"}')
+    if gone is None or gone.send_id != "" or gone.wav_paths != held.wav_paths:
+        raise SystemExit("limit wysyłek: DESKTOP_SEND_REQUIRED zdejmuje identyfikator")
+    if forget_spent_send(held, "POST -> 500 inne") is not held or forget_spent_send(None, "DESKTOP_SEND_REQUIRED") is not None:
+        raise SystemExit("limit wysyłek: inne błędy nie ruszają stanu")
+    text = friendly_upload_error('POST /api/studio/projects/p/record/place -> 429 {"error":"desktop_send_limit","code":"DESKTOP_SEND_REQUIRED"}')
+    if "wygasła" not in text or "Na dziś" in text:
+        raise SystemExit("limit wysyłek: komunikat DESKTOP_SEND_REQUIRED")
 
 
 def _self_test_send_refund() -> None:

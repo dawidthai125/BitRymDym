@@ -438,6 +438,21 @@ export const PLAN_PACK_CATALOG: Record<Exclude<PlanPack, "youtube">, { units: nu
 };
 
 /**
+ * Owner 2026-11-22: starter offer. A new account (auth.users.created_at under `windowHours` ago)
+ * gets `percentOff` on ONE one-off pack (take / master / youtube). Not on plans, add-ons or beats.
+ * Price: server only (money.ts checkoutPrice). One per account: create_payment_order_capped
+ * refuses a second discounted order while one is pending, paid or refunded.
+ */
+export const STARTER_PACK_OFFER = { code: "starter30", percentOff: 30, windowHours: 48 } as const;
+export type PromoCode = (typeof STARTER_PACK_OFFER)["code"];
+
+/** Starter price in grosz: Math.round(regular * 0.7). 999 → 699, 1499 → 1049, 2499 → 1749. */
+export function starterPackGrosz(regularGrosz: number): number {
+  if (!Number.isSafeInteger(regularGrosz) || regularGrosz <= 0) throw new Error("PRICE_INVALID");
+  return Math.round((regularGrosz * (100 - STARTER_PACK_OFFER.percentOff)) / 100);
+}
+
+/**
  * Anti-spam cap on unfinished checkouts (PayU/P24) per user, enforced atomically in
  * create_payment_order_capped. Counts only orders still `pending` (paid / failed /
  * canceled-by-provider do not count). perHour: created in the last 60 min;
@@ -461,10 +476,17 @@ export function youtubePackOffer(tier: PremiumTier | null | undefined): { units:
   return null;
 }
 
-/** Units granted for a paid YouTube pack. Tied to the charged grosz, not the tier at webhook time. */
+/**
+ * Units granted for a paid YouTube pack. Tied to the charged grosz, not the tier at webhook time.
+ * Regular 999 → 2, 1499 / 2499 → 1; starter prices (-30%) 699 → 2, 1049 / 1749 → 1.
+ * The two price sets do not overlap, so the charged amount alone is unambiguous.
+ */
 export function youtubeUnitsForGrosz(amountGrosz: number): number | null {
-  if (amountGrosz === 999) return 2;
-  if (amountGrosz === 1499 || amountGrosz === 2499) return 1;
+  if (!Number.isSafeInteger(amountGrosz) || amountGrosz <= 0) return null;
+  for (const offer of Object.values(YOUTUBE_PACK_OFFERS)) {
+    const regular = Math.round(offer.pricePln * 100);
+    if (amountGrosz === regular || amountGrosz === starterPackGrosz(regular)) return offer.units;
+  }
   return null;
 }
 

@@ -15,6 +15,7 @@ import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { presentBeats } from "@/lib/ui/demo-beats";
+import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("beats.beatsPage");
@@ -49,6 +50,7 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
     .map(toPublicCatalogItem);
   const favoriteIds = session ? await listFavoriteBeatIds(session.userId) : [];
   const beats = presentBeats(raw);
+  const genreLinks = !mine && !paid ? collectGenres(beats) : [];
   const initialQuery =
     typeof params.q === "string" ? params.q.trim().slice(0, 80) : "";
 
@@ -100,6 +102,25 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
               </Link>
             ) : null}
           </nav>
+
+          {genreLinks.length > 0 ? (
+            <nav
+              aria-label={t("gatunkiAria")}
+              className="-mt-2 mb-4 flex flex-wrap items-center gap-x-3 text-sm text-[var(--brd-mute)]"
+              data-testid="beats-genre-links"
+            >
+              <span>{t("gatunki")}</span>
+              {genreLinks.map((g) => (
+                <Link
+                  key={g.slug}
+                  href={genrePagePath(g.slug)}
+                  className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-[var(--brd-ink)]"
+                >
+                  {g.label}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
 
           {mine ? (
             <div className="space-y-6">

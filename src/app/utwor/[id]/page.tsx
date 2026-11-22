@@ -4,10 +4,15 @@ import { notFound } from "next/navigation";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { CommunityThread } from "@/components/community/community-thread";
+import { ShareButtons } from "@/components/share/share-buttons";
 import { AppShell } from "@/components/site/app-shell";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { findLiveCatalogWork } from "@/lib/catalog/catalog-service";
 import { loadThread } from "@/lib/community/community-service";
+import { absoluteUrl, clampText } from "@/lib/share/share-links";
+import { getPublicSiteUrl } from "@/lib/site-url";
+import { workRecordingJsonLd } from "@/lib/seo/json-ld";
+import { JsonLdScript } from "@/lib/seo/json-ld-script";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -15,7 +20,16 @@ export async function generateMetadata({ params }: Props) {
   const { id } = await params;
   const work = await findLiveCatalogWork(id).catch(() => null);
   const t = await getTranslations("community.works");
-  return { title: work?.title ?? t("title") };
+  if (!work) return { title: t("title") };
+  const description = clampText(t("shareDescription", { title: work.title, author: work.author }), 200);
+  // Card image: ./opengraph-image + ./twitter-image (dynamic; brand card when the work is not live).
+  return {
+    title: work.title,
+    description,
+    alternates: { canonical: `/utwor/${work.id}` },
+    openGraph: { type: "music.song", title: work.title, description, url: `/utwor/${work.id}` },
+    twitter: { card: "summary_large_image", title: work.title, description },
+  };
 }
 
 export default async function FinishedWorkPage({ params }: Props) {
@@ -29,6 +43,16 @@ export default async function FinishedWorkPage({ params }: Props) {
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
+        <JsonLdScript
+          data={workRecordingJsonLd({
+            origin: getPublicSiteUrl(),
+            id: work.id,
+            title: work.title,
+            author: work.author,
+            datePublished: work.publishedAt,
+            image: `/utwor/${work.id}/opengraph-image`,
+          })}
+        />
         <PageFrame width="wide" className="py-5 sm:py-6">
           <CommunityShelf current="works" />
           <h1 className="font-poster text-2xl font-bold uppercase">{work.title}</h1>
@@ -40,6 +64,14 @@ export default async function FinishedWorkPage({ params }: Props) {
             {work.allowComments ? t("commentsOn") : t("commentsOff")}
             {work.inRankings ? ` · ${t("inRank")}` : ""}
           </p>
+          <div className="mt-4">
+            <ShareButtons
+              url={absoluteUrl(getPublicSiteUrl(), `/utwor/${work.id}`)}
+              text={t("shareText", { title: work.title, author: work.author })}
+              title={work.title}
+              testId="work-share"
+            />
+          </div>
           {thread?.found ? (
             <CommunityThread
               kind="work"

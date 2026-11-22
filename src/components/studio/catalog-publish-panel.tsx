@@ -3,9 +3,13 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { ShareButtons } from "@/components/share/share-buttons";
 import { Button } from "@/components/ui/button";
+import { absoluteUrl } from "@/lib/share/share-links";
 
 type Entry = {
+  id: string;
+  author?: string;
   title: string;
   allowRatings: boolean;
   allowComments: boolean;
@@ -32,6 +36,22 @@ export function CatalogPublishPanel({
   const [inRankings, setInRankings] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Live catalogue entry (id + author) → share block under the form.
+  const [live, setLive] = useState<{ id: string; title: string; author: string } | null>(null);
+
+  function applyLive(entry: Entry | null | undefined) {
+    setLive(entry?.listed && entry.id ? { id: entry.id, title: entry.title, author: entry.author ?? "" } : null);
+  }
+
+  async function refreshLive() {
+    try {
+      const response = await fetch(`/api/studio/catalog?projectId=${encodeURIComponent(projectId)}&masterJobId=${encodeURIComponent(masterJobId)}`);
+      const payload = (await response.json().catch(() => null)) as { entry?: Entry | null } | null;
+      applyLive(payload?.entry);
+    } catch {
+      setLive(null);
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -54,6 +74,7 @@ export function CatalogPublishPanel({
           setAllowRatings(payload.entry.allowRatings);
           setAllowComments(payload.entry.allowComments);
           setInRankings(payload.entry.listed && payload.entry.inRankings);
+          applyLive(payload.entry);
         }
         setReady(true);
       } catch {
@@ -94,6 +115,8 @@ export function CatalogPublishPanel({
     setBusy(false);
     if (payload.result === "ok") {
       setNote(publish ? t("saved") : t("withdrawn"));
+      if (publish) await refreshLive();
+      else setLive(null);
       return;
     }
     setNote(payload.result === "off" ? t("off") : payload.result === "missing" ? t("missing") : t("invalid"));
@@ -140,6 +163,18 @@ export function CatalogPublishPanel({
         {busy ? t("saving") : t("save")}
       </Button>
       {note ? <p role="status" className="text-sm">{note}</p> : null}
+      {live ? (
+        <div className="flex flex-col gap-2 border-t border-[var(--brd-line)] pt-3" data-testid="catalog-publish-share">
+          <p className="text-sm font-semibold">{t("shareLead")}</p>
+          <ShareButtons
+            url={absoluteUrl(window.location.origin, `/utwor/${live.id}`)}
+            text={live.author ? t("shareText", { title: live.title, author: live.author }) : live.title}
+            title={live.title}
+            testId="catalog-work-share"
+            compact
+          />
+        </div>
+      ) : null}
     </section>
   );
 }

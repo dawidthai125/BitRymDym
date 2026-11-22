@@ -347,7 +347,7 @@
       "tytul": "Udostępnij",
       "kopiuj": "Kopiuj link",
       "skopiowano": "Skopiowano ✓",
-      "wiecej": "Więcej…",
+      "natywnie": "Udostępnij…",
       "udostepnijW": "Udostępnij w: {serwis}",
       "serwis": {
         "facebook": "Facebook",
@@ -355,7 +355,9 @@
         "whatsapp": "WhatsApp"
       },
       "ogBit": "Bit",
-      "ogOdsluch": "Prywatny odsłuch"
+      "ogOdsluch": "Prywatny odsłuch",
+      "ogUtwor": "Gotowy kawałek",
+      "ogMarka": "Darmowe bity · Studio online"
     }
   },
   "account": {
@@ -657,6 +659,10 @@
         "pakietMaster": "5 masterów",
         "pakietYoutube": "{n} wideo MP4",
         "pakietPrzycisk": "Dokupuję pakiet",
+        "startOdznaka": "-30% na start",
+        "startLinia": "Nowe konto, więc jeden pakiet bierzesz 30% taniej. Zostało jeszcze {h} h.",
+        "startOmnibus": "Najniższa cena z 30 dni przed obniżką: {cena}",
+        "startRegularna": "Cena regularna:",
         "blok": {
           "PENDING_PLAN": "Masz już zaplanowany inny niższy plan. Kolejny kupisz, gdy tamten wystartuje.",
           "PERPETUAL": "Masz dostęp bezterminowy — nie skracam go płatnością.",
@@ -674,6 +680,7 @@
           "PROVIDER": "PayU nie przyjął zamówienia. Nic nie pobrałem — spróbuj jeszcze raz.",
           "ORIGIN": "To żądanie nie przyszło ze strony BitRymDym.",
           "LOGIN": "Zaloguj się, to otworzę płatność.",
+          "PROMO": "Rabat na start już nie działa na tym koncie. Odśwież stronę, pokażę aktualną cenę.",
           "PENDING_PLAN": "Inny niższy plan jest już zaplanowany. Tego nie przyjmę, dopóki tamten nie wystartuje.",
           "PERPETUAL": "Masz dostęp bezterminowy — nie skracam go płatnością.",
           "ADDON_INCLUDED": "Na Gold masz mastering pod wybrany utwór w cenie.",
@@ -766,7 +773,7 @@
       "moderacjaEtykieta": "Moderacja bitów",
       "moderacjaOpis": "Wynik moderacji Twoich bitów (zatwierdzony / odrzucony).",
       "studioEtykieta": "Studio",
-      "studioOpis": "Gotowy master i gotowe wideo MP4.",
+      "studioOpis": "Gotowy master i wideo MP4, nagrania przed wygaśnięciem i przypomnienie o pierwszym nagraniu.",
       "zapisz": "Zapisz powiadomienia",
       "zapisywanie": "Zapisywanie…",
       "zapisano": "Zapisano.",
@@ -1746,7 +1753,19 @@
       "czystaListaBitowBez": "Czysta lista bitów. Bez banerów i hustlu.",
       "programWindows": "Nagrywarka (Windows). Mac wkrótce. Konto do pobrania i logowania.",
       "cicho": "Cicho.",
-      "nieMaJeszczeOpublikowanych": "Nie ma jeszcze opublikowanych bitów."
+      "nieMaJeszczeOpublikowanych": "Nie ma jeszcze opublikowanych bitów.",
+      "gatunkiAria": "Darmowe bity według gatunku",
+      "gatunki": "Gatunki:"
+    },
+    "genrePage": {
+      "metaTitle": "Darmowe bity {genre} — odsłuch i nagrywanie online",
+      "metaDescription": "Darmowe bity {genre} do rapu. Odpal odsłuch za free, wybierz bit i nagraj swoją zwrotkę w Studiu online BitRymDym, prosto w przeglądarce.",
+      "notFoundTitle": "Nie ma takiego gatunku",
+      "h1": "Darmowe bity {genre}",
+      "lead": "Same bity {genre}, za darmo. Słuchasz, wybierasz, a jak siądzie — nagrywasz zwrotkę w Studiu online. Bez instalowania i bez kombinowania.",
+      "licznik": "{count, plural, one {# bit} few {# bity} many {# bitów} other {# bitu}} · słuchaj, potem nagraj",
+      "wszystkieBity": "← Wszystkie bity",
+      "inneGatunki": "Inne gatunki"
     },
     "beatsUploadPage": {
       "metaTitle": "Dodaj bit",
@@ -4789,6 +4808,8 @@
       "commentsOn": "Komentarze włączone",
       "commentsOff": "Bez komentarzy",
       "inRank": "W rankingach",
+      "shareDescription": "„{title}” — {author}. Gotowy kawałek po mixie i masterze, zrobiony w Studio BitRymDym. Wbijaj i sprawdź.",
+      "shareText": "„{title}” — {author}. Sprawdź ten kawałek na BitRymDym",
       "rankTitle": "Ranking utworów",
       "rankLead": "Tydzień, miesiąc i Top100 All Time, czas warszawski. Swojego utworu nie oceniasz. Do rankingu wchodzi tylko utwór, przy którym właściciel zgodził się i na oceny, i na komentarze.",
       "week": "Tydzień",
@@ -4818,6 +4839,7 @@
       "saving": "Zapisuję…",
       "saved": "Zapisane.",
       "withdrawn": "Utwór zszedł z katalogu.",
+      "shareLead": "Kawałek jest w katalogu. Puść go w świat — wrzuć link ziomkom:",
       "invalid": "Sprawdź tytuł (1–80 znaków) i spróbuj jeszcze raz.",
       "off": "Katalog utworów włączy się po aktualizacji bazy.",
       "missing": "Najpierw zatwierdź master.",

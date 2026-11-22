@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (11) — SEO, udostępnianie, maile, oferta startowa, Nagrywarka
+
+- **SEO:** sitemap z bitami, utworami i stronami gatunków; JSON-LD `MusicRecording` na `/beat/[id]` i `/utwor/[id]` (`src/lib/seo`); `/beats/gatunek/[slug]` + rząd „Gatunki:” w darmowym katalogu; prywatne bity `noindex`.
+- **Udostępnianie utworu:** karta OG/Twitter `/utwor/[id]`, metadane, `ShareButtons` z Web Share na start i fallbackiem kopiowania; blok udostępnienia po publikacji (`catalog-publish-panel.tsx`).
+- **Maile:** „nic jeszcze nie nagrałeś” (konto 3–10 dni, raz, kategoria studio) i raport tygodniowy właściciela w poniedziałki (`OWNER_REPORT_EMAIL`), oba w cronie `takes-expiry-notice`. Migracja `20261122100000`.
+- **Oferta startowa:** -30% na jeden pakiet w 48 h od rejestracji (`starter-offer.ts`, `promo_code`, blokada w `create_payment_order_capped`), Omnibus pod ceną, regulamin § 9, `TERMS_VERSION` 2026-11-22.1. Migracja `20261122120000`.
+- **Nagrywarka:** wstawianie przypina wysyłkę po `sendId`, bez okna 24 h dla już przypiętego projektu, błąd odczytu projektu = 500. Migracja `20261122110000`. Program: `sendId` przy wstawianiu, `forget_spent_send`.
+
 ## 2026-11-22 (10) — Stare bity w katalogu, kaseta, porządki
 
 - **17 bitów z 5.10 (darmowy katalog):** analiza kodem strony (BPM ensemble + Krumhansl key, druga opinia librosa) i odsłuch Gemini; nowe nazwy (Komitywa I–III, Zimna Ulica, Nocne Rozkminy, Stare Aleje, Gryź się ze mną, Nikt nie zatrzyma nas, Suchy Klawisz + remiksy), tempo (Gryź 95→96), tonacja z trybem, gatunek, styl, opis, tagi, producent; okładki xAI → `processCoverImage` → moderacja Gemini (17/17 approve) → `beat-covers/platform/<id>/…`.

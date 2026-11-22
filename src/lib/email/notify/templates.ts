@@ -21,7 +21,8 @@ export function escapeHtml(s: string): string {
 
 const clean = (s: string | null | undefined, max = 120) => (s ?? "").replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
 
-type Body = { subject: string; heading: string; lines: string[]; cta?: { label: string; path: string } };
+type Link = { label: string; path: string };
+type Body = { subject: string; heading: string; lines: string[]; cta?: Link; links?: Link[] };
 
 function body(kind: NotifyKind, d: TemplateData): Body {
   const hi = clean(d.name, 40) ? `Cześć ${clean(d.name, 40)},` : "Cześć,";
@@ -59,6 +60,22 @@ function body(kind: NotifyKind, d: TemplateData): Body {
         lines: [hi, `Twój plan kończy się ${clean(d.detail, 160) || "za 3 dni"}.`, "Przedłuż go, żeby dalej korzystać z limitów planu."],
         cta: { label: "Przedłuż plan", path: "/premium" },
       };
+    case "no_recording_yet":
+      return {
+        subject: "Bit czeka, mikrofon też",
+        heading: "Pierwsza zwrotka czeka",
+        lines: [
+          hi,
+          "konto masz od kilku dni, a w Studiu wciąż cisza. Czas to zmienić.",
+          "Wejdź do Studia. Na górze czekają „Pierwsze kroki”: wybierasz bit, nagrywasz zwrotkę, potem mix i master. Wystarczy przeglądarka, mikrofon i słuchawki.",
+          "Nie masz jeszcze bitu? W katalogu są darmowe podkłady. Wybierz coś pod swój flow.",
+        ],
+        cta: { label: "Otwórz Studio", path: "/studio" },
+        links: [
+          { label: "Katalog bitów", path: "/beats" },
+          { label: "Jak nagrać utwór", path: "/jak-nagrac" },
+        ],
+      };
     default: {
       const neverKind: never = kind;
       return neverKind;
@@ -70,12 +87,13 @@ export function buildMail(kind: NotifyKind, d: TemplateData, links: { unsubscrib
   const b = body(kind, d);
   const base = d.siteUrl.replace(/\/+$/, "");
   const cta = b.cta ? `${base}${b.cta.path}` : null;
+  const extra = (b.links ?? []).map((l) => ({ label: l.label, url: `${base}${l.path}` }));
   const footer = kind === "welcome"
     ? "Dostajesz tę wiadomość, bo założono konto w BitRymDym."
     : kind === "purchase_confirmed"
       ? "Dostajesz tę wiadomość, bo opłacono zamówienie w BitRymDym."
       : "Dostajesz tę wiadomość, bo masz włączone powiadomienia w BitRymDym.";
-  const text = [b.heading, "", ...b.lines, ...(cta ? ["", `${b.cta!.label}: ${cta}`] : []), "", "—", footer, `Ustawienia powiadomień: ${links.preferences}`, `Wypisz się: ${links.unsubscribe}`].join("\n");
+  const text = [b.heading, "", ...b.lines, ...(cta ? ["", `${b.cta!.label}: ${cta}`] : []), ...extra.map((l) => `${l.label}: ${l.url}`), "", "—", footer, `Ustawienia powiadomień: ${links.preferences}`, `Wypisz się: ${links.unsubscribe}`].join("\n");
   const p = (s: string) => `<p style="margin:0 0 12px">${escapeHtml(s)}</p>`;
   const html = `<!doctype html><html lang="pl"><body style="margin:0;background:#f3ebdd;font-family:Arial,Helvetica,sans-serif;color:#16130f">
 <div style="max-width:560px;margin:0 auto;padding:24px">
@@ -83,6 +101,7 @@ export function buildMail(kind: NotifyKind, d: TemplateData, links: { unsubscrib
 <h1 style="margin:0 0 16px;font-size:22px">${escapeHtml(b.heading)}</h1>
 ${b.lines.map(p).join("\n")}
 ${cta ? `<p style="margin:20px 0"><a href="${escapeHtml(cta)}" style="display:inline-block;background:#16130f;color:#f3ebdd;padding:12px 18px;text-decoration:none;border-radius:2px">${escapeHtml(b.cta!.label)}</a></p>` : ""}
+${extra.length ? `<p style="margin:0 0 12px">${extra.map((l) => `<a href="${escapeHtml(l.url)}" style="color:#16130f">${escapeHtml(l.label)}</a>`).join(" · ")}</p>` : ""}
 <hr style="border:0;border-top:1px solid #cbbfa9;margin:24px 0">
 <p style="margin:0;font-size:12px;color:#6b6152">${escapeHtml(footer)} <a href="${escapeHtml(links.preferences)}" style="color:#6b6152">Ustawienia powiadomień</a> · <a href="${escapeHtml(links.unsubscribe)}" style="color:#6b6152">Wypisz się</a></p>
 </div></body></html>`;

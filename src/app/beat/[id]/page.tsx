@@ -30,6 +30,8 @@ import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 import { presentBeat, presentBeats } from "@/lib/ui/demo-beats";
 import { absoluteUrl, clampText } from "@/lib/share/share-links";
 import { getPublicSiteUrl } from "@/lib/site-url";
+import { beatRecordingJsonLd } from "@/lib/seo/json-ld";
+import { JsonLdScript } from "@/lib/seo/json-ld-script";
 import {
   canDownloadBeatByOwnerChoice,
   canUseBeatInStudio,
@@ -60,6 +62,8 @@ export async function generateMetadata({ params }: BeatDetailPageProps) {
     title: presented.title,
     description,
     alternates: { canonical: `/beat/${id}` },
+    // Private user beats open by link only; keep them out of search results.
+    ...(beat.visibility === "private" ? { robots: { index: false, follow: false } } : {}),
     openGraph: { type: "music.song", title: presented.title, description, url: `/beat/${id}` },
     twitter: { card: "summary_large_image", title: presented.title, description },
   };
@@ -178,9 +182,30 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     (await relatedPromise).map(toPublicCatalogItem).slice(0, 6),
   );
 
+  const jsonLd =
+    beat.visibility === "private"
+      ? null
+      : beatRecordingJsonLd({
+          origin: getPublicSiteUrl(),
+          id: beat.id,
+          title: presented.title,
+          producer: presented.producer,
+          genre: presented.genre,
+          style: beat.style,
+          tags: beat.tags,
+          bpm: presented.bpm,
+          musicalKey: presented.key,
+          durationSeconds: presented.durationSeconds,
+          description: clampText(beat.description, 300),
+          image: detail.coverFullUrl ?? `/beat/${beat.id}/opengraph-image`,
+          datePublished: beat.createdAt,
+          dateModified: beat.updatedAt,
+        });
+
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
+        {jsonLd ? <JsonLdScript data={jsonLd} /> : null}
         <PageFrame className="py-6 sm:py-8">
           <CommunityShelf current="beats" />
           <Link

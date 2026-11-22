@@ -9,10 +9,13 @@ import {
   PLAN_ADDON_PRICE_PLN,
   PLAN_PACK_CATALOG,
   PLAN_POLICY,
+  STARTER_PACK_OFFER,
+  starterPackGrosz,
   youtubePackOffer,
   type PaidTier,
   type PlanAddon,
   type PlanPack,
+  type PromoCode,
 } from "@/config/plan-policy";
 import { isUuid } from "@/lib/beats/audio-validation";
 import type { PremiumTier } from "@/types/premium";
@@ -71,6 +74,24 @@ export function priceGrosz(product: CheckoutProduct, buyerTier?: PremiumTier | n
   const pln = product.period === "month" ? price.monthlyPln : price.yearlyPln;
   if (pln == null) throw new Error("PRICE_INVALID");
   return plnToGrosz(pln);
+}
+
+export type CheckoutPrice = {
+  /** What PayU charges and what payment_orders.amount_grosz stores. */
+  amountGrosz: number;
+  /** Catalog price before the discount; null without a discount. */
+  regularAmountGrosz: number | null;
+  promoCode: PromoCode | null;
+};
+
+/**
+ * Server price for a checkout. `starter` = the account qualifies (starter-offer.ts).
+ * The discount applies to packs only; plans, add-ons and beats ignore it.
+ */
+export function checkoutPrice(product: CheckoutProduct, buyerTier: PremiumTier | null | undefined, starter: boolean): CheckoutPrice {
+  const regular = priceGrosz(product, buyerTier);
+  if (!starter || product.kind !== "pack") return { amountGrosz: regular, regularAmountGrosz: null, promoCode: null };
+  return { amountGrosz: starterPackGrosz(regular), regularAmountGrosz: regular, promoCode: STARTER_PACK_OFFER.code };
 }
 
 export function isPaidTier(value: unknown): value is PaidTier {

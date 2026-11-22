@@ -36,7 +36,14 @@ type Code =
   | "PROVIDER"
   | "ORIGIN"
   | "LOGIN"
+  | "PROMO"
   | CheckoutBlock;
+
+/** Starter offer as shown (prices formatted on the server from money.ts checkoutPrice). */
+export type StarterPackView = {
+  hoursLeft: number;
+  packs: Partial<Record<PlanPack, { price: string; regular: string }>>;
+};
 
 export function PremiumCheckoutForm({
   loggedIn,
@@ -46,6 +53,7 @@ export function PremiumCheckoutForm({
   addonPrice,
   packPrices,
   youtubeUnits,
+  starter = null,
   youtubeBlock,
   tierBlock,
   addonBlock,
@@ -61,6 +69,7 @@ export function PremiumCheckoutForm({
   addonPrice: string;
   packPrices: Record<PlanPack, string>;
   youtubeUnits: number;
+  starter?: StarterPackView | null;
   youtubeBlock: CheckoutBlock | null;
   tierBlock: Record<PaidTier, CheckoutBlock | null>;
   addonBlock: CheckoutBlock | null;
@@ -110,7 +119,8 @@ export function PremiumCheckoutForm({
       const response = await fetch("/api/payments/p24/checkout", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify({ product, consent: productConsent, locale }),
+        // `starter` never sets a price: it only asks the server to refuse when the shown discount is gone.
+        body: JSON.stringify({ product, consent: productConsent, locale, ...(product.kind === "pack" && starter?.packs[product.pack] ? { starter: true } : {}) }),
       });
       const payload = (await response.json()) as { ok?: boolean; code?: Code; redirectUrl?: string };
       if (!response.ok || !payload.ok || !payload.redirectUrl || (!isP24Redirect(payload.redirectUrl) && !isPayuRedirect(payload.redirectUrl))) {
@@ -213,6 +223,12 @@ export function PremiumCheckoutForm({
       <div className="flex flex-col gap-3 border-t border-[var(--brd-line)] pt-6">
         <h3 className="text-base font-semibold">{t("pakietTytul")}</h3>
         <p className="max-w-[62ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{t("pakietOpis")}</p>
+        {starter ? (
+          <p className="flex flex-wrap items-center gap-2 text-sm" data-testid="premium-starter-offer">
+            <span className="inline-flex items-center rounded-full border border-[var(--brd-amber)] px-2 py-0.5 text-xs font-semibold text-[var(--brd-amber)]">{t("startOdznaka")}</span>
+            <span>{t("startLinia", { h: starter.hoursLeft })}</span>
+          </p>
+        ) : null}
         {loggedIn ? (
           <div id="pakiety" className="scroll-mt-24" data-testid="premium-extra-consent">
             <PurchaseConsent value={extraConsent} onChange={setExtraConsent} />
@@ -220,6 +236,7 @@ export function PremiumCheckoutForm({
         ) : null}
         {(["take", "master", "youtube"] as const).map((pack) => {
           const blocked = pack === "youtube" ? youtubeBlock : null;
+          const promo = blocked ? undefined : starter?.packs[pack];
           return (
           <form
             key={pack}
@@ -230,10 +247,22 @@ export function PremiumCheckoutForm({
               void pay({ kind: "pack", pack });
             }}
           >
-            <p className="text-sm">
-              {pack === "youtube" ? t("pakietYoutube", { n: youtubeUnits }) : t(pack === "take" ? "pakietTake" : "pakietMaster")}
-              {packPrices[pack] ? <span className="ml-2 font-mono">{packPrices[pack]}</span> : null}
-            </p>
+            {promo ? (
+              <div className="text-sm" data-testid={`premium-pack-${pack}-starter`}>
+                <p>
+                  {pack === "youtube" ? t("pakietYoutube", { n: youtubeUnits }) : t(pack === "take" ? "pakietTake" : "pakietMaster")}
+                  <s className="ml-2 font-mono text-[var(--brd-mute)]"><span className="sr-only">{t("startRegularna")} </span>{promo.regular}</s>
+                  <span className="ml-2 font-mono font-semibold">{promo.price}</span>
+                  <span className="ml-2 text-xs font-semibold text-[var(--brd-amber)]">{t("startOdznaka")}</span>
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--brd-mute)]">{t("startOmnibus", { cena: promo.regular })}</p>
+              </div>
+            ) : (
+              <p className="text-sm">
+                {pack === "youtube" ? t("pakietYoutube", { n: youtubeUnits }) : t(pack === "take" ? "pakietTake" : "pakietMaster")}
+                {packPrices[pack] ? <span className="ml-2 font-mono">{packPrices[pack]}</span> : null}
+              </p>
+            )}
             {blocked ? <p className="text-sm text-[var(--brd-mute)]">{t(`blok.${blocked}`)}</p> : null}
             {loggedIn ? (
               <BrdButton type="submit" variant="secondary" disabled={!!blocked || readFailed || pending !== null} data-testid={`premium-pack-${pack}`}>

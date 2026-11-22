@@ -30,3 +30,25 @@ export function clampText(s: string | null | undefined, max: number): string {
   const sp = cut.lastIndexOf(" ");
   return `${(sp > max * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s,.;:–-]+$/, "")}…`;
 }
+
+export type NativeShareResult = "shared" | "cancelled" | "unsupported" | "failed";
+type ShareCapableNavigator = { share?: (data: ShareData) => Promise<void>; canShare?: (data: ShareData) => boolean };
+
+/**
+ * Web Share API (system share sheet on phones → Instagram, WhatsApp, Messenger…).
+ * "cancelled" = the user closed the sheet (AbortError) — do nothing; "unsupported"/"failed" → caller copies the link.
+ */
+export async function tryNativeShare(nav: ShareCapableNavigator | null | undefined, data: ShareData): Promise<NativeShareResult> {
+  if (!nav || typeof nav.share !== "function") return "unsupported";
+  try {
+    if (typeof nav.canShare === "function" && !nav.canShare(data)) return "unsupported";
+  } catch {
+    return "unsupported";
+  }
+  try {
+    await nav.share(data);
+    return "shared";
+  } catch (e) {
+    return (e as { name?: string } | null)?.name === "AbortError" ? "cancelled" : "failed";
+  }
+}

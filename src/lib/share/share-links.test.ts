@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { absoluteUrl, clampText, SHARE_TARGETS, shareUrl } from "./share-links";
+import { absoluteUrl, clampText, SHARE_TARGETS, shareUrl, tryNativeShare } from "./share-links";
 
 const URL_ = "https://bitrymdym.pl/beat/abc?x=1&y=2";
 
@@ -25,5 +25,24 @@ describe("helpers", () => {
     expect(out.length).toBeLessThanOrEqual(20);
     expect(out.endsWith("…")).toBe(true);
     expect(clampText(null, 5)).toBe("");
+  });
+});
+
+describe("tryNativeShare", () => {
+  const data = { url: URL_, text: "Hej", title: "Kawałek" };
+  it("reports unsupported without navigator.share", async () => {
+    expect(await tryNativeShare(undefined, data)).toBe("unsupported");
+    expect(await tryNativeShare({}, data)).toBe("unsupported");
+    expect(await tryNativeShare({ share: async () => {}, canShare: () => false }, data)).toBe("unsupported");
+  });
+  it("passes data to the share sheet", async () => {
+    let got: ShareData | null = null;
+    expect(await tryNativeShare({ share: async (d) => void (got = d) }, data)).toBe("shared");
+    expect(got).toEqual(data);
+  });
+  it("treats AbortError as a user cancel and other errors as failed", async () => {
+    const abort = Object.assign(new Error("x"), { name: "AbortError" });
+    expect(await tryNativeShare({ share: async () => Promise.reject(abort) }, data)).toBe("cancelled");
+    expect(await tryNativeShare({ share: async () => Promise.reject(new Error("NotAllowed")) }, data)).toBe("failed");
   });
 });

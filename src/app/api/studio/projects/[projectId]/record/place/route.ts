@@ -28,6 +28,7 @@ export async function POST(request: Request, context: RouteContext) {
       durationMs?: number;
       ownerId?: string | null;
       objectKey?: string | null;
+      sendId?: unknown;
     };
 
     // Reject client-chosen storage / ownership identity (P4 contract).
@@ -65,8 +66,12 @@ export async function POST(request: Request, context: RouteContext) {
     // 2026-11-22: the Windows recorder (bearer auth; the site uses cookies) must have a
     // daily send (POST /api/desktop/studio-send). The first place binds it to the project,
     // so it can no longer be refunded. Before the place, so nothing lands without a send.
+    // sendId (newer recorder builds): bind exactly that send; without it the newest free one.
+    if (body.sendId != null && (typeof body.sendId !== "string" || !UUID.test(body.sendId))) {
+      return NextResponse.json({ error: "Nieprawidłowy identyfikator wysyłki." }, { status: 400 });
+    }
     if (await requestUserAccessBearer()) {
-      const denied = await desktopSendDenied(projectId);
+      const denied = await desktopSendDenied(projectId, (body.sendId as string | undefined) ?? null);
       if (denied) return denied;
     }
 
@@ -99,14 +104,22 @@ export async function POST(request: Request, context: RouteContext) {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function desktopSendDenied(projectId: string): Promise<NextResponse | null> {
+async function desktopSendDenied(projectId: string, sendId: string | null): Promise<NextResponse | null> {
   const profile = await getCurrentProfile();
   // No session / bad id: the service below answers with its own auth / not-found error.
   if (!profile || !UUID.test(projectId)) return null;
   const admin = createSupabaseAdminClient();
-  const { data: project } = await admin.from("studio_projects").select("id").eq("id", projectId).eq("owner_id", profile.userId).maybeSingle();
+  const { data: project, error: projectError } = await admin.from("studio_projects").select("id").eq("id", projectId).eq("owner_id", profile.userId).maybeSingle();
+  // A failed lookup must not skip the send check (fail closed), only a real "not yours / missing".
+  if (projectError) {
+    return NextResponse.json({ error: "Nie udało się sprawdzić limitu wysyłek." }, { status: 500 });
+  }
   if (!project) return null;
-  const { data, error } = await admin.rpc("use_desktop_studio_send", { p_owner_id: profile.userId, p_project_id: projectId });
+  // p_send_id only when the recorder sent one, so older builds keep the 2-arg call shape.
+  const args = sendId
+    ? { p_owner_id: profile.userId, p_project_id: projectId, p_send_id: sendId }
+    : { p_owner_id: profile.userId, p_project_id: projectId };
+  const { data, error } = await admin.rpc("use_desktop_studio_send", args);
   if (error) {
     return NextResponse.json({ error: "Nie udało się sprawdzić limitu wysyłek." }, { status: 500 });
   }

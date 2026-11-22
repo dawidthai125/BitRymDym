@@ -248,3 +248,39 @@ describe("PayU webhook pack and failed-order paths", () => {
     expect(await (await post(orderNote())).json()).toEqual({ ok: true, result: "already" });
   });
 });
+
+describe("PayU webhook: starter offer (-30%) orders", () => {
+  it("grants a discounted youtube pack (Gold 6,99 zł) with the regular 2 units", async () => {
+    const fake = fakeAdmin({ payment_orders: { data: orderRow({ amount_grosz: 699, promo_code: "starter30", regular_amount_grosz: 999 }) } }, {
+      grant_p24_quota_pack: { data: { result: "granted" } },
+    });
+    createSupabaseAdminClient.mockReturnValue(fake.client);
+    checkPayuOrder.mockResolvedValue("ok");
+    const res = await post(orderNote("COMPLETED", "699"));
+    expect(res.status).toBe(200);
+    expect(checkPayuOrder).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ amountGrosz: 699 }));
+    expect(fake.rpcCalls[0]).toMatchObject({ name: "grant_p24_quota_pack", args: { p_amount: 699, p_units: 2 } });
+  });
+
+  it("grants a discounted take pack at 6,99 zł and rejects PayU reporting the regular price for it", async () => {
+    const take = () => orderRow({ pack: "take", amount_grosz: 699, promo_code: "starter30", regular_amount_grosz: 999 });
+    const fake = fakeAdmin({ payment_orders: { data: take() } }, { grant_p24_quota_pack: { data: { result: "granted" } } });
+    createSupabaseAdminClient.mockReturnValue(fake.client);
+    checkPayuOrder.mockResolvedValue("ok");
+    expect((await post(orderNote("COMPLETED", "699"))).status).toBe(200);
+    expect(fake.rpcCalls[0]?.args).toMatchObject({ p_pack: "take", p_units: 10, p_amount: 699 });
+
+    createSupabaseAdminClient.mockReturnValue(fakeAdmin({ payment_orders: { data: take() } }, {}).client);
+    expect((await post(orderNote("COMPLETED", "999"))).status).toBe(400);
+  });
+
+  it("refunds a discounted youtube pack against the amount actually paid, with the regular units", async () => {
+    const fake = fakeAdmin({ payment_orders: { data: { session_id: SESSION, product_kind: "pack", pack: "youtube", amount_grosz: 1049 } } }, {
+      apply_p24_refund: { data: { result: "refunded" } },
+    });
+    createSupabaseAdminClient.mockReturnValue(fake.client);
+    const res = await post(refundNote({ amount: "1049" }));
+    expect(await res.json()).toEqual({ ok: true, result: "refunded" });
+    expect(fake.rpcCalls[0]?.args).toMatchObject({ p_refund_amount: 1049, p_units: 1 });
+  });
+});

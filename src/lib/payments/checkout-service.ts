@@ -9,13 +9,14 @@ import { isMissingRpcFunction } from "@/lib/supabase/rpc-errors";
 
 import { loadBeatSale } from "@/lib/payments/beat-sale";
 import { checkoutBlock, isLivePaid, planStartsLater, type AddonSnapshot, type CheckoutBlock, type PlanSnapshot } from "@/lib/payments/entitlement-grant";
-import { parseCheckoutProduct, priceGrosz, type CheckoutProduct } from "@/lib/payments/money";
+import { checkoutPrice, parseCheckoutProduct, type CheckoutProduct } from "@/lib/payments/money";
 import { registerP24Transaction } from "@/lib/payments/p24-client";
 import { readP24Config } from "@/lib/payments/p24-config";
 import { registerPayuOrder } from "@/lib/payments/payu-client";
 import { readPayuConfig } from "@/lib/payments/payu-config";
 import { isCustomerIp } from "@/lib/payments/payu-url";
 import { loadAddonSnapshot, loadPlanSnapshot } from "@/lib/payments/snapshots";
+import { loadStarterOffer } from "@/lib/payments/starter-offer";
 
 export type CheckoutCode =
   | "PAYMENTS_OFF"
@@ -26,6 +27,7 @@ export type CheckoutCode =
   | "PROVIDER"
   | "OWNED"
   | "OPEN"
+  | "PROMO"
   | CheckoutBlock;
 
 export type CheckoutResult =
@@ -39,12 +41,14 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
 /**
  * Insert the pending order under the unfinished-checkout cap (PAYMENT_PENDING_ORDER_LIMITS) atomically
  * via create_payment_order_capped. Before migration 20261121150100 is applied: previous count + insert.
+ * A discounted order (promo_code) also needs the one-per-account check inside the same RPC
+ * (migration 20261122120000): "PROMO" when another discounted order is pending / paid / refunded.
  */
 export async function createPendingOrder(
   admin: AdminClient,
   order: Record<string, unknown> & { user_id: string },
   now: Date,
-): Promise<"ok" | "RATE" | "PROVIDER"> {
+): Promise<"ok" | "RATE" | "PROVIDER" | "PROMO"> {
   const { perHour, perDay } = PAYMENT_PENDING_ORDER_LIMITS;
   const claimed = await admin.rpc("create_payment_order_capped", {
     p_user: order.user_id,
@@ -57,8 +61,11 @@ export async function createPendingOrder(
     const row = (Array.isArray(claimed.data) ? claimed.data[0] : claimed.data) as { status?: string; order_id?: string } | null;
     if (row?.status === "ok" && row.order_id) return "ok";
     if (row?.status === "rate_hour" || row?.status === "rate_day") return "RATE";
+    if (row?.status === "promo_used") return "PROMO";
     return "PROVIDER";
   }
+  // Without the RPC there is no atomic one-per-account guard: never insert a discounted order.
+  if (order.promo_code != null) return "PROMO";
   const pending = await admin
     .from("payment_orders")
     .select("id", { count: "exact", head: true })
@@ -150,7 +157,13 @@ export async function startCheckout(input: {
   }
 
   const buyerTier = isLivePaid(plan, now) ? plan.tier : "FREE";
-  const amountGrosz = priceGrosz(product, buyerTier);
+  // Starter offer (-30% on one pack, 48 h from signup): qualified on the server only. `starter: true`
+  // from the page only means "I was shown the discount": without it the discount still applies,
+  // with it a lapsed offer is refused instead of silently charging the regular price.
+  const starter = product.kind === "pack" ? await loadStarterOffer(input.context.userId, now) : null;
+  if (product.kind === "pack" && row?.starter === true && !starter) return { ok: false, code: "PROMO" };
+  const price = checkoutPrice(product, buyerTier, starter !== null);
+  const amountGrosz = price.amountGrosz;
   const admin = createSupabaseAdminClient();
   const sessionId = crypto.randomUUID();
   const origin = getPublicSiteUrl();
@@ -167,6 +180,8 @@ export async function startCheckout(input: {
         ? { pack: product.pack, period: "once" }
         : { period: product.period }),
     amount_grosz: amountGrosz,
+    // Only on discounted orders, so a regular order never names a column the migration has not added yet.
+    ...(price.promoCode ? { promo_code: price.promoCode, regular_amount_grosz: price.regularAmountGrosz } : {}),
     currency: "PLN",
     buyer_email: email,
     locale: input.locale,
