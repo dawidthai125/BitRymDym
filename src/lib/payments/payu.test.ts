@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { registerPayuOrder, verifyPayuOrder } from "@/lib/payments/payu-client";
+import { capturePayuOrder, registerPayuOrder, verifyPayuOrder } from "@/lib/payments/payu-client";
 import { isPayuConfigured, payuOrigin, type PayuConfig } from "@/lib/payments/payu-config";
 import { parsePayuNotification, payuStatusAction } from "@/lib/payments/payu-notification";
 import { payuBodyMd5, payuSignatureValid } from "@/lib/payments/payu-sign";
@@ -170,5 +170,24 @@ describe("PayU client", () => {
       return jsonResponse({ ...good, orders: [{ ...good.orders[0], status: "PENDING" }] });
     };
     expect(await verifyPayuOrder(config, { orderId: "ORDER1", extOrderId: input.sessionId, amountGrosz: 2999 }, pending)).toBe(false);
+  });
+});
+
+describe("PayU receive (oczekuje na odbiór)", () => {
+  it("PUTs COMPLETED on the order status and reports success only on SUCCESS", async () => {
+    const calls: { url: string; init: RequestInit }[] = [];
+    const fetchImpl = async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      if (url.endsWith("/oauth/authorize")) return jsonResponse({ access_token: "token-1234567890abcdef" });
+      return jsonResponse({ status: { statusCode: "SUCCESS" } });
+    };
+    expect(await capturePayuOrder(config, "ORDER1", fetchImpl)).toBe(true);
+    expect(calls[1]?.url).toBe("https://secure.payu.com/api/v2_1/orders/ORDER1/status");
+    expect(calls[1]?.init.method).toBe("PUT");
+    expect(JSON.parse(String(calls[1]?.init.body))).toEqual({ orderId: "ORDER1", orderStatus: "COMPLETED" });
+    const failing = async (url: string) =>
+      url.endsWith("/oauth/authorize") ? jsonResponse({ access_token: "token-1234567890abcdef" }) : jsonResponse({ status: { statusCode: "ERROR" } }, 400);
+    expect(await capturePayuOrder(config, "ORDER1", failing)).toBe(false);
+    expect(await capturePayuOrder(config, "../x", fetchImpl)).toBe(false);
   });
 });

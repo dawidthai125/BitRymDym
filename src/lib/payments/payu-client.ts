@@ -117,6 +117,37 @@ export async function registerPayuOrder(
 }
 
 /**
+ * 2026-11-22: the POS has no automatic receipt, so a paid order waits as
+ * WAITING_FOR_CONFIRMATION ("oczekuje na odbiór") and PayU never sends COMPLETED.
+ * This receives it (PUT …/status COMPLETED); PayU then notifies COMPLETED as usual.
+ */
+export async function capturePayuOrder(config: PayuConfig, orderId: string, fetchImpl: FetchLike = fetch): Promise<boolean> {
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(orderId)) return false;
+  const token = await accessToken(config, fetchImpl);
+  if (!token) return false;
+  let response: Response;
+  try {
+    response = await fetchImpl(`${payuOrigin(config.sandbox)}/api/v2_1/orders/${encodeURIComponent(orderId)}/status`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ orderId, orderStatus: "COMPLETED" }),
+      signal: AbortSignal.timeout(15_000),
+      cache: "no-store",
+    });
+  } catch {
+    return false;
+  }
+  if (!response.ok) return false;
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return false;
+  }
+  return asRecord(asRecord(payload)?.status)?.statusCode === "SUCCESS";
+}
+
+/**
  * 2026-11-22: reads an order from PayU by its orderId, shaped like a notification
  * (for the return-page fallback when the notification never arrived). null = no answer.
  */

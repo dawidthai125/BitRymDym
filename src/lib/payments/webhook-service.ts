@@ -14,7 +14,7 @@ import { readP24Config } from "@/lib/payments/p24-config";
 import { notificationSignValid, parseP24Notification } from "@/lib/payments/p24-notification";
 import { PLAN_PACK_CATALOG, youtubeUnitsForGrosz } from "@/config/plan-policy";
 import { recordPaymentReview } from "@/lib/payments/payment-reviews";
-import { checkPayuOrder, fetchPayuOrderNotice } from "@/lib/payments/payu-client";
+import { capturePayuOrder, checkPayuOrder, fetchPayuOrderNotice } from "@/lib/payments/payu-client";
 import { readPayuConfig, type PayuConfig } from "@/lib/payments/payu-config";
 import { parsePayuNotification, parsePayuRefund, payuRefundAction, payuStatusAction, type PayuOrderNotice } from "@/lib/payments/payu-notification";
 import { payuSignatureValid } from "@/lib/payments/payu-sign";
@@ -287,8 +287,43 @@ export async function reconcilePayuOrder(sessionId: string, userId: string, now 
   }
 }
 
+/**
+ * "Oczekuje na odbiór": receive the order when it matches our pending order exactly
+ * (amount, currency, POS) and PayU itself confirms the same state. Then PayU sends COMPLETED.
+ */
+async function receiveWaitingPayuOrder(note: PayuOrderNotice, config: PayuConfig): Promise<WebhookOutcome> {
+  const loaded = await loadOrder(note.extOrderId);
+  if (loaded === "error") return { status: 503, body: { ok: false } };
+  if (loaded === "missing") return { status: 200, body: { ok: true, result: "ignored" } };
+  const admin = createSupabaseAdminClient();
+  const row = await admin.from("payment_orders").select("status, amount_grosz, currency").eq("session_id", note.extOrderId).maybeSingle();
+  const data = row.data as { status?: string; amount_grosz?: number; currency?: string } | null;
+  if (row.error || !data) return { status: 503, body: { ok: false } };
+  if (data.status !== "pending") return { status: 200, body: { ok: true, result: "ignored" } };
+  if (data.amount_grosz !== note.totalAmount || data.currency !== "PLN" || String(note.merchantPosId) !== config.posId) {
+    console.error("[payu] waiting order does not match", { sessionId: note.extOrderId });
+    return { status: 200, body: { ok: true, result: "ignored" } };
+  }
+  const live = await fetchPayuOrderNotice(config, note.orderId);
+  if (!live) return { status: 503, body: { ok: false } };
+  const confirmed = parsePayuNotification({ order: live });
+  if (!confirmed || confirmed.extOrderId !== note.extOrderId || confirmed.totalAmount !== note.totalAmount) {
+    console.error("[payu] waiting order not confirmed by PayU", { sessionId: note.extOrderId });
+    return { status: 200, body: { ok: true, result: "ignored" } };
+  }
+  if (confirmed.status === "COMPLETED") return { status: 200, body: { ok: true, result: "ignored" } };
+  if (confirmed.status !== "WAITING_FOR_CONFIRMATION") return { status: 200, body: { ok: true, result: "ignored" } };
+  const received = await capturePayuOrder(config, note.orderId);
+  console.info("[payu] waiting order received", { sessionId: note.extOrderId, ok: received });
+  return received ? { status: 200, body: { ok: true, result: "ignored" } } : { status: 503, body: { ok: false } };
+}
+
 async function settlePayuNotice(note: PayuOrderNotice, config: PayuConfig, now: Date): Promise<WebhookOutcome> {
   const action = payuStatusAction(note.status);
+  // Keep PayU's orderId on the order (return-page fallback, refunds).
+  await createSupabaseAdminClient().from("payment_orders").update({ provider_order_id: note.orderId })
+    .eq("session_id", note.extOrderId).is("provider_order_id", null);
+  if (note.status === "WAITING_FOR_CONFIRMATION") return receiveWaitingPayuOrder(note, config);
   if (action === "ignore") return { status: 200, body: { ok: true, result: "ignored" } };
   if (action === "retry") {
     console.error("[payu] notification status not settled", { sessionId: note.extOrderId, status: note.status });
