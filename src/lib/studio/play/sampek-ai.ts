@@ -11,7 +11,7 @@ import {
   type PlaySession,
   type SampekResult,
 } from "@/lib/studio/play/play-types";
-import { detectKey, isDrumLayer, keyLabelPl } from "@/lib/studio/play/sampek-edit";
+import { detectKey, isDrumLayer, keyLabelPl, plPlural } from "@/lib/studio/play/sampek-edit";
 import { openAiCompatibleProvider, type BitekLlmProvider } from "@/lib/studio/bitek/chat/providers";
 
 /**
@@ -165,7 +165,7 @@ export function applyModelAnswer(
     const fallback =
       action === "chords"
         ? `Dopełniłem akordy w warstwie: ${target.notes.length} → ${notes.length} nut.`
-        : `Zrobiłem wariant warstwy (${notes.length} nut).`;
+        : `Zrobiłem wariant warstwy (${notes.length} ${plPlural(notes.length, "nuta", "nuty", "nut")}).`;
     return { session: next, changes: changes.length ? changes : [fallback] };
   }
 
@@ -178,7 +178,7 @@ export function applyModelAnswer(
   let i = 2;
   while (next.layers.some((l) => l.id === id)) id = `${action === "bass" ? "sampek-bass" : "sampek-counter"}-${i++}`;
   next.layers.push({ id, instrument, notes, gain: action === "bass" ? 0.9 : 0.7 });
-  const fallback = action === "bass" ? `Dodałem linię basu (${notes.length} nut).` : `Dodałem kontrmelodię (${notes.length} nut).`;
+  const fallback = action === "bass" ? `Dodałem linię basu (${notes.length} ${plPlural(notes.length, "nuta", "nuty", "nut")}).` : `Dodałem kontrmelodię (${notes.length} ${plPlural(notes.length, "nuta", "nuty", "nut")}).`;
   return { session: next, changes: changes.length ? changes : [fallback] };
 }
 

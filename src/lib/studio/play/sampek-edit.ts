@@ -337,7 +337,7 @@ export function cleanUp(session: PlaySession, opts: { overflow?: "wrap" | "drop"
   const changes: string[] = [];
   if (wrapped) changes.push(`Przeniosłem ${wrapped} ${nutLabel(wrapped)} spoza pętli na jej początek.`);
   if (dropped) changes.push(`Usunąłem ${dropped} ${nutLabel(dropped)} poza pętlą.`);
-  if (doubles) changes.push(`Usunąłem ${doubles} ${doubles === 1 ? "podwójne uderzenie" : "podwójnych uderzeń"}.`);
+  if (doubles) changes.push(`Usunąłem ${doubles} ${plPlural(doubles, "podwójne uderzenie", "podwójne uderzenia", "podwójnych uderzeń")}.`);
   if (lengthened) changes.push(`Wydłużyłem ${lengthened} ${nutLabel(lengthened)} zagranych za krótko.`);
   if (clipped) changes.push(`Skróciłem ${clipped} ${nutLabel(clipped)} wystających za koniec pętli.`);
   if (!changes.length) changes.push("Nagranie jest czyste: nic do sprzątania.");
@@ -418,4 +418,14 @@ export function parsePlaySession(input: unknown): PlaySession | null {
     layers,
     beatId: typeof raw.beatId === "string" ? raw.beatId : null,
   };
+}
+
+/** Polish noun form for a count: 1 → one, 2–4 (not 12–14) → few, else many. */
+export function plPlural(n: number, one: string, few: string, many: string): string {
+  const abs = Math.abs(Math.trunc(n));
+  if (abs === 1) return one;
+  const tens = abs % 100;
+  const units = abs % 10;
+  if (units >= 2 && units <= 4 && (tens < 12 || tens > 14)) return few;
+  return many;
 }
