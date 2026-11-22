@@ -55,19 +55,16 @@ async function countOwnerSessionsToday(ownerId: string): Promise<number> {
   return count ?? 0;
 }
 
+/**
+ * Owner 2026-11-22 (GO): the active cap counts only loose own recordings — not placed in a
+ * project, not sample/catalog copies, not stems. Same SQL as the server claim
+ * (public.count_active_loose_takes), so the screen and the server always agree.
+ */
 async function countOwnerActiveReady(ownerId: string): Promise<number> {
   const admin = createSupabaseAdminClient();
-  const nowIso = new Date().toISOString();
-  const { count, error } = await admin
-    .from("takes")
-    .select("id", { count: "exact", head: true })
-    .eq("owner_id", ownerId)
-    .eq("is_stem", false)
-    .eq("status", "READY")
-    .is("deleted_at", null)
-    .gt("expires_at", nowIso);
+  const { data, error } = await admin.rpc("count_active_loose_takes", { p_owner_id: ownerId });
   if (error) throw new Error(error.message);
-  return count ?? 0;
+  return typeof data === "number" ? data : Number(data ?? 0);
 }
 
 async function countAnonSessionsToday(tokenHash: string): Promise<number> {

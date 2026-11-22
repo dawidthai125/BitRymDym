@@ -6,7 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildPlanUsage, type PlanUsage } from "@/lib/plans/plan-usage-model";
 import { loadUsageResets } from "@/lib/plans/usage-resets";
 import { windowStartAfterReset } from "@/lib/plans/usage-resets-model";
-import { NOT_SAMPLE_COPY_TAKE, STUDIO_SAMPLES_TABLE } from "@/lib/studio/samples/sample-policy";
+import { STUDIO_SAMPLES_TABLE } from "@/lib/studio/samples/sample-policy";
 import { countsTowardCleanupQuota } from "@/lib/studio/cleanup/cleanup-core";
 import { warsawDayStartIso } from "@/lib/studio/cleanup/cleanup-server";
 import { aiCoverEnabled, aiCoverPerDay } from "@/lib/studio/video/ai-cover/config";
@@ -39,7 +39,6 @@ export async function loadPlanUsage(params: {
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
   ).toISOString();
   const weekStart = new Date(now.getTime() - 7 * 864e5).toISOString();
-  const nowIso = now.toISOString();
   const month = warsawMonthWindow(now);
   const head = { count: "exact" as const, head: true };
   // Admin "reset limits" moves a counter's window start forward (usage_resets).
@@ -60,7 +59,8 @@ export async function loadPlanUsage(params: {
       admin.from("studio_projects").select("id", head).eq("owner_id", params.userId).neq("status", "ARCHIVED"),
       // Owner 2026-11-13: "Nagrania" today = finished songs (first master download of a project).
       admin.from("studio_song_completions").select("id", head).eq("owner_id", params.userId).gte("created_at", recDayStart),
-      admin.from("takes").select("id", head).eq("owner_id", params.userId).eq("is_stem", false).or(NOT_SAMPLE_COPY_TAKE).eq("status", "READY").is("deleted_at", null).gt("expires_at", nowIso),
+      // Same rule as the recording cap (public.count_active_loose_takes, Owner 2026-11-22).
+      admin.rpc("count_active_loose_takes", { p_owner_id: params.userId }).then((r) => ({ count: typeof r.data === "number" ? r.data : Number(r.data ?? 0), error: r.error })),
       admin.from("studio_master_jobs").select("id", head).eq("owner_id", params.userId).eq("kind", "master").gte("created_at", masterStart).not("status", "in", "(failed,cancelled)"),
       studioQuotaRemaining(params.userId, "take"),
       studioQuotaRemaining(params.userId, "master"),
