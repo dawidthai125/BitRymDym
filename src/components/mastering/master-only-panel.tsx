@@ -188,6 +188,8 @@ export function MasterOnlyPanel({ tier }: Props) {
             type="file"
             accept={STUDIO_VOCAL_IMPORT_ACCEPT}
             className="sr-only"
+            tabIndex={-1}
+            aria-label={t("wybierzPlik")}
             data-testid="master-only-file"
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;

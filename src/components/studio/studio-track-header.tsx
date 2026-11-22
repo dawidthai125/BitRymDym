@@ -74,7 +74,7 @@ export function StudioTrackHeader({
         data-track-type={track.trackType}
         data-track-role={track.trackRole}
         data-selected={isSelected ? "true" : "false"}
-        className="studio-track-strip flex items-stretch gap-1 border py-1 pl-1.5 pr-1"
+        className="studio-track-strip flex items-stretch gap-1 border py-1 pl-1.5 pr-1 max-lg:pr-14"
         style={{
           height: STUDIO_DAW_LANE_HEIGHT_PX,
           borderColor: isBeat ? "#b9761e" : STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],

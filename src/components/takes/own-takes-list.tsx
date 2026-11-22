@@ -257,7 +257,7 @@ export function OwnTakesList({
                   {take.beatTitle ? (
                     <Link
                       href={`/beat/${take.beatId}`}
-                      className="underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+                      className="-my-3 inline-block py-3 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
                     >
                       {tl(take.beatTitle)}
                     </Link>
