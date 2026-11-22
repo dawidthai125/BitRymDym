@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-22 (8) — Czuwanie, zwroty, przypomnienie o planie, lejek, pierwsze kroki
+
+- **Czuwanie na Contabo:** `scripts/site-watch.mjs` + `bitrymdym-site-watch.timer` (co godzinę :41) uruchamia smoke produkcji i wysyła mail (Resend) tylko przy zmianie stanu. Powód: harmonogramy GitHub Actions nie odpalały się w tym repo. Sprawdzone: awaria i naprawa → 2 maile.
+- **PayU:** strona przy zakupie zapisuje `provider_order_id`, sama przyjmuje płatności „oczekuje na odbiór”, strona powrotu dopytuje PayU; logi odrzuconych powiadomień. Test na żywo: zakup → pakiet w 30 s; zwrot częściowy → przegląd ręczny.
+- **Admin `/admin/platnosci`:** lista „Zwroty do sprawdzenia” (zdejmij zakup i zamknij / zamknij bez zmian), wpis `PAYMENT_REVIEW_RESOLVE` w dzienniku (migracja `20261122070000`).
+- **Mail „plan kończy się za 3 dni”** (`plan_expiring`, kategoria konto) z cronu `takes-expiry-notice`; kolumna `premium_entitlements.plan_expiry_notified_for` (`20261122071000`).
+- **Lejek zakupów `/admin/lejek`:** wejścia na Premium, kliknięcia „Dokupuję”, rozpoczęte i opłacone zamówienia (tabela `funnel_events`, bez danych osobowych, `20261122072000`).
+- **Studio:** karta „Pierwsze kroki” dla kont z 0–1 projektem.
+- **Menu planu:** wszystkie limity (wideo MP4 z plusem, teksty AI, czyszczenie, okładki AI, sample); złoty plus do pakietów; zgody tuż nad pakietami.
+- Log wysyłki maili (`[notify] sent|failed`, bez adresu).
+
 ## 2026-11-22 (7) — Zwrot planu i limit wysyłek programu Windows (GO Ownera)
 
 - **Zwrot przedłużenia / ulepszenia planu (`20261122040000_refund_restores_previous_order`, zastosowana):** pełny zwrot nie kasuje już czasu z wcześniejszego opłaconego zamówienia — plan wraca do poziomu i daty końca poprzedniego trwającego zamówienia; bez takiego kończy się teraz (jak dotąd). To samo dla dodatku referencji.
