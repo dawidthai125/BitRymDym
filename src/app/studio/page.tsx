@@ -4,12 +4,14 @@ import { redirect } from "next/navigation";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { RecorderSessionCard } from "@/components/studio/recorder-session-card";
+import { StudioFirstStepsCard } from "@/components/studio/studio-first-steps-card";
 import { StudioProjectList } from "@/components/studio/studio-project-list";
 import { AppShell } from "@/components/site/app-shell";
 import { maxProjectsForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
+import { planFirstSteps } from "@/lib/studio/first-steps";
 import { listStudioProjects } from "@/lib/studio/studio-service";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -46,6 +48,7 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
     typeof params.beatId === "string" && params.beatId.length > 0
       ? params.beatId
       : null;
+  const firstSteps = planFirstSteps(projects);
 
   return (
     <AppShell tone="studio">
@@ -68,6 +71,8 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
               {t("nocnaDeskaOtworzProjekt")}
             </p>
           </header>
+
+          {firstSteps.show ? <StudioFirstStepsCard steps={firstSteps.steps} /> : null}
 
           <RecorderSessionCard tier={tier} />
 

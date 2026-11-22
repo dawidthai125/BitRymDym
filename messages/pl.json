@@ -4518,6 +4518,23 @@
       "zobaczPlany": "Zobacz plany",
       "nieDoszlo": "Rozcięcie nie doszło do końca ({code}).",
       "blad": "błąd"
+    },
+    "firstSteps": {
+      "tytul": "Pierwsze kroki",
+      "ukryj": "Ukryj",
+      "krokNr": "Krok {n}:",
+      "zrobione": "Zrobione",
+      "krok1Tytul": "Wybierz bit",
+      "krok1Opis": "Znajdź bit w katalogu i otwórz go w Studio.",
+      "krok1Przycisk": "Katalog bitów",
+      "krok2Tytul": "Nagraj zwrotkę",
+      "krok2Opis": "Nagraj wokal w Studio albo w programie na Windows.",
+      "krok3Tytul": "Zmiksuj",
+      "krok3Opis": "W projekcie przejdź do kroku Mix i ustaw głośności.",
+      "krok4Tytul": "Zrób master i pobierz",
+      "krok4Opis": "W kroku Mastering zrób master i pobierz gotowy utwór.",
+      "otworzProjekt": "Otwórz projekt",
+      "programWindows": "Program na Windows"
     }
   },
   "nav": {

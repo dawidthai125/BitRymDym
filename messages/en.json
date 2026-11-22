@@ -4518,6 +4518,23 @@
       "zobaczPlany": "See plans",
       "nieDoszlo": "Splitting did not finish ({code}).",
       "blad": "error"
+    },
+    "firstSteps": {
+      "tytul": "First steps",
+      "ukryj": "Hide",
+      "krokNr": "Step {n}:",
+      "zrobione": "Done",
+      "krok1Tytul": "Pick a beat",
+      "krok1Opis": "Find a beat in the catalogue and open it in Studio.",
+      "krok1Przycisk": "Beat catalogue",
+      "krok2Tytul": "Record a verse",
+      "krok2Opis": "Record vocals in Studio or in the Windows app.",
+      "krok3Tytul": "Mix it",
+      "krok3Opis": "In your project, go to the Mix step and set the levels.",
+      "krok4Tytul": "Master and download",
+      "krok4Opis": "In the Mastering step, make a master and download your track.",
+      "otworzProjekt": "Open project",
+      "programWindows": "Windows app"
     }
   },
   "nav": {
