@@ -14,9 +14,9 @@ import { readP24Config } from "@/lib/payments/p24-config";
 import { notificationSignValid, parseP24Notification } from "@/lib/payments/p24-notification";
 import { PLAN_PACK_CATALOG, youtubeUnitsForGrosz } from "@/config/plan-policy";
 import { recordPaymentReview } from "@/lib/payments/payment-reviews";
-import { checkPayuOrder } from "@/lib/payments/payu-client";
-import { readPayuConfig } from "@/lib/payments/payu-config";
-import { parsePayuNotification, parsePayuRefund, payuRefundAction, payuStatusAction } from "@/lib/payments/payu-notification";
+import { checkPayuOrder, fetchPayuOrderNotice } from "@/lib/payments/payu-client";
+import { readPayuConfig, type PayuConfig } from "@/lib/payments/payu-config";
+import { parsePayuNotification, parsePayuRefund, payuRefundAction, payuStatusAction, type PayuOrderNotice } from "@/lib/payments/payu-notification";
 import { payuSignatureValid } from "@/lib/payments/payu-sign";
 import { loadAddonSnapshot, loadPlanSnapshot } from "@/lib/payments/snapshots";
 
@@ -231,12 +231,17 @@ async function loadOrder(sessionId: string): Promise<{ userId: string; order: Or
 export async function handlePayuWebhook(rawBody: string, signatureHeader: string | null, now = new Date()): Promise<WebhookOutcome> {
   const config = readPayuConfig();
   if (!config) return { status: 403, body: { ok: false, code: "PAYMENTS_OFF" } };
-  if (!payuSignatureValid(rawBody, signatureHeader, config.md5Key)) return { status: 400, body: { ok: false } };
+  if (!payuSignatureValid(rawBody, signatureHeader, config.md5Key)) {
+    // 2026-11-22: rejections were silent; log the reason (never the key or the body).
+    console.error("[payu] notification signature invalid", { hasHeader: !!signatureHeader, length: rawBody.length });
+    return { status: 400, body: { ok: false } };
+  }
 
   let body: unknown;
   try {
     body = JSON.parse(rawBody) as unknown;
   } catch {
+    console.error("[payu] notification is not JSON");
     return { status: 400, body: { ok: false } };
   }
   const note = parsePayuNotification(body);
@@ -244,9 +249,45 @@ export async function handlePayuWebhook(rawBody: string, signatureHeader: string
     // Refund notifications have a different shape (top-level "refund"). Signature was verified above.
     const rawRefund = body && typeof body === "object" ? (body as Record<string, unknown>).refund : null;
     if (rawRefund && typeof rawRefund === "object") return handlePayuRefund(body);
+    console.error("[payu] notification shape not recognised");
     return { status: 400, body: { ok: false } };
   }
+  const outcome = await settlePayuNotice(note, config, now);
+  if (outcome.status !== 200) console.error("[payu] notification not settled", { sessionId: note.extOrderId, status: note.status, http: outcome.status });
+  else console.info("[payu] notification settled", { sessionId: note.extOrderId, status: note.status, result: outcome.body.result });
+  return outcome;
+}
 
+/**
+ * 2026-11-22: return-page fallback. When the order is still pending, ask PayU by the stored
+ * orderId and settle it exactly like a verified notification. Owner-scoped; never throws.
+ */
+export async function reconcilePayuOrder(sessionId: string, userId: string, now = new Date()): Promise<string> {
+  try {
+    const config = readPayuConfig();
+    if (!config) return "off";
+    const admin = createSupabaseAdminClient();
+    const row = await admin
+      .from("payment_orders")
+      .select("provider, status, provider_order_id")
+      .eq("session_id", sessionId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    const data = row.data as { provider?: string; status?: string; provider_order_id?: string | null } | null;
+    if (row.error || !data || data.provider !== "payu" || data.status !== "pending" || !data.provider_order_id) return "skip";
+    const fetched = await fetchPayuOrderNotice(config, data.provider_order_id);
+    if (!fetched) return "unavailable";
+    const note = parsePayuNotification({ order: fetched });
+    if (!note || note.extOrderId !== sessionId) return "mismatch";
+    const outcome = await settlePayuNotice(note, config, now);
+    console.info("[payu] return-page reconcile", { sessionId, status: note.status, http: outcome.status });
+    return outcome.status === 200 ? outcome.body.result : "retry";
+  } catch {
+    return "error";
+  }
+}
+
+async function settlePayuNotice(note: PayuOrderNotice, config: PayuConfig, now: Date): Promise<WebhookOutcome> {
   const action = payuStatusAction(note.status);
   if (action === "ignore") return { status: 200, body: { ok: true, result: "ignored" } };
   if (action === "retry") {

@@ -65,7 +65,7 @@ export async function registerPayuOrder(
   config: PayuConfig,
   input: PayuRegisterInput,
   fetchImpl: FetchLike = fetch,
-): Promise<{ redirectUrl: string } | { error: "PROVIDER" }> {
+): Promise<{ redirectUrl: string; orderId: string } | { error: "PROVIDER" }> {
   const token = await accessToken(config, fetchImpl);
   if (!token) return { error: "PROVIDER" };
   const description = input.description.slice(0, 250);
@@ -113,7 +113,52 @@ export async function registerPayuOrder(
   if (!accepted || typeof redirectUri !== "string" || typeof orderId !== "string") return { error: "PROVIDER" };
   if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(orderId)) return { error: "PROVIDER" };
   if (!isPayuRedirectFor(redirectUri, config.sandbox)) return { error: "PROVIDER" };
-  return { redirectUrl: redirectUri };
+  return { redirectUrl: redirectUri, orderId };
+}
+
+/**
+ * 2026-11-22: reads an order from PayU by its orderId, shaped like a notification
+ * (for the return-page fallback when the notification never arrived). null = no answer.
+ */
+export async function fetchPayuOrderNotice(
+  config: PayuConfig,
+  orderId: string,
+  fetchImpl: FetchLike = fetch,
+): Promise<{ orderId: string; extOrderId: string; status: string; totalAmount: unknown; currencyCode: unknown; merchantPosId: unknown } | null> {
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(orderId)) return null;
+  const token = await accessToken(config, fetchImpl);
+  if (!token) return null;
+  let response: Response;
+  try {
+    response = await fetchImpl(`${payuOrigin(config.sandbox)}/api/v2_1/orders/${encodeURIComponent(orderId)}`, {
+      method: "GET",
+      headers: { authorization: `Bearer ${token}`, accept: "application/json" },
+      signal: AbortSignal.timeout(15_000),
+      cache: "no-store",
+    });
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return null;
+  }
+  const record = asRecord(payload);
+  if (asRecord(record?.status)?.statusCode !== "SUCCESS") return null;
+  const orders = record?.orders;
+  const order = Array.isArray(orders) ? asRecord(orders[0]) : null;
+  if (!order || typeof order.orderId !== "string" || typeof order.extOrderId !== "string" || typeof order.status !== "string") return null;
+  return {
+    orderId: order.orderId,
+    extOrderId: order.extOrderId,
+    status: order.status,
+    totalAmount: order.totalAmount,
+    currencyCode: order.currencyCode,
+    merchantPosId: order.merchantPosId,
+  };
 }
 
 export type PayuOrderCheck = "ok" | "mismatch" | "unavailable";

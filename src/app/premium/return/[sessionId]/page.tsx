@@ -8,6 +8,7 @@ import { PremiumReturnView, type ReturnState } from "@/components/premium/premiu
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { reconcilePayuOrder } from "@/lib/payments/webhook-service";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,8 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
   let state: ReturnState = { status: "missing" };
 
   try {
+    // 2026-11-22: a pending PayU order is re-checked with PayU here (lost notification).
+    await reconcilePayuOrder(sessionId, context.userId);
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin
       .from("payment_orders")

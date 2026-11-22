@@ -203,5 +203,10 @@ export async function startCheckout(input: {
     await admin.from("payment_orders").update({ status: "failed" }).eq("session_id", sessionId).eq("status", "pending");
     return { ok: false, code: "PROVIDER" };
   }
+  if ("orderId" in registered && registered.orderId) {
+    // 2026-11-22: kept so the return page can ask PayU when the notification is lost.
+    const stored = await admin.from("payment_orders").update({ provider_order_id: registered.orderId }).eq("session_id", sessionId);
+    if (stored.error) console.error("[payu] provider order id not stored", { sessionId });
+  }
   return { ok: true, redirectUrl: registered.redirectUrl };
 }

@@ -120,7 +120,7 @@ describe("PayU client", () => {
       }, 302);
     };
     const result = await registerPayuOrder(config, input, fetchImpl);
-    expect(result).toEqual({ redirectUrl: "https://secure.payu.com/pay/?orderId=ORDER1&token=t" });
+    expect(result).toEqual({ redirectUrl: "https://secure.payu.com/pay/?orderId=ORDER1&token=t", orderId: "ORDER1" });
     expect(calls[1]?.init.redirect).toBe("manual");
     expect(calls[1]?.url).toBe("https://secure.payu.com/api/v2_1/orders");
     const order = JSON.parse(String(calls[1]?.init.body)) as { totalAmount: string; customerIp: string; extOrderId: string; merchantPosId: string };
