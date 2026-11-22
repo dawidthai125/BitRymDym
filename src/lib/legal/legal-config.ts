@@ -4,7 +4,7 @@
  * LEGAL_PLACEHOLDERS (legal.test.ts enforces that none remain).
  * Bump a version whenever the text changes materially (stored with each consent).
  */
-export const TERMS_VERSION = "2026-11-15.3";
+export const TERMS_VERSION = "2026-11-15.4"; // .4: redakcja „w Studiu” (2026-11-22), bez zmiany treści
 export const PRIVACY_VERSION = "2026-11-15.1";
 
 /** Effective date shown in the documents (matches the versions above). */
