@@ -271,8 +271,10 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
+// `.well-known/` (assetlinks.json for the Android TWA) bypasses middleware: it must stay a plain
+// 200 application/json even in maintenance mode (no rewrite, no redirect).
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|workers/|favicon.ico|api/beats/[^/]+/cover$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|wav|ogg|m4a)$).*)",
+    "/((?!_next/static|_next/image|workers/|\\.well-known/|favicon.ico|api/beats/[^/]+/cover$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|wav|ogg|m4a)$).*)",
   ],
 };

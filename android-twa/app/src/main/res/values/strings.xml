@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appName">BitRymDym</string>
+    <string name="launchUrl" translatable="false">https://www.bitrymdym.pl/?app=android</string>
+    <string name="assetStatements" translatable="false">
+        [{
+            \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+            \"target\": {
+                \"namespace\": \"web\",
+                \"site\": \"https://www.bitrymdym.pl\"
+            }
+        }]
+    </string>
+</resources>
