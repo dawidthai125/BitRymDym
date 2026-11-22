@@ -1558,6 +1558,29 @@
         "REFUND_FAILED": "Could not remove the purchase. Try again.",
         "RESOLVE_FAILED": "Could not close the case. Try again."
       }
+    },
+    "adminFunnelPage": {
+      "navLabel": "Purchase funnel",
+      "metaTitle": "Purchase funnel",
+      "tytul": "Purchase funnel",
+      "opis": "How many people opened the Premium page, clicked “Buy”, started a payment and finished it. Counted without cookies or personal data.",
+      "okno": "Last {days} days",
+      "krok": "Step",
+      "liczba": "Count",
+      "zPoprzedniego": "From previous step",
+      "zWyswietlen": "From views",
+      "kroki": {
+        "views": "Premium page views",
+        "clicks": "“Buy” clicks",
+        "started": "Payments started",
+        "paid": "Paid"
+      },
+      "rozbicie": "Paid orders by product",
+      "produkt": "Product",
+      "ile": "Count",
+      "pustoOplacone": "No paid orders in this period.",
+      "uwaga": "Paid also counts refunded orders. Bots and link previews are not counted.",
+      "blad": "Could not load the data. Refresh the page."
     }
   },
   "auth": {

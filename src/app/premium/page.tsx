@@ -20,6 +20,7 @@ import {
 } from "@/config/plan-policy";
 import { studioAdvancedRecordAllowed } from "@/lib/studio/studio-record-view";
 import { PremiumPurchaseSection } from "@/components/premium/premium-purchase-section";
+import { PremiumViewCounter } from "@/components/premium/premium-view-counter";
 import { isP24Configured } from "@/lib/payments/p24-config";
 import { isPayuConfigured } from "@/lib/payments/payu-config";
 import { OWN_TAKE_RAW_DOWNLOADS_DAILY } from "@/config/recording";
@@ -129,6 +130,7 @@ export default function PremiumPage() {
   return (
     <AppShell tone="public">
       <main>
+        <PremiumViewCounter />
         <PageFrame className="max-w-5xl py-10 sm:py-12">
           <SectionLabel>{tr("premium")}</SectionLabel>
           <h1 className="brd-display mt-2 max-w-[20ch] text-[clamp(2rem,4.5vw,3rem)] font-semibold leading-[0.95] tracking-tight">
