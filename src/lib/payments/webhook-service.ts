@@ -72,7 +72,7 @@ function receiptLine(write: GrantWrite): string {
     const what = write.pack === "take" ? "nagrań" : write.pack === "youtube" ? "wideo MP4" : "masterów";
     return `Tu BITEK. Dodałem ${write.units} ${what}. Zostają, aż je wykorzystasz.`;
   }
-  if (write.action === "beat") return "Tu BITEK. Wpłata doszła. Plik wav tego bitu jest do pobrania na jego stronie.";
+  if (write.action === "beat") return "Tu BITEK. Wpłata doszła. Plik WAV tego bitu jest do pobrania na jego stronie.";
   if (write.note === "downgrade") return "Tu BITEK. Wpłata doszła, ale niższego planu nie włączam, dopóki wyższy trwa.";
   if (write.note === "pending_plan") return "Tu BITEK. Wpłata doszła, ale inny niższy plan jest już zaplanowany. Napisz na dawid.thai@int.pl, to oddam tę wpłatę przez PayU.";
   if (write.note === "addon_perpetual") return "Tu BITEK. Wpłata doszła, ale bezterminowego dodatku nie skracam.";
@@ -81,7 +81,7 @@ function receiptLine(write: GrantWrite): string {
 
 function receiptFor(write: GrantWrite, result: string): string {
   if (write.action === "beat" && result === "skipped") {
-    return "Tu BITEK. Wpłata doszła, ale ten wav już masz. Napisz na dawid.thai@int.pl, to oddam tę wpłatę przez PayU.";
+    return "Tu BITEK. Wpłata doszła, ale ten WAV już masz. Napisz na dawid.thai@int.pl, to oddam tę wpłatę przez PayU.";
   }
   return receiptLine(write);
 }

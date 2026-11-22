@@ -609,7 +609,7 @@ describe("STU-14 recording recovery — 25 scenarios", () => {
     await writer.release();
     const d = deps(store, c);
     const [item] = await listItems(d, PROJECT);
-    expect(takeRecoveryItemSummaryPl(item)).toMatch(/dokończenia zapisu/);
+    expect(takeRecoveryItemSummaryPl(item)).toMatch(/dokończyć zapis/);
     expect(banner).toMatch(/"Dokończ zapis"/);
     expect(await recoverTakeRecording(d, writer.recoveryId)).toEqual({
       kind: "SAVED",

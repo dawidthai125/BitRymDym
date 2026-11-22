@@ -118,7 +118,7 @@
   "tpl": true
  },
  {
-  "src": "Najwyższy score sygnałowy ({0})",
+  "src": "Najwyższy wynik sygnału ({0})",
   "en": "Highest signal score ({0})",
   "tpl": true
  },
@@ -232,11 +232,11 @@
   "en": "<p>Private data was deleted according to the service rules. Published works may remain in anonymised form.</p>"
  },
  {
-  "src": "<p>Ta wiadomość niczego nie cofa.</p>",
+  "src": "<p>Ta wiadomość jest tylko powiadomieniem.</p>",
   "en": "<p>This message does not undo anything.</p>"
  },
  {
-  "src": "<p>To już jest zrobione: nie zalogujesz się na nie ponownie.</p>",
+  "src": "<p>Usunięcie jest ostateczne — nie zalogujesz się już na to konto.</p>",
   "en": "<p>This is already done: you will not be able to sign in to it again.</p>"
  },
  {
@@ -280,7 +280,7 @@
   "en": "BPM analysis failed."
  },
  {
-  "src": "Artefakt nie został znaleziony.",
+  "src": "Nie znaleziono pliku.",
   "en": "Artifact not found."
  },
  {
@@ -300,11 +300,11 @@
   "en": "Automatic BPM detection is unavailable for this format."
  },
  {
-  "src": "Automatyczne wykrywanie BPM jest niedostępne dla tego audio. Nie można przejść dalej bez bezpiecznej wartości systemowej.",
+  "src": "Automatyczne wykrywanie BPM jest niedostępne dla tego audio. Bez wartości wykrytej przez system nie przejdziesz dalej.",
   "en": "Automatic BPM detection is unavailable for this audio. You can't continue without a safe system value."
  },
  {
-  "src": "Automatyczne wykrywanie BPM jest niedostępne — nie można zapisać arbitralnego BPM.",
+  "src": "Automatyczne wykrywanie BPM jest niedostępne — nie można zapisać dowolnego BPM.",
   "en": "Automatic BPM detection is unavailable — an arbitrary BPM can't be saved."
  },
  {
@@ -444,7 +444,7 @@
   "en": "You don't have permission to export this project."
  },
  {
-  "src": "Brak uprawnień do pobrania tego artefaktu.",
+  "src": "Brak uprawnień do pobrania tego pliku.",
   "en": "You don't have permission to download this artifact."
  },
  {
@@ -468,7 +468,7 @@
   "en": "You don't have permission to change users."
  },
  {
-  "src": "Brak wiarygodnych kandydatów BPM — nie można zapisać arbitralnego BPM.",
+  "src": "Brak wiarygodnych kandydatów BPM — nie można zapisać dowolnego BPM.",
   "en": "No reliable BPM candidates — an arbitrary BPM can't be saved."
  },
  {
@@ -514,11 +514,11 @@
   "en": "The expiry date must be in the future."
  },
  {
-  "src": "Dokument Studio zmienił się. Odśwież projekt i uruchom eksport ponownie.",
+  "src": "Projekt w Studio się zmienił. Odśwież go i uruchom eksport ponownie.",
   "en": "The Studio document changed. Refresh the project and start the export again."
  },
  {
-  "src": "Dokument miksu zmienił się od czasu rozpoczęcia operacji. Odśwież stan projektu i potwierdź przywrócenie ponownie.",
+  "src": "Miks zmienił się w międzyczasie. Odśwież projekt i ponów przywrócenie.",
   "en": "The mix document changed since the operation started. Refresh the project state and confirm the restore again."
  },
  {
@@ -538,7 +538,7 @@
   "en": "Export is currently unavailable."
  },
  {
-  "src": "Eksport nie może pominąć zatwierdzonego reverse albo tempa Scratch. Ten parametr nie jest jeszcze w offline render.",
+  "src": "Eksport nie może pominąć zatwierdzonego reverse ani tempa Scratch, a jeszcze ich nie obsługuje.",
   "en": "Export can't skip an approved Scratch reverse or tempo. This parameter is not in offline render yet."
  },
  {
@@ -574,7 +574,7 @@
   "en": "Export is taking too long. Try again."
  },
  {
-  "src": "Eksport w kolejce — pipeline kodu gotowy; EXTERNAL worker jest obecnie STOPPED.",
+  "src": "Eksport czeka w kolejce — serwer eksportu jest chwilowo wyłączony.",
   "en": "Export queued — code pipeline ready; the EXTERNAL worker is currently STOPPED."
  },
  {
@@ -666,19 +666,19 @@
   "en": "The account was deleted. The history entry could not be saved."
  },
  {
-  "src": "Kopia TAKE jest gotowa, ale nie udało się umieścić klipu w Studio.",
+  "src": "Kopia nagrania jest gotowa, ale nie udało się umieścić klipu w Studio.",
   "en": "The TAKE copy is ready, but the clip could not be placed in Studio."
  },
  {
-  "src": "Kopiowanie sample jest chwilowo niedostępne.",
+  "src": "Kopiowanie sampla jest chwilowo niedostępne.",
   "en": "Copying the sample is temporarily unavailable."
  },
  {
-  "src": "Kopiowanie sample nie powiodło się.",
+  "src": "Kopiowanie sampla nie powiodło się.",
   "en": "Copying the sample failed."
  },
  {
-  "src": "Kopiowanie sample nie powiodło się. Nic nie zostało zapisane jako gotowe nagranie.",
+  "src": "Kopiowanie sampla nie powiodło się. Nic nie zostało zapisane jako gotowe nagranie.",
   "en": "Copying the sample failed. Nothing was saved as a ready recording."
  },
  {
@@ -806,7 +806,7 @@
   "en": "The recording exceeds the project length. Shorten the recording or extend the project."
  },
  {
-  "src": "Nagranie zostało przesłane, ale zapis nie został potwierdzony. Wymaga dokończenia zapisu.",
+  "src": "Nagranie zostało przesłane, ale zapis nie został potwierdzony. Trzeba dokończyć zapis.",
   "en": "The recording was uploaded, but the save was not confirmed. The save needs to be completed."
  },
  {
@@ -822,11 +822,11 @@
   "en": "Recording is not available in this browser."
  },
  {
-  "src": "Nagrywanie nie jest wspierane w tej przeglądarce.",
+  "src": "Nagrywanie nie jest obsługiwane w tej przeglądarce.",
   "en": "Recording is not supported in this browser."
  },
  {
-  "src": "Nagrywanie niedostępne dla tego beatu.",
+  "src": "Nagrywanie niedostępne dla tego bitu.",
   "en": "Recording is unavailable for this beat."
  },
  {
@@ -838,7 +838,7 @@
   "en": "Recording interrupted — the recording panel was closed. The recording was not saved."
  },
  {
-  "src": "Najwyższy score sygnałowy",
+  "src": "Najwyższy wynik sygnału",
   "en": "Highest signal score"
  },
  {
@@ -958,7 +958,7 @@
   "en": "Couldn't read the audio file."
  },
  {
-  "src": "Nie udało się odczytać źródeł audio. Sprawdź dostępność take/beat i spróbuj ponownie.",
+  "src": "Nie udało się odczytać źródeł audio. Sprawdź, czy nagranie i bit są dostępne, i spróbuj ponownie.",
   "en": "Couldn't read the audio sources. Check that the take/beat is available and try again."
  },
  {
@@ -1050,7 +1050,7 @@
   "en": "Couldn't finalise the recording."
  },
  {
-  "src": "Nie udało się skopiować sample z katalogu.",
+  "src": "Nie udało się skopiować sampla z katalogu.",
   "en": "Couldn't copy the sample from the catalog."
  },
  {
@@ -1094,7 +1094,7 @@
   "en": "Couldn't delete the project."
  },
  {
-  "src": "Nie udało się utworzyć URL uploadu.",
+  "src": "Nie udało się przygotować wysyłki pliku.",
   "en": "Couldn't create the upload URL."
  },
  {
@@ -1142,15 +1142,15 @@
   "en": "Couldn't sign in. Try again."
  },
  {
-  "src": "Nie udało się zapisać Master. Sprawdź wartości i spróbuj ponownie.",
+  "src": "Nie udało się zapisać Mastera. Sprawdź wartości i spróbuj ponownie.",
   "en": "Couldn't save the Master. Check the values and try again."
  },
  {
-  "src": "Nie udało się zapisać Master. Sprawdź wartości i spróbuj ponownie. (empty patch)",
+  "src": "Nie udało się zapisać Mastera. Sprawdź wartości i spróbuj ponownie. (empty patch)",
   "en": "Couldn't save the Master. Check the values and try again. (empty patch)"
  },
  {
-  "src": "Nie udało się zapisać beatu. Spróbuj ponownie.",
+  "src": "Nie udało się zapisać bitu. Spróbuj ponownie.",
   "en": "Couldn't save the beat. Try again."
  },
  {
@@ -1262,7 +1262,7 @@
   "en": "Unspecified"
  },
  {
-  "src": "Niepełna odpowiedź unlock.",
+  "src": "Niepełna odpowiedź serwera przy odblokowaniu.",
   "en": "Incomplete unlock response."
  },
  {
@@ -1318,7 +1318,7 @@
   "en": "New project"
  },
  {
-  "src": "Oba potwierdzenia zostały przyjęte. Twój adres e-mail został pomyślnie zaktualizowany. Możesz wrócić do swojego konta.",
+  "src": "Oba potwierdzenia przyjęte. Twój adres e-mail został zmieniony. Możesz wrócić do konta.",
   "en": "Both confirmations were accepted. Your e-mail address was updated successfully. You can go back to your account."
  },
  {
@@ -1382,7 +1382,7 @@
   "en": "Leave Studio"
  },
  {
-  "src": "Oryginał sample jest niedostępny.",
+  "src": "Oryginał sampla jest niedostępny.",
   "en": "The sample original is unavailable."
  },
  {
@@ -1474,11 +1474,11 @@
   "en": "The file is too large or has an invalid size."
  },
  {
-  "src": "Plik jest za długi względem limitu nagrania dla tego bitu.",
+  "src": "Plik przekracza limit długości nagrania dla tego bitu.",
   "en": "The file is too long for this beat's recording limit."
  },
  {
-  "src": "Plik sample nie przeszedł kontroli treści.",
+  "src": "Plik sampla nie przeszedł kontroli treści.",
   "en": "The sample file did not pass the content check."
  },
  {
@@ -1498,7 +1498,7 @@
   "en": "Downloading the original beat is unavailable."
  },
  {
-  "src": "Pobranie artefaktu Studio Final Mix nie powiodło się.",
+  "src": "Nie udało się pobrać pliku Studio Final Mix.",
   "en": "Downloading the Studio Final Mix artifact failed."
  },
  {
@@ -1650,7 +1650,7 @@
   "en": "The split point must be strictly inside the clip."
  },
  {
-  "src": "Pusta odpowiedź unlock.",
+  "src": "Pusta odpowiedź serwera przy odblokowaniu.",
   "en": "Empty unlock response."
  },
  {
@@ -1663,7 +1663,7 @@
   "en": "Password reset is temporarily unavailable."
  },
  {
-  "src": "Retencja utworu wygasła.",
+  "src": "Czas przechowywania utworu minął.",
   "en": "The track's retention has expired."
  },
  {
@@ -1740,7 +1740,7 @@
   "en": "This local copy belongs to another account or a guest session. Sign in to the right account to recover it."
  },
  {
-  "src": "Ta wiadomość niczego nie cofa.",
+  "src": "Ta wiadomość jest tylko powiadomieniem.",
   "en": "This message does not undo anything."
  },
  {
@@ -1772,11 +1772,11 @@
   "en": "This project has no beat. Add a beat to copy the sample."
  },
  {
-  "src": "Ten sample nie istnieje.",
+  "src": "Ten sampel nie istnieje.",
   "en": "This sample doesn't exist."
  },
  {
-  "src": "Ten sample nie jest dostępny do skopiowania.",
+  "src": "Ten sampel nie jest dostępny do skopiowania.",
   "en": "This sample is not available for copying."
  },
  {
@@ -1788,7 +1788,7 @@
   "en": "These effects cannot be used here."
  },
  {
-  "src": "To już jest zrobione: nie zalogujesz się na nie ponownie.",
+  "src": "Usunięcie jest ostateczne — nie zalogujesz się już na to konto.",
   "en": "This is already done: you will not be able to sign in to it again."
  },
  {
@@ -1800,7 +1800,7 @@
   "en": "This recording doesn't belong to you."
  },
  {
-  "src": "To żądanie zostało już użyte z innymi danymi. Nie wykonano kolejnej mutacji.",
+  "src": "To żądanie zostało już użyte z innymi danymi. Nic więcej nie zmieniono.",
   "en": "This request was already used with different data. No further change was made."
  },
  {
@@ -1904,7 +1904,7 @@
   "en": "Choose a beat."
  },
  {
-  "src": "Wybierz jedną z systemowych hipotez. Ranking sygnałowy nie oznacza automatycznej decyzji o tempie.",
+  "src": "Wybierz jedną z wartości zaproponowanych przez system. Najwyżej oceniona nie musi być właściwa.",
   "en": "Choose one of the system hypotheses. The signal ranking is not an automatic tempo decision."
  },
  {
@@ -1952,7 +1952,7 @@
   "en": "Expired"
  },
  {
-  "src": "Wykryliśmy w bicie wokal lub mowę. Przyjmujemy wyłącznie czyste instrumentale. Usuń wokal i wgraj nowy master. Jeśli to pomyłka (np. syntezator), możesz poprosić o ponowne sprawdzenie przez moderatora.",
+  "src": "Wykryliśmy w bicie wokal lub mowę. Przyjmujemy wyłącznie czyste instrumentale. Usuń wokal i wgraj nowy Master. Jeśli to pomyłka (np. syntezator), możesz poprosić o ponowne sprawdzenie przez moderatora.",
   "en": "We detected vocals or speech in the beat. We only accept clean instrumentals. Remove the vocals and upload a new master. If this is a mistake (e.g. a synth), you can ask a moderator to re-check it."
  },
  {
@@ -2677,7 +2677,7 @@
   "en": "Conflicting hypotheses"
  },
  {
-  "src": "Niepoprawne dane kopii sample.",
+  "src": "Niepoprawne dane kopii sampla.",
   "en": "Invalid sample copy data."
  },
  {

@@ -140,7 +140,7 @@ export async function commitYoutubeVideo(p: {
 }): Promise<{ ok: true; jobId: string } | Deny> {
   if (!youtubeVideoAllowed(p.tier)) return { ok: false, error: "tier_video" };
   // The poller renders kind youtube_video. The flag stays off until that host runs this code.
-  if (!youtubeVideoRenderEnabled()) return { ok: false, error: "video_soon", message: "Wideo MP4 niedostępne — wkrótce." };
+  if (!youtubeVideoRenderEnabled()) return { ok: false, error: "video_soon", message: "Wideo MP4 będzie dostępne wkrótce." };
   const admin = createSupabaseAdminClient();
   const proj = await project(admin, p.ownerId, p.projectId);
   const approved = await approvedMaster(admin, p.ownerId, p.projectId);

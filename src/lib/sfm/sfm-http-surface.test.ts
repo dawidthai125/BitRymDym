@@ -92,7 +92,7 @@ describe("GO-SFM-HTTP-SURFACE — source contracts", () => {
     const src = read(SFM_DL);
     expect(src).toMatch(/createOwnSfmArtifactDownloadSignedUrl/);
     expect(src).toMatch(/rejectClientRenderSourceClaims/);
-    expect(src).toMatch(/Pobranie artefaktu Studio Final Mix nie powiodło się/);
+    expect(src).toMatch(/Nie udało się pobrać pliku Studio Final Mix/);
     expect(src).not.toMatch(/error instanceof Error \? error\.message/);
   });
 

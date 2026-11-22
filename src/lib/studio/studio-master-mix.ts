@@ -17,7 +17,7 @@ export const STUDIO_MASTER_PAN_MIN = -1;
 export const STUDIO_MASTER_PAN_MAX = 1;
 
 const MIX_INVALID_PL =
-  "Nie udało się zapisać Master. Sprawdź wartości i spróbuj ponownie.";
+  "Nie udało się zapisać Mastera. Sprawdź wartości i spróbuj ponownie.";
 
 function mixInvalid(detail?: string): never {
   throw new StudioFxChainError(

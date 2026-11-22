@@ -81,7 +81,7 @@ export function gateStudioVocalImportFile(file: {
 
 /** Message shown when an imported file is longer than the beat's take cap. */
 export const STUDIO_VOCAL_IMPORT_TOO_LONG_MESSAGE =
-  "Plik jest za długi względem limitu nagrania dla tego bitu.";
+  "Plik przekracza limit długości nagrania dla tego bitu.";
 
 /** Pure check: true only when the duration is known and exceeds the cap. */
 export function isStudioVocalImportTooLong(

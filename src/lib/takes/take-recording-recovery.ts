@@ -1116,7 +1116,7 @@ export function takeRecoveryItemSummaryPl(item: TakeRecoveryListItem): string {
   const c = item.classification;
   if (c.kind === "RECOVERABLE") {
     if (item.record.upload?.stage === "BINARY_UPLOADED") {
-      return "Nagranie zostało przesłane, ale zapis nie został potwierdzony. Wymaga dokończenia zapisu.";
+      return "Nagranie zostało przesłane, ale zapis nie został potwierdzony. Trzeba dokończyć zapis.";
     }
     return c.partial
       ? `Nagrywanie zostało przerwane. Zabezpieczono lokalnie fragment (ok. ${c.approxSeconds} s) — wymaga odzyskania.`

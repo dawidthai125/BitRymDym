@@ -19,8 +19,8 @@ describe("settings hub (navigation only)", () => {
   });
 
   it("states it is a hub to existing settings, not new options", () => {
-    expect(src).toMatch(/prowadzi do istniejących ustawień/i);
-    expect(src).toMatch(/Nie\s+dodaje nowych opcji/i);
+    expect(src).toMatch(/skróty do ustawień/i);
+    expect(src).toMatch(/Nie\s+ma tu nowych opcji/i);
     expect(src).not.toMatch(/kolejnej fali/i);
   });
 

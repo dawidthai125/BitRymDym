@@ -54,7 +54,7 @@ describe("P6.7.3 ClipEditPanel fade controls (source)", () => {
   it("shows current fade values from clip DTO", () => {
     expect(editor).toMatch(/formatStudioTimeMs\(clip\.fadeInMs\)/);
     expect(editor).toMatch(/formatStudioTimeMs\(clip\.fadeOutMs\)/);
-    expect(editor).toMatch(/Teraz, ciche wejście/);
+    expect(editor).toMatch(/Teraz: ciche wejście/);
   });
 
   it("allows changing Fade In / Fade Out via local drafts", () => {

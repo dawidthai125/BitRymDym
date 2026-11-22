@@ -418,7 +418,7 @@ export async function createPlatformBeatSignedUploadSession(params: {
   if (signError || !signed) {
     await markAssetFailed(assetId);
     throw new Error(
-      signError?.message ?? "Nie udało się utworzyć URL uploadu.",
+      signError?.message ?? "Nie udało się przygotować wysyłki pliku.",
     );
   }
 
@@ -667,7 +667,7 @@ export async function createMasterReplaceSignedUploadSession(params: {
   if (signError || !signed) {
     await markAssetFailed(assetId);
     throw new Error(
-      signError?.message ?? "Nie udało się utworzyć URL uploadu.",
+      signError?.message ?? "Nie udało się przygotować wysyłki pliku.",
     );
   }
 
@@ -895,7 +895,7 @@ export async function createUserBeatSignedUploadSessionFor(
   if (signError || !signed) {
     await markAssetFailed(assetId);
     throw new Error(
-      signError?.message ?? "Nie udało się utworzyć URL uploadu.",
+      signError?.message ?? "Nie udało się przygotować wysyłki pliku.",
     );
   }
 

@@ -183,7 +183,7 @@ describe("P3 — migration / source contracts", () => {
     expect(actions).toMatch(/accountClaimRedirectPath/);
     expect(middleware).not.toMatch(/claimAnon|brd_tk_aid|anon-account-claim/);
     expect(panel).not.toMatch(/bez transferu/);
-    expect(panel).toMatch(/zapisane na Twoim koncie|zapisane na koncie/i);
+    expect(panel).toMatch(/zapiszesz na Twoim koncie|zapisane na Twoim koncie|zapisane na koncie/i);
   });
 
   it("orchestrator reuses Premium Tier SSOT and Storage copy protocol", () => {

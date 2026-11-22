@@ -17,7 +17,7 @@ describe("admin deletion email contract", () => {
       "Konto w BitRymDym zostało usunięte",
     );
     expect(text).toContain("Administrator usunął Twoje konto w BitRymDym.");
-    expect(text).toContain("Ta wiadomość niczego nie cofa.");
+    expect(text).toContain("Ta wiadomość jest tylko powiadomieniem.");
     expect(text).toContain("zanonimizowanej formie");
     expect(text).not.toMatch(/wszystkie dane/i);
     expect(text).toContain(reason);

@@ -62,7 +62,7 @@ export async function DELETE(request: Request) {
   const body = (await request.json().catch(() => null)) as { sendId?: unknown } | null;
   const sendId = typeof body?.sendId === "string" ? body.sendId : "";
   if (!UUID.test(sendId)) {
-    return NextResponse.json({ error: "Zły identyfikator wysyłki." }, { status: 400, headers: NO_STORE });
+    return NextResponse.json({ error: "Nieprawidłowy identyfikator wysyłki." }, { status: 400, headers: NO_STORE });
   }
   try {
     const admin = createSupabaseAdminClient();

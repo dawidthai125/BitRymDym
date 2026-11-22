@@ -35,7 +35,7 @@ export function studioExportPublicErrorMessage(errorCode: string | null): string
     case STUDIO_EXPORT_EMPTY_SESSION_CODE:
       return EMPTY_SESSION_MESSAGE;
     case "SOURCE_UNAVAILABLE":
-      return "Nie udało się odczytać źródeł audio. Sprawdź dostępność take/beat i spróbuj ponownie.";
+      return "Nie udało się odczytać źródeł audio. Sprawdź, czy nagranie i bit są dostępne, i spróbuj ponownie.";
     case "LIMIT":
       return "Eksport przekroczył limit czasu lub pamięci. Skróć sesję albo uprość efekty i spróbuj ponownie.";
     case "TIER_UNSUPPORTED":

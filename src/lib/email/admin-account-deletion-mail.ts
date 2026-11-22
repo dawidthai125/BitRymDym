@@ -11,8 +11,8 @@ export function buildAdminAccountDeletionText(reason: string): string {
   const why = deletionReason(reason);
   const lines = [
     "Administrator usunął Twoje konto w BitRymDym.",
-    "To już jest zrobione: nie zalogujesz się na nie ponownie.",
-    "Ta wiadomość niczego nie cofa.",
+    "Usunięcie jest ostateczne — nie zalogujesz się już na to konto.",
+    "Ta wiadomość jest tylko powiadomieniem.",
   ];
   if (why) {
     lines.push("", `Powód: ${why}`);
@@ -28,8 +28,8 @@ export function buildAdminAccountDeletionHtml(reason: string): string {
   const why = deletionReason(reason);
   const parts = [
     "<p>Administrator usunął Twoje konto w BitRymDym.</p>",
-    "<p>To już jest zrobione: nie zalogujesz się na nie ponownie.</p>",
-    "<p>Ta wiadomość niczego nie cofa.</p>",
+    "<p>Usunięcie jest ostateczne — nie zalogujesz się już na to konto.</p>",
+    "<p>Ta wiadomość jest tylko powiadomieniem.</p>",
   ];
   if (why) {
     parts.push(`<p>Powód: ${escapeHtml(why)}</p>`);

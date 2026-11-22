@@ -405,7 +405,7 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(editor).not.toMatch(/STUDIO_EXPORT_DEEP_LINK_HREF/);
     expect(editor).not.toMatch(/href=\{STUDIO_EXPORT_DEEP_LINK_HREF\}/);
     expect(control).toMatch(/Eksportuj WAV/);
-    expect(control).toMatch(/Eksport całego dokumentu/);
+    expect(control).toMatch(/Eksport całego projektu/);
   });
 
   it("does not auto-enqueue on mount / useEffect", () => {
@@ -603,7 +603,7 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
       /mapped\.phase === "SUCCEEDED" && !mapped\.artifactId/,
     );
     expect(control).toMatch(
-      /Plik jest zrobiony, ale jeszcze go nie ma do pobrania/,
+      /Plik jest gotowy, ale jeszcze nie da się go pobrać/,
     );
     expect(control).toMatch(/unavailableWithTrackedJob/);
     expect(control).toMatch(
@@ -631,7 +631,7 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(control).toMatch(/function applyRecoveredJob/);
     expect(control).toMatch(/setJobId\(mapped\.jobId\)/);
     const recoveredUnavailable = control.match(
-      /setJobId\(mapped\.jobId\)[\s\S]{0,400}?Plik jest zrobiony, ale jeszcze go nie ma do pobrania/,
+      /setJobId\(mapped\.jobId\)[\s\S]{0,400}?Plik jest gotowy, ale jeszcze nie da się go pobrać/,
     )?.[0] ?? "";
     expect(recoveredUnavailable.length).toBeGreaterThan(0);
     expect(recoveredUnavailable).not.toMatch(/setJobId\(null\)/);

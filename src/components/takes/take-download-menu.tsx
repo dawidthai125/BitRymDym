@@ -159,7 +159,7 @@ export function TakeDownloadMenu({
       ) {
         setInfraNote(
           json.note ??
-            "Eksport w kolejce — pipeline kodu gotowy; EXTERNAL worker jest obecnie STOPPED.",
+            "Eksport czeka w kolejce — serwer eksportu jest chwilowo wyłączony.",
         );
       } else {
         setInfraNote(t("statusEksportu", { v0: json.status ?? "QUEUED" }));

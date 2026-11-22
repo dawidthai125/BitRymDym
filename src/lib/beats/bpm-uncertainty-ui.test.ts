@@ -124,7 +124,7 @@ describe("BPM uncertainty UX model", () => {
     expect(model.recommendedBpm).toBeNull();
     expect(model.requiresSelection).toBe(true);
     expect(model.headline).toContain("nie może jednoznacznie określić BPM");
-    expect(model.description).toMatch(/Ranking sygnałowy nie oznacza automatycznej decyzji/i);
+    expect(model.description).toMatch(/Najwyżej oceniona nie musi być właściwa/i);
     expect(model.options.map((o) => o.bpm)).toEqual([92, 138]);
     expect(model.options.every((o) => o.label.startsWith("Hipoteza "))).toBe(
       true,
@@ -350,15 +350,15 @@ describe("BPM uncertainty UX model", () => {
     expect(model.requiresSelection).toBe(true);
     expect(model.canProceed).toBe(false);
     expect(model.defaultSelectionMode).toBeNull();
-    expect(model.description).toMatch(/Ranking sygnałowy nie oznacza automatycznej decyzji/i);
+    expect(model.description).toMatch(/Najwyżej oceniona nie musi być właściwa/i);
     expect(model.description).toContain("RATIO_1_5_AMBIGUITY");
 
     const opt65 = model.options.find((o) => o.bpm === 65);
     const opt100 = model.options.find((o) => o.bpm === 100);
     expect(opt65?.label).toBe("Hipoteza 65 BPM");
     expect(opt100?.label).toBe("Hipoteza 100 BPM");
-    expect(opt65?.hint ?? "").not.toMatch(/główna|Najwyższy score/i);
-    expect(opt100?.hint).toMatch(/Najwyższy score sygnałowy/i);
+    expect(opt65?.hint ?? "").not.toMatch(/główna|Najwyższy wynik/i);
+    expect(opt100?.hint).toMatch(/Najwyższy wynik sygnału/i);
     // Presentation still follows hypothesis member order (65 before 100).
     expect(model.options[0]?.bpm).toBe(65);
     expect(
@@ -410,7 +410,7 @@ describe("BPM uncertainty UX model", () => {
     ).toBe(true);
     expect(
       model.options.find((o) => o.bpm === 131)?.hint,
-    ).toMatch(/Najwyższy score sygnałowy/i);
+    ).toMatch(/Najwyższy wynik sygnału/i);
   });
 
   it("C. Conflict 97 vs 130 — no auto recommendation; labels independent of BPM sort", () => {
@@ -443,7 +443,7 @@ describe("BPM uncertainty UX model", () => {
     expect(model.recommendedBpm).toBeNull();
     expect(model.requiresSelection).toBe(true);
     expect(model.options[0]?.bpm).toBe(97);
-    expect(model.options[0]?.hint).toMatch(/Najwyższy score sygnałowy/i);
+    expect(model.options[0]?.hint).toMatch(/Najwyższy wynik sygnału/i);
     expect(model.options[1]?.bpm).toBe(130);
     expect(model.options[1]?.hint).toBeUndefined();
   });
@@ -478,7 +478,7 @@ describe("BPM uncertainty UX model", () => {
     expect(model.recommendedBpm).toBeNull();
     expect(
       model.options.every(
-        (o) => !(o.hint ?? "").includes("Najwyższy score sygnałowy"),
+        (o) => !(o.hint ?? "").includes("Najwyższy wynik sygnału"),
       ),
     ).toBe(true);
     expect(model.options.every((o) => o.label.startsWith("Hipoteza "))).toBe(
@@ -539,7 +539,7 @@ describe("BPM uncertainty UX model", () => {
     expect(model.options[0]?.hypothesisId).toBe("h0");
     expect(model.options[0]?.hint ?? "").not.toMatch(/Najwyższy score|główna/i);
     expect(model.options[1]?.bpm).toBe(100);
-    expect(model.options[1]?.hint).toMatch(/Najwyższy score sygnałowy/i);
+    expect(model.options[1]?.hint).toMatch(/Najwyższy wynik sygnału/i);
     // Deterministic presentation order preserved across rebuild.
     const again = buildBpmUxModel(
       envelope({

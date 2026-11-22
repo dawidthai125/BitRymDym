@@ -290,7 +290,7 @@ function mapHttpFailure(input: {
       httpStatus: input.httpStatus,
       code,
       message:
-        "Dokument miksu zmienił się od czasu rozpoczęcia operacji. Odśwież stan projektu i potwierdź przywrócenie ponownie.",
+        "Miks zmienił się w międzyczasie. Odśwież projekt i ponów przywrócenie.",
       kind: "conflict_cas",
     };
   }
@@ -300,7 +300,7 @@ function mapHttpFailure(input: {
       httpStatus: input.httpStatus,
       code,
       message:
-        "To żądanie zostało już użyte z innymi danymi. Nie wykonano kolejnej mutacji.",
+        "To żądanie zostało już użyte z innymi danymi. Nic więcej nie zmieniono.",
       kind: "idempotency_reuse",
     };
   }

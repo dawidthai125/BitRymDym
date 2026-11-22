@@ -88,7 +88,7 @@ export async function copyCatalogAndPlaceStudioClip(
       status: copyRes.status || 500,
       error: readErrorMessage(
         copyBody,
-        "Nie udało się skopiować sample z katalogu.",
+        "Nie udało się skopiować sampla z katalogu.",
       ),
     };
   }
@@ -119,7 +119,7 @@ export async function copyCatalogAndPlaceStudioClip(
       status: placeRes.status || 500,
       error: readErrorMessage(
         placeBody,
-        "Kopia TAKE jest gotowa, ale nie udało się umieścić klipu w Studio.",
+        "Kopia nagrania jest gotowa, ale nie udało się umieścić klipu w Studio.",
       ),
     };
   }

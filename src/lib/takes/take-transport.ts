@@ -586,7 +586,7 @@ export async function createStemUploadSessionFor(
   if (claimError) {
     const code = claimError.message.toUpperCase();
     if (code.includes("STEM_PROJECT_CAP")) {
-      throw new AuthError("FORBIDDEN", `Limit stemów w projekcie (${maxStems}) osiągnięty.`);
+      throw new AuthError("FORBIDDEN", `Osiągnięto limit stemów w projekcie (${maxStems}).`);
     }
     if (code.includes("STEM_USER_CAP")) {
       throw new AuthError("FORBIDDEN", "Za dużo stemów na koncie. Usuń stare projekty albo stemy.");

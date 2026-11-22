@@ -34,7 +34,7 @@ export const AUTO_CHECK_MESSAGES_PL = {
   passed:
     "Automatyczne sprawdzenie zakończone. Bit czeka teraz na moderację.",
   rejectedVocals:
-    "Wykryliśmy w bicie wokal lub mowę. Przyjmujemy wyłącznie czyste instrumentale. Usuń wokal i wgraj nowy master. Jeśli to pomyłka (np. syntezator), możesz poprosić o ponowne sprawdzenie przez moderatora.",
+    "Wykryliśmy w bicie wokal lub mowę. Przyjmujemy wyłącznie czyste instrumentale. Usuń wokal i wgraj nowy Master. Jeśli to pomyłka (np. syntezator), możesz poprosić o ponowne sprawdzenie przez moderatora.",
   rejectedMatch:
     "Nagranie jest bardzo podobne do istniejącego utworu. Nie możemy go przyjąć. Jeśli masz do niego prawa, poproś o weryfikację przez moderatora.",
   error:

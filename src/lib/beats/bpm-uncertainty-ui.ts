@@ -118,7 +118,7 @@ export function buildBpmUxModel(
       confidenceClass: "UNAVAILABLE",
       headline: "Nie udało się bezpiecznie określić BPM tego pliku.",
       description:
-        "Automatyczne wykrywanie BPM jest niedostępne dla tego audio. Nie można przejść dalej bez bezpiecznej wartości systemowej.",
+        "Automatyczne wykrywanie BPM jest niedostępne dla tego audio. Bez wartości wykrytej przez system nie przejdziesz dalej.",
       detectedBpm: null,
       recommendedBpm: null,
       options: [],
@@ -180,8 +180,8 @@ export function buildBpmUxModel(
           hint: isClearTop
             ? typeof topSignalScore === "number" &&
               Number.isFinite(topSignalScore)
-              ? `Najwyższy score sygnałowy (${formatConflictScore(topSignalScore)})`
-              : "Najwyższy score sygnałowy"
+              ? `Najwyższy wynik sygnału (${formatConflictScore(topSignalScore)})`
+              : "Najwyższy wynik sygnału"
             : undefined,
           hypothesisId: h.id,
         });
@@ -199,8 +199,8 @@ export function buildBpmUxModel(
               label: conflictHypothesisLabel(bpm),
               hint: isClearTop
                 ? typeof score === "number" && Number.isFinite(score)
-                  ? `Najwyższy score sygnałowy (${formatConflictScore(score)})`
-                  : "Najwyższy score sygnałowy"
+                  ? `Najwyższy wynik sygnału (${formatConflictScore(score)})`
+                  : "Najwyższy wynik sygnału"
                 : undefined,
             };
           });
@@ -215,7 +215,7 @@ export function buildBpmUxModel(
       confidenceClass: "CONFLICT",
       headline: "System nie może jednoznacznie określić BPM.",
       description:
-        "Wybierz jedną z systemowych hipotez. Ranking sygnałowy nie oznacza automatycznej decyzji o tempie." +
+        "Wybierz jedną z wartości zaproponowanych przez system. Najwyżej oceniona nie musi być właściwa." +
         reasonSuffix,
       detectedBpm: envelope.detectedBpm,
       recommendedBpm: null,
@@ -379,7 +379,7 @@ export function mapFinalizeBpmError(error: string | null | undefined): {
   }
   return {
     phase: "FINALIZE_ERROR",
-    message: "Nie udało się zapisać beatu. Spróbuj ponownie.",
+    message: "Nie udało się zapisać bitu. Spróbuj ponownie.",
   };
 }
 

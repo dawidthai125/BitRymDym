@@ -128,13 +128,13 @@ export async function unlockPremiumWorkFor(
 
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) {
-    throw new PremiumUnlockError("Pusta odpowiedź unlock.", "INVALID");
+    throw new PremiumUnlockError("Pusta odpowiedź serwera przy odblokowaniu.", "INVALID");
   }
   if (row.denied_reason) {
     throw mapDenied(String(row.denied_reason));
   }
   if (!row.unlock_id || !row.retention_expires_at) {
-    throw new PremiumUnlockError("Niepełna odpowiedź unlock.", "INVALID");
+    throw new PremiumUnlockError("Niepełna odpowiedź serwera przy odblokowaniu.", "INVALID");
   }
 
   return {

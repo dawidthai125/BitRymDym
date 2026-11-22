@@ -20,7 +20,7 @@ export const SCRATCH_JOG_RATE_PER_FULL_WIDTH = 2;
 export const SCRATCH_EXPORT_UNSUPPORTED = "SCRATCH_EXPORT_UNSUPPORTED" as const;
 
 export const SCRATCH_EXPORT_UNSUPPORTED_PL =
-  "Eksport nie może pominąć zatwierdzonego reverse albo tempa Scratch. Ten parametr nie jest jeszcze w offline render.";
+  "Eksport nie może pominąć zatwierdzonego reverse ani tempa Scratch, a jeszcze ich nie obsługuje.";
 
 export type StudioScratchApprovedState = {
   cueMs: number;

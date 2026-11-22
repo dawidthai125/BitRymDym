@@ -1471,7 +1471,7 @@ export async function updateStudioMasterMixFor(
   if (!hasGain && !hasPan) {
     throw new StudioFxChainError(
       "FX_CHAIN_INVALID",
-      "Nie udało się zapisać Master. Sprawdź wartości i spróbuj ponownie. (empty patch)",
+      "Nie udało się zapisać Mastera. Sprawdź wartości i spróbuj ponownie. (empty patch)",
     );
   }
 

@@ -141,7 +141,7 @@ describe("take upload user-facing errors", () => {
     ).toMatch(/za duży/i);
     expect(
       toUserFacingTakeUploadError("Duration 200s exceeds max 174s."),
-    ).toMatch(/za długi/i);
+    ).toMatch(/przekracza limit długości/i);
     expect(
       toUserFacingTakeUploadError(
         "Duration could not be verified (fail-closed).",

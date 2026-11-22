@@ -17,7 +17,7 @@ export function studioExportForbiddenMessage(serverError: unknown): string {
   const text = typeof serverError === "string" ? serverError : "";
   if (/session expired/i.test(text)) return `${STUDIO_TAKE_EXPIRED_ERROR_PL} Potem eksportuj ponownie.`;
   if (/take was deleted/i.test(text)) {
-    return "Nagranie na jednej ze ścieżek zostało usunięte. Usuń jego klip albo dodaj nowe ujęcie, potem eksportuj ponownie.";
+    return "Nagranie na jednej ze ścieżek zostało usunięte. Usuń jego klip albo dodaj nowe ujęcie, a potem wyeksportuj ponownie.";
   }
   if (/not READY/i.test(text)) return "Nagranie na jednej ze ścieżek nie jest jeszcze gotowe. Poczekaj chwilę i spróbuj ponownie.";
   return "Brak uprawnień do eksportu tego projektu.";
@@ -157,14 +157,14 @@ export function mapStudioExportDownloadHttpResult(input: {
     return {
       ok: false,
       httpStatus: 403,
-      message: "Brak uprawnień do pobrania tego artefaktu.",
+      message: "Brak uprawnień do pobrania tego pliku.",
     };
   }
   if (input.httpStatus === 404) {
     return {
       ok: false,
       httpStatus: 404,
-      message: "Artefakt nie został znaleziony.",
+      message: "Nie znaleziono pliku.",
     };
   }
 
@@ -294,7 +294,7 @@ export function mapStudioExportHttpResult(input: {
       httpStatus,
       code: "CONFLICT",
       message:
-        "Dokument Studio zmienił się. Odśwież projekt i uruchom eksport ponownie.",
+        "Projekt w Studio się zmienił. Odśwież go i uruchom eksport ponownie.",
     };
   }
 
@@ -572,7 +572,7 @@ export function mapSfmEncodeHttpError(input: {
   if (code === "NOT_ELIGIBLE" || input.httpStatus === 403) {
     const byCode: Record<string, string> = {
       NOT_ELIGIBLE:
-        "Wersja Final Mix nie jest jeszcze gotowa do MP3 (Master SFM musi się udać).",
+        "Wersja Final Mix nie jest jeszcze gotowa do MP3 — najpierw musi się udać Master.",
       NO_GRANT: "Brak uprawnienia do pobrania MP3 dla tej wersji.",
       FREE_NO_DOWNLOAD: "Plan Free nie obejmuje pobierania MP3.",
       PLAN_DENIED: "Twój plan nie obejmuje tego formatu MP3.",

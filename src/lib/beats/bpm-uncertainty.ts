@@ -101,9 +101,9 @@ export type ResolveCreateBpmResult =
 const REJECT_OUTSIDE =
   "BPM spoza wartości uznanych przez system dla tego pliku.";
 const REJECT_UNAVAILABLE =
-  "Automatyczne wykrywanie BPM jest niedostępne — nie można zapisać arbitralnego BPM.";
+  "Automatyczne wykrywanie BPM jest niedostępne — nie można zapisać dowolnego BPM.";
 const REJECT_EMPTY =
-  "Brak wiarygodnych kandydatów BPM — nie można zapisać arbitralnego BPM.";
+  "Brak wiarygodnych kandydatów BPM — nie można zapisać dowolnego BPM.";
 /** BPM Quality V2 — CONFLICT/LOW/MEDIUM without explicit selectionMode. */
 export const REJECT_SELECTION_REQUIRED = "BLOCKED_BPM_SELECTION_REQUIRED";
 
@@ -756,13 +756,13 @@ export function resolveCreateBpm(params: {
     return {
       ok: false,
       error:
-        "Automatyczne wykrywanie BPM jest niedostępne — nie można zapisać arbitralnego BPM.",
+        "Automatyczne wykrywanie BPM jest niedostępne — nie można zapisać dowolnego BPM.",
     };
   }
 
   return {
     ok: false,
     error:
-      "Brak wiarygodnych kandydatów BPM — nie można zapisać arbitralnego BPM.",
+      "Brak wiarygodnych kandydatów BPM — nie można zapisać dowolnego BPM.",
   };
 }

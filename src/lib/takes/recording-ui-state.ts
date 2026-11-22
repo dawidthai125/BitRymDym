@@ -88,7 +88,7 @@ export function reduceRecordingUi(
       return {
         ...state,
         phase: "BEAT_NOT_ELIGIBLE",
-        error: event.message ?? "Nagrywanie niedostępne dla tego beatu.",
+        error: event.message ?? "Nagrywanie niedostępne dla tego bitu.",
       };
     case "REQUEST_MIC":
       if (
@@ -125,7 +125,7 @@ export function reduceRecordingUi(
       return {
         ...state,
         phase: "UNSUPPORTED",
-        error: event.message ?? "Nagrywanie nie jest wspierane w tej przeglądarce.",
+        error: event.message ?? "Nagrywanie nie jest obsługiwane w tej przeglądarce.",
       };
     case "START_RECORDING":
       if (state.phase !== "READY") {

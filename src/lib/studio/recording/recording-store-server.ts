@@ -109,7 +109,7 @@ async function upsertLaneRow(
       return { available: false, lane };
     }
     if (/TAKE_LANE_LIMIT/.test(error.message)) {
-      throw new AuthError("FORBIDDEN", "Osiągnięto limit sekcji z take'ami w projekcie.");
+      throw new AuthError("FORBIDDEN", "Osiągnięto limit sekcji z nagraniami w projekcie.");
     }
     if (/TAKE_LANE_/.test(error.message)) {
       throw new AuthError("FORBIDDEN", "Sekcja nie należy do tego projektu.");

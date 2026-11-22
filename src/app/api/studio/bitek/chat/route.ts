@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       result = {
         ...result,
         jobs,
-        reply: jobs.length > 0 ? result.reply : lang === "en" ? "Ducking under the beat starts on Silver." : "Ściszanie pod bit jest od Silver.",
+        reply: jobs.length > 0 ? result.reply : lang === "en" ? "Ducking under the beat starts on Silver." : "Ściszanie pod bit jest od planu Silver.",
       };
     }
   }

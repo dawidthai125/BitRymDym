@@ -39,7 +39,7 @@ export async function GET(request: Request, context: RouteContext) {
     // Never echo raw SQL/RPC/storage internals to the client.
     return NextResponse.json(
       {
-        error: "Pobranie artefaktu Studio Final Mix nie powiodło się.",
+        error: "Nie udało się pobrać pliku Studio Final Mix.",
         code: "INVALID",
       },
       { status: 400 },

@@ -30,7 +30,7 @@ export const EMAIL_CHANGE_NOTICE_COPY = {
   },
   both: {
     title: "Adres e-mail został zmieniony!",
-    body: "Oba potwierdzenia zostały przyjęte. Twój adres e-mail został pomyślnie zaktualizowany. Możesz wrócić do swojego konta.",
+    body: "Oba potwierdzenia przyjęte. Twój adres e-mail został zmieniony. Możesz wrócić do konta.",
   },
   invalid: {
     title: "Nie udało się potwierdzić adresu",

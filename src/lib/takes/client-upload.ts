@@ -79,7 +79,7 @@ export function toUserFacingTakeUploadError(message: string): string {
     /DURATION_EXCEEDED/i.test(message) ||
     /exceeds max \d+s/i.test(message)
   ) {
-    return "Plik jest za długi względem limitu nagrania dla tego bitu.";
+    return "Plik przekracza limit długości nagrania dla tego bitu.";
   }
   if (
     /Duration could not be verified/i.test(message) ||

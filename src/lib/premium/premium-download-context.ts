@@ -109,7 +109,7 @@ export function denyMessageForPremiumDownloadReason(
     case "NO_UNLOCK":
       return "Odblokuj utwór, zanim pobierzesz gotowy plik.";
     case "RETENTION_EXPIRED":
-      return "Retencja utworu wygasła.";
+      return "Czas przechowywania utworu minął.";
     case "NOT_READY":
       return "Utwór nie jest gotowy do pobrania.";
     case "NOT_OWNER":

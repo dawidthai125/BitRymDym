@@ -86,7 +86,7 @@ describe("P5.6 auto-place decoupling", () => {
     expect(workflowIdx).toBeGreaterThan(-1);
     expect(catalogIdx).toBeGreaterThan(workflowIdx);
     expect(panel).toMatch(
-      /Nagranie gotowe — kliknij Zachowaj, żeby wstawić na ścieżkę\./,
+      /Nagranie gotowe — kliknij „Zachowaj”, żeby wstawić je na ścieżkę\./,
     );
     expect(panel).toMatch(/takeWorkflowRef\.current\?\.scrollIntoView/);
     expect(panel).toMatch(/aria-label="Przebieg nagrania w Studio"/);
@@ -105,7 +105,7 @@ describe("P5.6 auto-place decoupling", () => {
     expect(panel).toMatch(/Zastąp/);
     expect(panel).toMatch(/replaceOverlapping/);
     expect(panel).toMatch(/Odliczanie \/ punch/);
-    expect(panel).toMatch(/Monitor do ucha/);
+    expect(panel).toMatch(/Odsłuch w słuchawkach/);
   });
 });
 

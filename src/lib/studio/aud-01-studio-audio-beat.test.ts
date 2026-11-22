@@ -276,7 +276,7 @@ describe("AUD-01 architecture + mic lifecycle guards", () => {
   });
 
   it("mobile output copy is Automatic-only when picker disabled", () => {
-    expect(panel).toMatch(/Automatyczny — urządzenie systemowe/);
+    expect(panel).toMatch(/Automatycznie — urządzenie systemowe/);
     expect(panel).toMatch(/pickerEnabled/);
   });
 });

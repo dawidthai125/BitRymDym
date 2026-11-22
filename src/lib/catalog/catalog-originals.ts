@@ -372,32 +372,32 @@ export function catalogCopyErrorHttpStatus(error: string): number {
 export function catalogCopyUserMessage(error: string): string {
   switch (error) {
     case "VALIDATION_FAILED":
-      return "Niepoprawne dane kopii sample.";
+      return "Niepoprawne dane kopii sampla.";
     case "UNAUTHENTICATED":
       return "Zaloguj się, aby skopiować sample.";
     case "FORBIDDEN":
       return "Nie masz uprawnień do tej kopii.";
     case "NOT_FOUND":
     case CATALOG_NOT_FOUND:
-      return "Ten sample nie istnieje.";
+      return "Ten sampel nie istnieje.";
     case CATALOG_STORAGE_POLICIES_UNAVAILABLE:
-      return "Kopiowanie sample jest chwilowo niedostępne.";
+      return "Kopiowanie sampla jest chwilowo niedostępne.";
     case CATALOG_ASSET_NOT_COPYABLE:
-      return "Ten sample nie jest dostępny do skopiowania.";
+      return "Ten sampel nie jest dostępny do skopiowania.";
     case CATALOG_PROJECT_NO_BEAT:
       return "Ten projekt nie ma bitu. Dodaj bit, aby skopiować sample.";
     case CATALOG_SOURCE_UNAVAILABLE:
-      return "Oryginał sample jest niedostępny.";
+      return "Oryginał sampla jest niedostępny.";
     case CATALOG_TAKE_CAP:
       return "Osiągnięto limit nagrań. Usuń albo zastąp istniejące nagranie.";
     case CATALOG_CONTENT_BYTES_REQUIRED:
     case CATALOG_CONTENT_EMPTY:
     case CATALOG_CONTENT_TYPE_MISMATCH:
     case CATALOG_CONTENT_UNSUPPORTED:
-      return "Plik sample nie przeszedł kontroli treści.";
+      return "Plik sampla nie przeszedł kontroli treści.";
     case CATALOG_COPY_FAILED:
-      return "Kopiowanie sample nie powiodło się. Nic nie zostało zapisane jako gotowe nagranie.";
+      return "Kopiowanie sampla nie powiodło się. Nic nie zostało zapisane jako gotowe nagranie.";
     default:
-      return "Kopiowanie sample nie powiodło się.";
+      return "Kopiowanie sampla nie powiodło się.";
   }
 }
