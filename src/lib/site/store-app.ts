@@ -13,7 +13,9 @@ export const STORE_APP_COOKIE = "brd_app";
 export const STORE_APP_QUERY_PARAM = "app";
 export const STORE_APP_PLATFORMS = ["android", "ios"] as const;
 export const STORE_APP_CLEAR_VALUE = "web";
-export const STORE_APP_COOKIE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
+// 12 h, renewed on every app launch (the app always opens /?app=…). The Android app (TWA) shares cookies with
+// Chrome on the phone: a long cookie would hide buying on bitrymdym.pl in the normal browser too.
+export const STORE_APP_COOKIE_MAX_AGE_SECONDS = 12 * 60 * 60;
 /** Checkout refusal code (API + checkout-service). */
 export const STORE_APP_CHECKOUT_CODE = "STORE_APP";
 

@@ -60,15 +60,15 @@ describe("store-app rules", () => {
     expect(isStoreAppCookieValue("")).toBe(false);
   });
 
-  it("cookie: 1 year, Lax, path /, httpOnly", () => {
+  it("cookie: 12 h (renewed per launch), Lax, path /, httpOnly", () => {
     expect(storeAppCookieOptions(true)).toEqual({
       httpOnly: true,
       secure: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 365 * 24 * 60 * 60,
+      maxAge: 12 * 60 * 60,
     });
-    expect(STORE_APP_COOKIE_MAX_AGE_SECONDS).toBe(31_536_000);
+    expect(STORE_APP_COOKIE_MAX_AGE_SECONDS).toBe(43_200);
   });
 
   it("decideStoreAppEntry: set + redirect without the param, other params kept", () => {
