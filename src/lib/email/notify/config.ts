@@ -4,7 +4,7 @@
  * The same flags work on Vercel (welcome, moderation) and on E3 (master / MP4 ready).
  */
 export type NotifyCategory = "account" | "moderation" | "studio";
-export type NotifyKind = "welcome" | "beat_approved" | "beat_rejected" | "master_ready" | "mp4_ready" | "purchase_confirmed" | "take_expiring" | "plan_expiring" | "no_recording_yet";
+export type NotifyKind = "welcome" | "beat_approved" | "beat_rejected" | "master_ready" | "mp4_ready" | "purchase_confirmed" | "take_expiring" | "plan_expiring" | "no_recording_yet" | "work_featured";
 
 export const KIND_CATEGORY: Record<NotifyKind, NotifyCategory> = {
   welcome: "account",
@@ -17,6 +17,8 @@ export const KIND_CATEGORY: Record<NotifyKind, NotifyCategory> = {
   plan_expiring: "account",
   // Studio nudge: respects the same "Studio" switch / unsubscribe as take_expiring.
   no_recording_yet: "studio",
+  // Utwór tygodnia: about the author's finished track → the same "Studio" switch / unsubscribe.
+  work_featured: "studio",
 };
 
 /** Preference columns in public.notification_preferences (all default true). */

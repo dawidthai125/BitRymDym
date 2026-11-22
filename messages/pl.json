@@ -774,7 +774,7 @@
       "moderacjaEtykieta": "Moderacja bitów",
       "moderacjaOpis": "Wynik moderacji Twoich bitów (zatwierdzony / odrzucony).",
       "studioEtykieta": "Studio",
-      "studioOpis": "Gotowy master i wideo MP4, nagrania przed wygaśnięciem i przypomnienie o pierwszym nagraniu.",
+      "studioOpis": "Gotowy master i wideo MP4, nagrania przed wygaśnięciem, przypomnienie o pierwszym nagraniu i wyróżnienie Twojego utworu jako Utwór tygodnia.",
       "zapisz": "Zapisz powiadomienia",
       "zapisywanie": "Zapisywanie…",
       "zapisano": "Zapisano.",
@@ -1019,7 +1019,8 @@
       "oczekujace": "Oczekujące",
       "katalog": "Katalog",
       "trybPrac": "Tryb prac",
-      "generatorSampli": "Generator sampli"
+      "generatorSampli": "Generator sampli",
+      "utwory": "Utwory"
     },
     "adminPaymentsPage": {
       "tytul": "Historia płatności",
@@ -1646,6 +1647,32 @@
       "pustoOplacone": "Brak opłaconych zamówień w tym okresie.",
       "uwaga": "Opłacone liczą też zamówienia zwrócone. Boty i podgląd linków nie są liczone.",
       "blad": "Nie udało się wczytać danych. Odśwież stronę."
+    },
+    "adminWorksPage": {
+      "metaTitle": "Utwory · Administrator",
+      "tytul": "Utwory",
+      "opis": "Opublikowane utwory z katalogu. Jeden numer na tydzień (od poniedziałku, czas warszawski) leci na stronie głównej jako Utwór tygodnia. Autor dostaje maila, jeśli nie wyłączył powiadomień Studia.",
+      "tydzien": "Bieżący tydzień od {date}",
+      "obecny": "W tym tygodniu leci: {title}",
+      "brakWyroznienia": "W tym tygodniu nic nie jest wyróżnione.",
+      "pusto": "Katalog utworów jest jeszcze pusty. Jak ktoś opublikuje numer, pojawi się tutaj.",
+      "wylaczone": "Wyróżnienia jeszcze nie działają: brakuje tabeli featured_works (migracja 20261122190000).",
+      "katalogWylaczony": "Katalog utworów jest niedostępny.",
+      "wyroznij": "Wyróżnij jako utwór tygodnia",
+      "zamien": "Wyróżnij zamiast obecnego",
+      "cofnij": "Cofnij wyróżnienie",
+      "zapiszNotatke": "Zapisz notatkę",
+      "notatka": "Notatka na stronę główną (opcjonalnie)",
+      "notatkaPodpowiedz": "Max 280 znaków, jedna linijka.",
+      "czekaj": "Chwila…",
+      "zapisano": "Gotowe.",
+      "otworz": "Otwórz",
+      "bledy": {
+        "INVALID": "Coś nie tak z tym utworem. Odśwież stronę.",
+        "NOT_LIVE": "Ten utwór nie jest już publiczny.",
+        "OFF": "Wyróżnienia jeszcze nie działają (brak migracji).",
+        "FAILED": "Nie udało się zapisać. Spróbuj ponownie."
+      }
     }
   },
   "auth": {
@@ -4970,7 +4997,14 @@
       "prizeSaved": "Włączone.",
       "prizeConflict": "Plan zmienił się w tej samej chwili. Odśwież i spróbuj jeszcze raz.",
       "prizeWait": "Najpierw musi się skończyć obecny plan.",
-      "prizeOff": "Nagroda włączy się po aktualizacji bazy."
+      "prizeOff": "Nagroda włączy się po aktualizacji bazy.",
+      "featuredBadge": "Utwór tygodnia",
+      "featuredTitle": "Utwór tygodnia",
+      "featuredLead": "Ten numer ekipa wrzuca na cały tydzień. Odpal fragment, a po resztę wbijaj na stronę utworu.",
+      "featuredNote": "Słowo od ekipy",
+      "featuredOpen": "Wbijaj do utworu",
+      "featuredAll": "Wszystkie utwory",
+      "featuredCover": "Okładka: {title}"
     },
     "sampleCatalog": {
       "sortuj": "Sortuj",

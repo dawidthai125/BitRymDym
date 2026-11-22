@@ -40,7 +40,7 @@ export async function listenShareData(token: string): Promise<ShareCardData | nu
 }
 
 /** Beat behind a Studio project (its cover goes on the card, still only when public). */
-async function projectBeatId(projectId: string | null | undefined): Promise<string | null> {
+export async function projectBeatId(projectId: string | null | undefined): Promise<string | null> {
   if (!projectId || !UUID.test(projectId)) return null;
   const { data } = await createSupabaseAdminClient().from("studio_projects").select("beat_id").eq("id", projectId).maybeSingle();
   return ((data as { beat_id?: string | null } | null)?.beat_id ?? null) as string | null;

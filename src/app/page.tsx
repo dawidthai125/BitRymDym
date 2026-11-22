@@ -5,6 +5,7 @@ import { FREE_WATERMARK_PER_DAY, freeWatermarkDownloadEnabled } from "@/lib/stud
 import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-region";
 import { HomePromoFilm } from "@/components/home/home-promo-film";
 import { CommunityShelf } from "@/components/community/community-shelf";
+import { HomeFeaturedWork } from "@/components/home/home-featured-work";
 import { HomeTracklist } from "@/components/home/home-tracklist";
 import { TapeDeck } from "@/components/home/tape-deck";
 import { AppShell } from "@/components/site/app-shell";
@@ -18,6 +19,7 @@ import {
 import { getCurrentProfile } from "@/lib/auth/session";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
+import { loadFeaturedWorkOfWeek } from "@/lib/catalog/featured-work-server";
 import { presentBeats } from "@/lib/ui/demo-beats";
 import type { PremiumTier } from "@/types/premium";
 import { cn } from "@/lib/utils";
@@ -97,6 +99,8 @@ export default async function HomePage() {
     maximumFractionDigits: 2,
   });
   const publishedPromise = listPublishedBeats({ limit: 8 });
+  // Null (no feature this week / work withdrawn / table missing) → the section is not rendered.
+  const featuredPromise = loadFeaturedWorkOfWeek().catch(() => null);
   const session = await getCurrentProfile();
   const steps = [
     { title: tc("wybierzBit"), body: t("krokBit", { s: GUEST_POLICY.previewSeconds }) },
@@ -276,6 +280,7 @@ export default async function HomePage() {
     (await publishedPromise).map(toPublicCatalogItem),
   );
   const strip = beats.slice(0, 6);
+  const featured = await featuredPromise;
 
   return (
     <AppShell tone="public">
@@ -346,6 +351,9 @@ export default async function HomePage() {
             </p>
           </div>
         </section>
+
+        {/* TRACK OF THE WEEK — only while a live work is featured for this Warsaw week */}
+        {featured ? <HomeFeaturedWork featured={featured} /> : null}
 
         {/* WHAT YOU CAN DO — rack units, not cards */}
         <section aria-labelledby="home-co-mozesz" className="border-b border-tape-line bg-tape-deck">
