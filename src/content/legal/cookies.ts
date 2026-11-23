@@ -1,4 +1,4 @@
-/** Polityka cookies. Only strictly necessary storage → no consent banner needed (strictly-necessary exemption, Prawo komunikacji elektronicznej). */
+/** Polityka cookies. Necessary storage without consent; Google Analytics only after consent (banner, src/components/site/cookie-consent.tsx). */
 import { PRIVACY_VERSION } from "@/lib/legal/legal-config";
 
 import type { LegalDoc } from "./types";
@@ -6,7 +6,7 @@ import type { LegalDoc } from "./types";
 export const COOKIES: LegalDoc = {
   title: "Polityka cookies BitRymDym",
   version: PRIVACY_VERSION,
-  lead: "Używamy wyłącznie plików cookie i pamięci przeglądarki niezbędnych do działania Serwisu. Nie używamy cookies analitycznych, reklamowych ani śledzących, dlatego nie wyświetlamy banera zgody.",
+  lead: "Pliki cookie niezbędne do działania Serwisu zapisujemy bez pytania. Cookies statystyczne Google Analytics zapisujemy tylko za Twoją zgodą wyrażoną w banerze. Nie używamy cookies reklamowych. Zgodę możesz w każdej chwili zmienić przyciskiem „Ustawienia cookies” w stopce.",
   sections: [
     { id: "c1", h: "1. Pliki cookie", blocks: [{ table: { head: ["Nazwa", "Cel", "Ważność"], rows: [
       ["sb-…-auth-token", "sesja logowania (Supabase)", "do wylogowania / wygaśnięcia sesji"],
@@ -16,7 +16,15 @@ export const COOKIES: LegalDoc = {
       ["brd_tk_aid", "dawne nagrania bez konta (losowy identyfikator)", "do 2 godzin"],
       ["brd_ref", "kod polecający z linku „Zaproś znajomego” (tylko kod, bez danych osobowych), odczytywany przy zakładaniu Konta", "do 30 dni"],
       ["NEXT_LOCALE", "wybrany język", "do zmiany"],
+      ["brd_consent", "zapamiętana decyzja w sprawie cookies statystycznych", "12 miesięcy"],
     ] } }] },
+    { id: "c1a", h: "1a. Cookies statystyczne (tylko za zgodą)", blocks: [
+      "Po kliknięciu „Akceptuję” w banerze włączamy Google Analytics 4 (Google Ireland Ltd.). Służy do zliczania odwiedzin i sprawdzania, które strony są oglądane. Nie łączymy tych danych z Kontem, nie włączamy funkcji reklamowych ani sygnałów Google. Po kliknięciu „Tylko niezbędne” Google Analytics się nie ładuje. Wycofanie zgody usuwa te pliki.",
+      { table: { head: ["Nazwa", "Cel", "Ważność"], rows: [
+        ["_ga", "rozróżnianie odwiedzających (losowy identyfikator)", "do 2 lat"],
+        ["_ga_<identyfikator>", "utrzymanie sesji statystyk", "do 2 lat"],
+      ] } },
+    ] },
     { id: "c2", h: "2. Pamięć przeglądarki", blocks: [
       "To nie są pliki cookie. Zostają na Twoim urządzeniu i nie wysyłamy ich do analityki.",
       { list: [
@@ -26,7 +34,7 @@ export const COOKIES: LegalDoc = {
       ] },
     ] },
     { id: "c3", h: "3. Zarządzanie", blocks: [
-      "Możesz usunąć lub zablokować pliki cookie, localStorage, sessionStorage i IndexedDB w ustawieniach przeglądarki. Bez cookie sesji logowanie nie zadziała. Wyłączenie IndexedDB może przerwać dokańczanie nagrania po zerwaniu. Jeśli kiedyś dodamy narzędzia analityczne lub marketingowe, najpierw poprosimy o zgodę.",
+      "Możesz usunąć lub zablokować pliki cookie, localStorage, sessionStorage i IndexedDB w ustawieniach przeglądarki. Bez cookie sesji logowanie nie zadziała. Wyłączenie IndexedDB może przerwać dokańczanie nagrania po zerwaniu. Zgodę na cookies statystyczne zmienisz przyciskiem „Ustawienia cookies” w stopce Serwisu.",
     ] },
   ],
 };

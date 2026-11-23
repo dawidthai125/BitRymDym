@@ -394,6 +394,14 @@
     "pwa": {
       "zainstaluj": "Install the app",
       "iosPodpowiedz": "On iPhone: Share → Add to Home Screen. The BRD icon lands next to your other apps."
+    },
+    "consent": {
+      "tytul": "Visit statistics",
+      "tresc": "With your consent we use Google Analytics to see which pages and beats people view. Without consent only cookies needed to run the site are used. You can change this in the footer.",
+      "wiecej": "Cookie policy",
+      "akceptuj": "Accept",
+      "tylkoNiezbedne": "Necessary only",
+      "ustawienia": "Cookie settings"
     }
   },
   "account": {

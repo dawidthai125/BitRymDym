@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { LanguageSwitcher } from "@/components/site/language-switcher";
+import { CookieSettingsButton } from "@/components/site/cookie-consent";
 import { InstallAppButton } from "@/components/site/pwa-install";
 import { siteConfig } from "@/config/site";
 import { LEGAL_PATHS } from "@/lib/legal/legal-config";
@@ -57,6 +58,7 @@ export async function SiteFooter() {
           <Link href={LEGAL_PATHS.terms} className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{t("regulamin")}</Link>
           <Link href={LEGAL_PATHS.privacy} className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{t("prywatnosc")}</Link>
           <Link href={LEGAL_PATHS.cookies} className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{t("cookies")}</Link>
+          {storeApp ? null : <CookieSettingsButton />}
         </nav>
         <LanguageSwitcher />
       </div>

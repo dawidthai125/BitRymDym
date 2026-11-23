@@ -27,7 +27,8 @@ export const PRIVACY: LegalDoc = {
       ["Funkcje AI na Twoje żądanie (BITEK, okładki AI)", "art. 6 ust. 1 lit. b — umowa"],
       ["Rozliczenia i księgowość", "art. 6 ust. 1 lit. c — przepisy podatkowe i rachunkowe"],
       ["Reklamacje, dochodzenie i obrona roszczeń", "art. 6 ust. 1 lit. f"],
-    ] } }, "Nie wysyłamy marketingu i nie używamy narzędzi analitycznych ani reklamowych. Jeśli to się zmieni, poprosimy o zgodę."] },
+      ["Statystyki odwiedzin (Google Analytics) — tylko po zgodzie w banerze cookies", "art. 6 ust. 1 lit. a — zgoda (możesz ją wycofać w każdej chwili)"],
+    ] } }, "Nie wysyłamy marketingu i nie używamy narzędzi reklamowych."] },
     { id: "p4", h: "4. Automatyczna moderacja", blocks: [
       "Okładki i wybrane grafiki oceniamy automatycznie modelem AI (np. nagość, przemoc, treści nienawistne). Plik audio Bitu porównujemy z własnym katalogiem, a do AcoustID wysyłamy wyłącznie odcisk dźwięku i czas trwania. Wysoki wynik może spowodować automatyczne odrzucenie publikacji. Masz prawo do interwencji człowieka: odwołanie z poziomu „Moje bity” rozpatruje moderator. Możesz też przedstawić swoje stanowisko i zakwestionować decyzję.",
     ] },
@@ -42,6 +43,7 @@ export const PRIVACY: LegalDoc = {
         ["xAI (Grok)", "generowanie okładek AI — tylko opis tekstowy", "USA"],
         ["Cloudflare (Workers AI)", "zapasowe generowanie okładek AI — tylko opis tekstowy", "USA / globalnie"],
         ["Resend", "wysyłka e-maili (gdy włączone)", "USA"],
+        ["Google Ireland Ltd. (Google Analytics 4)", "statystyki odwiedzin — tylko po Twojej zgodzie; losowy identyfikator przeglądarki, odwiedzone strony, przybliżona lokalizacja (bez pełnego IP)", "UE / USA"],
         ["PayU S.A., Poznań", "płatności — odrębny administrator danych płatniczych", "UE (Polska)"],
         ["AcoustID (api.acoustid.org)", "odcisk dźwięku i czas trwania wgrywanego Bitu; plik audio zostaje u nas", "serwer usługi AcoustID"],
       ] } },
@@ -64,7 +66,7 @@ export const PRIVACY: LegalDoc = {
       "Podanie danych jest dobrowolne, ale bez adresu e-mail i hasła nie założysz Konta.",
     ] },
     { id: "p8", h: "8. Pliki cookie i pamięć przeglądarki", blocks: [
-      `Cookie służą tylko do działania Serwisu: logowanie, bezpieczeństwo i język. Motyw, szkice i tymczasowe nagranie są w pamięci przeglądarki, nie w cookie. Szczegóły: Polityka cookies (${LEGAL_PATHS.cookies}).`,
+      `Cookie niezbędne służą do działania Serwisu: logowanie, bezpieczeństwo i język. Cookies statystyczne Google Analytics zapisujemy tylko za Twoją zgodą. Motyw, szkice i tymczasowe nagranie są w pamięci przeglądarki, nie w cookie. Szczegóły: Polityka cookies (${LEGAL_PATHS.cookies}).`,
     ] },
     { id: "p9", h: "9. Zmiany", blocks: ["O istotnych zmianach poinformujemy e-mailem lub w Serwisie. Aktualna wersja jest zawsze pod tym adresem."] },
   ],

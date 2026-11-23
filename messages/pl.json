@@ -394,6 +394,14 @@
     "pwa": {
       "zainstaluj": "Zainstaluj aplikację",
       "iosPodpowiedz": "Na iPhonie: Udostępnij → Do ekranu początkowego. Ikonka BRD ląduje obok reszty apek."
+    },
+    "consent": {
+      "tytul": "Statystyki odwiedzin",
+      "tresc": "Za Twoją zgodą używamy Google Analytics, żeby wiedzieć, które strony i bity są oglądane. Bez zgody działają tylko pliki cookie niezbędne do działania serwisu. Decyzję zmienisz w stopce.",
+      "wiecej": "Polityka cookies",
+      "akceptuj": "Akceptuję",
+      "tylkoNiezbedne": "Tylko niezbędne",
+      "ustawienia": "Ustawienia cookies"
     }
   },
   "account": {

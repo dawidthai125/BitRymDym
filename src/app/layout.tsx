@@ -1,3 +1,4 @@
+import { CookieConsent } from "@/components/site/cookie-consent";
 import type { Metadata } from "next";
 import {
   Big_Shoulders,
@@ -108,6 +109,7 @@ export default async function RootLayout({
             <PwaServiceWorker />
             <MaintenanceAdminBanner />
             {children}
+            <CookieConsent nonce={nonce} disabled={storeApp} />
           </ClientProviders>
         </NextIntlClientProvider>
       </body>

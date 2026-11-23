@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (11) — Google Analytics 4 za zgodą
+
+- GA4 `G-DN860754XQ` (usługa „BitRymDym (www.bitrymdym.pl)” na koncie Analytics neon125, strumień web 16395900918). Ładowany tylko po „Akceptuję” w banerze (`src/components/site/cookie-consent.tsx`, cookie `brd_consent` 12 mies.), bez sygnałów Google i reklam; w aplikacjach ze sklepów wyłączony. „Ustawienia cookies” w stopce; wycofanie zgody kasuje `_ga*`.
+- CSP: googletagmanager / google-analytics w script/connect/img. Polityka cookies i prywatności zaktualizowane (PRIVACY_VERSION 2026-11-23.1).
+
 ## 2026-11-23 (10) — SEO: angielskie strony pod frazy
 
 - `/en/free-rap-beats`, `/en/online-recording-studio`, `/en/mix-and-mastering-online`, `/en/rap-recording-software` (`src/lib/seo/landing-pages-en.ts`), każda z hreflang do polskiej odpowiedniczki (i odwrotnie). Middleware wymusza `en` dla tych tras (bez rewrite). Widok landingów dwujęzyczny (FAQ, „See also”, gatunki → `/en/beats/gatunek/...`). Stopka: skróty zależne od języka. Sitemap z alternates.

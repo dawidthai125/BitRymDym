@@ -52,10 +52,13 @@ describe("legal documents", () => {
     // Pollinations failover removed (2026-10-31) — must not be listed as a processor.
     expect(text(PRIVACY) + text(TERMS)).not.toMatch(/pollinations/i);
   });
-  it("cookie policy lists only necessary cookies (no banner)", () => {
+  it("cookie policy: necessary cookies without consent, Google Analytics only after consent, no ads", () => {
     const c = text(COOKIES);
-    expect(c).toContain("nie wyświetlamy banera");
-    expect(c).not.toMatch(/_ga|analytics|pixel/i);
+    expect(c).toContain("tylko za Twoją zgodą");
+    expect(c).toContain("_ga");
+    expect(c).toContain("brd_consent");
+    expect(c).toContain("Nie używamy cookies reklamowych");
+    expect(c).not.toMatch(/pixel|facebook|meta ads/i);
   });
 });
 

@@ -38,6 +38,11 @@ function originOf(value: string | undefined): string {
   }
 }
 
+// Google Analytics 4 (loaded only after cookie consent, src/components/site/cookie-consent.tsx).
+const GOOGLE_ANALYTICS_CONNECT =
+  "https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com";
+const GOOGLE_ANALYTICS_IMG = "https://*.google-analytics.com https://*.googletagmanager.com";
+
 export function buildCsp({ nonce, env = process.env }: BuildCspOptions): string {
   const isDev = env.NODE_ENV === "development";
   // Vercel toolbar / comments only on non-production deployments.
@@ -59,12 +64,13 @@ export function buildCsp({ nonce, env = process.env }: BuildCspOptions): string 
       "'strict-dynamic'",
       // Host sources are ignored by CSP3 browsers under 'strict-dynamic'; kept as fallback.
       "https://va.vercel-scripts.com",
+      "https://www.googletagmanager.com",
       live,
       turnstile,
       isDev && "'unsafe-eval'",
     ),
     "style-src 'self' 'unsafe-inline'",
-    list("img-src 'self' data: blob:", supabaseOrigin, "https://vercel.com", live),
+    list("img-src 'self' data: blob:", supabaseOrigin, "https://vercel.com", live, GOOGLE_ANALYTICS_IMG),
     "font-src 'self' data:",
     list("media-src 'self' blob: mediastream: data:", supabaseOrigin, "https://edge.bitrymdym.pl"),
     list(
@@ -77,6 +83,7 @@ export function buildCsp({ nonce, env = process.env }: BuildCspOptions): string 
       live,
       "wss://ws-us3.pusher.com",
       "https://vitals.vercel-insights.com",
+      GOOGLE_ANALYTICS_CONNECT,
       turnstile,
     ),
     "worker-src 'self' blob:",
