@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 — SEO (047d2f4, wdrożone)
+
+- **JSON-LD:** strona główna Organization + WebSite + WebApplication (Studio, oferta 0 PLN); `/beats` i gatunki ItemList; bit, gatunek i utwór BreadcrumbList (test Google: „Menu nawigacyjne” prawidłowe). Buildery w `src/lib/seo/json-ld.ts`.
+- **Strony gatunków:** sekcja „o gatunku” z unikalnym wstępem (`beats.genrePage.intro.<slug>`, fallback `introDefault`), prawdziwym zakresem BPM i najczęstszymi tonacjami (`genreStats`), linki do `/jak-nagrac` i `/nagrywarka`.
+- **Linkowanie:** darmowy publiczny bit linkuje do swojej strony gatunku (`beat-genre-link`).
+- **robots:** `Allow: /api/beats/*/cover` (okładki dla Google Images/JSON-LD), `Disallow: /r/`; `noindex, follow` na `/sign-in`, `/sign-up`, `/forgot-password`.
+- **Opisy:** nowe meta description `/about` i `/jak-nagrac`.
+- **GSC:** prośba o indeksowanie `/`, `/beats` i 4 gatunków; poza stroną główną nie były jeszcze w indeksie. Dane skuteczności GSC jeszcze puste.
+
 ## 2026-11-22 (14) — Ochrona bitów, wyłączność, polecenia, Utwór tygodnia
 
 - **Podgląd darmowych bitów:** pełny plik ze znakiem wodnym głosowym (zalogowani bez limitu, goście 20 s); 24 podglądy przegenerowane na E3.
