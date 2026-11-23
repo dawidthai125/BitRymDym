@@ -154,14 +154,15 @@ function promptHasBpm(prompt: string, bpm: number): boolean {
 export async function suggestDistinctTitle(
   description: string,
   existing: readonly string[],
-  deps: RewriteDeps = {},
+  deps: RewriteDeps & { timeoutMs?: number } = {},
 ): Promise<string | null> {
   const key = deps.apiKey?.trim();
   if (!key) return null;
   try {
     const res = await (deps.fetchFn ?? fetch)(REWRITE_URL, {
       method: "POST",
-      signal: AbortSignal.timeout(20_000),
+      // grok-4.7 answers in ~18–33 s even on low reasoning (2026-11-23).
+      signal: AbortSignal.timeout(deps.timeoutMs ?? 50_000),
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: deps.model || "grok-4.7",

@@ -3,7 +3,7 @@ import "server-only";
 import { AuthError, requirePermission } from "@/lib/auth/session";
 import { BeatRequestError } from "@/lib/beats/request-error";
 import { rewriteBeatPrompt, suggestDistinctTitle } from "@/lib/beats/ai-beat/rewrite";
-import { pickDistinctTitle, titleRejectReason } from "@/lib/beats/ai-beat/title-variety";
+import { titleRejectReason } from "@/lib/beats/ai-beat/title-variety";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   STABLE_AUDIO_MODEL,
@@ -46,17 +46,14 @@ export async function existingBeatTitles(): Promise<string[]> {
 
 /**
  * Last check before a generated beat is saved (result route, 120 s budget): a title that
- * echoes the catalogue gets up to two fresh suggestions; otherwise it is kept.
+ * echoes the catalogue gets one fresh suggestion (grok is slow); otherwise it is kept.
  */
 export async function ensureDistinctBeatTitle(title: string, description: string): Promise<string> {
   const existing = await existingBeatTitles();
   if (titleRejectReason(title, existing) === null) return title;
   const xai = { apiKey: process.env.XAI_API_KEY, model: process.env.BITEK_XAI_MODEL || "grok-4.7" };
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const next = await suggestDistinctTitle(description, existing, xai);
-    if (next) return next;
-  }
-  return title;
+  // One slow call (≤50 s) fits the result route's 120 s budget next to ingest.
+  return (await suggestDistinctTitle(description, existing, { ...xai, timeoutMs: 50_000 })) ?? title;
 }
 
 function stabilityKey(): string {
@@ -77,15 +74,9 @@ export async function startBeatGeneration(params: {
   await requireAdminGenerator();
   let rewritten: { title: string; prompt: string; style: string; opis: string };
   const xai = { apiKey: process.env.XAI_API_KEY, model: process.env.BITEK_XAI_MODEL || "grok-4.7" };
-  const titlePromise = existingBeatTitles().then(async (existing) => ({
-    existing,
-    title: await suggestDistinctTitle(params.description, existing, xai),
-  }));
   try {
     rewritten = await rewriteBeatPrompt(params.description, params.bpm, xai);
-    const { existing, title } = await titlePromise;
-    // Distinct name first; the rewrite's own title only when it is distinct too.
-    rewritten = { ...rewritten, title: title ?? pickDistinctTitle([rewritten.title], existing) ?? rewritten.title };
+    // The distinct catalogue name is chosen when the beat is saved (ensureDistinctBeatTitle).
   } catch (error) {
     console.error(
       "[beat-rewrite] failed:",
