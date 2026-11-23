@@ -10,6 +10,7 @@ on:
     branches: [app-smoke]
     paths:
       - ".github/workflows/app-smoke.yml"
+      - "android-twa/**"
 
 permissions:
   contents: read
@@ -118,7 +119,7 @@ jobs:
           c["server"]["url"]="https://www.bitrymdym.pl/premium?app=ios"
           json.dump(c,open(p,"w"))
           PY
-          grep -o '"url":"[^"]*"' "$CFG" >>"$LOG"
+          grep -o '"url": *"[^"]*"' "$CFG" >>"$LOG" || true
           xcrun simctl terminate "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1 || true
           xcrun simctl install "$SIM_UDID" "$APP_PATH" >>"$LOG" 2>&1
           xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1
