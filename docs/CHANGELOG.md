@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (15) — Adresy z „\\” bez błędu 500
+
+- Skaner wchodził na `/premium\\`, `/ranking\\` (`%5C`) → Next zwracał 500. Middleware `stripBackslashes` → 308 na adres bez ukośnika wstecznego. Test `src/lib/site/backslash-path.test.ts`.
+
 ## 2026-11-23 (14) — Profile marki (2)
 
 - `social.ts`: Instagram, Facebook (strona 61596562513740), SoundCloud, Bluesky `@bitrymdym.pl` (TXT `_atproto` w Vercel DNS). TikTok — po potwierdzeniu nicka.

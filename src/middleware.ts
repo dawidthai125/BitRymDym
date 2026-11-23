@@ -85,6 +85,13 @@ function forwardWithMaintenanceHeaders(
   return next;
 }
 
+/** "/premium%5C" or "/a\\b" → path without backslashes ("/" when nothing is left); null when clean. */
+export function stripBackslashes(pathname: string): string | null {
+  if (!/%5c|\\/i.test(pathname)) return null;
+  const cleaned = pathname.replace(/%5c|\\/gi, "").replace(/\/{2,}/g, "/");
+  return cleaned.length > 0 ? cleaned : "/";
+}
+
 /** A Supabase session cookie, including the chunked `.0` form. No cookie means a guest. */
 function hasAuthSessionCookie(request: NextRequest): boolean {
   return request.cookies
@@ -253,6 +260,13 @@ export async function middleware(request: NextRequest) {
   const nonce = generateNonce();
   const headerName = cspHeaderName();
   const csp = buildCsp({ nonce });
+  // Scanners hit "/premium\\" (%5C): Next answered 500. Strip backslashes and redirect permanently.
+  const backslashTarget = stripBackslashes(request.nextUrl.pathname);
+  if (backslashTarget !== null) {
+    const clean = request.nextUrl.clone();
+    clean.pathname = backslashTarget;
+    return NextResponse.redirect(clean, 308);
+  }
   // bitrymdym.com / bitrymdym.eu → English site on the main domain (permanent).
   const hostTarget = englishHostRedirect(
     request.headers.get("host"),
