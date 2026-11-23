@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, ty
 
 import { removeCatalogSampleAction, updateCatalogSampleAction } from "@/app/sampel/actions";
 import { SampleTalk } from "@/components/community/sample-talk";
+import { catalogNumber } from "@/lib/community/share-policy";
 
 export type CatalogSampleItem = {
   id: string;
@@ -45,10 +46,6 @@ type Option = { id: string; label: string };
 function clock(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-
-export function catalogNumber(no: number): string {
-  return `#${String(no).padStart(2, "0")}`;
 }
 
 /**

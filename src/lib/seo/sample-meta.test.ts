@@ -28,6 +28,8 @@ describe("sample page copy", () => {
   });
   it("offers the Studio and no download", () => {
     const page = readFileSync(join(process.cwd(), "src/app/sampel/[id]/page.tsx"), "utf8");
+    // A server page may only take components from "use client" files (a function call there is a 500).
+    expect(page).toContain('import { SampleCatalog } from "@/components/community/sample-catalog";');
     expect(page).toContain('href="/studio"');
     expect(page).not.toMatch(/\sdownload[=\s>]|\/stream|\/copy|createSignedUrl|object_key/);
   });

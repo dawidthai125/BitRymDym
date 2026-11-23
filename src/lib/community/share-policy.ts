@@ -43,6 +43,11 @@ export function parseCatalogSource(raw: string | string[] | null | undefined): C
   return value === "user" ? "user" : "brd";
 }
 
+/** "#07" — used by client rows and the server-rendered sample page. */
+export function catalogNumber(no: number): string {
+  return `#${String(no).padStart(2, "0")}`;
+}
+
 /**
  * Catalog numbers (#NN) per sample id. The stored `sampleNumber` (DB identity, never moves)
  * wins. Only when no row has it (DB before migration 20261121170000) the page falls back
