@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (5) — SEO: prawdziwe 404
+
+- Usunięty globalny `src/app/loading.tsx`: owijał każdą stronę w Suspense, więc `notFound()` na `/beat/[id]`, `/utwor/[id]`, `/beats/gatunek/[slug]`, `/poradniki/[slug]` dawało HTTP 200 (soft 404). Ekran ładowania przeniesiony tylko do list: `ranking`, `utwory`, `sampel`, `library`, `settings` (account/admin/studio mają własne).
+
 ## 2026-11-23 (4) — SEO: poradniki
 
 - `/poradniki` + 6 artykułów (`src/lib/seo/guides.ts`): jak napisać tekst rapowy, jak zrobić refren, BPM i tonacja, jak zmiksować wokal, freestyle, jak wydać utwór na Spotify. JSON-LD `Article` + `FAQPage` + okruszki; wspólny widok z landingami (`ContentPageView`). Sitemap + link „Poradniki” w stopce.
