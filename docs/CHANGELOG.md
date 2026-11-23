@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (21) — Sample: własne opisy i „Użyj w Studiu” jednym kliknięciem
+
+- Migracja `20261123170000_studio_samples_description.sql` (zastosowana): `description`, `description_en` (do 600 znaków). Pola w edycji sampla (admin), opisy 18 sampli BitRymDym. Puste = opis z faktów.
+- `/sampel/[id]` → „Użyj w Studiu”: wybór projektu z bitem → kopia + klip na ścieżce SAMPLE za ostatnim klipem → otwarcie projektu (`src/lib/studio/samples/use-sample-in-studio.ts`, istniejące API, bez zmian w edytorze). Brak wolnej ścieżki w planie → pytanie o istniejącą; nic nie jest nadpisywane.
+
 ## 2026-11-23 (20) — Strony sampli `/sampel/[id]`
 
 - Każdy sampel z katalogu ma stronę: odtwarzacz (ten sam co w katalogu, zalogowani), opis i parametry z faktów w bazie (`src/lib/seo/sample-meta.ts`, bez nowej kolumny), „Użyj w Studiu”, podobne sample, komentarze, udostępnianie. Bez pobierania (dotychczasowa blokada bez zmian).

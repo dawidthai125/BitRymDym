@@ -1,8 +1,8 @@
 /**
  * Title and description of a catalogue sample page /sampel/[id] (pure, client-safe).
- * studio_samples has no description column, so the copy is built only from stored facts
- * (type, instrument, tempo, bars, key) and the product rule: samples are free, there is
- * no file download, they are used in the Studio.
+ * Own text (studio_samples.description / description_en) when there is one, otherwise copy
+ * built only from stored facts (type, instrument, tempo, bars, key). Product rule: samples
+ * are free, there is no file download, they are used in the Studio.
  */
 export type SampleMetaInput = {
   title: string;
@@ -12,6 +12,8 @@ export type SampleMetaInput = {
   bpm: number | null;
   barsLabel: string | null;
   musicalKey: string | null;
+  description?: string | null;
+  descriptionEn?: string | null;
   locale: "pl" | "en";
 };
 
@@ -31,6 +33,7 @@ export function sampleMetaTitle(s: SampleMetaInput): string {
 /** Paragraphs shown on the page; the first one is also the meta description. */
 export function sampleDescription(s: SampleMetaInput): string[] {
   const list = facts(s).join(", ");
+  const own = (s.locale === "en" ? s.descriptionEn : s.description)?.trim() || null;
   if (s.locale === "en") {
     const use =
       s.sampleType === "loop"
@@ -41,8 +44,9 @@ export function sampleDescription(s: SampleMetaInput): string[] {
             ? "It is a one-shot: place single hits exactly where you need them."
             : null;
     return [
+      ...(own ? [own] : []),
       `Free sample “${s.title}”${list ? ` (${list})` : ""}. Listen on the site and use it in your project in the BitRymDym Studio.`,
-      [use, "The file can't be downloaded — you add the sample to a project in the Studio, in the Sample tab."].filter(Boolean).join(" "),
+      [own ? null : use, "The file can't be downloaded — add the sample to your project with the button above or in the Studio, in the Sample tab."].filter(Boolean).join(" "),
     ];
   }
   const use =
@@ -54,8 +58,9 @@ export function sampleDescription(s: SampleMetaInput): string[] {
           ? "To pojedynczy dźwięk: stawiasz go dokładnie tam, gdzie go potrzebujesz."
           : null;
   return [
+    ...(own ? [own] : []),
     `Darmowy sampel „${s.title}”${list ? ` (${list})` : ""}. Odsłuchaj na stronie i użyj w swoim projekcie w Studiu BitRymDym.`,
-    [use, "Pliku nie da się pobrać — sampel dodajesz do projektu w Studiu, w zakładce Sample."].filter(Boolean).join(" "),
+    [own ? null : use, "Pliku nie da się pobrać — sampel dodajesz do projektu przyciskiem wyżej albo w Studiu, w zakładce Sample."].filter(Boolean).join(" "),
   ];
 }
 

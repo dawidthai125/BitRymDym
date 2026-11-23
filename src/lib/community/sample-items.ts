@@ -28,6 +28,8 @@ export function toCatalogSampleItems(samples: readonly PublicSampleCard[], label
       bars: s.bars,
       barsLabel: s.bars ? labels.bars(s.bars) : null,
       musicalKey: s.musicalKey,
+      description: s.description,
+      descriptionEn: s.descriptionEn,
       platform: s.platform,
       ratingAvg: s.ratingAvg,
       ratingCount: s.ratingCount,

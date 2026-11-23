@@ -3,11 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { CommunityThread } from "@/components/community/community-thread";
 import { SampleCatalog } from "@/components/community/sample-catalog";
+import { UseSampleButton } from "@/components/community/use-sample-button";
 import { ShareButtons } from "@/components/share/share-buttons";
 import { AppShell } from "@/components/site/app-shell";
 import type { AppLocale } from "@/i18n/config";
@@ -114,7 +114,7 @@ export default async function SamplePage({ params }: Props) {
             <SampleCatalog items={[item]} signedIn={Boolean(session)} isAdmin={false} instruments={[]} types={[]} showTalk={false} showFilters={false} />
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <BrdLink href="/studio" data-testid="sample-use-in-studio">{ts("uzyjWStudiu")}</BrdLink>
+            <UseSampleButton sampleId={id} signedIn={Boolean(session)} />
             <p className="text-sm text-[var(--brd-mute)]">{ts("tylkoStudio")}</p>
           </div>
           <section aria-labelledby="sample-about" className="mt-8 max-w-3xl space-y-3 text-[var(--brd-ink-soft)]" data-testid="sample-description">

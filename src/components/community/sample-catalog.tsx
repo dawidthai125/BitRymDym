@@ -23,6 +23,9 @@ export type CatalogSampleItem = {
   bars: number | null;
   barsLabel: string | null;
   musicalKey: string | null;
+  /** Own text of the sample page (admin editor). */
+  description?: string | null;
+  descriptionEn?: string | null;
   platform: boolean;
   /** Average stars and number of ratings (catalog only). */
   ratingAvg?: number | null;
@@ -468,6 +471,12 @@ function AdminSampleEditor({
         {t("tonacja")}
         <input name="musicalKey" defaultValue={item.musicalKey ?? ""} placeholder="Am, F#, A2" maxLength={4} className={field} />
       </label>
+      {([["description", t("opisPl"), item.description], ["descriptionEn", t("opisEn"), item.descriptionEn]] as const).map(([name, label, value]) => (
+        <label key={name} className="flex flex-col gap-1 text-xs text-[var(--brd-mute)] sm:col-span-2">
+          {label}
+          <textarea name={name} defaultValue={value ?? ""} maxLength={600} rows={3} placeholder={t("opisPusty")} className={`${field} py-2`} />
+        </label>
+      ))}
       <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
         <button type="submit" disabled={pending} className="min-h-10 rounded-lg border border-[var(--brd-amber)] px-4 text-sm text-[var(--brd-ink)] disabled:opacity-50">
           {pending ? t("zapisuje") : t("zapisz")}

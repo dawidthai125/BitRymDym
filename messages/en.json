@@ -5087,6 +5087,17 @@
       "okruszekUtwory": "Tracks catalogue"
     },
     "sampleCatalog": {
+      "opisPl": "Description (Polish)",
+      "opisEn": "Description (English)",
+      "opisPusty": "Empty = text from the sample data",
+      "uzyjProjekt": "Choose a project",
+      "uzyjSciezka": "Choose a track",
+      "uzyjWstaw": "Add and open",
+      "uzyjCzekaj": "One moment…",
+      "uzyjBrakProjektu": "You don't have a project with a beat yet.",
+      "uzyjWybierzBit": "Choose a beat",
+      "uzyjBrakSciezki": "This project has no free track on your plan. You can add the sample to an existing one, after its last clip. Nothing gets overwritten.",
+      "uzyjBlad": "Could not add the sample. Try again.",
       "opis": "About",
       "oSamplu": "About the sample",
       "podobne": "Similar samples",

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { relatedSamples, sampleDescription, sampleMetaTitle, type SampleMetaInput } from "@/lib/seo/sample-meta";
+import { normalizeSampleDescription } from "@/lib/studio/samples/sample-policy";
 import { isLocalizedPath, stripEnglishPrefix } from "@/lib/seo/locale-paths";
 
 const base: SampleMetaInput = { title: "Gitara arpeggio Em", sampleType: "loop", typeLabel: "pętla", instrumentLabel: "Gitara", bpm: 88, barsLabel: "4 takty", musicalKey: "Em", locale: "pl" };
@@ -16,6 +17,18 @@ describe("sample page copy", () => {
     expect(sampleMetaTitle(bare)).toBe("Gitara arpeggio Em — darmowy sampel do rapu");
     expect(sampleDescription(bare)[0]).not.toContain("(");
     expect(sampleDescription({ ...base, locale: "en" })[1]).toContain("can't be downloaded");
+  });
+  it("puts the own text first, per language", () => {
+    const own = { ...base, description: "Nylonowe arpeggio.", descriptionEn: null };
+    expect(sampleDescription(own)[0]).toBe("Nylonowe arpeggio.");
+    expect(sampleDescription(own).join(" ")).not.toContain("To pętla");
+    expect(sampleDescription({ ...own, locale: "en" })[0]).toContain("Free sample");
+  });
+  it("normalizes admin descriptions", () => {
+    expect(normalizeSampleDescription(null)).toBeUndefined();
+    expect(normalizeSampleDescription("  ")).toBeNull();
+    expect(normalizeSampleDescription(" a\n b ")).toBe("a b");
+    expect(normalizeSampleDescription("x".repeat(601))).toBe(false);
   });
   it("orders related samples and drops the sample itself", () => {
     const s = (id: string, instrument: string, sampleType: string, bpm: number | null) => ({ id, instrument, sampleType, bpm });
@@ -30,7 +43,7 @@ describe("sample page copy", () => {
     const page = readFileSync(join(process.cwd(), "src/app/sampel/[id]/page.tsx"), "utf8");
     // A server page may only take components from "use client" files (a function call there is a 500).
     expect(page).toContain('import { SampleCatalog } from "@/components/community/sample-catalog";');
-    expect(page).toContain('href="/studio"');
+    expect(page).toContain("<UseSampleButton");
     expect(page).not.toMatch(/\sdownload[=\s>]|\/stream|\/copy|createSignedUrl|object_key/);
   });
 });

@@ -176,6 +176,16 @@ export function normalizeSampleTitle(value: unknown): string | null {
   return title;
 }
 
+export const SAMPLE_DESCRIPTION_MAX = 600;
+
+/** undefined = field not sent (keep), null = cleared, false = too long. */
+export function normalizeSampleDescription(value: unknown): string | null | undefined | false {
+  if (typeof value !== "string") return undefined;
+  const text = value.replace(/\s+/g, " ").trim();
+  if (!text) return null;
+  return [...text].length > SAMPLE_DESCRIPTION_MAX ? false : text;
+}
+
 export function normalizeSampleNote(value: unknown): string | null {
   if (value == null) return null;
   if (typeof value !== "string") return null;

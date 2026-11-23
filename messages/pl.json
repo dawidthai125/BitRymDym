@@ -5087,6 +5087,17 @@
       "okruszekUtwory": "Katalog utworów"
     },
     "sampleCatalog": {
+      "opisPl": "Opis (polski)",
+      "opisEn": "Opis (angielski)",
+      "opisPusty": "Puste = opis z danych sampla",
+      "uzyjProjekt": "Wybierz projekt",
+      "uzyjSciezka": "Wybierz ścieżkę",
+      "uzyjWstaw": "Wstaw i otwórz",
+      "uzyjCzekaj": "Chwila…",
+      "uzyjBrakProjektu": "Nie masz jeszcze projektu z bitem.",
+      "uzyjWybierzBit": "Wybierz bit",
+      "uzyjBrakSciezki": "Ten projekt nie ma wolnej ścieżki w Twoim planie. Możesz wstawić sampel na istniejącą, za jej ostatnim klipem. Nic nie zostanie nadpisane.",
+      "uzyjBlad": "Nie udało się wstawić sampla. Spróbuj jeszcze raz.",
       "opis": "Opis",
       "oSamplu": "O samplu",
       "podobne": "Podobne sample",

@@ -6,6 +6,7 @@ import {
   instrumentKind,
   isSampleInstrumentId,
   isSampleUuid,
+  normalizeSampleDescription,
   normalizeSampleTitle,
   parseSampleLabMeta,
   STUDIO_SAMPLES_TABLE,
@@ -20,6 +21,9 @@ export type CatalogSampleEdit = {
   bpm: unknown;
   bars: unknown;
   musicalKey: unknown;
+  /** Absent (null) = keep the stored text; empty = remove it. */
+  description?: unknown;
+  descriptionEn?: unknown;
 };
 
 export type AdminSampleResult = { ok: true; removed?: "deleted" | "unlisted" } | { ok: false; error: string };
@@ -38,6 +42,9 @@ export async function adminUpdateCatalogSample(input: CatalogSampleEdit): Promis
     musicalKey: input.musicalKey,
   });
   if (!meta.ok) return { ok: false, error: `Popraw pola: ${meta.details.join(", ")}.` };
+  const description = normalizeSampleDescription(input.description);
+  const descriptionEn = normalizeSampleDescription(input.descriptionEn);
+  if (description === false || descriptionEn === false) return { ok: false, error: "Opis może mieć do 600 znaków." };
   const { error } = await createSupabaseAdminClient()
     .from(STUDIO_SAMPLES_TABLE)
     .update({
@@ -48,6 +55,8 @@ export async function adminUpdateCatalogSample(input: CatalogSampleEdit): Promis
       bpm: meta.value.bpm,
       bars: meta.value.bars,
       musical_key: meta.value.musicalKey,
+      ...(description === undefined ? {} : { description }),
+      ...(descriptionEn === undefined ? {} : { description_en: descriptionEn }),
     })
     .eq("id", input.sampleId);
   if (error) return { ok: false, error: "Nie udało się zapisać zmian." };

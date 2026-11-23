@@ -13,6 +13,8 @@ export async function updateCatalogSampleAction(formData: FormData): Promise<Adm
     bpm: formData.get("bpm"),
     bars: formData.get("bars"),
     musicalKey: formData.get("musicalKey"),
+    description: formData.get("description"),
+    descriptionEn: formData.get("descriptionEn"),
   });
   if (result.ok) revalidatePath("/sampel");
   return result;
