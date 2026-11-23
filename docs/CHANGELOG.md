@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (17) — SEO: darmowe narzędzia dla raperów
+
+- `/narzedzia` + `/narzedzia/metronom-online`, `/narzedzia/licznik-bpm` (tap tempo + BPM z pliku liczone w przeglądarce), `/narzedzia/licznik-sylab` (sylaby na wers, odchylenie od średniej).
+- Logika w `src/lib/tools/` (testy), treść w `src/lib/seo/tool-pages.ts`, JSON-LD WebApplication + FAQPage + breadcrumbs.
+- Mapa strony, stopka („Narzędzia”) i „Zobacz też” na landingach/poradnikach linkują narzędzia.
+
 ## 2026-11-23 (16) — „Zrób bit z linku”: cel 8/10
 
 - Było 6/10 (jedna poprawka poniżej 6,5). Teraz poprawki najlepszej wersji aż do 8/10, maks. 3 (`MAX_AUTO_REVISIONS`, `AUTO_TARGET_SCORE` w `beat-judge.ts`, pętla w `auto-beat-client.ts`); próg liczy `score` z karą za tonację.

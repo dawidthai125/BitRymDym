@@ -7,6 +7,7 @@ import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 import { GUIDE_BASE, GUIDES, guidePath } from "@/lib/seo/guides";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { isLocalizedPath, localizedPath } from "@/lib/seo/locale-paths";
+import { TOOL_PAGES, TOOLS_BASE, toolPath } from "@/lib/seo/tool-pages";
 import { RYMY_BASE, rhymePagePath, rhymePageWords } from "@/lib/rymy/dictionary";
 import { EN_LANDING_PAGES, englishLandingPath, englishTwinOf } from "@/lib/seo/landing-pages-en";
 import { getPublicSiteUrl } from "@/lib/site-url";
@@ -106,7 +107,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...rhymePageWords().map((w) => ({ url: `${base}${rhymePagePath(w)}`, changeFrequency: "monthly" as const, priority: 0.4 })),
   ];
 
-  const all = [...staticEntries, ...rhymeEntries, ...enLandingEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...workEntries];
+  // Free browser tools (metronom, licznik BPM, licznik sylab).
+  const toolEntries: MetadataRoute.Sitemap = [
+    { url: `${base}${TOOLS_BASE}`, changeFrequency: "monthly", priority: 0.7 },
+    ...TOOL_PAGES.map((t) => ({ url: `${base}${toolPath(t.slug)}`, changeFrequency: "monthly" as const, priority: 0.8 })),
+  ];
+
+  const all = [...staticEntries, ...toolEntries, ...rhymeEntries, ...enLandingEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...workEntries];
   return withEnglish(all, base);
 }
 

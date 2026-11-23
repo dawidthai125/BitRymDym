@@ -15,6 +15,7 @@ import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 import { articleJsonLd, beatListJsonLd, breadcrumbJsonLd, faqPageJsonLd } from "@/lib/seo/json-ld";
 import { GUIDE_BASE, GUIDES, guidePath, type Guide } from "@/lib/seo/guides";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
+import { TOOL_PAGES, toolPath } from "@/lib/seo/tool-pages";
 import { LANDING_PAGES, landingPage, landingPath, type LandingPage } from "@/lib/seo/landing-pages";
 import { EN_LANDING_PAGES, englishLandingPage, englishLandingPath, englishTwinOf } from "@/lib/seo/landing-pages-en";
 import { isStoreApp } from "@/lib/site/store-app-server";
@@ -89,6 +90,7 @@ async function ContentPageView({ page, path, guide, lang = "pl" }: { page: Landi
     : [
     ...GUIDES.filter((g) => g.slug !== page.slug).map((g) => ({ href: guidePath(g.slug), label: g.navLabel })),
     ...LANDING_PAGES.filter((p) => p.slug !== page.slug && !(p.webOnly && storeApp)).map((p) => ({ href: landingPath(p.slug), label: p.navLabel })),
+    ...TOOL_PAGES.map((t) => ({ href: toolPath(t.slug), label: t.navLabel })),
   ];
   const crumbs = guide
     ? [{ name: L.guides, path: GUIDE_BASE }, { name: page.h1, path }]

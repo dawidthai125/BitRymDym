@@ -274,3 +274,23 @@ export function promoVideoJsonLd(origin: string, input: { name: string; descript
     publisher: { "@id": `${absoluteUrl(origin, "/")}#organization` },
   };
 }
+
+/** Free browser tool (/narzedzia/<slug>): WebApplication, free, no install. */
+export function webToolJsonLd(origin: string, input: { path: string; name: string; description: string }): JsonLdObject {
+  const url = absoluteUrl(origin, input.path);
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "@id": `${url}#app`,
+    name: input.name,
+    description: input.description,
+    url,
+    applicationCategory: "MultimediaApplication",
+    operatingSystem: "Any",
+    browserRequirements: "Requires JavaScript and Web Audio",
+    inLanguage: "pl-PL",
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "PLN" },
+    publisher: { "@id": `${absoluteUrl(origin, "/")}#organization` },
+  };
+}
