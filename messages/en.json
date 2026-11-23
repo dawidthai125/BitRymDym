@@ -1534,6 +1534,16 @@
         "drums": "Drums and FX"
       },
       "preset": {
+        "kalimba": "Kalimba",
+        "harp": "Harp",
+        "hammond": "Hammond organ",
+        "pizzicato": "Pizzicato violins",
+        "trumpet": "Muted trumpet",
+        "accordion": "Accordion",
+        "lead": "Whistling lead",
+        "synthbass": "Synth bass",
+        "cowbell": "Cowbell",
+        "taiko": "Taiko",
         "piano": "Piano",
         "rhodes": "Rhodes",
         "strings": "Strings",

@@ -1534,6 +1534,16 @@
         "drums": "Perkusja i efekty"
       },
       "preset": {
+        "kalimba": "Kalimba",
+        "harp": "Harfa",
+        "hammond": "Hammond",
+        "pizzicato": "Skrzypce pizzicato",
+        "trumpet": "Trąbka z tłumikiem",
+        "accordion": "Akordeon",
+        "lead": "Gwiżdżący lead",
+        "synthbass": "Synth bas",
+        "cowbell": "Cowbell",
+        "taiko": "Taiko",
         "piano": "Pianino",
         "rhodes": "Rhodes",
         "strings": "Smyczki",

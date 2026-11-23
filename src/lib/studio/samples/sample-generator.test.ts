@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { encodeWav16 } from "./sample-lab-dsp";
@@ -89,5 +92,17 @@ describe("one-shot tuning", () => {
     expect(oneShotNote(out[0]!, 44100)).toBe("F1");
     expect(retuneOneShot([sine(49)], 49, 200)).toBeNull();
     expect(noteNameToHz("A4")).toBeCloseTo(440, 5);
+  });
+});
+
+describe("generator instruments", () => {
+  it("have unique ids, sounds and labels in both languages", () => {
+    const ids = SAMPLE_PRESETS.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(SAMPLE_PRESETS.map((p) => p.sound)).size).toBe(ids.length);
+    for (const locale of ["pl", "en"]) {
+      const labels = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}.json`), "utf8")).admin.adminSampleGenerator.preset;
+      for (const id of ids) expect(labels[id], `${locale} ${id}`).toBeTruthy();
+    }
   });
 });

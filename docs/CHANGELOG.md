@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (23) — Generator sampli: 10 nowych instrumentów
+
+- Kalimba, harfa, Hammond, pizzicato, trąbka z tłumikiem, akordeon, lead, synth bas, cowbell, taiko (`sample-generator.ts`, etykiety PL/EN, test kompletności).
+
 ## 2026-11-23 (22) — Katalogi po 20 na stronę, wydawanie sampli z generatora
 
 - Bity (`/beats`, gatunki) i sample (`/sampel`): 20 na stronę, `?strona=N`, prawdziwe linki (`src/lib/ui/paginate.ts`, `catalog-pager.tsx`). Filtr, szukanie i sortowanie działają na całości i wracają na stronę 1; `#id` z rankingu otwiera właściwą stronę.
