@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+import { ConsentSwitches } from "@/components/community/consent-switches";
 import { ShareButtons } from "@/components/share/share-buttons";
 import { Button } from "@/components/ui/button";
 import { LEGAL_PATHS } from "@/lib/legal/legal-config";
@@ -89,14 +90,6 @@ export function CatalogPublishPanel({
     return () => controller.abort();
   }, [masterJobId, projectId]);
 
-  function toggleRank(checked: boolean) {
-    setInRankings(checked);
-    if (checked) {
-      setAllowRatings(true);
-      setAllowComments(true);
-    }
-  }
-
   async function save() {
     setBusy(true);
     setNote(null);
@@ -108,8 +101,8 @@ export function CatalogPublishPanel({
         masterJobId,
         title,
         publish,
-        allowRatings: inRankings ? true : allowRatings,
-        allowComments: inRankings ? true : allowComments,
+        allowRatings,
+        allowComments,
         inRankings,
       }),
     });
@@ -150,25 +143,23 @@ export function CatalogPublishPanel({
             onChange={(event) => setTitle(event.target.value)}
             className="min-h-11 border border-[var(--brd-line)] bg-transparent px-3 text-sm"
           />
-          <label className="flex min-h-11 items-center gap-2 text-sm">
-            <input type="checkbox" checked={allowRatings || inRankings} disabled={inRankings} onChange={(event) => setAllowRatings(event.target.checked)} />
-            {t("allowRatings")}
-          </label>
-          <label className="flex min-h-11 items-center gap-2 text-sm">
-            <input type="checkbox" checked={allowComments || inRankings} disabled={inRankings} onChange={(event) => setAllowComments(event.target.checked)} />
-            {t("allowComments")}
-          </label>
-          <label className="flex min-h-11 items-center gap-2 text-sm">
-            <input type="checkbox" checked={inRankings} onChange={(event) => toggleRank(event.target.checked)} />
-            {t("rankOpt")}
-          </label>
-          <p className="text-sm text-[var(--brd-mute)]">{t("rankForces")}</p>
+          <ConsentSwitches
+            kind="work"
+            hideListed
+            value={{ listed: true, allowRatings, allowComments, inRankings }}
+            onChange={(next) => {
+              setAllowRatings(next.allowRatings);
+              setAllowComments(next.allowComments);
+              setInRankings(next.inRankings);
+            }}
+          />
         </div>
       ) : null}
       <Button type="button" className="min-h-11 self-start px-4" disabled={busy || (publish && title.trim().length === 0)} onClick={() => void save()}>
         {busy ? t("saving") : t("save")}
       </Button>
       {note ? <p role="status" className="text-sm">{note}</p> : null}
+      <Link href="/account/catalog" className="inline-flex min-h-11 items-center self-start text-sm underline underline-offset-4">{t("allMine")}</Link>
       {live ? (
         <div className="flex flex-col gap-2 border-t border-[var(--brd-line)] pt-3" data-testid="catalog-publish-share">
           <p className="text-sm font-semibold">{t("shareLead")}</p>

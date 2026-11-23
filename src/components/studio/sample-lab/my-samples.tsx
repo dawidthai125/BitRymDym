@@ -3,6 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ConsentSwitches } from "@/components/community/consent-switches";
+import type { ListingConsents } from "@/lib/community/consents";
 import type { StudioSampleDto } from "@/lib/studio/samples/sample-service";
 import { cn } from "@/lib/utils";
 
@@ -22,10 +24,13 @@ async function fetchSamples(): Promise<{ ok: true; list: NonNullable<ListState> 
 /** The user's samples: listen, send to the catalogue, delete. Shared by the lab and the locked view. */
 export function MySamples({ refreshKey }: { refreshKey: number }) {
   const t = useTranslations("studio.sampleLab");
+  const tc = useTranslations("community.consents");
   const [list, setList] = useState<ListState>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
+  /** Choices made before sending to the catalogue. */
+  const [wishes, setWishes] = useState<Record<string, ListingConsents>>({});
   const [playing, setPlaying] = useState<string | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
 
@@ -62,11 +67,34 @@ export function MySamples({ refreshKey }: { refreshKey: number }) {
     void el.play();
   }
 
+  async function share(id: string, next: ListingConsents) {
+    setBusy(id);
+    const res = await fetch(`/api/studio/samples/${id}/share`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(next),
+    }).catch(() => null);
+    const body = (await res?.json().catch(() => ({})) ?? {}) as { message?: string; sample?: StudioSampleDto };
+    setBusy(null);
+    const saved = body.sample;
+    if (!res?.ok || !saved) {
+      setError(body.message ?? t("bladAkcji"));
+      return;
+    }
+    setError(null);
+    setList((current) =>
+      current ? { ...current, samples: current.samples.map((s) => (s.id === id ? { ...s, consents: saved.consents } : s)) } : current,
+    );
+  }
+
   async function act(id: string, kind: "submit" | "delete") {
     setBusy(id);
     setAsking(null);
     const res = await fetch(kind === "submit" ? `/api/studio/samples/${id}/submit` : `/api/studio/samples/${id}`, {
       method: kind === "submit" ? "POST" : "DELETE",
+      ...(kind === "submit"
+        ? { headers: { "content-type": "application/json" }, body: JSON.stringify(wishes[id] ?? {}) }
+        : {}),
     });
     const body = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
     setBusy(null);
@@ -146,6 +174,22 @@ export function MySamples({ refreshKey }: { refreshKey: number }) {
                     {t("usun")}
                   </button>
                 )
+              ) : null}
+              {s.consents ? (
+                <details className="w-full">
+                  <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm underline underline-offset-4">{tc("heading")}</summary>
+                  {s.status === "PUBLISHED" || s.status === "PENDING_REVIEW" ? (
+                    <ConsentSwitches kind="sample" value={s.consents} disabled={busy === s.id} onChange={(next) => void share(s.id, next)} />
+                  ) : (
+                    <ConsentSwitches
+                      kind="sample"
+                      hideListed
+                      value={wishes[s.id] ?? { ...s.consents, listed: true }}
+                      disabled={busy === s.id}
+                      onChange={(next) => setWishes((current) => ({ ...current, [s.id]: next }))}
+                    />
+                  )}
+                </details>
               ) : null}
             </li>
           ))}

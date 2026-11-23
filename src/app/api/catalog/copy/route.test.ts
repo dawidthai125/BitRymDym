@@ -4,6 +4,8 @@ import { AuthError, requireUser } from "@/lib/auth/session";
 import { executeCatalogAssetCopyFor } from "@/lib/catalog/catalog-copy-service";
 import type { AuthContext } from "@/lib/auth/types";
 
+const { openMock } = vi.hoisted(() => ({ openMock: vi.fn(() => true) }));
+vi.mock("@/lib/studio/samples/sample-service", () => ({ catalogAssetOpenTo: vi.fn(async () => openMock()) }));
 vi.mock("@/lib/auth/session", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/auth/session")>();
   return { ...actual, requireUser: vi.fn() };
@@ -114,5 +116,22 @@ describe("POST /api/catalog/copy", () => {
       }),
     );
     expect(response.status).toBe(503);
+  });
+
+  it("refuses a sample its author took out of the catalogue", async () => {
+    requireUserMock.mockResolvedValue(auth());
+    const { POST } = await import("./route");
+    openMock.mockReturnValueOnce(false);
+    const response = await POST(
+      new Request("http://localhost/api/catalog/copy", {
+        method: "POST",
+        body: JSON.stringify({
+          catalogAssetId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          projectId: "11111111-1111-4111-8111-111111111111",
+        }),
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(executeMock).not.toHaveBeenCalled();
   });
 });

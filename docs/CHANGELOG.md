@@ -6,6 +6,13 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (24) — Katalog i rankingi: te same wybory autora dla bitów, sampli i utworów
+
+- Migracja `20261123190000_listing_consents.sql` (zastosowana): `allow_ratings`, `in_rankings` w `beats` i `studio_samples`; ranking wymaga ocen i komentarzy (CHECK jak w `catalog_works`). Nowe rzeczy użytkownika startują bez zgód (trigger), BitRymDym ze wszystkimi. Wycofanie utworu nie wymaga już gotowego mastera.
+- Wspólne reguły `src/lib/community/consents.ts` + `consent-switches.tsx`: katalog, oceny, komentarze, ranking. Miejsca: dodawanie i edycja bitu, Studio (sample, utwory), Sample Lab, nowa strona `/account/catalog` (`listing-service.ts`, `PATCH /api/account/listings`) — także starsze utwory, których Studio już nie pokazuje.
+- Ranking bitów liczy też bity płatne (bez sprzedanych) i tylko te, których autor się zgodził; sample tak samo, w tym „Sampel tygodnia”. Wyłączone oceny: brak głosowania i brak średniej.
+- Sampel zdjęty z katalogu przez autora znika też z katalogu w Studiu; inni nie odsłuchają go ani nie wstawią (także przez `/api/catalog/copy`). Wybór autora zostaje po akceptacji moderatora.
+
 ## 2026-11-23 (23) — Generator sampli: 10 nowych instrumentów
 
 - Kalimba, harfa, Hammond, pizzicato, trąbka z tłumikiem, akordeon, lead, synth bas, cowbell, taiko (`sample-generator.ts`, etykiety PL/EN, test kompletności).

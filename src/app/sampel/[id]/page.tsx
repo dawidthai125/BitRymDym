@@ -156,6 +156,7 @@ export default async function SamplePage({ params }: Props) {
               own={thread.own}
               enabled={thread.enabled}
               commentsOpen={thread.commentsOpen}
+              ratingsOpen={thread.ratingsOpen}
               average={thread.average}
               count={thread.count}
               mine={thread.mine}

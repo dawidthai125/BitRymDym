@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 
 import { SampleBitekCard, type BitekApply, type BitekPreview } from "@/components/studio/sample-bitek-card";
 
+import { ConsentSwitches } from "@/components/community/consent-switches";
 import { Button } from "@/components/ui/button";
+import { DEFAULT_USER_CONSENTS, type ListingConsents } from "@/lib/community/consents";
 import {
   SAMPLE_INSTRUMENTS,
   isSampleInstrumentId,
@@ -31,9 +33,7 @@ type SampleDto = {
   catalogAssetId: string | null;
   moderationNote: string | null;
   mine: boolean;
-  publicListing?: boolean | null;
-  allowComments?: boolean | null;
-  shareReady?: boolean;
+  consents?: ListingConsents | null;
 };
 
 export function StudioSampleDesk({
@@ -64,6 +64,8 @@ export function StudioSampleDesk({
   const [rights, setRights] = useState(false);
   const [uploadKind, setUploadKind] = useState<SampleKind>("effect");
   const [quota, setQuota] = useState<string | null>(null);
+  /** Choices made before sending; the server stores them with the review request. */
+  const [wishes, setWishes] = useState<Record<string, ListingConsents>>({});
   const [bitekFor, setBitekFor] = useState<string | null>(null);
 
   const load = useCallback(async (scope: "mine" | "catalog") => {
@@ -210,7 +212,13 @@ export function StudioSampleDesk({
       action === "submit"
         ? `/api/studio/samples/${sampleId}/submit`
         : `/api/studio/samples/${sampleId}`,
-      { method: action === "submit" ? "POST" : "DELETE" },
+      action === "submit"
+        ? {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(wishes[sampleId] ?? {}),
+          }
+        : { method: "DELETE" },
     );
     const body = (await response.json().catch(() => null)) as { message?: string } | null;
     setBusyId(null);
@@ -222,7 +230,7 @@ export function StudioSampleDesk({
     void load("mine");
   }
 
-  async function share(sample: SampleDto, patch: { publicListing?: boolean; allowComments?: boolean }) {
+  async function share(sample: SampleDto, patch: ListingConsents) {
     setBusyId(sample.id);
     setError(null);
     const response = await fetch(`/api/studio/samples/${sample.id}/share`, {
@@ -455,6 +463,14 @@ export function StudioSampleDesk({
                 ) : null}
                 {sample.mine && (sample.status === "PRIVATE" || sample.status === "REJECTED") ? (
                   <div className="col-span-2">
+                    <ConsentSwitches
+                      kind="sample"
+                      compact
+                      hideListed
+                      value={wishes[sample.id] ?? { ...(sample.consents ?? DEFAULT_USER_CONSENTS), listed: true }}
+                      disabled={busyId === sample.id}
+                      onChange={(next) => setWishes((current) => ({ ...current, [sample.id]: next }))}
+                    />
                     <Button
                       type="button"
                       size="sm"
@@ -480,37 +496,15 @@ export function StudioSampleDesk({
                     {tr("sampleUsun")}
                   </Button>
                 ) : null}
-                {sample.mine && sample.status === "PUBLISHED" && sample.shareReady === false ? (
-                  <p className="col-span-2 text-[11px] text-[var(--brd-mute)]">{tr("sampleUdostepnianieCzeka")}</p>
-                ) : null}
-                {sample.mine && sample.status === "PUBLISHED" && sample.shareReady ? (
-                  <div className="col-span-2 space-y-2">
-                    <label className="flex min-h-11 items-start gap-2 text-xs text-[var(--brd-ink)]">
-                      <input
-                        type="checkbox"
-                        className="mt-1"
-                        checked={sample.publicListing === true}
-                        disabled={busyId === sample.id}
-                        onChange={(event) => void share(sample, { publicListing: event.target.checked })}
-                      />
-                      <span>
-                        <span className="block font-medium">{tr("samplePubliczny")}</span>
-                        <span className="block text-[var(--brd-mute)]">{tr("samplePublicznyOpis")}</span>
-                      </span>
-                    </label>
-                    <label className="flex min-h-11 items-start gap-2 text-xs text-[var(--brd-ink)]">
-                      <input
-                        type="checkbox"
-                        className="mt-1"
-                        checked={sample.allowComments !== false}
-                        disabled={busyId === sample.id || sample.publicListing !== true}
-                        onChange={(event) => void share(sample, { allowComments: event.target.checked })}
-                      />
-                      <span>
-                        <span className="block font-medium">{tr("sampleKomentarze")}</span>
-                        <span className="block text-[var(--brd-mute)]">{tr("sampleKomentarzeOpis")}</span>
-                      </span>
-                    </label>
+                {sample.mine && (sample.status === "PUBLISHED" || sample.status === "PENDING_REVIEW") && sample.consents ? (
+                  <div className="col-span-2">
+                    <ConsentSwitches
+                      kind="sample"
+                      compact
+                      value={sample.consents}
+                      disabled={busyId === sample.id}
+                      onChange={(next) => void share(sample, next)}
+                    />
                   </div>
                 ) : null}
               </div>

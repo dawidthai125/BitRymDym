@@ -315,6 +315,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               own={thread.own}
               enabled={thread.enabled}
               commentsOpen={thread.commentsOpen}
+              ratingsOpen={thread.ratingsOpen}
               average={thread.average}
               count={thread.count}
               mine={thread.mine}

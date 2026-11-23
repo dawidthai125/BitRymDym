@@ -5,7 +5,7 @@ import { cache } from "react";
 import { isUuid } from "@/lib/beats/audio-validation";
 import { loadPublicAuthorDisplayNames } from "@/lib/beats/public-author";
 import { resolvePublicAuthor } from "@/lib/beats/public-author-resolve";
-import { getPublishedBeat, listPublishedBeatBoardKeys, listPublishedBeats } from "@/lib/beats/service";
+import { getPublishedBeat, listPublishedBeatBoardKeys } from "@/lib/beats/service";
 import {
   aggregateRatings,
   cleanComment,
@@ -65,6 +65,8 @@ export type PublicSampleCard = {
   /** Same over the last 7 days (for "Sampel tygodnia"). */
   weekAvg: number | null;
   weekCount: number;
+  /** Author's choice: "Sampel tygodnia" and the ranking use only these. */
+  inRankings: boolean;
 };
 
 export type BoardRow = {
@@ -102,9 +104,9 @@ export type Thread = {
   enabled: boolean;
   found: boolean;
   own: boolean;
-  /** False when the author turned comments off. Beat and sample ratings stay. */
+  /** False when the author left comments off. */
   commentsOpen: boolean;
-  /** False only for a finished track whose owner left ratings off. */
+  /** False when the author left ratings off (beat, sample or finished track). */
   ratingsOpen: boolean;
   average: number | null;
   count: number;
@@ -132,8 +134,8 @@ type Work = {
   author: string;
   ownership: "PLATFORM" | "USER";
   allowComments: boolean;
-  /** Absent means ratings stay open, which is the beat and sample rule. */
   allowRatings?: boolean;
+  inRankings?: boolean;
   kind?: string;
   instrument?: string | null;
   durationMs?: number;
@@ -189,19 +191,17 @@ async function authorNames(ownerIds: string[]): Promise<Map<string, string | nul
   }
 }
 
-async function beatCommentFlags(ids: string[]): Promise<Map<string, boolean> | null> {
+type BeatFlags = { allowRatings: boolean; allowComments: boolean };
+
+/** Author switches of one beat. A read error keeps both closed. */
+async function beatConsentFlags(id: string): Promise<BeatFlags> {
+  const closed: BeatFlags = { allowRatings: false, allowComments: false };
   const admin = adminOrNull();
-  if (!admin || ids.length === 0) return null;
-  const flags = new Map<string, boolean>();
-  for (let index = 0; index < ids.length; index += 100) {
-    const loaded = await admin.from("beats").select("id, allow_comments").in("id", ids.slice(index, index + 100));
-    if (shareColumnMissing(loaded.error, "allow_comments")) return null;
-    if (loaded.error) return new Map(ids.map((id) => [id, false]));
-    for (const row of (loaded.data ?? []) as Array<{ id: string; allow_comments?: boolean }>) {
-      flags.set(row.id, row.allow_comments !== false);
-    }
-  }
-  return flags;
+  if (!admin) return closed;
+  const loaded = await admin.from("beats").select("id, allow_ratings, allow_comments").eq("id", id).maybeSingle();
+  if (loaded.error || !loaded.data) return closed;
+  const row = loaded.data as { allow_ratings?: boolean; allow_comments?: boolean };
+  return { allowRatings: row.allow_ratings === true, allowComments: row.allow_comments === true };
 }
 
 type SampleRow = {
@@ -212,57 +212,26 @@ type SampleRow = {
   instrument: string | null;
   duration_ms: number;
   public_listing?: boolean;
+  allow_ratings?: boolean;
   allow_comments?: boolean;
+  in_rankings?: boolean;
 };
 
 async function loadPublishedSampleRows(): Promise<SampleRow[]> {
   const admin = adminOrNull();
   if (!admin) return [];
-  const flagged = await admin
+  const loaded = await admin
     .from("studio_samples")
-    .select("id, owner_id, title, kind, instrument, duration_ms, public_listing, allow_comments")
+    .select("id, owner_id, title, kind, instrument, duration_ms, public_listing, allow_ratings, allow_comments, in_rankings")
     .eq("status", "PUBLISHED")
+    .eq("public_listing", true)
     .order("created_at", { ascending: false })
     .limit(200);
-  const flagsMissing = shareColumnMissing(flagged.error, "public_listing") || shareColumnMissing(flagged.error, "allow_comments");
-  const loaded = flagsMissing
-    ? await admin
-        .from("studio_samples")
-        .select("id, owner_id, title, kind, instrument, duration_ms")
-        .eq("status", "PUBLISHED")
-        .order("created_at", { ascending: false })
-        .limit(200)
-    : flagged;
   if (loaded.error) return [];
-  const rows = (loaded.data ?? []) as SampleRow[];
-  return rows.filter((row) => (flagsMissing ? true : row.public_listing === true)).map((row) => ({
-    ...row,
-    allow_comments: flagsMissing ? true : row.allow_comments !== false,
-  }));
+  return (loaded.data ?? []) as SampleRow[];
 }
 
-async function publishedWorks(kind: TargetKind | "work"): Promise<Work[]> {
-  if (kind === "work") return [];
-  if (kind === "beat") {
-    const beats = await listPublishedBeats();
-    const names = await authorNames(
-      beats.filter((beat) => beat.ownershipType === "USER" && beat.ownerId).map((beat) => beat.ownerId as string),
-    );
-    const flags = await beatCommentFlags(beats.map((beat) => beat.id));
-    return beats.map((beat) => ({
-      id: beat.id,
-      title: beat.title,
-      ownerId: beat.ownerId,
-      ownership: beat.ownershipType === "USER" ? "USER" : "PLATFORM",
-      allowComments: flags?.get(beat.id) ?? true,
-      author: resolvePublicAuthor({
-        ownershipType: beat.ownershipType,
-        ownerId: beat.ownerId,
-        producer: beat.producer,
-        ownerDisplayName: beat.ownerId ? names.get(beat.ownerId) : null,
-      }),
-    }));
-  }
+async function publishedSamples(): Promise<Work[]> {
   const rows = await loadPublishedSampleRows();
   const [names, platform] = await Promise.all([
     authorNames(rows.map((row) => row.owner_id)),
@@ -273,7 +242,9 @@ async function publishedWorks(kind: TargetKind | "work"): Promise<Work[]> {
     title: row.title,
     ownerId: row.owner_id,
     ownership: platform.has(row.owner_id) ? ("PLATFORM" as const) : ("USER" as const),
-    allowComments: row.allow_comments !== false,
+    allowComments: row.allow_comments === true,
+    allowRatings: row.allow_ratings === true,
+    inRankings: row.in_rankings === true,
     author: platform.has(row.owner_id)
       ? publicAuthorName({ ownership: "PLATFORM" })
       : publicAuthorName({ ownership: "USER", displayName: names.get(row.owner_id) }),
@@ -284,7 +255,7 @@ async function publishedWorks(kind: TargetKind | "work"): Promise<Work[]> {
 }
 
 export async function listPublicSamples(source: CatalogSource): Promise<PublicSampleCard[]> {
-  const works = (await publishedWorks("sample")).filter((work) =>
+  const works = (await publishedSamples()).filter((work) =>
     source === "brd" ? work.ownership === "PLATFORM" : work.ownership === "USER",
   );
   const ids = works.map((work) => work.id);
@@ -305,10 +276,12 @@ export async function listPublicSamples(source: CatalogSource): Promise<PublicSa
     platform: work.ownership === "PLATFORM",
     createdAt: meta.get(work.id)?.createdAt ?? null,
     sampleNumber: meta.get(work.id)?.sampleNumber ?? null,
-    ratingAvg: stats.get(work.id)?.avg ?? null,
-    ratingCount: stats.get(work.id)?.count ?? 0,
-    weekAvg: stats.get(work.id)?.weekAvg ?? null,
-    weekCount: stats.get(work.id)?.weekCount ?? 0,
+    // Ratings off → earlier votes are not shown either.
+    ratingAvg: work.allowRatings ? (stats.get(work.id)?.avg ?? null) : null,
+    ratingCount: work.allowRatings ? (stats.get(work.id)?.count ?? 0) : 0,
+    weekAvg: work.allowRatings ? (stats.get(work.id)?.weekAvg ?? null) : null,
+    weekCount: work.allowRatings ? (stats.get(work.id)?.weekCount ?? 0) : 0,
+    inRankings: work.inRankings === true,
   }));
 }
 
@@ -376,9 +349,10 @@ async function sampleRatingStats(ids: string[]): Promise<Map<string, SampleRatin
  * "Sampel tygodnia": best 7-day average with at least 2 ratings that week; otherwise the most
  * rated sample of all time (ties: higher average). Null when nothing has a rating.
  */
-export function pickSampleOfTheWeek<T extends { id: string; ratingAvg: number | null; ratingCount: number; weekAvg: number | null; weekCount: number }>(
-  samples: readonly T[],
+export function pickSampleOfTheWeek<T extends { id: string; inRankings?: boolean; ratingAvg: number | null; ratingCount: number; weekAvg: number | null; weekCount: number }>(
+  listed: readonly T[],
 ): T | null {
+  const samples = listed.filter((s) => s.inRankings !== false);
   const week = samples.filter((s) => s.weekCount >= 2 && s.weekAvg != null);
   if (week.length) {
     return [...week].sort((a, b) => (b.weekAvg ?? 0) - (a.weekAvg ?? 0) || b.weekCount - a.weekCount)[0] ?? null;
@@ -506,6 +480,7 @@ async function settlePeriod(admin: Admin, kind: TargetKind, period: PeriodWindow
   return settleLoaded(admin, kind, period, works, await loadRatingWindow(admin, kind, period));
 }
 
+/** Public works whose author entered the ranking (the database keeps ratings and comments on for them). */
 async function loadBoardWorks(kind: TargetKind): Promise<BoardWork[]> {
   if (kind === "beat") {
     const beats = await listPublishedBeatBoardKeys();
@@ -515,19 +490,21 @@ async function loadBoardWorks(kind: TargetKind): Promise<BoardWork[]> {
       ownerId: beat.ownerId,
       ownership: beat.ownershipType,
       allowComments: true,
+      allowRatings: true,
       author: "",
       producer: beat.producer,
       source: "beat" as const,
     }));
   }
-  const rows = await loadPublishedSampleRows();
+  const rows = (await loadPublishedSampleRows()).filter((row) => row.in_rankings === true);
   const platform = await platformSampleOwners(rows.map((row) => row.owner_id));
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
     ownerId: row.owner_id,
     ownership: platform.has(row.owner_id) ? ("PLATFORM" as const) : ("USER" as const),
-    allowComments: row.allow_comments !== false,
+    allowComments: row.allow_comments === true,
+    allowRatings: row.allow_ratings === true,
     author: "",
     producer: null,
     source: "sample" as const,
@@ -625,13 +602,14 @@ async function findPublishedBeat(id: string): Promise<Work | null> {
     beat.ownershipType === "USER" && beat.ownerId
       ? await authorNames([beat.ownerId])
       : new Map<string, string | null>();
-  const flags = await beatCommentFlags([beat.id]);
+  const flags = await beatConsentFlags(beat.id);
   return {
     id: beat.id,
     title: beat.title,
     ownerId: beat.ownerId,
     ownership: beat.ownershipType === "USER" ? "USER" : "PLATFORM",
-    allowComments: flags?.get(beat.id) ?? true,
+    allowComments: flags.allowComments,
+    allowRatings: flags.allowRatings,
     author: resolvePublicAuthor({
       ownershipType: beat.ownershipType,
       ownerId: beat.ownerId,
@@ -656,7 +634,7 @@ export async function findWork(kind: TargetKind | "work", id: string): Promise<W
     };
   }
   if (kind === "beat") return findPublishedBeat(id);
-  const works = await publishedWorks(kind);
+  const works = await publishedSamples();
   return works.find((work) => work.id === id) ?? null;
 }
 
@@ -792,13 +770,19 @@ export async function commentTarget(userId: string, kind: TargetKind | "work", i
   return typeof newId === "string" ? { result: "ok", id: newId } : { result: "ok" };
 }
 
+async function titlesOf(admin: Admin, table: "beats" | "studio_samples", ids: string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const loaded = await admin.from(table).select("id, title").in("id", ids);
+  return new Map(((loaded.data ?? []) as Array<{ id: string; title: string }>).map((row) => [row.id, row.title]));
+}
+
 export async function listMyRewards(userId: string, now = new Date()): Promise<{ enabled: boolean; rewards: RewardView[] }> {
   const admin = adminOrNull();
   if (!admin) return { enabled: false, rewards: [] };
   const week = warsawPeriod(now, "week");
   const month = warsawPeriod(now, "month");
   for (const kind of ["beat", "sample"] as const) {
-    const works = new Map((await publishedWorks(kind)).map((work) => [work.id, work]));
+    const works = new Map((await loadBoardWorks(kind)).map((work) => [work.id, work]));
     const weekOk = await settlePeriod(admin, kind, previousPeriod(week, now), works);
     const monthOk = await settlePeriod(admin, kind, previousPeriod(month, now), works);
     if (!weekOk || !monthOk) return { enabled: false, rewards: [] };
@@ -823,8 +807,11 @@ export async function listMyRewards(userId: string, now = new Date()): Promise<{
     reward_days: number;
     status: string;
   }>;
-  const beatWorks = new Map((await publishedWorks("beat")).map((work) => [work.id, work]));
-  const sampleWorks = new Map((await publishedWorks("sample")).map((work) => [work.id, work]));
+  // The title stays readable also when the work has left the catalogue or the ranking.
+  const [beatTitles, sampleTitles] = await Promise.all([
+    titlesOf(admin, "beats", rows.filter((row) => row.target_kind === "beat").map((row) => row.target_id)),
+    titlesOf(admin, "studio_samples", rows.filter((row) => row.target_kind === "sample").map((row) => row.target_id)),
+  ]);
   return {
     enabled: true,
     rewards: rows.map((row) => ({
@@ -833,7 +820,7 @@ export async function listMyRewards(userId: string, now = new Date()): Promise<{
       periodKey: row.period_key,
       place: row.place,
       targetKind: row.target_kind,
-      title: (row.target_kind === "beat" ? beatWorks : sampleWorks).get(row.target_id)?.title ?? "—",
+      title: (row.target_kind === "beat" ? beatTitles : sampleTitles).get(row.target_id) ?? "—",
       mode: row.reward_mode,
       tier: row.reward_tier,
       days: row.reward_days,

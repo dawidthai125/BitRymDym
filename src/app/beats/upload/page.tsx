@@ -10,8 +10,9 @@ import {
   MAIN_CONTENT_LANDMARK_CLASS,
 } from "@/components/site/skip-to-main";
 import { AuthError, requireUser } from "@/lib/auth/session";
-import { getOwnUserBeat } from "@/lib/beats/service";
+import { getOwnUserBeat, loadOwnBeatConsents } from "@/lib/beats/service";
 import { canUserEditBeatStatus } from "@/lib/beats/status-labels";
+import type { ListingConsents } from "@/lib/community/consents";
 import { cn } from "@/lib/utils";
 
 type PageProps = {
@@ -59,6 +60,7 @@ export default async function BeatsUploadPage({ searchParams }: PageProps) {
         title: string;
         producer: string | null;
         activeMasterReady: boolean;
+        consents: ListingConsents | undefined;
       }
     | undefined;
 
@@ -73,6 +75,7 @@ export default async function BeatsUploadPage({ searchParams }: PageProps) {
         title: beat.title,
         producer: beat.producer,
         activeMasterReady: beat.activeMasterReady,
+        consents: (await loadOwnBeatConsents(context.userId, beat.id)) ?? undefined,
       };
     } catch {
       redirect("/account/beats");
@@ -110,6 +113,7 @@ export default async function BeatsUploadPage({ searchParams }: PageProps) {
           initialTitle={existing?.title}
           initialProducer={existing?.producer}
           masterAlreadyReady={existing?.activeMasterReady}
+          initialConsents={existing?.consents}
         />
       </main>
     </div>

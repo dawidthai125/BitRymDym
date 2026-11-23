@@ -6,6 +6,8 @@ import {
   catalogCopyErrorHttpStatus,
   catalogCopyUserMessage,
 } from "@/lib/catalog/catalog-originals";
+import { sampleUserMessage } from "@/lib/studio/samples/sample-policy";
+import { catalogAssetOpenTo } from "@/lib/studio/samples/sample-service";
 
 export const runtime = "nodejs";
 
@@ -39,6 +41,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "catalogAssetId and projectId are required." },
         { status: 400 },
+      );
+    }
+
+    if (!(await catalogAssetOpenTo(auth.userId, body.catalogAssetId))) {
+      return NextResponse.json(
+        { error: "SAMPLE_FORBIDDEN", message: sampleUserMessage("SAMPLE_FORBIDDEN") },
+        { status: 403 },
       );
     }
 

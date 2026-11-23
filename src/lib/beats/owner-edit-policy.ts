@@ -23,8 +23,10 @@ export type OwnerBeatSettings = {
   visibility?: BeatVisibility;
   allowDownload?: boolean;
   allowStudioUse?: boolean;
-  /** Stored separately so a missing column does not block the other settings. */
+  /** Consents: saved through applyConsentPatch, not through toOwnerSettingsPayload. */
+  allowRatings?: boolean;
   allowComments?: boolean;
+  inRankings?: boolean;
 };
 
 export function isOwnerEditableStatus(status: BeatStatus): boolean {
@@ -51,7 +53,7 @@ export function parseOwnerBeatSettings(
     }
     value.visibility = raw.visibility as BeatVisibility;
   }
-  for (const key of ["allowDownload", "allowStudioUse", "allowComments"] as const) {
+  for (const key of ["allowDownload", "allowStudioUse", "allowRatings", "allowComments", "inRankings"] as const) {
     if (raw[key] !== undefined) {
       if (typeof raw[key] !== "boolean") {
         return { ok: false, error: "Nieprawidłowe ustawienia bitu." };

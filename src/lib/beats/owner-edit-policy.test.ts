@@ -45,5 +45,10 @@ describe("owner edit policy", () => {
       value: { allowComments: false },
     });
     expect(toOwnerSettingsPayload({ allowComments: false })).toEqual({});
+    expect(parseOwnerBeatSettings({ inRankings: true, allowRatings: true })).toEqual({
+      ok: true,
+      value: { inRankings: true, allowRatings: true },
+    });
+    expect(parseOwnerBeatSettings({ inRankings: 1 }).ok).toBe(false);
   });
 });

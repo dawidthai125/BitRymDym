@@ -52,6 +52,14 @@ import {
 } from "@/lib/beats/owner-edit-policy";
 import type { AuthContext } from "@/lib/auth/types";
 import {
+  applyConsentPatch,
+  CONSENT_KEYS,
+  consentColumns,
+  consentsFromRow,
+  type ConsentPatch,
+  type ListingConsents,
+} from "@/lib/community/consents";
+import {
   BEAT_SELECT_FULL,
   BEAT_SELECT_PUBLIC,
   mapBeatRow,
@@ -469,12 +477,21 @@ export async function patchOwnUserBeatAfterAuthz(params: {
     throw new BeatRequestError(validated.errors.join("; "));
   }
 
-  const { allowComments, ...listedSettings } = params.settings ?? {};
+  const { allowRatings, allowComments, inRankings, ...listedSettings } = params.settings ?? {};
+  // Read before the update: a moderator or another tab may have changed the switches.
+  const before = await readBeatConsents(admin, params.beatId);
+  const consents = applyConsentPatch(before, {
+    ...(listedSettings.visibility !== undefined ? { listed: listedSettings.visibility === "public" } : {}),
+    ...(allowRatings !== undefined ? { allowRatings } : {}),
+    ...(allowComments !== undefined ? { allowComments } : {}),
+    ...(inRankings !== undefined ? { inRankings } : {}),
+  });
   const { data: updatedRows, error } = await admin
     .from("beats")
     .update({
       ...toBeatMetadataPayload(validated.value),
       ...toOwnerSettingsPayload(listedSettings),
+      ...consentColumns(consents),
     })
     .eq("id", params.beatId)
     .eq("owner_id", context.userId)
@@ -492,19 +509,6 @@ export async function patchOwnUserBeatAfterAuthz(params: {
     includeRejectionReason: true,
   });
 
-  let commentsSaved = false;
-  if (allowComments !== undefined) {
-    const flag = await admin
-      .from("beats")
-      .update({ allow_comments: allowComments })
-      .eq("id", params.beatId)
-      .eq("owner_id", context.userId)
-      .eq("ownership_type", "USER");
-    const missingFlag = (flag.error?.message ?? "").toLowerCase().includes("allow_comments");
-    if (flag.error && !missingFlag) throw new Error(flag.error.message);
-    commentsSaved = !flag.error;
-  }
-
   if (isOwnerEditAudited(beat.status)) {
     const diff = diffBeatMetadataForAudit(beat, updated);
     const settingsChanged: Record<string, { from: unknown; to: unknown }> = {};
@@ -513,8 +517,8 @@ export async function patchOwnUserBeatAfterAuthz(params: {
         settingsChanged[k] = { from: beat[k] ?? null, to: updated[k] ?? null };
       }
     }
-    if (commentsSaved) {
-      settingsChanged.allowComments = { from: null, to: allowComments };
+    for (const k of ["allowRatings", "allowComments", "inRankings"] as const) {
+      if (before[k] !== consents[k]) settingsChanged[k] = { from: before[k], to: consents[k] };
     }
     if (diff.changed.length > 0 || Object.keys(settingsChanged).length > 0) {
       const { error: auditError } = await admin.from("admin_audit_events").insert({
@@ -540,20 +544,81 @@ export async function patchOwnUserBeatAfterAuthz(params: {
   return updated;
 }
 
-/** Side read. Null means the comment column is not on this database yet. */
-export async function loadOwnerCommentSwitch(beatId: string): Promise<boolean | null> {
+async function readBeatConsents(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  beatId: string,
+): Promise<ListingConsents> {
+  const { data, error } = await admin
+    .from("beats")
+    .select("visibility, allow_ratings, allow_comments, in_rankings")
+    .eq("id", beatId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const row = (data ?? {}) as { visibility?: string; allow_ratings?: boolean; allow_comments?: boolean; in_rankings?: boolean };
+  return consentsFromRow(row, row.visibility !== "private");
+}
+
+/** Catalogue / ratings / comments / ranking of the caller's own USER beat. Null when it is not theirs. */
+export async function loadOwnBeatConsents(userId: string, beatId: string): Promise<ListingConsents | null> {
   if (!isUuid(beatId)) return null;
-  let admin: ReturnType<typeof createSupabaseAdminClient>;
-  try {
-    admin = createSupabaseAdminClient();
-  } catch {
-    return null;
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("beats")
+    .select("visibility, allow_ratings, allow_comments, in_rankings")
+    .eq("id", beatId)
+    .eq("owner_id", userId)
+    .eq("ownership_type", "USER")
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as { visibility?: string; allow_ratings?: boolean; allow_comments?: boolean; in_rankings?: boolean };
+  return consentsFromRow(row, row.visibility !== "private");
+}
+
+/**
+ * Same four switches as samples and finished tracks. Works in every status except ARCHIVED
+ * (moderation reviews audio and texts, not these choices). Audited after approval.
+ */
+export async function saveOwnBeatConsents(
+  context: AuthContext,
+  beatId: string,
+  patch: ConsentPatch,
+): Promise<ListingConsents | null> {
+  const before = await loadOwnBeatConsents(context.userId, beatId);
+  if (!before) return null;
+  const consents = applyConsentPatch(before, patch);
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("beats")
+    .update({
+      ...consentColumns(consents),
+      ...(consents.listed !== before.listed ? { visibility: consents.listed ? "public" : "private" } : {}),
+    })
+    .eq("id", beatId)
+    .eq("owner_id", context.userId)
+    .eq("ownership_type", "USER")
+    .neq("status", "ARCHIVED")
+    .select("id, status")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  const changed: Record<string, { from: boolean; to: boolean }> = {};
+  for (const key of CONSENT_KEYS) {
+    if (before[key] !== consents[key]) changed[key] = { from: before[key], to: consents[key] };
   }
-  const loaded = await admin.from("beats").select("id, allow_comments").eq("id", beatId).maybeSingle();
-  const message = (loaded.error?.message ?? "").toLowerCase();
-  if (loaded.error && message.includes("allow_comments")) return null;
-  if (loaded.error || !loaded.data) return null;
-  return (loaded.data as { allow_comments?: boolean }).allow_comments !== false;
+  if (Object.keys(changed).length > 0 && isOwnerEditAudited((data as { status: BeatStatus }).status)) {
+    const { error: auditError } = await admin.from("admin_audit_events").insert({
+      actor_user_id: context.profile.id,
+      target_user_id: context.profile.id,
+      actor_user_number: context.profile.userNumber ?? null,
+      target_user_number: context.profile.userNumber ?? null,
+      action: "BEAT_OWNER_UPDATE",
+      old_value: {},
+      new_value: {},
+      metadata: { beatId, status: (data as { status: string }).status, fields: [], settings: changed },
+    });
+    if (auditError) console.error("[beats] owner audit insert failed:", auditError.message);
+  }
+  return consents;
 }
 
 /** Owner edit page loader: own USER beat incl. private fields. */
@@ -800,7 +865,7 @@ export async function transitionBeatStatus(
 /** Community Wave 3/5: DRAFT → PENDING_REVIEW (own + MASTER READY + submit cooldown). */
 export async function submitUserBeat(
   beatId: string,
-  options?: { rightsAccepted?: boolean },
+  options?: { rightsAccepted?: boolean; consents?: ConsentPatch },
 ): Promise<Beat> {
   const context = await requireUser();
   await requirePermission("beats.create");
@@ -836,6 +901,7 @@ export async function submitUserBeat(
       "Zaznacz oświadczenie o prawach do nagrania i sampli.",
     );
   }
+  if (options.consents) await saveOwnBeatConsents(context, current.id, options.consents);
   const { prepareUserSubmissionRights } = await import(
     "@/lib/beats/rights-records"
   );
@@ -1151,8 +1217,8 @@ export async function listPublishedBeats(options?: {
 }
 
 /**
- * Free published beats for the ranking board: id, title, owner, producer.
- * Same lane rules as listPublishedBeats() with no limit. No cover columns and no author RPC.
+ * Published beats (free and paid) whose author entered the ranking: id, title, owner, producer.
+ * A sold beat left the catalogue, so it left the board too. No cover columns and no author RPC.
  */
 export async function listPublishedBeatBoardKeys(): Promise<
   Array<{
@@ -1166,10 +1232,11 @@ export async function listPublishedBeatBoardKeys(): Promise<
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
-    .select("id, title, owner_id, ownership_type, producer, catalog_lane")
+    .select("id, title, owner_id, ownership_type, producer")
     .eq("status", "PUBLISHED")
     .eq("visibility", "public")
-    .or("catalog_lane.is.null,catalog_lane.neq.paid");
+    .eq("in_rankings", true)
+    .is("sold_at", null);
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as Array<{
     id: string;
@@ -1177,20 +1244,14 @@ export async function listPublishedBeatBoardKeys(): Promise<
     owner_id: string | null;
     ownership_type: string;
     producer: string | null;
-    catalog_lane?: string | null;
   }>;
-  return rows.flatMap((row) => {
-    if (catalogLaneOf(row.catalog_lane) !== "free") return [];
-    return [
-      {
-        id: row.id,
-        title: row.title,
-        ownerId: row.owner_id,
-        ownershipType: row.ownership_type === "USER" ? ("USER" as const) : ("PLATFORM" as const),
-        producer: row.producer,
-      },
-    ];
-  });
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    ownerId: row.owner_id,
+    ownershipType: row.ownership_type === "USER" ? ("USER" as const) : ("PLATFORM" as const),
+    producer: row.producer,
+  }));
 }
 
 /**

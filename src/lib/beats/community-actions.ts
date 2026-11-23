@@ -9,6 +9,7 @@ import {
 } from "@/lib/beats/audio-transport";
 import { beatActionErrorMessage } from "@/lib/beats/beat-operation-error";
 import { requireUser } from "@/lib/auth/session";
+import { parseConsentPatch } from "@/lib/community/consents";
 import type { Beat } from "@/types/domain";
 import {
   approveUserBeat,
@@ -68,10 +69,13 @@ export async function createUserDraftBeatAction(params?: {
 
 export async function submitUserBeatAction(
   beatId: string,
-  options?: { rightsAccepted?: boolean },
+  options?: { rightsAccepted?: boolean; consents?: unknown },
 ): Promise<CommunityActionState> {
   try {
-    const beat = await submitUserBeat(beatId, options);
+    const beat = await submitUserBeat(beatId, {
+      rightsAccepted: options?.rightsAccepted,
+      consents: parseConsentPatch(options?.consents) ?? undefined,
+    });
     revalidateCommunitySurfaces(beat.id);
     return { error: null, success: true, beatId: beat.id };
   } catch (error) {

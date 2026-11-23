@@ -24,7 +24,7 @@ type Props = {
   own: boolean;
   enabled: boolean;
   commentsOpen: boolean;
-  /** Beat and sample pages leave this unset. Ratings stay open. */
+  /** False when the author left ratings off. */
   ratingsOpen?: boolean;
   average: number | null;
   count: number;

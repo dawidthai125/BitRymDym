@@ -497,7 +497,8 @@
       "tworca": "Twórca",
       "twojePobrania": "Twoje pobrania",
       "wgraneIWModeracji": "Wgrane i w moderacji",
-      "kupioneBitySklep": "Twoje bity na wyłączność"
+      "kupioneBitySklep": "Twoje bity na wyłączność",
+      "katalogIRankingi": "Katalog i rankingi"
     },
     "accountSharedPage": {
       "metaTitle": "Bity udostępnione",
@@ -816,7 +817,9 @@
         "premiumLimity": "Premium — limity",
         "informacjaOPoziomachI": "Plany i limity. Zakup jest na stronie Premium, gdy płatności są włączone.",
         "powiadomieniaEMail": "Powiadomienia e-mail",
-        "moderacjaMasterMp4": "Moderacja, gotowy master i MP4, wypisanie"
+        "moderacjaMasterMp4": "Moderacja, gotowy master i MP4, wypisanie",
+        "katalogIRankingi": "Katalog i rankingi",
+        "katalogIRankingiOpis": "Co jest w katalogu i co bierze udział w rankingu"
       }
     },
     "accountBeatEditPage": {
@@ -2156,14 +2159,6 @@
       "uzyjWykrytej": "Użyj wykrytej",
       "tagi": "Tagi (po przecinku)",
       "udostepnianie": "Udostępnianie",
-      "widocznosc": "Widoczność",
-      "publiczny": "Publiczny katalog",
-      "publicznyOpis": "Po publikacji bit wchodzi do katalogu i rankingu, a inni mogą go oceniać.",
-      "komentarze": "Komentarze",
-      "komentarzeOpis": "Działają tylko w katalogu publicznym. Oceny zostają, gdy komentarze są wyłączone.",
-      "komentarzeCzekaja": "Wyłączanie komentarzy zadziała po aktualizacji bazy.",
-      "prywatny": "Prywatny (mój katalog)",
-      "prywatnyOpis": "Widzisz go tylko Ty i osoby, którym dasz dostęp.",
       "pozwolPobierac": "Pozwól pobierać",
       "pozwolPobieracOpis": "Wyłączone = tylko odsłuch. Limity planu nadal obowiązują.",
       "pozwolStudio": "Pozwól innym używać w Studiu",
@@ -3078,12 +3073,7 @@
       "sampleZapisz": "Zapisz sampel",
       "sampleDodajNaSciezke": "Dodaj na ścieżkę",
       "sampleWyslij": "Do moderacji",
-      "sampleWyslijOpis": "Po akceptacji sampel wchodzi do katalogu publicznego. Potem możesz go stamtąd zdjąć.",
-      "samplePubliczny": "Katalog publiczny",
-      "samplePublicznyOpis": "Po moderacji sampel trafia do katalogu i rankingu, a inni mogą go oceniać. Możesz to wyłączyć bez ponownej moderacji.",
-      "sampleKomentarze": "Komentarze",
-      "sampleKomentarzeOpis": "Tylko dla sampli w katalogu publicznym. Oceny zostają.",
-      "sampleUdostepnianieCzeka": "Przełącznik katalogu włączy się po aktualizacji bazy.",
+      "sampleWyslijOpis": "Po akceptacji sampel wchodzi do katalogu publicznego z wyborem, który zaznaczysz wyżej. Zmienisz go, kiedy chcesz.",
       "sampleUsun": "Usuń",
       "samplePusty": "Nie ma jeszcze sampli.",
       "sampleLadowanie": "Wczytywanie…",
@@ -4923,7 +4913,7 @@
   },
   "community": {
     "pitch": "Oceń bit albo sampel. Trzy pierwsze miejsca tygodnia dostają dni premium (7, 3 i 1). Miesiąc daje cały pakiet: 1. Gold, 2. Silver, 3. Bronze. Nagrodę włączasz sam, kiedy chcesz, w profilu → Nagrody.",
-    "rules": "Tydzień i miesiąc liczą się według czasu warszawskiego. Jedna ocena na bit albo sampel, liczona w okresie, w którym padła. Swojego nie oceniasz. Nagroda wymaga ocen od trzech różnych osób. BitRymDym zostaje na tablicy, ale nagrodę bierze autor. To dni albo miesiąc premium, nie pieniądze. Nie da się jej dołożyć do premium bez daty końca. Autor wybiera katalog publiczny. Tylko wtedy utwór jest w rankingu i ludzie mogą go oceniać. Komentarze można wyłączyć.",
+    "rules": "Tydzień i miesiąc liczą się według czasu warszawskiego. Jedna ocena na bit albo sampel, liczona w okresie, w którym padła. Swojego nie oceniasz. Nagroda wymaga ocen od trzech różnych osób. BitRymDym zostaje na tablicy, ale nagrodę bierze autor. To dni albo miesiąc premium, nie pieniądze. Nie da się jej dołożyć do premium bez daty końca. O udziale w rankingu decyduje autor, osobno przy każdym bicie i samplu. Można zostać w samym katalogu.",
     "off": "Oceny i ranking włączą się po aktualizacji bazy. Katalog już działa.",
     "shelf": {
       "aria": "Katalog i ranking",
@@ -5067,10 +5057,6 @@
       "publish": "Wrzucam do katalogu. Publiczny fragment 45 s (z bitem) będzie słyszalny w katalogu, też dla niezalogowanych.",
       "publishTerms": "Regulamin, § 7",
       "titleLabel": "Tytuł",
-      "allowRatings": "Zgoda na oceny",
-      "allowComments": "Zgoda na komentarze",
-      "rankOpt": "Biorę udział w rankingach z nagrodą",
-      "rankForces": "Ranking włącza oceny i komentarze. W samym katalogu obie zgody są osobne i opcjonalne.",
       "save": "Zapisz",
       "saving": "Zapisuję…",
       "saved": "Zapisane.",
@@ -5102,7 +5088,8 @@
       "featuredOpen": "Wbijaj do utworu",
       "featuredAll": "Wszystkie utwory",
       "featuredCover": "Okładka: {title}",
-      "okruszekUtwory": "Katalog utworów"
+      "okruszekUtwory": "Katalog utworów",
+      "allMine": "Wszystkie Twoje utwory w katalogu"
     },
     "sampleCatalog": {
       "opisPl": "Opis (polski)",
@@ -5164,6 +5151,46 @@
         "loop": "Pętle",
         "phrase": "Frazy"
       }
+    },
+    "consents": {
+      "heading": "Katalog i ranking",
+      "legend": "Katalog, oceny, komentarze i ranking",
+      "afterReview": "Sam decydujesz. Wybór działa od chwili, gdy moderator przepuści bit. Zmienisz go, kiedy chcesz.",
+      "listed": "W katalogu publicznym",
+      "listedNote": {
+        "beat": "Wyłączone: bit widzisz tylko Ty i osoby, którym dasz dostęp.",
+        "sample": "Wyłączone: sampel znika z katalogu i ze Studia innych. Zostaje w projektach, do których ktoś już go wstawił.",
+        "work": "W katalogu leci publiczny fragment 45 s (z bitem), też dla niezalogowanych. Wyłączone: fragment znika."
+      },
+      "ratings": "Oceny",
+      "ratingsNote": "Inni mogą dawać gwiazdki.",
+      "comments": "Komentarze",
+      "commentsNote": "Inni mogą pisać komentarze.",
+      "ranking": "Biorę udział w rankingu z nagrodami",
+      "rankingNote": "Ranking włącza oceny i komentarze. Bez niego możesz zostać w samym katalogu.",
+      "pageTitle": "Katalog i rankingi",
+      "pageLead": "Tu decydujesz o każdym bicie, samplu i utworze: czy jest w katalogu, czy inni mogą go oceniać i komentować i czy walczy w rankingu. Zmiana zapisuje się od razu.",
+      "section": {
+        "beat": "Bity",
+        "sample": "Sample",
+        "work": "Utwory"
+      },
+      "empty": {
+        "beat": "Nie masz jeszcze bitów.",
+        "sample": "Nie masz sampli w katalogu ani w moderacji.",
+        "work": "Nie masz jeszcze utworów w katalogu."
+      },
+      "add": {
+        "beat": "Moje bity",
+        "sample": "Otwórz Sample Lab",
+        "work": "Otwórz Studio"
+      },
+      "pending": "Jeszcze nie w katalogu. Wybór zadziała po publikacji.",
+      "openPage": "Zobacz stronę",
+      "saved": "Zapisane.",
+      "failed": "Nie udało się zapisać. Spróbuj jeszcze raz.",
+      "relistConfirm": "Wrzucić utwór z powrotem do katalogu? Publiczny fragment 45 s (z bitem) znów będzie słyszalny, też dla niezalogowanych.",
+      "recordingsNote": "Surowe nagrania nie mają katalogu. Widzisz je tylko Ty."
     }
   },
   "maintenance": {

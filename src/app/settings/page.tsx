@@ -64,6 +64,11 @@ const SETTINGS_HUB_LINKS = [
         description: "wgraneBityIStatus",
       },
       {
+        href: "/account/catalog",
+        title: "katalogIRankingi",
+        description: "katalogIRankingiOpis",
+      },
+      {
         href: "/account/downloads",
         title: "pobraneBity",
         description: "historiaPobran",

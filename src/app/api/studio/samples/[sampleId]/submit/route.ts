@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { AuthError, requireUser } from "@/lib/auth/session";
+import { parseConsentPatch } from "@/lib/community/consents";
 import { sampleUserMessage } from "@/lib/studio/samples/sample-policy";
 import { submitStudioSample } from "@/lib/studio/samples/sample-service";
 
@@ -13,7 +14,7 @@ const SAMPLE_PUBLISH_TIER_MESSAGE =
   "Publikacja sampli w katalogu jest od planu Bronze. Na planie Free sample zostają prywatne.";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ sampleId: string }> },
 ) {
   try {
@@ -29,7 +30,8 @@ export async function POST(
         );
       }
     }
-    const result = await submitStudioSample(auth, sampleId);
+    const body: unknown = await request.json().catch(() => null);
+    const result = await submitStudioSample(auth, sampleId, parseConsentPatch(body) ?? {});
     if (!result.ok) {
       const status =
         result.error === "SAMPLE_NOT_FOUND"

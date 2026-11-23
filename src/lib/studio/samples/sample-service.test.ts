@@ -9,9 +9,13 @@ import {
   buildUserSampleObjectKey,
 } from "@/lib/studio/samples/sample-policy";
 import {
+  catalogAssetOpenTo,
   copyStudioSampleToTake,
   createStudioSample,
   reviewStudioSample,
+  signStudioSamplePlayback,
+  submitStudioSample,
+  updateStudioSampleShare,
 } from "@/lib/studio/samples/sample-service";
 import { encodePcm16Wav, renderInstrumentSample, SAMPLE_RATE } from "@/lib/studio/samples/sample-synth";
 
@@ -281,5 +285,102 @@ describe("studio sample service", () => {
     expect(state.uploads).toHaveLength(0);
     expect(state.inserts).toHaveLength(0);
     expect(state.updates[0]?.patch.status).toBe("REJECTED");
+  });
+});
+
+describe("author choices for a sample", () => {
+  function state(patch: Record<string, unknown>): State {
+    return {
+      uploads: [],
+      inserts: [],
+      updates: [],
+      row: {
+        id: SAMPLE_ID,
+        owner_id: OWNER,
+        title: "Stopa",
+        kind: "effect",
+        instrument: "kick",
+        status: "PUBLISHED",
+        rights_accepted: true,
+        object_key: buildUserSampleObjectKey(SAMPLE_ID),
+        content_type: "audio/wav",
+        byte_size: 10,
+        duration_ms: 1000,
+        catalog_asset_id: CATALOG_ID,
+        moderation_note: null,
+        public_listing: true,
+        allow_ratings: false,
+        allow_comments: false,
+        in_rankings: false,
+        ...patch,
+      },
+    };
+  }
+  const share = (s: State, patch: Parameters<typeof updateStudioSampleShare>[2], user = OWNER) =>
+    updateStudioSampleShare(auth(user), SAMPLE_ID, patch, adminFor(s) as never);
+
+  it("entering the ranking turns on ratings and comments", async () => {
+    const s = state({});
+    const result = await share(s, { inRankings: true });
+    expect(result).toMatchObject({
+      ok: true,
+      sample: { consents: { listed: true, allowRatings: true, allowComments: true, inRankings: true } },
+    });
+    expect(s.updates[0]?.patch).toMatchObject({ public_listing: true, allow_ratings: true, allow_comments: true, in_rankings: true });
+  });
+
+  it("can stay in the catalogue without the ranking, and leaving the catalogue leaves the ranking", async () => {
+    const on = { allow_ratings: true, allow_comments: true, in_rankings: true };
+    const out = state(on);
+    await share(out, { inRankings: false });
+    expect(out.updates[0]?.patch).toMatchObject({ public_listing: true, in_rankings: false, allow_ratings: true });
+    const gone = state(on);
+    await share(gone, { listed: false });
+    expect(gone.updates[0]?.patch).toMatchObject({ public_listing: false, in_rankings: false });
+  });
+
+  it("lets only the owner decide, also while the sample waits for review", async () => {
+    const s = state({});
+    expect(await share(s, { listed: false }, OTHER)).toMatchObject({ ok: false, error: SAMPLE_FORBIDDEN });
+    expect(s.updates).toHaveLength(0);
+    const pending = state({ status: "PENDING_REVIEW", catalog_asset_id: null });
+    expect(await share(pending, { listed: false })).toMatchObject({ ok: true });
+  });
+
+  it("keeps the author's choice when a moderator approves", async () => {
+    const s = state({ status: "PENDING_REVIEW", catalog_asset_id: null, public_listing: false, byte_size: wav().byteLength });
+    const result = await reviewStudioSample(
+      auth(REVIEWER),
+      { sampleId: SAMPLE_ID, action: "approve", note: null },
+      { admin: adminFor(s) as never, catalogAssetId: CATALOG_ID },
+    );
+    expect(result).toMatchObject({ ok: true, status: "PUBLISHED" });
+    expect(s.updates[0]?.patch).not.toHaveProperty("public_listing");
+  });
+
+  it("sending to review means the catalogue, with the optional choices off unless ticked", async () => {
+    const plain = state({ status: "PRIVATE", catalog_asset_id: null, public_listing: false });
+    await submitStudioSample(auth(), SAMPLE_ID, {}, adminFor(plain) as never);
+    expect(plain.updates[0]?.patch).toMatchObject({ status: "PENDING_REVIEW", public_listing: true, in_rankings: false, allow_ratings: false });
+    const ranked = state({ status: "PRIVATE", catalog_asset_id: null, public_listing: false });
+    await submitStudioSample(auth(), SAMPLE_ID, { inRankings: true }, adminFor(ranked) as never);
+    expect(ranked.updates[0]?.patch).toMatchObject({ in_rankings: true, allow_ratings: true, allow_comments: true });
+  });
+
+  it("a sample out of the catalogue is closed to others and open to its author", async () => {
+    const s = state({ public_listing: false });
+    const admin = adminFor(s) as never;
+    expect(await signStudioSamplePlayback({ userId: OTHER, moderator: false }, SAMPLE_ID, admin)).toMatchObject({ ok: false, error: SAMPLE_FORBIDDEN });
+    expect(await signStudioSamplePlayback({ userId: OWNER, moderator: false }, SAMPLE_ID, admin)).toMatchObject({ ok: true });
+    expect(
+      await copyStudioSampleToTake(
+        auth(OTHER),
+        { sampleId: SAMPLE_ID, projectId: "11111111-1111-4111-8111-111111111111" },
+        { admin },
+      ),
+    ).toMatchObject({ ok: false, error: SAMPLE_FORBIDDEN });
+    expect(await catalogAssetOpenTo(OTHER, CATALOG_ID, admin)).toBe(false);
+    expect(await catalogAssetOpenTo(OWNER, CATALOG_ID, admin)).toBe(true);
+    expect(await catalogAssetOpenTo(OTHER, CATALOG_ID, adminFor(state({})) as never)).toBe(true);
   });
 });

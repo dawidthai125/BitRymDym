@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { AuthError, requireUser } from "@/lib/auth/session";
-import { SAMPLE_SHARE_OFF, sampleUserMessage } from "@/lib/studio/samples/sample-policy";
+import { parseConsentPatch } from "@/lib/community/consents";
+import { sampleUserMessage } from "@/lib/studio/samples/sample-policy";
 import { updateStudioSampleShare } from "@/lib/studio/samples/sample-service";
 
 export const runtime = "nodejs";
@@ -13,21 +14,19 @@ export async function POST(
   try {
     const auth = await requireUser();
     const { sampleId } = await context.params;
-    const body = (await request.json().catch(() => null)) as {
-      publicListing?: unknown;
-      allowComments?: unknown;
-    } | null;
-    const result = await updateStudioSampleShare(auth, sampleId, {
-      publicListing: typeof body?.publicListing === "boolean" ? body.publicListing : undefined,
-      allowComments: typeof body?.allowComments === "boolean" ? body.allowComments : undefined,
-    });
+    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+    // `publicListing` is the older name of `listed` (a Studio tab open during the deploy).
+    const patch = parseConsentPatch(
+      body && typeof body.publicListing === "boolean" ? { ...body, listed: body.publicListing } : body,
+    );
+    const result = await updateStudioSampleShare(auth, sampleId, patch ?? {});
     if (!result.ok) {
       const status =
         result.error === "SAMPLE_NOT_FOUND"
           ? 404
           : result.error === "SAMPLE_FORBIDDEN"
             ? 403
-            : result.error === SAMPLE_SHARE_OFF || result.error === "SAMPLE_TABLE_UNAVAILABLE"
+            : result.error === "SAMPLE_TABLE_UNAVAILABLE"
               ? 503
               : 400;
       return NextResponse.json(

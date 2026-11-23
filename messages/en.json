@@ -497,7 +497,8 @@
       "tworca": "Creator",
       "twojePobrania": "Your downloads",
       "wgraneIWModeracji": "Uploaded and in moderation",
-      "kupioneBitySklep": "Your exclusive beats"
+      "kupioneBitySklep": "Your exclusive beats",
+      "katalogIRankingi": "Catalogue and rankings"
     },
     "accountSharedPage": {
       "metaTitle": "Shared beats",
@@ -816,7 +817,9 @@
         "premiumLimity": "Premium — limits",
         "informacjaOPoziomachI": "Information about tiers and limits. Purchase is on the Premium page when payments are on.",
         "powiadomieniaEMail": "E-mail notifications",
-        "moderacjaMasterMp4": "Moderation, master and MP4 ready, unsubscribe"
+        "moderacjaMasterMp4": "Moderation, master and MP4 ready, unsubscribe",
+        "katalogIRankingi": "Catalogue and rankings",
+        "katalogIRankingiOpis": "What is in the catalogue and what enters the ranking"
       }
     },
     "accountBeatEditPage": {
@@ -2156,14 +2159,6 @@
       "uzyjWykrytej": "Use detected",
       "tagi": "Tags (comma-separated)",
       "udostepnianie": "Sharing",
-      "widocznosc": "Visibility",
-      "publiczny": "Public catalogue",
-      "publicznyOpis": "Once published, the beat enters the catalogue and the ranking, and people can rate it.",
-      "komentarze": "Comments",
-      "komentarzeOpis": "They work only in the public catalogue. Ratings stay when comments are off.",
-      "komentarzeCzekaja": "The comment switch turns on after the database update.",
-      "prywatny": "Private (my catalogue)",
-      "prywatnyOpis": "Only you and people you grant access can see it.",
       "pozwolPobierac": "Allow downloads",
       "pozwolPobieracOpis": "Off = listen only. Plan limits still apply.",
       "pozwolStudio": "Allow use in other people’s Studio",
@@ -3078,12 +3073,7 @@
       "sampleZapisz": "Save sample",
       "sampleDodajNaSciezke": "Add to track",
       "sampleWyslij": "Send to moderation",
-      "sampleWyslijOpis": "After it is accepted, the sample enters the public catalogue. You can take it out later.",
-      "samplePubliczny": "Public catalogue",
-      "samplePublicznyOpis": "After moderation the sample is in the catalogue and the ranking, and people can rate it. You can turn that off without another review.",
-      "sampleKomentarze": "Comments",
-      "sampleKomentarzeOpis": "Only while the sample is in the public catalogue. Ratings stay.",
-      "sampleUdostepnianieCzeka": "The catalogue switch turns on after the database update.",
+      "sampleWyslijOpis": "After it is accepted, the sample enters the public catalogue with the choices above. You can change them at any time.",
       "sampleUsun": "Delete",
       "samplePusty": "No samples yet.",
       "sampleLadowanie": "Loading…",
@@ -4923,7 +4913,7 @@
   },
   "community": {
     "pitch": "Rate a beat or a sample. The weekly top three get extra premium days (7, 3 and 1). The month gives a full package: 1st Gold, 2nd Silver, 3rd Bronze. You turn the prize on yourself, whenever you want, under Profile → Rewards.",
-    "rules": "The week and the month follow Europe/Warsaw. One rating per beat or sample, counted in the period when it was cast. You cannot rate your own. A prize needs three different people. BitRymDym stays on the board, and the prize goes to the author. It is premium time, not cash. It cannot be added to a premium plan with no end date. The author chooses the public catalogue. Only then does the work enter the ranking and receive ratings. Comments can be turned off.",
+    "rules": "The week and the month follow Europe/Warsaw. One rating per beat or sample, counted in the period when it was cast. You cannot rate your own. A prize needs three different people. BitRymDym stays on the board, and the prize goes to the author. It is premium time, not cash. It cannot be added to a premium plan with no end date. The author decides about the ranking, separately for each beat and sample. It is fine to stay in the catalogue only.",
     "off": "Ratings and the ranking turn on after the database update. The catalogue already works.",
     "shelf": {
       "aria": "Catalogue and ranking",
@@ -5067,10 +5057,6 @@
       "publish": "Publish to the catalogue. A public 45 s clip (with the beat) will be playable in the catalogue, also for logged-out visitors.",
       "publishTerms": "Terms, § 7",
       "titleLabel": "Title",
-      "allowRatings": "Allow ratings",
-      "allowComments": "Allow comments",
-      "rankOpt": "Enter the prize rankings",
-      "rankForces": "A ranking entry turns on ratings and comments. In the catalogue alone, each consent is optional.",
       "save": "Save",
       "saving": "Saving",
       "saved": "Saved.",
@@ -5102,7 +5088,8 @@
       "featuredOpen": "Go to the track",
       "featuredAll": "All tracks",
       "featuredCover": "Cover: {title}",
-      "okruszekUtwory": "Tracks catalogue"
+      "okruszekUtwory": "Tracks catalogue",
+      "allMine": "All your tracks in the catalogue"
     },
     "sampleCatalog": {
       "opisPl": "Description (Polish)",
@@ -5164,6 +5151,46 @@
         "loop": "Loops",
         "phrase": "Phrases"
       }
+    },
+    "consents": {
+      "heading": "Catalogue and ranking",
+      "legend": "Catalogue, ratings, comments and ranking",
+      "afterReview": "You decide. Your choice applies once a moderator accepts the beat. You can change it at any time.",
+      "listed": "In the public catalogue",
+      "listedNote": {
+        "beat": "Off: only you and people you grant access can see the beat.",
+        "sample": "Off: the sample leaves the catalogue and other people's Studio. It stays in projects where someone already placed it.",
+        "work": "The catalogue plays a public 45 s clip (with the beat), also for logged-out visitors. Off: the clip disappears."
+      },
+      "ratings": "Ratings",
+      "ratingsNote": "Other people can give stars.",
+      "comments": "Comments",
+      "commentsNote": "Other people can comment.",
+      "ranking": "Enter the prize ranking",
+      "rankingNote": "The ranking turns on ratings and comments. Without it you can stay in the catalogue only.",
+      "pageTitle": "Catalogue and rankings",
+      "pageLead": "Decide for every beat, sample and track: whether it is in the catalogue, whether people can rate and comment on it, and whether it enters the ranking. Changes save at once.",
+      "section": {
+        "beat": "Beats",
+        "sample": "Samples",
+        "work": "Tracks"
+      },
+      "empty": {
+        "beat": "You have no beats yet.",
+        "sample": "You have no samples in the catalogue or in review.",
+        "work": "You have no tracks in the catalogue yet."
+      },
+      "add": {
+        "beat": "My beats",
+        "sample": "Open Sample Lab",
+        "work": "Open the Studio"
+      },
+      "pending": "Not in the catalogue yet. Your choice applies once it is published.",
+      "openPage": "Open the page",
+      "saved": "Saved.",
+      "failed": "Could not save. Try again.",
+      "relistConfirm": "Put the track back in the catalogue? A public 45 s clip (with the beat) will be playable again, also for logged-out visitors.",
+      "recordingsNote": "Raw recordings have no catalogue. Only you can see them."
     }
   },
   "maintenance": {

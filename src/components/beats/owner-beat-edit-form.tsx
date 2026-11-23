@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type FormEvent } from "react";
 
 import { BeatArtwork } from "@/components/brand/beat-artwork";
+import { ConsentSwitches } from "@/components/community/consent-switches";
 import { Button } from "@/components/ui/button";
 import { useLibText } from "@/i18n/use-lib-text";
 import { beatCoverUrl } from "@/lib/beats/cover/cover-url";
 import { updateOwnBeatAction } from "@/lib/beats/owner-edit-actions";
 import { artworkVariantForId } from "@/lib/ui/demo-beats";
-import type { BeatCoverStatus, BeatVisibility } from "@/types/domain";
+import type { ListingConsents } from "@/lib/community/consents";
+import type { BeatCoverStatus } from "@/types/domain";
 
 const fieldClass =
   "min-h-11 w-full min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-sm";
@@ -26,11 +28,9 @@ export type OwnerBeatEditInitial = {
   key: string | null;
   scale: string | null;
   tags: string[];
-  visibility: BeatVisibility;
   allowDownload: boolean;
   allowStudioUse: boolean;
-  /** Null while the comment column is missing. */
-  allowComments: boolean | null;
+  consents: ListingConsents;
   coverStatus: BeatCoverStatus;
   coverUpdatedAt: string | null;
   coverRejectionReason: string | null;
@@ -59,10 +59,9 @@ export function OwnerBeatEditForm({ initial }: { initial: OwnerBeatEditInitial }
   const [coverMessage, setCoverMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [keyValue, setKeyValue] = useState(initial.key ?? "");
   const [scaleValue, setScaleValue] = useState(initial.scale ?? "");
-  const [visibility, setVisibility] = useState<BeatVisibility>(initial.visibility);
   const [allowDownload, setAllowDownload] = useState(initial.allowDownload);
   const [allowStudioUse, setAllowStudioUse] = useState(initial.allowStudioUse);
-  const [allowComments, setAllowComments] = useState(initial.allowComments !== false);
+  const [consents, setConsents] = useState<ListingConsents>(initial.consents);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const detected = parseDetectedKey(initial.keyDetected);
@@ -99,10 +98,12 @@ export function OwnerBeatEditForm({ initial }: { initial: OwnerBeatEditInitial }
           .map((x) => x.trim())
           .filter(Boolean),
         settings: {
-          visibility,
+          visibility: consents.listed ? "public" : "private",
           allowDownload,
           allowStudioUse,
-          ...(initial.allowComments !== null ? { allowComments } : {}),
+          allowRatings: consents.allowRatings,
+          allowComments: consents.allowComments,
+          inRankings: consents.inRankings,
         },
       });
       if (!result.success) {
@@ -313,23 +314,7 @@ export function OwnerBeatEditForm({ initial }: { initial: OwnerBeatEditInitial }
 
         <section className="flex flex-col gap-3" data-testid="usage-settings">
           <h2 className="text-sm font-semibold tracking-wide">{t("udostepnianie")}</h2>
-          <fieldset className="flex flex-col gap-2" disabled={disabled}>
-            <legend className="sr-only">{t("widocznosc")}</legend>
-            <label className="flex min-h-11 items-start gap-3 rounded-lg border border-border px-3 py-2 text-sm">
-              <input type="radio" name="visibility" value="public" className="mt-1" checked={visibility === "public"} onChange={() => setVisibility("public")} />
-              <span>
-                <span className="block font-medium">{t("publiczny")}</span>
-                <span className="block text-xs text-[var(--brd-mute)]">{t("publicznyOpis")}</span>
-              </span>
-            </label>
-            <label className="flex min-h-11 items-start gap-3 rounded-lg border border-border px-3 py-2 text-sm">
-              <input type="radio" name="visibility" value="private" className="mt-1" checked={visibility === "private"} onChange={() => setVisibility("private")} />
-              <span>
-                <span className="block font-medium">{t("prywatny")}</span>
-                <span className="block text-xs text-[var(--brd-mute)]">{t("prywatnyOpis")}</span>
-              </span>
-            </label>
-          </fieldset>
+          <ConsentSwitches kind="beat" value={consents} onChange={setConsents} disabled={disabled} />
           <label className="flex min-h-11 items-start gap-3 text-sm">
             <input type="checkbox" className="mt-1" checked={allowDownload} onChange={(e) => setAllowDownload(e.target.checked)} disabled={disabled} />
             <span>
@@ -344,17 +329,6 @@ export function OwnerBeatEditForm({ initial }: { initial: OwnerBeatEditInitial }
               <span className="block text-xs text-[var(--brd-mute)]">{t("pozwolStudioOpis")}</span>
             </span>
           </label>
-          {initial.allowComments === null ? (
-            <p className="text-xs text-[var(--brd-mute)]">{t("komentarzeCzekaja")}</p>
-          ) : (
-            <label className="flex min-h-11 items-start gap-3 text-sm">
-              <input type="checkbox" className="mt-1" checked={allowComments} onChange={(e) => setAllowComments(e.target.checked)} disabled={disabled} />
-              <span>
-                <span className="block font-medium">{t("komentarze")}</span>
-                <span className="block text-xs text-[var(--brd-mute)]">{t("komentarzeOpis")}</span>
-              </span>
-            </label>
-          )}
         </section>
 
         {message ? (

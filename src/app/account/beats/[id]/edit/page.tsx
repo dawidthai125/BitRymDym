@@ -8,8 +8,9 @@ import { OwnerBeatEditForm } from "@/components/beats/owner-beat-edit-form";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError } from "@/lib/auth/session";
 import { isOwnerEditableStatus } from "@/lib/beats/owner-edit-policy";
-import { getOwnUserBeatForEdit, loadOwnerCommentSwitch } from "@/lib/beats/service";
+import { getOwnUserBeatForEdit, loadOwnBeatConsents } from "@/lib/beats/service";
 import { beatStatusLabelPl, beatStatusTone } from "@/lib/beats/status-labels";
+import { DEFAULT_USER_CONSENTS } from "@/lib/community/consents";
 import type { Beat } from "@/types/domain";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -34,6 +35,7 @@ export default async function AccountBeatEditPage({ params }: PageProps) {
     if (error instanceof AuthError) notFound();
     throw error;
   }
+  const consents = beat.ownerId ? await loadOwnBeatConsents(beat.ownerId, beat.id) : null;
 
   return (
       <main className="pb-16">
@@ -74,10 +76,9 @@ export default async function AccountBeatEditPage({ params }: PageProps) {
               key: beat.key,
               scale: beat.scale,
               tags: beat.tags,
-              visibility: beat.visibility ?? "public",
               allowDownload: beat.allowDownload !== false,
               allowStudioUse: beat.allowStudioUse !== false,
-              allowComments: await loadOwnerCommentSwitch(beat.id),
+              consents: consents ?? DEFAULT_USER_CONSENTS,
               coverStatus: beat.coverStatus ?? "none",
               coverUpdatedAt: beat.coverUpdatedAt ?? null,
               coverRejectionReason: beat.coverRejectionReason ?? null,

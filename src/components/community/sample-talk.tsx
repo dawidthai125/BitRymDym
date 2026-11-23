@@ -9,6 +9,7 @@ type Loaded = {
   enabled: boolean;
   own: boolean;
   commentsOpen?: boolean;
+  ratingsOpen?: boolean;
   average: number | null;
   count: number;
   mine: number | null;
@@ -43,6 +44,7 @@ export function SampleTalk({ id, signedIn }: { id: string; signedIn: boolean }) 
           own={loaded.own}
           enabled={loaded.enabled}
           commentsOpen={loaded.commentsOpen !== false}
+          ratingsOpen={loaded.ratingsOpen !== false}
           average={loaded.average}
           count={loaded.count}
           mine={loaded.mine}

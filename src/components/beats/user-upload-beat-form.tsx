@@ -16,6 +16,7 @@ import {
 } from "react";
 
 import { BpmUncertaintyField } from "@/components/beats/bpm-uncertainty-field";
+import { ConsentSwitches } from "@/components/community/consent-switches";
 import { Button } from "@/components/ui/button";
 import {
   createUserDraftBeatAction,
@@ -26,6 +27,7 @@ import {
   BEAT_AUDIO_MAX_BYTES,
   resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
+import { DEFAULT_USER_CONSENTS, type ListingConsents } from "@/lib/community/consents";
 import type { BeatKeySuggestion } from "@/lib/beats/audio-key";
 import type { BpmUncertaintyEnvelope } from "@/lib/beats/bpm-uncertainty";
 import {
@@ -74,6 +76,8 @@ type UserUploadBeatFormProps = {
   initialTitle?: string;
   initialProducer?: string | null;
   masterAlreadyReady?: boolean;
+  /** Saved choices of a reworked beat; a new one starts with the catalogue only. */
+  initialConsents?: ListingConsents;
 };
 
 export function UserUploadBeatForm({
@@ -81,9 +85,11 @@ export function UserUploadBeatForm({
   initialTitle = "",
   initialProducer = "",
   masterAlreadyReady = false,
+  initialConsents = DEFAULT_USER_CONSENTS,
 }: UserUploadBeatFormProps) {
   const tl = useLibText();
   const tr = useTranslations("beats.userUploadBeatForm");
+  const tc = useTranslations("community.consents");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [analyzing, startAnalyze] = useTransition();
@@ -102,6 +108,7 @@ export function UserUploadBeatForm({
   );
   const [submitted, setSubmitted] = useState(false);
   const [rightsAccepted, setRightsAccepted] = useState(false);
+  const [consents, setConsents] = useState<ListingConsents>(initialConsents);
   const [keyValue, setKeyValue] = useState("");
   const [scaleValue, setScaleValue] = useState("");
   const [keySuggestion, setKeySuggestion] = useState<BeatKeySuggestion | null>(
@@ -451,7 +458,7 @@ export function UserUploadBeatForm({
     }
 
     startTransition(async () => {
-      const result = await submitUserBeatAction(beatId, { rightsAccepted: true });
+      const result = await submitUserBeatAction(beatId, { rightsAccepted: true, consents });
       if (!result.success) {
         setFormError(result.error ?? tr("nieUdaloSieWyslac"));
         return;
@@ -634,6 +641,12 @@ export function UserUploadBeatForm({
           ) : null}
         </div>
       ) : null}
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-semibold tracking-wide text-foreground">{tc("heading")}</h2>
+        <p className="text-xs text-muted-foreground">{tc("afterReview")}</p>
+        <ConsentSwitches kind="beat" value={consents} onChange={setConsents} disabled={pending || submitted} />
+      </section>
 
       <label className="flex items-start gap-3 text-sm">
         <input

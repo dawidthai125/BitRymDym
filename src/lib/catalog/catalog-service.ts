@@ -12,6 +12,12 @@ import {
   type WorkBoardPeriod,
   type WorkConsents,
 } from "@/lib/catalog/catalog-policy";
+import {
+  applyConsentPatch,
+  consentsFromRow,
+  type ConsentPatch,
+  type ListingConsents,
+} from "@/lib/community/consents";
 import { WORK_ALL_PLACES } from "@/lib/catalog/catalog-prize";
 import { aggregateRatings, MIN_RATERS, previousPeriod, rankTargets, warsawPeriod } from "@/lib/community/ranking-policy";
 import { publicAuthorName } from "@/lib/community/share-policy";
@@ -253,8 +259,8 @@ export async function saveOwnerCatalog(input: {
   if (!isUuid(input.projectId) || !isUuid(input.masterJobId) || typeof input.publish !== "boolean") return "invalid";
   const admin = adminOrNull();
   if (!admin) return "off";
-  const ready = await approvedMaster(admin, input.userId, input.projectId, input.masterJobId);
-  if (!ready) return "missing";
+  // Withdrawing needs no master: the owner can always take the track out.
+  if (input.publish && !(await approvedMaster(admin, input.userId, input.projectId, input.masterJobId))) return "missing";
   const existing = await admin
     .from(TABLE)
     .select("id")
@@ -296,6 +302,56 @@ export async function saveOwnerCatalog(input: {
   // Public 45 s clip: queue the E3 cut (best effort; never fails the publish).
   await queueWorkClip(admin, input.userId, input.masterJobId);
   return "ok";
+}
+
+/** Every track the owner ever put in the catalogue (also earlier masters), newest first. */
+export async function listOwnerCatalogEntries(userId: string): Promise<OwnerCatalogEntry[]> {
+  const admin = adminOrNull();
+  if (!admin) return [];
+  const loaded = await admin
+    .from(TABLE)
+    .select("id, owner_id, project_id, master_job_id, title, allow_ratings, allow_comments, in_rankings, published_at, withdrawn_at")
+    .eq("owner_id", userId)
+    .order("published_at", { ascending: false })
+    .limit(500);
+  if (missingRelation(loaded.error, TABLE)) return [];
+  if (loaded.error) throw new Error(loaded.error.message ?? "catalog_works read failed");
+  return ((loaded.data ?? []) as Row[]).map((row) => ({
+    ...toCard(row, new Map()),
+    projectId: row.project_id,
+    masterJobId: row.master_job_id,
+    listed: row.withdrawn_at == null,
+  }));
+}
+
+/** Owner switches for one track by its id, without opening the Studio. */
+export async function updateOwnerCatalogEntry(
+  userId: string,
+  workId: string,
+  patch: ConsentPatch,
+): Promise<{ result: "ok" | "invalid" | "missing" | "off"; consents?: ListingConsents }> {
+  if (!isUuid(workId)) return { result: "invalid" };
+  const admin = adminOrNull();
+  if (!admin) return { result: "off" };
+  const loaded = await admin
+    .from(TABLE)
+    .select("project_id, master_job_id, title, allow_ratings, allow_comments, in_rankings, withdrawn_at")
+    .eq("id", workId)
+    .eq("owner_id", userId)
+    .maybeSingle();
+  if (missingRelation(loaded.error, TABLE)) return { result: "off" };
+  if (loaded.error || !loaded.data) return { result: "missing" };
+  const row = loaded.data as Pick<Row, "project_id" | "master_job_id" | "title" | "allow_ratings" | "allow_comments" | "in_rankings" | "withdrawn_at">;
+  const consents = applyConsentPatch(consentsFromRow(row, row.withdrawn_at == null), patch);
+  const result = await saveOwnerCatalog({
+    userId,
+    projectId: row.project_id,
+    masterJobId: row.master_job_id,
+    title: row.title,
+    publish: consents.listed,
+    consents,
+  });
+  return result === "ok" ? { result, consents } : { result };
 }
 
 async function rankingWorks(admin: Admin): Promise<Map<string, CatalogCard> | null> {
