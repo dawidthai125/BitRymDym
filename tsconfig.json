@@ -35,6 +35,8 @@
   ],
   "exclude": [
     "node_modules",
+    "ios-app",
+    "android-twa",
     "**/*.test.ts",
     "**/*.test.tsx",
     "src/components/player/sticky-mini-player.mount-host.ts",
