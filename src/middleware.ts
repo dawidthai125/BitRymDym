@@ -7,6 +7,7 @@ import {
   referralCodeToStore,
   referralCookieOptions,
 } from "@/lib/referrals/referral-policy";
+import { GUARD_RETRY_AFTER_SECONDS, isOverloadRequest } from "@/lib/security/request-guard";
 import { buildCsp, cspHeaderName, generateNonce, NONCE_HEADER } from "@/lib/security/csp";
 import { decideStoreAppEntry, STORE_APP_COOKIE, storeAppCookieOptions } from "@/lib/site/store-app";
 import { userAccessBearer } from "@/lib/supabase/access-bearer";
@@ -262,6 +263,23 @@ async function handleRequest(request: NextRequest) {
  * untouched in handleRequest.
  */
 export async function middleware(request: NextRequest) {
+  // First and cheapest: a flood from one address stops here, before any rendering or database call.
+  if (
+    isOverloadRequest({
+      headers: request.headers,
+      pathname: request.nextUrl.pathname,
+      hasSession: request.headers.has("authorization") || hasAuthSessionCookie(request),
+    })
+  ) {
+    return new NextResponse("Za dużo zapytań naraz. Spróbuj za minutę. / Too many requests. Try again in a minute.", {
+      status: 429,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Retry-After": String(GUARD_RETRY_AFTER_SECONDS),
+      },
+    });
+  }
   const nonce = generateNonce();
   const headerName = cspHeaderName();
   const csp = buildCsp({ nonce });
@@ -350,6 +368,6 @@ export const config = {
   matcher: [
     // sw.js + manifest.webmanifest: static PWA files; .well-known/assetlinks.json for the Android app.
     // No redirect / rewrite / maintenance gate on any of them.
-    "/((?!_next/static|_next/image|workers/|\\.well-known/|favicon.ico|sw\\.js$|manifest\\.webmanifest$|api/beats/[^/]+/cover$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|wav|ogg|m4a)$).*)",
+    "/((?!_next/static|_next/image|workers/|\\.well-known/|favicon.ico|sitemap\\.xml$|robots\\.txt$|sw\\.js$|manifest\\.webmanifest$|api/beats/[^/]+/cover$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|wav|ogg|m4a)$).*)",
   ],
 };

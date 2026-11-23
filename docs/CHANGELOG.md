@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (27) — Ochrona przed przeciążeniem
+
+- `src/lib/security/request-guard.ts` + middleware: limit na adres IP (gość 240/min, zalogowany 1200/min, na instancję, bez bazy) → 429. Bez limitu: webhooki płatności, cron, health. Wyłącznik: env `OVERLOAD_GUARD=0`. Zmierzone lokalnie: odrzucone zapytanie ok. 1,7 ms CPU.
+- `robots.txt`: roboty SEO (Ahrefs i podobne) bez wstępu, roboty AI bez ~3000 stron `/rymy/`. Wyszukiwarki bez zmian.
+- `/sitemap.xml` i `/robots.txt` z CDN (1 h), poza middleware. Flaga „Trwają prace” w pamięci 30 s zamiast 5 s.
+- IndexNow bez stron `/rymy/` (chyba że `--all`).
+- Contabo: `bitrymdym-uptime.timer` co 5 min (mail po 2 błędach z rzędu, rozpoznaje wstrzymanie przez Vercela).
+
 ## 2026-11-23 (26) — Kopia plików katalogu na Contabo
 
 - `scripts/files-backup.mjs` + `deploy/systemd/bitrymdym-files-backup.{service,timer}` (niedziela 3:20): bity, sample z katalogu i okładki ze Storage, szyfrowane kluczem publicznym GPG w locie. Klucz prywatny poza serwerem. Tylko nowe i zmienione pliki, usunięte trzymane 30 dni, 12 ostatnich spisów, mail przy błędzie. Bez nagrań i prywatnych sampli użytkowników. Testy: `node --test scripts/files-backup.test.mjs`.

@@ -16,7 +16,7 @@ export const MAINTENANCE_ADMIN_HEADER = "x-brd-maintenance-admin" as const;
 export const MAINTENANCE_RETRY_AFTER_SECONDS = 120;
 
 /** Short in-memory cache so an admin toggle is effective within seconds. */
-export const MAINTENANCE_CACHE_TTL_MS = 5_000;
+export const MAINTENANCE_CACHE_TTL_MS = 30_000;
 
 export const MAINTENANCE_API_ERROR =
   "Trwają prace techniczne. Spróbuj ponownie później.";

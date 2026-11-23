@@ -1,0 +1,17 @@
+[Unit]
+Description=BitRymDym fast uptime check (mail on change)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+StateDirectory=bitrymdym-uptime
+EnvironmentFile=/etc/bitrymdym-e3-worker/master.env
+EnvironmentFile=/etc/bitrymdym-site-watch/alert.env
+ExecStart=/usr/bin/node /opt/bitrymdym-site-watch/uptime-watch.mjs
+TimeoutStartSec=90
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes

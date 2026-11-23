@@ -48,6 +48,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // Same for everyone and not in the middleware matcher: the CDN answers, not the server.
+      ...["/sitemap.xml", "/robots.txt"].map((source) => ({
+        source,
+        headers: [{ key: "Vercel-CDN-Cache-Control", value: "public, s-maxage=3600, stale-while-revalidate=86400" }],
+      })),
       // Content-hashed worker bundles.
       { source: "/workers/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
       // PWA service worker (public/sw.js): always revalidated so an update ships on the next visit;
