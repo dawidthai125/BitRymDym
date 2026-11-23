@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (16) — „Zrób bit z linku”: cel 8/10
+
+- Było 6/10 (jedna poprawka poniżej 6,5). Teraz poprawki najlepszej wersji aż do 8/10, maks. 3 (`MAX_AUTO_REVISIONS`, `AUTO_TARGET_SCORE` w `beat-judge.ts`, pętla w `auto-beat-client.ts`); próg liczy `score` z karą za tonację.
+- Brief z filmu opisuje oryginał (bas, lead, aranżacja), a szablon BRD tylko uzupełnia niejasne części; `GENRE_ANCHOR` bez wymuszonego 808 i sampli.
+- Test na żywo (Bonus RPK x Buśka – PDW Dobrowol): A/B 6, poprawki 5,5 → 7 → 8/10. Koszt: 5 generowań.
+
 ## 2026-11-23 (15) — Adresy z „\\” bez błędu 500
 
 - Skaner wchodził na `/premium\\`, `/ranking\\` (`%5C`) → Next zwracał 500. Middleware `stripBackslashes` → 308 na adres bez ukośnika wstecznego. Test `src/lib/site/backslash-path.test.ts`.
