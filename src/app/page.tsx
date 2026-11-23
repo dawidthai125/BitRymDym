@@ -614,6 +614,11 @@ export default async function HomePage() {
                     </Link>
                   </li>
                 ))}
+                <li>
+                  <Link href="/rymy" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+                    Słownik rymów
+                  </Link>
+                </li>
                 {LANDING_PAGES.filter((p) => !(p.webOnly && storeApp)).map((p) => (
                   <li key={p.slug}>
                     <Link href={landingPath(p.slug)} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">

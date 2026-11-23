@@ -24,6 +24,7 @@ export async function SiteFooter() {
     : [
         ...LANDING_PAGES.filter((p) => !(p.webOnly && storeApp)).map((p) => ({ href: landingPath(p.slug), label: p.navLabel })),
         { href: "/poradniki", label: "Poradniki" },
+        { href: "/rymy", label: "Słownik rymów" },
       ];
   return (
     <footer className="border-t border-[var(--brd-line)] px-4 py-6 sm:px-6">

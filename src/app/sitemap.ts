@@ -7,6 +7,7 @@ import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 import { GUIDE_BASE, GUIDES, guidePath } from "@/lib/seo/guides";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { isLocalizedPath, localizedPath } from "@/lib/seo/locale-paths";
+import { RYMY_BASE, rhymePagePath, rhymePageWords } from "@/lib/rymy/dictionary";
 import { EN_LANDING_PAGES, englishLandingPath, englishTwinOf } from "@/lib/seo/landing-pages-en";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
@@ -99,7 +100,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (twin) entry.alternates = { languages: { pl: entry.url, en: `${base}${englishLandingPath(twin.slug)}`, "x-default": entry.url } };
   }
 
-  const all = [...staticEntries, ...enLandingEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...workEntries];
+  // Słownik rymów: index + one page per common word.
+  const rhymeEntries: MetadataRoute.Sitemap = [
+    { url: `${base}${RYMY_BASE}`, changeFrequency: "weekly", priority: 0.7 },
+    ...rhymePageWords().map((w) => ({ url: `${base}${rhymePagePath(w)}`, changeFrequency: "monthly" as const, priority: 0.4 })),
+  ];
+
+  const all = [...staticEntries, ...rhymeEntries, ...enLandingEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...workEntries];
   return withEnglish(all, base);
 }
 

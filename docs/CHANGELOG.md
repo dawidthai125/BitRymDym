@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (12) — SEO: słownik rymów
+
+- `/rymy` (wyszukiwarka, `?q=` noindex) i `/rymy/[słowo]` dla ~3000 najczęstszych słów + stała lista słownictwa rapowego. Silnik `src/lib/rymy/rhyme.ts` (akcent na przedostatnią, ó/rz/ch, zmiękczenia, ubezdźwięcznienie): rymy wielosylabowe, dokładne, niedokładne. Dane `src/lib/rymy/words.json` (FrequencyWords CC BY-SA 4.0, filtr SJP.PL CC BY 4.0; `scripts/build-rymy-words.mjs`, README w katalogu). Sitemap, stopka, strona główna.
+
 ## 2026-11-23 (11) — Google Analytics 4 za zgodą
 
 - GA4 `G-DN860754XQ` (usługa „BitRymDym (www.bitrymdym.pl)” na koncie Analytics neon125, strumień web 16395900918). Ładowany tylko po „Akceptuję” w banerze (`src/components/site/cookie-consent.tsx`, cookie `brd_consent` 12 mies.), bez sygnałów Google i reklam; w aplikacjach ze sklepów wyłączony. „Ustawienia cookies” w stopce; wycofanie zgody kasuje `_ga*`.
