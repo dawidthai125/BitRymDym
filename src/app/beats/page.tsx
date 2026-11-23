@@ -39,6 +39,8 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const lane = paid ? "paid" : "free";
   const session = await getCurrentProfile();
   const storeApp = await isStoreApp();
+  // Store apps (Google Play / App Store) sell nothing: no paid catalogue there (exclusive beats are bought on the web).
+  if (storeApp && paid) redirect("/beats");
   if (mine && !session) redirect(signInPathWithNext("/beats?katalog=moj"));
   const [listed, purchased] = await Promise.all([
     mine ? Promise.resolve([]) : listPublishedBeats({ catalogLane: lane, ownershipType: source }),
@@ -85,6 +87,7 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
             >
               {t("darmowyKatalog")}
             </Link>
+{storeApp ? null : (
             <Link
               href="/beats?katalog=platny"
               aria-current={paid ? "page" : undefined}
@@ -92,6 +95,7 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
             >
               {t("platnyKatalog")}
             </Link>
+            )}
             {session ? (
               <Link
                 href="/beats?katalog=moj"

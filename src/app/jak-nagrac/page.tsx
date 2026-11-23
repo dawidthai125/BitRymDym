@@ -48,6 +48,8 @@ export default async function HowToRecordPage() {
             ))}
           </ul>
 
+{storeApp ? null : (
+          <>
           <h2 className="mt-10 text-xl font-medium text-[var(--brd-ink)]">{t("planyTytul")}</h2>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[34rem] text-sm" data-testid="how-to-plans">
@@ -77,6 +79,8 @@ export default async function HowToRecordPage() {
             </table>
           </div>
           <p className="mt-2 text-xs text-[var(--brd-mute)]">{t("planyUwaga")}</p>
+          </>
+          )}
 
           {freeWatermarkDownloadEnabled() ? (
             <p className="mt-4 rounded border border-[var(--brd-line)] p-3 text-sm text-[var(--brd-ink-soft)]" data-testid="how-to-watermark-note">
