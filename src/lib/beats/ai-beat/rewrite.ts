@@ -10,6 +10,7 @@ import {
   sanitizeBeatStyle,
   withInstrumentalClause,
 } from "@/lib/beats/ai-beat/prompt";
+import { parseTitleCandidates, pickDistinctTitle, titlePrompt } from "@/lib/beats/ai-beat/title-variety";
 
 const REWRITE_URL = "https://api.x.ai/v1/chat/completions";
 
@@ -144,4 +145,40 @@ export async function rewriteBeatPrompt(
 
 function promptHasBpm(prompt: string, bpm: number): boolean {
   return new RegExp(`\\b${bpm}\\s*BPM\\b`, "i").test(prompt);
+}
+
+/**
+ * A catalogue name that does not sound like the existing ones (title-variety.ts).
+ * Separate high-temperature call, run next to rewriteBeatPrompt; null on any failure.
+ */
+export async function suggestDistinctTitle(
+  description: string,
+  existing: readonly string[],
+  deps: RewriteDeps = {},
+): Promise<string | null> {
+  const key = deps.apiKey?.trim();
+  if (!key) return null;
+  try {
+    const res = await (deps.fetchFn ?? fetch)(REWRITE_URL, {
+      method: "POST",
+      signal: AbortSignal.timeout(20_000),
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: deps.model || "grok-4.7",
+        temperature: 1,
+        reasoning_effort: "low",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: titlePrompt(existing) },
+          { role: "user", content: `Beat description:\n${clipBeatDescription(description)}` },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const content = json.choices?.[0]?.message?.content;
+    return typeof content === "string" ? pickDistinctTitle(parseTitleCandidates(content), existing) : null;
+  } catch {
+    return null;
+  }
 }

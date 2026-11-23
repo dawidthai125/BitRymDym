@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (19) — Generator: różne tytuły bitów
+
+- Tytuły generowanych bitów były do siebie podobne („Mroczny Puls w Moll”, „Mroczny Pocket w Moll”, „Ciemny Motyw Ulicy”). Teraz osobne zapytanie do Groka (temperatura 1, 6 propozycji, lista istniejących tytułów, zakaz nadużywanych słów) + kod odrzuca propozycje z tym samym pierwszym słowem, dwoma wspólnymi słowami albo słowem z listy (`src/lib/beats/ai-beat/title-variety.ts`, testy). Działa równolegle z opisem, bez wydłużania generowania.
+
 ## 2026-11-23 (18) — SEO: tytuły bitów, filmy YouTube na stronach bitów, 4 poradniki
 
 - `/beat/[id]`: tytuł i opis z frazami („Nocny Pościg — darmowy bit trap 98 BPM do rapu”, „… na wyłączność”), PL/EN — `src/lib/seo/beat-meta.ts` (testy).
