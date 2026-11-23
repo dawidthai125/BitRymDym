@@ -14,6 +14,7 @@ import {
   parseSampleGenBody,
   shapeLoop,
   shapeOneShot,
+  SAMPLE_PRESETS,
 } from "./sample-generator";
 
 const SR = 44100;
