@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (7) — Dodatkowe domeny
+
+- Vercel: dodane `bitrymdym.com`, `bitrymdym.eu` (+ www) — middleware 308 na `https://www.bitrymdym.pl/en/<ścieżka>` (`englishHostRedirect`); `bitrymdym.online`, `bitrymdym.com.pl` (+ www) — przekierowanie domeny Vercel 308 na `www.bitrymdym.pl`. DNS w cyberFolks: A `@` → 76.76.21.21, CNAME `www` → cname.vercel-dns.com.
+
 ## 2026-11-23 (6) — SEO: angielskie adresy /en
 
 - `/en/<ścieżka>` = ta sama strona po angielsku (middleware: rewrite na ścieżkę bez prefiksu + nagłówek `x-brd-locale: en` czytany w `src/i18n/request.ts`; ustawia też ciasteczko `NEXT_LOCALE=en`). Lista stron z wersją EN: `src/lib/seo/locale-paths.ts` (strona główna, bity, bit, gatunki, sample, utwory, utwór, rankingi, about, jak-nagrac, nagrywarka, mastering, premium). Landingi i poradniki tylko PL (bez /en → 404).

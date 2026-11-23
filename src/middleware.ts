@@ -11,7 +11,7 @@ import { buildCsp, cspHeaderName, generateNonce, NONCE_HEADER } from "@/lib/secu
 import { decideStoreAppEntry, STORE_APP_COOKIE, storeAppCookieOptions } from "@/lib/site/store-app";
 import { userAccessBearer } from "@/lib/supabase/access-bearer";
 import { LOCALE_COOKIE } from "@/i18n/config";
-import { LOCALE_OVERRIDE_HEADER, stripEnglishPrefix } from "@/lib/seo/locale-paths";
+import { englishHostRedirect, LOCALE_OVERRIDE_HEADER, stripEnglishPrefix } from "@/lib/seo/locale-paths";
 
 import {
   createMaintenanceStateCache,
@@ -252,6 +252,14 @@ export async function middleware(request: NextRequest) {
   const nonce = generateNonce();
   const headerName = cspHeaderName();
   const csp = buildCsp({ nonce });
+  // bitrymdym.com / bitrymdym.eu → English site on the main domain (permanent).
+  const hostTarget = englishHostRedirect(
+    request.headers.get("host"),
+    request.nextUrl.pathname,
+    request.nextUrl.search,
+    "https://www.bitrymdym.pl",
+  );
+  if (hostTarget) return NextResponse.redirect(hostTarget, 308);
   // Store app entry (`/?app=android|ios`): remember the platform (cookie) and drop the param.
   const storeEntry = decideStoreAppEntry({ method: request.method, url: request.nextUrl });
   if (storeEntry) {

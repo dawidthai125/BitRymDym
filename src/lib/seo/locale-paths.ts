@@ -64,3 +64,16 @@ export function localeAlternates(
     languages: { pl: p, en: localizedPath("en", p), "x-default": p },
   };
 }
+
+/** Extra domains that open the English site (DNS → Vercel project). */
+const ENGLISH_HOSTS = new Set(["bitrymdym.com", "www.bitrymdym.com", "bitrymdym.eu", "www.bitrymdym.eu"]);
+
+/**
+ * bitrymdym.com/<path> → https://www.bitrymdym.pl/en/<path> (localized pages) or /<path> (the rest).
+ * null for every other host.
+ */
+export function englishHostRedirect(host: string | null, pathname: string, search: string, origin: string): string | null {
+  const h = (host ?? "").toLowerCase().split(":")[0];
+  if (!ENGLISH_HOSTS.has(h)) return null;
+  return `${origin}${localizedPath("en", pathname)}${search}`;
+}

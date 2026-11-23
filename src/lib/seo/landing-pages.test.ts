@@ -81,3 +81,15 @@ describe("English URLs", () => {
     expect(m.localeAlternates("pl", "/darmowe-bity-do-rapu")).toEqual({ canonical: "/darmowe-bity-do-rapu" });
   });
 });
+
+describe("English domains", () => {
+  it("send bitrymdym.com and .eu to /en on the main domain", async () => {
+    const { englishHostRedirect } = await import("@/lib/seo/locale-paths");
+    const o = "https://www.bitrymdym.pl";
+    expect(englishHostRedirect("bitrymdym.com", "/", "", o)).toBe(`${o}/en`);
+    expect(englishHostRedirect("www.bitrymdym.com", "/beats", "?q=x", o)).toBe(`${o}/en/beats?q=x`);
+    expect(englishHostRedirect("bitrymdym.eu", "/poradniki", "", o)).toBe(`${o}/poradniki`);
+    expect(englishHostRedirect("www.bitrymdym.pl", "/", "", o)).toBeNull();
+    expect(englishHostRedirect(null, "/", "", o)).toBeNull();
+  });
+});
