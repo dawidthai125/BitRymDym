@@ -11,8 +11,8 @@ android {
         applicationId = "pl.bitrymdym.app"
         minSdk = 24 // androidbrowserhelper 2.7.4 requires 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
     }
 
     buildTypes {
