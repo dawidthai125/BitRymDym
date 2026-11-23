@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (4) — SEO: poradniki
+
+- `/poradniki` + 6 artykułów (`src/lib/seo/guides.ts`): jak napisać tekst rapowy, jak zrobić refren, BPM i tonacja, jak zmiksować wokal, freestyle, jak wydać utwór na Spotify. JSON-LD `Article` + `FAQPage` + okruszki; wspólny widok z landingami (`ContentPageView`). Sitemap + link „Poradniki” w stopce.
+- Bing Webmaster Tools: strona zaimportowana z GSC (sitemap 62 URL, Sukces).
+
 ## 2026-11-23 (3) — SEO: strony pod frazy, FAQ, IndexNow
 
 - **7 stron pod frazy** (`src/lib/seo/landing-pages.ts`, widok `src/components/seo/landing-page-view.tsx`): `/darmowe-bity-do-rapu`, `/podklady-do-rapu`, `/studio-nagran-online`, `/nagrywanie-rapu-w-domu`, `/mix-i-mastering-online`, `/program-do-nagrywania-rapu`, `/bity-na-wylacznosc` (tylko web; w aplikacji ze sklepu 404). Każda: treść, FAQ z JSON-LD `FAQPage`, okruszki, najnowsze bity z katalogu, linki „Zobacz też”.

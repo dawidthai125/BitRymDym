@@ -44,6 +44,9 @@ export async function SiteFooter() {
               {p.navLabel}
             </Link>
           ))}
+          <Link href="/poradniki" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+            Poradniki
+          </Link>
         </nav>
         <nav aria-label={t("nawigacja")} className="flex flex-wrap gap-x-4 gap-y-0">
           <Link href={LEGAL_PATHS.terms} className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{t("regulamin")}</Link>

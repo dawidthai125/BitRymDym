@@ -12,9 +12,10 @@ import { listFavoriteBeatIds } from "@/lib/beats/favorites";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
-import { beatListJsonLd, breadcrumbJsonLd, faqPageJsonLd } from "@/lib/seo/json-ld";
+import { articleJsonLd, beatListJsonLd, breadcrumbJsonLd, faqPageJsonLd } from "@/lib/seo/json-ld";
+import { GUIDE_BASE, GUIDES, guidePath, type Guide } from "@/lib/seo/guides";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
-import { LANDING_PAGES, landingPage, landingPath } from "@/lib/seo/landing-pages";
+import { LANDING_PAGES, landingPage, landingPath, type LandingPage } from "@/lib/seo/landing-pages";
 import { isStoreApp } from "@/lib/site/store-app-server";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import { presentBeats } from "@/lib/ui/demo-beats";
@@ -27,13 +28,23 @@ export async function landingMetadata(slug: string): Promise<Metadata> {
   return pageMetadata({ title: page.metaTitle, description: page.metaDescription, path: landingPath(slug) });
 }
 
-/** Keyword landing page: copy + FAQ (FAQPage JSON-LD) + newest beats of a lane. */
-export async function LandingPageView({ slug }: { slug: string }) {
-  const page = landingPage(slug);
+export async function guideMetadata(guide: Guide): Promise<Metadata> {
+  return pageMetadata({ title: guide.metaTitle, description: guide.metaDescription, path: guidePath(guide.slug) });
+}
+
+export function LandingPageView({ slug }: { slug: string }) {
+  return <ContentPageView page={landingPage(slug)} path={landingPath(slug)} />;
+}
+
+export function GuidePageView({ guide }: { guide: Guide }) {
+  return <ContentPageView page={guide} path={guidePath(guide.slug)} guide={guide} />;
+}
+
+/** Landing page or guide: copy + FAQ (FAQPage JSON-LD) + newest beats of a lane. */
+async function ContentPageView({ page, path, guide }: { page: LandingPage; path: string; guide?: Guide }) {
   const storeApp = await isStoreApp();
   if (page.webOnly && storeApp) notFound();
   const origin = getPublicSiteUrl();
-  const path = landingPath(slug);
 
   const lane = page.beats;
   const raw = lane ? await listPublishedBeats({ catalogLane: lane }).catch(() => []) : [];
@@ -41,15 +52,31 @@ export async function LandingPageView({ slug }: { slug: string }) {
   const favoriteIds = session ? await listFavoriteBeatIds(session.userId) : [];
   const beats = presentBeats(raw.slice(0, BEATS_ON_PAGE).map(toPublicCatalogItem));
   const genres = lane === "free" ? collectGenres(raw) : [];
-  const related = LANDING_PAGES.filter((p) => p.slug !== slug && !(p.webOnly && storeApp));
+  const related = [
+    ...GUIDES.filter((g) => g.slug !== page.slug).map((g) => ({ href: guidePath(g.slug), label: g.navLabel })),
+    ...LANDING_PAGES.filter((p) => p.slug !== page.slug && !(p.webOnly && storeApp)).map((p) => ({ href: landingPath(p.slug), label: p.navLabel })),
+  ];
+  const crumbs = guide
+    ? [{ name: "Poradniki", path: GUIDE_BASE }, { name: page.h1, path }]
+    : [{ name: page.h1, path }];
 
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
-        <JsonLdScript data={breadcrumbJsonLd(origin, [{ name: page.h1, path }])} />
+        <JsonLdScript data={breadcrumbJsonLd(origin, crumbs)} />
+        {guide ? (
+          <JsonLdScript
+            data={articleJsonLd(origin, { path, headline: page.h1, description: page.metaDescription, datePublished: guide.datePublished })}
+          />
+        ) : null}
         <JsonLdScript data={faqPageJsonLd(origin, { path, items: page.faq })} />
         {beats.length > 0 ? <JsonLdScript data={beatListJsonLd(origin, { name: page.h1, path, beats })} /> : null}
         <PageFrame width="wide" className="py-8 sm:py-10">
+          {guide ? (
+            <Link href={GUIDE_BASE} className="inline-flex min-h-11 items-center text-sm text-[var(--brd-mute)] hover:text-[var(--brd-ink)]">
+              ← Wszystkie poradniki
+            </Link>
+          ) : null}
           <header className="mb-6 max-w-3xl border-b-4 border-[var(--brd-ink)] pb-4">
             <h1 className="brd-display text-[length:var(--tape-text-xl)] leading-[0.88]">{page.h1}</h1>
             <p className="mt-4 font-[family-name:var(--font-display)] text-lg italic leading-snug text-[var(--brd-ink-soft)]">
@@ -103,9 +130,9 @@ export async function LandingPageView({ slug }: { slug: string }) {
 
           <nav aria-label="Zobacz też" className="mt-10 flex flex-wrap items-center gap-x-4 border-t border-[var(--brd-line)] pt-4 text-sm text-[var(--brd-mute)]" data-testid="landing-related">
             <span>Zobacz też:</span>
-            {related.map((p) => (
-              <Link key={p.slug} href={landingPath(p.slug)} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-[var(--brd-ink)]">
-                {p.navLabel}
+            {related.map((r) => (
+              <Link key={r.href} href={r.href} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-[var(--brd-ink)]">
+                {r.label}
               </Link>
             ))}
           </nav>

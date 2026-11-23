@@ -216,3 +216,25 @@ export function faqPageJsonLd(
     })),
   };
 }
+
+/** Article for /poradniki/[slug] (publisher = site Organization). */
+export function articleJsonLd(
+  origin: string,
+  input: { path: string; headline: string; description: string; datePublished: string; dateModified?: string },
+): JsonLdObject {
+  const url = absoluteUrl(origin, input.path);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${url}#article`,
+    headline: input.headline,
+    description: input.description,
+    url,
+    mainEntityOfPage: url,
+    inLanguage: "pl-PL",
+    datePublished: input.datePublished,
+    dateModified: input.dateModified ?? input.datePublished,
+    author: { "@type": "Organization", name: "BitRymDym", url: absoluteUrl(origin, "/") },
+    publisher: { "@type": "Organization", name: "BitRymDym", url: absoluteUrl(origin, "/") },
+  };
+}

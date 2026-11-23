@@ -4,6 +4,7 @@ import { catalogLaneOf } from "@/lib/beats/catalog-lane";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { listPublicWorkSitemapEntries } from "@/lib/catalog/catalog-service";
 import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
+import { GUIDE_BASE, GUIDES, guidePath } from "@/lib/seo/guides";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
@@ -43,6 +44,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly",
     priority: 0.8,
   }));
+  const guideEntries: MetadataRoute.Sitemap = [
+    { url: `${base}${GUIDE_BASE}`, changeFrequency: "weekly", priority: 0.7 },
+    ...GUIDES.map((g) => ({
+      url: `${base}${guidePath(g.slug)}`,
+      lastModified: date(g.datePublished),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
+  ];
 
   // Same visibility as /beats and /utwory (PUBLISHED + public; live works). A DB hiccup
   // must not take the static part of the sitemap down.
@@ -75,5 +85,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticEntries, ...landingEntries, ...genreEntries, ...beatEntries, ...workEntries];
+  return [...staticEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...workEntries];
 }

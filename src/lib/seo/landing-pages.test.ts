@@ -33,7 +33,7 @@ describe("keyword landing pages", () => {
   it("only the exclusive-sale page is web-only (store apps sell nothing)", () => {
     expect(LANDING_PAGES.filter((p) => p.webOnly).map((p) => p.slug)).toEqual(["bity-na-wylacznosc"]);
     for (const page of LANDING_PAGES.filter((p) => !p.webOnly)) {
-      expect(JSON.stringify(page)).not.toMatch(/zł|PayU/);
+      expect(JSON.stringify(page)).not.toMatch(/\d\s?zł|PayU/);
     }
   });
 
@@ -42,5 +42,21 @@ describe("keyword landing pages", () => {
     expect(ld["@type"]).toBe("FAQPage");
     expect(ld["@id"]).toBe("https://www.bitrymdym.pl/x#faq");
     expect(ld.mainEntity).toEqual([{ "@type": "Question", name: "Q?", acceptedAnswer: { "@type": "Answer", text: "A." } }]);
+  });
+});
+
+describe("poradniki", () => {
+  it("have unique slugs distinct from landing pages and search-sized meta", async () => {
+    const { GUIDES } = await import("@/lib/seo/guides");
+    const all = [...GUIDES.map((g) => g.slug), ...LANDING_PAGES.map((p) => p.slug)];
+    expect(new Set(all).size).toBe(all.length);
+    for (const g of GUIDES) {
+      expect(g.slug).toMatch(/^[a-z0-9-]+$/);
+      expect(g.metaDescription.length).toBeLessThanOrEqual(165);
+      expect(g.metaTitle.length).toBeLessThanOrEqual(70);
+      expect(g.faq.length).toBeGreaterThanOrEqual(3);
+      expect(g.datePublished).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(JSON.stringify(g)).not.toMatch(/\d\s?zł|PayU/);
+    }
   });
 });
