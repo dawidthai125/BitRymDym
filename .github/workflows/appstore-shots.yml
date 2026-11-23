@@ -119,12 +119,14 @@ jobs:
             xcrun simctl io "$SIM_UDID" screenshot "$OUT/$(printf '%02d' $i)-$NAME.png" >>"$LOG" 2>&1
           done <<'LIST'
           start /?app=ios
-          beats /beats?app=ios
           trap /beats/gatunek/trap?app=ios
-          jak-nagrac /jak-nagrac?app=ios
           bit /beat/cf6d9a70-5a5e-443c-a117-263f678a72f1?app=ios
-          studio /studio?app=ios
-          o-nas /o-nas?app=ios
+          boom-bap /beats/gatunek/boom-bap?app=ios
+          utwory /utwory?app=ios
+          ranking /ranking?app=ios
+          about /about?app=ios
+          mastering /mastering?app=ios
+          bit2 /beat/ce85e374-b319-4563-ae83-05ed3ef095be?app=ios
           LIST
           sips -g pixelWidth -g pixelHeight "$OUT"/*.png >>"$LOG" 2>&1 || true
           ls -l "$OUT"; cat "$LOG"
