@@ -20,8 +20,7 @@ const TIMEOUT_MS = 170_000;
 const BRIEF_MAX = 800;
 /** Stable Audio drifts dark and bass-heavy; say the tonal balance out loud. */
 /** Opens every brief so Stable Audio stays in hip-hop even when the source has a live band. */
-export const GENRE_ANCHOR =
-  "Hip-hop rap instrumental built on programmed drums and 808-style bass, with sampled and chopped loops, no live band.";
+export const GENRE_ANCHOR = "Hip-hop rap instrumental with programmed drums, no live band.";
 /** Closes every brief. */
 export const GENRE_NEGATIVE = "Not rock, not metal, not a live band.";
 
@@ -80,11 +79,11 @@ const INSTRUCTION = [
   "style: 2 to 6 Polish words naming the lane (boom bap, trap, lo-fi, drill, phonk, etc.).",
   "opis: one or two short Polish catalog sentences — drums, bass, melody, mood, vocal space.",
   "drums: ONE English sentence — kick and snare character and placement, hat pattern and subdivision (e.g. 1/16 rolls, triplets), swing or quantize, pocket.",
-  "bass: ONE English sentence — 808/synth/upright, glide or staccato, note length, how it locks with the kick; make it an active melodic line that moves with the chords, not only root notes.",
-  "melody: ONE English sentence — exact lead instrument (e.g. felt piano, detuned saw lead, plucked sample) plus one supporting layer (strings, pads, choir), minor/major, repeating motif.",
+  "bass: ONE English sentence — exactly the bass you hear: 808, sub, synth, sampled or upright; glide or staccato; note length and movement (root notes only if that is what plays); how it locks with the kick.",
+  "melody: ONE English sentence — the exact lead instrument and its sound (e.g. felt piano, detuned saw lead, plucked vocal-free sample, brass stab) plus any supporting layer you actually hear, register (low/mid/high), rhythm of the motif (sustained, staccato, chopped), minor/major.",
   "GENRE RULE: the result must be a hip-hop / rap instrumental, never rock. If the original has a live guitar or band, describe that part as a sampled, filtered or chopped loop on top of programmed drums and an 808 or synth bass. Never write distorted, riff, palm-muted, power chords, metal, live drums or rock. For aggression use harder programmed drums, faster hats and a tighter 808, not guitar distortion.",
   "mood: ONE English sentence — energy 1 to 10 and texture (vinyl, tape, clean digital, grit, reverb size).",
-  "arrangement: ONE English sentence — short intro, main loop, one 4 to 8 bar breakdown where drums or bass drop out, return with an added layer; never more than 8 bars of near silence; space for a rapper.",
+  "arrangement: ONE English sentence — how the original loop is built and changes (how many layers, when drums or bass drop out, what is added on return); never more than 8 bars of near silence; space for a rapper.",
   "key: musical key as tonic plus major or minor (e.g. D minor); listen to the bass and the chords; empty string only if there is no pitched music.",
   "bpm: integer 60–180, count it carefully from the drums, else null.",
   "Match the original's groove, tempo, key, sound palette and energy as closely as possible while writing original music. Never describe it vaguely.",
@@ -92,7 +91,9 @@ const INSTRUCTION = [
   "BAD (too vague): dark atmospheric beat with hard drums and deep bass.",
   "BAD (too long): multi-clause essays, repeated adjectives, or more than one sentence per English field.",
   "GOOD: Warm organic boom bap drums with light swing, punchy kick and a crisp snare with short room reverb, steady 1/8 hi-hats. Active melodic bass with frequent note changes and slides following the piano. Melancholic felt piano motif layered with lush cinematic strings and soft pads. Cinematic energy 7/10, gritty vinyl texture, bright crisp top end and wide hall reverb. Short intro, main loop, an 8-bar breakdown without drums, then the return with an added string layer, room for a verse.",
-  `Unless the original clearly does something else, follow the house pattern. ${BEAT_PRODUCTION_PATTERN}`,
+  // 2026-11-23: the house pattern (808 slides, breakdown, piano+strings) made every beat sound alike
+  // and cost similarity on bass, melody and mix; now it only fills parts the original does not make clear.
+  `Describe what the original does. Only for a part you cannot hear clearly, fall back to this house pattern. ${BEAT_PRODUCTION_PATTERN}`,
   "Every English field needs one concrete sonic detail. No artist, song, channel, label, producer, lyrics, URL or video id.",
   'If there is no music, set style to "hip-hop instrumentalny" and say in every field that the clip has no beat.',
 ].join(" ");

@@ -36,6 +36,7 @@ describe("beat judge", () => {
     expect(note).toContain("bass");
     expect(note).toContain("9/10");
     expect(needsAutoRevision(combineVerdict([run(8, 8)], { measured: "Dm", target: "Dm" })!)).toBe(false);
+    expect(needsAutoRevision(combineVerdict([run(7.5, 8)], { measured: "Dm", target: "Dm" })!)).toBe(true);
   });
 
   it("picks the best judged variant", () => {

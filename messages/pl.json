@@ -1001,14 +1001,14 @@
       "tempoZPliku": "Tempo z pliku: {bpm} BPM.",
       "plikNieCzytelny": "Nie udało się odczytać pliku. Wgraj MP3 albo WAV z wyraźną perkusją.",
       "autoPrzycisk": "Zrób bit z linku",
-      "autoPomoc": "Jeden przycisk: Gemini słucha filmu, powstają 2 warianty naraz, Gemini po kolei porównuje każdy z filmem dwa razy, lepszy zostaje, słabszy znika. Przy słabym wyniku jest jedna automatyczna poprawka. Trwa 5–8 minut i zużywa 2–3 generowania. Bez oceny nic nie jest usuwane.",
+      "autoPomoc": "Jeden przycisk: Gemini słucha filmu, powstają 2 warianty naraz, Gemini po kolei porównuje każdy z filmem dwa razy, lepszy zostaje, słabszy znika. Poniżej 8/10 są do 3 automatycznych poprawek, każda porównana z filmem. Trwa 5–20 minut i zużywa 2–5 generowań. Bez oceny nic nie jest usuwane.",
       "autoBlad": "Nie udało się zrobić bitu z linku. Sprawdź link i spróbuj jeszcze raz.",
       "autoKrok": {
         "describe": "Gemini słucha filmu i pisze opis",
         "generate": "Generuję 2 warianty naraz",
         "judge": "Gemini porównuje warianty z filmem",
-        "revise": "Wynik słaby: robię jedną poprawkę",
-        "judgeRevision": "Porównuję poprawkę z filmem"
+        "revise": "Poniżej 8/10: poprawka {detail}",
+        "judgeRevision": "Porównuję poprawkę {detail} z filmem"
       },
       "autoWynik": "Zostaje: {title} (wariant {label}).",
       "autoOcena": "Podobieństwo do filmu wg Gemini: {score}/10.",
@@ -1019,7 +1019,7 @@
       "autoUsuniety": "usunięty",
       "autoZgodne": "Zgodne z filmem",
       "autoRozne": "Różnice",
-      "autoPoprawka": "Była automatyczna poprawka; zostaje lepsza z dwóch wersji."
+      "autoPoprawka": "Były automatyczne poprawki; zostaje najlepsza wersja."
     },
     "adminBeatsWaitingPage": {
       "lista": "← Lista",

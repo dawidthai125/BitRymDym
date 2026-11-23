@@ -340,7 +340,7 @@ export function AdminGenerateBeatForm() {
               return (
                 <li key={step} className={at === now ? "font-medium" : at < now ? "text-muted-foreground" : "text-muted-foreground/60"}>
                   {at < now ? "✓ " : at === now ? "… " : "· "}
-                  {t(`autoKrok.${step}`)}
+                  {t(`autoKrok.${step}`, { detail: autoProgress.detail ?? "" })}
                 </li>
               );
             })}

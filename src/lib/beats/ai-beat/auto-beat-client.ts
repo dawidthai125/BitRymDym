@@ -1,11 +1,11 @@
 /**
  * One-button generator, browser side: describe the video, generate two variants at once
  * (different seeds, model-default vs stricter prompt adherence), judge both, keep the better,
- * remove the other, and try one automatic revision when the winner is weak.
+ * remove the other, then revise the best one until it reaches the target score (MAX_AUTO_REVISIONS).
  * Each step is an existing admin route; this file only orders them.
  */
 
-import { autoRevisionNote, needsAutoRevision, type BeatVerdict } from "@/lib/beats/ai-beat/beat-judge";
+import { autoRevisionNote, MAX_AUTO_REVISIONS, needsAutoRevision, type BeatVerdict } from "@/lib/beats/ai-beat/beat-judge";
 import { descriptionFromYoutubeStyle } from "@/lib/beats/ai-beat/prompt";
 import type { ReferenceMeasure } from "@/lib/beats/ai-beat/reference-tempo";
 
@@ -166,8 +166,12 @@ export async function runAutoBeat(params: {
   }
 
   let revised = false;
-  if (winner.verdict && needsAutoRevision(winner.verdict)) {
-    onProgress({ step: "revise" });
+  // Keep fixing the best beat until it reaches the target or the revisions run out.
+  // Each round listens to the video and the current best beat again, so fixes build on each other.
+  for (let round = 1; round <= MAX_AUTO_REVISIONS; round += 1) {
+    if (!winner.verdict || !needsAutoRevision(winner.verdict)) break;
+    const detail = `${round}/${MAX_AUTO_REVISIONS}`;
+    onProgress({ step: "revise", detail });
     try {
       const start = await json<{ generationId: string; title: string; style?: string; opis?: string; description: string; bpm: number | null; seed: number; cfgScale: number | null }>(
         "/api/admin/beats/generate/bitek",
@@ -183,7 +187,7 @@ export async function runAutoBeat(params: {
         },
       );
       const ready = await waitForBeat({ ...start, description: start.description, bpm: start.bpm });
-      onProgress({ step: "judgeRevision" });
+      onProgress({ step: "judgeRevision", detail });
       const fixed: AutoCandidate = {
         label: `${winner.label}+`,
         beatId: ready.beatId,
@@ -196,14 +200,14 @@ export async function runAutoBeat(params: {
       };
       candidates.push(fixed);
       revised = true;
-      if (fixed.verdict) {
-        const better = pickWinner([winner, fixed]);
-        const loser = better === winner ? fixed : winner;
-        if (await discard(loser.beatId)) removed.push(loser.beatId);
-        winner = better;
-      }
+      if (!fixed.verdict) break;
+      const better = pickWinner([winner, fixed]);
+      const loser = better === winner ? fixed : winner;
+      if (await discard(loser.beatId)) removed.push(loser.beatId);
+      winner = better;
     } catch {
-      // The first winner stays; a failed revision costs nothing more.
+      // The current winner stays; a failed revision ends the loop.
+      break;
     }
   }
 

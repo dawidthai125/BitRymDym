@@ -127,11 +127,16 @@ export function combineVerdict(
   };
 }
 
-/** Below this the pipeline tries one automatic revision of the better variant. */
-export const AUTO_REVISE_BELOW = 6.5;
+/**
+ * Target similarity of the one-button generator. Below it the pipeline keeps revising the best
+ * beat (up to MAX_AUTO_REVISIONS). 2026-11-23: one revision at 6.5 left beats at 6/10.
+ */
+export const AUTO_TARGET_SCORE = 8;
+export const AUTO_REVISE_BELOW = AUTO_TARGET_SCORE;
+export const MAX_AUTO_REVISIONS = 3;
 
 export function needsAutoRevision(v: BeatVerdict): boolean {
-  return v.keyOk === false || v.geminiOverall < AUTO_REVISE_BELOW;
+  return v.keyOk === false || v.score < AUTO_REVISE_BELOW;
 }
 
 /** The note sent to the revision: Gemini's fix plus the measured key problem, in plain words. */
@@ -140,7 +145,7 @@ export function autoRevisionNote(v: BeatVerdict): string {
   if (v.keyOk === false && v.keyMeasured && v.keyTarget) {
     parts.push(`Tonacja wyszła ${v.keyMeasured} zamiast ${v.keyTarget}: trzymaj ${v.keyTarget}.`);
   }
-  const weak = JUDGE_DIMENSIONS.filter((d) => (v.scores[d] ?? 10) < 7);
+  const weak = JUDGE_DIMENSIONS.filter((d) => (v.scores[d] ?? 10) < 8);
   if (weak.length) parts.push(`Najsłabsze: ${weak.join(", ")}.`);
   if (v.different.length) parts.push(`Różnice: ${v.different.join("; ")}.`);
   if (v.fix) parts.push(v.fix);
