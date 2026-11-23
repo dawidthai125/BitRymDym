@@ -85,7 +85,13 @@ describe("desktop SiteMainNav aria-current contract", () => {
     );
     expect(mainNav).toMatch(/\blg:flex\b/);
     expect(bottomNav).toMatch(/\blg:hidden\b/);
-    expect(appShell).toMatch(/\blg:pb-2\b/);
+    // Desktop: small padding normally, room for the mini player only while it exists.
+    expect(appShell).toMatch(/ lg:pb-2 /);
+    expect(appShell).toContain(
+      "lg:[[data-app-shell]:has([data-sticky-player])_&]:pb-28",
+    );
+    expect(appShell).toContain("data-app-shell");
+    expect(miniPlayer).toContain("data-sticky-player");
     expect(miniPlayer).toMatch(/\blg:bottom-0\b/);
   });
 
