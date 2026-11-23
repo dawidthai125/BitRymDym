@@ -441,7 +441,7 @@ export function StudioRecordingPanel({
   const [workflowError, setWorkflowError] = useState<string | null>(null);
   const [workflowBusy, setWorkflowBusy] = useState<WorkflowActionBusy>(null);
   const [keptMessage, setKeptMessage] = useState<string | null>(null);
-  const [libraryOpen, setLibraryOpen] = useState(simple);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTakes, setLibraryTakes] = useState<StudioPlaceableTakeDto[]>([]);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [libraryLoading, setLibraryLoading] = useState(false);
@@ -480,7 +480,6 @@ export function StudioRecordingPanel({
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const [testerStream, setTesterStream] = useState<MediaStream | null>(null);
   const [testerError, setTesterError] = useState<string | null>(null);
-  const [advancedMicOpen, setAdvancedMicOpen] = useState(false);
   const [recordPane, setRecordPane] = useState<"take" | "setup" | "lanes" | "scratch">("take");
   /** Blocks tester re-acquire while arming recorder (closes dual-stream window). */
   const [captureArming, setCaptureArming] = useState(false);
@@ -2496,7 +2495,9 @@ export function StudioRecordingPanel({
       className={
         embedded
           ? "space-y-2 border-0 bg-transparent p-0"
-          : "space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
+          : simple && !samplesMode
+            ? "flex flex-col gap-3 [&>.studio-gear-fold]:order-last"
+            : "space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
       }
       aria-label={tr("nagrywanieWStudio")}
       data-record-density={simple ? "simple" : "full"}
@@ -2551,7 +2552,7 @@ export function StudioRecordingPanel({
         </p>
       ) : null}
       {!simple && !samplesMode ? (
-        <div className="grid grid-cols-4 gap-1" role="tablist" aria-label={tr("nagrywanie")} data-testid="studio-record-panes">
+        <div className="grid grid-cols-2 gap-1" role="tablist" aria-label={tr("nagrywanie")} data-testid="studio-record-panes">
           {(
             [
               ["take", "recPaneNagraj"],
@@ -2578,7 +2579,7 @@ export function StudioRecordingPanel({
           ))}
         </div>
       ) : null}
-      {takeOpen ? (
+      {takeOpen && !simple ? (
         <p className="text-xs leading-snug text-[var(--brd-mute)]" data-testid="studio-record-start">
           {tr("zacznijTutaj")}{" "}
           <Link href="/jak-nagrac" className="underline" data-testid="studio-record-how-it-works">
@@ -2992,7 +2993,6 @@ export function StudioRecordingPanel({
       {takeOpen ? (
       <div className="studio-gear">
         <p className="studio-gear-label text-xs font-medium text-[var(--brd-ink)]">{tr("mikrofon")}</p>
-        <p className="text-xs text-[var(--brd-mute)]">{tr("zrodloNagrywania")}</p>
         <label className="block w-full text-xs text-[var(--brd-mute)]">
           <span className="sr-only">{tr("mikrofon")}</span>
           <select
@@ -3014,39 +3014,13 @@ export function StudioRecordingPanel({
             <option value="">
               {tr("automatycznieUrzadzenieSystemowe")}
             </option>
-            {!advancedMicOpen &&
-            inputDevices.selectedDeviceId &&
-            inputDevices.inputs.some(
-              (d) => d.deviceId === inputDevices.selectedDeviceId,
-            )
-              ? inputDevices.inputs
-                  .filter((d) => d.deviceId === inputDevices.selectedDeviceId)
-                  .map((d) => (
-                    <option key={d.deviceId} value={d.deviceId}>
-                      {tl(d.label)}
-                    </option>
-                  ))
-              : null}
-            {advancedMicOpen
-              ? inputDevices.inputs.map((d) => (
-                  <option key={d.deviceId} value={d.deviceId}>
-                    {tl(d.label)}
-                  </option>
-                ))
-              : null}
+            {inputDevices.inputs.map((d) => (
+              <option key={d.deviceId} value={d.deviceId}>
+                {tl(d.label)}
+              </option>
+            ))}
           </select>
         </label>
-        {inputDevices.inputs.length > 1 ? (
-          <button
-            type="button"
-            className="text-xs text-[var(--brd-green)] underline-offset-2 hover:underline"
-            onClick={() => setAdvancedMicOpen((v) => !v)}
-          >
-            {tl(advancedMicOpen
-              ? tr("ukryjZaawansowaneUrzadzenia")
-              : tr("zaawansowaneUstawieniaAudio"))}
-          </button>
-        ) : null}
         {inputDevices.permission === "UNAVAILABLE" ||
         inputDevices.lastErrorCode === "NO_INPUT_DEVICE" ? (
           <p className="text-xs text-[var(--brd-mute)]" role="status">
@@ -3114,6 +3088,8 @@ export function StudioRecordingPanel({
       ) : null}
 
       {gearOutputOpen ? (
+      <details open={simple ? undefined : true} className="studio-gear-fold" data-testid="studio-record-sound-settings">
+      <summary className={simple ? "flex min-h-11 cursor-pointer items-center text-sm text-[var(--brd-mute)]" : "hidden"}>{tr("ustawieniaDzwieku")}</summary>
       <div className="studio-gear">
         <p className="studio-gear-label text-xs font-medium text-[var(--brd-ink)]">{tr("odsluch")}</p>
         {outputDevices.pickerEnabled ? (
@@ -3160,6 +3136,12 @@ export function StudioRecordingPanel({
           {tr("odswiezUrzadzenia")}
         </Button>
       </div>
+      {simple ? (
+        <p className="pt-2 text-[11px] text-[var(--brd-mute)]">
+          {tr("limit")}{" "}{maxSeconds}{tr("sIstniejaceLimityKonta")}
+        </p>
+      ) : null}
+      </details>
       ) : null}
 
       {contextError || state.error || workflowError ? (
@@ -3177,11 +3159,11 @@ export function StudioRecordingPanel({
       {takeOpen && !showWorkflow ? (
         <div className="flex w-full flex-col gap-2">
           <StudioQuotaLine />
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <div className={`flex w-full flex-col gap-2 ${simple ? "" : "sm:flex-row sm:flex-wrap"}`}>
           <Button
             type="button"
             size="sm"
-            className="studio-rec-button w-full sm:w-auto"
+            className={simple ? "studio-rec-button min-h-14 w-full text-base font-semibold" : "studio-rec-button w-full sm:w-auto"}
             variant={state.phase === "RECORDING" ? "destructive" : "default"}
             disabled={primaryDisabled}
             onClick={() => {
@@ -3356,7 +3338,7 @@ export function StudioRecordingPanel({
       </div>
       ) : null}
 
-      {samplesMode ? null : (
+      {samplesMode || simple ? null : (
       <p className="text-[11px] text-[var(--brd-mute)]">
         {tr("limit")}{" "}{maxSeconds}{tr("sIstniejaceLimityKonta")}
       </p>

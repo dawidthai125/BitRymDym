@@ -76,7 +76,8 @@ describe("Phase 7.1.3 editor IA wiring", () => {
     expect(editor).toMatch(/selectedTrackId/);
     expect(editor).toMatch(/selectedClipId/);
     expect(editor).not.toMatch(/createContext\(\s*\{[^}]*selectedTrack/);
-    expect(editor).not.toMatch(/InspectorTab/);
+    // The tab is the user's choice of panel; it stores no track or clip (2026-11-23).
+    expect(editor).toMatch(/useState<StudioInspectorTab>\("settings"\)/);
     expect(editor).not.toMatch(/\["settings", "Ustawienia"\]/);
   });
 
@@ -109,7 +110,8 @@ describe("Phase 7.1.3 editor IA wiring", () => {
     expect(shell).toMatch(/studio-inspector-backdrop/);
     expect(shell).toMatch(/Escape/);
     expect(shell).toMatch(/safe-area-inset-bottom/);
-    expect(shell).toMatch(/min-h-11/);
+    // 44 px close target lives in the shared CloseButton.
+    expect(shell).toMatch(/<CloseButton/);
   });
 
   it("implements Inspector↔Mixer XOR on overlay open", () => {

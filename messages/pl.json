@@ -381,7 +381,10 @@
       "zakupNatychmiast": "Żądam rozpoczęcia świadczenia przed upływem 14 dni na odstąpienie od umowy i przyjmuję do wiadomości, że w przypadku treści cyfrowych tracę prawo odstąpienia z chwilą ich dostarczenia.",
       "zakupWymagane": "Zaznacz obie zgody, aby przejść do płatności.",
       "zakupPozniej": "Ten niższy plan włączy się dopiero w dniu końca obecnego. Przez 14 dni od zapłaty, nie później niż do jego startu, możesz odstąpić mailem na adres z regulaminu.",
-      "zakupWymaganePozniej": "Zaznacz zgodę na regulamin, aby przejść do płatności."
+      "zakupWymaganePozniej": "Zaznacz zgodę na regulamin, aby przejść do płatności.",
+      "muzyka": "Muzyka",
+      "tworzenie": "Tworzenie",
+      "profile": "Nasze profile"
     },
     "share": {
       "tytul": "Udostępnij",
@@ -2787,7 +2790,9 @@
       "trybKlawiaturySzybkiRecKrotki": "REC",
       "trybKlawiaturyDawKrotki": "DAW",
       "gainKlipuEtykieta": "Głośność",
-      "gainKlipuAria": "Głośność zaznaczonego fragmentu"
+      "gainKlipuAria": "Głośność zaznaczonego fragmentu",
+      "efektyWybierzSciezke": "Zaznacz ścieżkę, żeby zmieniać jej efekty. Teraz zmieniasz całość (master).",
+      "bitProjektu": "Bit projektu"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "Eksport dotyczy innego projektu.",
@@ -3246,7 +3251,8 @@
       "niewstawioneNagranie": "Masz niewstawione nagranie z tego projektu ({s} s). Wstawić je na ścieżkę tam, gdzie je nagrałeś?",
       "niewstawioneWstaw": "Wstaw na ścieżkę",
       "niewstawioneNieTeraz": "Nie teraz",
-      "niewstawioneZostajeWArchiwum": "Nagranie zostaje w Archiwum nagrań. Wstawisz je stamtąd, kiedy zechcesz."
+      "niewstawioneZostajeWArchiwum": "Nagranie zostaje w Archiwum nagrań. Wstawisz je stamtąd, kiedy zechcesz.",
+      "ustawieniaDzwieku": "Ustawienia dźwięku"
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch DJ v1",
@@ -3389,7 +3395,9 @@
       "clip": "Klip / plik",
       "track": "Ścieżka",
       "empty": "Inspektor",
-      "closeBlocked": "Nie da się zamknąć tego panelu, dopóki trwa nagrywanie albo zapis nagrania."
+      "closeBlocked": "Nie da się zamknąć tego panelu, dopóki trwa nagrywanie albo zapis nagrania.",
+      "file": "Plik",
+      "effects": "Efekty"
     },
     "exportStatus": {
       "creating": "przygotowuję plik",
@@ -4800,6 +4808,16 @@
       "krok4Opis": "W kroku Mastering zrób master i pobierz gotowy utwór.",
       "otworzProjekt": "Otwórz projekt",
       "programWindows": "Nagrywarka (Windows)"
+    },
+    "inspectorFile": {
+      "sciezka": "Ścieżka",
+      "bit": "Bit",
+      "brakBitu": "Projekt nie ma jeszcze bitu.",
+      "zmienBit": "Zmień bit",
+      "wybierzBit": "Wybierz bit",
+      "nagrania": "Nagrania i sample w projekcie",
+      "brakNagran": "Jeszcze nic tu nie ma. Nagraj wokal albo wgraj plik.",
+      "importuj": "Nagraj albo wgraj wokal"
     }
   },
   "nav": {

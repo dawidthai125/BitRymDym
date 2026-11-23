@@ -287,6 +287,35 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   background: var(--tape-neon);
   color: var(--tape-soot);
 }
+/* Light theme (2026-11-23): the same page on label paper. Bright amber stays for buttons and is
+   darkened for text (AA on paper). The cassette deck and film frame stay dark hardware. */
+html[data-theme="light"] .tape-surface {
+  --tape-soot: #f2ebe0;
+  --tape-deck: #eae1d2;
+  --tape-panel: #faf6ee;
+  --tape-line: #d5c9b5;
+  --tape-line-strong: #b5a68e;
+  --tape-cream: #101412;
+  --tape-cream-soft: #453f36;
+  --tape-mute: #6b6255;
+  --tape-neon: #c2185b;
+  --tape-well: #e5dbc9;
+}
+html[data-theme="light"] .tape-surface .text-tape-amber { color: #8a5200; }
+html[data-theme="light"] .tape-surface .tape-neon-sign { text-shadow: none; }
+html[data-theme="light"] .tape-surface .tape-device {
+  --tape-soot: #0e0c0a;
+  --tape-deck: #17130f;
+  --tape-panel: #211b15;
+  --tape-line: #3a3028;
+  --tape-line-strong: #5c4c3c;
+  --tape-cream: #f1e7d3;
+  --tape-cream-soft: #cdbfa6;
+  --tape-mute: #9e8f78;
+  --tape-neon: #ff4fa3;
+  color: var(--tape-cream);
+}
+html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: var(--tape-amber); }
 /* Fine film/tape grain — static SVG noise, no motion. */
 .tape-grain {
   position: relative;
@@ -1003,3 +1032,7 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
     scroll-padding-top: 14rem;
   }
 }
+
+/* Simple record view (2026-11-23): one narrow column, labels above full-width controls. */
+.studio-desk [data-record-density="simple"] .studio-gear { display: flex; flex-direction: column; align-items: stretch; gap: 0.5rem; }
+.studio-desk [data-record-density="simple"] .studio-gear select { width: 100%; max-width: 100%; }

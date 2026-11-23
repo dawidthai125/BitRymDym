@@ -6,6 +6,13 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (28) — Studio: panele, prosty widok; stopka; jasny motyw strony głównej
+
+- Studio (GO Dawida na `studio-editor.tsx`): zakładki inspektora Opcje/Efekty/Plik/Nagraj mają własne panele (`resolveStudioInspectorPanel`, `studio-inspector-file-panel.tsx`); efekty w kolumnie inspektora, poza nią arkusz z boku; jeden `CloseButton` (X) w efektach, inspektorze i mikserze; panel nagrywania w kolumnie z własnym przewijaniem (strona się nie wydłuża); nagłówek w jednym rzędzie.
+- Prosty widok: jeden rząd transportu, ścieżka, mikrofon, duży przycisk, reszta zwinięta. Lista mikrofonów zawsze pełna.
+- Stopka: kolumny, ikony profili (`social-icon.tsx`), w projekcie Studia jedna linia; odstęp pod stopką tylko, gdy gra odtwarzacz.
+- Jasny motyw działa na stronie głównej (paleta `--tape-*` w `.tape-surface`), kaseta i film zostają ciemne.
+
 ## 2026-11-23 (27) — Ochrona przed przeciążeniem
 
 - `src/lib/security/request-guard.ts` + middleware: limit na adres IP (gość 240/min, zalogowany 1200/min, na instancję, bez bazy) → 429. Bez limitu: webhooki płatności, cron, health. Wyłącznik: env `OVERLOAD_GUARD=0`. Zmierzone lokalnie: odrzucone zapytanie ok. 1,7 ms CPU.

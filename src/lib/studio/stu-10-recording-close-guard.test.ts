@@ -424,9 +424,9 @@ describe("STU-10-E — wiring contracts", () => {
     expect(shell).toMatch(
       /aria-label="Zamknij Inspektor"[\s\S]{0,120}onClick=\{onClose\}/,
     );
-    expect(shell).toMatch(/onClick=\{onClose\}\s*>\s*Zamknij/);
+    expect(shell).toMatch(/<CloseButton [^>]*onClick=\{onClose\}/);
     expect(shell).toMatch(/event\.key === "Escape"[\s\S]{0,80}onClose\(\);/);
-    // prop type, destructure, Escape, effect deps, backdrop, Zamknij button.
+    // prop type, destructure, Escape, effect deps, backdrop, X button.
     expect((shell.match(/onClose/g) ?? []).length).toBe(6);
   });
 

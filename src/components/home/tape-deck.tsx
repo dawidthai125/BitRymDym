@@ -81,7 +81,7 @@ export function TapeDeck({ beats }: { beats: PresentedBeat[] }) {
     <div
       data-playing={playing ? "true" : "false"}
       data-testid="home-tape-deck"
-      className="tape-deck relative rounded-[var(--tape-r-panel)] border border-tape-line-strong bg-tape-panel p-4 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)] sm:p-6"
+      className="tape-deck tape-device relative rounded-[var(--tape-r-panel)] border border-tape-line-strong bg-tape-panel p-4 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)] sm:p-6"
     >
       {/* Faceplate */}
       <div className="flex items-center justify-between gap-3 border-b border-tape-line pb-3">

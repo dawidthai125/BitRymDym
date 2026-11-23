@@ -85,7 +85,7 @@ describe("desktop SiteMainNav aria-current contract", () => {
     );
     expect(mainNav).toMatch(/\blg:flex\b/);
     expect(bottomNav).toMatch(/\blg:hidden\b/);
-    expect(appShell).toMatch(/\blg:pb-28\b/);
+    expect(appShell).toMatch(/\blg:pb-2\b/);
     expect(miniPlayer).toMatch(/\blg:bottom-0\b/);
   });
 

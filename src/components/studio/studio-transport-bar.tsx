@@ -80,7 +80,10 @@ export function StudioTransportBar({
   onRedo,
   selectionStartMs,
   selectionEndMs,
+  simple = false,
 }: {
+  /** Simple record view: start, play/pause, stop, record, undo, metronome, clock. The rest is hidden. */
+  simple?: boolean;
   projectId: string;
   trackNames: Record<string, string>;
   tipDocumentVersion: number;
@@ -271,6 +274,7 @@ export function StudioTransportBar({
               <StudioRecLamp />
               <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("nagraj")}</span>
             </Button>
+            {!simple ? (
             <Button
               type="button"
               size="sm"
@@ -301,6 +305,7 @@ export function StudioTransportBar({
                   : tr("trybKlawiaturyDawKrotki")}
               </span>
             </Button>
+            ) : null}
             <Button
               type="button"
               size="sm"
@@ -314,6 +319,7 @@ export function StudioTransportBar({
             >
               <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("cofnij")}</span>
             </Button>
+            {!simple ? (
             <Button
               type="button"
               size="sm"
@@ -327,6 +333,8 @@ export function StudioTransportBar({
             >
               <StudioGlyph name="redo" />
             </Button>
+            ) : null}
+            {simple && phase !== "playing" ? null : (
             <Button
               type="button"
               size="sm"
@@ -339,6 +347,8 @@ export function StudioTransportBar({
             >
               <StudioGlyph name="pause" />
             </Button>
+            )}
+            {!simple ? (
             <Button
               type="button"
               size="sm"
@@ -363,6 +373,7 @@ export function StudioTransportBar({
             >
               <StudioGlyph name="loop" />
             </Button>
+            ) : null}
             <Button
               type="button"
               size="sm"
@@ -385,6 +396,7 @@ export function StudioTransportBar({
             >
               <StudioGlyph name="metronome" />
             </Button>
+            {!simple || noBeat ? (
             <Button
               type="button"
               size="sm"
@@ -401,6 +413,7 @@ export function StudioTransportBar({
             >
               {tl(noBeat ? tr("wybierzBit2") : tr("beatButton"))}
             </Button>
+            ) : null}
           </div>
 
           <div
@@ -434,6 +447,7 @@ export function StudioTransportBar({
             ) : null}
           </div>
 
+          {simple ? null : (
           <div
             className="ml-auto flex min-w-[9rem] max-w-[14rem] shrink-0 items-center gap-2 [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]"
             data-testid="studio-transport-master"
@@ -452,9 +466,11 @@ export function StudioTransportBar({
               onCommit={onMasterGainCommit}
             />
           </div>
+          )}
 
           <p
-            className={`min-h-11 max-w-[12rem] shrink-0 truncate text-xs leading-[2.75rem] sm:min-h-8 sm:leading-8 ${
+            title={tl(saveStatusLabel)}
+            className={`min-h-11 max-w-[18rem] shrink-0 truncate text-xs leading-[2.75rem] sm:min-h-8 sm:leading-8 ${simple ? "ml-auto" : ""} ${
               saveIsError || conflictActive
                 ? "text-[var(--brd-warn)]"
                 : "text-[var(--brd-mute)]"
@@ -477,6 +493,8 @@ export function StudioTransportBar({
             ) : null}
           </p>
 
+          {simple ? null : (
+          <>
           <StudioMixRevisionHistoryControl
             projectId={projectId}
             tipDocumentVersion={tipDocumentVersion}
@@ -489,6 +507,8 @@ export function StudioTransportBar({
             projectId={projectId}
             getExpectedDocumentVersion={getExpectedDocumentVersion}
           />
+          </>
+          )}
         </div>
         {hasSelection || (showFragmentTools && (fragmentEnabled || fragmentConfirmDelete)) ? (
         <div className="flex min-w-0 flex-wrap items-center gap-1" data-testid="studio-transport-row-tools">
@@ -542,7 +562,7 @@ export function StudioTransportBar({
             />
           ) : null}
         </div>
-        ) : showFragmentTools ? (
+        ) : showFragmentTools && !simple ? (
           <p className="px-1 text-[11px] text-[var(--brd-mute)]" data-testid="studio-transport-select-hint">
             {tr("zaznaczFragment")}
           </p>

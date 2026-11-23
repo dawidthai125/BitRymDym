@@ -63,7 +63,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
   ]);
 
   return (
-    <AppShell tone="studio">
+    <AppShell tone="studio" compactFooter>
       <main
         data-brd-surface="control-room"
         data-surface="tape"

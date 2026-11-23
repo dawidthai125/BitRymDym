@@ -56,6 +56,7 @@ export function StickyMiniPlayer() {
 
   return (
     <div
+      data-sticky-player=""
       className={cn(
         "fixed inset-x-0 z-30 border-t border-[var(--brd-line-strong)] bg-[var(--brd-audio-surface)] shadow-[0_-10px_30px_-12px_rgba(0,0,0,0.8)]",
         "bottom-[calc(3.75rem+env(safe-area-inset-bottom))] lg:bottom-0",

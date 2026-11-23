@@ -4,7 +4,23 @@
  * Priority: record → clip → track → empty.
  */
 
-export type StudioInspectorContext = "record" | "clip" | "track" | "empty";
+export type StudioInspectorContext = "record" | "clip" | "track" | "empty" | "effects" | "file";
+
+/** The tab that the user chose. Recording wins over it (see resolveStudioInspectorPanel). */
+export type StudioInspectorTab = "settings" | "effects" | "file";
+
+/** What the inspector shows. Each tab always opens its own panel, also with nothing selected. */
+export function resolveStudioInspectorPanel(input: {
+  recordingActive: boolean;
+  tab: StudioInspectorTab;
+  selectedClipId: string | null;
+  selectedTrackId: string | null;
+}): StudioInspectorContext {
+  if (input.recordingActive) return "record";
+  if (input.tab === "effects") return "effects";
+  if (input.tab === "file") return input.selectedClipId ? "clip" : "file";
+  return input.selectedTrackId ? "track" : "empty";
+}
 
 export type DeriveStudioInspectorContextInput = {
   recordingActive: boolean;
@@ -64,6 +80,10 @@ export function studioInspectorContextTitle(
       return "Klip / plik";
     case "track":
       return "Ścieżka";
+    case "effects":
+      return "Efekty";
+    case "file":
+      return "Plik";
     case "empty":
       return "Inspector";
   }

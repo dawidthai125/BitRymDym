@@ -381,7 +381,10 @@
       "zakupNatychmiast": "I request that performance starts before the 14-day withdrawal period ends and I acknowledge that for digital content I lose the right of withdrawal once it is delivered.",
       "zakupWymagane": "Tick both boxes to continue to payment.",
       "zakupPozniej": "This lower plan starts only when the current one ends. For 14 days after payment, and no later than its start, you can withdraw by email to the address in the terms.",
-      "zakupWymaganePozniej": "Tick the terms box to continue to payment."
+      "zakupWymaganePozniej": "Tick the terms box to continue to payment.",
+      "muzyka": "Music",
+      "tworzenie": "Create",
+      "profile": "Our profiles"
     },
     "share": {
       "tytul": "Share",
@@ -2787,7 +2790,9 @@
       "trybKlawiaturySzybkiRecKrotki": "REC",
       "trybKlawiaturyDawKrotki": "DAW",
       "gainKlipuEtykieta": "Level",
-      "gainKlipuAria": "Selected fragment level"
+      "gainKlipuAria": "Selected fragment level",
+      "efektyWybierzSciezke": "Select a track to change its effects. You are now changing the whole mix (master).",
+      "bitProjektu": "Project beat"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "The export belongs to another project.",
@@ -3246,7 +3251,8 @@
       "niewstawioneNagranie": "You have a recording from this project that is not on a track yet ({s} s). Put it back where you recorded it?",
       "niewstawioneWstaw": "Put on track",
       "niewstawioneNieTeraz": "Not now",
-      "niewstawioneZostajeWArchiwum": "The recording stays in your recordings archive. You can place it from there any time."
+      "niewstawioneZostajeWArchiwum": "The recording stays in your recordings archive. You can place it from there any time.",
+      "ustawieniaDzwieku": "Sound settings"
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch DJ v1",
@@ -3389,7 +3395,9 @@
       "clip": "Clip / file",
       "track": "Track",
       "empty": "Inspector",
-      "closeBlocked": "You can't close this panel while a recording is running or saving."
+      "closeBlocked": "You can't close this panel while a recording is running or saving.",
+      "file": "File",
+      "effects": "Effects"
     },
     "exportStatus": {
       "creating": "preparing file",
@@ -4800,6 +4808,16 @@
       "krok4Opis": "In the Mastering step, make a master and download your track.",
       "otworzProjekt": "Open project",
       "programWindows": "Windows app"
+    },
+    "inspectorFile": {
+      "sciezka": "Track",
+      "bit": "Beat",
+      "brakBitu": "The project has no beat yet.",
+      "zmienBit": "Change beat",
+      "wybierzBit": "Choose a beat",
+      "nagrania": "Recordings and samples in the project",
+      "brakNagran": "Nothing here yet. Record a vocal or upload a file.",
+      "importuj": "Record or upload a vocal"
     }
   },
   "nav": {

@@ -248,6 +248,7 @@ html[data-theme="light"] {
 :root {
   /* Surfaces — warm soot, tape-deck brown, rack panel */
   --tape-soot: #0e0c0a;
+  --tape-well: #0a0807;
   --tape-deck: #17130f;
   --tape-panel: #211b15;
   --tape-line: #3a3028;

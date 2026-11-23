@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import { CloseButton } from "@/components/ui/close-button";
 import { StudioGlyph } from "@/components/studio/studio-glyphs";
 
 function getFocusable(root: HTMLElement): HTMLElement[] {
@@ -124,15 +125,7 @@ export function StudioMixerOverlay({
           >
             {t("mixer")}
           </p>
-          <Button
-            type="button"
-            size="xs"
-            variant="ghost"
-            className="min-h-11 min-w-11"
-            onClick={onClose}
-          >
-            {t("zamknij")}
-          </Button>
+          <CloseButton label={t("zamknijMixer")} onClick={onClose} />
         </div>
         <div
           id={panelId}

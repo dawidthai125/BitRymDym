@@ -15,6 +15,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import { Button } from "@/components/ui/button";
+import { CloseButton } from "@/components/ui/close-button";
 import { StudioGlyph } from "@/components/studio/studio-glyphs";
 import {
   addStudioFxToChain,
@@ -65,6 +66,8 @@ type StudioFxChainEditorProps = {
   onFxPersisted: (chain: StudioFxChainV1, documentVersion: number) => void;
   onClose?: () => void;
   title?: string;
+  /** Rendered inside the inspector (tab "Efekty"): no dialog, no own scroll, no close. */
+  inline?: boolean;
   /** Gaps P0 #3 — vocal sound presets (track chains only); bpm syncs the delay. */
   vocalPresets?: { bpm: number };
   /** Track chains: the track's clips (BRD Tune note editor, Gold). */
@@ -93,6 +96,7 @@ export function StudioFxChainEditor({
   onFxPersisted,
   onClose,
   title,
+  inline = false,
   vocalPresets,
   trackClips,
   maxEffects = STUDIO_FX_CHAIN_MAX_EFFECTS,
@@ -111,8 +115,8 @@ export function StudioFxChainEditor({
   const beatKey = useProjectBeatKey(role === "track" ? projectId : null);
 
   useEffect(() => {
-    panelRef.current?.focus();
-  }, []);
+    if (!inline) panelRef.current?.focus();
+  }, [inline]);
 
   async function commit(nextChain: StudioFxChainV1): Promise<boolean> {
     setSaving("saving");
@@ -271,33 +275,34 @@ export function StudioFxChainEditor({
     <div
       ref={panelRef}
       tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
+      role="group"
       aria-labelledby={titleId}
-      className="flex max-h-[min(85dvh,40rem)] flex-col overflow-hidden rounded-t-2xl border border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-lg outline-none"
+      data-testid={inline ? "studio-fx-inline" : "studio-fx-editor"}
+      className={
+        inline
+          ? "flex flex-col outline-none"
+          : "flex max-h-[min(85dvh,40rem)] flex-col overflow-hidden rounded-t-2xl border border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-lg outline-none sm:h-full sm:max-h-none sm:rounded-none"
+      }
     >
-      <div className="flex items-center justify-between gap-2 border-b border-[var(--brd-line)] px-3 py-3">
+      <div className={`flex items-center justify-between gap-2 border-b border-[var(--brd-line)] ${inline ? "pb-2" : "px-3 py-1.5"}`}>
         <h2
           id={titleId}
           className="text-sm font-semibold text-[var(--brd-ink)]"
         >
           {tl(heading)}
         </h2>
-        {onClose ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="min-h-11 min-w-11"
-            aria-label={t("zamknijEfekty")}
-            onClick={onClose}
-          >
-            {t("zamknij")}
-          </Button>
+        {onClose && !inline ? (
+          <CloseButton label={t("zamknijEfekty")} data-testid="studio-fx-sheet-close" onClick={onClose} />
         ) : null}
       </div>
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+      <div
+        className={
+          inline
+            ? "space-y-3 pt-2"
+            : "min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        }
+      >
         {vocalPresets && role === "track" ? (
           <StudioVocalPresetPicker
             chain={chain}
@@ -485,7 +490,7 @@ export function StudioFxChainEditor({
             {t("dodajEfekt")}
           </Button>
           {addOpen ? (
-            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <ul className={`grid gap-2 ${inline ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"}`}>
               {STUDIO_FX_TYPES.filter((type) => STUDIO_FX_REGISTRY[type][role] && (type !== "sidechain" || allowSidechain)).map((type) => (
                 <li key={type}>
                   <Button
@@ -601,7 +606,7 @@ export function StudioFxSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end"
       data-testid="studio-fx-sheet"
     >
       <button
@@ -618,23 +623,11 @@ export function StudioFxSheet({
         aria-labelledby={titleId}
         tabIndex={-1}
         data-testid="studio-fx-sheet-panel"
-        className="relative z-10 w-full max-w-lg outline-none pb-[env(safe-area-inset-bottom)] sm:px-4"
+        className="relative z-10 w-full outline-none max-sm:pb-[env(safe-area-inset-bottom)] sm:h-full sm:w-[min(26rem,92vw)]"
       >
         <span id={titleId} className="sr-only">
           {t("efekty")}
         </span>
-        <div className="mb-2 flex justify-end sm:mb-0">
-          <Button
-            type="button"
-            size="xs"
-            variant="ghost"
-            className="min-h-11 min-w-11 bg-[var(--brd-bg)] sm:absolute sm:right-6 sm:top-2"
-            data-testid="studio-fx-sheet-close"
-            onClick={onClose}
-          >
-            {t("zamknij")}
-          </Button>
-        </div>
         {children}
       </div>
     </div>

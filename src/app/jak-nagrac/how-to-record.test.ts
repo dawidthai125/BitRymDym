@@ -51,8 +51,8 @@ describe("jak-nagrac vs home: no duplicated steps", () => {
 
 describe("simple record view: pick the best take", () => {
   const panel = read("src/components/studio/studio-recording-panel.tsx");
-  it("list is open by default in the simple view, same-beat takes only, numbered, max 6", () => {
-    expect(panel).toContain("useState(simple)");
+  it("list is folded by default (simple view stays simple), same-beat takes only, numbered, max 6", () => {
+    expect(panel).toContain("const [libraryOpen, setLibraryOpen] = useState(false);");
     expect(panel).toContain("filter((t) => t.sameBeat)");
     expect(panel).toContain(".slice(0, 6)");
     expect(panel).toContain('tr("ujecieNr"');

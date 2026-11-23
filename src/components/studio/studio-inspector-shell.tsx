@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { Button } from "@/components/ui/button";
+import { CloseButton } from "@/components/ui/close-button";
 import {
   type StudioInspectorContext,
 } from "@/components/studio/studio-inspector-context";
@@ -146,15 +146,7 @@ export function StudioInspectorOverlay({
           >
             {t("inspector")}{" "}{tl(title)}
           </p>
-          <Button
-            type="button"
-            size="xs"
-            variant="ghost"
-            className="min-h-11 min-w-11"
-            onClick={onClose}
-          >
-            {t("zamknij")}
-          </Button>
+          <CloseButton label={t("zamknijInspector")} onClick={onClose} />
         </div>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
           {children}

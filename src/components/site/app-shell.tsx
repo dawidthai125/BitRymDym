@@ -18,8 +18,11 @@ export async function AppShell({
   children,
   tone = "public",
   className,
+  compactFooter = false,
 }: {
   children: React.ReactNode;
+  /** One-line footer for work screens (Studio project). */
+  compactFooter?: boolean;
   tone?: "public" | "studio" | "admin";
   className?: string;
 }) {
@@ -39,11 +42,12 @@ export async function AppShell({
         className={cn(
           MAIN_CONTENT_LANDMARK_CLASS,
           !isAdminChrome &&
-            "pb-[calc(3.75rem+env(safe-area-inset-bottom)+10rem)] lg:pb-28",
+            // Room for the bottom nav (phone) and, only while it is on screen, the sticky player.
+            "pb-[calc(3.75rem+env(safe-area-inset-bottom)+1rem)] lg:pb-2 [[data-app-shell]:has([data-sticky-player])_&]:pb-[calc(3.75rem+env(safe-area-inset-bottom)+10rem)] lg:[[data-app-shell]:has([data-sticky-player])_&]:pb-28",
         )}
       >
         {children}
-        <SiteFooter />
+        <SiteFooter compact={compactFooter} />
       </div>
       {!isAdminChrome ? (
         <>

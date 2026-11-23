@@ -29,7 +29,7 @@ export function HomePromoFilm() {
   }
 
   return (
-    <figure className="border border-tape-line-strong bg-tape-panel p-4 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)] sm:p-6">
+    <figure className="tape-device border border-tape-line-strong bg-tape-panel p-4 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)] sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3 border-b border-tape-line pb-3">
         <p className="font-poster text-sm font-bold uppercase tracking-[var(--tape-tracking-label)] text-tape-cream-soft">
           {t("promoDeck")}

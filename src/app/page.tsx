@@ -391,7 +391,7 @@ export default async function HomePage() {
               {CAPABILITIES.map((c) => (
                 <li
                   key={tc(c.title)}
-                  className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-[var(--tape-r-panel)] border border-tape-line-strong bg-tape-panel px-4 py-5 shadow-[inset_0_1px_0_#ffffff0d,0_6px_16px_-10px_#000] sm:px-5"
+                  className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-[var(--tape-r-panel)] border border-tape-line-strong bg-tape-panel px-4 py-5 shadow-[inset_0_1px_0_#ffffff0d,0_6px_16px_-10px_#0008] sm:px-5"
                 >
                   <span className="tape-rack-screw self-start" aria-hidden="true" />
                   <div className="grid gap-x-6 gap-y-1 sm:grid-cols-[12rem_1fr]">
@@ -472,7 +472,7 @@ export default async function HomePage() {
 
         {/* PREMIUM — the one neon sign. Store app: no plans / prices (store rules). */}
         {storeApp ? null : (
-        <section id="premium" aria-labelledby="home-premium" className="border-b border-tape-line bg-[#0a0807]">
+        <section id="premium" aria-labelledby="home-premium" className="border-b border-tape-line bg-[color:var(--tape-well)]">
           <div className={`${wrap} py-[var(--tape-section-y)]`}>
             <h2
               id="home-premium"

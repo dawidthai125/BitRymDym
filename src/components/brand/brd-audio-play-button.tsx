@@ -53,7 +53,7 @@ export function BrdAudioPlayButton({
       aria-label={tl(label)}
       aria-pressed={playing}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-[var(--tape-r-panel)] text-[var(--tape-on-amber)] shadow-[inset_0_-3px_0_0_rgba(0,0,0,0.22)] transition-colors",
+        "inline-flex shrink-0 items-center justify-center rounded-[var(--tape-r-panel)] text-[var(--primary-foreground)] shadow-[inset_0_-3px_0_0_rgba(0,0,0,0.22)] transition-colors",
         "bg-[var(--brd-audio-play)] hover:bg-[var(--brd-audio-play-hover)]",
         "outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brd-paper)]",
         "disabled:pointer-events-none disabled:opacity-45",

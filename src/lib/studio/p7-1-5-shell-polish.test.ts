@@ -110,8 +110,10 @@ describe("Phase 7.1.5.2 — StudioFxSheet a11y parity", () => {
     expect(sheet).toMatch(/getFocusable/);
     expect(sheet).toMatch(/previouslyFocusedRef/);
     expect(sheet).toMatch(/studio-fx-sheet-backdrop/);
-    expect(sheet).toMatch(/min-h-11 min-w-11/);
-    expect(sheet).toMatch(/studio-fx-sheet-close/);
+    // One X only: the editor header inside the sheet owns it (no second close in the sheet).
+    expect(sheet).not.toMatch(/studio-fx-sheet-close|t\("zamknij"\)/);
+    expect(fx.match(/studio-fx-sheet-close/g)).toHaveLength(1);
+    expect(fx).toMatch(/<CloseButton/);
   });
 
   it("FxSheet Escape uses capture + stopImmediatePropagation (top-most over Mixer)", () => {

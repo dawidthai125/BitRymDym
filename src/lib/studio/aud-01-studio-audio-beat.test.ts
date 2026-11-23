@@ -237,7 +237,8 @@ describe("AUD-01 architecture + mic lifecycle guards", () => {
     expect(panel).toMatch(/useMicAnalyser/);
     expect(panel).toMatch(/BrdInputMonitor/);
     expect(panel).toMatch(/Test mikrofonu/);
-    expect(panel).toMatch(/Zaawansowane ustawienia audio/);
+    // Every microphone is on the list at once (the "advanced" link only hid them, 2026-11-23).
+    expect(panel).not.toMatch(/advancedMicOpen/);
     expect(panel).toMatch(/Automatycznie — urządzenie systemowe/);
   });
 

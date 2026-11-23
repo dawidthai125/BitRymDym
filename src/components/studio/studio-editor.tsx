@@ -35,11 +35,14 @@ import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
 import {
   deriveStudioInspectorContext,
+  resolveStudioInspectorPanel,
+  type StudioInspectorTab,
   studioPreferRecordAfterCaptureReport,
   studioPreferRecordAfterClipCreated,
   studioPreferRecordAfterTimelineSelect,
   studioInspectorOverlayCloseBlocked,
 } from "@/components/studio/studio-inspector-context";
+import { StudioInspectorFilePanel } from "@/components/studio/studio-inspector-file-panel";
 import { StudioInspectorOverlay } from "@/components/studio/studio-inspector-shell";
 import { StudioLeaveGuardDialog, useStudioLeaveGuard } from "@/components/studio/studio-leave-guard-dialog";
 import { studioPageUnloadPrompt } from "@/components/studio/studio-leave-guard";
@@ -429,6 +432,9 @@ function StudioEditorInner({
   const [recoverySavedKey, setRecoverySavedKey] = useState(0);
   const [beatPickerOpen, setBeatPickerOpen] = useState(false);
   const [fxPanel, setFxPanel] = useState<FxPanelTarget | null>(null);
+  /** Inspector tab chosen by the user; "effects" edits the selected track or the master. */
+  const [inspectorTab, setInspectorTab] = useState<StudioInspectorTab>("settings");
+  const [fxInspectorRole, setFxInspectorRole] = useState<"track" | "master">("track");
   /** Mix Track selection (SoT) — drives P6.6.1 Track meter target. */
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   /**
@@ -516,8 +522,14 @@ function StudioEditorInner({
   const recordSimple =
     onSampleTab ||
     studioRecordView({ step: studioStep, fullView: recordFullView, advancedAllowed: advancedRecord }) === "simple";
-  const inspectorContext = deriveStudioInspectorContext({
+  const selectionContext = deriveStudioInspectorContext({
     recordingActive: recordingContextActive || recordSimple,
+    selectedClipId: activeSelectedId,
+    selectedTrackId: activeSelectedTrackId,
+  });
+  const inspectorContext = resolveStudioInspectorPanel({
+    recordingActive: selectionContext === "record",
+    tab: inspectorTab,
     selectedClipId: activeSelectedId,
     selectedTrackId: activeSelectedTrackId,
   });
@@ -676,6 +688,19 @@ function StudioEditorInner({
   function openInspectorOverlay() {
     setMixerOpen(false);
     setInspectorOverlayOpen(true);
+  }
+
+  /** Effects open in the inspector when its column is on screen, otherwise in the sheet. */
+  function openEffects(target: FxPanelTarget) {
+    if (inspectorDesktopRail && studioStep === "record" && !recordSimple && !recordingLocked) {
+      if (target.role === "track") setSelectedTrackId(target.trackId);
+      setFxInspectorRole(target.role);
+      setInspectorPreferRecord(false);
+      setInspectorTab("effects");
+      setFxPanel(null);
+      return;
+    }
+    setFxPanel(target);
   }
 
   function closeInspectorOverlay(): boolean {
@@ -2748,6 +2773,77 @@ function StudioEditorInner({
     },
   };
 
+  function renderFxEditor(target: FxPanelTarget, inline: boolean) {
+    return target.role === "master" ? (
+          <StudioFxChainEditor
+            key="fx-master"
+            inline={inline}
+            role="master"
+            projectId={doc.project.id}
+            maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}
+            allowSidechain={sidechainForTier(trackCapacity.premiumTier)}
+            chain={doc.project.masterFxChain}
+            getExpectedDocumentVersion={expectedDocumentVersion}
+            enqueuePersistAsync={enqueuePersistAsync}
+            title={tr("masterEfekty")}
+            onClose={() => setFxPanel(null)}
+            onFxPersisted={(masterFxChain, documentVersion) => {
+              recordUndo({
+                undo: { kind: "master_fx", chain: committedDocRef.current.project.masterFxChain },
+                redo: { kind: "master_fx", chain: masterFxChain },
+              });
+              applyPersistedDoc((prev) => ({
+                ...prev,
+                project: {
+                  ...prev.project,
+                  documentVersion,
+                  masterFxChain,
+                },
+              }));
+            }}
+          />
+    ) : (
+          <StudioFxChainEditor
+            key={`fx-${target.trackId}`}
+            inline={inline}
+            role="track"
+            projectId={doc.project.id}
+            trackId={target.trackId}
+            maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}
+            allowSidechain={sidechainForTier(trackCapacity.premiumTier)}
+            chain={
+              doc.tracks.find((t) => t.id === target.trackId)?.effectsChain ?? {
+                schemaVersion: 1,
+                effects: [],
+              }
+            }
+            getExpectedDocumentVersion={expectedDocumentVersion}
+            enqueuePersistAsync={enqueuePersistAsync}
+            title={tr("efekty", { v0: doc.tracks.find((t) => t.id === target.trackId)?.name ?? tr("sciezka") })}
+            vocalPresets={{ bpm: doc.project.tempoBpm }}
+            trackClips={doc.clips.filter((c) => c.trackId === target.trackId)}
+            onClose={() => setFxPanel(null)}
+            onFxPersisted={(effectsChain, documentVersion) => {
+              const trackId = target.trackId;
+              const beforeChain = committedDocRef.current.tracks.find((t) => t.id === trackId)?.effectsChain;
+              if (beforeChain) {
+                recordUndo({
+                  undo: { kind: "track_fx", trackId, chain: beforeChain },
+                  redo: { kind: "track_fx", trackId, chain: effectsChain },
+                });
+              }
+              applyPersistedDoc((prev) => ({
+                ...prev,
+                project: { ...prev.project, documentVersion },
+                tracks: prev.tracks.map((t) =>
+                  t.id === trackId ? { ...t, effectsChain } : t,
+                ),
+              }));
+            }}
+          />
+    );
+  }
+
   const inspectorContent = (
     <div
       className="min-h-0 flex-1 space-y-2 overflow-y-auto"
@@ -2769,6 +2865,7 @@ function StudioEditorInner({
               active:
                 inspectorContext === "track" || inspectorContext === "empty",
               onClick: () => {
+                setInspectorTab("settings");
                 setInspectorPreferRecord(false);
                 setConfirmDelete(false);
                 openInspectorOverlay();
@@ -2777,21 +2874,21 @@ function StudioEditorInner({
             {
               id: "effects",
               label: tr("tabEffects"),
-              active: false,
+              active: inspectorContext === "effects",
               onClick: () => {
+                setInspectorTab("effects");
+                setFxInspectorRole(selectedTrack ? "track" : "master");
                 setInspectorPreferRecord(false);
-                if (selectedTrack) {
-                  setFxPanel({ role: "track", trackId: selectedTrack.id });
-                } else {
-                  setFxPanel({ role: "master" });
-                }
+                setConfirmDelete(false);
+                openInspectorOverlay();
               },
             },
             {
               id: "file",
               label: tr("tabFile"),
-              active: inspectorContext === "clip",
+              active: inspectorContext === "clip" || inspectorContext === "file",
               onClick: () => {
+                setInspectorTab("file");
                 setInspectorPreferRecord(false);
                 setConfirmDelete(false);
                 openInspectorOverlay();
@@ -2813,6 +2910,7 @@ function StudioEditorInner({
             type="button"
             role="tab"
             aria-selected={tab.active}
+            disabled={recordingLocked && tab.id !== "record"}
             data-testid={`studio-inspector-tab-${tab.id}`}
             className={`min-h-11 rounded border px-1 text-[10px] font-medium uppercase tracking-[0.08em] ${
               tab.active
@@ -2905,6 +3003,7 @@ function StudioEditorInner({
               return;
             }
             setInspectorPreferRecord(false);
+            setInspectorTab("file");
             setSelectedClipId(selectClipId(null, clip.id));
             setSelectedTrackId(clip.trackId);
             setStatus(tr("nagranieDodaneNaOs"));
@@ -2929,9 +3028,7 @@ function StudioEditorInner({
           track={selectedTrack}
           trackCount={trackCount}
           maxTracks={maxTracks}
-          onOpenEffects={() =>
-            setFxPanel({ role: "track", trackId: selectedTrack.id })
-          }
+          onOpenEffects={() => openEffects({ role: "track", trackId: selectedTrack.id })}
           onOpenRecord={() => {
             setInspectorPreferRecord(true);
             openInspectorOverlay();
@@ -2953,6 +3050,61 @@ function StudioEditorInner({
           onDelete={() => {
             deleteSelectedClip();
           }}
+        />
+      ) : null}
+
+      {inspectorContext === "effects" ? (
+        <div className="space-y-2" data-testid="studio-inspector-effects">
+          <div className="grid grid-cols-2 gap-1" role="group" aria-label={tr("tabEffects")}>
+            {(
+              [
+                { role: "track" as const, label: selectedTrack ? selectedTrack.name : tr("sciezka"), disabled: !selectedTrack },
+                { role: "master" as const, label: "Master", disabled: false },
+              ] as const
+            ).map((item) => {
+              const active = item.role === (selectedTrack ? fxInspectorRole : "master");
+              return (
+                <button
+                  key={item.role}
+                  type="button"
+                  aria-pressed={active}
+                  disabled={item.disabled}
+                  className={`min-h-11 min-w-0 truncate rounded border px-2 text-xs disabled:opacity-50 ${
+                    active
+                      ? "border-[var(--brd-amber)] text-[var(--brd-ink)]"
+                      : "border-[var(--brd-line)] text-[var(--brd-mute)]"
+                  }`}
+                  onClick={() => setFxInspectorRole(item.role)}
+                >
+                  {tl(item.label)}
+                </button>
+              );
+            })}
+          </div>
+          {selectedTrack ? null : <p className="text-xs text-[var(--brd-mute)]">{tr("efektyWybierzSciezke")}</p>}
+          {renderFxEditor(
+            selectedTrack && fxInspectorRole === "track" ? { role: "track", trackId: selectedTrack.id } : { role: "master" },
+            true,
+          )}
+        </div>
+      ) : null}
+
+      {inspectorContext === "file" ? (
+        <StudioInspectorFilePanel
+          clips={doc.clips}
+          tracks={doc.tracks}
+          beatTitle={doc.project.beatId ? (beatTitle ?? tr("bitProjektu")) : null}
+          disabled={recordingLocked}
+          onSelectClip={(clipId, trackId) => {
+            setSelectedClipId(selectClipId(null, clipId));
+            setSelectedTrackId(trackId);
+            setMode("edit");
+          }}
+          onImport={() => {
+            setInspectorPreferRecord(true);
+            openInspectorOverlay();
+          }}
+          onChangeBeat={() => setBeatPickerOpen(true)}
         />
       ) : null}
 
@@ -3044,7 +3196,7 @@ function StudioEditorInner({
           variant="outline"
           className="mt-auto min-h-11 w-full truncate px-1 text-[10px]"
           aria-label={tr("efektyMaster")}
-          onClick={() => setFxPanel({ role: "master" })}
+          onClick={() => openEffects({ role: "master" })}
         >
           {tl(studioFxEntryLabel(doc.project.masterFxChain))}
         </Button>
@@ -3193,7 +3345,7 @@ function StudioEditorInner({
               title={tl(fxLabel)}
               onClick={() => {
                 setSelectedTrackId(track.id);
-                setFxPanel({ role: "track", trackId: track.id });
+                openEffects({ role: "track", trackId: track.id });
               }}
             >
               {tl(fxLabel)}
@@ -3216,15 +3368,14 @@ function StudioEditorInner({
     >
       <header
         data-testid="studio-header"
-        className="studio-brand-bar flex min-h-11 flex-wrap items-end gap-x-3 gap-y-1 pb-1"
+        className="studio-brand-bar flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 pb-1"
       >
         <span className="studio-brand">BitRymDym</span>
         <span className="studio-kicker">{tr("studioOnline")}</span>
         <h1 className="min-w-0 flex-1 truncate text-sm leading-none text-[var(--brd-mute)]">
           {tl(doc.project.title)}
         </h1>
-      </header>
-      <div className="flex flex-wrap items-center gap-2 px-0.5 py-1">
+      <div className="flex min-w-0 items-center gap-2 max-sm:w-full">
         <span className="studio-gear-label">BIT</span>
         <button
           type="button"
@@ -3238,6 +3389,7 @@ function StudioEditorInner({
           ▾
         </button>
       </div>
+      </header>
 
       <StudioStepNav
         studioStep={studioStep}
@@ -3270,6 +3422,7 @@ function StudioEditorInner({
       />
 
       <StudioTransportBar
+        simple={recordSimple && !onSampleTab}
         projectId={doc.project.id}
         trackNames={Object.fromEntries(doc.tracks.map((t) => [t.id, t.name]))}
         tipDocumentVersion={doc.project.documentVersion}
@@ -3725,8 +3878,75 @@ function StudioEditorInner({
         />
       ) : (
         <>
-      {recordSimple ? (
-        <div data-testid="studio-record-simple" className="flex flex-col gap-2">
+      {recordSimple ? null : (
+      <StudioEditToolbar
+        timelineMode={timelineMode}
+        recordingLocked={recordingLocked}
+        pending={pending}
+        hasSelectedClip={Boolean(selectedClip)}
+        atTrackCapacity={atTrackCapacity}
+        showUpgradeCta={showUpgradeCta}
+        trackCount={trackCount}
+        maxTracks={maxTracks}
+        premiumTier={trackCapacity.premiumTier}
+        inspectorOverlayOpen={inspectorOverlayOpen}
+        inspectorPanelId={inspectorPanelId}
+        mixerOpen={mixerOpen}
+        mixerPanelId={mixerPanelId}
+        snapPreset={snapPreset}
+        showClipMutations={studioStep !== "record"}
+        onSeekMode={() => setMode("seek")}
+        onEditMode={() => setMode("edit")}
+        onSplit={() => {
+          splitSelectedAtPlayhead();
+        }}
+        onDeleteClip={() => {
+          setInspectorTab("file");
+          setInspectorPreferRecord(false);
+          setConfirmDelete(true);
+          openInspectorOverlay();
+        }}
+        onAddTrack={() => {
+          addTrack();
+        }}
+        onToggleInspector={() => {
+          if (inspectorOverlayOpen) closeInspectorOverlay();
+          else openInspectorOverlay();
+        }}
+        onToggleMixer={toggleMixerSurface}
+        onSnapCycle={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
+        onZoomOut={() => {
+          userAdjustedZoomRef.current = true;
+          zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current));
+        }}
+        onZoomIn={() => {
+          userAdjustedZoomRef.current = true;
+          zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current));
+        }}
+        onFit={() => {
+          userAdjustedZoomRef.current = false;
+          const el = timelineScrollRef.current;
+          const viewport = el?.clientWidth;
+          zoomAtViewportCenter(
+            fitPxPerMs(
+              studioTimelineFitLengthMs(length, doc.clips),
+              typeof viewport === "number" && viewport > 0 ? viewport : 360,
+            ),
+          );
+        }}
+      />
+      )}
+
+      <div className={`flex min-h-0 flex-col gap-3 xl:items-start ${onSampleTab ? "" : "xl:flex-row"}`}>
+        {recordSimple ? (
+        <div
+          data-testid="studio-record-simple"
+          className={`flex flex-col gap-2 ${
+            onSampleTab
+              ? "xl:order-first xl:basis-full"
+              : "xl:order-2 xl:max-h-[max(30rem,calc(100dvh-17rem))] xl:w-[24rem] xl:shrink-0 xl:overflow-y-auto xl:rounded xl:border xl:border-[var(--brd-line)] xl:bg-[var(--brd-paper)] xl:p-3"
+          }`}
+        >
           {inspectorContent}
           {selectedClip && !recordingLocked ? (
             <div className="flex flex-wrap items-center gap-2" data-testid="studio-record-simple-clip">
@@ -3773,66 +3993,8 @@ function StudioEditorInner({
             </div>
           ) : null}
         </div>
-      ) : (
-      <StudioEditToolbar
-        timelineMode={timelineMode}
-        recordingLocked={recordingLocked}
-        pending={pending}
-        hasSelectedClip={Boolean(selectedClip)}
-        atTrackCapacity={atTrackCapacity}
-        showUpgradeCta={showUpgradeCta}
-        trackCount={trackCount}
-        maxTracks={maxTracks}
-        premiumTier={trackCapacity.premiumTier}
-        inspectorOverlayOpen={inspectorOverlayOpen}
-        inspectorPanelId={inspectorPanelId}
-        mixerOpen={mixerOpen}
-        mixerPanelId={mixerPanelId}
-        snapPreset={snapPreset}
-        showClipMutations={studioStep !== "record"}
-        onSeekMode={() => setMode("seek")}
-        onEditMode={() => setMode("edit")}
-        onSplit={() => {
-          splitSelectedAtPlayhead();
-        }}
-        onDeleteClip={() => {
-          setInspectorPreferRecord(false);
-          setConfirmDelete(true);
-          openInspectorOverlay();
-        }}
-        onAddTrack={() => {
-          addTrack();
-        }}
-        onToggleInspector={() => {
-          if (inspectorOverlayOpen) closeInspectorOverlay();
-          else openInspectorOverlay();
-        }}
-        onToggleMixer={toggleMixerSurface}
-        onSnapCycle={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
-        onZoomOut={() => {
-          userAdjustedZoomRef.current = true;
-          zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current));
-        }}
-        onZoomIn={() => {
-          userAdjustedZoomRef.current = true;
-          zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current));
-        }}
-        onFit={() => {
-          userAdjustedZoomRef.current = false;
-          const el = timelineScrollRef.current;
-          const viewport = el?.clientWidth;
-          zoomAtViewportCenter(
-            fitPxPerMs(
-              studioTimelineFitLengthMs(length, doc.clips),
-              typeof viewport === "number" && viewport > 0 ? viewport : 360,
-            ),
-          );
-        }}
-      />
-      )}
-
-      <div className="flex min-h-0 flex-col gap-3 xl:flex-row xl:items-stretch">
-        <div className="min-w-0 flex-1">
+        ) : null}
+        <div className="min-w-0 flex-1 max-xl:w-full xl:order-1 xl:w-full">
           <StudioTimelinePlayheadBound
             tracks={doc.tracks}
             clips={doc.clips}
@@ -3887,6 +4049,7 @@ function StudioEditorInner({
                 }),
               );
               setSelectedClipId(selectClipId(activeSelectedId, id));
+              setInspectorTab("file");
               const clip = doc.clips.find((c) => c.id === id);
               if (clip) setSelectedTrackId(clip.trackId);
               setMode("edit");
@@ -3915,7 +4078,7 @@ function StudioEditorInner({
           data-testid="studio-inspector-desktop"
           data-studio-inspector="desktop"
           data-inspector-context={inspectorContext}
-          className="hidden w-[300px] shrink-0 flex-col gap-1.5 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 shadow-sm xl:flex"
+          className="hidden w-[320px] shrink-0 flex-col gap-1.5 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 shadow-sm xl:order-2 xl:flex xl:max-h-[max(30rem,calc(100dvh-17rem))] 2xl:w-[360px]"
           aria-label={tInspector(inspectorContext)}
         >
           {inspectorDesktopRail ? inspectorContent : null}
@@ -3965,71 +4128,7 @@ function StudioEditorInner({
         open
         onClose={() => setFxPanel(null)}
       >
-        {fxPanel?.role === "master" ? (
-          <StudioFxChainEditor
-            role="master"
-            projectId={doc.project.id}
-            maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}
-            allowSidechain={sidechainForTier(trackCapacity.premiumTier)}
-            chain={doc.project.masterFxChain}
-            getExpectedDocumentVersion={expectedDocumentVersion}
-            enqueuePersistAsync={enqueuePersistAsync}
-            title={tr("masterEfekty")}
-            onClose={() => setFxPanel(null)}
-            onFxPersisted={(masterFxChain, documentVersion) => {
-              recordUndo({
-                undo: { kind: "master_fx", chain: committedDocRef.current.project.masterFxChain },
-                redo: { kind: "master_fx", chain: masterFxChain },
-              });
-              applyPersistedDoc((prev) => ({
-                ...prev,
-                project: {
-                  ...prev.project,
-                  documentVersion,
-                  masterFxChain,
-                },
-              }));
-            }}
-          />
-        ) : null}
-        {fxPanel?.role === "track" ? (
-          <StudioFxChainEditor
-            role="track"
-            projectId={doc.project.id}
-            trackId={fxPanel.trackId}
-            maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}
-            allowSidechain={sidechainForTier(trackCapacity.premiumTier)}
-            chain={
-              doc.tracks.find((t) => t.id === fxPanel.trackId)?.effectsChain ?? {
-                schemaVersion: 1,
-                effects: [],
-              }
-            }
-            getExpectedDocumentVersion={expectedDocumentVersion}
-            enqueuePersistAsync={enqueuePersistAsync}
-            title={tr("efekty", { v0: doc.tracks.find((t) => t.id === fxPanel.trackId)?.name ?? tr("sciezka") })}
-            vocalPresets={{ bpm: doc.project.tempoBpm }}
-            trackClips={doc.clips.filter((c) => c.trackId === fxPanel.trackId)}
-            onClose={() => setFxPanel(null)}
-            onFxPersisted={(effectsChain, documentVersion) => {
-              const trackId = fxPanel.trackId;
-              const beforeChain = committedDocRef.current.tracks.find((t) => t.id === trackId)?.effectsChain;
-              if (beforeChain) {
-                recordUndo({
-                  undo: { kind: "track_fx", trackId, chain: beforeChain },
-                  redo: { kind: "track_fx", trackId, chain: effectsChain },
-                });
-              }
-              applyPersistedDoc((prev) => ({
-                ...prev,
-                project: { ...prev.project, documentVersion },
-                tracks: prev.tracks.map((t) =>
-                  t.id === trackId ? { ...t, effectsChain } : t,
-                ),
-              }));
-            }}
-          />
-        ) : null}
+        {renderFxEditor(fxPanel, false)}
       </StudioFxSheet>
       ) : null}
       <StudioLazyPanelsIdlePrefetch />
