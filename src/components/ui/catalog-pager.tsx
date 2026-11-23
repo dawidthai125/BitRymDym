@@ -1,13 +1,20 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useEffect } from "react";
 
-import { catalogPageHref, pagerItems } from "@/lib/ui/paginate";
+import { CATALOG_PAGE_PARAM, catalogPageHref, pagerItems, parseCatalogPage } from "@/lib/ui/paginate";
 import { cn } from "@/lib/utils";
 
 /** Page links under a catalogue list: real addresses, switched without a reload. */
 export function CatalogPager({ page, pages, query, onPage }: { page: number; pages: number; /** Other query parameters to keep. */ query: string; onPage: (page: number) => void }) {
   const t = useTranslations("common.catalogPager");
+  // The address always names the page on screen (also after a filter went back to page 1).
+  useEffect(() => {
+    if (parseCatalogPage(new URLSearchParams(window.location.search).get(CATALOG_PAGE_PARAM)) === page) return;
+    const search = catalogPageHref(query, page);
+    window.history.replaceState(null, "", `${window.location.pathname}${search === "?" ? "" : search}${window.location.hash}`);
+  }, [page, query]);
   if (pages <= 1) return null;
   const link = (target: number, label: string, aria: string, rel?: string) => (
     <a
@@ -18,7 +25,8 @@ export function CatalogPager({ page, pages, query, onPage }: { page: number; pag
       onClick={(e) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
         e.preventDefault();
-        window.history.replaceState(null, "", catalogPageHref(query, target) === "?" ? window.location.pathname : catalogPageHref(query, target));
+        // A "#sample" in the address belongs to the page being left.
+        if (window.location.hash) window.history.replaceState(null, "", window.location.pathname + window.location.search);
         onPage(target);
       }}
       className={cn(

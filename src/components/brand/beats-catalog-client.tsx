@@ -269,7 +269,7 @@ export function BeatsCatalogClient({
             {filterPanel}
           </aside>
 
-          <div className="min-w-0 scroll-mt-4" ref={listTopRef}>
+          <div className="min-w-0 scroll-mt-28" ref={listTopRef}>
             <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--brd-line)] pb-2">
               <div
                 className="sr-only"

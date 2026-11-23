@@ -282,7 +282,7 @@ export function SampleCatalog({
         </p>
       ) : null}
 
-      <ol ref={listRef} className="scroll-mt-4 divide-y divide-[var(--brd-line)] rounded-xl border border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_60%,transparent)]">
+      <ol ref={listRef} className="scroll-mt-28 divide-y divide-[var(--brd-line)] rounded-xl border border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_60%,transparent)]">
         {paged.rows.map((s) => {
           const isCurrent = current === s.id;
           const total = isCurrent && duration > 0 ? duration : s.durationMs / 1000;
