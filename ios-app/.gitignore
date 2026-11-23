@@ -1,0 +1,8 @@
+node_modules/
+# Projekt Xcode generowany w CI (npx cap add ios + scripts/patch-ios.sh)
+ios/
+build/
+*.ipa
+*.p8
+*.p12
+*.mobileprovision

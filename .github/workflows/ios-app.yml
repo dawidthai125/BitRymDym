@@ -1,0 +1,151 @@
+name: ios-app
+
+# Buduje aplikację iOS BitRymDym (Capacitor, zdalny URL https://www.bitrymdym.pl/?app=ios) z katalogu ios-app/.
+# Projekt Xcode generowany tutaj (npx cap add ios + scripts/patch-ios.sh) – lokalnie nie ma Maca.
+# Podpis: automatyczny Xcode (cloud-managed Apple Distribution) z kluczem App Store Connect API.
+# Wynik: podpisany IPA jako artifact; upload do TestFlight tylko, gdy rekord aplikacji istnieje w App Store Connect.
+# Sekrety: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8. Opis: ios-app/README.md.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ios-app/**"
+      - ".github/workflows/ios-app.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-app-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BUNDLE_ID: pl.bitrymdym.app
+  TEAM_ID: QKKYTLZKYD
+  APP_VERSION: 1.0.0
+  BUILD_NUMBER: ${{ github.run_number }}
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ios-app
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: ios-app/package-lock.json
+
+      # App Store (od 28.04.2026): Xcode 26+ i iOS 26 SDK. Bierzemy najnowszy stabilny Xcode 26.x z obrazu.
+      - name: Wybierz Xcode 26
+        run: |
+          XCODE="$(ls -d /Applications/Xcode_26*.app | grep -viE 'beta|_rc' | sort -V | tail -1)"
+          test -n "$XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i iphoneos
+
+      - name: Klucz App Store Connect API
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          KEY_DIR="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$KEY_DIR"
+          ( umask 077; printf '%s\n' "$ASC_KEY_P8" > "$KEY_DIR/AuthKey_${ASC_KEY_ID}.p8" )
+          echo "ASC_KEY_PATH=$KEY_DIR/AuthKey_${ASC_KEY_ID}.p8" >> "$GITHUB_ENV"
+
+      - name: npm ci
+        run: npm ci --no-audit --no-fund
+
+      - name: Generuj projekt Xcode (cap add ios + patch + sync)
+        run: |
+          npx cap add ios
+          bash scripts/patch-ios.sh
+          npx cap sync ios
+          npx cap --version
+
+      - name: Archive (bez podpisu)
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            | tee "$RUNNER_TEMP/archive.log" | grep -E '^(\*\*|error:|warning: .*deprecated)|ARCHIVE' || true
+          test -d "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app" || { tail -80 "$RUNNER_TEMP/archive.log"; exit 1; }
+
+      - name: Export IPA (podpis automatyczny, klucz API)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            | tee "$RUNNER_TEMP/export.log"
+          mkdir -p ../dist
+          cp "$RUNNER_TEMP"/export/*.ipa "../dist/BitRymDym-${APP_VERSION}-${BUILD_NUMBER}.ipa"
+
+      - name: Sprawdź podpis IPA
+        run: |
+          cd "$RUNNER_TEMP" && rm -rf ipa-check && mkdir ipa-check && cd ipa-check
+          unzip -q "$GITHUB_WORKSPACE/dist/"*.ipa
+          codesign -dvv Payload/App.app 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
+          codesign --verify --deep --strict Payload/App.app && echo "codesign OK"
+          security cms -D -i Payload/App.app/embedded.mobileprovision > profile.plist
+          /usr/libexec/PlistBuddy -c "Print :Name" -c "Print :ExpirationDate" profile.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" -c "Print :CFBundleShortVersionString" -c "Print :CFBundleVersion" -c "Print :DTSDKName" -c "Print :DTXcode" Payload/App.app/Info.plist
+          ls -l "$GITHUB_WORKSPACE/dist"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bitrymdym-ios-${{ env.APP_VERSION }}-${{ env.BUILD_NUMBER }}
+          path: dist/*.ipa
+          if-no-files-found: error
+
+      # Rekordu aplikacji nie da się utworzyć przez API (apps: CREATE niedozwolone) – tworzy go właściciel ręcznie.
+      - name: Czy rekord aplikacji istnieje w App Store Connect
+        id: asc
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          APP_ID="$(node scripts/asc-app-id.mjs "$BUNDLE_ID")"
+          echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
+          if [ -n "$APP_ID" ]; then
+            echo "Rekord aplikacji: $APP_ID – wysyłam do TestFlight."
+          else
+            echo "::warning::Brak rekordu aplikacji $BUNDLE_ID w App Store Connect – IPA tylko jako artifact (patrz ios-app/README.md)."
+          fi
+
+      - name: Upload do TestFlight
+        if: steps.asc.outputs.app_id != ''
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app --type ios \
+            --file "$(ls ../dist/*.ipa | head -1)" \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" \
+            --output-format normal
+
+      - name: Sprzątanie klucza
+        if: always()
+        run: rm -rf "$HOME/.appstoreconnect" "$RUNNER_TEMP/ipa-check"

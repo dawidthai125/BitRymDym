@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BitRymDym</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0E0C0A; color: #F1E7D3;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+    main { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 18px; padding: env(safe-area-inset-top) 28px env(safe-area-inset-bottom); box-sizing: border-box; text-align: center; }
+    img { width: 120px; height: auto; }
+    h1 { font-size: 22px; margin: 0; }
+    p { margin: 0; opacity: .8; line-height: 1.45; max-width: 320px; }
+    button { margin-top: 8px; background: #F2A93B; color: #0E0C0A; border: 0; border-radius: 999px;
+      padding: 14px 28px; font-size: 17px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="logo.png" alt="BitRymDym">
+    <h1>Brak połączenia</h1>
+    <p>BitRymDym potrzebuje internetu. Sprawdź Wi-Fi albo dane komórkowe i spróbuj jeszcze raz.</p>
+    <button id="retry" type="button">Spróbuj ponownie</button>
+  </main>
+  <script>
+    var START_URL = "https://www.bitrymdym.pl/?app=ios";
+    function retry() { window.location.href = START_URL; }
+    document.getElementById("retry").addEventListener("click", retry);
+    window.addEventListener("online", retry);
+  </script>
+</body>
+</html>
