@@ -12,6 +12,7 @@ Format: data, zakres, skrót.
 - Prosty widok: jeden rząd transportu, ścieżka, mikrofon, duży przycisk, reszta zwinięta. Lista mikrofonów zawsze pełna.
 - Stopka: kolumny, ikony profili (`social-icon.tsx`), w projekcie Studia jedna linia; odstęp pod stopką tylko, gdy gra odtwarzacz.
 - Jasny motyw działa na stronie głównej (paleta `--tape-*` w `.tape-surface`), kaseta i film zostają ciemne.
+- `scripts/vercel-ignore-build.sh` porównuje z ostatnim wdrożonym commitem (`VERCEL_GIT_PREVIOUS_SHA`): paczka kilku commitów zakończona samym testem nie pomija już budowania.
 
 ## 2026-11-23 (27) — Ochrona przed przeciążeniem
 

@@ -43,7 +43,18 @@ if [[ "${1:-}" == "--classify" ]]; then
   exit 1
 fi
 
-if ! git rev-parse --verify --quiet HEAD^ >/dev/null; then
+# Compare with the last successful deployment, so that a push of several commits
+# that ends with a test-only commit still builds the app commits before it.
+# A redeploy of the same commit keeps the HEAD^ comparison.
+base="HEAD^"
+previous="${VERCEL_GIT_PREVIOUS_SHA:-}"
+if [[ -n "$previous" && "$previous" != "$(git rev-parse HEAD)" ]]; then
+  if ! git rev-parse --verify --quiet "${previous}^{commit}" >/dev/null; then
+    echo "vercel-ignore: last deployed commit not in the clone, building"
+    exit 1
+  fi
+  base="$previous"
+elif ! git rev-parse --verify --quiet HEAD^ >/dev/null; then
   echo "vercel-ignore: HEAD^ missing, building"
   exit 1
 fi
@@ -52,7 +63,7 @@ fi
 # A failed diff must build: an empty list would otherwise look like "nothing changed".
 diff_file=$(mktemp)
 trap 'rm -f "$diff_file"' EXIT
-if ! git diff -z --name-only HEAD^ HEAD >"$diff_file"; then
+if ! git diff -z --name-only "$base" HEAD >"$diff_file"; then
   echo "vercel-ignore: git diff failed, building"
   exit 1
 fi
