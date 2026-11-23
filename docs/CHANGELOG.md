@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (29) — Hasło: wymogi na ekranie; stopka na telefonie
+
+- Rejestracja, zmiana i reset hasła: lista wymogów odhaczana podczas pisania (`new-password-fields.tsx`), osobny komunikat dla hasła z wycieku (HIBP w Supabase), za prostego, za długiego i takiego samego jak obecne.
+- Formularze konta nie czyszczą pól po błędzie (wcześniej znikało wszystko, także zgoda).
+- Stopka na telefonie: grupy linków zwinięte, rozwijane dotknięciem.
+
 ## 2026-11-23 (28) — Studio: panele, prosty widok; stopka; jasny motyw strony głównej
 
 - Studio (GO Dawida na `studio-editor.tsx`): zakładki inspektora Opcje/Efekty/Plik/Nagraj mają własne panele (`resolveStudioInspectorPanel`, `studio-inspector-file-panel.tsx`); efekty w kolumnie inspektora, poza nią arkusz z boku; jeden `CloseButton` (X) w efektach, inspektorze i mikserze; panel nagrywania w kolumnie z własnym przewijaniem (strona się nie wydłuża); nagłówek w jednym rzędzie.

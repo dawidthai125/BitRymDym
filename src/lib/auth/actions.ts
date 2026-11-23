@@ -20,7 +20,7 @@ import {
   limitSignUp,
 } from "@/lib/auth/attempt-limit";
 import { verifyTurnstile } from "@/lib/auth/turnstile";
-import { validateNewPassword } from "@/lib/auth/password-policy";
+import { mapPasswordProviderError, validateNewPassword } from "@/lib/auth/password-policy";
 import {
   clearPasswordRecoverySeal,
   passwordRecoverySealMatches,
@@ -370,7 +370,10 @@ export async function changePasswordAction(
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) {
-    return { error: "Nie udało się zmienić hasła.", success: false };
+    return {
+      error: mapPasswordProviderError(error.message) ?? "Nie udało się zmienić hasła.",
+      success: false,
+    };
   }
 
   return {
@@ -497,7 +500,10 @@ export async function updatePasswordAfterResetAction(
   try {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
-      return { error: "Nie udało się ustawić nowego hasła.", success: false };
+      return {
+        error: mapPasswordProviderError(error.message) ?? "Nie udało się ustawić nowego hasła.",
+        success: false,
+      };
     }
   } catch {
     return { error: "Nie udało się ustawić nowego hasła.", success: false };

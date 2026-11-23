@@ -1837,6 +1837,18 @@
       "zapisywanie": "Saving…",
       "zapiszKsywke": "Save nickname"
     },
+    "newPasswordFields": {
+      "haslo": "Your password must:",
+      "dlugosc": "have at least {min} characters",
+      "dlugoscMasz": "have at least {min} characters (you have {n})",
+      "zaDlugie": "be shorter: at most 72 characters, accented letters count as two",
+      "nieZListy": "not be common or known from leaks, e.g. password1 (checked when you submit)",
+      "odrzucone": "be different: this one is too simple or was leaked from another site",
+      "takieSame": "be typed the same way twice",
+      "rozne": "be typed the same way twice (they differ now)",
+      "spelnione": "(met)",
+      "niespelnione": "(not met)"
+    },
     "passwordFieldWithToggle": {
       "pr12": "{v0} pr-12",
       "pokaz": "Show",

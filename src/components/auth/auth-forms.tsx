@@ -8,7 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { DELETE_CONFIRM_WORD, resolveLocale } from "@/i18n/config";
 
 import Link from "@/components/ui/app-link";
-import { useActionState } from "react";
+import { startTransition, useActionState, useEffect, useRef, type FormEvent } from "react";
 
 import {
   changePasswordAction,
@@ -22,11 +22,21 @@ import {
 } from "@/lib/auth/actions";
 import { TurnstileWidget } from "@/lib/auth/turnstile-widget";
 import { AUTH_FIELD_CLASS } from "@/components/auth/auth-field-class";
+import { NewPasswordFields } from "@/components/auth/new-password-fields";
 import { PasswordFieldWithToggle } from "@/components/auth/password-field-with-toggle";
 import { SignupConsentCheckbox } from "@/components/legal/consent-checkbox";
 import { Button } from "@/components/ui/button";
 
 const initialState: AuthActionState = { error: null, success: false };
+
+/** Submit without React's automatic form reset: an error must not clear what was typed. */
+function keepValues(action: (data: FormData) => void) {
+  return (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    startTransition(() => action(data));
+  };
+}
 
 export function SignInForm({ next = null }: { next?: string | null } = {}) {
   const tl = useLibText();
@@ -34,7 +44,7 @@ export function SignInForm({ next = null }: { next?: string | null } = {}) {
   const [state, action, pending] = useActionState(signInAction, initialState);
 
   return (
-    <form action={action} className="flex w-full max-w-sm flex-col gap-3">
+    <form action={action} onSubmit={keepValues(action)} className="flex w-full max-w-sm flex-col gap-3">
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <label className="flex flex-col gap-1 text-sm">
         {t("eMail")}
@@ -79,7 +89,7 @@ export function SignUpForm({ next = null }: { next?: string | null } = {}) {
   const [state, action, pending] = useActionState(signUpAction, initialState);
 
   return (
-    <form action={action} className="flex w-full max-w-sm flex-col gap-3">
+    <form action={action} onSubmit={keepValues(action)} className="flex w-full max-w-sm flex-col gap-3">
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <label className="flex flex-col gap-1 text-sm">
         {t("ksywka")}
@@ -103,21 +113,11 @@ export function SignUpForm({ next = null }: { next?: string | null } = {}) {
           className={AUTH_FIELD_CLASS}
         />
       </label>
-      <PasswordFieldWithToggle
-        label={t("haslo")}
+      <NewPasswordFields
         name="password"
-        required
-        minLength={8}
-        autoComplete="new-password"
-      />
-      <PasswordFieldWithToggle
-        label={t("powtorzHaslo")}
-        name="confirmPassword"
-        required
-        minLength={8}
-        autoComplete="new-password"
-        showLabel={t("pokazPowtorzoneHaslo")}
-        hideLabel={t("ukryjPowtorzoneHaslo")}
+        label={t("haslo")}
+        confirmLabel={t("powtorzHaslo")}
+        error={state.error}
       />
       <SignupConsentCheckbox />
       <TurnstileWidget />
@@ -146,8 +146,14 @@ export function ChangePasswordForm() {
     initialState,
   );
 
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state.success) formRef.current?.reset();
+  }, [state]);
+
   return (
-    <form action={action} className="flex w-full flex-col gap-3">
+    <form ref={formRef} action={action} onSubmit={keepValues(action)} className="flex w-full flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
         {t("aktualneHaslo")}
         <input
@@ -158,28 +164,12 @@ export function ChangePasswordForm() {
           className={AUTH_FIELD_CLASS}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        {t("noweHaslo")}
-        <input
-          name="newPassword"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className={AUTH_FIELD_CLASS}
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        {t("potwierdzNoweHaslo")}
-        <input
-          name="confirmPassword"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className={AUTH_FIELD_CLASS}
-        />
-      </label>
+      <NewPasswordFields
+        name="newPassword"
+        label={t("noweHaslo")}
+        confirmLabel={t("potwierdzNoweHaslo")}
+        error={state.error}
+      />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
           {tl(state.error)}
@@ -206,7 +196,7 @@ export function ForgotPasswordForm() {
   );
 
   return (
-    <form action={action} className="flex w-full max-w-sm flex-col gap-3">
+    <form action={action} onSubmit={keepValues(action)} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
         {t("eMail")}
         <input
@@ -260,29 +250,13 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form action={action} className="flex w-full max-w-sm flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        {t("noweHaslo")}
-        <input
-          name="newPassword"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className={AUTH_FIELD_CLASS}
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        {t("potwierdzHaslo")}
-        <input
-          name="confirmPassword"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className={AUTH_FIELD_CLASS}
-        />
-      </label>
+    <form action={action} onSubmit={keepValues(action)} className="flex w-full max-w-sm flex-col gap-3">
+      <NewPasswordFields
+        name="newPassword"
+        label={t("noweHaslo")}
+        confirmLabel={t("potwierdzHaslo")}
+        error={state.error}
+      />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
           {tl(state.error)}

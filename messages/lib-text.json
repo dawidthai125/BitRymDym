@@ -614,8 +614,20 @@
   "en": "Passwords don't match."
  },
  {
-  "src": "Hasło nie spełnia wymagań bezpieczeństwa.",
-  "en": "The password doesn't meet the security requirements."
+  "src": "To hasło jest na liście haseł, które wyciekły z innych serwisów. Wpisz inne, na przykład kilka przypadkowych słów i cyfrę.",
+  "en": "This password is on a list of passwords leaked from other sites. Choose another one, for example a few random words and a digit."
+ },
+ {
+  "src": "Hasło jest za proste. Dodaj wielką literę, cyfrę i znak specjalny.",
+  "en": "The password is too simple. Add a capital letter, a digit and a special character."
+ },
+ {
+  "src": "Hasło jest za długie. Skróć je do 72 znaków (polska litera liczy się jak dwa).",
+  "en": "The password is too long. Shorten it to 72 characters (accented letters count as two)."
+ },
+ {
+  "src": "Nowe hasło musi być inne niż obecne.",
+  "en": "The new password must be different from the current one."
  },
  {
   "src": "Hasło zostało ustawione. Możesz się zalogować.",

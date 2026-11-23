@@ -6,6 +6,8 @@
  * or return an explicit Polish string — never pass through unknown English.
  */
 
+import { mapPasswordProviderError } from "@/lib/auth/password-policy";
+
 export type UserFacingErrorDomain =
   | "auth"
   | "playback"
@@ -116,15 +118,8 @@ export function mapSupabaseAuthError(
     // Fallback copy if a non-signup path surfaces this provider error.
     return "Nie udało się założyć konta. Spróbuj ponownie lub zaloguj się.";
   }
-  if (
-    lower.includes("password") &&
-    (lower.includes("weak") ||
-      lower.includes("least") ||
-      lower.includes("characters") ||
-      lower.includes("short"))
-  ) {
-    return "Hasło nie spełnia wymagań bezpieczeństwa.";
-  }
+  const passwordError = mapPasswordProviderError(message);
+  if (passwordError) return passwordError;
   if (
     lower.includes("invalid email") ||
     lower.includes("unable to validate email") ||

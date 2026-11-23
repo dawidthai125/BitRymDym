@@ -20,6 +20,10 @@ type PasswordFieldWithToggleProps = {
   showLabel?: string;
   /** Accessible name when the value is visible. */
   hideLabel?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
+  describedBy?: string;
+  invalid?: boolean;
 };
 
 /**
@@ -34,6 +38,10 @@ export function PasswordFieldWithToggle({
   minLength,
   showLabel,
   hideLabel,
+  value,
+  onValueChange,
+  describedBy,
+  invalid = false,
 }: PasswordFieldWithToggleProps) {
   const tl = useLibText();
   const t = useTranslations("auth.passwordFieldWithToggle");
@@ -54,6 +62,11 @@ export function PasswordFieldWithToggle({
           required={required}
           minLength={minLength}
           autoComplete={autoComplete}
+          aria-describedby={describedBy}
+          aria-invalid={invalid || undefined}
+          {...(onValueChange
+            ? { value: value ?? "", onChange: (e) => onValueChange(e.target.value) }
+            : {})}
           className={t("pr12", { v0: AUTH_FIELD_CLASS })}
         />
         <Button
