@@ -23,6 +23,7 @@ export function StudioStepNav({
   onRecord,
   onSamples,
   onMix,
+  onMaster,
   onToggleFullView,
   onStepIntent,
 }: {
@@ -37,6 +38,8 @@ export function StudioStepNav({
   onRecord: () => void;
   onSamples: () => void;
   onMix: () => void;
+  /** Set when this very mix already has a master: step 3 opens without a new analysis. */
+  onMaster?: () => void;
   onToggleFullView: () => void;
   /** Hover / focus / touch on the nav: warm the lazily loaded step panels before the click. */
   onStepIntent?: () => void;
@@ -72,7 +75,7 @@ export function StudioStepNav({
             <button
               type="button"
               data-testid="studio-tab-samples"
-              aria-current={onSampleTab ? "page" : undefined}
+              aria-current={onSampleTab ? "step" : undefined}
               disabled={recordingLocked}
               className={
                 onSampleTab
@@ -89,15 +92,16 @@ export function StudioStepNav({
             const active = studioStep === s;
             // Mix opens from the record step (once there is a vocal) and from Mastering. Mastering opens only from the Mix step.
             const goMix = s === "mix" && !active && (studioStep === "master" || canGoMix);
-            if (goMix) {
+            const goMaster = s === "master" && !active && !recordingLocked ? onMaster : undefined;
+            if (goMix || goMaster) {
               return (
                 <li key={s}>
                   <button
                     type="button"
-                    data-testid="studio-tab-mix"
-                    title={tMix("krokMixTytul")}
+                    data-testid={goMaster ? "studio-tab-master" : "studio-tab-mix"}
+                    title={goMaster ? undefined : tMix("krokMixTytul")}
                     className="min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] underline-offset-4 hover:underline"
-                    onClick={onMix}
+                    onClick={goMaster ?? onMix}
                   >
                     {label}
                   </button>
@@ -108,8 +112,8 @@ export function StudioStepNav({
               <li
                 key={s}
                 aria-current={active ? "step" : undefined}
-                title={!active && s === "master" ? tMix("krokMasteringTytul") : undefined}
-                data-testid={!active && s === "master" ? "studio-tab-master-locked" : undefined}
+                title={active ? undefined : s === "master" ? tMix("krokMasteringTytul") : tMix("przejdzDoMixuBrakWokalu")}
+                data-testid={!active && s === "master" ? "studio-tab-master-locked" : !active ? "studio-tab-mix-locked" : undefined}
                 className={
                   active
                     ? "rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
@@ -117,10 +121,10 @@ export function StudioStepNav({
                 }
               >
                 {label}
-                {!active && s === "master" ? (
+                {!active ? (
                   <>
                     <span aria-hidden>🔒</span>
-                    <span className="text-[10px] font-normal tracking-normal">{tMix("krokMasteringZamek")}</span>
+                    <span className="text-[10px] font-normal tracking-normal">{s === "master" ? tMix("krokMasteringZamek") : tMix("krokMixZamek")}</span>
                   </>
                 ) : null}
               </li>
@@ -144,11 +148,11 @@ export function StudioStepNav({
                 {tMix("pelnyWidok")}
               </Button>
             ) : (
-              <span className="max-w-[18rem] text-xs leading-snug text-[var(--brd-mute)]" data-testid="studio-record-simple-only">
+              <span className="max-w-[18rem] text-xs leading-snug text-[var(--brd-mute)] max-sm:hidden" data-testid="studio-record-simple-only">
                 {tMix("widokUproszczonyPlan")}
               </span>
             )}
-            <span id="studio-go-mix-hint" className="text-xs text-[var(--brd-mute)] max-sm:order-last max-sm:basis-full sm:max-w-[22rem]">
+            <span id="studio-go-mix-hint" className={canGoMix ? "text-xs text-[var(--brd-mute)] max-sm:order-last max-sm:basis-full sm:max-w-[22rem]" : "sr-only"}>
               {songReady
                 ? tMix("przejdzDoMixuUtwor")
                 : canGoMix
@@ -162,6 +166,7 @@ export function StudioStepNav({
               data-testid="studio-go-mix"
               aria-describedby="studio-go-mix-hint"
               disabled={!canGoMix}
+              title={canGoMix ? undefined : tMix("przejdzDoMixuBrakWokalu")}
               onClick={onMix}
             >
               {tMix("przejdzDoMixu")} →

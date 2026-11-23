@@ -4,7 +4,8 @@ import { useTranslations } from "next-intl";
 import Link from "@/components/ui/app-link";
 import { useId, useSyncExternalStore } from "react";
 
-import { BrdButton, BrdLink } from "@/components/brand/brd-button";
+import { BrdLink } from "@/components/brand/brd-button";
+import { CloseButton } from "@/components/ui/close-button";
 import { FIRST_STEPS_STORAGE_KEY, type FirstStep } from "@/lib/studio/first-steps";
 
 const listeners = new Set<() => void>();
@@ -37,6 +38,16 @@ function hide() {
   listeners.forEach((l) => l());
 }
 
+function show() {
+  try {
+    window.localStorage.removeItem(FIRST_STEPS_STORAGE_KEY);
+  } catch {
+    /* private mode */
+  }
+  hiddenThisView = false;
+  listeners.forEach((l) => l());
+}
+
 /** Server render: hidden, so users who dismissed it never see a flash. */
 const serverHidden = () => true;
 const clientHidden = () => hiddenThisView || readHidden();
@@ -52,7 +63,20 @@ export function StudioFirstStepsCard({ steps }: { steps: FirstStep[] }) {
   const t = useTranslations("studio.firstSteps");
   const titleId = useId();
   const hidden = useSyncExternalStore(subscribe, clientHidden, serverHidden);
-  if (hidden) return null;
+  const ready = useSyncExternalStore(subscribe, () => true, () => false);
+  if (hidden) {
+    // Hidden by the user (not the server render): a small way back.
+    return ready ? (
+      <button
+        type="button"
+        className="min-h-11 text-sm text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline"
+        data-testid="studio-first-steps-show"
+        onClick={show}
+      >
+        {t("pokazPierwszeKroki")}
+      </button>
+    ) : null;
+  }
 
   return (
     <section
@@ -64,9 +88,7 @@ export function StudioFirstStepsCard({ steps }: { steps: FirstStep[] }) {
         <h2 id={titleId} className="text-lg font-semibold text-[var(--brd-ink)]">
           {t("tytul")}
         </h2>
-        <BrdButton variant="ghost" className="-mr-2 -mt-2 shrink-0 text-sm" onClick={hide} data-testid="studio-first-steps-hide">
-          {t("ukryj")}
-        </BrdButton>
+        <CloseButton label={t("ukryjPierwszeKroki")} className="-mr-2 -mt-2" onClick={hide} data-testid="studio-first-steps-hide" />
       </div>
       <ol className="mt-3 grid gap-3 sm:grid-cols-2">
         {steps.map((step, index) => {

@@ -44,7 +44,16 @@ export type MixAnalysisFailure =
 
 export type MixAnalysisOutcome =
   | { ok: true; metrics: MixMetrics; verdict: MixVerdict; elapsedMs: number }
-  | { ok: false; reason: MixAnalysisFailure };
+  /** `track` names the track whose audio did not load (decode_failed). */
+  | { ok: false; reason: MixAnalysisFailure; track?: string };
+
+/** A clip source could not be loaded: no verdict and no master without that track. */
+export class MixSourceError extends Error {
+  constructor(readonly track: string) {
+    super("decode_failed");
+    this.name = "MixSourceError";
+  }
+}
 
 export function clipSourceKey(clip: Pick<StudioClipDto, "sourceKind" | "sourceTakeId" | "sourceBeatId">): string | null {
   if (clip.sourceKind === "TAKE" && clip.sourceTakeId) return `take:${clip.sourceTakeId}`;
@@ -74,6 +83,11 @@ export function buildMixAnalysisSkeleton(
       muted: c.muted,
       fadeInMs: c.fadeInMs,
       fadeOutMs: c.fadeOutMs,
+      stretchRatio: c.stretchRatio,
+      pitchCents: c.pitchCents,
+      scratchCueMs: c.scratchCueMs,
+      scratchReverse: c.scratchReverse,
+      scratchRate: c.scratchRate,
     });
   }
   const midiEnd = doc.tracks.reduce((max, t) => {
@@ -91,6 +105,7 @@ export function buildMixAnalysisSkeleton(
       id: t.id,
       name: t.name,
       role: t.trackRole,
+      trackType: t.trackType,
       gainDb: t.gainDb,
       pan: t.pan,
       muted: t.muted,
@@ -124,6 +139,47 @@ async function decode(url: string, sampleRate: number, signal: AbortSignal): Pro
     channels.push(new Float32Array(buffer.getChannelData(c)));
   }
   return { channels };
+}
+
+/** Settles at once when `signal` aborts, even if the work itself hangs (a URL that never resolves). */
+function withAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const stop = () => reject(new DOMException("aborted", "AbortError"));
+    if (signal.aborted) return stop();
+    signal.addEventListener("abort", stop, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener("abort", stop));
+  });
+}
+
+/** Every heard source or MixSourceError (strict). Unheard clips (all muted) do not have to load. */
+async function loadSources(
+  doc: StudioProjectDocument,
+  skeleton: ReturnType<typeof buildMixAnalysisSkeleton>,
+  resolveSourceUrl: (clip: StudioClipDto) => Promise<string | null>,
+  signal: AbortSignal,
+  onDone: (fraction: number) => void,
+  strict = true,
+): Promise<Record<string, MixAnalysisSource>> {
+  const sources: Record<string, MixAnalysisSource> = {};
+  const muted = new Set(skeleton.tracks.filter((t) => t.muted).map((t) => t.id));
+  let done = 0;
+  for (const [key, clip] of skeleton.sourceClips) {
+    const load = async () => {
+      const url = await resolveSourceUrl(clip);
+      return url ? decode(url, skeleton.sampleRate, signal) : null;
+    };
+    const decoded = await withAbort(load(), signal).catch((error) => {
+      if (signal.aborted) throw error;
+      return null;
+    });
+    if (decoded) sources[key] = decoded;
+    else if (strict) {
+      const heard = skeleton.clips.find((c) => c.sourceKey === key && !c.muted && !muted.has(c.trackId));
+      if (heard) throw new MixSourceError(doc.tracks.find((t) => t.id === heard.trackId)?.name ?? "");
+    }
+    onDone(++done / skeleton.sourceClips.size);
+  }
+  return sources;
 }
 
 async function runInWorker(
@@ -171,7 +227,7 @@ async function runInWorker(
 
 /**
  * Stage 3 — decode every clip source into a full render input (used by Mastering
- * to render the approved mix as one stereo track). Null when nothing decodes.
+ * to render the approved mix as one stereo track). Null when nothing decodes or it was aborted.
  */
 export async function decodeMixAnalysisInput(params: {
   doc: StudioProjectDocument;
@@ -179,17 +235,16 @@ export async function decodeMixAnalysisInput(params: {
   sampleRate: number;
   signal: AbortSignal;
   onProgress?: (fraction: number) => void;
+  /** Throw MixSourceError when a heard track does not load (default: leave it out, the caller reports it). */
+  strict?: boolean;
 }): Promise<MixAnalysisInput | null> {
   const skeleton = buildMixAnalysisSkeleton(params.doc, params.sampleRate);
-  const sources: Record<string, MixAnalysisSource> = {};
-  let done = 0;
-  for (const [key, clip] of skeleton.sourceClips) {
+  let sources: Record<string, MixAnalysisSource>;
+  try {
+    sources = await loadSources(params.doc, skeleton, params.resolveSourceUrl, params.signal, (f) => params.onProgress?.(f), params.strict === true);
+  } catch (error) {
     if (params.signal.aborted) return null;
-    const url = await params.resolveSourceUrl(clip);
-    const decoded = url ? await decode(url, skeleton.sampleRate, params.signal).catch(() => null) : null;
-    if (decoded) sources[key] = decoded;
-    done++;
-    params.onProgress?.(done / skeleton.sourceClips.size);
+    throw error;
   }
   if (Object.keys(sources).length === 0) return null;
   const { sourceClips: _unused, ...rest } = skeleton;
@@ -222,19 +277,10 @@ export async function runStudioMixAnalysis(params: {
       timedOut = true;
       controller.abort();
     }, params.timeoutMs ?? mixAnalysisTimeoutMs(skeleton.clips));
-    if (skeleton.sourceClips.size === 0) return { ok: false, reason: "no_audio" };
-    const sources: Record<string, MixAnalysisSource> = {};
-    let done = 0;
-    for (const [key, clip] of skeleton.sourceClips) {
-      if (controller.signal.aborted) break;
-      const url = await params.resolveSourceUrl(clip);
-      const decoded = url ? await decode(url, skeleton.sampleRate, controller.signal).catch(() => null) : null;
-      if (decoded) sources[key] = decoded;
-      done++;
-      progress((0.4 * done) / skeleton.sourceClips.size);
-    }
-    if (controller.signal.aborted) return { ok: false, reason: timedOut ? "timeout" : "aborted" };
-    if (Object.keys(sources).length === 0) return { ok: false, reason: "decode_failed" };
+    const hasNotes = skeleton.tracks.some((t) => (t.midi?.notes.length ?? 0) > 0);
+    if (skeleton.sourceClips.size === 0 && !hasNotes) return { ok: false, reason: "no_audio" };
+    const sources = await loadSources(params.doc, skeleton, params.resolveSourceUrl, controller.signal, (f) => progress(0.4 * f));
+    if (Object.keys(sources).length === 0 && !hasNotes) return { ok: false, reason: "decode_failed" };
     const { sourceClips: _unused, ...rest } = skeleton;
     void _unused;
     const metrics = await runInWorker(
@@ -243,8 +289,9 @@ export async function runStudioMixAnalysis(params: {
       controller.signal,
     );
     return { ok: true, metrics, verdict: buildMixVerdict(metrics), elapsedMs: Date.now() - started };
-  } catch {
+  } catch (error) {
     if (controller.signal.aborted) return { ok: false, reason: timedOut ? "timeout" : "aborted" };
+    if (error instanceof MixSourceError) return { ok: false, reason: "decode_failed", track: error.track };
     return { ok: false, reason: "error" };
   } finally {
     if (timer) clearTimeout(timer);

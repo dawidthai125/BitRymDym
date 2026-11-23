@@ -39,7 +39,19 @@ export type StudioStructuralUndoOp =
       sourceTrackId: string;
       duplicateTrackId: string;
       duplicateClipIds: string[];
+      /** "Dubel": the copy also gets its own pan, level, name, role, shift and detune. */
+      double?: StudioTrackDouble;
     };
+
+export type StudioTrackDouble = {
+  pan: number;
+  gainDb: number;
+  trackRole: string;
+  nameSuffix: string;
+  offsetMs: number;
+  /** null when the plan has no clip pitch. */
+  pitchCents: number | null;
+};
 
 export const STUDIO_STRUCTURAL_UNDO_KINDS = new Set<StudioStructuralUndoOp["kind"]>([
   "clip_remove",
@@ -183,6 +195,77 @@ function versionOf(res: StudioApiResponse): number | null {
   return res.ok && typeof res.json.documentVersion === "number" ? res.json.documentVersion : null;
 }
 
+type TrackDoubleState = {
+  version: number;
+  track: StudioTrackDto;
+  clips: StudioClipDto[];
+  partial: boolean;
+};
+
+/** Settings of a fresh duplicate, one CAS call after another. A failed step leaves `partial`. */
+export async function applyTrackDouble(
+  double: StudioTrackDouble,
+  ctx: {
+    base: string;
+    api: StudioApiCall;
+    version: number;
+    track: StudioTrackDto;
+    clips: StudioClipDto[];
+    timelineLengthMs: number;
+  },
+): Promise<TrackDoubleState> {
+  const state: TrackDoubleState = {
+    version: ctx.version,
+    track: ctx.track,
+    clips: [...ctx.clips],
+    partial: false,
+  };
+  const patch = async (path: string, body: Record<string, unknown>) => {
+    const res = await ctx.api("PATCH", `${ctx.base}${path}`, {
+      ...body,
+      expectedDocumentVersion: state.version,
+    });
+    const v = versionOf(res);
+    if (v === null) {
+      state.partial = true;
+      return null;
+    }
+    state.version = v;
+    return res.json;
+  };
+
+  for (const body of [
+    {
+      pan: double.pan,
+      gainDb: double.gainDb,
+      name: `${ctx.track.name} · ${double.nameSuffix}`.slice(0, 80),
+    },
+    { trackRole: double.trackRole },
+  ]) {
+    const json = await patch(`/tracks/${ctx.track.id}`, body);
+    if (json?.track) state.track = json.track as StudioTrackDto;
+  }
+  for (let i = 0; i < state.clips.length; i += 1) {
+    const clip = state.clips[i]!;
+    const maxStart = Math.max(0, ctx.timelineLengthMs - clip.durationMs);
+    const start = Math.min(maxStart, Math.max(0, Math.round(clip.timelineStartMs + double.offsetMs)));
+    const steps: Array<Record<string, unknown>> = [];
+    if (start !== clip.timelineStartMs) steps.push({ op: "move", timelineStartMs: start });
+    if (double.pitchCents !== null) {
+      steps.push({
+        op: "set_playback",
+        stretch: clip.stretchRatio ?? 1,
+        pitchCents: double.pitchCents,
+      });
+    }
+    for (const step of steps) {
+      const json = await patch(`/clips/${clip.id}`, step);
+      if (json?.clip) state.clips[i] = json.clip as StudioClipDto;
+    }
+  }
+  return state;
+}
+
 /** Run one structural op through the existing CAS routes. */
 export async function runStudioStructuralOp(
   op: StudioStructuralUndoOp,
@@ -246,6 +329,11 @@ export async function runStudioStructuralOp(
           rate: clip.scratchRate ?? SCRATCH_DEFAULTS.rate,
         };
         if (JSON.stringify(want) !== JSON.stringify(have)) steps.push({ op: "set_scratch", ...want });
+      }
+      const stretch = src.stretchRatio ?? 1;
+      const pitchCents = src.pitchCents ?? 0;
+      if ((clip.stretchRatio ?? 1) !== stretch || (clip.pitchCents ?? 0) !== pitchCents) {
+        steps.push({ op: "set_playback", stretch, pitchCents });
       }
       for (const step of steps) {
         const r = await call("PATCH", `/clips/${clip.id}`, step);
@@ -418,15 +506,25 @@ export async function runStudioStructuralOp(
         const next = newSorted[i];
         if (next) aliases.push([oldId, next.id]);
       });
+      const doubled = op.double
+        ? await applyTrackDouble(op.double, {
+            base,
+            api: ctx.api,
+            version: v,
+            track,
+            clips: newSorted,
+            timelineLengthMs: ctx.doc.project.timelineLengthMs,
+          })
+        : { version: v, track, clips: newSorted, partial: false };
       return {
         ok: true,
-        documentVersion: v,
-        partial: false,
+        documentVersion: doubled.version,
+        partial: doubled.partial,
         aliases,
         mutate: (d) => ({
           ...d,
-          tracks: sortTracks([...d.tracks, track]),
-          clips: sortClips([...d.clips, ...clips]),
+          tracks: sortTracks([...d.tracks, doubled.track]),
+          clips: sortClips([...d.clips, ...doubled.clips]),
         }),
       };
     }

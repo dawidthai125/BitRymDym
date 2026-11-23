@@ -24,7 +24,7 @@ export async function DELETE(
               ? 503
               : 400;
       return NextResponse.json(
-        { error: result.error, message: sampleUserMessage(result.error), details: result.details },
+        { error: result.error, message: sampleUserMessage(result.error, result.details), details: result.details },
         { status },
       );
     }

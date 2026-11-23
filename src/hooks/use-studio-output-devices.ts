@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import {
   mapMediaDevicesToAudioOutputs,
@@ -11,6 +11,7 @@ import {
   writeStoredAudioOutputDeviceId,
   type StudioAudioOutputOption,
 } from "@/lib/studio/studio-output-devices";
+import { studioDeviceIdsHidden } from "@/lib/studio/studio-input-devices";
 
 function browserLocalStorage(): Storage | null {
   if (typeof window === "undefined") return null;
@@ -19,6 +20,16 @@ function browserLocalStorage(): Storage | null {
   } catch {
     return null;
   }
+}
+
+const subscribeNever = () => () => undefined;
+
+function readPickerEnabled(): boolean {
+  return shouldShowStudioOutputPicker({
+    supportsSetSinkId: supportsAudioContextSetSinkId(),
+    isMobileLike: window.matchMedia("(max-width: 768px), (pointer: coarse)")
+      .matches,
+  });
 }
 
 /**
@@ -31,21 +42,14 @@ export function useStudioOutputDevices(options?: {
   const onSinkIdChange = options?.onSinkIdChange;
   const selectedRef = useRef<string | null>(null);
 
-  const [pickerEnabled] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const supports = supportsAudioContextSetSinkId();
-    const mobile = window.matchMedia(
-      "(max-width: 768px), (pointer: coarse)",
-    ).matches;
-    return shouldShowStudioOutputPicker({
-      supportsSetSinkId: supports,
-      isMobileLike: mobile,
-    });
-  });
-  const [outputs, setOutputs] = useState<StudioAudioOutputOption[]>([]);
-  const [selectedDeviceId, setSelectedDeviceIdState] = useState<string | null>(
-    () => readStoredAudioOutputDeviceId(browserLocalStorage()),
+  // false on the server and in the first client render (hydration), then the real answer.
+  const pickerEnabled = useSyncExternalStore(
+    subscribeNever,
+    readPickerEnabled,
+    () => false,
   );
+  const [outputs, setOutputs] = useState<StudioAudioOutputOption[]>([]);
+  const [selectedDeviceId, setSelectedDeviceIdState] = useState<string | null>(null);
   const [softNotice, setSoftNotice] = useState<string | null>(null);
   const appliedInitialSinkRef = useRef(false);
 
@@ -65,6 +69,8 @@ export function useStudioOutputDevices(options?: {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const mapped = mapMediaDevicesToAudioOutputs(devices);
       setOutputs(mapped);
+      // No permission yet: the browser hides every id, so nothing can be judged as missing.
+      if (studioDeviceIdsHidden(mapped)) return mapped;
       const resolved = resolveSelectedOutputDeviceId({
         preferredId: selectedRef.current,
         outputs: mapped,
@@ -85,7 +91,9 @@ export function useStudioOutputDevices(options?: {
   useEffect(() => {
     if (!pickerEnabled) return;
     let cancelled = false;
+    selectedRef.current = readStoredAudioOutputDeviceId(browserLocalStorage());
     void (async () => {
+      if (selectedRef.current) setSelectedDeviceIdState(selectedRef.current);
       await refreshOutputs();
       if (cancelled || appliedInitialSinkRef.current) return;
       appliedInitialSinkRef.current = true;

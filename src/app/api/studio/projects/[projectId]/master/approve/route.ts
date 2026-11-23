@@ -15,7 +15,7 @@ export async function POST(request: Request, context: RouteContext) {
     const auth = await requireUser();
     const body = await readJson(request);
     const r = await approveStudioMaster({ ownerId: auth.userId, projectId, jobId: String(body?.jobId ?? "") });
-    return NextResponse.json({ success: r.ok }, { status: r.ok ? 200 : 409 });
+    return NextResponse.json({ success: r.ok, ...r }, { status: r.ok ? 200 : 409 });
   } catch (error) {
     return masterErrorResponse(error);
   }

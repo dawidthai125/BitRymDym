@@ -13,6 +13,7 @@ import path from "node:path";
 import { Worker } from "node:worker_threads";
 
 import { mixHasRapPocket } from "@/lib/studio/mix-analysis/rap-pocket";
+import { isSidechainKey, mixHasTrackSidechain, SidechainBus, trackSidechain } from "@/lib/studio/mix-analysis/track-sidechain";
 import type { MixAnalysisInput } from "@/lib/studio/mix-analysis/render";
 
 import type { Stereo } from "./dsp";
@@ -62,7 +63,27 @@ export async function renderMixStereoParallel(
   const file = path.join(__dirname, "render-track-thread.ts");
   const workers = Array.from({ length: n }, () => new Worker(file));
   // Heaviest tracks first (LPT): the last thread to finish isn't stuck with a reverb track.
-  const order = src.tracks.map((t, i) => ({ i, cost: trackCost(src, t.id) })).sort((a, b) => b.cost - a.cost || a.i - b.i).map((x) => x.i);
+  // With a sidechain the key (BEAT) tracks go first: a ducked track waits for them, so few buffers are held.
+  const sidechained = !opts.raw && mixHasTrackSidechain(src.tracks);
+  const bus = sidechained ? new SidechainBus(src.sampleRate, len) : null;
+  const keyRank = (i: number) => (sidechained && isSidechainKey(src.tracks[i]!) ? 0 : 1);
+  let keysLeft = sidechained ? src.tracks.filter(isSidechainKey).length : 0;
+  const held: { seq: number; left: Float32Array; right: Float32Array }[] = [];
+  const order = src.tracks
+    .map((t, i) => ({ i, cost: trackCost(src, t.id) }))
+    .sort((a, b) => keyRank(a.i) - keyRank(b.i) || b.cost - a.cost || a.i - b.i)
+    .map((x) => x.i);
+  const add = (r: { left: Float32Array; right: Float32Array }) => {
+    for (let i = 0; i < len; i++) {
+      left[i] += r.left[i];
+      right[i] += r.right[i];
+    }
+  };
+  const duckAndAdd = (r: { seq: number; left: Float32Array; right: Float32Array }) => {
+    const params = bus ? trackSidechain(src.tracks[r.seq]!) : null;
+    if (bus && params) bus.duck(r.left, r.right, params);
+    add(r);
+  };
   const totalCost = order.reduce((n2, i) => n2 + trackCost(src, src.tracks[i]!.id), 0) || 1;
   let doneCost = 0;
   try {
@@ -85,11 +106,16 @@ export async function renderMixStereoParallel(
           if (!r.ok) return reject(new Error(r.error));
           doneCost += trackCost(src, src.tracks[r.seq]!.id);
           onProgress?.(doneCost / totalCost);
-          if (r.use) {
-            for (let i = 0; i < len; i++) {
-              left[i] += r.left[i];
-              right[i] += r.right[i];
+          if (bus && isSidechainKey(src.tracks[r.seq]!)) {
+            keysLeft--;
+            if (r.use) {
+              bus.addKey(r.left, r.right);
+              add(r);
             }
+            if (keysLeft === 0) for (const h of held.splice(0)) duckAndAdd(h);
+          } else if (r.use) {
+            if (bus && keysLeft > 0 && trackSidechain(src.tracks[r.seq]!)) held.push(r);
+            else duckAndAdd(r);
           }
           feed(w);
         });

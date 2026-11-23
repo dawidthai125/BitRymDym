@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { measureBeatWindow } from "@/lib/studio/analysis/measure";
+import { measureBeat, measureBeatWindow } from "@/lib/studio/analysis/measure";
 import { countsTowardCleanupQuota } from "@/lib/studio/cleanup/cleanup-core";
 import { decideNoiseSave } from "@/lib/studio/noise-decision";
 import { decideSeparatorWorker, demucsStemFile, separateObjectKey, separateSourceExt } from "@/lib/studio/separate/separate-worker-env";
@@ -45,6 +45,12 @@ describe("remaining studio gaps", () => {
     const hot = measureBeatWindow(sine(1000, 0.1, 1), 44100);
     expect(hot.suggestion).toBe("hot");
     expect(hot.lowerByDb).toBe(6);
+    // A quiet 25 s intro before the loud part is not a "quiet beat".
+    const intro = new Float32Array(44100 * 26);
+    intro.set(sine(1000, 0.5, 0.5), 44100 * 25);
+    intro.set(sine(1000, 0.4, 0.9), Math.floor(44100 * 25.5));
+    expect(measureBeat(intro, 44100).peakDb).toBeGreaterThan(-2);
+    expect(measureBeatWindow(intro, 44100).peakDb).toBeLessThan(-60);
     const quiet = measureBeatWindow(sine(1000, 0.1, 0.01), 44100);
     expect(quiet.suggestion).toBe("quiet");
     const mud = measureBeatWindow(sine(100, 0.1, 0.2), 44100);

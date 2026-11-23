@@ -231,7 +231,7 @@ describe("P6.7.3 mobile + architecture guards", () => {
     expect(editor).toMatch(/sm:sticky sm:top-2/);
     expect(editor).toMatch(/data-testid="studio-mobile-mini-transport"/);
     // Visual Parity V2 — Play label may include noBeat “wymaga bitu” suffix.
-    expect(editor).toMatch(/aria-label=\{noBeat \? "Odtwórz — wymaga bitu" : "Odtwórz"\}/);
+    expect(editor).toMatch(/aria-label=\{noAudio \? "Odtwórz — wymaga bitu" : "Odtwórz"\}/);
   });
 
   it("mobile layout guard: min-w-0, min-h-11 fade targets, safe-area", () => {

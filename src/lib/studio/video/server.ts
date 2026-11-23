@@ -90,14 +90,17 @@ export async function getYoutubeVideoState(p: { ownerId: string; projectId: stri
   const cover = await projectBeatCover(admin, p.ownerId, proj.beatId);
   const rendering = youtubeVideoRenderEnabled();
   if (!allowed) return { available: true as const, rendering, allowed, approved: !!approved, cover: cover ? { url: cover.url } : null, title: proj.title, latest: null, usage: null };
-  const { data, error } = await admin.from("studio_master_jobs").select("id").eq("owner_id", p.ownerId).eq("project_id", p.projectId)
+  const { data, error } = await admin.from("studio_master_jobs").select("id, source_artifact_id").eq("owner_id", p.ownerId).eq("project_id", p.projectId)
     .eq("kind", "youtube_video").order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (missing(error)) return { available: false as const };
   check(error);
   const latest = data ? await getStudioJob({ ownerId: p.ownerId, projectId: p.projectId, jobId: String((data as { id: string }).id) }) : null;
   return {
     available: true as const, rendering, allowed, approved: !!approved, cover: cover ? { url: cover.url } : null, title: proj.title,
-    latest, usage: {
+    latest,
+    /** The latest video was made from a master that is no longer the approved one. */
+    stale: !!data && (data as { source_artifact_id?: string | null }).source_artifact_id !== approved?.id,
+    usage: {
       used: await usedThisWeek(admin, p.ownerId),
       perWeek: youtubeVideosPerWeekForTier(p.tier),
       credits: await youtubeCredits(admin, p.ownerId),
@@ -106,7 +109,7 @@ export async function getYoutubeVideoState(p: { ownerId: string; projectId: stri
   };
 }
 
-type Deny = { ok: false; error: YoutubeVideoDeny | "image_rejected"; message?: string };
+type Deny = { ok: false; error: YoutubeVideoDeny | "image_rejected" | "in_progress"; message?: string; jobId?: string };
 
 /** Own graphic: Gold only → checks + content filter → stored (JPEG) under the owner + project. */
 export async function uploadYoutubeImage(p: { ownerId: string; projectId: string; tier: PremiumTier; bytes: Uint8Array }):
@@ -154,6 +157,11 @@ export async function commitYoutubeVideo(p: {
   }
   const d = decideYoutubeVideo({ tier: p.tier, approved: !!approved?.result_object_key, source: p.source, hasImage: !!image });
   if (!d.allowed) return { ok: false, error: d.reason };
+  // One video at a time per project: a second click (other tab, reload) must not spend a second one.
+  const { data: active, error: activeError } = await admin.from("studio_master_jobs").select("id").eq("owner_id", p.ownerId).eq("project_id", p.projectId)
+    .eq("kind", "youtube_video").in("status", ["queued", "running"]).limit(1).maybeSingle();
+  check(activeError);
+  if (active) return { ok: false, error: "in_progress", jobId: String((active as { id: string }).id) };
   const spec: YoutubeVideoSpec = { source: p.source as YoutubeVideoSpec["source"], image: image!, title: cleanVideoText(p.title), artist: cleanVideoText(p.artist) };
   const jobId = randomUUID();
   const { data, error } = await admin.rpc("enqueue_studio_youtube_video", {

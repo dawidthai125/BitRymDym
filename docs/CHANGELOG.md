@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (30) — Studio: naprawy po audycie (odtwarzanie, zapis, nagrywanie, mix, master, układ)
+
+- Odtwarzanie: adres bitu pobierany tylko przy Play, jedno ładowanie na klip, głośność > 0 dB, tempo/ton po przewinięciu, koniec na końcu utworu.
+- Zapis: nieudane zmiany ponawiane, odrzucone cofane z komunikatem, brak zamrożeń i fałszywych 409; Cofnij obejmuje tempo, ton, nuty i automatykę.
+- Nagrywanie: jeden przepływ (pasek, panel, klawisze), Stop i Anuluj naprawdę zatrzymują, nagranie nie ginie po zmianie zakładki, kroku i szerokości okna; „Zastąp” dodaje przed usunięciem.
+- Mix: koniec pętli renderów, „Ścisz bit pod wokal” ścisza bit, analiza/master/stemy uwzględniają tempo, ton, odwrócenie i duck (`MIX_CACHE_TAG` r2, wymaga wdrożenia workera).
+- Master i eksport: wznowienie po odświeżeniu, zerwana sieć to nie porażka, okno eksportu, pobranie WAV przez właściciela (4 odblokowania/7 dni, 45 dni na projekt), „Sam mastering” bez bitu, nieznany błąd serwera = 500 z polskim tekstem.
+- Układ: okna z X, pułapką fokusu i blokadą przewijania, menu ścieżki, zmiana nazwy ścieżki i projektu, znaczniki na linijce, oś od początku i prawdziwa długość utworu.
+- Migracje (zastosowane 23.11): `20261123200000_studio_copies_keep_clip_playback.sql`, `20261123210000_master_only_stem_without_beat.sql`.
 ## 2026-11-23 (29) — Hasło: wymogi na ekranie; stopka na telefonie
 
 - Rejestracja, zmiana i reset hasła: lista wymogów odhaczana podczas pisania (`new-password-fields.tsx`), osobny komunikat dla hasła z wycieku (HIBP w Supabase), za prostego, za długiego i takiego samego jak obecne.

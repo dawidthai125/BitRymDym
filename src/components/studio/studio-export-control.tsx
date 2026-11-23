@@ -6,14 +6,20 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
+import { StoreAppHidden } from "@/components/site/store-app-context";
+import { useStudioScrollLock } from "@/components/studio/use-studio-dialog";
 import { Button } from "@/components/ui/button";
+import { CloseButton } from "@/components/ui/close-button";
+import { PREMIUM_UNLOCK_CREDITS_PER_PERIOD } from "@/config/premium-export-policy";
 import {
   getStudioDialogFocusable,
   handleStudioDialogKeydown,
 } from "@/lib/studio/studio-dialog-focus";
 import {
   SFM_PHONE_MP3_QUALITY,
+  STUDIO_EXPORT_PLAN_MESSAGE,
   STUDIO_EXPORT_POLL_INTERVAL_MS,
   STUDIO_EXPORT_POLL_MAX_ATTEMPTS,
   createSfmQualityEncodeIdempotencyKey,
@@ -41,7 +47,19 @@ export type StudioExportControlProps = {
   projectId: string;
   getExpectedDocumentVersion: () => number;
   disabled?: boolean;
+  /** The plan has no WAV export: the button shows a lock before the click (the server decides anyway). */
+  planLocked?: boolean;
 };
+
+/** The request limiter and gateway errors answer with plain text: an empty object, never a thrown parse error. */
+async function readJsonSafe(res: Response): Promise<Record<string, unknown>> {
+  try {
+    const json: unknown = await res.json();
+    return json && typeof json === "object" ? (json as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
 
 /**
  * Stage I — Studio Final Mix WAV export control + optional SFM MP3 (existing encode API).
@@ -54,6 +72,7 @@ export function StudioExportControl({
   projectId,
   getExpectedDocumentVersion,
   disabled,
+  planLocked = false,
 }: StudioExportControlProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioExportControl");
@@ -67,6 +86,10 @@ export function StudioExportControl({
   const [downloading, setDownloading] = useState(false);
   const [preparingMp3, setPreparingMp3] = useState(false);
   const [recovering, setRecovering] = useState(false);
+  /** From the server when the window opens. */
+  const [serverPlanLocked, setServerPlanLocked] = useState(false);
+  const locked = planLocked || serverPlanLocked;
+  useStudioScrollLock(open);
 
   const titleId = useId();
   const descriptionId = useId();
@@ -198,9 +221,10 @@ export function StudioExportControl({
           return;
         }
         if (gen !== recoverGenRef.current) return;
-        const json = (await res.json()) as Parameters<
+        const json = (await readJsonSafe(res)) as Parameters<
           typeof mapStudioExportLatestHttpResult
         >[0]["json"];
+        if (typeof json.canExport === "boolean") setServerPlanLocked(!json.canExport);
         if (gen !== recoverGenRef.current) return;
         const mapped = mapStudioExportLatestHttpResult({
           httpStatus: res.status,
@@ -265,11 +289,15 @@ export function StudioExportControl({
           },
         );
       } catch {
-        setPhase("UNAVAILABLE");
-        setMessage(t("nieUdaloSieOdczytac"));
+        // The job goes on without us: keep asking instead of calling it unavailable.
+        setMessage(t("polaczeniePrzerwane"));
         return;
       }
-      const json = (await res.json()) as Parameters<
+      if (res.status === 429 || res.status >= 500) {
+        setMessage(t("polaczeniePrzerwane"));
+        return;
+      }
+      const json = (await readJsonSafe(res)) as Parameters<
         typeof mapStudioExportHttpResult
       >[0]["json"];
       const mapped = mapStudioExportHttpResult({
@@ -298,8 +326,8 @@ export function StudioExportControl({
         return;
       }
       setPhase(mapped.phase);
-      // A finished export drops any earlier "status not available yet" note.
-      if (mapped.phase === "SUCCEEDED") setMessage(null);
+      // A good answer drops any earlier "no connection" / "status not available yet" note.
+      if (mapped.phase !== "FAILED") setMessage(null);
       if (mapped.phase === "FAILED") {
         // I.17 — typed empty-session vs generic FAILED; never show raw API text.
         setMessage(
@@ -405,7 +433,7 @@ export function StudioExportControl({
       return;
     }
 
-    const json = (await res.json()) as Parameters<
+    const json = (await readJsonSafe(res)) as Parameters<
       typeof mapStudioExportHttpResult
     >[0]["json"];
     const mapped = mapStudioExportHttpResult({
@@ -413,6 +441,7 @@ export function StudioExportControl({
       json,
     });
     if (!mapped.ok) {
+      if (mapped.code === "PLAN") setServerPlanLocked(true);
       applyMappedFailure(mapped);
       return;
     }
@@ -471,16 +500,6 @@ export function StudioExportControl({
   async function resolveDownloadUrl(): Promise<string> {
     if (!artifactId) throw new Error(t("pobieranieNiedostepne"));
     return resolveArtifactDownloadUrl(artifactId, sfmVersionId);
-  }
-
-  async function readJsonSafe(
-    res: Response,
-  ): Promise<Record<string, unknown>> {
-    try {
-      return (await res.json()) as Record<string, unknown>;
-    } catch {
-      return {};
-    }
   }
 
   /**
@@ -628,7 +647,7 @@ export function StudioExportControl({
           "download",
         ),
       );
-      setPhase("UNAVAILABLE");
+      // The file is still ready: the button stays, so the download can be tried again.
     } finally {
       setDownloading(false);
     }
@@ -665,11 +684,11 @@ export function StudioExportControl({
     setDownloading(true);
     setPreparingMp3(Boolean(sfmVersionId));
     setMessage(null);
+    let url = "";
+    let doneMsg = "";
     try {
-      let url: string;
       let fileName: string;
       let mime: string;
-      let doneMsg: string;
       if (sfmVersionId) {
         const mp3 = await ensureSfmPhoneMp3Artifact();
         url = await resolveArtifactDownloadUrl(mp3.artifactId, mp3.versionId);
@@ -704,6 +723,12 @@ export function StudioExportControl({
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
+      // The browser forgot the click while the file was loading (iOS): download it instead of failing.
+      if (e instanceof DOMException && e.name === "NotAllowedError" && url) {
+        window.location.assign(url);
+        setMessage(doneMsg);
+        return;
+      }
       setMessage(
         toUserFacingError(
           e instanceof Error ? e.message : t("pobieranieNiedostepne"),
@@ -732,6 +757,7 @@ export function StudioExportControl({
   const unavailableWithTrackedJob = phase === "UNAVAILABLE" && Boolean(jobId);
   const canStart =
     !disabled &&
+    !locked &&
     !submitting &&
     !recovering &&
     !unavailableWithTrackedJob &&
@@ -742,6 +768,7 @@ export function StudioExportControl({
       phase === "SUCCEEDED");
   const canForceNewDespiteUnavailable =
     !disabled &&
+    !locked &&
     !submitting &&
     !recovering &&
     unavailableWithTrackedJob;
@@ -777,13 +804,16 @@ export function StudioExportControl({
           setRecovering(next);
         }}
       >
+        {locked ? <span aria-hidden className="mr-1">🔒</span> : null}
         {t("eksportujWav")}
       </button>
-      {open ? (
-        <>
+      {open && typeof document !== "undefined" ? createPortal(
+        // Outside the transport bar: its colours are inverted and it clips whatever sticks out of it.
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" data-testid="studio-export-layer">
           <button
             type="button"
-            className="fixed inset-0 z-20 cursor-default bg-transparent"
+            tabIndex={-1}
+            className="absolute inset-0 cursor-default bg-black/60"
             aria-label={t("zamknijEksport")}
             data-testid="studio-export-backdrop"
             onClick={closeDialog}
@@ -791,7 +821,7 @@ export function StudioExportControl({
           <div
             ref={dialogRef}
             id="studio-export-dialog"
-            className="absolute right-0 z-30 mt-2 w-[min(100vw-2rem,20rem)] space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3 text-[var(--brd-ink)] shadow-sm outline-none"
+            className="relative z-10 max-h-[min(92dvh,40rem)] w-full space-y-3 overflow-y-auto rounded-t-xl border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-[var(--brd-ink)] shadow-lg outline-none sm:w-[min(100vw-2rem,28rem)] sm:rounded-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -799,20 +829,37 @@ export function StudioExportControl({
             tabIndex={-1}
             data-testid="studio-export-dialog"
           >
-            <div className="space-y-1">
-              <p id={titleId} className="text-xs font-semibold">
+            <div className="flex items-start justify-between gap-2">
+              <p id={titleId} className="brd-ui pt-3 text-sm font-semibold">
                 {t("eksportCalegoDokumentu")}
               </p>
+              <CloseButton label={t("zamknijEksport")} data-testid="studio-export-close" onClick={closeDialog} />
+            </div>
+            <div className="space-y-1">
               <p
                 id={descriptionId}
-                className="text-[11px] text-[var(--brd-ink)]/75"
+                className="text-xs text-[var(--brd-ink-soft)]"
               >
                 {t("formatWavOperacjaW")}
               </p>
-              <p className="text-[11px] text-[var(--brd-ink)]/75">
+              <p className="text-xs text-[var(--brd-ink-soft)]">
                 {t("stemyHint")}
               </p>
+              {locked ? null : (
+                <p className="text-xs text-[var(--brd-ink-soft)]" data-testid="studio-export-unlock-note">
+                  {t("odblokowanieInfo", { n: PREMIUM_UNLOCK_CREDITS_PER_PERIOD.GOLD })}
+                </p>
+              )}
             </div>
+
+            {locked ? (
+              <p role="note" data-testid="studio-export-plan-lock" className="border-l-4 border-l-[var(--brd-amber)] px-3 py-2 text-sm">
+                🔒 {tl(STUDIO_EXPORT_PLAN_MESSAGE)}{" "}
+                <StoreAppHidden>
+                  <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a>
+                </StoreAppHidden>
+              </p>
+            ) : null}
 
             <p
               className="text-xs"
@@ -825,9 +872,9 @@ export function StudioExportControl({
                 : studioExportPhaseLabel(phase))}
             </p>
 
-            {message ? (
+            {message && !(locked && message === STUDIO_EXPORT_PLAN_MESSAGE) ? (
               <p
-                className="text-xs text-[var(--brd-warn)]"
+                className="text-sm text-[var(--brd-rec)]"
                 role="alert"
                 data-testid="studio-export-message"
               >
@@ -837,11 +884,11 @@ export function StudioExportControl({
 
             <div className="flex flex-wrap gap-2">
               {/* Primary start — hidden when UNAVAILABLE already tracks a jobId (I.45AW). */}
-              {!unavailableWithTrackedJob ? (
+              {!unavailableWithTrackedJob && !locked ? (
                 <Button
                   type="button"
                   size="sm"
-                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  className="min-h-11 h-auto max-w-full whitespace-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
                   disabled={!canStart}
                   data-testid="studio-export-start"
                   onClick={() =>
@@ -867,7 +914,7 @@ export function StudioExportControl({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  className="min-h-11 h-auto max-w-full whitespace-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
                   data-testid="studio-export-refresh"
                   onClick={() => void onRefreshStatus()}
                 >
@@ -880,7 +927,7 @@ export function StudioExportControl({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  className="min-h-11 h-auto max-w-full whitespace-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
                   data-testid="studio-export-force-new"
                   onClick={() =>
                     void enqueueExport({ forceNewAttempt: true })
@@ -895,7 +942,7 @@ export function StudioExportControl({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  className="min-h-11 h-auto max-w-full whitespace-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
                   disabled={busyDownload}
                   data-testid="studio-export-download"
                   onClick={() => void onDownload()}
@@ -913,7 +960,7 @@ export function StudioExportControl({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  className="min-h-11 h-auto max-w-full whitespace-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
                   disabled={busyDownload}
                   data-testid="studio-export-mp3"
                   onClick={() => void onDownloadMp3()}
@@ -927,7 +974,7 @@ export function StudioExportControl({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  className="min-h-11 h-auto max-w-full whitespace-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
                   disabled={busyDownload}
                   data-testid="studio-export-phone"
                   onClick={() => void onSharePhone()}
@@ -941,20 +988,10 @@ export function StudioExportControl({
                   )}
                 </Button>
               ) : null}
-
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
-                data-testid="studio-export-close"
-                onClick={closeDialog}
-              >
-                {t("zamknij")}
-              </Button>
             </div>
           </div>
-        </>
+        </div>,
+        document.body,
       ) : null}
     </div>
   );

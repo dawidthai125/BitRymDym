@@ -5,7 +5,7 @@
  * audit 2026-11-21). Clip geometry SSOT stays integer ms; zoom is view only.
  */
 
-import { Fragment, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 import { useTranslations } from "next-intl";
 
 import { StudioClipLaneItem } from "@/components/studio/studio-clip-lane";
@@ -16,14 +16,19 @@ import {
   type StudioTimelineMode,
 } from "@/components/studio/studio-daw-layout";
 import { StudioLiveTakeRegion } from "@/components/studio/studio-live-take-region";
-import { useStudioTransportPlayhead } from "@/components/studio/studio-transport-provider";
+import {
+  useStudioTransportControls,
+  useStudioTransportPlayhead,
+} from "@/components/studio/studio-transport-provider";
 import { useLibText } from "@/i18n/use-lib-text";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
+import { studioMarkerKindLabelPl, type StudioMarkerDto } from "@/lib/studio/studio-markers-state";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import {
   buildTimelineRulerTicks,
   clampPxPerMs,
   contentWidthPx,
+  followPlayheadScrollLeft,
   msToPx,
   pxToMs,
   zoomInPxPerMs,
@@ -33,6 +38,7 @@ import {
 import type { StudioClipDto, StudioTrackDto } from "@/lib/studio/studio-types";
 
 type TimelineMode = StudioTimelineMode;
+const NO_MARKERS: readonly StudioMarkerDto[] = [];
 
 /** Phone layout (< sm): each track header sits right above its own lane (audit 2026-11-21). */
 const PHONE_QUERY = "(max-width: 639px)";
@@ -42,19 +48,202 @@ function subscribePhone(onChange: () => void): () => void {
   return () => mq.removeEventListener("change", onChange);
 }
 
-/** Phase 7.1.5.1 — playhead leaf for timeline. */
-export function StudioTimelinePlayheadBound(
-  props: Omit<Parameters<typeof StudioTimeline>[0], "playheadMs">,
-) {
+/** Ruler ticks are drawn only around the visible part (a full-zoom ruler has thousands). */
+const RULER_CHUNK_PX = 800;
+/** The user scrolled the lanes by hand: leave the view alone for a moment. */
+const FOLLOW_PAUSE_MS = 2000;
+
+const TimelineRuler = memo(function TimelineRuler({
+  timelineLengthMs,
+  density,
+  scrollRef,
+  markers,
+  loop,
+  onSeek,
+}: {
+  timelineLengthMs: number;
+  density: number;
+  scrollRef: RefObject<HTMLDivElement | null>;
+  markers: readonly StudioMarkerDto[];
+  /** Loop range drawn on the ruler, null = off. */
+  loop: { startMs: number; endMs: number } | null;
+  onSeek: (ms: number) => void;
+}) {
+  const tl = useLibText();
+  const ticks = useMemo(
+    () => buildTimelineRulerTicks({ timelineLengthMs, pxPerMs: density }),
+    [timelineLengthMs, density],
+  );
+  const [view, setView] = useState({ from: -RULER_CHUNK_PX, to: 4 * RULER_CHUNK_PX });
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const sync = () => {
+      const from = (Math.floor(el.scrollLeft / RULER_CHUNK_PX) - 1) * RULER_CHUNK_PX;
+      const to = from + (Math.ceil(el.clientWidth / RULER_CHUNK_PX) + 3) * RULER_CHUNK_PX;
+      setView((prev) => (prev.from === from && prev.to === to ? prev : { from, to }));
+    };
+    sync();
+    el.addEventListener("scroll", sync, { passive: true });
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", sync);
+      ro.disconnect();
+    };
+  }, [scrollRef]);
+
+  return (
+    <div
+      className="sticky top-0 z-[3] h-7 border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_92%,var(--brd-ink)_8%)]"
+      data-testid="studio-timeline-ruler"
+    >
+      {loop && loop.endMs > loop.startMs ? (
+        <span
+          className="pointer-events-none absolute inset-y-0 border-x border-[var(--brd-amber)] bg-[color-mix(in_srgb,var(--brd-amber)_22%,transparent)]"
+          style={{ left: msToPx(loop.startMs, density), width: msToPx(loop.endMs - loop.startMs, density) }}
+          data-testid="studio-timeline-loop"
+          aria-hidden
+        />
+      ) : null}
+      {ticks.map((tick) => {
+        const x = msToPx(tick.ms, density);
+        if (x < view.from || x > view.to) return null;
+        return (
+          <span
+            key={tick.ms}
+            className={`absolute top-0 text-[10px] ${tick.ms === 0 ? "pl-0.5" : "-translate-x-1/2"} ${
+              tick.major ? "text-[var(--brd-ink)]" : "text-[var(--brd-mute)]"
+            }`}
+            style={{ left: x }}
+          >
+            {tl(tick.major ? formatStudioTimeMs(tick.ms) : "·")}
+          </span>
+        );
+      })}
+      {markers.map((marker) => (
+        <button
+          key={marker.id}
+          type="button"
+          data-testid="studio-timeline-marker"
+          data-marker-kind={marker.kind}
+          className="absolute bottom-0 max-w-28 truncate border-l-2 border-[var(--brd-amber)] bg-[var(--brd-paper)] px-1 text-[10px] leading-[13px] font-semibold text-[var(--brd-amber)]"
+          style={{ left: msToPx(marker.positionMs, density) }}
+          title={`${tl(studioMarkerKindLabelPl(marker.kind))} · ${formatStudioTimeMs(marker.positionMs)}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSeek(marker.positionMs);
+          }}
+        >
+          {tl(studioMarkerKindLabelPl(marker.kind))}
+        </button>
+      ))}
+    </div>
+  );
+});
+
+/** Playhead leaf: the only part of the lanes that renders on every playback frame. */
+function TimelinePlayhead({
+  density,
+  scrollRef,
+}: {
+  density: number;
+  scrollRef: RefObject<HTMLDivElement | null>;
+}) {
   const { playheadMs } = useStudioTransportPlayhead();
-  return <StudioTimeline {...props} playheadMs={playheadMs} />;
+  const { phase } = useStudioTransportControls();
+  const userScrollAtRef = useRef(0);
+  const x = msToPx(playheadMs, density);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onUser = () => {
+      userScrollAtRef.current = Date.now();
+    };
+    el.addEventListener("wheel", onUser, { passive: true });
+    el.addEventListener("pointerdown", onUser, { passive: true });
+    el.addEventListener("touchmove", onUser, { passive: true });
+    return () => {
+      el.removeEventListener("wheel", onUser);
+      el.removeEventListener("pointerdown", onUser);
+      el.removeEventListener("touchmove", onUser);
+    };
+  }, [scrollRef]);
+
+  // Play / record just started: go to the playhead now, whatever was scrolled before.
+  useEffect(() => {
+    if (phase === "playing") userScrollAtRef.current = 0;
+  }, [phase]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || phase !== "playing") return;
+    if (Date.now() - userScrollAtRef.current < FOLLOW_PAUSE_MS) return;
+    const next = followPlayheadScrollLeft({
+      playheadPx: x,
+      scrollLeft: el.scrollLeft,
+      viewportPx: el.clientWidth,
+    });
+    if (next != null) el.scrollLeft = next;
+  }, [x, phase, scrollRef]);
+
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute bottom-0 top-6 z-[4] w-0.5 bg-[var(--brd-audio-playhead)] will-change-transform"
+        style={{ transform: `translateX(${x}px)` }}
+        data-testid="studio-playhead"
+        data-playhead-ms={playheadMs}
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute top-6 z-[4] size-2 -translate-x-1/2 rounded-full bg-[var(--brd-rec)]"
+        style={{ left: x }}
+        aria-hidden
+      />
+    </>
+  );
+}
+
+/** Position slider leaf. Range = the song, not the 6:00 canvas. */
+function TimelinePositionSlider({
+  songEndMs,
+  disabled,
+  onSeek,
+}: {
+  songEndMs: number;
+  disabled: boolean;
+  onSeek: (ms: number) => void;
+}) {
+  const tl = useLibText();
+  const tr = useTranslations("studio.studioEditor");
+  const { playheadMs } = useStudioTransportPlayhead();
+  return (
+    <label className="block shrink-0 border-t border-[var(--brd-line)] px-2 py-1.5 text-xs text-[var(--brd-mute)]">
+      {tr("playhead2")}{" "}{tl(formatStudioTimeMs(playheadMs))}
+      <input
+        type="range"
+        min={0}
+        max={Math.max(songEndMs, playheadMs)}
+        step={1}
+        value={playheadMs}
+        disabled={disabled}
+        className="mt-1 h-11 w-full"
+        aria-label={tr("pozycjaPlayhead")}
+        aria-valuetext={formatStudioTimeMs(playheadMs)}
+        onChange={(e) => onSeek(Math.round(Number(e.target.value)))}
+      />
+    </label>
+  );
 }
 
 export function StudioTimeline({
   tracks,
   clips,
   timelineLengthMs,
-  playheadMs,
+  songEndMs,
+  markers = NO_MARKERS,
   pxPerMs,
   mode,
   interactionLocked = false,
@@ -67,12 +256,16 @@ export function StudioTimeline({
   snapConfig,
   onSeek,
   onSelectClip,
+  onClearSelection,
   onCommitClipGeometry,
 }: {
   tracks: StudioTrackDto[];
   clips: StudioClipDto[];
   timelineLengthMs: number;
-  playheadMs: number;
+  /** End of the last clip / note: range of the position slider. */
+  songEndMs: number;
+  /** Verse / hook labels on the ruler. */
+  markers?: readonly StudioMarkerDto[];
   pxPerMs: number;
   mode: TimelineMode;
   interactionLocked?: boolean;
@@ -86,6 +279,8 @@ export function StudioTimeline({
   snapConfig: StudioSnapConfig;
   onSeek: (ms: number) => void;
   onSelectClip: (clipId: string) => void;
+  /** Click on an empty part of a lane. */
+  onClearSelection?: () => void;
   onCommitClipGeometry: (
     clipId: string,
     commit: Exclude<StudioClipEditCommit, { kind: "noop" }>,
@@ -93,7 +288,13 @@ export function StudioTimeline({
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
-  const seekEnabled = mode === "seek" && !interactionLocked;
+  const { loopEnabled, loopStartMs, loopEndMs } = useStudioTransportControls();
+  const loop = useMemo(
+    () => (loopEnabled ? { startMs: loopStartMs, endMs: loopEndMs } : null),
+    [loopEnabled, loopStartMs, loopEndMs],
+  );
+  /** The ruler and empty lanes always move the playhead, also while a clip is being edited. */
+  const seekEnabled = !interactionLocked;
   const density = clampPxPerMs(pxPerMs);
   const headerScrollRef = useRef<HTMLDivElement | null>(null);
   const laneScrollRef = useRef<HTMLDivElement | null>(null);
@@ -103,11 +304,12 @@ export function StudioTimeline({
     viewportWidthPx:
       laneViewportWidthPx > 0 ? laneViewportWidthPx : undefined,
   });
-  const playheadX = msToPx(playheadMs, density);
-  const ticks = buildTimelineRulerTicks({
-    timelineLengthMs,
-    pxPerMs: density,
+  // Stable handler for the memoized ruler: the editor passes a new onSeek on every render.
+  const seekRef = useRef(onSeek);
+  useEffect(() => {
+    seekRef.current = onSeek;
   });
+  const [seekStable] = useState(() => (ms: number) => seekRef.current(ms));
 
   function assignLaneScrollEl(el: HTMLDivElement | null) {
     laneScrollRef.current = el;
@@ -168,9 +370,14 @@ export function StudioTimeline({
 
   function seekFromPointer(event: {
     currentTarget: HTMLDivElement;
+    target: EventTarget;
     clientX: number;
   }) {
     if (!seekEnabled) return;
+    const target = event.target instanceof Element ? event.target : null;
+    // Clips and the automation editor handle their own clicks.
+    if (target?.closest("[data-studio-clip], [data-testid='studio-automation-lane']")) return;
+    if (target?.closest("[data-studio-clip-lane]")) onClearSelection?.();
     const rect = event.currentTarget.getBoundingClientRect();
     const localX = Math.min(
       widthPx,
@@ -235,34 +442,17 @@ export function StudioTimeline({
               }`}
               style={{ width: widthPx, minWidth: "100%" }}
               onClick={seekFromPointer}
-              role="slider"
-              aria-label={
-                tl(interactionLocked
-                  ? tr("osCzasuTrybNagrywania")
-                  : seekEnabled
-                    ? tr("osCzasuKliknijAby")
-                    : tr("osCzasuTrybEdycji"))
-              }
-              aria-valuemin={0}
-              aria-valuemax={timelineLengthMs}
-              aria-valuenow={playheadMs}
-              aria-disabled={interactionLocked || undefined}
+              role="group"
+              aria-label={tl(interactionLocked ? tr("osCzasuTrybNagrywania") : tr("osCzasuKliknijAby"))}
             >
-              <div className="sticky top-0 z-[3] h-7 border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_92%,var(--brd-ink)_8%)]">
-                {ticks.map((tick) => (
-                  <span
-                    key={tick.ms}
-                    className={`absolute top-0 -translate-x-1/2 text-[10px] ${
-                      tick.major
-                        ? "text-[var(--brd-ink)]"
-                        : "text-[var(--brd-mute)]"
-                    }`}
-                    style={{ left: msToPx(tick.ms, density) }}
-                  >
-                    {tl(tick.major ? formatStudioTimeMs(tick.ms) : "·")}
-                  </span>
-                ))}
-              </div>
+              <TimelineRuler
+                timelineLengthMs={timelineLengthMs}
+                density={density}
+                scrollRef={laneScrollRef}
+                markers={markers}
+                loop={loop}
+                onSeek={seekStable}
+              />
               {tracks.map((track, index) => {
                 const trackClips = clips.filter((c) => c.trackId === track.id);
                 return (
@@ -295,7 +485,7 @@ export function StudioTimeline({
                       </span>
                     ) : null}
                     {trackClips.length === 0 && track.trackType !== "BEAT" ? (
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--brd-mute)]">
+                      <span className="studio-lane-empty pointer-events-none sticky left-3 inline-flex h-full items-center text-xs text-[var(--brd-mute)]">
                         {tr("pustaSciezka")}
                       </span>
                     ) : null}
@@ -326,36 +516,12 @@ export function StudioTimeline({
                   </Fragment>
                 );
               })}
-              <div
-                className="pointer-events-none absolute bottom-0 top-6 z-[4] w-0.5 bg-[var(--brd-audio-playhead)] will-change-transform"
-                style={{ transform: `translateX(${playheadX}px)` }}
-                data-testid="studio-playhead"
-                data-playhead-ms={playheadMs}
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute top-6 z-[4] size-2 -translate-x-1/2 rounded-full bg-[var(--brd-rec)]"
-                style={{ left: playheadX }}
-                aria-hidden
-              />
+              <TimelinePlayhead density={density} scrollRef={laneScrollRef} />
             </div>
           </div>
         </div>
       </div>
-      <label className="block shrink-0 border-t border-[var(--brd-line)] px-2 py-1.5 text-xs text-[var(--brd-mute)]">
-        {tr("playhead2")}{" "}{tl(formatStudioTimeMs(playheadMs))}
-        <input
-          type="range"
-          min={0}
-          max={timelineLengthMs}
-          step={1}
-          value={playheadMs}
-          disabled={interactionLocked}
-          className="mt-1 h-11 w-full"
-          aria-label={tr("pozycjaPlayhead")}
-          onChange={(e) => onSeek(Math.round(Number(e.target.value)))}
-        />
-      </label>
+      <TimelinePositionSlider songEndMs={songEndMs} disabled={interactionLocked} onSeek={onSeek} />
     </div>
   );
 }

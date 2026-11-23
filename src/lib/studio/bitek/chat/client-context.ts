@@ -26,7 +26,7 @@ export function bitekTuneLevelOf(chain: StudioFxChainV1 | null | undefined): Bit
   return tuneStyleOf(fx.params) === "natural" ? 1 : 2;
 }
 
-export type BitekMixFixResult = { ok: true } | { ok: false; reason: "no-analysis" | "empty" | "failed" };
+export type BitekMixFixResult = { ok: true } | { ok: false; reason: "no-analysis" | "empty" | "limit" | "failed" };
 
 export type BitekClientContext = {
   /** Sent to the server (no DB ids, no user data). */

@@ -1,5 +1,7 @@
 "use client";
 
+import { useStudioDialog } from "@/components/studio/use-studio-dialog";
+import Link from "@/components/ui/app-link";
 import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useLibText } from "@/i18n/use-lib-text";
 
@@ -19,7 +21,7 @@ import {
 
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
 import { BrdCheckbox } from "@/components/brand/brd-checkbox";
-import { STUDIO_PROJECT_LIST_PAGE_SIZE } from "@/config/studio";
+import { STUDIO_PROJECT_LIST_PAGE_SIZE, STUDIO_TITLE_MAX_LENGTH } from "@/config/studio";
 import { requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
 import type { StudioProjectSummary } from "@/lib/studio/studio-types";
 import { formatStudioListDurationMs } from "@/lib/studio/studio-time";
@@ -53,14 +55,32 @@ function formatProjectDateTime(iso: string, tag = "pl-PL"): string {
   }
 }
 
+/** Text written by our API. Anything else (network, broken JSON) is English browser text. */
+class ProjectApiError extends Error {}
+
+function projectErrorText(error: unknown, fallback: string): string {
+  return error instanceof ProjectApiError ? error.message : fallback;
+}
+
 async function deleteProjectRequest(projectId: string, fallbackError: string): Promise<void> {
   const res = await fetch(`/api/studio/projects/${projectId}`, {
     method: "DELETE",
   });
-  const json = (await res.json()) as { success?: boolean; error?: string };
+  const json = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
   if (!res.ok || !json.success) {
-    throw new Error(json.error ?? fallbackError);
+    throw new ProjectApiError(json.error ?? fallbackError);
   }
+}
+
+async function renameProjectRequest(projectId: string, title: string, fallbackError: string): Promise<string> {
+  const res = await fetch(`/api/studio/projects/${projectId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  const json = (await res.json().catch(() => ({}))) as { title?: string; error?: string };
+  if (!res.ok || !json.title) throw new ProjectApiError(json.error ?? fallbackError);
+  return json.title;
 }
 
 function DeleteConfirmDialog({
@@ -84,21 +104,33 @@ function DeleteConfirmDialog({
   const t = useTranslations("studio.studioProjectList");
   const titleId = useId();
   const descId = useId();
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const cancelRef = useRef<HTMLButtonElement | null>(null);
+  useStudioDialog({
+    open: true,
+    onClose: () => {
+      if (!pending) onClose();
+    },
+    panelRef,
+    initialFocusRef: cancelRef,
+  });
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
       role="presentation"
       onClick={() => {
         if (!pending) onClose();
       }}
     >
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="w-full max-w-md border border-[var(--brd-line)] bg-[var(--brd-paper)] p-5 shadow-lg"
+        tabIndex={-1}
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto border border-[var(--brd-line)] bg-[var(--brd-paper)] p-5 shadow-lg outline-none"
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id={titleId} className="text-lg font-semibold text-[var(--brd-ink)]">
@@ -114,6 +146,7 @@ function DeleteConfirmDialog({
         ) : null}
         <div className="mt-6 flex flex-wrap justify-end gap-2">
           <BrdButton
+            ref={cancelRef}
             type="button"
             variant="ghost"
             onClick={onClose}
@@ -140,12 +173,14 @@ function ProjectRow({
   selected,
   pending,
   onToggle,
+  onRename,
   onRequestDelete,
 }: {
   project: StudioProjectSummary;
   selected: boolean;
   pending: boolean;
   onToggle: (projectId: string) => void;
+  onRename: (projectId: string, title: string) => void;
   onRequestDelete: (project: StudioProjectSummary) => void;
 }) {
   const tl = useLibText();
@@ -157,6 +192,7 @@ function ProjectRow({
     project.beatId ? t("zBitem") : null,
   ].filter(Boolean);
   const checkboxId = `studio-project-select-${project.id}`;
+  const [draftTitle, setDraftTitle] = useState<string | null>(null);
 
   return (
     <li className="studio-project-row border-b border-[var(--brd-line)] last:border-b-0">
@@ -173,12 +209,44 @@ function ProjectRow({
 
         <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:pt-2">
           <div className="min-w-0 flex-1 space-y-2 pt-2 sm:pt-0">
-            <label
-              htmlFor={checkboxId}
-              className="block cursor-pointer truncate text-lg font-semibold tracking-tight text-[var(--brd-ink)] sm:text-xl"
-            >
-              {tl(project.title)}
-            </label>
+            {draftTitle === null ? (
+              <Link
+                href={`/studio/p/${project.id}`}
+                className="block min-h-11 truncate text-lg leading-[2.75rem] font-semibold tracking-tight text-[var(--brd-ink)] underline-offset-4 hover:underline sm:min-h-0 sm:text-xl sm:leading-normal"
+              >
+                {tl(project.title)}
+              </Link>
+            ) : (
+              <form
+                className="flex flex-wrap items-center gap-2"
+                data-testid="studio-project-rename"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const next = draftTitle.trim();
+                  setDraftTitle(null);
+                  if (next && next !== project.title) onRename(project.id, next);
+                }}
+              >
+                <input
+                  type="text"
+                  autoFocus
+                  value={draftTitle}
+                  maxLength={STUDIO_TITLE_MAX_LENGTH}
+                  aria-label={t("nazwaProjektu")}
+                  className="min-h-11 min-w-0 flex-1 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 text-base text-[var(--brd-ink)]"
+                  onChange={(event) => setDraftTitle(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setDraftTitle(null);
+                  }}
+                />
+                <BrdButton type="submit" variant="secondary">
+                  {t("zapisz")}
+                </BrdButton>
+                <BrdButton type="button" variant="ghost" onClick={() => setDraftTitle(null)}>
+                  {t("anuluj")}
+                </BrdButton>
+              </form>
+            )}
             <dl className="space-y-0.5 text-sm text-[var(--brd-ink-soft)]">
               <div className="flex flex-wrap gap-x-2">
                 <dt className="sr-only">{t("utworzono")}</dt>
@@ -209,6 +277,15 @@ function ProjectRow({
             >
               {t("otworz")}
             </BrdLink>
+            <BrdButton
+              type="button"
+              variant="ghost"
+              disabled={pending || draftTitle !== null}
+              onClick={() => setDraftTitle(project.title)}
+              aria-label={t("zmienNazweProjektu", { v0: project.title })}
+            >
+              {t("zmienNazwe")}
+            </BrdButton>
             <BrdButton
               type="button"
               variant="danger"
@@ -243,6 +320,12 @@ export function StudioProjectList({
   const router = useRouter();
   const selectAllId = useId();
   const [projects, setProjects] = useState(initialProjects);
+  // Fresh server list (router.refresh after a project was made from a recorder session).
+  const [seenInitial, setSeenInitial] = useState(initialProjects);
+  if (initialProjects !== seenInitial) {
+    setSeenInitial(initialProjects);
+    setProjects(initialProjects);
+  }
   const [error, setError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -286,7 +369,7 @@ export function StudioProjectList({
   // Page past the end (projects deleted): clamp while rendering, not in an effect.
   if (page !== safePage) setPage(safePage);
 
-  async function createProject(beatId?: string | null) {
+  async function createProject(beatId?: string | null, options?: { replace?: boolean }) {
     setError(null);
     const res = await fetch("/api/studio/projects", {
       method: "POST",
@@ -297,7 +380,7 @@ export function StudioProjectList({
         beatId: beatId ?? null,
       }),
     });
-    const json = (await res.json()) as {
+    const json = (await res.json().catch(() => ({}))) as {
       success?: boolean;
       document?: { project: StudioProjectSummary };
       error?: string;
@@ -308,12 +391,27 @@ export function StudioProjectList({
       return;
     }
     if (!res.ok || !json.document) {
-      throw new Error(json.error ?? t("nieUdaloSieUtworzyc"));
+      throw new ProjectApiError(json.error ?? t("nieUdaloSieUtworzyc"));
     }
     setProjects((prev) => [json.document!.project, ...prev]);
     setPage(0);
     requestPlanUsageRefresh();
-    router.push(`/studio/p/${json.document.project.id}`);
+    // From /studio?beatId=…: replace that entry, otherwise Back creates another project.
+    if (options?.replace) router.replace(`/studio/p/${json.document.project.id}`);
+    else router.push(`/studio/p/${json.document.project.id}`);
+  }
+
+  function renameProject(projectId: string, title: string) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        const saved = await renameProjectRequest(projectId, title, t("nieUdaloSieZmienicNazwy"));
+        setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, title: saved } : p)));
+        router.refresh();
+      } catch (e) {
+        setError(projectErrorText(e, t("nieUdaloSieZmienicNazwy")));
+      }
+    });
   }
 
   function toggleOne(projectId: string) {
@@ -368,12 +466,11 @@ export function StudioProjectList({
           return next;
         });
         setDeleteTarget(null);
+        setError(null);
         requestPlanUsageRefresh();
         router.refresh();
       } catch (e) {
-        setDeleteError(
-          e instanceof Error ? e.message : t("nieUdaloSieUsunac"),
-        );
+        setDeleteError(projectErrorText(e, t("nieUdaloSieUsunac")));
       }
     });
   }
@@ -395,6 +492,7 @@ export function StudioProjectList({
         setProjects((prev) => prev.filter((p) => !deleted.includes(p.id)));
         setSelectedIds(new Set());
         setBulkDeleteOpen(false);
+        setError(null);
         requestPlanUsageRefresh();
         router.refresh();
       } catch (e) {
@@ -407,10 +505,7 @@ export function StudioProjectList({
             return next;
           });
         }
-        const base =
-          e instanceof Error
-            ? e.message
-            : t("nieUdaloSieUsunac2");
+        const base = projectErrorText(e, t("nieUdaloSieUsunac2"));
         setDeleteError(
           failedTitle ? `„${failedTitle}”: ${base}` : base,
         );
@@ -423,9 +518,9 @@ export function StudioProjectList({
     seededRef.current = true;
     startTransition(async () => {
       try {
-        await createProject(seedBeatId);
+        await createProject(seedBeatId, { replace: true });
       } catch (e) {
-        setError(e instanceof Error ? e.message : t("bladTworzeniaProjektu"));
+        setError(projectErrorText(e, t("bladTworzeniaProjektu")));
       }
     });
     // intentionally once per seedBeatId mount
@@ -455,9 +550,7 @@ export function StudioProjectList({
               try {
                 await createProject(null);
               } catch (e) {
-                setError(
-                  e instanceof Error ? e.message : t("bladTworzeniaProjektu"),
-                );
+                setError(projectErrorText(e, t("bladTworzeniaProjektu")));
               }
             })
           }
@@ -517,15 +610,13 @@ export function StudioProjectList({
             type="button"
             variant="primary"
             className="mt-6"
-            disabled={pending}
+            disabled={pending || atLimit}
             onClick={() =>
               startTransition(async () => {
                 try {
                   await createProject(null);
                 } catch (e) {
-                  setError(
-                    e instanceof Error ? e.message : t("bladTworzeniaProjektu"),
-                  );
+                  setError(projectErrorText(e, t("bladTworzeniaProjektu")));
                 }
               })
             }
@@ -599,6 +690,7 @@ export function StudioProjectList({
                 selected={selectedIds.has(project.id)}
                 pending={pending}
                 onToggle={toggleOne}
+                onRename={renameProject}
                 onRequestDelete={requestDelete}
               />
             ))}
@@ -606,7 +698,7 @@ export function StudioProjectList({
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-mono text-xs tabular-nums text-[var(--brd-mute)]">
-              {rangeStart}–{rangeEnd} z {projects.length}
+              {t("zakres", { v0: rangeStart, v1: rangeEnd, v2: projects.length })}
               {tl(pageCount > 1 ? t("strona", { v0: safePage + 1, v1: pageCount }) : "")}
             </p>
             {pageCount > 1 ? (

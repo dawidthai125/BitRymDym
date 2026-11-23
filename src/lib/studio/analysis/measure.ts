@@ -42,33 +42,49 @@ function centroidHzOf(samples: Float32Array, sampleRate: number): number {
   return magSum > 0 ? weighted / magSum : 0;
 }
 
-/** Peak, RMS and centroid over at most 20 seconds. Does not change the file. */
-export function measureBeatWindow(samples: Float32Array, sampleRate: number): BeatMeasure {
-  const features = audioFeaturesFromPcm(samples, sampleRate);
-  const centroidHz = centroidHzOf(samples, sampleRate);
-  const count = Math.min(samples.length, Math.max(0, Math.floor(sampleRate * 20)));
+function verdictOf(peakDb: number, rmsDb: number, centroidHz: number): BeatMeasure {
+  let suggestion: BeatMeasure["suggestion"] = "ok";
+  let lowerByDb = 0;
+  if (peakDb > -1) {
+    suggestion = "hot";
+    lowerByDb = Math.max(1, Math.round(peakDb + 6));
+  } else if (peakDb < -18 || rmsDb < -24) {
+    suggestion = "quiet";
+  } else if (centroidHz > 0 && centroidHz < 800) {
+    suggestion = "mud";
+  }
+  return { peakDb, rmsDb, centroidHz, suggestion, lowerByDb };
+}
+
+function rmsDbOf(samples: Float32Array, count: number): number {
   let sum = 0;
   for (let i = 0; i < count; i += 1) {
     const s = samples[i] ?? 0;
     sum += s * s;
   }
   const rms = count > 0 ? Math.sqrt(sum / count) : 0;
-  const rmsDb = rms > 1e-8 ? 20 * Math.log10(rms) : -120;
-  let suggestion: BeatMeasure["suggestion"] = "ok";
-  let lowerByDb = 0;
-  if (features.peakDb > -1) {
-    suggestion = "hot";
-    lowerByDb = Math.max(1, Math.round(features.peakDb + 6));
-  } else if (features.peakDb < -18 || rmsDb < -24) {
-    suggestion = "quiet";
-  } else if (centroidHz > 0 && centroidHz < 800) {
-    suggestion = "mud";
+  return rms > 1e-8 ? 20 * Math.log10(rms) : -120;
+}
+
+/** The whole file (a quiet intro is not a quiet beat). Centroid from the 20 s around the loudest moment. */
+export function measureBeat(samples: Float32Array, sampleRate: number): BeatMeasure {
+  let peak = 0;
+  let at = 0;
+  for (let i = 0; i < samples.length; i += 1) {
+    const a = Math.abs(samples[i] ?? 0);
+    if (a > peak) {
+      peak = a;
+      at = i;
+    }
   }
-  return {
-    peakDb: features.peakDb,
-    rmsDb,
-    centroidHz,
-    suggestion,
-    lowerByDb,
-  };
+  const peakDb = peak > 1e-8 ? 20 * Math.log10(Math.min(1, peak)) : -120;
+  const from = Math.max(0, at - Math.floor(sampleRate * 10));
+  return verdictOf(peakDb, rmsDbOf(samples, samples.length), centroidHzOf(samples.subarray(from), sampleRate));
+}
+
+/** Peak, RMS and centroid over at most 20 seconds. Does not change the file. */
+export function measureBeatWindow(samples: Float32Array, sampleRate: number): BeatMeasure {
+  const { peakDb } = audioFeaturesFromPcm(samples, sampleRate);
+  const count = Math.min(samples.length, Math.max(0, Math.floor(sampleRate * 20)));
+  return verdictOf(peakDb, rmsDbOf(samples, count), centroidHzOf(samples, sampleRate));
 }

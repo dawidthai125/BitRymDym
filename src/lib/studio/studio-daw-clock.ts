@@ -177,9 +177,24 @@ export function findOverlappingTakeClip<
   clips: readonly T[],
   params: { trackId: string; startMs: number; durationMs: number },
 ): T | undefined {
+  return findOverlappingTakeClips(clips, params)[0];
+}
+
+/** Every TAKE clip of the track that shares time with the range, in list order. */
+export function findOverlappingTakeClips<
+  T extends {
+    trackId: string;
+    sourceKind: string;
+    timelineStartMs: number;
+    durationMs: number;
+  },
+>(
+  clips: readonly T[],
+  params: { trackId: string; startMs: number; durationMs: number },
+): T[] {
   const start = params.startMs;
   const end = params.startMs + params.durationMs;
-  return clips.find((clip) => {
+  return clips.filter((clip) => {
     if (clip.trackId !== params.trackId || clip.sourceKind !== "TAKE") {
       return false;
     }

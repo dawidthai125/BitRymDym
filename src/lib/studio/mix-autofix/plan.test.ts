@@ -370,6 +370,52 @@ describe("Stage 2 autofix — parameters from metrics", () => {
   });
 });
 
+describe("plan limits are told honestly (M20) and light pitch uses the beat key (M49)", () => {
+  const full = (): StudioFxChainV1 => {
+    let chain = emptyStudioFxChain();
+    for (const type of ["highpass", "eq", "compressor", "deesser"] as const) chain = upsertFx(chain, type, (p) => p, nextId)!;
+    return chain;
+  };
+  const plan = (chain: StudioFxChainV1, fixes: Parameters<typeof planMixAutofix>[0]["fixes"]) => {
+    const metrics = badMetrics();
+    return planMixAutofix({ doc: doc(120, [track(LEAD, "Wokal", "lead_vocal", { effectsChain: chain }), track(BEAT, "Bit", "beat")]), metrics, verdict: buildMixVerdict(metrics), fixes, createId: nextId, maxEffects: 4, allowSidechain: false });
+  };
+
+  it("does not announce reverb / echo the plan dropped, and says the plan is full", () => {
+    const out = plan(full(), ["space"]);
+    expect(out.ops).toHaveLength(0);
+    expect(out.limited).toBe(true);
+    expect(out.notes.map((n) => n.key)).toEqual(["planLimit"]);
+  });
+
+  it("keeps notes for effects that did fit", () => {
+    const out = plan(emptyStudioFxChain(), MIX_AUTOFIX_ALL);
+    const lead = out.ops.find((o) => o.op === "set_track_fx" && o.trackId === LEAD);
+    if (lead?.op !== "set_track_fx") throw new Error("no chain");
+    const types = lead.effectsChain.effects.map((e) => e.type);
+    expect(types).toHaveLength(4);
+    const keys = out.notes.map((n) => n.key);
+    expect(keys.includes("spaceLead")).toBe(types.includes("delay") && types.includes("reverb"));
+    expect(keys.includes("compLead")).toBe(types.includes("compressor"));
+    expect(keys).toContain("planLimit");
+  });
+
+  it("a new light tune takes the beat key; an existing one keeps the user's key", () => {
+    const metrics = badMetrics();
+    const run = (chain: StudioFxChainV1) => {
+      const out = planMixAutofix({ doc: doc(120, [track(LEAD, "Wokal", "lead_vocal", { effectsChain: chain })]), metrics, verdict: buildMixVerdict(metrics), fixes: ["tune"], createId: nextId, beatKey: { keyRoot: 9, scale: 1 } });
+      const op = out.ops.find((o) => o.op === "set_track_fx");
+      if (op?.op !== "set_track_fx") throw new Error("no chain");
+      const tune = op.effectsChain.effects.find((e) => e.type === "tune");
+      if (tune?.type !== "tune") throw new Error("no tune");
+      return tune.params;
+    };
+    expect(run(emptyStudioFxChain())).toMatchObject({ keyRoot: 9, scale: 1 });
+    const own = upsertFx(emptyStudioFxChain(), "tune", (p) => ({ ...p, keyRoot: 4, scale: 0, retuneMs: 300 }), nextId)!;
+    expect(run(own)).toMatchObject({ keyRoot: 4, scale: 0 });
+  });
+});
+
 describe("Stage 2 autofix — i18n", () => {
   it("every BITEK note key exists in PL and EN (first person, with the same placeholders)", () => {
     const src = readFileSync(join(__dirname, "plan.ts"), "utf8");

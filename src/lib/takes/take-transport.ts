@@ -33,7 +33,9 @@ import {
 } from "@/lib/takes/claim-errors";
 import {
   antiAbuseCapsFromPolicy,
+  getSamplePolicy,
   recordingModeForMaxSeconds,
+  sampleActorFromPremiumTier,
   type SamplePolicy,
 } from "@/lib/takes/entitlement";
 import {
@@ -48,6 +50,7 @@ import {
 } from "@/lib/takes/object-key";
 import { validateTakeUploadMeta } from "@/lib/takes/validation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import type { PremiumTier } from "@/types/premium";
 
 /** Allow small probe rounding vs client auto-stop. */
 const DURATION_TOLERANCE_SECONDS = 1;
@@ -364,9 +367,12 @@ export async function finalizeTakeRecordingFor(
     throw new AuthError("FORBIDDEN", "Take session expired.");
   }
 
-  const beat = await loadBeatOrThrow(take.beat_id as string);
-  if (beat.status !== "PUBLISHED") {
-    throw new AuthError("FORBIDDEN", "Beat is no longer PUBLISHED.");
+  // A stem of a "master only" project has no beat (DB check: only a stem may have none).
+  if (take.beat_id !== null || take.is_stem !== true) {
+    const beat = await loadBeatOrThrow(take.beat_id as string);
+    if (beat.status !== "PUBLISHED") {
+      throw new AuthError("FORBIDDEN", "Beat is no longer PUBLISHED.");
+    }
   }
 
   if (take.storage_bucket !== TAKE_AUDIO_BUCKET) {
@@ -499,7 +505,54 @@ export async function finalizeTakeRecording(params: {
   return finalizeTakeRecordingFor(context, params);
 }
 
-export type StemSessionParams = { projectId: string; contentType: string; byteSize: number };
+export type StemSessionParams = {
+  projectId: string;
+  contentType: string;
+  byteSize: number;
+  /** "Sam mastering": the project has no beat and must stay without one. In the Studio a stem still needs a beat. */
+  masterOnly?: boolean;
+};
+
+/** Same retention as the plan's takes. */
+async function stemTtlSeconds(premiumTier: PremiumTier): Promise<number> {
+  return getSamplePolicy({
+    actor: sampleActorFromPremiumTier(premiumTier),
+    beatDurationSeconds: STEM_MAX_SECONDS,
+    overrides: await loadSamplePolicyDurationOverrides(),
+  }).ttlSeconds;
+}
+
+/** The beat under a stem: usable in the Studio by this user, published, and the plan's retention. */
+async function assertStemBeatAccess(context: AuthContext, beatId: string, premiumTier: PremiumTier) {
+  const beat = await loadBeatOrThrow(beatId);
+  const activeRecordGrant = await hasActiveRecordGrant({ beatId, granteeUserId: context.userId });
+  const beatSubject = beatUsageSubjectFromRow(beat);
+  const hasPurchasedWav = await viewerPurchasedPaidBeat(beatId, beatSubject, context.userId);
+  if (
+    !canUseBeatInStudio(beatSubject, {
+      userId: context.userId,
+      hasActiveGrant: activeRecordGrant,
+      hasPurchasedWav,
+    }).allowed
+  ) {
+    throw new AuthError("FORBIDDEN", BEAT_RECORD_NOT_ALLOWED);
+  }
+
+  // Same retention as the plan's takes.
+  let policy: SamplePolicy;
+  try {
+    ({ policy } = assertTakeRecordAccess({
+      context,
+      beat: { id: beat.id as string, status: beat.status as string, durationSeconds: beat.duration_seconds as number },
+      premiumTier: premiumTier,
+      overrides: await loadSamplePolicyDurationOverrides(),
+      activeRecordGrant,
+    }));
+  } catch (e) {
+    mapTakeAuthz(e);
+  }
+  return { beat, ttlSeconds: policy!.ttlSeconds };
+}
 
 /**
  * Silver/Gold: signed upload session for one stem (an imported audio file for a project track).
@@ -533,42 +586,18 @@ export async function createStemUploadSessionFor(
   if (projectError) throw new Error(projectError.message);
   if (!project) throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
   const beatId = (project as { beat_id?: string | null }).beat_id ?? null;
-  if (!beatId) {
+  const masterOnly = params.masterOnly === true && beatId === null;
+  if (!beatId && !masterOnly) {
     throw new AuthError("FORBIDDEN", "Najpierw wybierz bit w projekcie.");
   }
 
-  const beat = await loadBeatOrThrow(beatId);
-  const activeRecordGrant = await hasActiveRecordGrant({ beatId, granteeUserId: context.userId });
-  const beatSubject = beatUsageSubjectFromRow(beat);
-  const hasPurchasedWav = await viewerPurchasedPaidBeat(beatId, beatSubject, context.userId);
-  if (
-    !canUseBeatInStudio(beatSubject, {
-      userId: context.userId,
-      hasActiveGrant: activeRecordGrant,
-      hasPurchasedWav,
-    }).allowed
-  ) {
-    throw new AuthError("FORBIDDEN", BEAT_RECORD_NOT_ALLOWED);
-  }
-
-  // Same retention as the plan's takes.
-  let policy: SamplePolicy;
-  try {
-    ({ policy } = assertTakeRecordAccess({
-      context,
-      beat: { id: beat.id as string, status: beat.status as string, durationSeconds: beat.duration_seconds as number },
-      premiumTier: product.premiumTier,
-      overrides: await loadSamplePolicyDurationOverrides(),
-      activeRecordGrant,
-    }));
-  } catch (e) {
-    mapTakeAuthz(e);
-  }
+  const { beat, ttlSeconds } = beatId
+    ? await assertStemBeatAccess(context, beatId, product.premiumTier)
+    : { beat: null, ttlSeconds: await stemTtlSeconds(product.premiumTier) };
 
   const takeId = randomUUID();
   const objectKey = buildUserTakeObjectKey({ ownerId: context.userId, takeId });
-  const expiresAt = new Date(Date.now() + policy!.ttlSeconds * 1000).toISOString();
-
+  const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
   const { error: claimError } = await admin.rpc("claim_stem_take_session", {
     p_owner_id: context.userId,
     p_project_id: params.projectId,
@@ -577,8 +606,8 @@ export async function createStemUploadSessionFor(
     p_object_key: objectKey,
     p_content_type: meta.contentType,
     p_byte_size: params.byteSize,
-    p_beat_duration_seconds: beat.duration_seconds,
-    p_beat_bpm: beat.bpm ?? null,
+    p_beat_duration_seconds: beat?.duration_seconds ?? STEM_MAX_SECONDS,
+    p_beat_bpm: beat?.bpm ?? null,
     p_expires_at: expiresAt,
     p_max_stems: maxStems,
     p_max_user_stems: Math.max(STEM_USER_ACTIVE_CAP, maxStems),
@@ -590,6 +619,10 @@ export async function createStemUploadSessionFor(
     }
     if (code.includes("STEM_USER_CAP")) {
       throw new AuthError("FORBIDDEN", "Za dużo stemów na koncie. Usuń stare projekty albo stemy.");
+    }
+    if (masterOnly && code.includes("BEAT_ID AND TAKE_ID ARE REQUIRED")) {
+      // 20261123210000_master_only_stem_without_beat.sql is not applied yet.
+      throw new AuthError("FORBIDDEN", "Sam mastering nie jest jeszcze włączony na serwerze. Na razie zrób master w Studiu.");
     }
     if (code.includes("STEM_PROJECT_INVALID")) {
       throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
@@ -607,7 +640,7 @@ export async function createStemUploadSessionFor(
 
   return {
     takeId,
-    beatId,
+    beatId: beatId ?? "",
     objectKey,
     path: signed.path,
     token: signed.token,

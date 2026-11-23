@@ -118,7 +118,8 @@ export function createLiveTakeStore() {
     /** `playheadMs` = transport position now; ignored before startMs (count-in / pre-roll). */
     sample(playheadMs: number, peak: number) {
       if (!snap || snap.status !== "recording") return;
-      const offset = playheadMs - snap.startMs;
+      // Whole ms: the lane's geometry rejects fractions.
+      const offset = Math.round(playheadMs - snap.startMs);
       if (!(offset >= 0)) return;
       snap = {
         ...snap,

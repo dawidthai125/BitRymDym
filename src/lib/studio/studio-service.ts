@@ -27,6 +27,9 @@ import {
   resolveStudioClipFadesForWrite,
 } from "@/lib/studio/studio-clip-fade";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import { isTakeExpired } from "@/lib/takes/entitlement";
+import { removeStudioProjectFiles } from "@/lib/studio/studio-project-storage";
+import { normalizeStudioProjectTitle } from "@/lib/studio/studio-project-title";
 import { parseClipPlaybackWrite } from "@/lib/studio/studio-clip-playback";
 import { clipPitchChangeAllowed } from "@/lib/studio/plan-feature-gates";
 import { StudioPlanFeatureError } from "@/lib/studio/presets/fx-presets-server";
@@ -37,6 +40,7 @@ import {
 import {
   assertValidClipSource,
   assertClipPlacement,
+  clipSourceRate,
   moveClipGeometry,
   resolveDuplicateClipPlacement,
   splitClipGeometry,
@@ -70,6 +74,7 @@ import {
   resolveStudioAddTrackName,
   resolveStudioAddTrackTypeForWrite,
 } from "@/lib/studio/studio-scratch-persist";
+import { mapStudioMarkersField } from "@/lib/studio/studio-markers-state";
 import type {
   StudioClipDto,
   StudioProjectDocument,
@@ -109,6 +114,7 @@ type ProjectRow = {
   schema_version: number;
   document_version: number;
   master_fx_chain?: unknown | null;
+  markers?: unknown | null;
   created_at: string;
   updated_at: string;
 };
@@ -348,7 +354,12 @@ export async function createStudioProjectFor(
     .from("studio_tracks")
     .insert(seedTracks)
     .select("*");
-  if (tracksError) throw new Error(tracksError.message);
+  if (tracksError) {
+    // A project without tracks cannot be used, but it would count toward the project limit.
+    const { error: undoError } = await admin.from("studio_projects").delete().eq("id", projectRow.id).eq("owner_id", context.userId);
+    if (undoError) console.error("[studio] empty project not removed", projectRow.id, undoError.message);
+    throw new Error(tracksError.message);
+  }
 
   const trackRows = (tracks as TrackRow[] | null) ?? [];
   const clips: ClipRow[] = [];
@@ -410,6 +421,8 @@ export type BeatRefClipSnapshot = {
   muted: boolean;
   fade_in_ms: number;
   fade_out_ms: number;
+  pitch_cents?: number | null;
+  stretch_ratio?: number | string | null;
 };
 
 /** Injectable persistence ops for AUD-01 fail-closed attach (testable). */
@@ -560,7 +573,6 @@ export async function attachBeatToStudioProjectFor(
   const previousBeatId = projectRow.beat_id;
   const previousTempoBpm =
     Number(projectRow.tempo_bpm) || STUDIO_DEFAULT_TEMPO_BPM;
-  const previousDocumentVersion = projectRow.document_version;
   const admin = createSupabaseAdminClient();
 
   const { data: beat, error: beatError } = await admin
@@ -684,7 +696,7 @@ export async function attachBeatToStudioProjectFor(
         .update({
           beat_id: priorBeatId,
           tempo_bpm: priorTempo,
-          document_version: previousDocumentVersion,
+          // The version is never turned back: a number must not mean two different documents.
           updated_at: new Date().toISOString(),
         })
         .eq("id", projectId)
@@ -738,6 +750,8 @@ export async function attachBeatToStudioProjectFor(
             muted: c.muted,
             fade_in_ms: c.fade_in_ms,
             fade_out_ms: c.fade_out_ms,
+            ...(c.pitch_cents == null ? {} : { pitch_cents: c.pitch_cents }),
+            ...(c.stretch_ratio == null ? {} : { stretch_ratio: c.stretch_ratio }),
           })),
         );
       if (restoreClipsError) {
@@ -833,6 +847,7 @@ export async function deleteStudioProjectFor(
   if (!data) {
     throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
   }
+  await removeStudioProjectFiles(admin, context.userId, projectId);
   return { id: (data as { id: string }).id };
 }
 
@@ -840,6 +855,37 @@ export async function deleteStudioProject(
   projectId: string,
 ): Promise<{ id: string }> {
   return deleteStudioProjectFor(await requireUser(), projectId);
+}
+
+/**
+ * Rename an owned project. The title is not part of the document, so document_version stays
+ * (an open Studio tab must not get a save conflict because of a new name).
+ */
+export async function renameStudioProjectFor(
+  context: AuthContext,
+  projectId: string,
+  rawTitle: unknown,
+): Promise<{ title: string }> {
+  const title = normalizeStudioProjectTitle(rawTitle);
+  await assertOwnsProject(context, projectId);
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("studio_projects")
+    .update({ title })
+    .eq("id", projectId)
+    .eq("owner_id", context.userId)
+    .select("title")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+  return { title: (data as { title: string }).title };
+}
+
+export async function renameStudioProject(
+  projectId: string,
+  rawTitle: unknown,
+): Promise<{ title: string }> {
+  return renameStudioProjectFor(await requireUser(), projectId, rawTitle);
 }
 
 export async function getStudioProjectDocumentFor(
@@ -882,6 +928,7 @@ export async function getStudioProjectDocumentFor(
     },
     tracks: trackRows.map(mapTrack),
     clips: clipRows.map(mapClip),
+    markers: mapStudioMarkersField(projectRow.markers),
   };
 }
 
@@ -908,7 +955,17 @@ export async function updateStudioTrackControlsFor(
 ): Promise<{ track: StudioTrackDto; documentVersion: number }> {
   await assertOwnsProject(context, input.projectId);
   if (input.trackRole !== undefined) {
-    return setStudioTrackRoleFor(context, input);
+    const roleSaved = await setStudioTrackRoleFor(context, input);
+    const { trackRole: _role, ...rest } = input;
+    const hasMore = [rest.name, rest.muted, rest.solo, rest.gainDb, rest.pan, rest.recordArmed].some(
+      (value) => value !== undefined,
+    );
+    if (!hasMore) return roleSaved;
+    // Combined PATCH: the remaining fields follow on the new version (as with name below).
+    return updateStudioTrackControlsFor(context, {
+      ...rest,
+      expectedDocumentVersion: roleSaved.documentVersion,
+    });
   }
   const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const admin = createSupabaseAdminClient();
@@ -1612,7 +1669,7 @@ export async function addStudioClipFor(
   if (input.sourceKind === "TAKE" && input.sourceTakeId) {
     const { data: take, error: takeError } = await admin
       .from("takes")
-      .select("id, owner_id, status, deleted_at")
+      .select("id, owner_id, status, deleted_at, expires_at")
       .eq("id", input.sourceTakeId)
       .maybeSingle();
     if (takeError) throw new Error(takeError.message);
@@ -1627,6 +1684,31 @@ export async function addStudioClipFor(
         "Nagranie nie jest dostępne do umieszczenia w projekcie.",
       );
     }
+    // Every render refuses an expired take, so it must not get onto the timeline.
+    if (take.expires_at && isTakeExpired({ expiresAt: take.expires_at as string })) {
+      throw new AuthError("FORBIDDEN", "To nagranie wygasło. Nagraj je jeszcze raz.");
+    }
+  }
+  // Same for a beat or a file the user may not use (the project's own beat was checked when it was chosen).
+  if (input.sourceKind === "BEAT_REF" && input.sourceBeatId && input.sourceBeatId !== project.beat_id) {
+    const { data: beat, error: beatError } = await admin
+      .from("beats")
+      .select(`id, ${BEAT_USAGE_COLUMNS}`)
+      .eq("id", input.sourceBeatId)
+      .maybeSingle();
+    if (beatError) throw new Error(beatError.message);
+    if (!beat) throw new AuthError("NOT_FOUND", "Wybrany bit nie istnieje.");
+    await assertBeatStudioUse({ beatId: input.sourceBeatId, row: beat as Record<string, unknown>, userId: context.userId });
+  }
+  if (input.sourceKind === "ARTIFACT" && input.sourceArtifactId) {
+    const { data: artifact, error: artifactError } = await admin
+      .from("audio_artifacts")
+      .select("id")
+      .eq("id", input.sourceArtifactId)
+      .eq("owner_id", context.userId)
+      .maybeSingle();
+    if (artifactError) throw new Error(artifactError.message);
+    if (!artifact) throw new AuthError("FORBIDDEN", "Ten plik nie jest dostępny w projekcie.");
   }
 
   const { data, error } = await admin.rpc("studio_cas_add_clip", {
@@ -1750,6 +1832,7 @@ export async function updateStudioClipGeometryFor(
         clip: current,
         trimMs: input.patch.trimMs,
         timelineLengthMs: length,
+        sourceRate: clipSourceRate(mapClip(clip)),
       });
       break;
     case "trim_right":
@@ -1764,6 +1847,7 @@ export async function updateStudioClipGeometryFor(
         clip: current,
         playheadMs: input.patch.playheadMs,
         timelineLengthMs: length,
+        sourceRate: clipSourceRate(mapClip(clip)),
       });
       break;
     case "trim_right_to_playhead":
@@ -2151,6 +2235,7 @@ export async function splitStudioClipFor(
     },
     atTimelineMs: input.atTimelineMs,
     timelineLengthMs: project.timeline_length_ms,
+    sourceRate: clipSourceRate(mapClip(clip)),
   });
   const splitLocalMs = left.durationMs;
   const fades = resolveFadesAfterSplit({

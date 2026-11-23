@@ -77,6 +77,8 @@ export type MasterJobView = {
   id: string; kind: StudioMasterJobKind; status: string; target: string | null; outputFormat: StudioMasterOutputFormat;
   metrics: unknown; errorCode: string | null; approvedAt: string | null; createdAt: string;
   settings: Record<string, number> | null;
+  /** Document version the job was made from — an older one no longer matches the current mix. */
+  sourceDocumentVersion: number | null;
   /** Live E3 progress (null before the worker picks the job up / old rows). */
   stage: StudioJobStage | null; progress: number | null;
   /** Mastering style (+ intensity %) and whether the job matched an uploaded reference. */
@@ -86,6 +88,7 @@ const view = (r: Record<string, unknown>): MasterJobView => ({
   id: String(r.id), kind: r.kind as StudioMasterJobKind, status: String(r.status), target: (r.target as string) ?? null,
   outputFormat: r.output_format as StudioMasterOutputFormat, metrics: r.metrics ?? null, errorCode: (r.error_code as string) ?? null,
   approvedAt: (r.approved_at as string) ?? null, settings: (r.settings as Record<string, number>) ?? null, createdAt: String(r.created_at),
+  sourceDocumentVersion: r.source_document_version == null ? null : Number(r.source_document_version),
   stage: isStudioJobStage(r.stage) ? r.stage : null,
   progress: typeof r.progress === "number" && Number.isFinite(r.progress) ? Math.min(100, Math.max(0, Math.round(r.progress))) : null,
   style: isMasterStyleId(r.style) ? r.style : null,
@@ -127,7 +130,7 @@ async function freeWatermarkUsage(admin: Admin, ownerId: string): Promise<Downlo
 /** Latest master job (+ approved one), the download counter and the monthly master quota. */
 export async function getStudioMasterState(p: { ownerId: string; projectId: string; tier: PremiumTier }) {
   const admin = createSupabaseAdminClient();
-  await assertOwner(admin, p.ownerId, p.projectId);
+  const { documentVersion } = await assertOwner(admin, p.ownerId, p.projectId);
   const { data, error } = await admin.from("studio_master_jobs").select("*").eq("project_id", p.projectId).eq("owner_id", p.ownerId)
     .eq("kind", "master").order("created_at", { ascending: false }).limit(20);
   if (missing(error)) return { available: false as const };
@@ -154,7 +157,7 @@ export async function getStudioMasterState(p: { ownerId: string; projectId: stri
     usage = { used, weekLimit: limit, resetAt };
   }
   const masters = await masterMonthUsage(admin, p.ownerId, p.tier);
-  return { available: true as const, latest, approved: approved ? view(approved) : null, usage, masters };
+  return { available: true as const, documentVersion, latest, approved: approved ? view(approved) : null, usage, masters };
 }
 
 /** Phase 1 of a master: job id + upload URL for the approved mix (browser-rendered WAV). */
@@ -209,14 +212,20 @@ export async function commitStudioMaster(p: { ownerId: string; projectId: string
   return { ok: true as const, jobId: p.jobId, masters };
 }
 
-export async function approveStudioMaster(p: { ownerId: string; projectId: string; jobId: string }) {
+export async function approveStudioMaster(p: { ownerId: string; projectId: string; jobId: string }): Promise<{ ok: true } | { ok: false; error: "not_ready" | "doc_changed" }> {
   if (!UUID.test(p.jobId)) throw new AuthError("NOT_FOUND", "not_found");
   const admin = createSupabaseAdminClient();
-  await assertOwner(admin, p.ownerId, p.projectId);
+  const { documentVersion } = await assertOwner(admin, p.ownerId, p.projectId);
+  // An older master would get a green "approved" while every download refuses it.
+  const { data: job, error: jobError } = await admin.from("studio_master_jobs").select("source_document_version")
+    .eq("id", p.jobId).eq("project_id", p.projectId).eq("owner_id", p.ownerId).eq("kind", "master").eq("status", "succeeded").maybeSingle();
+  check(jobError);
+  if (!job) return { ok: false, error: "not_ready" };
+  if (Number((job as { source_document_version: number }).source_document_version) !== documentVersion) return { ok: false, error: "doc_changed" };
   const { data, error } = await admin.from("studio_master_jobs").update({ approved_at: new Date().toISOString() })
     .eq("id", p.jobId).eq("project_id", p.projectId).eq("owner_id", p.ownerId).eq("kind", "master").eq("status", "succeeded").select("id").maybeSingle();
   check(error);
-  return { ok: !!data };
+  return data ? { ok: true } : { ok: false, error: "not_ready" };
 }
 
 const JOB_FOR: Record<DeliverKind, StudioMasterJobKind> = { mix: "transcode", master: "transcode", raw: "raw_sum", project: "project_zip" };
@@ -260,16 +269,6 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   // Free watermark: 3 per rolling 24 h. The RPC keeps the 7-day backstop (21).
   const wm = d.watermark ? await freeWatermarkUsage(admin, p.ownerId) : null;
   if (wm && (wm.dailyUsed ?? 0) >= FREE_WATERMARK_PER_DAY) return { ok: false as const, error: "daily_limit", usage: wm };
-  if (kind !== "project") {
-    // Owner 2026-11-13: the first download of a project is one finished song (daily plan number).
-    // Owner 2026-11-19: mix and raw downloads count too, not only the master (a project counts once).
-    const { data: s, error: se } = await admin.rpc("claim_song_completion", {
-      p_owner_id: p.ownerId, p_project_id: p.projectId, p_max_per_utc_day: PLAN_POLICY[p.tier].recording.sessionsPerDay,
-    });
-    check(se);
-    const song = (Array.isArray(s) ? s[0] : s) as { allowed: boolean; used: number; day_limit: number } | null;
-    if (!song?.allowed) return { ok: false as const, error: "song_day_limit", songs: { used: song?.used ?? 0, limit: song?.day_limit ?? 0 } };
-  }
   const { data: q, error: qe } = await admin.rpc("consume_studio_download", {
     p_owner_id: p.ownerId, p_project_id: p.projectId, p_kind: kind, p_format: format, p_tier: p.tier, p_week_limit: d.weeklyLimit,
     // 2026-11-22: the slot is tied to the job (idempotent retry; given back if the job fails).
@@ -281,6 +280,27 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
     ? { ...quota, daily_used: (wm.dailyUsed ?? 0) + (bump ? 1 : 0), daily_limit: wm.dailyLimit ?? FREE_WATERMARK_PER_DAY, daily_reset_at: wm.dailyResetAt ?? null }
     : quota);
   if (!quota?.allowed) return { ok: false as const, error: "weekly_limit", usage: withDay(false) };
+  // The download slot is tied to this job id, so it can be handed back when nothing gets queued. The song of the
+  // day is claimed after it: a refused download never costs a song.
+  const giveBackSlot = async () => {
+    const { error: backError } = await admin.from("studio_download_usage").delete()
+      .eq("owner_id", p.ownerId).eq("project_id", p.projectId).eq("job_id", p.jobId);
+    if (backError) console.error("[studio-deliver] download slot not returned", p.jobId, backError.message);
+  };
+  if (kind !== "project") {
+    // Owner 2026-11-13: the first download of a project is one finished song (daily plan number).
+    // Owner 2026-11-19: mix and raw downloads count too, not only the master (a project counts once).
+    const { data: s, error: se } = await admin.rpc("claim_song_completion", {
+      p_owner_id: p.ownerId, p_project_id: p.projectId, p_max_per_utc_day: PLAN_POLICY[p.tier].recording.sessionsPerDay,
+    });
+    if (se) await giveBackSlot();
+    check(se);
+    const song = (Array.isArray(s) ? s[0] : s) as { allowed: boolean; used: number; day_limit: number } | null;
+    if (!song?.allowed) {
+      await giveBackSlot();
+      return { ok: false as const, error: "song_day_limit", songs: { used: song?.used ?? 0, limit: song?.day_limit ?? 0 } };
+    }
+  }
   const { error } = await admin.from("studio_master_jobs").insert({
     id: p.jobId, project_id: p.projectId, owner_id: p.ownerId, kind: JOB_FOR[kind], source_document_version: documentVersion,
     source_artifact_id: kind === "master" ? approved!.id : null, output_format: format as StudioMasterOutputFormat,
@@ -292,6 +312,7 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
     const { data: dup } = await admin.from("studio_master_jobs").select("id").eq("id", p.jobId).eq("owner_id", p.ownerId).eq("project_id", p.projectId).maybeSingle();
     if (dup) return { ok: true as const, jobId: p.jobId, usage: withDay(false) };
   }
+  if (error) await giveBackSlot();
   check(error);
   return { ok: true as const, jobId: p.jobId, usage: withDay(true) };
 }

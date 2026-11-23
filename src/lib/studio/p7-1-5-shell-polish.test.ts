@@ -47,7 +47,8 @@ describe("Phase 7.1.5.1 — transport / meter render isolation", () => {
     expect(editor).toMatch(/useStudioTransportControls\(\)/);
     expect(editor).toMatch(/StudioMasterMeterLive/);
     expect(editor).toMatch(/StudioTrackMeterLive/);
-    expect(editor).toMatch(/StudioTimelinePlayheadBound/);
+    // Playhead leaves live in the timeline file; the editor and the lanes do not tick.
+    expect(editor).toMatch(/function TimelinePlayhead\(/);
     expect(editor).toMatch(/useStudioTransportMeters/);
     expect(editor).toMatch(/useStudioTransportPlayhead/);
     // Wide hook must not be the Inner subscription.
@@ -296,8 +297,9 @@ describe("Phase 7.1.5.3 — minimal transport keyboard", () => {
     expect(editor).toMatch(/transport\.pause\(\)/);
     expect(editor).toMatch(/event\.key === "Home"/);
     expect(editor).toMatch(/event\.key === "End"/);
-    expect(editor).toMatch(/isTypingTarget/);
-    expect(editor).toMatch(/INPUT[\s\S]*TEXTAREA[\s\S]*SELECT/);
+    expect(editor).toMatch(/isStudioTypingTarget\(event\.target\)/);
+    const guard = readFileSync(join(root, "src/lib/studio/studio-shortcut-guard.ts"), "utf8");
+    expect(guard).toMatch(/INPUT[\s\S]*TEXTAREA[\s\S]*SELECT/);
   });
 });
 

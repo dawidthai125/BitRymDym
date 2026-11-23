@@ -193,9 +193,8 @@ export async function deleteTakeLaneFor(
 }
 
 /**
- * Apply a lane's comp to the timeline: remove the clips the lane created
- * before, add one clip per comp segment (overlapping crossfades) and save
- * the new clip ids. Chained CAS ops starting at expectedDocumentVersion.
+ * Apply a lane's comp to the timeline: add one clip per comp segment (overlapping
+ * crossfades), remove the clips the lane created before and save the new clip ids. Chained CAS ops starting at expectedDocumentVersion.
  */
 export async function applyTakeLaneCompFor(
   context: AuthContext,
@@ -233,6 +232,46 @@ export async function applyTakeLaneCompFor(
       c.sourceTakeId != null &&
       laneTakes.has(c.sourceTakeId),
   );
+  // New clips first, old ones off last: a failure half way must not leave a hole on the timeline.
+  const clipIds: string[] = [];
+  try {
+    for (const spec of buildCompClipSpecs(lane)) {
+      const added = await addStudioClipFor(context, {
+        projectId: input.projectId,
+        trackId: lane.trackId,
+        expectedDocumentVersion: version,
+        sourceKind: "TAKE",
+        sourceTakeId: spec.takeId,
+        timelineStartMs: spec.timelineStartMs,
+        durationMs: spec.durationMs,
+        sourceOffsetMs: spec.sourceOffsetMs,
+      });
+      version = added.documentVersion;
+      clipIds.push(added.clip.id);
+      if (spec.fadeInMs > 0 || spec.fadeOutMs > 0) {
+        const faded = await updateStudioClipFadesFor(context, {
+          projectId: input.projectId,
+          clipId: added.clip.id,
+          expectedDocumentVersion: version,
+          fadeInMs: spec.fadeInMs,
+          fadeOutMs: spec.fadeOutMs,
+        });
+        version = faded.documentVersion;
+      }
+    }
+  } catch (error) {
+    // Best effort: take the new clips off again, the previous comp is still there.
+    for (const clipId of clipIds) {
+      const r = await deleteStudioClipFor(context, {
+        projectId: input.projectId,
+        clipId,
+        expectedDocumentVersion: version,
+      }).catch(() => null);
+      if (!r) break;
+      version = r.documentVersion;
+    }
+    throw error;
+  }
   for (const clip of toDelete) {
     const r = await deleteStudioClipFor(context, {
       projectId: input.projectId,
@@ -240,32 +279,6 @@ export async function applyTakeLaneCompFor(
       expectedDocumentVersion: version,
     });
     version = r.documentVersion;
-  }
-
-  const clipIds: string[] = [];
-  for (const spec of buildCompClipSpecs(lane)) {
-    const added = await addStudioClipFor(context, {
-      projectId: input.projectId,
-      trackId: lane.trackId,
-      expectedDocumentVersion: version,
-      sourceKind: "TAKE",
-      sourceTakeId: spec.takeId,
-      timelineStartMs: spec.timelineStartMs,
-      durationMs: spec.durationMs,
-      sourceOffsetMs: spec.sourceOffsetMs,
-    });
-    version = added.documentVersion;
-    clipIds.push(added.clip.id);
-    if (spec.fadeInMs > 0 || spec.fadeOutMs > 0) {
-      const faded = await updateStudioClipFadesFor(context, {
-        projectId: input.projectId,
-        clipId: added.clip.id,
-        expectedDocumentVersion: version,
-        fadeInMs: spec.fadeInMs,
-        fadeOutMs: spec.fadeOutMs,
-      });
-      version = faded.documentVersion;
-    }
   }
 
   const saved = await upsertLaneRow(context, input.projectId, {

@@ -50,6 +50,9 @@ export function techChipsFromAutofixNotes(notes: readonly MixAutofixNote[]): Mix
       case "compSide":
         chip(`kompresja ${s(p.ratio)}:1`);
         break;
+      case "duck":
+        out.push({ id: `${n.key}-${i}`, track: null, label: "bit −2.5 dB pod wokalem" });
+        break;
       case "eqBeatCut":
         chip(`EQ −${s(p.db)} dB @ 2.5 kHz`);
         break;

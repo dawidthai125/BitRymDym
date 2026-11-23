@@ -2,7 +2,7 @@
 
 import { useLibText } from "@/i18n/use-lib-text";
 
-import { useEffect, useId, useRef, useState, type RefObject } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 import {
   installStudioLeaveGuard,
@@ -13,6 +13,7 @@ import {
   type StudioLeaveGuard,
   type StudioLeaveIntent,
 } from "@/components/studio/studio-leave-guard";
+import { useStudioScrollLock } from "@/components/studio/use-studio-dialog";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -57,20 +58,88 @@ export function useStudioLeaveGuard(
   };
 }
 
+/** A save usually ends faster than this, so most exits never show the dialog. */
+const SAVE_GUARD_GRACE_MS = 500;
+
+/**
+ * Link / form out of Studio while a save is still running (or failed). The exit waits: it goes on by
+ * itself once everything is saved, otherwise the dialog asks after a short grace period.
+ */
+export function useStudioSaveLeaveGuard(
+  unsaved: boolean,
+  studioRootRef: RefObject<HTMLElement | null>,
+) {
+  const [waiting, setWaiting] = useState<StudioLeaveIntent | null>(null);
+  const [asking, setAsking] = useState<StudioLeaveIntent | null>(null);
+  const guardRef = useRef<StudioLeaveGuard | null>(null);
+  const unloadAllowedRef = useRef(false);
+
+  useEffect(() => {
+    if (!unsaved) return;
+    const guard = installStudioLeaveGuard({
+      target: window,
+      studioRoot: () => studioRootRef.current,
+      onIntercept: setWaiting,
+      beforeUnload: false,
+    });
+    guardRef.current = guard;
+    unloadAllowedRef.current = false;
+    return () => guard.dispose();
+  }, [unsaved, studioRootRef]);
+
+  useEffect(() => {
+    if (!waiting) return;
+    if (!unsaved) {
+      // Everything is saved: go where the user wanted to go.
+      const go = window.setTimeout(() => {
+        unloadAllowedRef.current = true;
+        setWaiting(null);
+        guardRef.current?.proceed(waiting);
+      }, 0);
+      return () => window.clearTimeout(go);
+    }
+    const id = window.setTimeout(() => setAsking(waiting), SAVE_GUARD_GRACE_MS);
+    return () => window.clearTimeout(id);
+  }, [waiting, unsaved]);
+
+  return {
+    open: unsaved && waiting !== null && asking === waiting,
+    stay: () => setWaiting(null),
+    leave: () => {
+      unloadAllowedRef.current = true;
+      setWaiting(null);
+      if (waiting) guardRef.current?.proceed(waiting);
+    },
+    unloadAllowed: () => unloadAllowedRef.current,
+  };
+}
+
 export function StudioLeaveGuardDialog({
   open,
   onStay,
   onLeave,
+  title,
+  body,
 }: {
   open: boolean;
   onStay: () => void;
   onLeave: () => void;
+  /** Already translated; default = capture texts. */
+  title?: string;
+  body?: string;
 }) {
   const tl = useLibText();
   const titleId = useId();
   const bodyId = useId();
   const stayRef = useRef<HTMLButtonElement | null>(null);
   const leaveRef = useRef<HTMLButtonElement | null>(null);
+
+  // In a ref: the editor re-renders during capture and must not pull focus back to "Zostań".
+  const onStayRef = useRef(onStay);
+  useLayoutEffect(() => {
+    onStayRef.current = onStay;
+  });
+  useStudioScrollLock(open);
 
   useEffect(() => {
     if (!open) return;
@@ -84,7 +153,7 @@ export function StudioLeaveGuardDialog({
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopImmediatePropagation();
-        onStay();
+        onStayRef.current();
         return;
       }
       if (event.key !== "Tab") return;
@@ -100,18 +169,18 @@ export function StudioLeaveGuardDialog({
       window.removeEventListener("keydown", onKeyDown, true);
       previouslyFocused?.focus?.();
     };
-  }, [open, onStay]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center md:items-center"
+      className="fixed inset-0 z-[70] flex items-end justify-center md:items-center"
       data-testid="studio-leave-guard"
     >
       <button
         type="button"
-        className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_45%,transparent)]"
+        className="absolute inset-0 bg-black/60"
         aria-label={tl(STUDIO_LEAVE_GUARD_STAY_PL)}
         tabIndex={-1}
         onClick={onStay}
@@ -128,10 +197,10 @@ export function StudioLeaveGuardDialog({
           id={titleId}
           className="text-xs font-medium uppercase tracking-[0.1em] text-destructive"
         >
-          {tl(STUDIO_LEAVE_GUARD_TITLE_PL)}
+          {title ?? tl(STUDIO_LEAVE_GUARD_TITLE_PL)}
         </p>
         <p id={bodyId} className="text-sm text-[var(--brd-ink)]">
-          {tl(STUDIO_LEAVE_GUARD_BODY_PL)}
+          {body ?? tl(STUDIO_LEAVE_GUARD_BODY_PL)}
         </p>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button

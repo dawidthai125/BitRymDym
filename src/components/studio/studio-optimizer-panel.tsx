@@ -1,9 +1,9 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { measureBeatWindow, type BeatMeasure } from "@/lib/studio/analysis/measure";
+import { measureBeat, type BeatMeasure } from "@/lib/studio/analysis/measure";
 
 type ProjectOpt = { id: string; title: string };
 
@@ -34,12 +34,8 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
       }
       const ctx = new AudioContext();
       const decoded = await ctx.decodeAudioData(await audioRes.arrayBuffer());
-      const channel = decoded.getChannelData(0);
-      const frames = Math.min(channel.length, Math.floor(decoded.sampleRate * 20));
-      const samples = new Float32Array(frames);
-      samples.set(channel.subarray(0, frames));
       await ctx.close().catch(() => undefined);
-      setMeasure(measureBeatWindow(samples, decoded.sampleRate));
+      setMeasure(measureBeat(decoded.getChannelData(0), decoded.sampleRate));
     } catch {
       setNote(t("nieUdaloSieSprawdzic"));
     } finally {
@@ -54,8 +50,13 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
         <select
           name="projectId"
           value={projectId}
-          onChange={(event) => setProjectId(event.target.value)}
-          disabled={projects.length === 0}
+          onChange={(event) => {
+            setProjectId(event.target.value);
+            // The numbers belong to the project they were measured on.
+            setMeasure(null);
+            setNote(null);
+          }}
+          disabled={busy || projects.length === 0}
           className="border border-[var(--brd-line)] bg-transparent px-3 py-2 text-[var(--brd-ink)]"
         >
           {projects.length === 0 ? <option value="">{t("brakProjektow")}</option> : null}
@@ -81,11 +82,13 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
 
 function Measurement({ measure }: { measure: BeatMeasure }) {
   const t = useTranslations("studio.optimizer");
-  const peak = measure.peakDb.toFixed(1);
-  const rms = measure.rmsDb.toFixed(1);
+  const locale = useLocale();
+  const one = (n: number) => n.toLocaleString(locale === "en" ? "en-US" : "pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const peak = one(measure.peakDb);
+  const rms = one(measure.rmsDb);
   let advice = t("poradaDomyslna", { peak, rms });
   if (measure.suggestion === "hot") {
-    advice = t("poradaGlosny", { db: String(measure.lowerByDb) });
+    advice = t("poradaGlosny", { db: one(measure.lowerByDb) });
   } else if (measure.suggestion === "quiet") {
     advice = t("poradaCichy");
   } else if (measure.suggestion === "mud") {

@@ -52,7 +52,7 @@ export function isFxPresetStoreMissing(error: { code?: string; message?: string 
 function mapRow(r: Record<string, unknown>): OwnFxPreset | null {
   try {
     const { kind, payload } = parseFxPresetPayload(r.kind, r.payload);
-    return { id: String(r.id), name: String(r.name), kind, payload, createdAt: String(r.created_at) };
+    return { id: String(r.id), name: String(r.name), kind, payload, createdAt: String(r.created_at), listed: payloadListed(r.payload) };
   } catch {
     return null; // unreadable rows are hidden, never applied
   }
@@ -179,8 +179,8 @@ export async function listListedFxPresets(): Promise<ListedFxPreset[]> {
   return out;
 }
 
-/** Owner marks one of their presets. listed is stored after the chain is parsed. */
-export async function publishFxPreset(context: AuthContext, presetId: string): Promise<void> {
+/** Owner lists one of their presets on the exchange, or takes it back. listed is stored after the chain is parsed. */
+export async function publishFxPreset(context: AuthContext, presetId: string, listed = true): Promise<void> {
   if (!UUID.test(presetId)) throw new AuthError("NOT_FOUND", "Preset nie został znaleziony.");
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
@@ -195,7 +195,7 @@ export async function publishFxPreset(context: AuthContext, presetId: string): P
   const parsed = parseFxPresetPayload(row.kind, row.payload);
   const { error: up } = await admin
     .from("studio_fx_presets")
-    .update({ payload: { ...parsed.payload, listed: true } })
+    .update({ payload: listed ? { ...parsed.payload, listed: true } : parsed.payload })
     .eq("id", presetId)
     .eq("owner_id", context.userId);
   if (up) throw new Error(up.message);

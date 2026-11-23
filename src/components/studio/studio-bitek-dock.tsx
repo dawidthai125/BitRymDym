@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { CloseButton } from "@/components/ui/close-button";
 import {
   clampBitekFrame,
   readBitekFrame,
@@ -11,6 +12,7 @@ import {
   writeBitekFrame,
   type BitekFrame,
 } from "@/lib/studio/bitek/bitek-dock-frame";
+import { studioModalState } from "@/lib/studio/studio-shortcut-guard";
 import { bitekDockPlacement } from "@/lib/studio/bitek-dock-placement";
 
 export type BitekMood = "happy" | "thinking" | "alert" | "done";
@@ -154,6 +156,9 @@ export function StudioBitekDock({
   };
   const beginPointer = (event: ReactPointerEvent, mode: "move" | "resize") => {
     if (event.button !== 0 || !rootRef.current) return;
+    // Buttons inside the drag header keep their own click (pointer capture would swallow it).
+    const pressed = event.target instanceof Element ? event.target.closest("button") : null;
+    if (pressed && pressed !== event.currentTarget) return;
     const rect = rootRef.current.getBoundingClientRect();
     const chat = chatRef.current?.getBoundingClientRect();
     dragRef.current = {
@@ -258,7 +263,8 @@ export function StudioBitekDock({
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
-      if (ev.key !== "Escape") return;
+      // Escape that closed a dialog or a menu is not for BITEK too.
+      if (ev.key !== "Escape" || ev.defaultPrevented || studioModalState(document) !== "none") return;
       if (chatOpen) {
         onChatOpenChange(false);
         avatarRef.current?.focus();
@@ -294,7 +300,7 @@ export function StudioBitekDock({
           aria-labelledby={chatTitleId}
           data-testid="studio-bitek-chat-panel"
           style={isMobile || !fitted ? undefined : { width: fitted.w, height: fitted.h }}
-          className={`bitek-pop pointer-events-auto relative flex flex-col gap-2 overflow-y-auto rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 shadow-2xl ${
+          className={`bitek-pop pointer-events-auto relative flex flex-col gap-2 overflow-y-auto rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 shadow-2xl ${isMobile ? "" : "pb-6"} ${
             isMobile ? "max-h-[min(70vh,36rem)] w-[min(24rem,calc(100vw-1.5rem))]" : fitted ? "" : "max-h-[min(70vh,36rem)] w-[min(24rem,calc(100vw-1.5rem))]"
           }`}
         >
@@ -311,20 +317,15 @@ export function StudioBitekDock({
             <Button type="button" size="sm" variant="ghost" className="min-h-9" aria-label={t("resetPozycji")} data-testid="studio-bitek-reset" onClick={resetFrame}>
               ↺
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="min-h-9"
-              aria-label={t("zamknijCzat")}
+            <CloseButton
+              label={t("zamknijCzat")}
+              className="size-9 max-sm:size-11"
               data-testid="studio-bitek-chat-close"
               onClick={() => {
                 onChatOpenChange(false);
                 avatarRef.current?.focus();
               }}
-            >
-              ✕
-            </Button>
+            />
           </header>
           {chat}
           {isMobile ? null : (
@@ -332,12 +333,16 @@ export function StudioBitekDock({
               type="button"
               data-testid="studio-bitek-resize"
               aria-label={t("rozmiar")}
-              className="absolute right-1 bottom-1 size-8 cursor-nwse-resize rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)]"
+              className="absolute right-0 bottom-0 grid size-5 cursor-nwse-resize place-items-center text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
               onPointerDown={(event) => beginPointer(event, "resize")}
               onPointerMove={movePointer}
               onPointerUp={endPointer}
               onPointerCancel={endPointer}
-            />
+            >
+              <svg viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                <path d="M11 3l-8 8M11 7.5L7.5 11" />
+              </svg>
+            </button>
           )}
         </div>
       ) : null}
@@ -358,29 +363,26 @@ export function StudioBitekDock({
           >
             {visible.hero ? (
               // eslint-disable-next-line @next/next/no-img-element -- static tiny asset, no optimizer needed
-              <img src="/bitek/bitek-hero.webp" alt="" width={240} height={240} className="mx-auto size-40 sm:size-48" />
+              <img src="/bitek/bitek-hero.webp" alt="" width={240} height={240} className="mx-auto hidden size-40 sm:block sm:size-48" />
             ) : null}
             <div className="flex items-start gap-2">
               <p className="min-w-0 flex-1" data-testid="studio-bitek-bubble-text">{visible.text}</p>
               <div className="-mt-1 -mr-1 flex shrink-0">
                 <button
                   type="button"
-                  className="grid size-8 place-items-center rounded-[2px] text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
+                  className="grid size-8 place-items-center max-sm:size-11 rounded-[2px] text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
                   aria-label={t("minimalizuj")}
                   data-testid="studio-bitek-bubble-minimize"
                   onClick={() => onMinimizedChange(true)}
                 >
                   –
                 </button>
-                <button
-                  type="button"
-                  className="grid size-8 place-items-center rounded-[2px] text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
-                  aria-label={t("zamknij")}
+                <CloseButton
+                  label={t("zamknij")}
+                  className="size-8 text-[var(--brd-mute)] hover:text-[var(--brd-ink)] max-sm:size-11"
                   data-testid="studio-bitek-bubble-close"
                   onClick={() => onDismiss(visible.key)}
-                >
-                  ✕
-                </button>
+                />
               </div>
             </div>
             {visible.details?.length ? (
@@ -481,6 +483,7 @@ export function StudioBitekDock({
             else if (event.key === "ArrowDown") nudge(0, step);
             else return;
             event.preventDefault();
+            event.stopPropagation();
           }}
           onClick={() => {
             if (suppressClick.current) {

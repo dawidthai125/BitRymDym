@@ -8,7 +8,7 @@ import { sourceOffsetSecondsAtPlayhead } from "@/lib/studio/studio-audio-clock";
 import { isTrackAudible, normalizePan } from "@/lib/studio/studio-track-ops";
 import {
   beatRefMatchesProjectSsot,
-  gainDbToLinearVolume,
+  gainDbToLinear,
 } from "@/lib/studio/studio-beat-audio";
 
 import { automationLane, trackParamAt, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
@@ -147,7 +147,7 @@ export function trackGraphParams(
     solo: track.solo,
     anySolo,
   });
-  const linear = gainDbToLinearVolume(track.gainDb);
+  const linear = gainDbToLinear(track.gainDb);
   return {
     gain: audible ? linear : 0,
     pan: normalizePan(track.pan),
@@ -156,7 +156,7 @@ export function trackGraphParams(
 
 export function clipGraphGain(clip: Pick<StudioEngineClip, "gainDb" | "muted">): number {
   if (clip.muted) return 0;
-  return gainDbToLinearVolume(clip.gainDb);
+  return gainDbToLinear(clip.gainDb);
 }
 
 export function masterGraphParams(document: Pick<
@@ -164,7 +164,7 @@ export function masterGraphParams(document: Pick<
   "masterGainDb" | "masterPan"
 >): { gain: number; pan: number } {
   return {
-    gain: gainDbToLinearVolume(document.masterGainDb),
+    gain: gainDbToLinear(document.masterGainDb),
     pan: normalizePan(document.masterPan),
   };
 }
@@ -227,7 +227,7 @@ export function trackAutomationSchedule(
   return {
     gain: gainLane
       ? audible
-        ? build(gainLane, "gainDb", track.gainDb, gainDbToLinearVolume, true)
+        ? build(gainLane, "gainDb", track.gainDb, gainDbToLinear, true)
         : { start: 0, events: [] }
       : null,
     pan: panLane ? build(panLane, "pan", track.pan, normalizePan, false) : null,

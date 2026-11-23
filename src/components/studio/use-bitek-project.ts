@@ -27,6 +27,8 @@ export type BitekProjectStore = {
 };
 
 const fallbackKey = (projectId: string) => `brd:bitek-project:${projectId}`;
+/** Bubble folded / dismissed: a per-device UI state, not a message of the project. */
+const bubbleStateKey = (projectId: string) => `brd:bitek-state:${projectId}`;
 const sessionKey = (projectId: string) => `brd:bitek-session:${projectId}`;
 
 /** Rows that belong to the conversation (session memory keeps exactly these in the tab). */
@@ -93,6 +95,14 @@ export function useBitekProject(projectId: string): BitekProjectStore {
           a.createdAt.localeCompare(b.createdAt),
         );
       }
+      let saved: string | null = null;
+      try {
+        saved = localStorage.getItem(bubbleStateKey(projectId));
+      } catch {
+        /* storage blocked */
+      }
+      messages = messages.filter((m) => m.kind !== "state");
+      if (saved) messages = [...messages, { id: "bubble-state", role: "assistant", kind: "state", content: saved, meta: {}, createdAt: new Date().toISOString() }];
       if (cancelled) return;
       availableRef.current = available;
       memoryRef.current = memory;
@@ -128,7 +138,17 @@ export function useBitekProject(projectId: string): BitekProjectStore {
   );
 
   const append = useCallback<BitekProjectStore["append"]>(
-    (rows, options) => {
+    (allRows, options) => {
+      const state = allRows.findLast((row) => row.kind === "state");
+      if (state) {
+        try {
+          localStorage.setItem(bubbleStateKey(projectId), state.content);
+        } catch {
+          /* storage blocked: this tab only */
+        }
+      }
+      const rows = allRows.filter((row) => row.kind !== "state");
+      if (rows.length === 0) return;
       const local: BitekStoredMessage[] = rows.map((r) => ({
         id: crypto.randomUUID(),
         role: "assistant",

@@ -35,13 +35,13 @@ describe("use sample in the Studio", () => {
   });
   it("adds a sample track and chains document versions", async () => {
     const s = server([beat, vocal], [], () => reply(200, { track: { id: "s" }, documentVersion: 6 }));
-    expect(await addSampleToProject({ projectId: P, sampleId: S }, s.impl)).toEqual({ ok: true });
+    expect(await addSampleToProject({ projectId: P, sampleId: S }, s.impl)).toEqual({ ok: true, startMs: 0, trackName: "Sample" });
     expect(s.calls.map((c) => c.body?.expectedDocumentVersion).filter(Boolean)).toEqual([5, 6, 7]);
     expect(s.calls.at(-1)?.body).toMatchObject({ trackId: "s", takeId: "take", timelineStartMs: 0 });
   });
   it("reuses a sample track without touching other tracks", async () => {
     const s = server([beat, vocal, { id: "s", trackType: "SAMPLE", name: "Sample" }], [{ trackId: "s", timelineStartMs: 0, durationMs: 4000 }], () => reply(500, {}));
-    expect(await addSampleToProject({ projectId: P, sampleId: S }, s.impl)).toEqual({ ok: true });
+    expect(await addSampleToProject({ projectId: P, sampleId: S }, s.impl)).toEqual({ ok: true, startMs: 4000, trackName: "Sample" });
     expect(s.calls.some((c) => c.url.includes("/tracks"))).toBe(false);
     expect(s.calls.at(-1)?.body).toMatchObject({ trackId: "s", timelineStartMs: 4000 });
   });
@@ -49,7 +49,7 @@ describe("use sample in the Studio", () => {
     const s = server([beat, vocal], [{ trackId: "v", timelineStartMs: 0, durationMs: 2000 }], () => reply(403, { error: "limit" }));
     expect(await addSampleToProject({ projectId: P, sampleId: S }, s.impl)).toEqual({ ok: false, kind: "capacity", message: "limit", tracks: [{ id: "v", name: "Wokal" }] });
     expect(s.calls.some((c) => c.url.endsWith("/copy"))).toBe(false);
-    expect(await addSampleToProject({ projectId: P, sampleId: S, trackId: "v" }, s.impl)).toEqual({ ok: true });
+    expect(await addSampleToProject({ projectId: P, sampleId: S, trackId: "v" }, s.impl)).toEqual({ ok: true, startMs: 2000, trackName: "Wokal" });
     expect(s.calls.at(-1)?.body).toMatchObject({ trackId: "v", timelineStartMs: 2000 });
   });
   it("never places on the beat track", async () => {

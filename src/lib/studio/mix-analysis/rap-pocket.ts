@@ -141,13 +141,20 @@ export type PocketTrack = {
 
 /** True when a lead vocal carries an enabled pocket slot. The parallel sum cannot duck per track, so that mix stays in-process. */
 export function mixHasRapPocket(tracks: readonly { role: string; effectsChain?: unknown }[]): boolean {
-  return tracks.some((t) => t.role === "lead_vocal" && readPocketParams(t.effectsChain) !== null);
+  return tracks.some(isPocketLead);
 }
 
-/** In place, on already-rendered track buffers, before they are summed. */
-export function applyRapPocket(tracks: readonly PocketTrack[], sampleRate: number, lengthMs: number, markers: readonly PocketMarker[]): void {
-  const leads = tracks.filter((t) => t.role === "lead_vocal" && readPocketParams(t.effectsChain));
-  if (leads.length === 0) return;
+export type PocketLeadStage = {
+  /** Sum of the pocketed leads — what the beat mids duck under. */
+  key: StereoBuf;
+  params: StudioFxPocketParams;
+  /** Hook double, after the key is taken. */
+  finish: () => void;
+};
+
+/** Section level on the pocketed leads (in place) + the key for the beat. Null when no lead has a pocket. */
+export function pocketLeadStage(leads: readonly PocketTrack[], sampleRate: number, lengthMs: number, markers: readonly PocketMarker[]): PocketLeadStage | null {
+  if (leads.length === 0) return null;
   const params = readPocketParams(leads[0]!.effectsChain)!;
   const spans = pocketSpans(markers, lengthMs);
   const len = leads[0]!.left.length;
@@ -159,9 +166,29 @@ export function applyRapPocket(tracks: readonly PocketTrack[], sampleRate: numbe
       key.right[i] += lead.right[i]!;
     }
   }
-  for (const beat of tracks) {
-    if (beat.role !== "beat" && beat.role !== "instrument") continue;
-    duckBeatMids(beat, key, sampleRate, params.depth);
-  }
-  for (const lead of leads) addHookDouble(lead, sampleRate, spans, params.doubleMs, params.doubleCents, params.doubleDb);
+  return {
+    key,
+    params,
+    finish: () => {
+      for (const lead of leads) addHookDouble(lead, sampleRate, spans, params.doubleMs, params.doubleCents, params.doubleDb);
+    },
+  };
+}
+
+/** A lead vocal with an enabled pocket slot. */
+export function isPocketLead(t: { role: string; effectsChain?: unknown }): boolean {
+  return t.role === "lead_vocal" && readPocketParams(t.effectsChain) !== null;
+}
+
+/** A track the pocket ducks. */
+export function isPocketBeat(t: { role: string }): boolean {
+  return t.role === "beat" || t.role === "instrument";
+}
+
+/** In place, on already-rendered track buffers, before they are summed. */
+export function applyRapPocket(tracks: readonly PocketTrack[], sampleRate: number, lengthMs: number, markers: readonly PocketMarker[]): void {
+  const stage = pocketLeadStage(tracks.filter(isPocketLead), sampleRate, lengthMs, markers);
+  if (!stage) return;
+  for (const beat of tracks) if (isPocketBeat(beat)) duckBeatMids(beat, stage.key, sampleRate, stage.params.depth);
+  stage.finish();
 }

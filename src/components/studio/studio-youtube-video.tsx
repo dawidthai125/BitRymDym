@@ -7,7 +7,9 @@ import { useEffect, useId, useRef, useState } from "react";
 import { LockedAction } from "@/components/plans/locked-action";
 import { StudioJobProgressBar as JobProgressBar } from "@/components/studio/studio-job-progress";
 import { Button } from "@/components/ui/button";
+import { useLibText } from "@/i18n/use-lib-text";
 import { joinParts } from "@/lib/studio/master/client";
+import { followStudioJob, refusalCode, studioJobUrl, type StudioJobBody } from "@/lib/studio/master/job-poll";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
 import { AI_COVER_ASPECTS, AI_COVER_PROMPT_MAX, AI_COVER_PROMPT_MIN, type AiCoverAspect } from "@/lib/studio/video/ai-cover/config";
 import { audioFeaturesFromPcm, coverPromptFromAudio } from "@/lib/studio/video/ai-cover/listen";
@@ -17,10 +19,13 @@ import {
 } from "@/lib/studio/video/youtube-video";
 import type { PremiumTier } from "@/types/premium";
 
-type JobLike = { job?: { status?: string; stage?: unknown; progress?: unknown; errorCode?: string | null }; downloadUrl?: string | null; playUrl?: string | null; downloadParts?: string[] | null; filename?: string | null };
+type JobLike = StudioJobBody;
 type State = {
   available: boolean; rendering?: boolean; allowed?: boolean; approved?: boolean; cover?: { url: string } | null; title?: string;
-  latest?: JobLike | null; usage?: { used: number; perWeek: number; credits: number; pack: { units: number; pricePln: number } | null } | null;
+  latest?: JobLike | null;
+  /** The latest video was made from an older master. */
+  stale?: boolean;
+  usage?: { used: number; perWeek: number; credits: number; pack: { units: number; pricePln: number } | null } | null;
   /** Gold AI cover generator (null = off / table missing). */
   ai?: { available: boolean; used?: number; perDay?: number; ownBeat?: boolean } | null;
 };
@@ -30,18 +35,35 @@ type AiRun = { status: "idle" | "working" | "ok" | "error"; imageId?: string; ur
 type Run =
   | { phase: "idle" }
   | { phase: "working" }
-  | { phase: "done"; url: string; downloadUrl: string; filename: string | null }
+  /** Still on the server, we only stopped watching. */
+  | { phase: "waiting"; jobId: string }
+  | { phase: "done"; jobId: string | null; url: string; downloadUrl: string; filename: string | null; stale?: boolean }
   | { phase: "error"; code: string };
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Same cap as the server filter; a bigger body is refused by the host before the app sees it. */
+const IMAGE_MAX_BYTES = 4 * 1024 * 1024;
 
-async function resultUrls(j: JobLike): Promise<{ play: string; download: string } | null> {
+/** Refusals and failures with their own sentence (studio.youtubeVideo.bledy.*). */
+function videoErrorKey(code: string): "image" | "notApproved" | "plan" | "network" | "signedOut" | "rateLimited" | "server" | "other" {
+  if (code === "image_missing" || code.startsWith("video_image")) return "image";
+  if (code === "not_approved") return "notApproved";
+  if (code === "tier_video") return "plan";
+  if (code === "network" || code === "missing") return "network";
+  if (code === "signed_out") return "signedOut";
+  if (code === "rate_limited") return "rateLimited";
+  if (code === "internal" || code === "no_file" || code === "worker_lost") return "server";
+  return "other";
+}
+
+/** `made` collects object URLs (they hold the whole film in memory until revoked). */
+async function resultUrls(j: JobLike, made: string[]): Promise<{ play: string; download: string } | null> {
   const play = j.playUrl || j.downloadUrl;
   if (play) return { play, download: j.downloadUrl || play };
   if (!j.downloadParts?.length) return null;
   const blob = await joinParts(j.downloadParts, "video/mp4");
   if (!blob) return null;
   const url = URL.createObjectURL(blob);
+  made.push(url);
   return { play: url, download: url };
 }
 
@@ -95,6 +117,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
   initialState?: State;
 }) {
   const t = useTranslations("studio.youtubeVideo");
+  const tl = useLibText();
   // Store app: no plan / pack links and no prices (store rules).
   const storeApp = useStoreApp();
   const locale = useLocale();
@@ -114,6 +137,18 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
   const [artist, setArtist] = useState("");
   const [run, setRun] = useState<Run>({ phase: "idle" });
   const [prog, setProg] = useState<JobProgress | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [downloadFailed, setDownloadFailed] = useState(false);
+  /** A new picture, source or text was chosen after a finished video: show that frame, not the old film. */
+  const [edited, setEdited] = useState(false);
+  const pollRef = useRef<AbortController | null>(null);
+  const uploadUrl = useRef<string | null>(null);
+  const filmUrls = useRef<string[]>([]);
+  useEffect(() => () => {
+    pollRef.current?.abort();
+    if (uploadUrl.current) URL.revokeObjectURL(uploadUrl.current);
+    for (const u of filmUrls.current.splice(0)) URL.revokeObjectURL(u);
+  }, []);
   const fileRef = useRef<HTMLInputElement>(null);
   const titleTouched = useRef(false);
 
@@ -125,24 +160,34 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       setState(j);
       if (!titleTouched.current && j.title) setTitle(j.title);
       if (!j.cover) setSource("upload");
-      if (j.latest?.job?.status === "succeeded") {
-        const urls = await resultUrls(j.latest);
-        if (live && urls) setRun({ phase: "done", url: urls.play, downloadUrl: urls.download, filename: j.latest.filename ?? null });
+      const latest = j.latest?.job;
+      if (latest?.status === "succeeded") {
+        const urls = await resultUrls(j.latest!, filmUrls.current);
+        if (live && urls) setRun({ phase: "done", jobId: latest.id ?? null, url: urls.play, downloadUrl: urls.download, filename: j.latest?.filename ?? null, stale: j.stale === true });
+      } else if ((latest?.status === "queued" || latest?.status === "running") && latest.id) {
+        // Reload during a render: pick the same video up, do not let a second one be ordered.
+        void follow(latest.id);
       }
     }).catch(() => {});
     return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- follow only reads projectId
   }, [projectId, allowed, approved, initialState]);
 
   async function pickFile(file: File | undefined) {
     if (!file) return;
+    if (file.size > IMAGE_MAX_BYTES) return setUpload({ status: "error", message: t("grafikaZaDuza") });
     setUpload({ status: "checking" });
     const form = new FormData();
     form.set("image", file);
     try {
       const r = await fetch(`/api/studio/projects/${projectId}/video/image`, { method: "POST", body: form });
       const j = await r.json().catch(() => ({}));
-      if (r.ok && j.imageId) setUpload({ status: "ok", imageId: j.imageId, url: j.previewUrl ?? URL.createObjectURL(file) });
-      else setUpload({ status: "error", message: typeof j.message === "string" ? j.message : t("grafikaBlad") });
+      if (r.ok && j.imageId) {
+        if (uploadUrl.current) URL.revokeObjectURL(uploadUrl.current);
+        uploadUrl.current = j.previewUrl ? null : URL.createObjectURL(file);
+        setUpload({ status: "ok", imageId: j.imageId, url: j.previewUrl ?? uploadUrl.current ?? undefined });
+        setEdited(true);
+      } else setUpload({ status: "error", message: r.status === 413 ? t("grafikaZaDuza") : typeof j.message === "string" ? tl(j.message) : t("grafikaBlad") });
     } catch {
       setUpload({ status: "error", message: t("grafikaBlad") });
     }
@@ -202,10 +247,11 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.imageId) {
         setAi({ status: "ok", imageId: j.imageId, url: j.previewUrl ?? undefined, cover: "idle" });
+        setEdited(true);
         if (typeof j.used === "number") setState((s) => (s?.ai ? { ...s, ai: { ...s.ai, used: j.used, perDay: j.perDay ?? s.ai.perDay } } : s));
         return;
       }
-      const message = j.error === "daily_limit" ? t("ai.limit") : r.status === 200 && j.available === false ? t("ai.niedostepne") : typeof j.message === "string" ? j.message : t("ai.blad");
+      const message = j.error === "daily_limit" ? t("ai.limit") : r.status === 200 && j.available === false ? t("ai.niedostepne") : typeof j.message === "string" ? tl(j.message) : t("ai.blad");
       setAi({ status: "error", message });
     } catch {
       setAi({ status: "error", message: t("ai.blad") });
@@ -221,31 +267,56 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.coverStatus) return setAi((a) => ({ ...a, cover: j.coverStatus === "approved" ? "approved" : "pending" }));
-      setAi((a) => ({ ...a, cover: "error", coverMessage: typeof j.message === "string" ? j.message : t("ai.okladkaBlad") }));
+      setAi((a) => ({ ...a, cover: "error", coverMessage: typeof j.message === "string" ? tl(j.message) : t("ai.okladkaBlad") }));
     } catch {
       setAi((a) => ({ ...a, cover: "error", coverMessage: t("ai.okladkaBlad") }));
     }
   }
 
-  async function poll(jobId: string): Promise<Run> {
-    for (let i = 0; i < 300; i++) {
-      const r = await fetch(`/api/studio/projects/${projectId}/jobs/${jobId}`);
-      const j: JobLike | null = r.ok ? await r.json() : null;
-      const st = j?.job?.status;
-      if (j?.job) setProg((p) => (st === "succeeded" ? { stage: "done", progress: 100 } : jobProgressOf(j.job!, p)));
-      if (st === "succeeded") {
-        const urls = await resultUrls(j!);
-        return urls ? { phase: "done", url: urls.play, downloadUrl: urls.download, filename: j!.filename ?? null } : { phase: "error", code: "no_file" };
-      }
-      if (st === "failed" || st === "cancelled") return { phase: "error", code: j?.job?.errorCode ?? st };
-      await sleep(i < 90 ? 1000 : 3000);
+  async function follow(jobId: string) {
+    pollRef.current?.abort();
+    const controller = new AbortController();
+    pollRef.current = controller;
+    setRun({ phase: "working" });
+    setProg((p) => p ?? { stage: "queued", progress: 0 });
+    const out = await followStudioJob(projectId, jobId, {
+      signal: controller.signal,
+      onUpdate: (body) => setProg((p) => jobProgressOf(body.job ?? {}, p)),
+      onConnection: (ok) => setOffline(!ok),
+    });
+    if (out.kind === "aborted" || controller.signal.aborted) return;
+    setOffline(false);
+    if (out.kind === "pending" || out.kind === "signed_out") return setRun({ phase: "waiting", jobId });
+    if (out.kind === "missing") return setRun({ phase: "error", code: "missing" });
+    if (out.kind === "failed") {
+      setRun({ phase: "error", code: out.code });
+      return void refreshUsage();
     }
-    return { phase: "error", code: "timeout" };
+    setProg({ stage: "done", progress: 100 });
+    const urls = await resultUrls(out.body, filmUrls.current);
+    if (controller.signal.aborted) return;
+    if (!urls) return setRun({ phase: "error", code: "no_file" });
+    setEdited(false);
+    setRun({ phase: "done", jobId, url: urls.play, downloadUrl: urls.download, filename: out.body.filename ?? null });
+    void refreshUsage();
+  }
+
+  /** The server counts (plan videos first, then pack credits, failed ones do not count). */
+  async function refreshUsage() {
+    try {
+      const r = await fetch(`/api/studio/projects/${projectId}/video`);
+      const j = r.ok ? ((await r.json()) as State) : null;
+      if (j?.usage) setState((s) => (s ? { ...s, usage: j.usage } : s));
+    } catch {
+      // the counter stays as it was
+    }
   }
 
   async function make() {
+    if (run.phase === "working" || run.phase === "waiting") return;
     setRun({ phase: "working" });
     setProg({ stage: "queued", progress: 0 });
+    let jobId: string | null = null;
     try {
       const r = await fetch(`/api/studio/projects/${projectId}/video`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -253,17 +324,56 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       });
       const j = await r.json().catch(() => ({}));
       if (r.status === 200 && j.available === false) return setRun({ phase: "error", code: "unavailable" });
-      if (!r.ok || !j.jobId) return setRun({ phase: "error", code: String(j.error ?? r.status) });
-      const out = await poll(j.jobId);
-      setRun(out);
-      if (out.phase === "done") setState((s) => {
-        if (!s?.usage) return s;
-        if (s.usage.used < s.usage.perWeek) return { ...s, usage: { ...s.usage, used: s.usage.used + 1 } };
-        return { ...s, usage: { ...s.usage, credits: Math.max(0, s.usage.credits - 1) } };
-      });
+      // Already being made (other tab, earlier click): follow that one.
+      if (j.error === "in_progress" && typeof j.jobId === "string") jobId = j.jobId;
+      else if (!r.ok || !j.jobId) return setRun({ phase: "error", code: refusalCode(r.status, j.error) });
+      else jobId = String(j.jobId);
     } catch {
-      setRun({ phase: "error", code: "network" });
+      return setRun({ phase: "error", code: "network" });
     }
+    await follow(jobId!);
+  }
+
+  /** The film's address expired while the page was open: one fresh address, then it stays as it is. */
+  const refreshedAt = useRef(0);
+  async function refreshVideo() {
+    if (run.phase !== "done" || !run.jobId || Date.now() - refreshedAt.current < 30_000) return;
+    refreshedAt.current = Date.now();
+    try {
+      const r = await fetch(studioJobUrl(projectId, run.jobId), { cache: "no-store" });
+      const urls = r.ok ? await resultUrls((await r.json()) as JobLike, filmUrls.current) : null;
+      if (urls) setRun((cur) => (cur.phase === "done" ? { ...cur, url: urls.play, downloadUrl: urls.download } : cur));
+    } catch {
+      // the player shows its own error
+    }
+  }
+
+  /** Signed links live 10 minutes: always download with a fresh one, never leave the Studio for an error page. */
+  async function download() {
+    if (run.phase !== "done") return;
+    setDownloadFailed(false);
+    let downloadUrl = run.downloadUrl;
+    let filename = run.filename;
+    if (run.jobId) {
+      try {
+        const r = await fetch(studioJobUrl(projectId, run.jobId), { cache: "no-store" });
+        if (!r.ok) return setDownloadFailed(true);
+        const body = (await r.json()) as JobLike;
+        const urls = await resultUrls(body, filmUrls.current);
+        if (urls) {
+          downloadUrl = urls.download;
+          filename = body.filename ?? filename;
+          setRun({ ...run, url: urls.play, downloadUrl, filename });
+        }
+      } catch {
+        return setDownloadFailed(true);
+      }
+    }
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.rel = "noopener";
+    a.download = filename ?? "youtube.mp4";
+    a.click();
   }
 
   const imageUrl = source === "cover" ? state?.cover?.url ?? null
@@ -273,7 +383,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
   const aiLimit = !!aiState?.perDay && (aiState.used ?? 0) >= aiState.perDay;
   const aiPromptLen = aiPrompt.trim().length;
   const limitReached = !!state?.usage && state.usage.used >= state.usage.perWeek && state.usage.credits <= 0;
-  const canMake = allowed && approved && !!imageUrl && run.phase !== "working" && !limitReached && state?.available !== false && state?.rendering !== false;
+  const canMake = allowed && approved && !!imageUrl && run.phase !== "working" && run.phase !== "waiting" && !limitReached && state?.available !== false && state?.rendering !== false;
   const shownTitle = showText ? cleanVideoText(title) : null;
   const shownArtist = showText ? cleanVideoText(artist) : null;
 
@@ -281,13 +391,13 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
     <section aria-labelledby={`${uid}-title`} data-testid="studio-youtube-video" data-tier={tier ?? "guest"} className="flex flex-col gap-3 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3">
       <div className="flex flex-wrap items-baseline gap-2">
         <h3 id={`${uid}-title`} className="brd-display text-lg">{t("tytul")}</h3>
-        <span className="rounded-[2px] border border-[var(--brd-amber)] px-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]">{allowed && tier ? tier : "Gold"}</span>
+        <span className="rounded-[2px] border border-[var(--brd-amber)] px-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]">{allowed && tier ? tier : t("odBronze")}</span>
       </div>
       <p className="text-sm">{t("opis")}</p>
 
       {!allowed ? (
         <div data-testid="studio-yt-locked" className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <LockedAction reason="plan" minTier="GOLD" action="video" testId="studio-yt-make" buttonClassName="px-3">{t("zrob")}</LockedAction>
+          <LockedAction reason="plan" minTier="BRONZE" action="video" testId="studio-yt-make" buttonClassName="px-3">{t("zrob")}</LockedAction>
           <span className="text-sm">{t(storeApp ? "tylkoGoldSklep" : "tylkoGold")} <StoreAppHidden><a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a></StoreAppHidden></span>
         </div>
       ) : (
@@ -305,7 +415,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
                   const disabled = s === "cover" && !state?.cover;
                   return (
                     <label key={s} className={`flex min-h-9 items-center gap-2 text-sm ${disabled ? "opacity-60" : ""}`}>
-                      <input type="radio" name={`${uid}-src`} value={s} checked={source === s} disabled={disabled} onChange={() => setSource(s)} data-testid={`studio-yt-src-${s}`} className="h-4 w-4 accent-[var(--brd-amber)]" />
+                      <input type="radio" name={`${uid}-src`} value={s} checked={source === s} disabled={disabled} onChange={() => { setSource(s); setEdited(true); }} data-testid={`studio-yt-src-${s}`} className="h-4 w-4 accent-[var(--brd-amber)]" />
                       {t(`zrodlo.${s}`)}
                       {disabled ? <span className="text-xs text-[var(--brd-mute)]">— {t("brakOkladki")}</span> : null}
                     </label>
@@ -313,7 +423,12 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
                 })}
                 {source === "upload" ? (
                   <div className="flex flex-col gap-1 pl-6">
-                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" id={`${uid}-file`} data-testid="studio-yt-file" onChange={(e) => void pickFile(e.currentTarget.files?.[0])} />
+                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" id={`${uid}-file`} data-testid="studio-yt-file" onChange={(e) => {
+                      const file = e.currentTarget.files?.[0];
+                      // Cleared, so the same file can be chosen again after a refusal.
+                      e.currentTarget.value = "";
+                      void pickFile(file);
+                    }} />
                     <Button type="button" size="sm" variant="outline" className="min-h-9 self-start" disabled={upload.status === "checking"} onClick={() => fileRef.current?.click()}>
                       {upload.status === "checking" ? t("sprawdzam") : upload.status === "ok" ? t("zmienPlik") : t("wybierzPlik")}
                     </Button>
@@ -390,18 +505,18 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
               </fieldset>
               <div className="flex flex-col gap-2">
                 <label className="flex min-h-9 items-center gap-2 text-sm">
-                  <input type="checkbox" checked={showText} onChange={(e) => setShowText(e.currentTarget.checked)} data-testid="studio-yt-text" className="h-4 w-4 accent-[var(--brd-amber)]" />
+                  <input type="checkbox" checked={showText} onChange={(e) => { setShowText(e.currentTarget.checked); setEdited(true); }} data-testid="studio-yt-text" className="h-4 w-4 accent-[var(--brd-amber)]" />
                   {t("tekstPokaz")}
                 </label>
                 {showText ? (
                   <>
                     <label className="flex flex-col gap-1 text-sm">
                       {t("tekstTytul")}
-                      <input value={title} maxLength={YT_VIDEO_TEXT_MAX} onChange={(e) => { titleTouched.current = true; setTitle(e.currentTarget.value); }} data-testid="studio-yt-title" className="min-h-9 rounded-[2px] border border-[var(--brd-line)] bg-transparent px-2" />
+                      <input value={title} maxLength={YT_VIDEO_TEXT_MAX} onChange={(e) => { titleTouched.current = true; setTitle(e.currentTarget.value); setEdited(true); }} data-testid="studio-yt-title" className="min-h-9 rounded-[2px] border border-[var(--brd-line)] bg-transparent px-2" />
                     </label>
                     <label className="flex flex-col gap-1 text-sm">
                       {t("tekstArtysta")}
-                      <input value={artist} maxLength={YT_VIDEO_TEXT_MAX} onChange={(e) => setArtist(e.currentTarget.value)} data-testid="studio-yt-artist" className="min-h-9 rounded-[2px] border border-[var(--brd-line)] bg-transparent px-2" />
+                      <input value={artist} maxLength={YT_VIDEO_TEXT_MAX} onChange={(e) => { setArtist(e.currentTarget.value); setEdited(true); }} data-testid="studio-yt-artist" className="min-h-9 rounded-[2px] border border-[var(--brd-line)] bg-transparent px-2" />
                     </label>
                     <span className="text-xs text-[var(--brd-mute)]">{t("tekstLimit", { n: YT_VIDEO_TEXT_MAX })}</span>
                   </>
@@ -409,8 +524,8 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
               </div>
             </div>
             <div className="flex min-w-0 flex-col gap-2">
-              {run.phase === "done" ? (
-                <video controls preload="metadata" src={run.url} className="aspect-video w-full rounded-[2px] border border-[var(--brd-line)] bg-black" data-testid="studio-yt-result" />
+              {run.phase === "done" && !edited ? (
+                <video controls preload="metadata" src={run.url} onError={() => void refreshVideo()} className="aspect-video w-full rounded-[2px] border border-[var(--brd-line)] bg-black" data-testid="studio-yt-result" />
               ) : (
                 <FramePreview src={imageUrl} title={shownTitle} artist={shownArtist} label={t("podglad")} empty={t("brakObrazu")} format={t("formatOpis")} />
               )}
@@ -421,14 +536,22 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
               {run.phase === "working" ? t("trwa") : t("zrob")}
             </Button>
             {run.phase === "done" ? (
-              <a href={run.downloadUrl} download={run.filename ?? "youtube.mp4"} className="inline-flex min-h-10 items-center font-semibold underline underline-offset-4" data-testid="studio-yt-download">⬇ {t("pobierz")}</a>
+              <Button type="button" variant="outline" className="min-h-10" onClick={() => void download()} data-testid="studio-yt-download">⬇ {t("pobierz")}</Button>
             ) : null}
             {state?.usage && state.usage.perWeek > 0 ? <span className={`text-xs ${limitReached ? "text-[var(--brd-rec)]" : "text-[var(--brd-mute)]"}`}>{t("licznik", { used: state.usage.used, limit: state.usage.perWeek })}</span> : null}
             {state?.usage && state.usage.credits > 0 ? <span className="text-xs text-[var(--brd-mute)]">{t("pakietZostalo", { n: state.usage.credits })}</span> : null}
           </div>
           {run.phase === "working" && prog ? <JobProgressBar value={prog} label={t(`etap.${prog.stage}`)} ariaLabel={t("postepAria")} testId="studio-yt-progress" /> : null}
-          {run.phase === "done" ? <p role="status" className="text-sm">{t("gotowe")}</p> : null}
-          {run.phase === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{run.code === "unavailable" ? t("niedostepne") : run.code === "video_soon" ? t("wkrotce") : run.code === "weekly_limit" || run.code === "daily_limit" ? t(state?.usage?.perWeek ? (storeApp ? "limitSklep" : "limit") : storeApp ? "limitJednorazowoSklep" : "limitJednorazowo") : t("blad", { code: run.code })}</p> : null}
+          {run.phase === "working" && offline ? <p role="status" className="text-sm">{t("offline")}</p> : null}
+          {run.phase === "waiting" ? (
+            <p role="status" className="flex flex-wrap items-center gap-2 text-sm" data-testid="studio-yt-waiting">
+              {t("czeka")}
+              <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void follow(run.jobId)}>{t("sprawdz")}</Button>
+            </p>
+          ) : null}
+          {downloadFailed ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t("pobierzBlad")}</p> : null}
+          {run.phase === "done" ? <p role="status" className="text-sm" data-testid="studio-yt-status">{t(run.stale ? "stareWideo" : edited ? "podgladNowego" : "gotowe")}</p> : null}
+          {run.phase === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{run.code === "unavailable" ? t("niedostepne") : run.code === "video_soon" ? t("wkrotce") : run.code === "weekly_limit" || run.code === "daily_limit" ? t(state?.usage?.perWeek ? (storeApp ? "limitSklep" : "limit") : storeApp ? "limitJednorazowoSklep" : "limitJednorazowo") : t(`bledy.${videoErrorKey(run.code)}`)}</p> : null}
           {limitReached && run.phase !== "error" ? (
             <p role="status" className="text-sm">
               {t(state?.usage?.perWeek ? (storeApp ? "limitSklep" : "limit") : storeApp ? "limitJednorazowoSklep" : "limitJednorazowo")}

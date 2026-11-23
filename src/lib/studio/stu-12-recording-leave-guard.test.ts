@@ -366,10 +366,11 @@ describe("STU-12 D — copy and wiring", () => {
     expect(dialog).toMatch(/aria-modal="true"/);
     expect(dialog).toMatch(/stayRef\.current\?\.focus\(\)/);
     expect(dialog).toMatch(/window\.addEventListener\("keydown", onKeyDown, true\)/);
-    expect(dialog).toMatch(/event\.key === "Escape"[\s\S]*?stopImmediatePropagation\(\);\s+onStay\(\)/);
+    expect(dialog).toMatch(/event\.key === "Escape"[\s\S]*?stopImmediatePropagation\(\);\s+onStayRef\.current\(\)/);
+    expect(dialog).toMatch(/onStayRef\.current = onStay;/);
     expect(dialog).toMatch(/onClick=\{onStay\}/);
     // above Inspector / Mixer (z-45) and FxSheet (z-50); bottom sheet on mobile
-    expect(dialog).toMatch(/z-\[60\]/);
+    expect(dialog).toMatch(/z-\[70\]/);
     expect(dialog).toMatch(/max-md:rounded-t-lg/);
     expect(dialog).toMatch(/min-h-11/);
   });

@@ -8,6 +8,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, use
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { audioToMidiNotes, downsampleMono, pickMidiTrackId } from "@/lib/studio/mix-analysis/audio-to-midi";
+import { renderTrack } from "@/lib/studio/mix-analysis/render";
+import type { StudioMidiV1 } from "@/lib/studio/studio-midi";
 import {
   autoMixMasterMaterial,
   clearAutoMixHandoff,
@@ -27,6 +29,8 @@ import { watchMixManual, type ManualIssue, type WatchTrack } from "@/lib/studio/
 import { Button } from "@/components/ui/button";
 import { bitekRulesGuide, type BitekAction, type BitekAnalysisState } from "@/lib/studio/bitek/bitek-guide";
 import {
+  decodeMixAnalysisInput,
+  MixSourceError,
   runStudioMixAnalysis,
   type MixAnalysisFailure,
 } from "@/lib/studio/mix-analysis/client";
@@ -49,7 +53,7 @@ import {
   techChipsFromAutofixNotes,
 } from "@/lib/studio/mix-autofix/tech-log";
 import { BITEK_POLISH_TILES } from "@/lib/studio/bitek-polish-tiles";
-import { planBeatDuckerOps } from "@/lib/studio/beat-ducker-plan";
+import { planBeatDucker } from "@/lib/studio/beat-ducker-plan";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
 import { StudioVocalSetsCard } from "@/components/studio/studio-vocal-presets";
@@ -79,7 +83,25 @@ type FixPanel =
       key: string;
     }
   | { kind: "nothing" }
+  /** The plan's effect limit left nothing to add. */
+  | { kind: "limit" }
+  /** Beat ducker without a lead vocal. */
+  | { kind: "noLead" }
+  /** The project changed after the plan was made. */
+  | { kind: "stale" }
   | { kind: "error"; conflict: boolean };
+
+/** Notes that describe a change (limit notes only explain what was left out). */
+const changeNotes = (notes: readonly MixAutofixNote[]) => notes.filter((n) => n.key !== "planLimit" && n.key !== "chainFull");
+
+/** A thrown apply counts as a failed save, so no button can stay on "Poprawiam…". */
+async function safeApply(apply: MixAutofixApply, ...args: Parameters<MixAutofixApply>): ReturnType<MixAutofixApply> {
+  try {
+    return await apply(...args);
+  } catch {
+    return { ok: false, conflict: false };
+  }
+}
 
 /** Nova / „Popraw wszystko” — show tech plan first; smaller tiles apply immediately. */
 function needsProposeGate(key: string): boolean {
@@ -87,17 +109,24 @@ function needsProposeGate(key: string): boolean {
 }
 
 const STATUS_RAIL: Record<MixCardStatus, string> = {
-  green: "border-l-[var(--brd-green)]",
+  // In the Studio theme --brd-green is the same orange as --brd-amber, so OK has its own green.
+  green: "border-l-[var(--brd-ok,#4caf6d)]",
   yellow: "border-l-[var(--brd-amber)]",
   red: "border-l-[var(--brd-rec)]",
   na: "border-l-[var(--brd-line)]",
 };
 const STATUS_DOT: Record<MixCardStatus, string> = {
-  green: "bg-[var(--brd-green)]",
+  green: "bg-[var(--brd-ok,#4caf6d)]",
   yellow: "bg-[var(--brd-amber)]",
   red: "bg-[var(--brd-rec)]",
   na: "bg-[var(--brd-line)]",
 };
+
+/** Colour and shape: OK = circle, warning = diamond, problem = square. */
+function StatusMark({ status }: { status: MixCardStatus }) {
+  const shape = status === "yellow" ? "rotate-45" : status === "red" ? "" : "rounded-full";
+  return <span aria-hidden className={`size-2.5 shrink-0 ${shape} ${STATUS_DOT[status]}`} />;
+}
 
 /** Mix-relevant document signature — analysis goes stale when it changes. */
 export function studioMixSignature(doc: StudioProjectDocument): string {
@@ -105,23 +134,36 @@ export function studioMixSignature(doc: StudioProjectDocument): string {
     doc.project.masterGainDb,
     doc.project.masterPan,
     doc.project.masterFxChain,
-    doc.tracks.map((t) => [t.id, t.gainDb, t.pan, t.muted, t.solo, t.trackRole, t.effectsChain]),
-    doc.clips.map((c) => [c.id, c.trackId, c.timelineStartMs, c.durationMs, c.sourceOffsetMs, c.gainDb, c.muted, c.fadeInMs, c.fadeOutMs]),
+    doc.tracks.map((t) => [t.id, t.gainDb, t.pan, t.muted, t.solo, t.trackRole, t.effectsChain, t.automation ?? null, t.midi ?? null]),
+    doc.clips.map((c) => [
+      c.id, c.trackId, c.timelineStartMs, c.durationMs, c.sourceOffsetMs, c.gainDb, c.muted, c.fadeInMs, c.fadeOutMs,
+      c.sourceTakeId, c.sourceBeatId,
+      c.stretchRatio ?? 1, c.pitchCents ?? 0, c.scratchCueMs ?? 0, c.scratchReverse ?? false, c.scratchRate ?? 1,
+    ]),
+    (doc.markers ?? []).map((m) => [m.kind, m.positionMs]),
   ]);
 }
 
-/** Decimal comma in PL ("2,5:1"); strings untouched. */
+/** "−9.3 LUFS" → "−9,3 LUFS" in PL. Only decimal points between digits. */
+export function localizeNumberText(text: string, locale: string): string {
+  return locale === "en" ? text : text.replace(/(\d)\.(\d)/g, "$1,$2");
+}
+
+/** Decimal comma in PL ("2,5:1"); track names untouched. */
 function localizeParams(params: Record<string, string | number>, locale: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(params)) {
-    out[k] = typeof v === "number" ? v.toLocaleString(locale === "en" ? "en-US" : "pl-PL", { maximumFractionDigits: 2 }) : v;
+    out[k] =
+      typeof v === "number"
+        ? v.toLocaleString(locale === "en" ? "en-US" : "pl-PL", { maximumFractionDigits: 2 })
+        : /^[-−+]?\d+\.\d+$/.test(v)
+          ? localizeNumberText(v, locale)
+          : v;
   }
   return out;
 }
 
-const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(1) : "−∞");
-
-type Result = { metrics: MixMetrics; verdict: MixVerdict; signature: string; elapsedMs: number };
+type Result = { metrics: MixMetrics; verdict: MixVerdict; signature: string; cleanupSig: string | null; elapsedMs: number };
 
 export function StudioMixStep({
   doc,
@@ -129,6 +171,8 @@ export function StudioMixStep({
   onBack,
   bitekBase,
   onApplyAutofix,
+  onSaveTrackMidi,
+  onOpenMixer,
   onAbOverride,
   onBitekBubble,
   onBitekNote,
@@ -156,6 +200,10 @@ export function StudioMixStep({
   onBack: () => void;
   bitekBase: { hasBeat: boolean; vocalTrackCount: number; vocalClipCount: number };
   onApplyAutofix?: MixAutofixApply;
+  /** Notes from the vocal go through the editor's save queue (undo included). */
+  onSaveTrackMidi?: (trackId: string, midi: StudioMidiV1) => void;
+  /** Below 1280 px the mixer dock is hidden: this opens it as a sheet. */
+  onOpenMixer?: () => void;
   onAbOverride?: (before: StudioProjectDocument | null) => void;
   /** Stage 2b — what BITEK says in the floating bubble for the Mix step. */
   onBitekBubble?: (bubble: BitekBubble | null) => void;
@@ -165,20 +213,30 @@ export function StudioMixStep({
 }) {
   const locale = useLocale();
   const t = useTranslations("studio.mixStep");
+  const beatKey = useProjectBeatKey(doc.project.id)?.key ?? null;
   /** planMixAutofix limited to what the user's plan can save (otherwise the server rejects the whole fix). */
   const planForPlan = useCallback(
-    (args: Parameters<typeof planMixAutofix>[0]) => planMixAutofix({ ...args, maxEffects, allowSidechain }),
-    [maxEffects, allowSidechain],
+    (args: Parameters<typeof planMixAutofix>[0]) => planMixAutofix({ ...args, maxEffects, allowSidechain, beatKey }),
+    [maxEffects, allowSidechain, beatKey],
   );
+  const fmt = (n: number) => (Number.isFinite(n) ? localizeNumberText(n.toFixed(1), locale) : "−∞");
   const tRole = useTranslations("studio.trackRole");
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [failure, setFailure] = useState<MixAnalysisFailure | null>(null);
+  /** Track whose audio did not load (analysis failure). */
+  const [failedTrack, setFailedTrack] = useState<string | null>(null);
+  /** Applied vocal cleanups (they change the sound without changing the document). Null = not loaded yet. */
+  const [cleanupSig, setCleanupSig] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [masterInfoOpen, setMasterInfoOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const signature = useMemo(() => studioMixSignature(doc), [doc]);
-  const stale = Boolean(result && result.signature !== signature);
+  const stale = Boolean(
+    result && (result.signature !== signature || (result.cleanupSig !== null && result.cleanupSig !== cleanupSig)),
+  );
+  // The cleanup list can arrive after the analysis started: that first value is what was analysed.
+  if (result && result.cleanupSig === null && cleanupSig !== null) setResult({ ...result, cleanupSig });
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -205,15 +263,20 @@ export function StudioMixStep({
   const [fixing, setFixing] = useState<string | null>(null);
   const [midiBusy, setMidiBusy] = useState(false);
   const [midiNote, setMidiNote] = useState<string | null>(null);
-  const [panel, setPanel] = useState<FixPanel | null>(null);
+  const [panelState, setPanel] = useState<FixPanel | null>(null);
+  // A plan made for an older project is never applied: it asks for a new analysis instead.
+  const panel = useMemo<FixPanel | null>(
+    () => (panelState?.kind === "propose" && stale ? { kind: "stale" } : panelState),
+    [panelState, stale],
+  );
   const [fixSeq, setFixSeq] = useState(0);
   /** Committed auto-fix rounds only (fixSeq also counts the "propose" step of gated fixes). */
   const [rounds, setRounds] = useState(0);
   const [declinedKey, setDeclinedKey] = useState<string | null>(null);
   const [ab, setAb] = useState<{ before: StudioProjectDocument; afterSig: string | null; metricsBefore: MixMetrics | null } | null>(null);
-  const [abMode, setAbMode] = useState<"before" | "after">("after");
-  const [listenMode, setListenMode] = useState<"dry" | "mix" | "master">("mix");
-  const reanalyzeRef = useRef<{ fromSig: string } | null>(null);
+  /** One listening state: dry stems, the current mix, or the mix before the last fix. */
+  const [listen, setListen] = useState<"dry" | "mix" | "before">("mix");
+  const reanalyzeRef = useRef(false);
   const reportRef = useRef(false);
   const abOverrideRef = useRef(onAbOverride);
   useEffect(() => {
@@ -233,6 +296,8 @@ export function StudioMixStep({
   const songFixed = useRef(false);
   /** Auto-fix passes done in this "Make the song" run (Nova pass first, then at most one full pass). */
   const songRounds = useRef(0);
+  /** The mix before the first round of an automatic run (A/B and the change report). */
+  const songBefore = useRef<{ before: StudioProjectDocument; metrics: MixMetrics } | null>(null);
   const goMasterRef = useRef(onGoMaster);
   const listenRef = useRef(onListen);
   useEffect(() => {
@@ -241,6 +306,7 @@ export function StudioMixStep({
   });
   const beginAutoMix = () => {
     clearBitekRecordHandoff();
+    songBefore.current = null;
     setFailure(null);
     setPanel(null);
     setAutoPhase("run");
@@ -259,6 +325,7 @@ export function StudioMixStep({
       if (!live || !readAutoMixHandoff(doc.project.id)) return;
       clearAutoMixHandoff();
       clearBitekRecordHandoff();
+      songBefore.current = null;
       setFailure(null);
       setPanel(null);
       setAutoPhase("run");
@@ -275,6 +342,7 @@ export function StudioMixStep({
     abortRef.current = controller;
     setRunning(true);
     setFailure(null);
+    setFailedTrack(null);
     setProgress(0);
     setMasterInfoOpen(false);
     const sig = signature;
@@ -287,7 +355,7 @@ export function StudioMixStep({
     if (abortRef.current !== controller) return;
     setRunning(false);
     if (outcome.ok) {
-      setResult({ metrics: outcome.metrics, verdict: outcome.verdict, signature: sig, elapsedMs: outcome.elapsedMs });
+      setResult({ metrics: outcome.metrics, verdict: outcome.verdict, signature: sig, cleanupSig, elapsedMs: outcome.elapsedMs });
       if (reportRef.current) {
         reportRef.current = false;
         const v = outcome.verdict;
@@ -296,73 +364,74 @@ export function StudioMixStep({
       }
     } else {
       setFailure(outcome.reason);
+      setFailedTrack(outcome.track ?? null);
     }
-  }, [doc, resolveClipSourceUrl, signature, t]);
+  }, [doc, resolveClipSourceUrl, signature, cleanupSig, t]);
 
-  // After a confirmed apply the doc signature changes → re-analyse once.
+  // After a confirmed apply → re-analyse once (the new document is already in this render).
   useEffect(() => {
-    const pending = reanalyzeRef.current;
-    if (!pending || pending.fromSig === signature) return;
-    reanalyzeRef.current = null;
+    if (!reanalyzeRef.current) return;
+    reanalyzeRef.current = false;
     reportRef.current = true;
     setAb((cur) => (cur ? { ...cur, afterSig: signature } : cur));
     void analyze();
-  }, [signature, analyze]);
+  }, [rounds, signature, analyze]);
 
   // Any further edit ends the A/B comparison (derived, not stored).
   const abLive = ab && (!ab.afterSig || ab.afterSig === signature) ? ab : null;
-  const abEnded = Boolean(ab && !abLive);
+  const listenNow = listen === "before" && !abLive ? "mix" : listen;
+  // Always built from the current document, so sliders and fixes stay audible in "dry" too.
   useEffect(() => {
-    if (abEnded) onAbOverride?.(null);
-  }, [abEnded, onAbOverride]);
-
-  const setLevelListen = (mode: "dry" | "mix" | "master") => {
-    if (!onAbOverride || mode === "master") return;
-    setListenMode(mode);
-    if (mode === "dry") {
+    const override = abOverrideRef.current;
+    if (!override) return;
+    if (listenNow === "dry") {
       const empty = emptyStudioFxChain();
-      onAbOverride({
+      override({
         ...doc,
         project: { ...doc.project, masterGainDb: 0, masterPan: 0, masterFxChain: empty },
-        tracks: doc.tracks.map((t) => ({ ...t, gainDb: 0, pan: 0, solo: false, effectsChain: empty, automation: undefined })),
+        tracks: doc.tracks.map((track) => ({ ...track, gainDb: 0, pan: 0, solo: false, effectsChain: empty, automation: undefined })),
       });
       return;
     }
-    onAbOverride(null);
-  };
-
-  const setAbListen = (mode: "before" | "after") => {
-    const ab = abLive;
-    if (!ab) return;
-    setAbMode(mode);
-    onAbOverride?.(mode === "before" ? ab.before : null);
-  };
+    override(listenNow === "before" && abLive ? abLive.before : null);
+  }, [listenNow, abLive, doc]);
 
   const commitAutofix = async (
     ops: MixWorkingOp[],
     notes: MixAutofixNote[],
     key: string,
     summary: string,
+    autoRun = false,
   ) => {
     const applyAutofix = applyAutofixRef.current;
-    if (!result || !applyAutofix || fixing || running || stale) return;
+    if (!result || !applyAutofix || fixing || running) return;
+    if (stale) {
+      setPanel({ kind: "stale" });
+      return;
+    }
     setFixing(key);
-    if (ab) onAbOverride?.(null);
-    const res = await applyAutofix(ops, t("autofix.historia", { summary }));
+    setListen("mix");
+    const res = await safeApply(applyAutofix, ops, t("autofix.historia", { summary }));
     setFixing(null);
     if (!res.ok) {
       setPanel({ kind: "error", conflict: res.conflict });
       return;
     }
-    reanalyzeRef.current = { fromSig: signature };
-    setAb({ before: res.before, afterSig: null, metricsBefore: result.metrics });
-    setAbMode("after");
+    reanalyzeRef.current = true;
+    // "Make the song" is several rounds but one change for the user: compare with the mix before the first one.
+    const first = songBefore.current;
+    if (autoRun && !first) songBefore.current = { before: res.before, metrics: result.metrics };
+    setAb({
+      before: autoRun && first ? first.before : res.before,
+      afterSig: null,
+      metricsBefore: autoRun && first ? first.metrics : result.metrics,
+    });
     setPanel({ kind: "done", notes, after: null });
     setFixSeq((n) => n + 1);
     setRounds((n) => n + 1);
     const texts = notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
     const tech = techChipsFromAutofixNotes(notes).map((c) =>
-      c.track ? `${c.track}: ${c.label}` : c.label,
+      c.track ? `${c.track}: ${localizeNumberText(c.label, locale)}` : localizeNumberText(c.label, locale),
     );
     onBitekNote?.(t("autofix.historia", { summary }), {
       notes: [...texts, ...(tech.length ? [t("autofix.techTytul"), ...tech] : [])],
@@ -373,6 +442,15 @@ export function StudioMixStep({
     commitAutofixRef.current = commitAutofix;
   });
 
+  /** One-tap fix outside the audit flow: failures are shown, never swallowed. */
+  const applyQuick = async (ops: MixWorkingOp[]): Promise<boolean> => {
+    const apply = applyAutofixRef.current;
+    if (!apply) return false;
+    const res = await safeApply(apply, ops, "BITEK");
+    if (!res.ok) setPanel({ kind: "error", conflict: res.conflict });
+    return res.ok;
+  };
+
   const runFix = async (
     fixes: readonly MixPlanFixId[],
     key: string,
@@ -380,6 +458,10 @@ export function StudioMixStep({
     opts?: { immediate?: boolean },
   ) => {
     if (!result || !applyAutofixRef.current || fixing || running || stale) return;
+    if (!opts?.immediate) {
+      setAutoPhase((p) => (p === "ask" ? "stay" : p));
+      setSongPhase((p) => (p === "ask" ? "stay" : p));
+    }
     const plan = planForPlan({
       doc,
       metrics: result.metrics,
@@ -388,7 +470,7 @@ export function StudioMixStep({
       createId: () => crypto.randomUUID(),
     });
     if (plan.ops.length === 0) {
-      setPanel({ kind: "nothing" });
+      setPanel({ kind: plan.limited ? "limit" : "nothing" });
       return;
     }
     if (needsProposeGate(key) && !opts?.immediate) {
@@ -403,65 +485,51 @@ export function StudioMixStep({
       setFixSeq((n) => n + 1);
       return;
     }
-    await commitAutofix(plan.ops, plan.notes, key, summary);
+    await commitAutofix(plan.ops, plan.notes, key, summary, Boolean(opts?.immediate));
   };
 
   async function notesFromVocal() {
     if (midiBusy) return;
     const lead = doc.tracks.find((track) => track.trackRole === "lead_vocal");
-    const clip = lead
-      ? doc.clips.find((item) => item.trackId === lead.id && item.sourceKind === "TAKE" && item.sourceTakeId)
-      : undefined;
+    const clips = lead ? doc.clips.filter((item) => item.trackId === lead.id && item.sourceKind === "TAKE" && item.sourceTakeId && !item.muted) : [];
     const trackId = pickMidiTrackId(
       doc.tracks.map((track) => ({ id: track.id, role: track.trackRole, noteCount: track.midi?.notes.length ?? 0 })),
     );
-    if (!clip?.sourceTakeId) {
-      setMidiNote(t("nutkiPusto"));
+    const target = doc.tracks.find((track) => track.id === trackId);
+    if (!lead || clips.length === 0) {
+      setMidiNote(t("nutkiBrakWokalu"));
       return;
     }
-    if (!trackId) {
+    if (!target || !onSaveTrackMidi) {
       setMidiNote(t("nutkiBrak"));
       return;
     }
     setMidiBusy(true);
     setMidiNote(null);
     try {
-      const prev = await fetch("/api/takes/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ takeId: clip.sourceTakeId }),
-      }).then((res) => res.json()).catch(() => null);
-      if (!prev?.url) {
-        setMidiNote(t("nutkiPusto"));
+      // The vocal exactly as it sits on the timeline: every clip, trim, tempo and pitch. No FX, no level.
+      const dry = { ...lead, gainDb: 0, pan: 0, muted: false, solo: false, effectsChain: emptyStudioFxChain(), automation: undefined, midi: undefined };
+      const input = await decodeMixAnalysisInput({
+        doc: { ...doc, tracks: [dry], clips },
+        resolveSourceUrl: resolveClipSourceUrl,
+        sampleRate: 16000,
+        signal: AbortSignal.timeout(60000),
+        strict: true,
+      });
+      if (!input) {
+        setMidiNote(t("nutkiBlad"));
         return;
       }
-      const bytes = await fetch(prev.url).then((res) => res.arrayBuffer());
-      const audioCtx = new AudioContext();
-      const audio = await audioCtx.decodeAudioData(bytes.slice(0));
-      await audioCtx.close();
-      const channel = audio.getChannelData(0);
-      const cap = Math.min(channel.length, Math.floor(audio.sampleRate * 45));
-      const small = downsampleMono(channel.subarray(0, cap), audio.sampleRate, 8000);
-      const notes = audioToMidiNotes(small, 8000, clip.timelineStartMs);
+      const vocal = renderTrack(input, input.tracks[0]!, false).left;
+      const notes = audioToMidiNotes(downsampleMono(vocal, input.sampleRate, 8000), 8000, 0);
       if (!notes.length) {
         setMidiNote(t("nutkiPusto"));
         return;
       }
-      const put = await fetch(`/api/studio/projects/${doc.project.id}/tracks/${trackId}/midi`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expectedDocumentVersion: doc.project.documentVersion,
-          midi: { v: 1, instrument: "sine", notes },
-        }),
-      });
-      if (!put.ok) {
-        setMidiNote(t("nutkiPusto"));
-        return;
-      }
-      window.location.reload();
-    } catch {
-      setMidiNote(t("nutkiPusto"));
+      onSaveTrackMidi(target.id, { v: 1, instrument: target.midi?.instrument ?? "sine", notes });
+      setMidiNote(t("nutkiGotowe", { count: notes.length, track: target.name }));
+    } catch (error) {
+      setMidiNote(error instanceof MixSourceError ? t("bladSciezka", { track: error.track }) : t("nutkiBlad"));
     } finally {
       setMidiBusy(false);
     }
@@ -510,8 +578,8 @@ export function StudioMixStep({
           fixes,
           createId: () => crypto.randomUUID(),
         });
-        if (plan.ops.length === 0) return { ok: false, reason: "empty" };
-        const res = await apply(plan.ops, "BITEK");
+        if (plan.ops.length === 0) return { ok: false, reason: plan.limited ? "limit" : "empty" };
+        const res = await safeApply(apply, plan.ops, "BITEK");
         return res.ok ? { ok: true } : { ok: false, reason: "failed" };
       },
     };
@@ -542,7 +610,7 @@ export function StudioMixStep({
   // Stage 2b — BITEK bubble (short) instead of long notes on the page.
   const tBitek = useTranslations("studio.bitek");
   // Bubble buttons dispatch through state so the bubble object stays stable.
-  const [pending, setPending] = useState<{ id: BitekAction | "fix-all"; seq: number } | null>(null);
+  const [pending, setPending] = useState<{ id: BitekAction | "fix-all" | "to-master"; seq: number } | null>(null);
   const handoffKey = useSyncExternalStore(
     subscribeBitekRecordHandoff,
     () => {
@@ -551,9 +619,11 @@ export function StudioMixStep({
     },
     () => "",
   );
-  const handoff: BitekRecordHandoff | null = handoffKey
-    ? readBitekRecordHandoff(doc.project.id)
-    : null;
+  // Same object while the handoff is the same (a new one every render would rebuild the bubble forever).
+  const handoff = useMemo<BitekRecordHandoff | null>(
+    () => (handoffKey ? readBitekRecordHandoff(doc.project.id) : null),
+    [handoffKey, doc.project.id],
+  );
   const applyHandoffRef = useRef<() => void>(() => {});
   useEffect(() => {
     applyHandoffRef.current = () => {
@@ -583,9 +653,13 @@ export function StudioMixStep({
         : gain === null
           ? []
           : [{ op: "set_track_controls" as const, trackId: vocal.id, gainDb: gain }];
-      clearBitekRecordHandoff();
-      if (ops.length === 0) return;
-      void onApplyAutofix(ops, "BITEK");
+      if (ops.length === 0) {
+        clearBitekRecordHandoff();
+        return;
+      }
+      void applyQuick(ops).then((ok) => {
+        if (ok) clearBitekRecordHandoff();
+      });
     };
   });
   const handledSeq = useRef(0);
@@ -593,13 +667,17 @@ export function StudioMixStep({
     if (!pending || pending.seq <= handledSeq.current) return;
     handledSeq.current = pending.seq;
     const pendingAction = pending.id;
+    // Through the ref: the editor passes a new onGoMaster every render and it must not rebuild the bubble.
+    if (pendingAction === "to-master") goMasterRef.current?.();
     // A click from the BITEK bubble (dispatched via state) — not a render-driven update.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (pendingAction === "fix-all") void runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"));
+    else if (pendingAction === "fix-all") void runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"));
     else onBitekAction(pendingAction);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per dispatched action
   }, [pending]);
   const autoLock = useRef(false);
+  /** Bumped when an automatic step ends, so the next one is always considered (never left on "Poprawiam…"). */
+  const [autoTick, setAutoTick] = useState(0);
   useEffect(() => {
     // Auto mix advances when analysis or a fix round finishes.
     /* eslint-disable react-hooks/set-state-in-effect -- same dispatch pattern as the bubble actions above */
@@ -609,8 +687,8 @@ export function StudioMixStep({
       setAutoPhase("stay");
       return;
     }
-    if (panel?.kind === "nothing") {
-      setAbListen("after");
+    if (panel?.kind === "nothing" || panel?.kind === "limit") {
+      setListen("mix");
       setAutoPhase("ask");
       return;
     }
@@ -639,7 +717,7 @@ export function StudioMixStep({
       return;
     }
     if (step === "ask") {
-      setAbListen("after");
+      setListen("mix");
       setAutoPhase("ask");
       return;
     }
@@ -650,10 +728,11 @@ export function StudioMixStep({
         : runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"), { immediate: true });
     void job.finally(() => {
       autoLock.current = false;
+      setAutoTick((n) => n + 1);
     });
     /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one tick per analysis / fix round
-  }, [autoPhase, result, stale, running, fixing, fixSeq, failure, panel, canAutofix, doc, analyze, t]);
+  }, [autoPhase, result, stale, running, fixing, fixSeq, failure, panel, canAutofix, doc, analyze, t, autoTick]);
   useEffect(() => {
     if (songPhase !== "run") return;
     if (autoLock.current) return;
@@ -681,7 +760,7 @@ export function StudioMixStep({
       return;
     }
     if (step === "ask") {
-      setAbListen("after");
+      setListen("mix");
       setSongPhase("ask");
       return;
     }
@@ -694,11 +773,12 @@ export function StudioMixStep({
       songFixed.current = true;
       songRounds.current += 1;
     }
-    void Promise.resolve(job).finally(() => {
+    void job.finally(() => {
       autoLock.current = false;
+      setAutoTick((n) => n + 1);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one tick per analysis or the single Nova pass
-  }, [songPhase, result, stale, running, fixing, failure, panel, canAutofix, analyze, t]);
+  }, [songPhase, result, stale, running, fixing, failure, panel, canAutofix, analyze, t, autoTick]);
   const [manual, setManual] = useState<ManualIssue | null>(null);
   const dismissedManual = useRef(new Set<string>());
   const mixBaseline = useRef<Parameters<typeof watchMixManual>[0]["baseline"]>(null);
@@ -727,6 +807,11 @@ export function StudioMixStep({
       return;
     }
     if (manualSeen.current === manualSig) return;
+    // BITEK's own change (and everything until it is measured again) is not the user's mistake.
+    if (fixing || running || reanalyzeRef.current) {
+      manualSeen.current = manualSig;
+      return;
+    }
     const timer = window.setTimeout(() => {
       manualSeen.current = manualSig;
       const tracks: WatchTrack[] = doc.tracks.map((t) => {
@@ -754,7 +839,7 @@ export function StudioMixStep({
       setManual(issue);
     }, 1500);
     return () => window.clearTimeout(timer);
-  }, [manualSig, doc, locale]);
+  }, [manualSig, doc, locale, fixing, running]);
   useEffect(() => {
     applyManualRef.current = (issue) => {
       dismissedManual.current.add(issue.key);
@@ -762,13 +847,13 @@ export function StudioMixStep({
       const fix = issue.fix;
       if (!fix || !onApplyAutofix) return;
       if (fix.kind === "controls") {
-        void onApplyAutofix([{
+        void applyQuick([{
           op: "set_track_controls",
           trackId: fix.trackId,
           ...(fix.gainDb !== undefined ? { gainDb: fix.gainDb } : {}),
           ...(fix.pan !== undefined ? { pan: fix.pan } : {}),
           ...(fix.muted !== undefined ? { muted: fix.muted } : {}),
-        }], "BITEK");
+        }]);
         return;
       }
       if (fix.kind !== "eqFlat" && fix.kind !== "compressorEase") return;
@@ -781,14 +866,20 @@ export function StudioMixStep({
         if (fix.kind === "compressorEase" && e.type === "compressor") return { ...e, params: { ...e.params, ratio: 3 } };
         return e;
       });
-      void onApplyAutofix([{ op: "set_track_fx", trackId: track.id, effectsChain: { ...track.effectsChain, effects } }], "BITEK");
+      void applyQuick([{ op: "set_track_fx", trackId: track.id, effectsChain: { ...track.effectsChain, effects } }]);
     };
   });
+  // The "done — mastering?" question is only about the mix it was asked for: any later change ends it.
+  const songAsk = (autoPhase === "ask" || songPhase === "ask") && Boolean(verdict) && !stale && !running && !fixing && panel?.kind !== "error";
+  if ((autoPhase === "ask" || songPhase === "ask") && stale && !running && !fixing) {
+    if (autoPhase === "ask") setAutoPhase("stay");
+    if (songPhase === "ask") setSongPhase("stay");
+  }
   const bubble = useMemo<BitekBubble>(() => {
     if (autoPhase === "run" || songPhase === "run") {
       return { key: songPhase === "run" ? "song-run" : "auto-mix-run", mood: "thinking", text: tBitek("msg.autoMixTrwa") };
     }
-    if ((autoPhase === "ask" || songPhase === "ask") && verdict && !verdict.canMaster && !autofixExhausted && !stale) {
+    if (songAsk && verdict && !canMaster) {
       // Honest state: the automatic passes are done but the mix is still not master-ready.
       return {
         key: "song-not-ready",
@@ -800,7 +891,7 @@ export function StudioMixStep({
         ],
       };
     }
-    if ((autoPhase === "ask" || songPhase === "ask") && verdict && !stale && !running && canFixMore && verdict.redCount + verdict.yellowCount > 0) {
+    if (songAsk && verdict && canFixMore && verdict.redCount + verdict.yellowCount > 0) {
       // The mix is playable but not clean: offer another fix round instead of jumping to mastering.
       const left = verdict.redCount + verdict.yellowCount;
       return {
@@ -814,7 +905,7 @@ export function StudioMixStep({
         ],
       };
     }
-    if (autoPhase === "ask" || songPhase === "ask") {
+    if (songAsk) {
       return {
         key: songPhase === "ask" ? "song-ask" : "auto-mix-ask",
         mood: "done",
@@ -828,6 +919,7 @@ export function StudioMixStep({
             onClick: () => {
               saveAutoMasterHandoff(doc.project.id);
               setAutoPhase("stay");
+              setSongPhase("stay");
               goMasterRef.current?.();
             },
           },
@@ -886,7 +978,7 @@ export function StudioMixStep({
     if (panel?.kind === "propose") {
       const notes = panel.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
       const tech = techChipsFromAutofixNotes(panel.notes).map((c) =>
-        c.track ? `${c.track}: ${c.label}` : c.label,
+        c.track ? `${c.track}: ${localizeNumberText(c.label, locale)}` : localizeNumberText(c.label, locale),
       );
       return {
         key: `propose-${fixSeq}`,
@@ -913,13 +1005,13 @@ export function StudioMixStep({
     if (panel?.kind === "done") {
       const notes = panel.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
       const tech = techChipsFromAutofixNotes(panel.notes).map((c) =>
-        c.track ? `${c.track}: ${c.label}` : c.label,
+        c.track ? `${c.track}: ${localizeNumberText(c.label, locale)}` : localizeNumberText(c.label, locale),
       );
       return {
         key: `fix-${fixSeq}-${panel.after ? "checked" : "checking"}`,
         mood: panel.after && verdict?.overall === "red" ? "alert" : "done",
         text: [
-          t("autofix.dymek", { count: notes.length }),
+          t("autofix.dymek", { count: changeNotes(panel.notes).length }),
           panel.after ?? t("autofix.sprawdzam"),
           panel.after && !running && !stale && verdict
             ? verdict.redCount + verdict.yellowCount === 0
@@ -934,23 +1026,38 @@ export function StudioMixStep({
         actions: (() => {
           if (!panel.after || running || stale || !verdict) return undefined;
           const left = verdict.redCount + verdict.yellowCount;
-          const goOn = { id: "toMaster", label: t("autofix.doMasteringu"), primary: left === 0, onClick: () => onGoMaster?.() };
-          if (left === 0) {
-            return [goOn, { id: "fixMyself", label: t("autofix.poprawiamSam"), onClick: () => setPanel(null) }];
-          }
-          if (!canFixMore) {
-            return [goOn, { id: "fixMyself", label: t("autofix.poprawiamSam"), onClick: () => setPanel(null) }];
+          if (left === 0 || !canFixMore) {
+            const myself = { id: "fixMyself", label: t("autofix.poprawiamSam"), onClick: () => setPanel(null) };
+            if (!canMaster) return [myself];
+            return [{ id: "toMaster", label: t("autofix.doMasteringu"), primary: left === 0, onClick: () => setPending((p) => ({ id: "to-master", seq: (p?.seq ?? 0) + 1 })) }, myself];
           }
           const again = canFixMore
             ? [{ id: "fixMore", label: t("autofix.jeszczeTak"), primary: true, onClick: () => setPending((p) => ({ id: "fix-all", seq: (p?.seq ?? 0) + 1 })) }]
             : [];
-          return [...again, { id: "moveOn", label: t("autofix.jeszczeNie"), onClick: () => (canMaster ? onGoMaster?.() : setPanel(null)) }];
+          return [...again, { id: "moveOn", label: t("autofix.jeszczeNie"), onClick: () => (canMaster ? setPending((p) => ({ id: "to-master", seq: (p?.seq ?? 0) + 1 })) : setPanel(null)) }];
         })(),
       };
     }
     if (panel?.kind === "error") {
-      return { key: `fix-error-${fixSeq}`, mood: "alert", text: panel.conflict ? t("autofix.konflikt") : t("autofix.blad") };
+      return {
+        key: `fix-error-${fixSeq}`,
+        mood: "alert",
+        text: panel.conflict ? t("autofix.konflikt") : t("autofix.blad"),
+        actions: panel.conflict
+          ? [{ id: "reload", label: t("autofix.odswiez"), primary: true, onClick: () => window.location.reload() }]
+          : undefined,
+      };
     }
+    if (panel?.kind === "stale") {
+      return {
+        key: `fix-stale-${fixSeq}`,
+        mood: "alert",
+        text: t("autofix.planNieaktualny"),
+        actions: [{ id: "analyze", label: tBitek("akcja.analyze"), primary: true, onClick: () => { setPanel(null); setPending((p) => ({ id: "analyze", seq: (p?.seq ?? 0) + 1 })); } }],
+      };
+    }
+    if (panel?.kind === "limit") return { key: `fix-limit-${fixSeq}`, mood: "alert", text: t("autofix.limit", { max: maxEffects ?? 0 }) };
+    if (panel?.kind === "noLead") return { key: `fix-nolead-${fixSeq}`, mood: "alert", text: t("autofix.brakWokalu") };
     if (autofixExhausted) return { key: `fix-exhausted-${fixSeq}`, mood: "alert", text: t("autofix.wyczerpane") };
     if (panel?.kind === "nothing" && !running) return { key: `fix-nothing-${fixSeq}`, mood: "happy", text: t("autofix.nic") };
     const msgs = bitekRulesGuide({ step: "mix", recording: false, ...bitekBase, analysis: analysisState });
@@ -973,7 +1080,9 @@ export function StudioMixStep({
           key: `mix-declined-${askKey}`,
           mood: "happy",
           text: t("autofix.zostawione"),
-          actions: [{ id: "toMaster", label: t("autofix.doMasteringu"), primary: true, onClick: () => onGoMaster?.() }],
+          actions: canMaster
+            ? [{ id: "toMaster", label: t("autofix.doMasteringu"), primary: true, onClick: () => setPending((p) => ({ id: "to-master", seq: (p?.seq ?? 0) + 1 })) }]
+            : [],
         };
       }
       return {
@@ -1001,20 +1110,24 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, autoEnabled, declinedKey, canMaster, onGoMaster, canFixMore]);
+  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, songAsk, autoEnabled, declinedKey, canMaster, canFixMore, maxEffects]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
   useEffect(() => () => onBitekBubble?.(null), [onBitekBubble]);
-  const beatKey = useProjectBeatKey(doc.project.id);
 
   return (
-    <div data-testid="studio-mix-step" className="flex flex-col gap-3 pb-64 lg:pb-48">
+    <div data-testid="studio-mix-step" className="flex flex-col gap-3 pb-64 pt-2 lg:pb-48">
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={onBack} data-testid="studio-mix-back">
           ← {t("wrocDoNagrania")}
         </Button>
         <h2 className="brd-display text-2xl leading-none tracking-tight">{t("tytul")}</h2>
+        {onOpenMixer ? (
+          <Button type="button" size="sm" variant="outline" className="min-h-11 xl:hidden" onClick={onOpenMixer} data-testid="studio-mix-open-mixer">
+            {t("mikserEfekty")}
+          </Button>
+        ) : null}
       </div>
 
       <StudioMixOverview doc={doc} />
@@ -1023,9 +1136,10 @@ export function StudioMixStep({
         <StudioVocalSetsCard
           tracks={doc.tracks}
           bpm={doc.project.tempoBpm}
-          tuneKey={beatKey?.key ?? null}
+          tuneKey={beatKey}
+          maxEffects={maxEffects}
           disabled={running}
-          onApplyOps={async (ops, description) => (await onApplyAutofix(ops, description, { asUser: true })).ok}
+          onApplyOps={async (ops, description) => (await safeApply(onApplyAutofix, ops, description, { asUser: true })).ok}
         />
       ) : null}
 
@@ -1043,6 +1157,7 @@ export function StudioMixStep({
                 onClick={() => {
                   songFixed.current = false;
                   songRounds.current = 0;
+                  songBefore.current = null;
                   setFailure(null);
                   setPanel(null);
                   setSongPhase("run");
@@ -1096,14 +1211,31 @@ export function StudioMixStep({
             ) : null}
             {result && !running ? (
               <span className="font-mono text-xs text-[var(--brd-mute)]">
-                {t("czasAnalizy", { s: (result.elapsedMs / 1000).toFixed(1) })}
+                {t("czasAnalizy", { s: fmt(result.elapsedMs / 1000) })}
               </span>
             ) : null}
           </div>
 
           {failure && !running ? (
             <p role="alert" data-testid="studio-mix-error" className="border-l-2 border-l-[var(--brd-rec)] pl-2 text-sm">
-              {t(`blad.${failure}`)}
+              {failure === "decode_failed" && failedTrack ? t("bladSciezka", { track: failedTrack }) : t(`blad.${failure}`)}
+            </p>
+          ) : null}
+
+          {panel?.kind === "error" ? (
+            <div role="alert" data-testid="studio-mix-fix-error" className="flex flex-wrap items-center gap-2 border-l-2 border-l-[var(--brd-rec)] pl-2 text-sm">
+              <span>{panel.conflict ? t("autofix.konflikt") : t("autofix.blad")}</span>
+              {panel.conflict ? (
+                <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => window.location.reload()}>
+                  {t("autofix.odswiez")}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {panel?.kind === "limit" || panel?.kind === "noLead" || panel?.kind === "stale" ? (
+            <p role="status" data-testid="studio-mix-fix-info" className="border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm">
+              {panel.kind === "limit" ? t("autofix.limit", { max: maxEffects ?? 0 }) : panel.kind === "noLead" ? t("autofix.brakWokalu") : t("autofix.planNieaktualny")}
             </p>
           ) : null}
 
@@ -1133,13 +1265,15 @@ export function StudioMixStep({
               role="status"
               data-testid="studio-mix-verdict"
               data-verdict={verdict.overall}
-              className={`flex flex-wrap items-center gap-3 rounded-[2px] border border-[var(--brd-line)] border-l-4 bg-[var(--brd-paper)] p-3 ${STATUS_RAIL[verdict.overall]}`}
+              className={`flex flex-wrap items-center gap-2 rounded-[2px] border border-[var(--brd-line)] border-l-4 bg-[var(--brd-paper)] p-3 ${STATUS_RAIL[verdict.overall]}`}
             >
-              <span aria-hidden className={`size-3 shrink-0 rounded-full ${STATUS_DOT[verdict.overall]}`} />
-              <p className="brd-display min-w-0 flex-1 text-lg leading-tight">{t(`werdykt.${verdict.overall}`)}</p>
-              <span className="font-mono text-xs text-[var(--brd-mute)]">
-                {t("werdyktLicznik", { red: verdict.redCount, yellow: verdict.yellowCount })}
-              </span>
+              <div className="flex basis-full flex-wrap items-center gap-x-3 gap-y-1">
+                <StatusMark status={verdict.overall} />
+                <p className="brd-display min-w-0 flex-1 basis-60 text-lg leading-tight">{t(`werdykt.${verdict.overall}`)}</p>
+                <span className="whitespace-nowrap font-mono text-xs text-[var(--brd-mute)]">
+                  {t("werdyktLicznik", { red: verdict.redCount, yellow: verdict.yellowCount })}
+                </span>
+              </div>
               {onApplyAutofix ? (
                 <Button
                   type="button"
@@ -1267,18 +1401,12 @@ export function StudioMixStep({
                   aria-describedby={allowSidechain === false ? "studio-mix-duck-plan" : undefined}
                   data-testid="studio-mix-beat-duck"
                   onClick={() => {
-                    const ops = planBeatDuckerOps({ tracks: doc.tracks });
-                    if (ops.length === 0 || !onApplyAutofix || fixing || running) return;
-                    setFixing("duck");
-                    void onApplyAutofix(ops, t("sciszBitPodWokal")).then((res) => {
-                      setFixing(null);
-                      if (!res.ok) {
-                        setPanel({ kind: "error", conflict: res.conflict });
-                        return;
-                      }
-                      setPanel({ kind: "done", notes: [], after: null });
-                      setFixSeq((n) => n + 1);
-                    });
+                    const duck = planBeatDucker({ tracks: doc.tracks, maxEffects });
+                    if (duck.reason) {
+                      setPanel({ kind: duck.reason === "limit" ? "limit" : duck.reason === "no-lead" ? "noLead" : "nothing" });
+                      return;
+                    }
+                    void commitAutofix(duck.ops, [{ key: "duck", params: {} }], "duck", t("sciszBitPodWokal"));
                   }}
                 >
                   {fixing === "duck" ? t("poprawTrwa") : t("sciszBitPodWokal")}
@@ -1307,17 +1435,16 @@ export function StudioMixStep({
               data-testid="studio-mix-listen"
               className="flex flex-wrap items-center gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2"
             >
-              {(["dry", "mix", "master"] as const).map((mode) => (
+              {(["dry", "mix"] as const).map((mode) => (
                 <Button
                   key={mode}
                   type="button"
                   size="sm"
-                  variant={listenMode === mode ? "default" : "outline"}
-                  aria-pressed={listenMode === mode}
+                  variant={listenNow === mode ? "default" : "outline"}
+                  aria-pressed={listenNow === mode}
                   className="min-h-11"
-                  disabled={mode === "master"}
                   data-testid={`studio-mix-listen-${mode}`}
-                  onClick={() => setLevelListen(mode)}
+                  onClick={() => setListen(mode)}
                 >
                   {t(`autofix.ab.${mode === "dry" ? "suchy" : mode}`)}
                 </Button>
@@ -1339,24 +1466,24 @@ export function StudioMixStep({
                   key={mode}
                   type="button"
                   size="sm"
-                  variant={abMode === mode ? "default" : "outline"}
-                  aria-pressed={abMode === mode}
+                  variant={(listenNow === "before") === (mode === "before") ? "default" : "outline"}
+                  aria-pressed={(listenNow === "before") === (mode === "before")}
                   className="min-h-11"
                   data-testid={`studio-mix-ab-${mode}`}
-                  onClick={() => setAbListen(mode)}
+                  onClick={() => setListen(mode === "before" ? "before" : "mix")}
                 >
                   {mode === "before" ? t("autofix.ab.przed") : t("autofix.ab.po")}
                 </Button>
               ))}
               <span className="text-xs text-[var(--brd-mute)]" aria-live="polite">
                 {t("autofix.ab.opis", {
-                  version: abMode === "before" ? t("autofix.ab.przed") : t("autofix.ab.po"),
+                  version: listenNow === "before" ? t("autofix.ab.przed") : t("autofix.ab.po"),
                 })}
               </span>
             </div>
           ) : null}
 
-          <StudioVocalCleanup doc={doc} />
+          <StudioVocalCleanup doc={doc} onAppliedChange={setCleanupSig} />
 
           {panel?.kind === "propose" ? (
             <section
@@ -1381,7 +1508,7 @@ export function StudioMixStep({
                           data-testid="studio-mix-tech-chip"
                           className="border border-[var(--brd-line)] bg-[var(--brd-bg)] px-2 py-1 font-mono text-xs text-[var(--brd-ink)]"
                         >
-                          {c.label}
+                          {localizeNumberText(c.label, locale)}
                         </span>
                       ))}
                     </div>
@@ -1424,7 +1551,7 @@ export function StudioMixStep({
                   className="border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 py-1 font-mono text-xs"
                   title={c.track ?? undefined}
                 >
-                  {c.track ? `${c.track}: ${c.label}` : c.label}
+                  {c.track ? `${c.track}: ${localizeNumberText(c.label, locale)}` : localizeNumberText(c.label, locale)}
                 </span>
               ))}
             </div>
@@ -1538,6 +1665,7 @@ function MixCardItem({
   onFix: () => void;
 }) {
   const t = useTranslations("studio.mixStep");
+  const locale = useLocale();
   const fixable = MIX_CARD_FIXES[card.id].length > 0;
   const hintId = `studio-mix-fix-hint-${card.id}`;
   return (
@@ -1548,12 +1676,12 @@ function MixCardItem({
       className={`flex flex-col gap-1.5 rounded-[2px] border border-[var(--brd-line)] border-l-4 bg-[var(--brd-paper)] p-3 ${STATUS_RAIL[card.status]}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span aria-hidden className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT[card.status]}`} />
+        <StatusMark status={card.status} />
         <h3 className="min-w-0 flex-1 text-sm font-semibold">{t(`cards.${card.id}.title`)}</h3>
         <span className="text-xs uppercase tracking-[0.12em] text-[var(--brd-mute)]">{t(`status.${card.status}`)}</span>
       </div>
-      {card.value ? <p className="font-mono text-lg leading-none">{card.value}</p> : null}
-      <p className="text-sm">{t(`cards.${card.id}.${card.messageKey}`, card.params)}</p>
+      {card.value ? <p className="font-mono text-lg leading-none">{localizeNumberText(card.value, locale)}</p> : null}
+      <p className="text-sm">{t(`cards.${card.id}.${card.messageKey}`, localizeParams(card.params, locale))}</p>
       {card.status === "red" || card.status === "yellow" ? (
         <div className="flex flex-wrap items-center gap-2">
           {fixable ? (

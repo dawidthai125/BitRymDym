@@ -32,7 +32,7 @@ function failure(error: string, details?: string[], status?: number) {
             ? 503
             : 400);
   return NextResponse.json(
-    { error, message: sampleUserMessage(error), details },
+    { error, message: sampleUserMessage(error, details), details },
     { status: code },
   );
 }

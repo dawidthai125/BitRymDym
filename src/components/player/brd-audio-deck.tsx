@@ -26,13 +26,15 @@ type BrdAudioDeckProps = {
   className?: string;
   /** "none": nothing is fetched before Play (public work clip). Default "metadata". */
   preload?: "none" | "metadata";
+  /** The address expired (signed link): give a fresh one and playback goes on from the same place. */
+  onRefreshSrc?: () => Promise<string | null>;
 };
 
 /**
  * BitRymDym listen deck for a URL we already hold (share link, finished master).
  * Hidden engine, no native controls, no download.
  */
-export function BrdAudioDeck({ src, title, testId, seed, className, preload = "metadata" }: BrdAudioDeckProps) {
+export function BrdAudioDeck({ src, title, testId, seed, className, preload = "metadata", onRefreshSrc }: BrdAudioDeckProps) {
   const tl = useLibText();
   const t = useTranslations("common.playbackShell");
   const labelId = useId();
@@ -43,13 +45,29 @@ export function BrdAudioDeck({ src, title, testId, seed, className, preload = "m
   const [rate, setRate] = useState(1);
   const [state, dispatch] = useReducer(reducePlayback, undefined, createInitialPlaybackSnapshot);
 
+  const refreshRef = useRef(onRefreshSrc);
+  useEffect(() => {
+    refreshRef.current = onRefreshSrc;
+  }, [onRefreshSrc]);
+  /** One renewal at a time, and not again right after it: a file that really cannot play must end in an error. */
+  const renewal = useRef<{ at: number; resume: { time: number; play: boolean } | null }>({ at: 0, resume: null });
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    const resume = renewal.current.resume;
+    renewal.current.resume = null;
     audio.pause();
     audio.src = src;
     audio.load();
     dispatch({ type: "RESET" });
+    if (!resume) return;
+    const onMeta = () => {
+      audio.currentTime = resume.time;
+      if (resume.play) void audio.play().catch(() => undefined);
+    };
+    audio.addEventListener("loadedmetadata", onMeta, { once: true });
+    return () => audio.removeEventListener("loadedmetadata", onMeta);
   }, [src]);
 
   useEffect(() => {
@@ -74,19 +92,36 @@ export function BrdAudioDeck({ src, title, testId, seed, className, preload = "m
     const onPlaying = () => dispatch({ type: "PLAYING" });
     const onPause = () => dispatch({ type: "PAUSED" });
     const onEnded = () => dispatch({ type: "ENDED" });
+    let wanted = false;
+    const onPlayAsked = () => {
+      wanted = true;
+    };
     const onError = () => {
+      const renew = refreshRef.current;
+      if (renew && Date.now() - renewal.current.at > 30_000) {
+        const resume = { time: audio.currentTime, play: wanted };
+        renewal.current = { at: Date.now(), resume };
+        void renew().catch(() => null).then((next) => {
+          if (next && next !== src) return;
+          renewal.current.resume = null;
+          dispatch({ type: "ENGINE_ERROR", message: toSafePlaybackErrorMessage("playback failure") });
+        });
+        return;
+      }
       dispatch({ type: "ENGINE_ERROR", message: toSafePlaybackErrorMessage("playback failure") });
     };
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("playing", onPlaying);
     audio.addEventListener("pause", onPause);
     audio.addEventListener("ended", onEnded);
+    audio.addEventListener("play", onPlayAsked);
     audio.addEventListener("error", onError);
     return () => {
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("playing", onPlaying);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("play", onPlayAsked);
       audio.removeEventListener("error", onError);
     };
   }, [src]);
@@ -105,6 +140,8 @@ export function BrdAudioDeck({ src, title, testId, seed, className, preload = "m
       }
       await audio.play();
     } catch {
+      // The same failure also reaches the "error" listener, which may be renewing the address right now.
+      if (renewal.current.resume) return;
       dispatch({ type: "ENGINE_ERROR", message: toSafePlaybackErrorMessage("playback failure") });
     }
   }
@@ -119,6 +156,8 @@ export function BrdAudioDeck({ src, title, testId, seed, className, preload = "m
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    // Keys belong to the focused button / slider inside; the deck only answers when it has the focus itself.
+    if (event.target !== event.currentTarget) return;
     if (event.key === " " || event.key === "Enter") {
       event.preventDefault();
       void togglePlay();

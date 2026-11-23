@@ -203,13 +203,15 @@ export type TakeLaneStore = {
   /** Server table present (false → browser-only copy). */
   serverBacked: boolean;
   put: (lane: TakeLane) => Promise<TakeLane>;
-  remove: (laneId: string) => Promise<void>;
+  /** false = the server kept the lane (it is put back on the list). */
+  remove: (laneId: string) => Promise<boolean>;
   replaceLocal: (lane: TakeLane) => void;
 };
 
 export function useTakeLanes(projectId: string, signedIn: boolean): TakeLaneStore {
   const [lanes, setLanes] = useState<TakeLane[]>([]);
   const [serverBacked, setServerBacked] = useState(false);
+  const putSeqRef = useRef(new Map<string, number>());
 
   const writeLocal = useCallback(
     (next: TakeLane[]) => {
@@ -269,6 +271,8 @@ export function useTakeLanes(projectId: string, signedIn: boolean): TakeLaneStor
 
   const put = useCallback(
     async (lane: TakeLane) => {
+      const seq = (putSeqRef.current.get(lane.id) ?? 0) + 1;
+      putSeqRef.current.set(lane.id, seq);
       replaceLocal(lane);
       if (!signedIn) return lane;
       try {
@@ -281,7 +285,8 @@ export function useTakeLanes(projectId: string, signedIn: boolean): TakeLaneStor
         const saved = parseTakeLane(body?.lane);
         if (r.ok && saved) {
           setServerBacked(Boolean(body?.available));
-          replaceLocal(saved);
+          // An older answer must not undo a newer click.
+          if (putSeqRef.current.get(lane.id) === seq) replaceLocal(saved);
           return saved;
         }
       } catch {
@@ -294,18 +299,24 @@ export function useTakeLanes(projectId: string, signedIn: boolean): TakeLaneStor
 
   const remove = useCallback(
     async (laneId: string) => {
+      let removed: TakeLane | null = null;
       setLanes((all) => {
+        removed = all.find((l) => l.id === laneId) ?? removed;
         const next = all.filter((l) => l.id !== laneId);
         writeLocal(next);
         return next;
       });
-      if (!signedIn) return;
-      await fetch(
+      if (!signedIn) return true;
+      const ok = await fetch(
         `/api/studio/projects/${projectId}/record/lanes?laneId=${encodeURIComponent(laneId)}`,
         { method: "DELETE" },
-      ).catch(() => undefined);
+      )
+        .then((r) => r.ok)
+        .catch(() => false);
+      if (!ok && removed) replaceLocal(removed);
+      return ok;
     },
-    [projectId, signedIn, writeLocal],
+    [projectId, replaceLocal, signedIn, writeLocal],
   );
 
   return { lanes, serverBacked, put, remove, replaceLocal };
@@ -327,21 +338,37 @@ export function StudioLatencyCard(props: {
   onCancel: () => void;
   /** Bumped by BITEK actions → open the card and bring it into view. */
   openSignal?: number;
+  /** The signal was used: a later mount of the card starts closed and does not scroll. */
+  onOpenSignalHandled?: () => void;
 }) {
   const t = useTranslations("studio.recTools");
   const { latency, calibration } = props;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(props.openSignal));
   const [seenSignal, setSeenSignal] = useState(props.openSignal ?? 0);
   if ((props.openSignal ?? 0) !== seenSignal) {
     setSeenSignal(props.openSignal ?? 0);
-    setOpen(true);
+    if (props.openSignal) setOpen(true);
   }
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const handledRef = useRef(props.onOpenSignalHandled);
+  useEffect(() => {
+    handledRef.current = props.onOpenSignalHandled;
+  });
   useEffect(() => {
     if (!props.openSignal) return;
     rootRef.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    const timer = window.setTimeout(() => handledRef.current?.(), 0);
+    return () => window.clearTimeout(timer);
   }, [props.openSignal]);
-  const manual = latency.profile?.manualOffsetMs ?? 0;
+  const savedManual = latency.profile?.manualOffsetMs ?? 0;
+  /** Value under the finger; saved once, on release. */
+  const [draftManual, setDraftManual] = useState<number | null>(null);
+  const manual = draftManual ?? savedManual;
+  const commitManual = () => {
+    if (draftManual === null) return;
+    if (draftManual !== savedManual) latency.save({ manualOffsetMs: draftManual });
+    setDraftManual(null);
+  };
   const running = calibration.status === "running";
   return (
     <div
@@ -426,7 +453,10 @@ export function StudioLatencyCard(props: {
               step={1}
               value={manual}
               disabled={running}
-              onChange={(e) => latency.save({ manualOffsetMs: Number(e.target.value) })}
+              onChange={(e) => setDraftManual(Number(e.target.value))}
+              onPointerUp={commitManual}
+              onKeyUp={commitManual}
+              onBlur={commitManual}
               aria-label={t("recznaKorektaAria")}
             />
           </label>
@@ -588,7 +618,13 @@ export function StudioTakeLanesCard(props: {
   localOnly: boolean;
 }) {
   const t = useTranslations("studio.recTools");
-  if (props.lanes.length === 0) return null;
+  if (props.lanes.length === 0) {
+    return (
+      <p className="text-xs text-[var(--brd-mute)]" data-testid="studio-take-lanes-empty">
+        {t("brakPrzejsc")}
+      </p>
+    );
+  }
   return (
     <div className="space-y-3 rounded border border-[var(--brd-line)] p-2" data-testid="studio-take-lanes">
       <p className="text-xs font-medium text-[var(--brd-ink)]">{t("takeWSekcjach")}</p>
@@ -607,6 +643,7 @@ function LaneBlock(
   },
 ) {
   const { lane, t } = props;
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const lines = useMemo(() => laneLines(lane), [lane]);
   const comp = useMemo(() => normalizeLaneComp(lane), [lane]);
   const passes = [...lane.passes].sort((a, b) => b.number - a.number);
@@ -621,14 +658,37 @@ function LaneBlock(
           })}
           <span className="text-[var(--brd-mute)]"> · {t("ileTake", { n: lane.passes.length })}</span>
         </p>
-        <button
-          type="button"
-          className="text-[11px] text-[var(--brd-mute)] underline"
-          disabled={props.busy}
-          onClick={() => props.onDelete(lane)}
-        >
-          {t("zapomnijSekcje")}
-        </button>
+        {confirmDelete ? (
+          <span className="flex items-center gap-2">
+            <button
+              type="button"
+              className="min-h-8 text-[11px] font-medium text-destructive underline"
+              disabled={props.busy}
+              onClick={() => {
+                setConfirmDelete(false);
+                props.onDelete(lane);
+              }}
+            >
+              {t("zapomnijTak")}
+            </button>
+            <button
+              type="button"
+              className="min-h-8 text-[11px] text-[var(--brd-mute)] underline"
+              onClick={() => setConfirmDelete(false)}
+            >
+              {t("zapomnijNie")}
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="min-h-8 text-[11px] text-[var(--brd-mute)] underline"
+            disabled={props.busy}
+            onClick={() => setConfirmDelete(true)}
+          >
+            {t("zapomnijSekcje")}
+          </button>
+        )}
       </div>
       <ul className="space-y-1">
         {passes.map((p) => {

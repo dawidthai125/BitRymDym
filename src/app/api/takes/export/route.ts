@@ -40,12 +40,6 @@ export async function POST(request: Request) {
       status: job.status,
       artifactId: job.artifactId ?? null,
       workerInfraStatus: job.workerInfraStatus,
-      note:
-        job.workerInfraStatus === "PREPARED_CODE"
-          ? "TAKE_EXPORT pipeline is prepared in app code; EXTERNAL Contabo worker remains STOPPED until Phase 2 Owner GO."
-          : job.workerInfraStatus === "BLOCKED_INFRA"
-            ? "Export job queued in code; EXTERNAL worker is STOPPED — not Production Ready."
-            : undefined,
     });
   } catch (error) {
     if (error instanceof RenderJobDomainError) {

@@ -1,5 +1,8 @@
 /** Stage 3 — browser side of Mastering: preview workers + fetching E3 results (no uploads). */
+import { preloadAcousticBank } from "@/lib/studio/acoustic-load";
+import { buildMixAnalysisSkeleton, decodeMixAnalysisInput } from "@/lib/studio/mix-analysis/client";
 import type { MixAnalysisInput } from "@/lib/studio/mix-analysis/render";
+import { hasMidi } from "@/lib/studio/studio-midi";
 import { spawnStudioWorker } from "@/lib/studio/studio-workers";
 
 import type { MasterMetrics, Stereo } from "./dsp";
@@ -48,7 +51,17 @@ export function stereoToAudioBuffer(ctx: BaseAudioContext, s: Stereo, gainDb = 0
   return b;
 }
 
-/** PUT a blob to a Supabase signed upload URL. */
+/**
+ * The mix of a project with decoded sources (throws MixSourceError when a track does not load).
+ * A project made only of instrument notes has no sources at all and is still a mix, same as on the server.
+ */
+export async function loadMasterMix(params: Parameters<typeof decodeMixAnalysisInput>[0]): Promise<MixAnalysisInput | null> {
+  const input = await decodeMixAnalysisInput(params);
+  if (input || params.signal.aborted || !params.doc.tracks.some((t) => hasMidi(t.midi))) return input;
+  const { sourceClips: _unused, ...rest } = buildMixAnalysisSkeleton(params.doc, params.sampleRate);
+  void _unused;
+  return { ...rest, sources: {}, acousticBank: await preloadAcousticBank() };
+}
 
 /** Fetch a parted result and join it into one Blob (object URL for <audio>/download). */
 export async function joinParts(urls: string[], type: string): Promise<Blob | null> {

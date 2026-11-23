@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { SampleBitekCard, type BitekApply, type BitekPreview } from "@/components/studio/sample-bitek-card";
 
@@ -67,17 +67,50 @@ export function StudioSampleDesk({
   /** Choices made before sending; the server stores them with the review request. */
   const [wishes, setWishes] = useState<Record<string, ListingConsents>>({});
   const [bitekFor, setBitekFor] = useState<string | null>(null);
+  const [askDelete, setAskDelete] = useState<string | null>(null);
+  const [playing, setPlaying] = useState<string | null>(null);
+  const locale = useLocale();
+  const loadSeq = useRef(0);
+  const playSeq = useRef(0);
+  const stopPlaying = useRef<(() => void) | null>(null);
+  useEffect(() => () => {
+    playSeq.current += 1;
+    stopPlaying.current?.();
+  }, []);
+
+  /** One request: the button always comes back and "no network" is a message. */
+  async function send<T>(url: string, init?: RequestInit): Promise<{ ok: boolean; body: (T & { message?: string }) | null }> {
+    try {
+      const response = await fetch(url, { ...init, signal: AbortSignal.timeout(60_000) });
+      return { ok: response.ok, body: (await response.json().catch(() => null)) as (T & { message?: string }) | null };
+    } catch {
+      return { ok: false, body: { message: tr("sampleBrakSieci") } as T & { message?: string } };
+    }
+  }
+
+  /** One preview at a time; the same button stops it. */
+  function stopPreview() {
+    playSeq.current += 1;
+    stopPlaying.current?.();
+    stopPlaying.current = null;
+    setPlaying(null);
+  }
 
   const load = useCallback(async (scope: "mine" | "catalog") => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     setError(null);
-    const response = await fetch(`/api/studio/samples?scope=${scope}`);
-    const body = (await response.json().catch(() => null)) as {
-      samples?: SampleDto[];
-      message?: string;
-      cap?: number;
-      owned?: number;
-    } | null;
+    let response: { ok: boolean } = { ok: false };
+    let body: { samples?: SampleDto[]; message?: string; cap?: number; owned?: number } | null = null;
+    try {
+      const res = await fetch(`/api/studio/samples?scope=${scope}`, { signal: AbortSignal.timeout(30_000) });
+      response = res;
+      body = (await res.json().catch(() => null)) as typeof body;
+    } catch {
+      body = { message: tr("sampleBrakSieci") };
+    }
+    // A slower answer for the other tab must not replace this one.
+    if (seq !== loadSeq.current) return;
     setLoading(false);
     if (!response.ok || !body?.samples) {
       setSamples([]);
@@ -105,7 +138,10 @@ export function StudioSampleDesk({
     return tr("sampleStatusPrivate");
   }
 
-  async function previewSynth() {
+  function previewSynth() {
+    const again = playing === "synth";
+    stopPreview();
+    if (again) return;
     const midi = SAMPLE_NOTES.find((item) => item.id === note)?.midi ?? 60;
     const pcm = renderInstrumentSample({ instrument, midi, durationMs });
     const ctx = new AudioContext();
@@ -114,7 +150,12 @@ export function StudioSampleDesk({
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(ctx.destination);
-    source.onended = () => void ctx.close();
+    const seq = playSeq.current;
+    stopPlaying.current = () => void ctx.close().catch(() => undefined);
+    source.onended = () => {
+      if (seq === playSeq.current) stopPreview();
+    };
+    setPlaying("synth");
     source.start();
   }
 
@@ -150,10 +191,9 @@ export function StudioSampleDesk({
     form.set("kind", kind);
     form.set("instrument", instrumentId ?? "");
     form.set("rightsAccepted", rights ? "1" : "0");
-    const response = await fetch("/api/studio/samples", { method: "POST", body: form });
-    const body = (await response.json().catch(() => null)) as { message?: string } | null;
+    const { ok, body } = await send("/api/studio/samples", { method: "POST", body: form });
     setBusyId(null);
-    if (!response.ok) {
+    if (!ok) {
       setError(body?.message || tr("sampleBlad"));
       return;
     }
@@ -177,10 +217,9 @@ export function StudioSampleDesk({
     form.set("kind", uploadKind);
     form.set("instrument", "");
     form.set("rightsAccepted", "1");
-    const response = await fetch("/api/studio/samples", { method: "POST", body: form });
-    const body = (await response.json().catch(() => null)) as { message?: string } | null;
+    const { ok, body } = await send("/api/studio/samples", { method: "POST", body: form });
     setBusyId(null);
-    if (!response.ok) {
+    if (!ok) {
       setError(body?.message || tr("sampleBlad"));
       return;
     }
@@ -196,7 +235,7 @@ export function StudioSampleDesk({
     }
     setBusyId(sampleId);
     setError(null);
-    const placed = await onPlace(sampleId);
+    const placed = await onPlace(sampleId).catch(() => ({ ok: false as const, message: tr("sampleBrakSieci") }));
     setBusyId(null);
     if (!placed.ok) {
       setError(placed.message);
@@ -208,7 +247,9 @@ export function StudioSampleDesk({
   async function mutate(sampleId: string, action: "submit" | "delete") {
     setBusyId(sampleId);
     setError(null);
-    const response = await fetch(
+    setAskDelete(null);
+    if (action === "delete" && playing === sampleId) stopPreview();
+    const { ok, body } = await send(
       action === "submit"
         ? `/api/studio/samples/${sampleId}/submit`
         : `/api/studio/samples/${sampleId}`,
@@ -220,9 +261,8 @@ export function StudioSampleDesk({
           }
         : { method: "DELETE" },
     );
-    const body = (await response.json().catch(() => null)) as { message?: string } | null;
     setBusyId(null);
-    if (!response.ok) {
+    if (!ok) {
       setError(body?.message || tr("sampleBlad"));
       return;
     }
@@ -233,14 +273,13 @@ export function StudioSampleDesk({
   async function share(sample: SampleDto, patch: ListingConsents) {
     setBusyId(sample.id);
     setError(null);
-    const response = await fetch(`/api/studio/samples/${sample.id}/share`, {
+    const { ok, body } = await send<{ sample?: SampleDto }>(`/api/studio/samples/${sample.id}/share`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(patch),
     });
-    const body = (await response.json().catch(() => null)) as { message?: string; sample?: SampleDto } | null;
     setBusyId(null);
-    if (!response.ok || !body?.sample) {
+    if (!ok || !body?.sample) {
       setError(body?.message || tr("sampleBlad"));
       return;
     }
@@ -249,19 +288,28 @@ export function StudioSampleDesk({
   }
 
   async function previewSaved(sampleId: string) {
-    setBusyId(sampleId);
-    const response = await fetch(`/api/studio/samples/${sampleId}/play`);
-    const body = (await response.json().catch(() => null)) as {
-      url?: string;
-      message?: string;
-    } | null;
-    setBusyId(null);
-    if (!response.ok || !body?.url) {
+    const again = playing === sampleId;
+    stopPreview();
+    if (again) return;
+    const seq = playSeq.current;
+    setPlaying(sampleId);
+    const { ok, body } = await send<{ url?: string }>(`/api/studio/samples/${sampleId}/play`);
+    if (seq !== playSeq.current) return;
+    if (!ok || !body?.url) {
+      setPlaying(null);
       setError(body?.message || tr("sampleBlad"));
       return;
     }
     const audio = new Audio(body.url);
-    await audio.play().catch(() => setError(tr("sampleBlad")));
+    stopPlaying.current = () => audio.pause();
+    audio.onended = () => {
+      if (seq === playSeq.current) stopPreview();
+    };
+    await audio.play().catch(() => {
+      if (seq !== playSeq.current) return;
+      stopPreview();
+      setError(tr("sampleBlad"));
+    });
   }
 
   return (
@@ -343,7 +391,7 @@ export function StudioSampleDesk({
               >
                 {[1000, 2000, 4000, 8000].map((ms) => (
                   <option key={ms} value={ms}>
-                    {ms / 1000}s
+                    {ms / 1000} s
                   </option>
                 ))}
               </select>
@@ -369,8 +417,8 @@ export function StudioSampleDesk({
             <span>{tr("samplePrawa")}</span>
           </label>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <Button type="button" size="sm" className="min-h-11 w-full" variant="secondary" onClick={() => void previewSynth()}>
-              {tr("samplePodglad")}
+            <Button type="button" size="sm" className="min-h-11 w-full" variant="secondary" onClick={previewSynth}>
+              {playing === "synth" ? tr("sampleStop") : tr("samplePodglad")}
             </Button>
             <Button type="button" size="sm" className="min-h-11 w-full" disabled={busyId === "save"} onClick={() => void saveSynth()}>
               {busyId === "save" ? tr("zapisywanie") : tr("sampleZapisz")}
@@ -395,7 +443,12 @@ export function StudioSampleDesk({
               type="file"
               accept="audio/wav,audio/mpeg,.wav,.mp3"
               aria-label={tr("sampleWgrajPlik")}
-              onChange={(event) => void onUploadFile(event.target.files?.[0] ?? null)}
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                // Cleared so the same file can be picked again (e.g. after ticking the rights box).
+                event.target.value = "";
+                void onUploadFile(file);
+              }}
             />
           </label>
         </div>
@@ -409,9 +462,9 @@ export function StudioSampleDesk({
             <li key={sample.id} className="rounded border border-[var(--brd-line)] p-2">
               <p className="truncate text-sm text-[var(--brd-ink)]">{sample.title}</p>
               <p className="text-[11px] text-[var(--brd-mute)]">
-                {instrumentLabel(sample.instrument) || sample.kind}
+                {instrumentLabel(sample.instrument) || tr(sample.kind === "effect" ? "sampleRodzajEfekt" : "sampleRodzajInstrument")}
                 {" · "}
-                {(sample.durationMs / 1000).toFixed(1)}s
+                {(sample.durationMs / 1000).toLocaleString(locale === "en" ? "en-US" : "pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} s
                 {" · "}
                 {statusLabel(sample.status)}
               </p>
@@ -427,7 +480,7 @@ export function StudioSampleDesk({
                   disabled={busyId === sample.id}
                   onClick={() => void previewSaved(sample.id)}
                 >
-                  {tr("samplePodglad")}
+                  {playing === sample.id ? tr("sampleStop") : tr("samplePodglad")}
                 </Button>
                 <Button
                   type="button"
@@ -491,9 +544,10 @@ export function StudioSampleDesk({
                     className="min-h-11 w-full"
                     variant="secondary"
                     disabled={busyId === sample.id}
-                    onClick={() => void mutate(sample.id, "delete")}
+                    onClick={() => (askDelete === sample.id ? void mutate(sample.id, "delete") : setAskDelete(sample.id))}
+                    onBlur={() => setAskDelete((cur) => (cur === sample.id ? null : cur))}
                   >
-                    {tr("sampleUsun")}
+                    {askDelete === sample.id ? tr("sampleUsunNaPewno") : tr("sampleUsun")}
                   </Button>
                 ) : null}
                 {sample.mine && (sample.status === "PUBLISHED" || sample.status === "PENDING_REVIEW") && sample.consents ? (

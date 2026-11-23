@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyTrackDouble,
   canRunStudioStructuralOp,
   resolveStudioStructuralOpIds,
   resolveStudioUndoId,
@@ -104,5 +105,55 @@ describe("studio structural undo", () => {
   it("rewrites ids through aliases before running", () => {
     const op = resolveStudioStructuralOpIds({ kind: "track_remove", trackId: "d1", clipIds: ["c1a"] }, (id) => ({ d1: "d2", c1a: "c2a" })[id] ?? id);
     expect(op).toEqual({ kind: "track_remove", trackId: "d2", clipIds: ["c2a"] });
+  });
+
+  it("restores tempo and pitch of a deleted clip", async () => {
+    const src = clip("old", "t1", { stretchRatio: 1.5, pitchCents: -300 });
+    let v = 5;
+    const { api, calls } = fakeApi((method) => {
+      v += 1;
+      return method === "POST"
+        ? { documentVersion: v, clip: clip("new", "t1") }
+        : { documentVersion: v, clip: clip("new", "t1", { stretchRatio: 1.5, pitchCents: -300 }) };
+    });
+    const res = await runStudioStructuralOp({ kind: "clip_restore", clip: src }, { projectId: "p", documentVersion: 5, doc: doc([track("t1")], []), api });
+    expect(calls[1]!.body).toMatchObject({ op: "set_playback", stretch: 1.5, pitchCents: -300, expectedDocumentVersion: 6 });
+    expect(res.ok && res.mutate(doc([track("t1")], [])).clips[0]).toMatchObject({ stretchRatio: 1.5, pitchCents: -300 });
+  });
+
+  it("a double saves pan / level / name, role, shift and detune on consecutive versions", async () => {
+    let v = 10;
+    let dTrack = track("d1", { name: "Wokal" });
+    let dClip = clip("dc", "d1");
+    const { api, calls } = fakeApi((_m, path, body) => {
+      expect(body.expectedDocumentVersion).toBe(v);
+      v += 1;
+      if (path.includes("/tracks/")) {
+        dTrack = { ...dTrack, ...body } as StudioTrackDto;
+        return { documentVersion: v, track: dTrack };
+      }
+      dClip = { ...dClip, ...(body.op === "move" ? { timelineStartMs: body.timelineStartMs as number } : { pitchCents: body.pitchCents as number }) };
+      return { documentVersion: v, clip: dClip };
+    });
+    const res = await applyTrackDouble(
+      { pan: 0.3, gainDb: -2.5, trackRole: "double", nameSuffix: "Dubel R", offsetMs: 22, pitchCents: 8 },
+      { base: "/api/studio/projects/p", api, version: 10, track: dTrack, clips: [dClip], timelineLengthMs: 60_000 },
+    );
+    expect(calls.map((c) => c.body.op ?? Object.keys(c.body).join())).toEqual([
+      "pan,gainDb,name,expectedDocumentVersion", "trackRole,expectedDocumentVersion", "move", "set_playback",
+    ]);
+    expect(res).toMatchObject({ version: 14, partial: false });
+    expect(res.track).toMatchObject({ pan: 0.3, gainDb: -2.5, trackRole: "double", name: "Wokal · Dubel R" });
+    expect(res.clips[0]).toMatchObject({ timelineStartMs: 1022, pitchCents: 8 });
+  });
+
+  it("a double whose settings fail keeps the copy and says partial", async () => {
+    const { api } = fakeApi(() => null);
+    const res = await applyTrackDouble(
+      { pan: 0.3, gainDb: -2.5, trackRole: "double", nameSuffix: "Dubel R", offsetMs: 22, pitchCents: null },
+      { base: "/b", api, version: 4, track: track("d1"), clips: [clip("dc", "d1")], timelineLengthMs: 60_000 },
+    );
+    expect(res).toMatchObject({ version: 4, partial: true });
+    expect(res.clips[0]).toMatchObject({ timelineStartMs: 1000 });
   });
 });

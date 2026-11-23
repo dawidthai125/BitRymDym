@@ -7,10 +7,12 @@ import { useTranslations } from "next-intl";
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   type ReactNode,
 } from "react";
 
+import { useStudioScrollLock } from "@/components/studio/use-studio-dialog";
 import { CloseButton } from "@/components/ui/close-button";
 import {
   type StudioInspectorContext,
@@ -62,6 +64,12 @@ export function StudioInspectorOverlay({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  // In a ref: the editor re-renders often and a new handler must not steal focus back to the X.
+  const closeRef = useRef(onClose);
+  useLayoutEffect(() => {
+    closeRef.current = onClose;
+  });
+  useStudioScrollLock(open && !capturing);
 
   useEffect(() => {
     if (!open) return;
@@ -77,7 +85,7 @@ export function StudioInspectorOverlay({
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        closeRef.current();
         return;
       }
       if (event.key !== "Tab" || !panelRef.current) return;
@@ -90,6 +98,13 @@ export function StudioInspectorOverlay({
       const firstItem = items[0]!;
       const lastItem = items[items.length - 1]!;
       const active = document.activeElement;
+      // Focus in a window above this one (effects, history) is not ours to take.
+      if (active?.closest('[role="dialog"], [role="alertdialog"], [role="menu"]') && !panelRef.current.contains(active)) return;
+      if (!panelRef.current.contains(active)) {
+        event.preventDefault();
+        firstItem.focus();
+        return;
+      }
       if (event.shiftKey) {
         if (active === firstItem || active === panelRef.current) {
           event.preventDefault();
@@ -106,7 +121,7 @@ export function StudioInspectorOverlay({
       window.removeEventListener("keydown", onKeyDown);
       previouslyFocusedRef.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -114,7 +129,7 @@ export function StudioInspectorOverlay({
 
   return (
     <div
-      className={`fixed inset-0 z-40 flex xl:hidden ${capturing ? "pointer-events-none" : ""}`}
+      className={`fixed inset-0 z-40 flex ${capturing ? "pointer-events-none" : ""}`}
       data-testid="studio-inspector-overlay"
       data-studio-inspector="overlay"
       data-capturing={capturing ? "true" : undefined}
@@ -122,7 +137,7 @@ export function StudioInspectorOverlay({
       <button
         type="button"
         hidden={capturing}
-        className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_45%,transparent)]"
+        className="absolute inset-0 bg-black/60"
         aria-label={t("zamknijInspector")}
         data-testid="studio-inspector-backdrop"
         onClick={onClose}
@@ -137,7 +152,7 @@ export function StudioInspectorOverlay({
         data-testid="studio-inspector-mobile"
         className={`pointer-events-auto relative flex w-full flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-lg outline-none max-md:mt-auto ${
           capturing ? "max-md:max-h-[34vh]" : "max-md:max-h-[70vh]"
-        } max-md:rounded-t-lg max-md:pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:ml-auto md:h-full md:w-[min(22rem,92vw)] md:border-l md:pb-0`}
+        } max-md:rounded-t-lg max-md:pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:ml-auto md:h-full md:w-[min(22rem,92vw)] md:border-l md:pb-[calc(3.75rem+env(safe-area-inset-bottom))] lg:pb-0`}
       >
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-2 py-1.5">
           <p
@@ -149,12 +164,12 @@ export function StudioInspectorOverlay({
           <CloseButton label={t("zamknijInspector")} onClick={onClose} />
         </div>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-          {children}
           {closeBlockedMessage ? (
             <p role="alert" className="text-sm text-destructive">
               {tl(closeBlockedMessage)}
             </p>
           ) : null}
+          {children}
         </div>
       </div>
     </div>

@@ -47,18 +47,16 @@ export async function GET(request: Request, context: RouteContext) {
     }
     if (error instanceof AudioEntitlementError) {
       return NextResponse.json(
-        { error: error.message },
+        { error: "Ten plik nie jest w Twoim planie.", code: "PLAN" },
         {
           status: error.code === "UNAUTHENTICATED" ? 401 : 403,
         },
       );
     }
+    console.error("[artifact-download] unexpected error", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Artifact download failed.",
-      },
-      { status: 400 },
+      { error: "Nie udało się przygotować pobrania. Spróbuj ponownie za chwilę.", code: "INTERNAL" },
+      { status: 500 },
     );
   }
 }

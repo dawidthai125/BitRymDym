@@ -28,20 +28,31 @@ export function StudioListenLinks({ projectId }: { projectId: string }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  /** Switching a link off cannot be undone: the first click asks. */
+  const [confirmOff, setConfirmOff] = useState<string | null>(null);
   const base = `/api/studio/projects/${projectId}/listen-links`;
 
   const apply = useCallback((j: (Partial<State> & { success?: boolean }) | null) => {
-    if (!j?.success) return;
+    if (!j?.success) return setLoadFailed(true);
+    setLoadFailed(false);
     setSt({ available: j.available !== false, approved: !!j.approved, tier: j.tier, links: j.links ?? [], limits: j.limits ?? { active: 0, maxActive: 0, dayOptions: [] } });
   }, []);
-  const load = useCallback(() => fetch(base).then((r) => r.json()).then(apply).catch(() => undefined), [base, apply]);
+  const load = useCallback(() => fetch(base, { cache: "no-store" }).then((r) => r.json()).then(apply).catch(() => setLoadFailed(true)), [base, apply]);
   useEffect(() => {
     let alive = true;
-    fetch(base).then((r) => r.json()).then((j) => { if (alive) apply(j); }).catch(() => undefined);
+    fetch(base).then((r) => r.json()).then((j) => { if (alive) apply(j); }).catch(() => { if (alive) setLoadFailed(true); });
     return () => { alive = false; };
   }, [base, apply]);
 
-  if (!st) return null;
+  if (!st) {
+    return loadFailed ? (
+      <p role="alert" data-testid="studio-share-load-error" className="flex flex-wrap items-center gap-2 text-sm">
+        {t("wczytajBlad")}
+        <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void load()}>{t("ponow")}</Button>
+      </p>
+    ) : null;
+  }
   if (!st.available) return <p className="text-xs text-[var(--brd-mute)]" data-testid="studio-share-unavailable">{t("niedostepne")}</p>;
   const opts = st.limits.dayOptions;
   const chosen = days && opts.includes(days) ? days : opts[opts.length - 1] ?? 1;
@@ -50,20 +61,41 @@ export function StudioListenLinks({ projectId }: { projectId: string }) {
 
   async function create() {
     setBusy(true); setMsg(null);
-    const r = await fetch(base, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ days: chosen }) });
-    const j = await r.json().catch(() => ({}));
-    setBusy(false);
-    if (!j.success) setMsg(t(`blad.${["limit", "not_approved", "bad_days"].includes(j.error) ? j.error : "inny"}`));
-    await load();
+    try {
+      const r = await fetch(base, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ days: chosen }) });
+      const j = await r.json().catch(() => ({}));
+      if (!j.success) setMsg(t(`blad.${["limit", "not_approved", "bad_days"].includes(j.error) ? j.error : "inny"}`));
+      await load();
+    } catch {
+      setMsg(t("blad.siec"));
+    } finally {
+      setBusy(false);
+    }
   }
   async function revoke(linkId: string) {
-    setBusy(true);
-    await fetch(base, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ linkId }) });
-    setBusy(false);
-    await load();
+    setBusy(true); setMsg(null);
+    try {
+      const r = await fetch(base, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ linkId }) });
+      const j = await r.json().catch(() => ({}));
+      // "Switched off" only when the server said so: otherwise the link still plays.
+      if (!r.ok || !j.success || j.ok === false) setMsg(t("blad.wylacz"));
+      await load();
+    } catch {
+      setMsg(t("blad.wylacz"));
+    } finally {
+      setConfirmOff(null);
+      setBusy(false);
+    }
   }
   async function copy(l: LinkView) {
-    try { await navigator.clipboard.writeText(l.url); setCopied(l.id); } catch { setCopied(null); }
+    setMsg(null);
+    try {
+      await navigator.clipboard.writeText(l.url);
+      setCopied(l.id);
+    } catch {
+      setCopied(null);
+      setMsg(t("blad.kopiuj"));
+    }
   }
 
   return (
@@ -105,14 +137,21 @@ export function StudioListenLinks({ projectId }: { projectId: string }) {
               </div>
               {l.state === "active" ? (
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <input readOnly value={l.url} aria-label={t("adres")} onFocus={(e) => e.currentTarget.select()} className="min-h-9 min-w-0 flex-1 rounded-[2px] border border-[var(--brd-line)] bg-transparent px-2 font-mono text-xs" />
+                  {l.url ? <input readOnly value={l.url} aria-label={t("adres")} onFocus={(e) => e.currentTarget.select()} className="min-h-9 min-w-0 flex-1 rounded-[2px] border border-[var(--brd-line)] bg-transparent px-2 font-mono text-xs" /> : <p className="min-w-0 flex-1 text-xs text-[var(--brd-mute)]">{t("adresNiedostepny")}</p>}
                   <div className="flex gap-1">
-                    <Button type="button" size="sm" variant="outline" className="min-h-9" onClick={() => void copy(l)} data-testid="studio-share-copy">{copied === l.id ? t("skopiowano") : t("kopiuj")}</Button>
-                    <Button type="button" size="sm" variant="outline" className="min-h-9" disabled={busy} onClick={() => void revoke(l.id)} data-testid="studio-share-revoke">{t("wylacz")}</Button>
+                    {l.url ? <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void copy(l)} data-testid="studio-share-copy">{copied === l.id ? t("skopiowano") : t("kopiuj")}</Button> : null}
+                    {confirmOff === l.id ? (
+                      <>
+                        <Button type="button" size="sm" className="min-h-11" disabled={busy} onClick={() => void revoke(l.id)} data-testid="studio-share-revoke-confirm">{t("wylaczNaPewno")}</Button>
+                        <Button type="button" size="sm" variant="outline" className="min-h-11" disabled={busy} onClick={() => setConfirmOff(null)}>{t("zostaw")}</Button>
+                      </>
+                    ) : (
+                      <Button type="button" size="sm" variant="outline" className="min-h-11" disabled={busy} onClick={() => setConfirmOff(l.id)} data-testid="studio-share-revoke">{t("wylacz")}</Button>
+                    )}
                   </div>
                 </div>
               ) : null}
-              {l.state === "active" ? <ShareButtons url={l.url} text={t("tekstUdostepnienia")} testId="studio-share-social" compact /> : null}
+              {l.state === "active" && l.url ? <ShareButtons url={l.url} text={t("tekstUdostepnienia")} testId="studio-share-social" compact /> : null}
             </li>
           ))}
         </ul>

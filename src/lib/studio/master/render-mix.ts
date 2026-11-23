@@ -7,6 +7,7 @@
  */
 
 import { applyRapPocket } from "@/lib/studio/mix-analysis/rap-pocket";
+import { applyTrackSidechain } from "@/lib/studio/mix-analysis/track-sidechain";
 import { analysisFxChain, applyFxInPlace, type MixAnalysisInput, type MixAnalysisTrack, renderTrack, stereoPanBuffer } from "@/lib/studio/mix-analysis/render";
 
 import type { Stereo } from "./dsp";
@@ -53,6 +54,7 @@ type CollectedTrack = {
   id: string;
   name: string;
   role: string;
+  trackType?: string;
   effectsChain?: unknown;
   left: Float32Array;
   right: Float32Array;
@@ -64,7 +66,7 @@ function renderAudibleTracks(src: MixAnalysisInput): CollectedTrack[] {
   for (const t of src.tracks) {
     const r = renderTrack(src, t, anySolo);
     if (!r.audible || r.activeRanges.length === 0) continue;
-    rendered.push({ id: t.id, name: t.name, role: t.role, effectsChain: t.effectsChain, left: r.left, right: r.right });
+    rendered.push({ id: t.id, name: t.name, role: t.role, trackType: t.trackType, effectsChain: t.effectsChain, left: r.left, right: r.right });
   }
   return rendered;
 }
@@ -75,7 +77,10 @@ export function renderMixStereo(input: MixAnalysisInput, opts: RenderMixOptions 
   const right = new Float32Array(len);
   const src = prepareMixInput(input, opts);
   const rendered = renderAudibleTracks(src);
-  if (!opts.raw) applyRapPocket(rendered, src.sampleRate, src.lengthMs, src.markers ?? []);
+  if (!opts.raw) {
+    applyRapPocket(rendered, src.sampleRate, src.lengthMs, src.markers ?? []);
+    applyTrackSidechain(rendered, src.sampleRate);
+  }
   for (const r of rendered) {
     for (let i = 0; i < len; i++) {
       left[i] += r.left[i]!;
@@ -88,7 +93,7 @@ export function renderMixStereo(input: MixAnalysisInput, opts: RenderMixOptions 
 export type MixStem = { id: string; name: string; role: string; audio: Stereo };
 
 /**
- * One stereo file per track after track FX, gain, pan and the rap pocket.
+ * One stereo file per track after track FX, gain, pan, the rap pocket and the sidechain.
  * Mute and solo match the mix. Master FX, master gain and master pan stay off
  * so a stem is not a second copy of the mastered song.
  */
@@ -96,6 +101,7 @@ export function renderMixStems(input: MixAnalysisInput): MixStem[] {
   const src = prepareMixInput(input, {});
   const rendered = renderAudibleTracks(src);
   applyRapPocket(rendered, src.sampleRate, src.lengthMs, src.markers ?? []);
+  applyTrackSidechain(rendered, src.sampleRate);
   const byId = new Map(rendered.map((r) => [r.id, r]));
   const len = mixLength(src);
   return src.tracks.map((t) => stemOrSilence(t, byId.get(t.id), len, src.sampleRate));

@@ -19,7 +19,7 @@ import {
   previewTrimRightToEdgeMs,
   type StudioClipEditCommit,
 } from "@/lib/studio/studio-clip-edit-preview";
-import type { StudioClipGeometry } from "@/lib/studio/studio-clip-ops";
+import { clipSourceRate, type StudioClipGeometry } from "@/lib/studio/studio-clip-ops";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import {
   clampPxPerMs,
@@ -172,6 +172,7 @@ export function StudioClipLaneItem({
         edgeTimelineMs: drag.origin.timelineStartMs + deltaMs,
         timelineLengthMs,
         sourceDurationMs,
+        sourceRate: clipSourceRate(clip),
         snap,
       });
       if (next) {
@@ -188,6 +189,7 @@ export function StudioClipLaneItem({
         edgeTimelineMs: originEnd + deltaMs,
         timelineLengthMs,
         sourceDurationMs,
+        sourceRate: clipSourceRate(clip),
         snap,
       });
       if (next) {
@@ -275,7 +277,7 @@ export function StudioClipLaneItem({
           : "bg-[var(--brd-ink)]/10"
       } ${clipInteractive ? "pointer-events-auto" : "pointer-events-none"}`}
       style={{ left, width }}
-      title={`${clip.sourceKind} · ${formatStudioTimeMs(clip.timelineStartMs)}`}
+      title={`${t(clip.sourceKind === "BEAT_REF" ? "klipBit" : "klipNagranie")} · ${formatStudioTimeMs(clip.timelineStartMs)}`}
       aria-selected={selected}
     >
       {editEnabled ? (
@@ -311,7 +313,7 @@ export function StudioClipLaneItem({
         <button
           type="button"
           data-studio-clip-drag={clip.id}
-          className="relative z-[2] h-full w-2 min-w-2 shrink-0 cursor-grab touch-none border-r border-[var(--brd-line)]/40 bg-[var(--brd-ink)]/10 before:absolute before:inset-y-0 before:left-1/2 before:w-11 before:-translate-x-1/2 before:content-['']"
+          className="absolute inset-y-0 left-0 z-[2] w-2 min-w-2 cursor-grab touch-none border-r border-[var(--brd-line)]/40 bg-[var(--brd-ink)]/10 before:absolute before:inset-y-0 before:left-1/2 before:w-11 before:-translate-x-1/2 before:content-['']"
           aria-label={t("przeciagnijKlip")}
           title={t("przeciagnijKlip")}
           onPointerDown={(e) => {
@@ -346,7 +348,7 @@ export function StudioClipLaneItem({
       >
         <StudioClipWaveform
           clip={clip}
-          widthPx={Math.max(1, width - (editEnabled ? 8 : 0))}
+          widthPx={width}
           heightPx={laneHeightPx - 8}
           selected={selected}
           interactionLocked={interactionLocked}

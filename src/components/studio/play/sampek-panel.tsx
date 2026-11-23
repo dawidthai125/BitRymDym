@@ -21,13 +21,28 @@ export function SampekPanel(props: {
   const t = useTranslations("studio.sampekPanel");
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  /** What Sampek proposes: heard in the preview, saved only after "Zastosuj". */
+  const [proposal, setProposal] = useState<{ result: SampekResult; base: PlaySession } | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  // New notes after the proposal: accepting it would lose them.
+  const current = proposal && proposal.base === props.session ? proposal.result : null;
+
+  function propose(result: SampekResult, base: PlaySession) {
+    setProposal({ result, base });
+    setMessage(result.changes.join(" "));
+    setPreviewing(true);
+    props.onPreview(result.session);
+  }
+  function stopPreview() {
+    setPreviewing(false);
+    props.onPreview(null);
+  }
 
   async function run(action: "quick" | "chords" | "bass" | "counter" | "variation") {
     setMessage(null);
+    setProposal(null);
     if (action === "quick") {
-      const result = quickFix(props.session);
-      props.onApply(result);
-      setMessage(result.changes.join(" "));
+      propose(quickFix(props.session), props.session);
       return;
     }
     if (!props.canUseAi) {
@@ -35,18 +50,22 @@ export function SampekPanel(props: {
       return;
     }
     setBusy(action);
+    const base = props.session;
     try {
       const response = await fetch("/api/studio/play/sampek", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ session: props.session, action }),
+        body: JSON.stringify({ session: base, action }),
+        signal: AbortSignal.timeout(60000),
       });
       const body = (await response.json().catch(() => ({}))) as { result?: SampekResult; message?: string };
-      if (!response.ok || !body.result) throw new Error(body.message ?? t("nieOdpowiedzial"));
-      props.onApply(body.result);
-      setMessage(body.result.changes.join(" "));
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : t("nieOdpowiedzial"));
+      if (!response.ok || !body.result) {
+        setMessage(body.message ?? t("nieOdpowiedzial"));
+        return;
+      }
+      propose(body.result, base);
+    } catch {
+      setMessage(t("nieOdpowiedzial"));
     } finally {
       setBusy(null);
     }
@@ -59,7 +78,11 @@ export function SampekPanel(props: {
           <h2 id="sampek-title" className="text-base font-semibold">{t("tytul")}</h2>
           <p className="mt-1 text-sm text-[var(--brd-ink-soft)]">{t("opis")}</p>
         </div>
-        <button type="button" onClick={() => props.onPreview(null)} className="min-h-10 rounded-md border border-[var(--brd-line)] px-3 text-sm">{t("stopPodgladu")}</button>
+        {current ? (
+          <button type="button" onClick={() => { if (previewing) stopPreview(); else { setPreviewing(true); props.onPreview(current.session); } }} className="min-h-10 rounded-md border border-[var(--brd-line)] px-3 text-sm">
+            {previewing ? t("stopPodgladu") : t("podglad")}
+          </button>
+        ) : null}
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => void run("quick")} disabled={!!busy} className="min-h-10 rounded-md bg-[var(--brd-amber)] px-3 text-sm font-semibold text-[var(--brd-on-media)] disabled:opacity-50">{t("szybkaPoprawa")}</button>
@@ -69,6 +92,12 @@ export function SampekPanel(props: {
           </button>
         ))}
       </div>
+      {current ? (
+        <div className="mt-3 flex flex-wrap gap-2" data-testid="sampek-proposal">
+          <button type="button" onClick={() => { stopPreview(); setProposal(null); props.onApply(current); }} className="min-h-10 rounded-md bg-[var(--brd-amber)] px-3 text-sm font-semibold text-[var(--brd-on-media)]">{t("zastosuj")}</button>
+          <button type="button" onClick={() => { stopPreview(); setProposal(null); setMessage(t("odrzucono")); }} className="min-h-10 rounded-md border border-[var(--brd-line)] px-3 text-sm">{t("odrzuc")}</button>
+        </div>
+      ) : null}
       {message ? <p role="status" className="mt-3 text-sm text-[var(--brd-ink-soft)]">{message}</p> : null}
     </section>
   );

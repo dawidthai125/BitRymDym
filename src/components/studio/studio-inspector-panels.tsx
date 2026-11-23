@@ -5,7 +5,7 @@
  * (moved out of studio-editor.tsx, audit 2026-11-21). Presentation only — state lives in the editor.
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { StudioMasterMeter } from "@/components/studio/studio-master-meter";
@@ -17,6 +17,7 @@ import {
   useStudioTransportPlayhead,
 } from "@/components/studio/studio-transport-provider";
 import { Button } from "@/components/ui/button";
+import { STUDIO_TRACK_NAME_MAX_LENGTH } from "@/config/studio";
 import { useLibText } from "@/i18n/use-lib-text";
 import { studioClipFadesOverlapHint } from "@/lib/studio/studio-clip-fade";
 import { STUDIO_CLIP_GAIN_DB_MAX, STUDIO_CLIP_GAIN_DB_MIN } from "@/lib/studio/studio-clip-mix";
@@ -26,18 +27,66 @@ import { formatStudioTrackCapacityLabel } from "@/lib/studio/studio-track-capaci
 import type { StudioClipDto, StudioTrackDto } from "@/lib/studio/studio-types";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 
+/** Track name: saved on Enter or when the field loses focus, Escape brings the old name back. */
+export function TrackNameField({
+  name,
+  disabled = false,
+  onRename,
+}: {
+  name: string;
+  disabled?: boolean;
+  onRename: (name: string) => void;
+}) {
+  const tr = useTranslations("studio.studioEditor");
+  const [draft, setDraft] = useState(name);
+  const cancelledRef = useRef(false);
+  return (
+    <input
+      type="text"
+      value={draft}
+      maxLength={STUDIO_TRACK_NAME_MAX_LENGTH}
+      disabled={disabled}
+      aria-label={tr("nazwaSciezki")}
+      data-testid="studio-track-name-field"
+      className="min-h-11 w-full min-w-0 rounded border border-[var(--brd-line)] px-2 text-sm font-medium"
+      onChange={(event) => setDraft(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur();
+        if (event.key === "Escape") {
+          cancelledRef.current = true;
+          setDraft(name);
+          event.currentTarget.blur();
+        }
+      }}
+      onBlur={() => {
+        if (cancelledRef.current) {
+          cancelledRef.current = false;
+          return;
+        }
+        const next = draft.trim();
+        if (next && next !== name) onRename(next);
+        else setDraft(name);
+      }}
+    />
+  );
+}
+
 export function TrackInspectorPanel({
   track,
   trackCount,
   maxTracks,
   onOpenEffects,
   onOpenRecord,
+  onRename,
+  disabled = false,
 }: {
   track: StudioTrackDto;
   trackCount: number;
   maxTracks: number;
   onOpenEffects: () => void;
   onOpenRecord: () => void;
+  onRename?: (name: string) => void;
+  disabled?: boolean;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
@@ -45,7 +94,11 @@ export function TrackInspectorPanel({
   return (
     <div className="space-y-3" data-testid="studio-inspector-track">
       <div className="space-y-1">
-        <p className="text-sm font-medium text-[var(--brd-ink)]">{tl(track.name)}</p>
+        {isBeat || !onRename ? (
+          <p className="text-sm font-medium text-[var(--brd-ink)]">{tl(track.name)}</p>
+        ) : (
+          <TrackNameField key={`${track.id}:${track.name}`} name={track.name} disabled={disabled} onRename={onRename} />
+        )}
         <p className="text-xs text-[var(--brd-mute)]">
           {tl(labelStudioTrackType(track.trackType))}
           {tl(isBeat ? tr("bitProjektuChroniony") : "")}
@@ -99,6 +152,8 @@ export function TrackInspectorPanel({
   );
 }
 
+const START_COMMIT_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
+
 export function ClipEditPanel({
   clip,
   playheadMs,
@@ -111,6 +166,7 @@ export function ClipEditPanel({
   onSaveGain,
   onFlushPersist,
   onMarkDirty,
+  onClearDirty,
   onSaveMute,
   onMove,
   onTrimLeftToPlayhead,
@@ -130,6 +186,8 @@ export function ClipEditPanel({
   onSaveGain: (gainDb: number) => void;
   onFlushPersist: () => void;
   onMarkDirty: () => void;
+  /** The slider came back to the saved value: nothing to save. */
+  onClearDirty?: () => void;
   onSaveMute: (muted: boolean) => void;
   onMove: (timelineStartMs: number) => void;
   onTrimLeftToPlayhead: () => void;
@@ -140,7 +198,8 @@ export function ClipEditPanel({
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
-  const [draftStart, setDraftStart] = useState<number | null>(null);
+  const [draftStartOf, setDraftStartOf] = useState<{ clipId: string; ms: number } | null>(null);
+  const draftStart = draftStartOf && draftStartOf.clipId === clip?.id ? draftStartOf.ms : null;
   const fadeBaselineKey = clip
     ? `${clip.id}:${clip.fadeInMs}:${clip.fadeOutMs}`
     : "";
@@ -185,6 +244,12 @@ export function ClipEditPanel({
     draftFadeOut,
     clip.durationMs,
   );
+
+  function commitStart() {
+    if (!clip || draftStart === null) return;
+    setDraftStartOf(null);
+    if (draftStart !== clip.timelineStartMs) onMove(draftStart);
+  }
 
   function setDraftFadeIn(next: number) {
     setFadeEdit({
@@ -243,13 +308,7 @@ export function ClipEditPanel({
         aria-label={tr("zrodloPlikuTylkoOdczyt")}
       >
         <p className="font-medium text-[var(--brd-ink)]">{tr("zrodloPlik")}</p>
-        <p>{tr("rodzaj")}{" "}{tl(clip.sourceKind)}</p>
-        {clip.sourceTakeId ? (
-          <p className="font-mono break-all">{tr("take")}{" "}{tl(clip.sourceTakeId)}</p>
-        ) : null}
-        {clip.sourceBeatId ? (
-          <p className="font-mono break-all">{tr("bit")}{" "}{tl(clip.sourceBeatId)}</p>
-        ) : null}
+        <p>{tr("rodzaj")}{" "}{tr(clip.sourceKind === "BEAT_REF" ? "rodzajBit" : "rodzajNagranie")}</p>
         <p className="font-mono tabular-nums">
           {tr("offsetZrodla2")}{" "}{tl(formatStudioTimeMs(clip.sourceOffsetMs))}
         </p>
@@ -279,6 +338,7 @@ export function ClipEditPanel({
           onCommit={(next) => {
             setDraftGainDb(next);
             if (clip && next !== clip.gainDb) onSaveGain(next);
+            else onClearDirty?.();
           }}
         />
         <Button
@@ -315,11 +375,11 @@ export function ClipEditPanel({
           className="mt-1 h-11 w-full min-w-0"
           aria-label={tr("przesunKlip")}
           disabled={pending}
-          onChange={(e) => setDraftStart(Number(e.target.value))}
-          onPointerUp={(e) => {
-            const next = Number((e.target as HTMLInputElement).value);
-            setDraftStart(null);
-            if (next !== clip.timelineStartMs) onMove(next);
+          onChange={(e) => setDraftStartOf({ clipId: clip.id, ms: Number(e.target.value) })}
+          onPointerUp={commitStart}
+          onBlur={commitStart}
+          onKeyUp={(e) => {
+            if (START_COMMIT_KEYS.has(e.key)) commitStart();
           }}
         />
       </label>
@@ -439,7 +499,7 @@ export function ClipEditPanel({
             setDraftFadeIn(next);
             if (clip && (next !== clip.fadeInMs || draftFadeOut !== clip.fadeOutMs)) {
               onSaveFades(next, draftFadeOut);
-            }
+            } else onClearDirty?.();
           }}
         />
         <StudioMixControl
@@ -459,7 +519,7 @@ export function ClipEditPanel({
             setDraftFadeOut(next);
             if (clip && (draftFadeIn !== clip.fadeInMs || next !== clip.fadeOutMs)) {
               onSaveFades(draftFadeIn, next);
-            }
+            } else onClearDirty?.();
           }}
         />
         {fadeOverlapHint ? (

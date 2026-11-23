@@ -6,6 +6,7 @@
  * chain drives the Web Audio preview (studio-fx-graph) and the E3 offline
  * render (studio-offline-fx), so preview == server render by construction.
  */
+import { clampChainToPlan } from "@/lib/studio/mix-autofix/plan";
 import type { StudioTrackRole } from "@/config/studio";
 import {
   parseStudioFxChainForWrite,
@@ -189,6 +190,17 @@ export function vocalSetRoleForTrack(role: StudioTrackRole): VocalSetRole | null
   return null;
 }
 
+/** A preset cut to what the plan can save (same rule as the server), and what was left out. */
+export function fitPresetToPlan(
+  chain: StudioFxChainV1,
+  current: StudioFxChainV1,
+  limits: { maxEffects?: number; allowSidechain?: boolean },
+): { chain: StudioFxChainV1 | null; skipped: StudioFxChainV1["effects"][number]["type"][] } {
+  const fitted = clampChainToPlan(chain, current, limits);
+  const kept = new Set((fitted?.effects ?? []).map((e) => e.id));
+  return { chain: fitted, skipped: fitted ? chain.effects.filter((e) => !kept.has(e.id)).map((e) => e.type) : [] };
+}
+
 /** One atomic mix apply: set_track_fx for every track whose role has a slot. */
 export function buildVocalSetOps(
   tracks: readonly { id: string; trackRole: StudioTrackRole }[],
@@ -223,7 +235,7 @@ export function captureVocalSet(
 export const FX_PRESET_NAME_MAX = 40;
 export type FxPresetKind = "chain" | "set";
 export type FxPresetPayload = { chain: StudioFxChainV1 } | { set: VocalPresetSet };
-export type OwnFxPreset = { id: string; name: string; kind: FxPresetKind; payload: FxPresetPayload; createdAt: string };
+export type OwnFxPreset = { id: string; name: string; kind: FxPresetKind; payload: FxPresetPayload; createdAt: string; listed?: boolean };
 
 export class FxPresetValidationError extends Error {
   readonly code = "FX_PRESET_INVALID" as const;

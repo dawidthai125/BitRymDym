@@ -51,6 +51,13 @@ export function mapMediaDevicesToAudioInputs(
   }));
 }
 
+/** Before permission browsers list devices without ids (Firefox, Safari, "allow this time"). */
+export function studioDeviceIdsHidden(
+  devices: readonly { deviceId: string }[],
+): boolean {
+  return devices.length > 0 && devices.every((d) => !d.deviceId);
+}
+
 /**
  * Resolve selection: null / empty = Automatic (system default mic).
  * Stale preferred id → Automatic (null) + fellBackFromStale.
@@ -130,7 +137,7 @@ export function studioDeviceErrorMessagePl(code: StudioDeviceErrorCode): string 
     case "DEVICE_SELECTION_FAILED":
       return "Nie udało się użyć wybranego mikrofonu.";
     case "INPUT_STREAM_FAILED":
-      return "Nie udało się uruchomić mikrofonu.";
+      return "Nie udało się uruchomić mikrofonu. Sprawdź, czy nie używa go inny program.";
   }
 }
 

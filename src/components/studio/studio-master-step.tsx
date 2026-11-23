@@ -23,13 +23,14 @@ import { LockedAction } from "@/components/plans/locked-action";
 import { FREE_WATERMARK_PER_DAY, minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { referenceEditInvalidatesMaster } from "@/lib/studio/master/reference-invalidation";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
-import { joinParts, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer } from "@/lib/studio/master/client";
+import { joinParts, loadMasterMix, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer } from "@/lib/studio/master/client";
+import { followStudioJob, masterErrorKey, refusalCode, studioJobUrl, type StudioJobBody } from "@/lib/studio/master/job-poll";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
 import { explainReferenceMatch, isReferenceMatchReport } from "@/lib/studio/master/reference";
 import { DEFAULT_MASTER_INTENSITY, DEFAULT_MASTER_SETTINGS, DEFAULT_REFERENCE_INTENSITY, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, applyMasterStyle, clampMasterSettings, isMasterStyleId, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterStyleId, type MasterTargetId } from "@/lib/studio/master/targets";
 import { buildMasterVerdict, type MasterCard } from "@/lib/studio/master/verdict";
 import { buildStreamingReadiness } from "@/lib/studio/master/streaming-readiness";
-import { decodeMixAnalysisInput } from "@/lib/studio/mix-analysis/client";
+import { MixSourceError } from "@/lib/studio/mix-analysis/client";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
 import type { MasterSessionSnap } from "@/lib/studio/studio-undo-history";
 
@@ -76,18 +77,32 @@ function laterReset(a?: string | null, b?: string | null): string | null {
   if (!b) return a;
   return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
 }
+/** What a master was ordered with: the report describes the file, not the sliders moved afterwards. */
+type MadeWith = { key: string; target: MasterTargetId; settings: MasterSettings; style: MasterStyleId | null; styleIntensity: number };
+type DoneMaster = { phase: "done"; jobId: string; url: string | null; urlState: "loading" | "ready" | "none"; metrics: { after?: Record<string, unknown> } | null; made: MadeWith | null };
 type ServerMaster =
   | { phase: "idle" }
   | { phase: "working"; jobId: string | null }
-  | { phase: "done"; jobId: string; url: string | null; metrics: { after?: Record<string, unknown> } | null }
+  /** The job is (or may be) still on the server, we only stopped watching. A second one must not be ordered. */
+  | { phase: "waiting"; jobId: string; reason: "pending" | "signed_out" }
+  | DoneMaster
   | { phase: "failed"; code: string }
   | { phase: "unavailable" };
+type JobView = {
+  id?: string; status?: string; target?: string | null; settings?: Record<string, number> | null; style?: string | null; styleIntensity?: number | null;
+  metrics?: unknown; sourceDocumentVersion?: number | null;
+};
+const LIMIT_CODES = ["daily_limit", "weekly_limit", "song_day_limit"] as const;
+type LimitCode = (typeof LIMIT_CODES)[number];
+const isLimitCode = (c: string): c is LimitCode => (LIMIT_CODES as readonly string[]).includes(c);
+
+const masterKeyOf = (target: MasterTargetId, effective: MasterSettings) => `${target}:${MASTER_SETTING_KEYS.map((k) => effective[k]).join(",")}`;
 
 const STATUS_RAIL = { green: "border-l-[var(--brd-green)]", yellow: "border-l-[var(--brd-amber)]", red: "border-l-[var(--brd-rec)]", na: "border-l-[var(--brd-line)]" } as const;
+/** The dark theme has one colour for "ok" and "watch out", so the state is never colour alone. */
+const STATUS_MARK = { green: "✓", yellow: "!", red: "✕", na: "" } as const;
 const MIN_PLAN = (format: DeliverFormat): Tier => minimumTierForDeliverFormat(format);
 const FORMATS: DeliverFormat[] = ["MP3_128", "MP3_192", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F"];
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Stage 3 — Mastering step: approved mix → one stereo track → target + whole-song settings → E3 master → approve → downloads. */
 export function StudioMasterStep({
@@ -125,6 +140,10 @@ export function StudioMasterStep({
 
   const [renderPct, setRenderPct] = useState(0);
   const [renderFailed, setRenderFailed] = useState(false);
+  /** The track whose audio did not load (no preview and no master without it). */
+  const [missingTrack, setMissingTrack] = useState<string | null>(null);
+  const [renderTry, setRenderTry] = useState(0);
+  const [mixChanged, setMixChanged] = useState(false);
   const [mix, setMix] = useState<{ stereo: Stereo; raw: Stereo; metrics: MasterMetrics } | null>(null);
   const [target, setTarget] = useState<MasterTargetId>(initialState?.target ?? "streaming");
   const [settings, setSettings] = useState<MasterSettings>(DEFAULT_MASTER_SETTINGS);
@@ -133,7 +152,9 @@ export function StudioMasterStep({
   const [styleIntensity, setStyleIntensity] = useState(DEFAULT_MASTER_INTENSITY);
   const [refState, setRefState] = useState<MasterReferenceState>({ loaded: false, available: true, gate: null, reference: null });
   const refStateRef = useRef(refState);
-  refStateRef.current = refState;
+  useEffect(() => {
+    refStateRef.current = refState;
+  }, [refState]);
   const [refIntensity, setRefIntensity] = useState(DEFAULT_REFERENCE_INTENSITY);
   const effective = useMemo(() => applyMasterStyle(settings, style, styleIntensity), [settings, style, styleIntensity]);
   const [preview, setPreview] = useState<{ stereo: Stereo; metrics: MasterMetrics; key: string } | null>(null);
@@ -143,83 +164,232 @@ export function StudioMasterStep({
   const [sm, setSm] = useState<ServerMaster>({ phase: "idle" });
   const [approved, setApproved] = useState(false);
   const [approving, setApproving] = useState(false);
-  const [dl, setDl] = useState<{ key: string; status: "working" | "done" | "error" | "limit"; reason?: "daily_limit" | "weekly_limit" | "song_day_limit"; songLimit?: number } | null>(null);
+  const [approveError, setApproveError] = useState<string | null>(null);
+  /** Why the last order failed. Kept apart from `sm`: an earlier finished master comes back on the screen. */
+  const [failCode, setFailCode] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<"signed_out" | "server" | null>(null);
+  const [offline, setOffline] = useState(false);
+  /** The reference was swapped / its strength moved after the finished master. */
+  const [refDirty, setRefDirty] = useState(false);
+  const [dl, setDl] = useState<{ key: string; status: "working" | "pending" | "done" | "error" | "limit"; jobId?: string; code?: string; reason?: LimitCode; songLimit?: number } | null>(null);
   /** Live E3 progress of the running master / download job (stage + overall %). */
   const [prog, setProg] = useState<{ master: JobProgress | null; dl: JobProgress | null }>({ master: null, dl: null });
   const [ab, setAb] = useState<"mix" | "master">("master");
   const [matched, setMatched] = useState(true);
   const [playing, setPlaying] = useState(false);
-  const audioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
-  const settingsKey = `${target}:${MASTER_SETTING_KEYS.map((k) => effective[k]).join(",")}`;
+  const audioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode; gain: GainNode; startedAt: number; offset: number } | null>(null);
+  /** Where A/B listening stopped (seconds): switching and resuming continue from here. */
+  const playPos = useRef(0);
+  const settingsKey = masterKeyOf(target, effective);
+  const [previewFailed, setPreviewFailed] = useState<string | null>(null);
+  const [previewTry, setPreviewTry] = useState(0);
+  const docVersion = doc.project.documentVersion;
+  const docVersionRef = useRef(docVersion);
+  useEffect(() => {
+    docVersionRef.current = docVersion;
+  }, [docVersion]);
+  const masterPoll = useRef<AbortController | null>(null);
+  const dlPoll = useRef<AbortController | null>(null);
+  const prevMaster = useRef<{ done: DoneMaster; approved: boolean } | null>(null);
+  /** Object URLs of joined results: they hold the whole file in memory until revoked. */
+  const objectUrls = useRef<string[]>([]);
+  useEffect(() => () => {
+    masterPoll.current?.abort();
+    dlPoll.current?.abort();
+    for (const u of objectUrls.current.splice(0)) URL.revokeObjectURL(u);
+  }, []);
+  const resultRef = useRef({ hasResult: false });
+  useEffect(() => {
+    resultRef.current = { hasResult: sm.phase === "done" };
+  }, [sm.phase]);
 
-  // 1) Bounce the approved mix (once per mount — going back to Mix discards the master).
+  const stop = useCallback(() => {
+    const a = audioRef.current;
+    audioRef.current = null;
+    if (a) {
+      // Detach first: the old source's async onended must not flip "playing" off for the next one.
+      a.src.onended = null;
+      playPos.current = a.offset + Math.max(0, a.ctx.currentTime - a.startedAt);
+      try { a.src.stop(); } catch { /* already stopped */ }
+      void a.ctx.close();
+    }
+    setPlaying(false);
+  }, []);
+  useEffect(() => () => stop(), [stop]);
+
+  // 1) Bounce the mix for the current document version. A change made meanwhile (undo, BITEK, another tab)
+  //    means a new version: the preview is rendered again and a master of the old mix is no longer offered.
+  const renderedVersion = useRef<number | null>(null);
   useEffect(() => {
     const controller = new AbortController();
-    void (async () => {
-      const input = await decodeMixAnalysisInput({ doc, resolveSourceUrl: resolveClipSourceUrl, sampleRate: MASTER_RENDER_SAMPLE_RATE, signal: controller.signal, onProgress: (f) => setRenderPct(Math.round(f * 80)) });
-      if (controller.signal.aborted) return;
-      if (!input) return setRenderFailed(true);
-      try {
-        const r = await renderApprovedMix(input);
-        if (!controller.signal.aborted) setMix({ stereo: r.mix, raw: r.raw, metrics: r.mixMetrics });
-      } catch {
-        if (!controller.signal.aborted) setRenderFailed(true);
+    const again = renderedVersion.current !== null && renderedVersion.current !== docVersion;
+    const timer = window.setTimeout(() => {
+      renderedVersion.current = docVersion;
+      if (again) {
+        stop();
+        playPos.current = 0;
+        setMix(null);
+        setPreview(null);
+        setRenderPct(0);
+        if (resultRef.current.hasResult) setMixChanged(true);
+        prevMaster.current = null;
+        setSm((cur) => (cur.phase === "done" ? { phase: "idle" } : cur));
+        setApproved(false);
       }
-    })();
-    return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the mix is frozen when entering Mastering
-  }, []);
+      setRenderFailed(false);
+      setMissingTrack(null);
+      void (async () => {
+        try {
+          const input = await loadMasterMix({ doc, resolveSourceUrl: resolveClipSourceUrl, sampleRate: MASTER_RENDER_SAMPLE_RATE, signal: controller.signal, onProgress: (f) => setRenderPct(Math.round(f * 80)) });
+          if (controller.signal.aborted) return;
+          if (!input) return setRenderFailed(true);
+          const r = await renderApprovedMix(input);
+          if (!controller.signal.aborted) setMix({ stereo: r.mix, raw: r.raw, metrics: r.mixMetrics });
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          setMissingTrack(error instanceof MixSourceError ? error.track : null);
+          setRenderFailed(true);
+        }
+      })();
+    }, again ? 600 : 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one render per saved document version
+  }, [docVersion, renderTry]);
 
   // 2) Server state: tier, download options, weekly counter, existing master.
+  const loadServer = useCallback(async (): Promise<Record<string, unknown> | null> => {
+    try {
+      const r = await fetch(`/api/studio/projects/${projectId}/master`, { cache: "no-store" });
+      if (!r.ok) {
+        setLoadError(r.status === 401 ? "signed_out" : "server");
+        return null;
+      }
+      const j = (await r.json()) as Record<string, unknown>;
+      setLoadError(null);
+      setServer({ available: j.available !== false, tier: (j.tier as Tier | undefined) ?? null, options: Array.isArray(j.options) ? (j.options as Option[]) : [], usage: readUsage(j.usage), masters: (j.masters as ServerState["masters"] | undefined) ?? null });
+      return j;
+    } catch {
+      setLoadError("server");
+      return null;
+    }
+  }, [projectId]);
+
+  /** Signed URL, or a joined object URL when the result is stored in ≤40 MB parts. */
+  const resultUrl = useCallback(async (j: StudioJobBody): Promise<string | null> => {
+    if (j.downloadUrl) return j.downloadUrl;
+    if (!j.downloadParts?.length) return null;
+    const ext = (j.filename ?? "").split(".").pop();
+    const blob = await joinParts(j.downloadParts, ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : ext === "flac" ? "audio/flac" : ext === "aiff" ? "audio/aiff" : "audio/wav");
+    if (!blob) return null;
+    const url = URL.createObjectURL(blob);
+    objectUrls.current.push(url);
+    return url;
+  }, []);
+
+  /** Fresh player address of a finished master (signed links live 10 minutes). */
+  const refreshFinalUrl = useCallback(async (jobId: string): Promise<string | null> => {
+    let url: string | null = null;
+    let known = false;
+    try {
+      const r = await fetch(studioJobUrl(projectId, jobId), { cache: "no-store" });
+      if (r.ok) {
+        known = true;
+        url = await resultUrl((await r.json()) as StudioJobBody);
+      }
+    } catch {
+      // handled below: the button "try again" stays
+    }
+    setSm((cur) => (cur.phase === "done" && cur.jobId === jobId ? { ...cur, url: url ?? (known ? null : cur.url), urlState: url ? "ready" : "none" } : cur));
+    return url;
+  }, [projectId, resultUrl]);
+
+  const failMaster = useCallback(async (code: string) => {
+    setFailCode(code);
+    if (masterErrorKey(code) === "referenceInvalid") {
+      refStateRef.current = { ...refStateRef.current, reference: null };
+      setRefState((cur) => ({ ...cur, reference: null }));
+    }
+    const prev = prevMaster.current;
+    prevMaster.current = null;
+    setSm(prev ? prev.done : { phase: "failed", code });
+    setApproved(prev?.approved ?? false);
+    // A failed or cancelled master is not counted by the server: bring the counter (and the button) back.
+    requestPlanUsageRefresh();
+    await loadServer();
+  }, [loadServer]);
+
+  const followMaster = useCallback(async (jobId: string, made: MadeWith | null) => {
+    masterPoll.current?.abort();
+    const controller = new AbortController();
+    masterPoll.current = controller;
+    setOffline(false);
+    setSm({ phase: "working", jobId });
+    const out = await followStudioJob(projectId, jobId, {
+      signal: controller.signal,
+      onUpdate: (body) => setProg((p) => ({ ...p, master: jobProgressOf(body.job ?? {}, p.master) })),
+      onConnection: (ok) => setOffline(!ok),
+    });
+    if (out.kind === "aborted" || controller.signal.aborted) return;
+    setOffline(false);
+    if (out.kind === "pending" || out.kind === "signed_out") return setSm({ phase: "waiting", jobId, reason: out.kind });
+    if (out.kind === "missing") return void failMaster("network");
+    if (out.kind === "failed") return void failMaster(out.code);
+    const version = out.body.job?.sourceDocumentVersion;
+    if (version != null && version !== docVersionRef.current) return void failMaster("doc_changed");
+    setProg((p) => ({ ...p, master: { stage: "done", progress: 100 } }));
+    const url = await resultUrl(out.body).catch(() => null);
+    if (controller.signal.aborted) return;
+    prevMaster.current = null;
+    setRefDirty(false);
+    requestPlanUsageRefresh();
+    setSm({ phase: "done", jobId, url, urlState: url ? "ready" : "none", metrics: (out.body.job?.metrics as DoneMaster["metrics"]) ?? null, made });
+  }, [failMaster, projectId, resultUrl]);
+
   useEffect(() => {
     let live = true;
-    void fetch(`/api/studio/projects/${projectId}/master`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (!live) return;
-        if (!j) {
-          setServerLoaded(true);
-          return;
+    void (async () => {
+      const j = await loadServer();
+      if (!live) return;
+      if (!j) return setServerLoaded(true);
+      if (j.available === false) {
+        setSm({ phase: "unavailable" });
+        return setServerLoaded(true);
+      }
+      // After a reload / Back to Mix: a running or finished master of this very mix is still there. Ordering
+      // another one would spend the monthly limit again.
+      const latest = (j.latest ?? null) as JobView | null;
+      const current = (v: JobView | null) => !!v?.id && (v.sourceDocumentVersion == null || j.documentVersion == null || v.sourceDocumentVersion === j.documentVersion);
+      const running = latest && current(latest) && (latest.status === "queued" || latest.status === "running") ? latest : null;
+      const approvedJob = j.approved && (j.approved as JobView).status === "succeeded" ? (j.approved as JobView) : null;
+      const view = running ?? approvedJob ?? (latest && current(latest) && latest.status === "succeeded" ? latest : null);
+      if (view?.id) {
+        const madeTarget = view.target && isMasterTargetId(view.target) ? view.target : (initialState?.target ?? "streaming");
+        const madeSettings = clampMasterSettings(view.settings ?? DEFAULT_MASTER_SETTINGS);
+        const madeStyle = isMasterStyleId(view.style) ? view.style : null;
+        const madeIntensity = typeof view.styleIntensity === "number" && madeStyle ? view.styleIntensity : DEFAULT_MASTER_INTENSITY;
+        const made: MadeWith = { key: masterKeyOf(madeTarget, applyMasterStyle(madeSettings, madeStyle, madeIntensity)), target: madeTarget, settings: madeSettings, style: madeStyle, styleIntensity: madeIntensity };
+        setTarget(madeTarget);
+        setSettings(madeSettings);
+        setStyle(madeStyle);
+        setStyleIntensity(madeIntensity);
+        if (running) {
+          setProg((p) => ({ ...p, master: { stage: "queued", progress: 0 } }));
+          void followMaster(view.id, made);
+        } else {
+          setSm({ phase: "done", jobId: view.id, url: null, urlState: "loading", metrics: (view.metrics as DoneMaster["metrics"]) ?? null, made });
+          setApproved(view === approvedJob);
+          await refreshFinalUrl(view.id);
         }
-        setServer({ available: j.available !== false, tier: j.tier ?? null, options: Array.isArray(j.options) ? j.options : [], usage: readUsage(j.usage), masters: j.masters ?? null });
-        if (j.available === false) {
-          setSm({ phase: "unavailable" });
-          setServerLoaded(true);
-          return;
-        }
-        // Restore an approved master for the current mix (after reload / coming back later).
-        const a = j.approved as { id?: string; target?: string | null; status?: string; settings?: Record<string, number> | null; style?: string | null; styleIntensity?: number | null } | null | undefined;
-        if (a?.id && a.status === "succeeded") {
-          const id = a.id;
-          void fetch(`/api/studio/projects/${projectId}/jobs/${id}`)
-            .then((r) => (r.ok ? r.json() : null))
-            .then(async (job) => {
-              if (!live || !job?.job) return;
-              const url = await resultUrl(job);
-              if (!live) return;
-              if (a.target && isMasterTargetId(a.target)) setTarget(a.target);
-              if (a.settings) setSettings(clampMasterSettings(a.settings));
-              if (isMasterStyleId(a.style)) {
-                setStyle(a.style);
-                if (typeof a.styleIntensity === "number") setStyleIntensity(a.styleIntensity);
-              }
-              setSm((cur) => (cur.phase === "idle" ? { phase: "done", jobId: id, url, metrics: (job.job.metrics as { after?: Record<string, unknown> }) ?? null } : cur));
-              setApproved(true);
-            })
-            .catch(() => {})
-            .finally(() => {
-              if (live) setServerLoaded(true);
-            });
-          return;
-        }
-        setServerLoaded(true);
-      })
-      .catch(() => {
-        if (live) setServerLoaded(true);
-      });
+      }
+      if (live) setServerLoaded(true);
+    })();
     return () => {
       live = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per project; the callbacks are stable
   }, [projectId]);
 
   const autoPhase = useRef<"off" | "clarity" | "commit" | "done">("off");
@@ -250,57 +420,63 @@ export function StudioMasterStep({
     const key = settingsKey;
     const h = setTimeout(() => {
       void renderMasterPreview(mix.stereo, target, effective).then((r) => {
-        if (live) setPreview({ stereo: r.preview, metrics: r.metrics, key });
-      }).catch(() => {});
+        if (!live) return;
+        setPreviewFailed(null);
+        setPreview({ stereo: r.preview, metrics: r.metrics, key });
+      }).catch(() => {
+        if (live) setPreviewFailed(key);
+      });
     }, 250);
     return () => {
       live = false;
       clearTimeout(h);
     };
-  }, [mix, target, effective, settingsKey]);
+  }, [mix, target, effective, settingsKey, previewTry]);
 
   const previewFresh = preview?.key === settingsKey ? preview : null;
   const verdict = useMemo(() => (preview ? buildMasterVerdict(preview.metrics, target, effective) : null), [preview, target, effective]);
-
-  const stop = useCallback(() => {
-    const a = audioRef.current;
-    audioRef.current = null;
-    if (a) {
-      // Detach first: the old source's async onended must not flip "playing" off for the next one.
-      a.src.onended = null;
-      try { a.src.stop(); } catch { /* already stopped */ }
-      void a.ctx.close();
-    }
-    setPlaying(false);
-  }, []);
-  useEffect(() => () => stop(), [stop]);
 
   const play = (which: "mix" | "master") => {
     stop();
     const s = which === "mix" ? mix?.stereo : preview?.stereo;
     if (!s || !mix || !preview) return;
     const ctx = new AudioContext({ sampleRate: s.sampleRate });
-    // Loudness-matched A/B: the mix is brought to the master's LUFS (never above, the master is limited).
-    const gain = which === "mix" && matched && Number.isFinite(preview.metrics.lufs) && Number.isFinite(mix.metrics.lufs) ? Math.min(12, preview.metrics.lufs - mix.metrics.lufs) : 0;
     const src = ctx.createBufferSource();
-    src.buffer = stereoToAudioBuffer(ctx, s, gain);
-    src.connect(ctx.destination);
+    src.buffer = stereoToAudioBuffer(ctx, s);
+    const gain = ctx.createGain();
+    gain.gain.value = abGain(which, matched);
+    src.connect(gain);
+    gain.connect(ctx.destination);
+    const offset = playPos.current < src.buffer.duration - 0.1 ? playPos.current : 0;
     src.onended = () => {
-      if (audioRef.current?.src === src) setPlaying(false);
+      if (audioRef.current?.src === src) {
+        stop();
+        playPos.current = 0;
+      }
     };
-    src.start();
-    audioRef.current = { ctx, src };
+    src.start(0, offset);
+    audioRef.current = { ctx, src, gain, startedAt: ctx.currentTime, offset };
     setPlaying(true);
   };
+  /** Loudness-matched A/B: the mix is brought to the master's LUFS (never above, the master is limited). */
+  function abGain(which: "mix" | "master", on: boolean): number {
+    if (which !== "mix" || !on || !mix || !preview || !Number.isFinite(preview.metrics.lufs) || !Number.isFinite(mix.metrics.lufs)) return 1;
+    return Math.pow(10, Math.min(12, preview.metrics.lufs - mix.metrics.lufs) / 20);
+  }
   const switchAb = (which: "mix" | "master") => {
+    if (which === ab) return;
     setAb(which);
     if (playing) play(which);
   };
-
-  const invalidate = () => {
-    if (sm.phase === "done") setSm({ phase: "idle" });
-    setApproved(false);
+  const chooseMatched = (on: boolean) => {
+    setMatched(on);
+    const a = audioRef.current;
+    if (a) a.gain.gain.value = abGain(ab, on);
   };
+
+  const locked = sm.phase === "working" || sm.phase === "waiting";
+  /** The finished master was made with other settings than the ones on the screen. */
+  const staleSettings = sm.phase === "done" && (refDirty || (sm.made !== null && sm.made.key !== settingsKey));
   const onReferenceState = (next: MasterReferenceState) => {
     const prev = refStateRef.current;
     refStateRef.current = next;
@@ -309,7 +485,7 @@ export function StudioMasterStep({
       { loaded: prev.loaded, referenceId: prev.reference?.id ?? null },
       next.reference?.id ?? null,
     )) {
-      invalidate();
+      setRefDirty(true);
     }
   };
   const sessionLive = useRef<MasterSessionSnap>({
@@ -341,40 +517,43 @@ export function StudioMasterStep({
     commitSessionRef.current?.(cloneSession(before), cloneSession(after));
   };
   const step = (key: MasterSettingKey, value: number) => {
+    if (locked) return;
     const before = cloneSession(sessionLive.current);
     const settingsNext = clampMasterSettings({ ...before.settings, [key]: value });
     setSettings(settingsNext);
-    invalidate();
     commitSession(before, { ...before, settings: settingsNext });
   };
-  const replaceSettings = (nextSettings: MasterSettings) => {
+  const replaceSettings = (nextSettings: MasterSettings): boolean => {
+    if (locked) return false;
     const before = cloneSession(sessionLive.current);
     const settingsNext = clampMasterSettings(nextSettings);
+    if (MASTER_SETTING_KEYS.every((k) => before.settings[k] === settingsNext[k])) return false;
     setSettings(settingsNext);
-    invalidate();
     commitSession(before, { ...before, settings: { ...settingsNext } });
+    return true;
   };
   const chooseTarget = (id: MasterTargetId): boolean => {
+    if (locked) return false;
     const before = cloneSession(sessionLive.current);
     if (before.target === id) return false;
     setTarget(id);
-    invalidate();
     commitSession(before, { ...before, target: id });
     return true;
   };
   const chooseStyle = (next: MasterStyleId | null) => {
+    if (locked) return;
     const before = cloneSession(sessionLive.current);
+    if (before.style === next) return;
     setStyle(next);
-    invalidate();
     commitSession(before, { ...before, style: next });
   };
   const onIntensity = (value: number) => {
+    if (locked) return;
     const before = intensityBefore.current ? null : cloneSession(sessionLive.current);
     const after = { ...sessionLive.current, styleIntensity: value, settings: { ...sessionLive.current.settings } };
     sessionLive.current = after;
     setStyleIntensity(value);
-    invalidate();
-    if (before) commitSessionRef.current?.(before, cloneSession(after));
+    if (before && before.styleIntensity !== value) commitSessionRef.current?.(before, cloneSession(after));
   };
   const onIntensityPhase = (phase: "start" | "end") => {
     if (phase === "start") {
@@ -383,7 +562,8 @@ export function StudioMasterStep({
     }
     const before = intensityBefore.current;
     intensityBefore.current = null;
-    if (!before) return;
+    // A click on the slider that changes nothing is not an undo step.
+    if (!before || before.styleIntensity === sessionLive.current.styleIntensity) return;
     commitSessionRef.current?.(before, cloneSession(sessionLive.current));
   };
   const applySession = (snap: MasterSessionSnap) => {
@@ -404,7 +584,6 @@ export function StudioMasterStep({
     setTarget(targetNext);
     setStyle(styleNext);
     setStyleIntensity(snap.styleIntensity);
-    invalidate();
   };
   const useReference = !!refState.gate?.allowed && refState.reference?.status === "ready";
   const measured = preview?.metrics ?? mix?.metrics ?? null;
@@ -491,15 +670,13 @@ export function StudioMasterStep({
         const settingsNow = sessionLive.current.settings;
         const next = applyMasterStyle(settingsNow, styleId, DEFAULT_MASTER_INTENSITY);
         const changed = MASTER_SETTING_KEYS.some((key) => next[key] !== settingsNow[key]);
-        if (changed) sessionApi.current.replaceSettings(next);
-        return changed;
+        return changed && sessionApi.current.replaceSettings(next);
       },
       applyMasterClarity: (patch) => {
         const settingsNow = sessionLive.current.settings;
         const next = clampMasterSettings({ ...settingsNow, ...patch });
         const changed = MASTER_SETTING_KEYS.some((key) => next[key] !== settingsNow[key]);
-        if (changed) sessionApi.current.replaceSettings(next);
-        return changed;
+        return changed && sessionApi.current.replaceSettings(next);
       },
       applyMasterTarget: (next: BitekMasterTarget) => sessionApi.current.chooseTarget(next),
     };
@@ -512,69 +689,62 @@ export function StudioMasterStep({
     };
   }, [chatContextRef, getChatContext]);
 
-  /** Signed URL, or a joined object URL when the result is stored in ≤40 MB parts. */
-  async function resultUrl(j: { downloadUrl?: string | null; downloadParts?: string[] | null; filename?: string | null }): Promise<string | null> {
-    if (j.downloadUrl) return j.downloadUrl;
-    if (!j.downloadParts?.length) return null;
-    const ext = (j.filename ?? "").split(".").pop();
-    const blob = await joinParts(j.downloadParts, ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : ext === "flac" ? "audio/flac" : ext === "aiff" ? "audio/aiff" : "audio/wav");
-    return blob ? URL.createObjectURL(blob) : null;
-  }
-
-  async function pollJob(jobId: string, slot: "master" | "dl"): Promise<{ status: string; url: string | null; filename: string | null; metrics: unknown; code: string | null }> {
-    // E3 jobs take ~1 min: poll every second at first so the bar and the result feel live.
-    for (let i = 0; i < 240; i++) {
-      const r = await fetch(`/api/studio/projects/${projectId}/jobs/${jobId}`);
-      const j = r.ok ? await r.json() : null;
-      const st = j?.job?.status;
-      if (st === "succeeded") setProg((p) => ({ ...p, [slot]: { stage: "done", progress: 100 } }));
-      else if (j?.job) setProg((p) => ({ ...p, [slot]: jobProgressOf(j.job, p[slot]) }));
-      if (st === "succeeded" || st === "failed" || st === "cancelled") return { status: st, url: st === "succeeded" ? await resultUrl(j) : null, filename: j.filename ?? null, metrics: j.job.metrics, code: j.job.errorCode ?? null };
-      await sleep(i < 90 ? 1000 : 3000);
-    }
-    return { status: "failed", url: null, filename: null, metrics: null, code: "timeout" };
-  }
-
   async function makeMaster() {
-    if (!mix || sm.phase === "working") return;
+    if (!mix || locked) return;
     stop();
+    prevMaster.current = sm.phase === "done" ? { done: sm, approved } : null;
+    const made: MadeWith = { key: settingsKey, target, settings: { ...settings }, style, styleIntensity };
+    let jobId: string | null = null;
+    setFailCode(null);
+    setMixChanged(false);
+    setApproveError(null);
     setSm({ phase: "working", jobId: null });
     setProg((p) => ({ ...p, master: { stage: "queued", progress: 0 } }));
     setApproved(false);
+    const post = async (body: Record<string, unknown>) => {
+      const r = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      return { status: r.status, json: (await r.json().catch(() => ({}))) as Record<string, unknown> };
+    };
     try {
-      const prep = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "prepare" }) }).then((r) => r.json());
-      if (prep.available === false) return setSm({ phase: "unavailable" });
-      if (!prep.jobId) return setSm({ phase: "failed", code: "prepare" });
+      const prep = await post({ action: "prepare" });
+      if (prep.json.available === false) return setSm({ phase: "unavailable" });
+      if (typeof prep.json.jobId !== "string") return void failMaster(refusalCode(prep.status, prep.json.error));
+      jobId = prep.json.jobId;
       // E3 renders the mix itself from the saved project (same DSP as this preview).
-      const commit = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-        action: "commit", jobId: prep.jobId, target, settings, documentVersion: doc.project.documentVersion,
+      const commit = await post({
+        action: "commit", jobId, target, settings, documentVersion: docVersionRef.current,
         ...(style ? { style, styleIntensity } : {}),
         ...(useReference && refState.reference ? { referenceId: refState.reference.id, referenceIntensity: refIntensity } : {}),
-      }) }).then((r) => r.json());
-      if (commit.available === false) return setSm({ phase: "unavailable" });
-      if (commit.masters) setServer((s) => ({ ...s, masters: commit.masters }));
-      if (!commit.ok) return setSm({ phase: "failed", code: String(commit.error ?? "commit") });
+      });
+      if (commit.json.available === false) return setSm({ phase: "unavailable" });
+      if (commit.json.masters) setServer((s) => ({ ...s, masters: commit.json.masters as ServerState["masters"] }));
+      if (!commit.json.ok) return void failMaster(refusalCode(commit.status, commit.json.error));
       requestPlanUsageRefresh();
       // The reference is single-use: E3 deletes it right after this master.
-      if (useReference) setRefState((r) => ({ ...r, reference: null }));
-      setSm({ phase: "working", jobId: prep.jobId });
-      const done = await pollJob(prep.jobId, "master");
-      // A failed or cancelled master is not counted by the server; refresh so the counter drops back.
-      requestPlanUsageRefresh();
-      if (done.status !== "succeeded") return setSm({ phase: "failed", code: done.code ?? "failed" });
-      setSm({ phase: "done", jobId: prep.jobId, url: done.url, metrics: (done.metrics as { after?: Record<string, unknown> }) ?? null });
+      if (useReference) {
+        refStateRef.current = { ...refStateRef.current, reference: null };
+        setRefState((r) => ({ ...r, reference: null }));
+      }
     } catch {
-      setSm({ phase: "failed", code: "network" });
+      // The connection dropped. Before the job id exists nothing was ordered; after it the server may have taken
+      // the order, so ask about the job (a missing job = nothing queued) instead of calling it a failure.
+      if (!jobId) return void failMaster("network");
     }
+    await followMaster(jobId, made);
   }
 
   const approveRef = useRef<() => void>(() => {});
   async function approve() {
     if (sm.phase !== "done" || approving) return;
     setApproving(true);
+    setApproveError(null);
     try {
       const r = await fetch(`/api/studio/projects/${projectId}/master/approve`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId: sm.jobId }) });
-      if (r.ok) setApproved(true);
+      if (r.ok) return setApproved(true);
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      setApproveError(refusalCode(r.status, j.error));
+    } catch {
+      setApproveError("network");
     } finally {
       setApproving(false);
     }
@@ -585,34 +755,61 @@ export function StudioMasterStep({
 
   async function deliver(kind: DeliverKind, format: DeliverFormat) {
     const key = `${kind}-${format}`;
-    if (dl?.status === "working") return;
+    if (dl?.status === "working" || dl?.status === "pending") return;
     setDl({ key, status: "working" });
     setProg((p) => ({ ...p, dl: { stage: "queued", progress: 0 } }));
     const post = (body: Record<string, unknown>) =>
       fetch(`/api/studio/projects/${projectId}/deliver`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, format, ...body }) }).then(async (r) => ({ status: r.status, json: await r.json().catch(() => ({})) }));
+    let jobId: string | null = null;
+    const refused = (status: number, json: { error?: unknown; songs?: { limit?: unknown } }) => {
+      const code = refusalCode(status, json.error);
+      // Only our own limit codes mean "used up" — a 429 from the request limiter does not.
+      if (isLimitCode(code)) return setDl({ key, status: "limit", reason: code, songLimit: typeof json.songs?.limit === "number" ? json.songs.limit : undefined });
+      setDl({ key, status: "error", code });
+    };
     try {
       const prep = await post({ action: "prepare" });
-      if (!prep.json.ok) return setDl({ key, status: prep.status === 429 ? "limit" : "error" });
-      const jobId = String(prep.json.jobId);
-      const commit = await post({ action: "commit", jobId, documentVersion: doc.project.documentVersion });
+      if (!prep.json.ok) return refused(prep.status, prep.json);
+      jobId = String(prep.json.jobId);
+      const commit = await post({ action: "commit", jobId, documentVersion: docVersionRef.current });
       if (commit.json.usage) setServer((s) => ({ ...s, usage: readUsage(commit.json.usage) }));
-      if (!commit.json.ok) {
-        const reason = commit.json.error === "daily_limit" || commit.json.error === "weekly_limit" || commit.json.error === "song_day_limit" ? commit.json.error : undefined;
-        const songLimit = typeof commit.json.songs?.limit === "number" ? commit.json.songs.limit : undefined;
-        return setDl({ key, status: commit.status === 429 ? "limit" : "error", reason, songLimit });
-      }
+      if (!commit.json.ok) return refused(commit.status, commit.json);
       requestPlanUsageRefresh();
-      const done = await pollJob(jobId, "dl");
-      if (done.status !== "succeeded" || !done.url) return setDl({ key, status: "error" });
-      const a = document.createElement("a");
-      a.href = done.url;
-      a.rel = "noopener";
-      if (done.filename) a.download = done.filename;
-      a.click();
-      setDl({ key, status: "done" });
     } catch {
-      setDl({ key, status: "error" });
+      if (!jobId) return setDl({ key, status: "error", code: "network" });
     }
+    await followDownload(key, jobId);
+  }
+
+  async function followDownload(key: string, jobId: string) {
+    dlPoll.current?.abort();
+    const controller = new AbortController();
+    dlPoll.current = controller;
+    setDl({ key, status: "working", jobId });
+    const out = await followStudioJob(projectId, jobId, {
+      signal: controller.signal,
+      onUpdate: (body) => setProg((p) => ({ ...p, dl: jobProgressOf(body.job ?? {}, p.dl) })),
+      onConnection: (ok) => setOffline(!ok),
+    });
+    if (out.kind === "aborted" || controller.signal.aborted) return;
+    setOffline(false);
+    if (out.kind === "pending" || out.kind === "signed_out") return setDl({ key, status: "pending", jobId });
+    if (out.kind === "missing") return setDl({ key, status: "error", code: "network" });
+    if (out.kind === "failed") {
+      requestPlanUsageRefresh();
+      setDl({ key, status: "error", code: out.code });
+      return void loadServer();
+    }
+    setProg((p) => ({ ...p, dl: { stage: "done", progress: 100 } }));
+    const url = await resultUrl(out.body).catch(() => null);
+    if (controller.signal.aborted) return;
+    if (!url) return setDl({ key, status: "pending", jobId });
+    const a = document.createElement("a");
+    a.href = url;
+    a.rel = "noopener";
+    if (out.body.filename) a.download = out.body.filename;
+    a.click();
+    setDl({ key, status: "done" });
   }
 
   // BITEK — short, first person, mood follows the state.
@@ -694,16 +891,16 @@ export function StudioMasterStep({
     let mood: BitekMood = "happy";
     let text: string;
     let key: string;
-    if (renderFailed) [mood, text, key] = ["alert", t("renderBlad"), "m-renderfail"];
+    if (renderFailed) [mood, text, key] = ["alert", missingTrack ? t("brakNagrania", { nazwa: missingTrack }) : t("renderBlad"), "m-renderfail"];
     else if (!mix) [mood, text, key] = ["thinking", t("bitek.renderuje"), "m-render"];
     else if (approved) [mood, text, key] = ["done", `${t("bitek.zatwierdzone")} ${t("bitek.copoDalej")}`, "m-approved"];
     else if (sm.phase === "done" && refLines) return { key: "m-done-ref", mood: "done", text: t("referencja.bitek.gotowe"), details: refLines, actions: [back] };
     else if (sm.phase === "done") {
       // Master rendered: Bitek asks, the user listens in the player and decides.
       return {
-        key: `m-ask-${target}`,
+        key: `m-ask-${sm.jobId}`,
         mood: "done",
-        text: `${t(`bitek.gotowe.${target}`)} ${streaming ? t("streaming.bitek", { score: streaming.score }) + " " : ""}${t("bitek.pytanieMaster")}`,
+        text: `${t(`bitek.gotowe.${sm.made?.target ?? target}`)} ${streaming ? t("streaming.bitek", { score: streaming.score }) + " " : ""}${t("bitek.pytanieMaster")}`,
         details: streaming?.notes.map((n) => t(`streaming.uwagi.${n.key}`, n.params)),
         actions: [
           { id: "approveMaster", label: t("zatwierdz"), primary: true, onClick: () => approveRef.current() },
@@ -711,19 +908,29 @@ export function StudioMasterStep({
         ],
       };
     }
+    else if (sm.phase === "waiting") [mood, text, key] = ["thinking", t("czekaPending"), "m-waiting"];
     else if (sm.phase === "working") [mood, text, key] = ["thinking", prog.master ? t(`bitek.etap.${prog.master.stage}`, { pct: prog.master.progress }) : t("bitek.masterTrwa"), `m-working-${prog.master?.stage ?? "start"}`];
     else if (sm.phase === "failed") [mood, text, key] = ["alert", t("bitek.blad"), "m-failed"];
     else if (worst?.status === "red") [mood, text, key] = ["alert", t("bitek.problem", { card: t(`cards.${worst.id}.title`) }), `m-red-${worst.id}`];
     else [mood, text, key] = ["happy", t("bitek.gotowy"), "m-ready"];
     return { key, mood, text, details: mix && !approved ? [t("bitek.wrocInfo"), ...(sm.phase === "unavailable" ? [t("bitek.niedostepny")] : [])] : undefined, actions: approved ? [] : [back] };
-  }, [manual, renderFailed, mix, approved, sm.phase, target, worst, t, tBitek, prog.master, refLines, streaming]);
+  }, [manual, renderFailed, missingTrack, mix, approved, sm, target, worst, t, tBitek, prog.master, refLines, streaming]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
   useEffect(() => () => onBitekBubble?.(null), [onBitekBubble]);
 
   const fmtN = (n: number, d = 1) => (Number.isFinite(n) ? n.toLocaleString(locale === "en" ? "en-US" : "pl-PL", { minimumFractionDigits: d, maximumFractionDigits: d }) : "−∞");
+  /** Card numbers come from the analysis with a dot; Polish reads a comma. */
+  const locNum = (v: string) => (locale === "en" ? v : v.replace(/(\d)\.(\d)/g, "$1,$2"));
+  const locParams = (params: Record<string, string | number>) => Object.fromEntries(Object.entries(params).map(([k, v]) => [k, typeof v === "string" ? locNum(v) : v]));
+  const errorText = (code: string | null | undefined) => {
+    const key = masterErrorKey(code);
+    return key === "other" ? null : t(`bledy.${key}`);
+  };
   const signed = (n: number) => (n > 0 ? `+${fmtN(n, n % 1 ? 1 : 0)}` : n < 0 ? `−${fmtN(-n, n % 1 ? 1 : 0)}` : "0");
+  const madeTarget = sm.phase === "done" && sm.made ? sm.made.target : target;
+  const madeStyle = sm.phase === "done" && sm.made ? sm.made.style : style;
   const plan = server.tier ? t(`plany.${server.tier}`) : null;
   const usage = server.usage;
   const freeWatermark = server.options.some((o) => o.watermark);
@@ -802,7 +1009,7 @@ export function StudioMasterStep({
           </div>
           {/* Audit 2026-11-21: a lone progress bar on an empty page — say what comes next and hold the layout. */}
           <ol className="flex flex-col gap-1 text-sm text-[var(--brd-ink-soft)]">
-            <li className="font-semibold text-[var(--brd-ink)]">1. {t("przygotowanie.krok1", { n: doc.tracks.length })}</li>
+            <li className="font-semibold text-[var(--brd-ink)]">1. {t("przygotowanie.krok1", { n: doc.tracks.filter((tr) => !tr.muted).length })}</li>
             <li>2. {t("przygotowanie.krok2")}</li>
             <li>3. {t("przygotowanie.krok3")}</li>
           </ol>
@@ -814,13 +1021,19 @@ export function StudioMasterStep({
           <div aria-hidden className="h-40 animate-pulse rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-line)]/20" />
         </div>
       ) : null}
-      {renderFailed ? <p role="alert" className="border-l-2 border-l-[var(--brd-rec)] pl-2 text-sm">{t("renderBlad")}</p> : null}
+      {mixChanged ? <p role="status" data-testid="studio-master-mix-changed" className="border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm">{t("mixZmieniony")}</p> : null}
+      {renderFailed ? (
+        <p role="alert" data-testid="studio-master-render-failed" className="flex flex-wrap items-center gap-2 border-l-2 border-l-[var(--brd-rec)] pl-2 text-sm">
+          {missingTrack ? t("brakNagrania", { nazwa: missingTrack }) : t("renderBlad")}
+          <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setRenderTry((n) => n + 1)}>{t("sprobujPonownie")}</Button>
+        </p>
+      ) : null}
 
       {mix ? (
         <>
           <p className="border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm">{t("calyNumer")}</p>
 
-          <fieldset data-testid="studio-master-targets" className="flex flex-col gap-2">
+          <fieldset data-testid="studio-master-targets" disabled={locked} className="flex flex-col gap-2">
             <legend className="brd-display mb-1 text-base">{t("celTytul")}</legend>
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               {MASTER_TARGET_IDS.map((id) => (
@@ -839,7 +1052,7 @@ export function StudioMasterStep({
           <section aria-labelledby="studio-master-settings-title" className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <h3 id="studio-master-settings-title" className="brd-display text-base">{t("ustawieniaTytul")}</h3>
-              <Button type="button" size="sm" variant="ghost" className="min-h-11" onClick={() => replaceSettings(DEFAULT_MASTER_SETTINGS)}>{t("reset")}</Button>
+              <Button type="button" size="sm" variant="ghost" className="min-h-11" disabled={locked} onClick={() => replaceSettings(DEFAULT_MASTER_SETTINGS)}>{t("reset")}</Button>
             </div>
             <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-5">
               {MASTER_SETTING_KEYS.map((k) => {
@@ -848,9 +1061,9 @@ export function StudioMasterStep({
                   <li key={k} data-testid={`studio-master-setting-${k}`} className="flex items-center justify-between gap-1 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-1.5">
                     <span className="text-sm">{name}</span>
                     <span className="flex items-center gap-1">
-                      <Button type="button" size="sm" variant="outline" className="min-h-11 min-w-11" aria-label={t("mniej", { name })} disabled={settings[k] <= -3} onClick={() => step(k, settings[k] - 0.5)}>−</Button>
+                      <Button type="button" size="sm" variant="outline" className="min-h-11 min-w-11" aria-label={t("mniej", { name })} disabled={locked || settings[k] <= -3} onClick={() => step(k, settings[k] - 0.5)}>−</Button>
                       <output className="w-9 text-center font-mono text-sm" aria-live="polite">{signed(settings[k])}</output>
-                      <Button type="button" size="sm" variant="outline" className="min-h-11 min-w-11" aria-label={t("wiecej", { name })} disabled={settings[k] >= 3} onClick={() => step(k, settings[k] + 0.5)}>+</Button>
+                      <Button type="button" size="sm" variant="outline" className="min-h-11 min-w-11" aria-label={t("wiecej", { name })} disabled={locked || settings[k] >= 3} onClick={() => step(k, settings[k] + 0.5)}>+</Button>
                     </span>
                   </li>
                 );
@@ -868,13 +1081,17 @@ export function StudioMasterStep({
             refState={refState}
             onRefState={onReferenceState}
             refIntensity={refIntensity}
-            onRefIntensity={(v) => { setRefIntensity(v); invalidate(); }}
-            disabled={sm.phase === "working"}
+            onRefIntensity={(v) => {
+              if (v === refIntensity) return;
+              setRefIntensity(v);
+              setRefDirty(true);
+            }}
+            disabled={locked}
           />
 
           <section aria-labelledby="studio-master-ab-title" data-testid="studio-master-ab" className="flex flex-wrap items-center gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2">
             <h3 id="studio-master-ab-title" className="text-sm font-semibold">{t("abTytul")}</h3>
-            <Button type="button" size="sm" className="min-h-11" disabled={!previewFresh} onClick={() => (playing ? stop() : play(ab))} data-testid="studio-master-play">
+            <Button type="button" size="sm" className="min-h-11" disabled={!previewFresh && !playing} onClick={() => (playing ? stop() : play(ab))} data-testid="studio-master-play">
               {playing ? `■ ${t("stop")}` : `▶ ${t("graj")}`}
             </Button>
             {(["mix", "master"] as const).map((m) => (
@@ -883,22 +1100,34 @@ export function StudioMasterStep({
               </Button>
             ))}
             <label className="flex items-center gap-1 text-sm">
-              <input type="checkbox" checked={matched} onChange={(e) => setMatched(e.target.checked)} aria-describedby="studio-master-matched-hint" />
+              <input type="checkbox" checked={matched} onChange={(e) => chooseMatched(e.target.checked)} aria-describedby="studio-master-matched-hint" />
               {t("abWyrownane")}
             </label>
             <span id="studio-master-matched-hint" className="text-xs text-[var(--brd-mute)]">{t("abWyrownaneOpis")}</span>
-            <p className="w-full text-xs text-[var(--brd-mute)]">{previewFresh ? t("podgladUwaga") : t("podgladLiczy")}</p>
+            {previewFailed === settingsKey && !previewFresh ? (
+              <p role="alert" data-testid="studio-master-preview-error" className="flex w-full flex-wrap items-center gap-2 text-sm text-[var(--brd-rec)]">
+                {t("podgladBlad")}
+                <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => { setPreviewFailed(null); setPreviewTry((n) => n + 1); }}>{t("sprobujPonownie")}</Button>
+              </p>
+            ) : (
+              <p className="w-full text-xs text-[var(--brd-mute)]">{previewFresh ? t("podgladUwaga") : t("podgladLiczy")}</p>
+            )}
           </section>
 
           {verdict ? (
             <section aria-labelledby="studio-master-cards-title">
               <h3 id="studio-master-cards-title" className="brd-display mb-1 text-base">{t("kartyTytul")}</h3>
+              <p className="mb-1 text-xs text-[var(--brd-mute)]">{t("kartyLegenda")}</p>
               <ul data-testid="studio-master-cards" className="grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3">
                 {verdict.cards.map((c) => (
                   <li key={c.id} data-testid="studio-master-card" data-card-id={c.id} data-status={c.status} className={`flex flex-col gap-1 rounded-[2px] border border-[var(--brd-line)] border-l-4 bg-[var(--brd-paper)] p-3 ${STATUS_RAIL[c.status]}`}>
-                    <h4 className="text-sm font-semibold">{t(`cards.${c.id}.title`)}</h4>
-                    {c.value ? <p className="font-mono text-lg leading-none">{c.value}</p> : null}
-                    <p className="text-sm">{t(`cards.${c.id}.${c.messageKey}`, { ...c.params, band: typeof c.params.band === "string" ? t(`pasma.${c.params.band}`) : "" })}</p>
+                    <h4 className="text-sm font-semibold">
+                      {STATUS_MARK[c.status] ? <span aria-hidden className="mr-1">{STATUS_MARK[c.status]}</span> : null}
+                      {t(`cards.${c.id}.title`)}
+                      {c.status === "na" ? null : <span className="sr-only"> — {t(`kartyStan.${c.status}`)}</span>}
+                    </h4>
+                    {c.value ? <p className="font-mono text-lg leading-none">{locNum(c.value)}</p> : null}
+                    <p className="text-sm">{t(`cards.${c.id}.${c.messageKey}`, { ...locParams(c.params), band: typeof c.params.band === "string" ? t(`pasma.${c.params.band}`) : "" })}</p>
                   </li>
                 ))}
               </ul>
@@ -931,17 +1160,24 @@ export function StudioMasterStep({
           ) : null}
 
           <div className="flex flex-col gap-2 border-t border-[var(--brd-line)] pt-3">
+            {loadError ? (
+              <p role="alert" data-testid="studio-master-load-error" className="flex flex-wrap items-center gap-2 text-sm text-[var(--brd-rec)]">
+                {t(loadError === "signed_out" ? "bledy.signedOut" : "stanBlad")}
+                {loadError === "server" ? <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void loadServer()}>{t("sprobujPonownie")}</Button> : null}
+              </p>
+            ) : null}
             {server.tier === "FREE" && !freeWatermark && sm.phase !== "done" && !approved ? (
               <p data-testid="studio-master-free-heads-up" role="note" className="border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] px-3 py-2 text-sm">
                 {t("freeUprzedzenie")}{" "}
                 <StoreAppHidden><a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a></StoreAppHidden>
               </p>
             ) : null}
-            {sm.phase !== "done" && !approved ? (
+            {staleSettings ? <p role="status" data-testid="studio-master-stale" className="border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] px-3 py-2 text-sm">{t("stareUstawienia")}</p> : null}
+            {(sm.phase !== "done" && !approved) || staleSettings ? (
               <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" size="lg" className="min-h-11 px-4" disabled={sm.phase === "working" || sm.phase === "unavailable" || mastersLeft === 0} aria-describedby={server.masters ? "studio-master-quota" : undefined} onClick={() => void makeMaster()} data-testid="studio-master-make">
+                <Button type="button" size="lg" className="min-h-11 px-4" disabled={locked || sm.phase === "unavailable" || mastersLeft === 0} aria-describedby={server.masters ? "studio-master-quota" : undefined} onClick={() => void makeMaster()} data-testid="studio-master-make">
                   {mastersLeft === 0 ? "🔒 " : ""}
-                  {sm.phase === "working" ? (sm.jobId ? t("masterTrwa") : t("masterKolejka")) : t("zrobMaster")}
+                  {sm.phase === "waiting" ? t("masterTrwa") : sm.phase === "working" ? (sm.jobId ? t("masterTrwa") : t("masterKolejka")) : t("zrobMaster")}
                 </Button>
                 {server.masters ? (
                   <p id="studio-master-quota" data-testid="studio-master-quota" data-left={mastersLeft ?? undefined} className={`text-sm ${mastersLeft === 0 ? "text-[var(--brd-rec)]" : "text-[var(--brd-mute)]"}`}>
@@ -950,14 +1186,21 @@ export function StudioMasterStep({
                   </p>
                 ) : null}
                 {sm.phase === "working" && prog.master ? <JobProgressBar value={prog.master} label={t(`etap.${prog.master.stage}`)} ariaLabel={t("postepAria")} testId="studio-master-progress" /> : null}
-                {sm.phase === "failed" && sm.code === "monthly_limit" ? (
+                {sm.phase === "working" && offline ? <p role="status" data-testid="studio-master-offline" className="text-sm">{t("offline")}</p> : null}
+                {sm.phase === "waiting" ? (
+                  <p role="status" data-testid="studio-master-waiting" className="flex flex-wrap items-center gap-2 text-sm">
+                    {t(sm.reason === "signed_out" ? "czekaWylogowany" : "czekaPending")}
+                    <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void followMaster(sm.jobId, null)} data-testid="studio-master-check">{t("sprawdzTeraz")}</Button>
+                  </p>
+                ) : null}
+                {failCode === "monthly_limit" ? (
                   <p role="alert" data-testid="studio-master-limit" className="text-sm text-[var(--brd-rec)]">
                     {t("masteryLimit")}{" "}
                     {server.tier !== "GOLD" ? <StoreAppHidden><a href="/premium" className="underline underline-offset-4">{t("zobaczPlany")}</a></StoreAppHidden> : null}
                   </p>
-                ) : sm.phase === "failed" && sm.code === "no_own_track" ? (
+                ) : failCode === "no_own_track" ? (
                   <p role="alert" data-testid="studio-master-no-own-track" className="text-sm text-[var(--brd-rec)]">{t("masterBezNagrania")}</p>
-                ) : sm.phase === "failed" ? <p role="alert" data-error-code={sm.code} className="text-sm text-[var(--brd-rec)]">{t("masterBlad")}</p> : null}
+                ) : failCode ? <p role="alert" data-testid="studio-master-error" data-error-code={failCode} className="text-sm text-[var(--brd-rec)]">{errorText(failCode) ?? t("masterBlad")}</p> : null}
                 {sm.phase === "unavailable" ? <p role="status" data-testid="studio-master-unavailable" className="text-sm">{t("serwerNiedostepny")}</p> : null}
               </div>
             ) : null}
@@ -966,7 +1209,14 @@ export function StudioMasterStep({
               <section aria-labelledby="studio-master-final-title" data-testid="studio-master-final" className="flex flex-col gap-2 rounded-[2px] border border-[var(--brd-line)] border-l-4 border-l-[var(--brd-green)] bg-[var(--brd-paper)] p-3">
                 <h3 id="studio-master-final-title" className="brd-display text-lg">{t("finalTytul")}</h3>
                 <p className="text-sm">{t("finalOpis")}</p>
-                {sm.url ? <BrdAudioDeck src={sm.url} title={t("finalTytul")} testId="studio-master-final-audio" seed={`master:${projectId}`} /> : null}
+                {sm.url ? <BrdAudioDeck src={sm.url} title={t("finalTytul")} testId="studio-master-final-audio" seed={`master:${projectId}`} onRefreshSrc={() => refreshFinalUrl(sm.jobId)} /> : sm.urlState === "loading" ? (
+                  <p role="status" className="text-sm text-[var(--brd-mute)]">{t("odsluchWczytuje")}</p>
+                ) : (
+                  <p role="status" data-testid="studio-master-no-audio" className="flex flex-wrap items-center gap-2 text-sm">
+                    {t("odsluchBrak")}
+                    <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void refreshFinalUrl(sm.jobId)}>{t("sprobujPonownie")}</Button>
+                  </p>
+                )}
                 {sm.metrics?.after ? (
                   <p className="font-mono text-xs">
                     {fmtN(Number(sm.metrics.after.lufs))} LUFS · {fmtN(Number(sm.metrics.after.truePeakDb))} dBTP · LRA {fmtN(Number(sm.metrics.after.lra))} LU
@@ -980,7 +1230,7 @@ export function StudioMasterStep({
                     </ul>
                   </div>
                 ) : null}
-                <StudioMasterReport mix={mix?.metrics ?? null} master={sm.metrics?.after ? { lufs: Number(sm.metrics.after.lufs), truePeakDb: Number(sm.metrics.after.truePeakDb), lra: Number(sm.metrics.after.lra) } : null} target={target} settings={settings} style={style ? { id: style, intensity: styleIntensity } : null} tpCeiling={MASTER_TARGETS[target].tp} />
+                <StudioMasterReport mix={mix?.metrics ?? null} master={sm.metrics?.after ? { lufs: Number(sm.metrics.after.lufs), truePeakDb: Number(sm.metrics.after.truePeakDb), lra: Number(sm.metrics.after.lra) } : null} target={madeTarget} settings={sm.made?.settings ?? settings} style={madeStyle ? { id: madeStyle, intensity: sm.made?.styleIntensity ?? styleIntensity } : null} tpCeiling={MASTER_TARGETS[madeTarget].tp} />
                 {approved ? (
                   <p role="status" className="text-sm font-semibold">✓ {t("zatwierdzone")}</p>
                 ) : (
@@ -988,6 +1238,7 @@ export function StudioMasterStep({
                     <Button type="button" size="lg" className="min-h-11 self-start px-4" disabled={approving} onClick={() => void approve()} data-testid="studio-master-approve">
                       {approving ? t("zatwierdzTrwa") : t("zatwierdz")}
                     </Button>
+                    {approveError ? <p role="alert" data-testid="studio-master-approve-error" className="text-sm text-[var(--brd-rec)]">{errorText(approveError) ?? t("zatwierdzBlad")}</p> : null}
                     <p className="text-xs text-[var(--brd-mute)]" data-testid="studio-master-approve-note">{t("zatwierdzUwaga")}</p>
                   </>
                 )}
@@ -1005,7 +1256,7 @@ export function StudioMasterStep({
                   <h3 id="studio-master-dl-title" className="brd-display text-lg">{t("pobierzTytul")}</h3>
                   {plan ? <span className="text-xs uppercase tracking-[0.12em] text-[var(--brd-mute)]">{t("planInfo", { plan })}</span> : null}
                 </div>
-                {!server.tier ? <p className="text-sm">{t("gosc")}</p> : null}
+                {!server.tier && !loadError && serverLoaded ? <p className="text-sm">{t("gosc")}</p> : null}
                 {server.tier === "FREE" ? (
                   <p data-testid="studio-master-dl-free" role="status" className="flex flex-col gap-1 border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
                     <span>{freeWatermark ? t("freeZeZnakiem", { n: FREE_WATERMARK_PER_DAY }) : t("freeBezPobierania")}</span>
@@ -1049,7 +1300,7 @@ export function StudioMasterStep({
                                 );
                               }
                               return (
-                                <Button key={format} type="button" size="sm" variant={enabled ? "default" : "outline"} className="min-h-11 min-w-11" disabled={!enabled || dl?.status === "working"} title={lockedLabel ?? undefined} aria-label={`${t("formatAria", { kind: t(`pobierz.${kind}`), format: t(`format.${format}`) })}${lockedLabel ? ` — ${lockedLabel}` : ""}`} data-testid={`studio-master-dl-${key}`} data-enabled={enabled} onClick={() => void deliver(kind, format)}>
+                                <Button key={format} type="button" size="sm" variant={enabled ? "default" : "outline"} className="min-h-11 min-w-11" disabled={!enabled || dl?.status === "working" || dl?.status === "pending"} title={lockedLabel ?? undefined} aria-label={`${t("formatAria", { kind: t(`pobierz.${kind}`), format: t(`format.${format}`) })}${lockedLabel ? ` — ${lockedLabel}` : ""}`} data-testid={`studio-master-dl-${key}`} data-enabled={enabled} onClick={() => void deliver(kind, format)}>
                                   {!opt?.enabled ? "🔒 " : ""}
                                   {dl?.key === key && dl.status === "working" ? t("przygotowuje") : opt?.watermark ? `${t(`format.${format}`)} · ${t("zeZnakiem")}` : t(`format.${format}`)}
                                 </Button>
@@ -1067,7 +1318,14 @@ export function StudioMasterStep({
                 ) : null}
                 {dl?.status === "working" && prog.dl ? <JobProgressBar value={prog.dl} label={t(`etap.${prog.dl.stage}`)} ariaLabel={t("postepAria")} testId="studio-master-dl-progress" /> : null}
                 {dl?.status === "done" ? <p role="status" className="text-sm">{t("gotowyPlik")}</p> : null}
-                {dl?.status === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t("pobierzBlad")}</p> : null}
+                {dl?.status === "working" && offline ? <p role="status" className="text-sm">{t("offline")}</p> : null}
+                {dl?.status === "pending" && dl.jobId ? (
+                  <p role="status" data-testid="studio-master-dl-pending" className="flex flex-wrap items-center gap-2 text-sm">
+                    {t("plikPending")}
+                    <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void followDownload(dl.key, dl.jobId!)}>{t("sprawdzTeraz")}</Button>
+                  </p>
+                ) : null}
+                {dl?.status === "error" ? <p role="alert" data-testid="studio-master-dl-error" data-error-code={dl.code} className="text-sm text-[var(--brd-rec)]">{dl.code === "no_own_track" ? t("masterBezNagrania") : errorText(dl.code) ?? t("pobierzBlad")}</p> : null}
                 {exhausted === "day" ? <p role="status" className="text-sm">{t("limitWyczerpanyDoba", { n: usage?.dailyLimit ?? FREE_WATERMARK_PER_DAY })}</p> : null}
                 {exhausted === "week" ? <p role="status" className="text-sm">{t("limitWyczerpany")}</p> : null}
                 {exhausted === "songs" ? <p role="status" className="text-sm">{t("limitUtworowDoba", { n: dl?.songLimit ?? 0 })}</p> : null}

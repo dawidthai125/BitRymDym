@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { uploadStemBlob } from "@/lib/takes/client-upload";
-import { guessStemRole, planStemImport, STEM_IMPORT_ACCEPT, stemTrackName } from "@/lib/takes/stem-import-client";
+import { gateStemFile, guessStemRole, planStemImport, STEM_IMPORT_ACCEPT, stemTrackName } from "@/lib/takes/stem-import-client";
 
 type StepResult = { ok: true; trackId?: string } | { ok: false; message: string };
 
@@ -22,10 +22,12 @@ type Props = {
   /** Put the READY take on that track at the start of the timeline. */
   placeStemTake: (input: { trackId: string; takeId: string }) => Promise<StepResult>;
   disabled?: boolean;
+  /** Import in flight: the host keeps this card mounted and guards leaving the page. */
+  onBusyChange?: (busy: boolean) => void;
 };
 
 /** Silver/Gold: import several audio files at once; each becomes a track on the timeline. */
-export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTrack, placeStemTake, disabled = false }: Props) {
+export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTrack, placeStemTake, disabled = false, onBusyChange }: Props) {
   const t = useTranslations("studio.stemImport");
   const id = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -43,12 +45,18 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
     setRows(chosen.map((c) => ({ id: c.rowId, name: c.file.name, state: "queued" as const })));
     if (chosen.length === 0) return;
     setBusy(true);
+    onBusyChange?.(true);
     try {
       // One at a time: every step is a CAS write on the same document.
       for (const { file, rowId } of chosen) {
         try {
+          const gate = gateStemFile(file);
+          if (!gate.ok) {
+            patch(rowId, { state: "failed", message: gate.message });
+            continue;
+          }
           patch(rowId, { state: "uploading" });
-          const uploaded = await uploadStemBlob({ projectId, blob: file, contentType: file.type || "audio/wav" });
+          const uploaded = await uploadStemBlob({ projectId, blob: file, contentType: gate.contentType });
           patch(rowId, { state: "track" });
           const track = await createStemTrack({ name: stemTrackName(file.name), role: guessStemRole(file.name) });
           if (!track.ok || !track.trackId) {
@@ -56,7 +64,9 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
             continue;
           }
           patch(rowId, { state: "placing" });
-          const placed = await placeStemTake({ trackId: track.trackId, takeId: uploaded.takeId });
+          let placed = await placeStemTake({ trackId: track.trackId, takeId: uploaded.takeId });
+          // One more try before leaving an empty track (a busy save queue is the usual cause).
+          if (!placed.ok) placed = await placeStemTake({ trackId: track.trackId, takeId: uploaded.takeId });
           patch(rowId, placed.ok ? { state: "done" } : { state: "failed", message: placed.message });
         } catch (e) {
           patch(rowId, { state: "failed", message: e instanceof Error && e.message ? e.message : t("blad") });
@@ -64,6 +74,7 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
       }
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
       if (inputRef.current) inputRef.current.value = "";
     }
   }

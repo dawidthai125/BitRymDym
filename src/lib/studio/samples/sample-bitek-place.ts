@@ -81,52 +81,62 @@ export async function previewBitekSamplePlacement(
 /**
  * Apply Bitek's plan: one private take copy, one clip per start, then tempo/key and level
  * on every clip. Each write passes the document version on (CAS), so a parallel edit stops it.
+ * When a later write fails, the clips saved so far and the current version come back (partial), so
+ * the Studio keeps the right version instead of a conflict on every next save.
  */
 export async function applyBitekSamplePlacement(
   context: AuthContext,
   req: BitekSampleRequest & { expectedDocumentVersion: number },
-): Promise<{ clips: StudioClipDto[]; documentVersion: number; plan: SamplePlacementPlan }> {
+): Promise<{ clips: StudioClipDto[]; documentVersion: number; plan: SamplePlacementPlan; partial?: true }> {
   const { plan, sampleDurationMs } = await previewBitekSamplePlacement(context, req);
   const copied = await copyStudioSampleToTake(context, { sampleId: req.sampleId, projectId: req.projectId });
   if (!copied.ok) throw new AuthError("FORBIDDEN", sampleUserMessage(copied.error));
 
   let version = req.expectedDocumentVersion;
   const clips: StudioClipDto[] = [];
-  for (const start of plan.starts) {
-    const placed = await placeReadyTakeAsStudioClipFor(context, {
-      projectId: req.projectId,
-      trackId: req.trackId,
-      takeId: copied.takeId,
-      timelineStartMs: start,
-      expectedDocumentVersion: version,
-      // The take copy rounds its length up to whole seconds; the clip keeps the exact sample length.
-      durationMs: sampleDurationMs > 0 ? Math.floor(sampleDurationMs) : undefined,
-      durationSlackMs: 999,
-    });
-    version = placed.documentVersion;
-    let clip = placed.clip;
-    if (plan.stretch !== 1 || plan.pitchCents !== 0) {
-      const res = await updateStudioClipPlaybackFor(context, {
+  try {
+    for (const start of plan.starts) {
+      const placed = await placeReadyTakeAsStudioClipFor(context, {
         projectId: req.projectId,
-        clipId: clip.id,
+        trackId: req.trackId,
+        takeId: copied.takeId,
+        timelineStartMs: start,
         expectedDocumentVersion: version,
-        stretch: plan.stretch,
-        pitchCents: plan.pitchCents,
+        // The take copy rounds its length up to whole seconds; the clip keeps the exact sample length.
+        durationMs: sampleDurationMs > 0 ? Math.floor(sampleDurationMs) : undefined,
+        durationSlackMs: 999,
       });
-      clip = res.clip;
-      version = res.documentVersion;
+      version = placed.documentVersion;
+      // Saved from here on: a failed tempo / key / level below must not hide this clip.
+      const at = clips.push(placed.clip) - 1;
+      let clip = placed.clip;
+      if (plan.stretch !== 1 || plan.pitchCents !== 0) {
+        const res = await updateStudioClipPlaybackFor(context, {
+          projectId: req.projectId,
+          clipId: clip.id,
+          expectedDocumentVersion: version,
+          stretch: plan.stretch,
+          pitchCents: plan.pitchCents,
+        });
+        clip = res.clip;
+        clips[at] = clip;
+        version = res.documentVersion;
+      }
+      if (plan.gainDb !== 0) {
+        const res = await updateStudioClipGainFor(context, {
+          projectId: req.projectId,
+          clipId: clip.id,
+          expectedDocumentVersion: version,
+          gainDb: plan.gainDb,
+        });
+        clip = res.clip;
+        clips[at] = clip;
+        version = res.documentVersion;
+      }
     }
-    if (plan.gainDb !== 0) {
-      const res = await updateStudioClipGainFor(context, {
-        projectId: req.projectId,
-        clipId: clip.id,
-        expectedDocumentVersion: version,
-        gainDb: plan.gainDb,
-      });
-      clip = res.clip;
-      version = res.documentVersion;
-    }
-    clips.push(clip);
+  } catch (error) {
+    if (clips.length === 0) throw error;
+    return { clips, documentVersion: version, plan, partial: true };
   }
   return { clips, documentVersion: version, plan };
 }

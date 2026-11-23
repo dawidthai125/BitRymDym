@@ -1,8 +1,10 @@
 "use client";
 
+import type * as React from "react";
+
 import { useLibText } from "@/i18n/use-lib-text";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 /** Shared Gain/Pan slider — local drag, commit on pointer up / keyboard commit. */
 export function StudioMixControl({
@@ -43,6 +45,47 @@ export function StudioMixControl({
   const tl = useLibText();
   const [draft, setDraft] = useState<number | null>(null);
   const shown = draft ?? value;
+  const startRef = useRef<number | null>(null);
+  const keyTimer = useRef<number | null>(null);
+  /** Saves only a real change: a click without a move adds no save and no undo step. */
+  const commit = (next: number) => {
+    if (keyTimer.current !== null) window.clearTimeout(keyTimer.current);
+    keyTimer.current = null;
+    // The parent may already show the dragged value, so compare with where the drag began.
+    const moved = startRef.current !== null && next !== startRef.current;
+    startRef.current = null;
+    setDraft(null);
+    if (moved) onCommit(next);
+  };
+  const commitRef = useRef(commit);
+  useLayoutEffect(() => {
+    commitRef.current = commit;
+  });
+  const slider = {
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      const next = Number(e.target.value);
+      startRef.current ??= value;
+      setDraft(next);
+      onLocalChange(next);
+    },
+    onPointerUp: (e: React.PointerEvent<HTMLInputElement>) => commit(Number(e.currentTarget.value)),
+    // A finger that starts scrolling the page cancels the pointer: keep what was set.
+    onPointerCancel: (e: React.PointerEvent<HTMLInputElement>) => commit(Number(e.currentTarget.value)),
+    // Arrows: one save after the last key, not one per press and not only on blur.
+    onKeyUp: (e: React.KeyboardEvent<HTMLInputElement>) => {
+      const input = e.currentTarget;
+      if (e.key === "Enter" || e.key === " ") {
+        commit(Number(input.value));
+        return;
+      }
+      if (draft === null) return;
+      if (keyTimer.current !== null) window.clearTimeout(keyTimer.current);
+      keyTimer.current = window.setTimeout(() => commitRef.current(Number(input.value)), 500);
+    },
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      if (draft !== null) commit(Number(e.currentTarget.value));
+    },
+  };
   const vertical = orientation === "vertical";
 
   if (stacked && !vertical) {
@@ -72,29 +115,7 @@ export function StudioMixControl({
           className="mt-0.5 h-7 w-full min-w-0 accent-[var(--brd-green)]"
           aria-label={tl(ariaLabel)}
           aria-valuetext={tl(display)}
-          onChange={(e) => {
-            const next = Number(e.target.value);
-            setDraft(next);
-            onLocalChange(next);
-          }}
-          onPointerUp={(e) => {
-            const next = Number((e.target as HTMLInputElement).value);
-            setDraft(null);
-            onCommit(next);
-          }}
-          onKeyUp={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              const next = Number((e.target as HTMLInputElement).value);
-              setDraft(null);
-              onCommit(next);
-            }
-          }}
-          onBlur={(e) => {
-            if (draft === null) return;
-            const next = Number(e.target.value);
-            setDraft(null);
-            onCommit(next);
-          }}
+          {...slider}
         />
       </label>
     );
@@ -139,29 +160,7 @@ export function StudioMixControl({
             : undefined
         }
         aria-label={tl(ariaLabel)}
-        onChange={(e) => {
-          const next = Number(e.target.value);
-          setDraft(next);
-          onLocalChange(next);
-        }}
-        onPointerUp={(e) => {
-          const next = Number((e.target as HTMLInputElement).value);
-          setDraft(null);
-          onCommit(next);
-        }}
-        onKeyUp={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            const next = Number((e.target as HTMLInputElement).value);
-            setDraft(null);
-            onCommit(next);
-          }
-        }}
-        onBlur={(e) => {
-          if (draft === null) return;
-          const next = Number(e.target.value);
-          setDraft(null);
-          onCommit(next);
-        }}
+        {...slider}
       />
     </label>
   );

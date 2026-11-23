@@ -128,7 +128,7 @@ export async function getAiCoverState(p: { ownerId: string; projectId: string; t
 
 export type AiCoverDeny = {
   ok: false;
-  error: "tier_video" | "bad_request" | "prompt_rejected" | "prompt_check_down" | "daily_limit" | "ai_unavailable" | "image_rejected";
+  error: "tier_video" | "bad_request" | "prompt_rejected" | "prompt_check_down" | "daily_limit" | "busy" | "ai_unavailable" | "image_rejected";
   message?: string;
 };
 
@@ -154,7 +154,7 @@ export async function generateAiCover(p: { ownerId: string; projectId: string; t
   const usageId = randomUUID();
   const claim = await claimAiCoverUsage(admin, { ownerId: p.ownerId, usageId, projectId: p.projectId, aspect: p.aspect, perDay });
   if (claim.status === "unavailable") return { ok: false, error: "ai_unavailable", message: AI_COVER_MESSAGES.allFailed };
-  if (claim.status === "busy") return { ok: false, error: "daily_limit", message: COVER_BUSY_MESSAGE };
+  if (claim.status === "busy") return { ok: false, error: "busy", message: COVER_BUSY_MESSAGE };
   if (claim.status === "daily_limit") return { ok: false, error: "daily_limit" };
   const used = claim.used - 1;
   const finish = (patch: Record<string, unknown>) => admin.from("studio_ai_cover_usage").update(patch).eq("id", usageId).then(() => undefined, () => undefined);

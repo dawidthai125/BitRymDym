@@ -93,6 +93,7 @@ export async function POST(request: Request, context: RouteContext) {
         takeId: result.takeId,
         durationMs: result.durationMs,
         reusedExisting: result.reusedExisting,
+        removedClipIds: result.removedClipIds,
         documentVersion: result.documentVersion,
       },
       { status: result.reusedExisting ? 200 : 201 },

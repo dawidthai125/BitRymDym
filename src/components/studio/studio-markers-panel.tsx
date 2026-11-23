@@ -8,6 +8,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 
 import { Button } from "@/components/ui/button";
 import { planHipHopStructureMarkers } from "@/lib/studio/hiphop-marker-structure";
+import { notifyStudioMarkersChanged } from "@/components/studio/studio-markers-events";
 import {
   studioMarkerKindLabelPl,
   type StudioMarkerDto,
@@ -165,6 +166,7 @@ export function StudioMarkersPanel({
           documentVersion,
           apply: () => {
             setMarkers(body.markers!);
+            notifyStudioMarkersChanged(projectId, body.markers!);
             if (!payload.quiet) {
               setMessage(
                 op === "add" ? t("dodanoMarker") : t("usunietoMarker"),
@@ -183,7 +185,10 @@ export function StudioMarkersPanel({
   const insertHipHopStructure = useCallback(async () => {
     setBusy("structure");
     setMessage(null);
-    const planned = planHipHopStructureMarkers({ bpm: tempoBpm });
+    // A second click must not double the structure: skip markers that are already there.
+    const planned = planHipHopStructureMarkers({ bpm: tempoBpm }).filter(
+      (row) => !markers.some((m) => m.kind === row.kind && m.positionMs === row.positionMs),
+    );
     let failed = false;
     for (const row of planned) {
       const result = await persistOp("add", {
@@ -198,7 +203,7 @@ export function StudioMarkersPanel({
     }
     setBusy(null);
     setMessage(failed ? t("nieUdaloSieZapisac") : t("wstawionoStrukture"));
-  }, [persistOp, t, tempoBpm]);
+  }, [markers, persistOp, t, tempoBpm]);
 
   const sorted = markers.toSorted((a, b) => a.positionMs - b.positionMs);
 

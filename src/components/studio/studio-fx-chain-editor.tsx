@@ -2,7 +2,7 @@
 
 import { useLibText } from "@/i18n/use-lib-text";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { StudioVocalPresetPicker } from "@/components/studio/studio-vocal-presets";
 import { StudioTunePanel, useProjectBeatKey } from "@/components/studio/studio-tune-panel";
@@ -10,13 +10,14 @@ import type { NoteEditorClip } from "@/lib/studio/tune/note-editor-client";
 import { tuneParams } from "@/lib/studio/tune/tune";
 
 import type { ReactNode } from "react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import { Button } from "@/components/ui/button";
 import { CloseButton } from "@/components/ui/close-button";
 import { StudioGlyph } from "@/components/studio/studio-glyphs";
+import { lockStudioPageScroll } from "@/lib/studio/studio-dialog-focus";
 import {
   addStudioFxToChain,
   canMoveStudioFx,
@@ -28,10 +29,9 @@ import {
   setStudioFxParamValue,
   setStudioFxParams,
   STUDIO_FX_CHAIN_MAX_EFFECTS,
-  STUDIO_FX_REGISTRY,
-  STUDIO_FX_TYPES,
   STUDIO_FX_UI_META,
   studioFxLabelPl,
+  studioFxTypesToAdd,
   type StudioFxChainRole,
   type StudioFxChainV1,
   type StudioFxInstance,
@@ -78,11 +78,8 @@ type StudioFxChainEditorProps = {
   allowSidechain?: boolean;
 };
 
-function formatParam(value: number, unit: string): string {
-  const text =
-    Math.abs(value) >= 100 || Number.isInteger(value)
-      ? String(Math.round(value * 1000) / 1000)
-      : value.toFixed(2);
+function formatParam(value: number, unit: string, locale: string): string {
+  const text = value.toLocaleString(locale === "en" ? "en-US" : "pl-PL", { maximumFractionDigits: 2, useGrouping: false });
   return unit ? `${text} ${unit}` : text;
 }
 
@@ -104,6 +101,7 @@ export function StudioFxChainEditor({
 }: StudioFxChainEditorProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioFxChainEditor");
+  const locale = useLocale();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -117,6 +115,16 @@ export function StudioFxChainEditor({
   useEffect(() => {
     if (!inline) panelRef.current?.focus();
   }, [inline]);
+
+  // "Saved" is news for a moment, not a permanent line.
+  useEffect(() => {
+    if (saving !== "saved") return;
+    const timer = window.setTimeout(() => {
+      setSaving("idle");
+      setMessage(null);
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [saving, chain]);
 
   async function commit(nextChain: StudioFxChainV1): Promise<boolean> {
     setSaving("saving");
@@ -181,7 +189,7 @@ export function StudioFxChainEditor({
       return false;
     }
     setSaving("saved");
-    setMessage("Zapisano");
+    setMessage(t("zapisano"));
     return true;
   }
 
@@ -309,6 +317,8 @@ export function StudioFxChainEditor({
             bpm={vocalPresets.bpm}
             tuneKey={beatKey?.key ?? null}
             disabled={saving === "saving"}
+            maxEffects={maxEffects}
+            allowSidechain={allowSidechain}
             onApply={async (next) => {
               const ok = await commit(next);
               if (ok) setExpandedId(null);
@@ -321,7 +331,7 @@ export function StudioFxChainEditor({
             role="status"
             className={
               saving === "conflict" || saving === "error"
-                ? "text-sm text-red-700"
+                ? "text-sm text-[var(--brd-rec)]"
                 : "text-sm text-[var(--brd-mute)]"
             }
           >
@@ -442,7 +452,7 @@ export function StudioFxChainEditor({
                             label={tl(param.labelPl)}
                             ariaLabel={`${meta.labelPl}: ${param.labelPl}`}
                             value={value}
-                            display={formatParam(value, param.unit)}
+                            display={formatParam(value, param.unit, locale)}
                             min={param.min}
                             max={param.max}
                             step={param.step}
@@ -491,7 +501,7 @@ export function StudioFxChainEditor({
           </Button>
           {addOpen ? (
             <ul className={`grid gap-2 ${inline ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"}`}>
-              {STUDIO_FX_TYPES.filter((type) => STUDIO_FX_REGISTRY[type][role] && (type !== "sidechain" || allowSidechain)).map((type) => (
+              {studioFxTypesToAdd(chain, role, allowSidechain).map((type) => (
                 <li key={type}>
                   <Button
                     type="button"
@@ -509,7 +519,7 @@ export function StudioFxChainEditor({
           ) : null}
           {atMax ? (
             <p className="text-xs text-[var(--brd-mute)]">
-              {t("limit")}{" "}{maxEffects} {t("efektow")}
+              {t("limitEfektow", { max: maxEffects })}
             </p>
           ) : null}
         </div>
@@ -548,6 +558,11 @@ export function StudioFxSheet({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  // In a ref: a new handler on every editor render must not steal focus back to the X.
+  const closeRef = useRef(onClose);
+  useLayoutEffect(() => {
+    closeRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -560,8 +575,7 @@ export function StudioFxSheet({
     const first = focusables[0] ?? panel;
     first?.focus();
 
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockStudioPageScroll();
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -570,7 +584,7 @@ export function StudioFxSheet({
         // listeners (bubble, registered earlier) do not close Mixer/Inspector first.
         event.preventDefault();
         event.stopImmediatePropagation();
-        onClose();
+        closeRef.current();
         return;
       }
       if (event.key !== "Tab" || !panelRef.current) return;
@@ -583,6 +597,11 @@ export function StudioFxSheet({
       const firstItem = items[0]!;
       const lastItem = items[items.length - 1]!;
       const active = document.activeElement;
+      if (!panelRef.current.contains(active)) {
+        event.preventDefault();
+        firstItem.focus();
+        return;
+      }
       if (event.shiftKey) {
         if (active === firstItem || active === panelRef.current) {
           event.preventDefault();
@@ -597,10 +616,10 @@ export function StudioFxSheet({
     window.addEventListener("keydown", onKeyDown, true);
     return () => {
       window.removeEventListener("keydown", onKeyDown, true);
-      document.body.style.overflow = prevOverflow;
+      unlockScroll();
       previouslyFocusedRef.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -611,7 +630,7 @@ export function StudioFxSheet({
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/60"
         aria-label={t("zamknijPanelEfektow")}
         data-testid="studio-fx-sheet-backdrop"
         onClick={onClose}

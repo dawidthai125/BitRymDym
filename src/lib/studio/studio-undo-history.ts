@@ -7,6 +7,8 @@
  */
 import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
 import type { StudioStructuralUndoOp } from "@/lib/studio/studio-undo-structural";
+import type { StudioAutomationV1 } from "@/lib/studio/studio-automation";
+import type { StudioMidiV1 } from "@/lib/studio/studio-midi";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 
 export const STUDIO_UNDO_HISTORY_LIMIT = 100;
@@ -33,6 +35,11 @@ export type StudioUndoOp =
   | { kind: "clip_gain"; clipId: string; gainDb: number }
   | { kind: "clip_mute"; clipId: string; muted: boolean }
   | { kind: "clip_scratch"; clipId: string; cueMs: number; reverse: boolean; rate: number }
+  /** Tempo and pitch. A tempo change also changes the clip length, so it comes back with it. */
+  | { kind: "clip_playback"; clipId: string; stretch: number; pitchCents: number; durationMs: number }
+  | { kind: "track_automation"; trackId: string; automation: StudioAutomationV1 }
+  | { kind: "track_midi"; trackId: string; midi: StudioMidiV1 }
+  | { kind: "track_reorder"; trackId: string; direction: "up" | "down" }
   | { kind: "track_fx"; trackId: string; chain: StudioFxChainV1 }
   | { kind: "master_fx"; chain: StudioFxChainV1 }
   /** Stage 2 — BITEK auto-fix batch, replayed atomically via mix-working/apply. */

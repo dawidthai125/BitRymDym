@@ -14,6 +14,10 @@ import {
   StudioTrackCapacityError,
 } from "@/lib/studio/studio-track-capacity";
 import { StudioProjectLimitError } from "@/lib/studio/studio-plan-limits";
+import { studioValidationMessage } from "@/lib/studio/studio-validation-error";
+
+/** The only text a client sees for an unknown server error. */
+export const STUDIO_INTERNAL_ERROR = "Coś poszło nie tak na serwerze. Spróbuj ponownie za chwilę.";
 
 export function studioApiErrorResponse(error: unknown): NextResponse {
   if (error instanceof StudioProjectLimitError) {
@@ -76,11 +80,14 @@ export function studioApiErrorResponse(error: unknown): NextResponse {
             : 403;
     return NextResponse.json({ error: error.message }, { status });
   }
+  const invalid = studioValidationMessage(error);
+  if (invalid) {
+    return NextResponse.json({ error: invalid, code: "VALIDATION" }, { status: 400 });
+  }
+  // Unknown (database, network, bug): the detail stays in the server log. 500 lets autosave retry (writes are CAS).
+  console.error("[studio-api] unexpected error", error);
   return NextResponse.json(
-    {
-      error:
-        error instanceof Error ? error.message : "Żądanie Studio nie powiodło się.",
-    },
-    { status: 400 },
+    { error: STUDIO_INTERNAL_ERROR, code: "INTERNAL" },
+    { status: 500 },
   );
 }

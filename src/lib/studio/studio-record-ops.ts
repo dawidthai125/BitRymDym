@@ -3,10 +3,10 @@
  * Take lifecycle / eligibility remain in src/lib/takes (SSOT).
  */
 
-import { findOverlappingTakeClip } from "@/lib/studio/studio-daw-clock";
+import { findOverlappingTakeClip, findOverlappingTakeClips } from "@/lib/studio/studio-daw-clock";
 import { assertIntegerMs } from "@/lib/studio/studio-time";
 
-export { findOverlappingTakeClip };
+export { findOverlappingTakeClip, findOverlappingTakeClips };
 
 /** Convert server Take duration (seconds, float probe) → integer ms for Clip. */
 export function takeDurationSecondsToMs(durationSeconds: number): number {

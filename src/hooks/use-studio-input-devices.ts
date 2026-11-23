@@ -7,6 +7,7 @@ import {
   mapMediaDevicesToAudioInputs,
   readStoredAudioInputDeviceId,
   resolveSelectedInputDeviceId,
+  studioDeviceIdsHidden,
   stopMediaStreamTracks,
   studioDeviceErrorMessagePl,
   writeStoredAudioInputDeviceId,
@@ -37,9 +38,7 @@ export function useStudioInputDevices(options?: {
   const selectedRef = useRef<string | null>(null);
 
   const [inputs, setInputs] = useState<StudioAudioInputOption[]>([]);
-  const [selectedDeviceId, setSelectedDeviceIdState] = useState<string | null>(
-    () => readStoredAudioInputDeviceId(browserLocalStorage()),
-  );
+  const [selectedDeviceId, setSelectedDeviceIdState] = useState<string | null>(null);
   const [permission, setPermission] =
     useState<StudioMicPermissionState>("UNKNOWN");
   const [softNotice, setSoftNotice] = useState<string | null>(null);
@@ -60,6 +59,10 @@ export function useStudioInputDevices(options?: {
       nextInputs: StudioAudioInputOption[],
       persist: boolean,
     ) => {
+      // No permission yet: the browser hides every id, so the saved choice cannot be judged.
+      if (studioDeviceIdsHidden(nextInputs)) {
+        return { selectedId: preferred, fellBackFromStale: false };
+      }
       const resolved = resolveSelectedInputDeviceId({
         preferredId: preferred,
         inputs: nextInputs,
@@ -186,7 +189,10 @@ export function useStudioInputDevices(options?: {
   // Initial enumerate after mount (labels may be empty pre-permission).
   useEffect(() => {
     let cancelled = false;
+    const stored = readStoredAudioInputDeviceId(browserLocalStorage());
+    selectedRef.current = stored;
     void (async () => {
+      if (stored) setSelectedDeviceIdState(stored);
       const mapped = await refreshInputs();
       if (cancelled) return;
       applySelection(selectedRef.current, mapped, false);

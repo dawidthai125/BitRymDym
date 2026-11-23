@@ -4,6 +4,7 @@ import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import {
   deleteStudioProject,
   getStudioProjectDocument,
+  renameStudioProject,
   updateStudioMasterMix,
 } from "@/lib/studio/studio-service";
 
@@ -49,7 +50,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
 }
 
 /**
- * PATCH — P6.4.1 Master Gain/Pan on existing project columns with document_version CAS.
+ * PATCH — `title` renames the project; otherwise P6.4.1 Master Gain/Pan on existing project columns with document_version CAS.
  * Does not mutate FX chains. No new table.
  */
 export async function PATCH(request: Request, context: RouteContext) {
@@ -65,7 +66,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       expectedDocumentVersion?: unknown;
       masterGainDb?: unknown;
       masterPan?: unknown;
+      title?: unknown;
     };
+    if (body.title !== undefined) {
+      const renamed = await renameStudioProject(projectId, body.title);
+      return NextResponse.json({ success: true, title: renamed.title });
+    }
     const result = await updateStudioMasterMix({
       projectId,
       expectedDocumentVersion: body.expectedDocumentVersion,

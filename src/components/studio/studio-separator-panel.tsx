@@ -50,7 +50,7 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!projectId || !canEnqueue) return;
+    if (!projectId || !canEnqueue || busy || waiting) return;
     setBusy(true);
     setNote(null);
     try {
@@ -87,7 +87,12 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
         <select
           name="projectId"
           value={projectId}
-          onChange={(event) => setProjectId(event.target.value)}
+          onChange={(event) => {
+            setProjectId(event.target.value);
+            // Nothing from the previous project stays on the screen.
+            setNote(null);
+            setJob(null);
+          }}
           disabled={projects.length === 0}
           className="border border-[var(--brd-line)] bg-transparent px-3 py-2 text-[var(--brd-ink)]"
         >
@@ -102,7 +107,7 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
       {canEnqueue ? (
         <button
           type="submit"
-          disabled={busy || !projectId}
+          disabled={busy || waiting || !projectId}
           className="w-fit border border-[var(--brd-line)] px-3 py-2 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)] disabled:opacity-50"
         >
           {busy ? t("wysylanie") : t("oddajDoRozciecia")}
@@ -122,14 +127,14 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
         <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("wKolejce")}</p>
       ) : null}
       {job?.status === "failed" ? (
-        <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("nieDoszlo", { code: job.errorCode ?? t("blad") })}</p>
+        <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("nieDoszlo")}</p>
       ) : null}
       {job?.status === "succeeded" && job.stems ? (
         <ul className="flex flex-col gap-2 text-sm">
           {STEMS.map((name) =>
             job.stems?.[name] ? (
               <li key={name}>
-                <a href={job.stems[name]} className="underline-offset-4 hover:underline">
+                <a href={job.stems[name]} download className="underline-offset-4 hover:underline">
                   {t(`stem.${name}`)}
                 </a>
               </li>

@@ -75,7 +75,7 @@ describe("Free watermark download (Owner 2026-11-12)", () => {
     expect(server).toContain('error: "daily_limit"');
     expect(server).toContain("dailyUsed");
     const ui = readFileSync("src/components/studio/studio-master-step.tsx", "utf8");
-    expect(ui).toContain('error === "daily_limit"');
+    expect(ui).toContain('LIMIT_CODES = ["daily_limit", "weekly_limit", "song_day_limit"]');
     expect(ui).toContain('t("limitWyczerpanyDoba"');
     expect(ui).toContain('t("freeZeZnakiem"');
     expect(ui).toContain('t("freeBezPobierania")');

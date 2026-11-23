@@ -8,12 +8,13 @@ export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ presetId: string }> };
 
-/** POST — list this preset on the exchange. Owner only. */
-export async function POST(_request: Request, context: RouteContext) {
+/** POST — list this preset on the exchange; { listed: false } takes it back. Owner only. */
+export async function POST(request: Request, context: RouteContext) {
   try {
     const { presetId } = await context.params;
     const auth = await requireUser();
-    await publishFxPreset(auth, presetId);
+    const body = (await request.json().catch(() => null)) as { listed?: unknown } | null;
+    await publishFxPreset(auth, presetId, body?.listed !== false);
     return NextResponse.json({ success: true });
   } catch (error) {
     return fxPresetErrorResponse(error);

@@ -64,6 +64,45 @@ export type StudioBeatAccessResult = {
   expiresAt?: string;
 };
 
+/** True while a resolved URL is still good for a new voice. */
+export function isStudioSourceFresh(source: StudioResolvedSource): boolean {
+  return source.expiresAt - Date.now() > URL_REFRESH_MS;
+}
+
+export type StudioBeatAccessCache = Map<
+  string,
+  { at: number; promise: Promise<StudioResolvedSource | null> }
+>;
+
+/**
+ * One access request per beat at a time, its answer reused for `ttlMs`.
+ * Each request is a server action that counts against the playback limit.
+ */
+export async function reuseStudioBeatAccess(params: {
+  cache: StudioBeatAccessCache;
+  beatId: string;
+  ttlMs: number;
+  request: () => Promise<StudioResolvedSource | null>;
+}): Promise<StudioResolvedSource | null> {
+  const { cache, beatId } = params;
+  const known = cache.get(beatId);
+  if (known && Date.now() - known.at < params.ttlMs) {
+    const source = await known.promise;
+    if (source && isStudioSourceFresh(source)) return source;
+    const latest = cache.get(beatId);
+    if (latest && latest !== known) return latest.promise;
+  }
+  const entry = { at: Date.now(), promise: params.request() };
+  cache.set(beatId, entry);
+  const forget = () => {
+    if (cache.get(beatId) === entry) cache.delete(beatId);
+  };
+  void entry.promise.then((source) => {
+    if (!source) forget();
+  }, forget);
+  return entry.promise;
+}
+
 export type ResolveStudioBeatSessionSourceParams = {
   beatId: string;
   access: StudioBeatAccessResult;

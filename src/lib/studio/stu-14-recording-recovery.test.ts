@@ -870,7 +870,7 @@ describe("STU-14 recovery — security, identity and wiring invariants", () => {
     expect(editor).toMatch(/hidden=\{recordingLocked\}/);
     expect(editor).toMatch(/onLocalRecoveryChanged=\{\(\) => setRecoveryRefreshKey/);
     expect(editor).toMatch(/recoverySavedKey=\{recoverySavedKey\}/);
-    expect(editor).toMatch(/onSaved=\{\(\) => setRecoverySavedKey/);
+    expect(editor).toMatch(/onSaved=\{\(takeId\) => \{\s*setRecoverySavedKey\(\(key\) => key \+ 1\);\s*adoptRecoveredTake\(/);
     expect(panel).toMatch(/if \(recoverySavedKey === 0\) return/);
     expect(panel).toMatch(/dispatch\(\{ type: "RETRY_IDLE" \}\)/);
     expect(banner).not.toMatch(/beforeunload|useStudioLeaveGuard/);

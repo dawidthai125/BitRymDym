@@ -2,12 +2,14 @@
 
 import { useLibText } from "@/i18n/use-lib-text";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
+import { useStudioScrollLock } from "@/components/studio/use-studio-dialog";
 import { Button } from "@/components/ui/button";
+import { CloseButton } from "@/components/ui/close-button";
 import {
   resolveMixHistoryListPanelKind,
   type MixHistoryListLoadState,
@@ -33,7 +35,7 @@ import {
   type MixRevisionListItem,
 } from "@/lib/studio/mix-working/mix-working-revision-client";
 import type { MixWorkingRevisionDiff } from "@/lib/studio/mix-working/mix-working-diff";
-import { summarizeMixChanges } from "@/lib/studio/mix-working/mix-change-summary";
+import { summarizeMixChanges, type ChangeTextOptions } from "@/lib/studio/mix-working/mix-change-summary";
 import type { MixRevision } from "@/lib/studio/mix-working/mix-working-types";
 import {
   getStudioDialogFocusable,
@@ -51,6 +53,8 @@ export type StudioMixRevisionHistoryControlProps = {
   /** Track id → name of the open project, so history reads "Wokal", not an id. */
   trackNames?: Record<string, string>;
   disabled?: boolean;
+  /** Empties the save queue; false = something could not be saved (no restore on top of it). */
+  onBeforeRestore?: () => Promise<boolean>;
 };
 
 type PanelView = "list" | "detail" | "compare";
@@ -72,6 +76,7 @@ export function StudioMixRevisionHistoryControl({
   onDocumentRefreshed,
   trackNames,
   disabled,
+  onBeforeRestore,
 }: StudioMixRevisionHistoryControlProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioMixRevisionHistoryControl");
@@ -97,6 +102,8 @@ export function StudioMixRevisionHistoryControl({
   const [compareError, setCompareError] = useState<MixRevisionApiFailure | null>(
     null,
   );
+  /** Restored on the server, but the project could not be loaded again. */
+  const [needsReload, setNeedsReload] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoreSubmitting, setRestoreSubmitting] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
@@ -106,6 +113,9 @@ export function StudioMixRevisionHistoryControl({
   const [summaries, setSummaries] = useState<Record<string, string[] | "loading" | "error">>({});
   /** What "Cofnij tę zmianę" will bring back: current mix → the revision before the selected one. */
   const [undoPreview, setUndoPreview] = useState<{ targetId: string; lines: string[] | "loading" | "error" } | null>(null);
+  const locale = useLocale();
+  const changeTextRef = useRef<ChangeTextOptions>({});
+  changeTextRef.current = { lang: locale === "en" ? "en" : "pl", label: tl };
   const trackNamesRef = useRef<Record<string, string>>(trackNames ?? {});
   trackNamesRef.current = trackNames ?? {};
 
@@ -123,11 +133,11 @@ export function StudioMixRevisionHistoryControl({
   const activeProjectIdRef = useRef(projectId);
 
   const listLoading = listLoadState === "loading";
+  useStudioScrollLock(open);
 
   const closeDialog = useCallback(() => {
     setOpen(false);
     setRestoreOpen(false);
-    setRestoreSubmitting(false);
     restoreRequestIdRef.current = null;
     restoreTargetIdRef.current = null;
     setUndoPreview(null);
@@ -149,8 +159,9 @@ export function StudioMixRevisionHistoryControl({
 
   useEffect(() => {
     if (!open) return;
-    previouslyFocusedRef.current =
-      document.activeElement instanceof HTMLElement
+    // Only the first time: opening "Przywróć" must not replace it with a button inside the dialog.
+    previouslyFocusedRef.current ??=
+      document.activeElement instanceof HTMLElement && document.activeElement !== document.body
         ? document.activeElement
         : triggerRef.current;
     const panel = restoreOpen ? restoreDialogRef.current : dialogRef.current;
@@ -377,7 +388,7 @@ export function StudioMixRevisionHistoryControl({
         });
         const mapped = mapMixRevisionCompareHttpResult({ httpStatus: res.status, json: await readJson(res) });
         if (!mapped.ok) return null;
-        return summarizeMixChanges(mapped.diff.changes, trackNamesRef.current);
+        return summarizeMixChanges(mapped.diff.changes, trackNamesRef.current, changeTextRef.current);
       } catch {
         return null;
       }
@@ -444,6 +455,12 @@ export function StudioMixRevisionHistoryControl({
     setRestoreMessage(null);
     setRestoreTone(null);
     try {
+      // Waiting saves first: a restore next to a save in flight ends in a version conflict.
+      if (onBeforeRestore && !(await onBeforeRestore())) {
+        setRestoreTone("warn");
+        setRestoreMessage(t("najpierwZapis"));
+        return;
+      }
       const res = await fetch(
         mixWorkingRevisionRestoreUrl(projectId, revisionId),
         {
@@ -474,18 +491,34 @@ export function StudioMixRevisionHistoryControl({
         return;
       }
 
-      const docRes = await fetch(studioProjectDocumentUrl(projectId), {
-        method: "GET",
-        credentials: "same-origin",
-      });
-      const docJson = await readJson(docRes);
-      const docMapped = mapStudioProjectDocumentHttpResult({
-        httpStatus: docRes.status,
-        json: docJson,
-      });
-      if (docMapped.ok) {
-        onDocumentRefreshed(docMapped.document);
+      // The mix is restored on the server; without the new document every next save would conflict.
+      const loadDocument = async () => {
+        try {
+          const docRes = await fetch(studioProjectDocumentUrl(projectId), {
+            method: "GET",
+            credentials: "same-origin",
+          });
+          const docMapped = mapStudioProjectDocumentHttpResult({
+            httpStatus: docRes.status,
+            json: await readJson(docRes),
+          });
+          return docMapped.ok ? docMapped.document : null;
+        } catch {
+          return null;
+        }
+      };
+      let restored = await loadDocument();
+      if (!restored) {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        restored = await loadDocument();
       }
+      if (!restored) {
+        setNeedsReload(true);
+        setRestoreTone("warn");
+        setRestoreMessage(t("przywroconoOdswiez"));
+        return;
+      }
+      onDocumentRefreshed(restored);
 
       setRestoreOpen(false);
       setRestoreTone("ok");
@@ -541,7 +574,7 @@ export function StudioMixRevisionHistoryControl({
             >
               <button
                 type="button"
-                className="absolute inset-0 cursor-default bg-[color-mix(in_srgb,var(--brd-ink)_45%,transparent)]"
+                className="absolute inset-0 cursor-default bg-black/60"
                 aria-label={t("zamknijHistorieMiksu")}
                 data-testid="studio-mix-history-backdrop"
                 onClick={closeDialog}
@@ -549,7 +582,7 @@ export function StudioMixRevisionHistoryControl({
               <div
                 ref={dialogRef}
                 id="studio-mix-history-dialog"
-                className="relative z-10 flex max-h-[min(92dvh,40rem)] w-full flex-col overflow-hidden rounded-t-xl border border-[var(--brd-line)] bg-[var(--brd-paper)] pb-[env(safe-area-inset-bottom)] text-[var(--brd-ink)] shadow-lg outline-none sm:w-[min(100vw-2rem,36rem)] sm:rounded-xl motion-reduce:transition-none"
+                className="studio-desk relative z-10 flex max-h-[min(92dvh,40rem)] w-full flex-col overflow-hidden rounded-t-xl border border-[var(--brd-line)] bg-[var(--brd-paper)] pb-[env(safe-area-inset-bottom)] text-[var(--brd-ink)] shadow-lg outline-none sm:w-[min(100vw-2rem,36rem)] sm:rounded-xl motion-reduce:transition-none"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
@@ -570,16 +603,11 @@ export function StudioMixRevisionHistoryControl({
                     {t("rewizjeDokumentuMiksuBez")}
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="min-h-11"
+                <CloseButton
+                  label={t("zamknijHistorieMiksu")}
                   data-testid="studio-mix-history-close"
                   onClick={closeDialog}
-                >
-                  {t("zamknij")}
-                </Button>
+                />
               </div>
               {/*
                 A3.5-D migration notice — visible whenever history UI is open.
@@ -724,7 +752,7 @@ export function StudioMixRevisionHistoryControl({
                 <>
                   <button
                     type="button"
-                    className="absolute inset-0 z-20 cursor-default bg-[color-mix(in_srgb,var(--brd-ink)_55%,transparent)]"
+                    className="absolute inset-0 z-20 cursor-default bg-black/60"
                     aria-label={t("anulujPrzywracanie")}
                     data-testid="studio-mix-history-restore-backdrop"
                     disabled={restoreSubmitting}
@@ -734,7 +762,7 @@ export function StudioMixRevisionHistoryControl({
                   />
                   <div
                     ref={restoreDialogRef}
-                    className="absolute inset-x-3 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-30 mx-auto max-w-md space-y-3 rounded-xl border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4 text-[var(--brd-ink)] outline-none sm:inset-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2"
+                    className="studio-desk absolute inset-x-3 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-30 mx-auto max-w-md space-y-3 rounded-xl border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4 text-[var(--brd-ink)] outline-none sm:inset-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2"
                     role="alertdialog"
                     aria-modal="true"
                     aria-labelledby={restoreTitleId}
@@ -774,6 +802,11 @@ export function StudioMixRevisionHistoryControl({
                       </p>
                     ) : null}
                     <div className="flex flex-wrap gap-2">
+                      {needsReload ? (
+                        <Button type="button" size="sm" className="min-h-11" data-testid="studio-mix-history-reload" onClick={() => window.location.reload()}>
+                          {t("odswiezStrone")}
+                        </Button>
+                      ) : null}
                       <Button
                         type="button"
                         size="sm"
@@ -789,7 +822,7 @@ export function StudioMixRevisionHistoryControl({
                         type="button"
                         size="sm"
                         className="min-h-11 bg-[var(--brd-green)] text-[var(--brd-paper)] hover:opacity-90"
-                        disabled={restoreSubmitting}
+                        disabled={restoreSubmitting || needsReload}
                         data-testid="studio-mix-history-restore-confirm"
                         onClick={() => void confirmRestore()}
                       >
@@ -1159,6 +1192,8 @@ function ComparePanel(props: {
   onRun: () => void;
 }) {
   const tl = useLibText();
+  const locale = useLocale();
+  const changeText: ChangeTextOptions = { lang: locale === "en" ? "en" : "pl", label: tl };
   const t = useTranslations("studio.studioMixRevisionHistoryControl");
 
   return (
@@ -1234,7 +1269,7 @@ function ComparePanel(props: {
               {t("brakZmianWDozwolonych")}
             </p>
           ) : (
-            <ChangeLines lines={summarizeMixChanges(props.diff.changes, props.trackNames)} testId="studio-mix-history-compare-lines" />
+            <ChangeLines lines={summarizeMixChanges(props.diff.changes, props.trackNames, changeText)} testId="studio-mix-history-compare-lines" />
           )}
         </div>
       ) : null}

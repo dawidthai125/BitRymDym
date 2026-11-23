@@ -87,6 +87,40 @@ export function planClipGeometryCommit(
   };
 }
 
+/** Geometry right after the commit, shown before the server answers (the clip must not jump back). */
+export function applyClipGeometryCommit(
+  clip: StudioClipGeometry,
+  commit: Exclude<StudioClipEditCommit, { kind: "noop" }>,
+  sourceRate = 1,
+): StudioClipGeometry {
+  switch (commit.kind) {
+    case "move":
+      return {
+        timelineStartMs: commit.timelineStartMs,
+        durationMs: clip.durationMs,
+        sourceOffsetMs: clip.sourceOffsetMs,
+      };
+    case "trim_left":
+      return {
+        timelineStartMs: clip.timelineStartMs + commit.trimMs,
+        durationMs: clip.durationMs - commit.trimMs,
+        sourceOffsetMs: clip.sourceOffsetMs + Math.round(commit.trimMs * sourceRate),
+      };
+    case "trim_right":
+      return {
+        timelineStartMs: clip.timelineStartMs,
+        durationMs: clip.durationMs - commit.trimMs,
+        sourceOffsetMs: clip.sourceOffsetMs,
+      };
+    case "set_geometry":
+      return {
+        timelineStartMs: commit.timelineStartMs,
+        durationMs: commit.durationMs,
+        sourceOffsetMs: commit.sourceOffsetMs,
+      };
+  }
+}
+
 function clampInteger(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(value)));
 }
@@ -100,15 +134,21 @@ export function previewTrimLeftToEdgeMs(params: {
   edgeTimelineMs: number;
   timelineLengthMs: number;
   sourceDurationMs: number | null;
+  /** From clipSourceRate: a slowed-down clip uses less source than timeline. */
+  sourceRate?: number;
   snap?: StudioSnapConfig;
 }): StudioClipGeometry | null {
   const { clip, timelineLengthMs, sourceDurationMs } = params;
+  const sourceRate = params.sourceRate ?? 1;
   assertIntegerMs(clip.timelineStartMs, "timelineStartMs");
   assertIntegerMs(clip.durationMs, "durationMs");
   assertIntegerMs(clip.sourceOffsetMs, "sourceOffsetMs");
 
   const end = clipEndMs(clip);
-  const minStart = Math.max(0, clip.timelineStartMs - clip.sourceOffsetMs);
+  const minStart = Math.max(
+    0,
+    clip.timelineStartMs - Math.floor(clip.sourceOffsetMs / sourceRate),
+  );
   const maxStart = end - STUDIO_CLIP_MIN_DURATION_MS;
   if (maxStart < minStart) return null;
 
@@ -125,7 +165,7 @@ export function previewTrimLeftToEdgeMs(params: {
   // Outward extend requires known source duration / offset headroom.
   if (edge < clip.timelineStartMs) {
     const extendMs = clip.timelineStartMs - edge;
-    if (clip.sourceOffsetMs < extendMs) return null;
+    if (clip.sourceOffsetMs < Math.floor(extendMs * sourceRate)) return null;
     if (sourceDurationMs == null) {
       // Without source length, only allow inward trim.
       return null;
@@ -133,9 +173,13 @@ export function previewTrimLeftToEdgeMs(params: {
   }
 
   const nextDuration = end - edge;
-  const nextOffset = clip.sourceOffsetMs + (edge - clip.timelineStartMs);
+  const nextOffset =
+    clip.sourceOffsetMs + Math.round((edge - clip.timelineStartMs) * sourceRate);
   if (nextOffset < 0) return null;
-  if (sourceDurationMs != null && nextOffset + nextDuration > sourceDurationMs) {
+  if (
+    sourceDurationMs != null &&
+    nextOffset + Math.floor(nextDuration * sourceRate) > sourceDurationMs
+  ) {
     return null;
   }
   if (nextDuration < STUDIO_CLIP_MIN_DURATION_MS) return null;
@@ -162,9 +206,12 @@ export function previewTrimRightToEdgeMs(params: {
   edgeTimelineMs: number;
   timelineLengthMs: number;
   sourceDurationMs: number | null;
+  /** From clipSourceRate: a slowed-down clip uses less source than timeline. */
+  sourceRate?: number;
   snap?: StudioSnapConfig;
 }): StudioClipGeometry | null {
   const { clip, timelineLengthMs, sourceDurationMs } = params;
+  const sourceRate = params.sourceRate ?? 1;
   assertIntegerMs(clip.timelineStartMs, "timelineStartMs");
   assertIntegerMs(clip.durationMs, "durationMs");
   assertIntegerMs(clip.sourceOffsetMs, "sourceOffsetMs");
@@ -177,7 +224,7 @@ export function previewTrimRightToEdgeMs(params: {
       : clip.timelineStartMs +
         Math.max(
           STUDIO_CLIP_MIN_DURATION_MS,
-          sourceDurationMs - clip.sourceOffsetMs,
+          Math.ceil((sourceDurationMs - clip.sourceOffsetMs) / sourceRate),
         );
   const maxEnd = Math.min(maxEndByTimeline, maxEndBySource);
   if (maxEnd < minEnd) return null;
@@ -200,7 +247,7 @@ export function previewTrimRightToEdgeMs(params: {
   if (nextDuration < STUDIO_CLIP_MIN_DURATION_MS) return null;
   if (
     sourceDurationMs != null &&
-    clip.sourceOffsetMs + nextDuration > sourceDurationMs
+    clip.sourceOffsetMs + Math.floor(nextDuration * sourceRate) > sourceDurationMs
   ) {
     return null;
   }

@@ -155,6 +155,25 @@ export async function unlockPremiumWork(input: {
   return unlockPremiumWorkFor(context, input);
 }
 
+/**
+ * Studio export: the project's first download marks the work ready and unlocks it in one step.
+ * Both calls are idempotent (one work and one sticky unlock per project), so later downloads cost nothing.
+ * The caller has already checked that the project belongs to the user.
+ */
+export async function ensureStudioProjectUnlockedFor(
+  context: AuthContext,
+  projectId: string,
+): Promise<void> {
+  const work = await markPremiumWorkReadyFor(context, {
+    domain: "STUDIO_PROJECT",
+    domainRef: projectId,
+  });
+  await unlockPremiumWorkFor(context, {
+    workId: work.workId,
+    idempotencyKey: `studio-export:${work.workId}`,
+  });
+}
+
 export async function markPremiumWorkReadyFor(
   context: AuthContext,
   input: {

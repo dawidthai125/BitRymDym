@@ -39,7 +39,7 @@ import {
 } from "@/lib/studio/studio-fx-chain";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import type { StudioProjectDocument } from "@/lib/studio/studio-types";
-import { TUNE_STYLES } from "@/lib/studio/tune/tune";
+import { TUNE_STYLES, type TuneKey } from "@/lib/studio/tune/tune";
 
 export const MIX_AUTOFIX_IDS = [
   "gain",
@@ -108,6 +108,8 @@ export type MixAutofixNote = {
   /** i18n key under studio.mixStep.autofix.notes.<key> (first-person BITEK). */
   key: string;
   params: Record<string, string | number>;
+  /** Effects this note announces; when the plan clamp dropped them all, the note goes too. */
+  fx?: { trackIds: readonly string[]; types: readonly StudioFxType[] };
 };
 
 export type MixAutofixPlan = {
@@ -116,6 +118,8 @@ export type MixAutofixPlan = {
   notes: MixAutofixNote[];
   /** Fixes that had nothing to change (for "already fine" copy). */
   unchanged: MixPlanFixId[];
+  /** The plan's effect limit kept at least one effect out. */
+  limited: boolean;
 };
 
 type TrackState = {
@@ -206,11 +210,14 @@ type Ctx = {
   bpm: number;
   createId: () => string;
   notes: MixAutofixNote[];
+  beatKey: TuneKey | null;
 };
 
-function note(ctx: Ctx, key: string, params: Record<string, string | number> = {}) {
-  ctx.notes.push({ key, params });
+function note(ctx: Ctx, key: string, params: Record<string, string | number> = {}, fx?: MixAutofixNote["fx"]) {
+  ctx.notes.push(fx ? { key, params, fx } : { key, params });
 }
+
+const fxOf = (t: TrackState, ...types: StudioFxType[]): MixAutofixNote["fx"] => ({ trackIds: [t.id], types });
 
 function withFx<T extends StudioFxType>(
   ctx: Ctx,
@@ -318,7 +325,7 @@ function fixCompression(ctx: Ctx): void {
         makeupDb: 2,
       }))
     ) {
-      note(ctx, lead ? "compLead" : "compSide", { track: t.name, ratio, threshold: thresholdDb });
+      note(ctx, lead ? "compLead" : "compSide", { track: t.name, ratio, threshold: thresholdDb }, fxOf(t, "compressor"));
     }
   }
 }
@@ -331,13 +338,13 @@ function fixEq(ctx: Ctx): void {
     if (
       withFx(ctx, t, "eq", (p) => ({ ...p, mid: { frequencyHz: 2500, gainDb: cut, q: 0.9 } }))
     ) {
-      note(ctx, "eqBeatCut", { track: t.name, db: fmtDb(cut) });
+      note(ctx, "eqBeatCut", { track: t.name, db: fmtDb(cut) }, fxOf(t, "eq"));
     }
   }
   for (const t of vocals(ctx.state)) {
     const hz = t.role === "lead_vocal" ? 90 : 120;
     if (withFx(ctx, t, "highpass", () => ({ frequencyHz: hz, q: 0.707 }))) {
-      note(ctx, "eqVocalHighpass", { track: t.name, hz });
+      note(ctx, "eqVocalHighpass", { track: t.name, hz }, fxOf(t, "highpass"));
     }
     if (
       withFx(ctx, t, "eq", (p) => ({
@@ -346,7 +353,7 @@ function fixEq(ctx: Ctx): void {
         mid: { frequencyHz: 3500, gainDb: 2, q: 1 },
       }))
     ) {
-      note(ctx, "eqVocalPresence", { track: t.name });
+      note(ctx, "eqVocalPresence", { track: t.name }, fxOf(t, "eq"));
     }
   }
 }
@@ -360,7 +367,7 @@ function fixDeesser(ctx: Ctx): void {
     const thresholdDb = clamp(Math.round(lufs - (red ? 9 : 6)), -50, -12);
     const ratio = red ? 6 : 4;
     if (withFx(ctx, t, "deesser", () => ({ frequencyHz: 6500, thresholdDb, ratio }))) {
-      note(ctx, red ? "deesserStrong" : "deesserSoft", { track: t.name });
+      note(ctx, red ? "deesserStrong" : "deesserSoft", { track: t.name }, fxOf(t, "deesser"));
     }
   }
 }
@@ -380,11 +387,11 @@ function fixDenoise(ctx: Ctx): void {
         releaseMs: P0_GATE_RELEASE_MS,
       }))
     ) {
-      note(ctx, "denoiseGate", { track: t.name, db: rangeDb });
+      note(ctx, "denoiseGate", { track: t.name, db: rangeDb }, fxOf(t, "gate"));
     }
     if (!t.chain.effects.some((e) => e.type === "highpass")) {
       if (withFx(ctx, t, "highpass", () => ({ frequencyHz: P0_HPF_HZ, q: 0.707 }))) {
-        note(ctx, "denoiseRumble", { track: t.name, hz: P0_HPF_HZ });
+        note(ctx, "denoiseRumble", { track: t.name, hz: P0_HPF_HZ }, fxOf(t, "highpass"));
       }
     }
   }
@@ -433,7 +440,7 @@ function fixSpace(ctx: Ctx): void {
         bpm: Math.round(bpm),
         ms: timeMs,
         decay: decaySeconds.toFixed(1),
-      });
+      }, fxOf(t, "delay", "reverb"));
     }
   }
 }
@@ -474,7 +481,7 @@ function fixPocket(ctx: Ctx): void {
     t.chain = pocket;
     if (JSON.stringify(t.chain) !== before) changed = true;
   }
-  if (changed) note(ctx, "pocket", {});
+  if (changed) note(ctx, "pocket", {}, { trackIds: leads.map((t) => t.id), types: ["saturate", "pocket"] });
 }
 
 function fixRider(ctx: Ctx): void {
@@ -496,7 +503,7 @@ function fixRider(ctx: Ctx): void {
     t.chain = next;
     if (JSON.stringify(t.chain) !== before) changed = true;
   }
-  if (changed) note(ctx, "rider", {});
+  if (changed) note(ctx, "rider", {}, { trackIds: leads.map((t) => t.id), types: ["rider"] });
 }
 
 function fixVoice(ctx: Ctx): void {
@@ -513,7 +520,7 @@ function fixVoice(ctx: Ctx): void {
     t.chain = next;
     if (JSON.stringify(t.chain) !== before) changed = true;
   }
-  if (changed) note(ctx, "voice", {});
+  if (changed) note(ctx, "voice", {}, { trackIds: leads.map((t) => t.id), types: ["voice"] });
 }
 
 function fixHarmony(ctx: Ctx): void {
@@ -530,7 +537,7 @@ function fixHarmony(ctx: Ctx): void {
     t.chain = next;
     if (JSON.stringify(t.chain) !== before) changed = true;
   }
-  if (changed) note(ctx, "harmony", {});
+  if (changed) note(ctx, "harmony", {}, { trackIds: leads.map((t) => t.id), types: ["harmony"] });
 }
 
 /** Light BRD Tune on lead (natural) — discoverability tile; no Antares. */
@@ -543,7 +550,8 @@ function fixTune(ctx: Ctx): void {
     const next = upsertFx(
       t.chain,
       "tune",
-      (p) => ({ ...p, ...TUNE_STYLES.natural }),
+      // A tune slot the user already has keeps its key; a new one takes the beat's key.
+      (p) => ({ ...p, ...(!t.chain.effects.some((e) => e.type === "tune") && ctx.beatKey ? ctx.beatKey : {}), ...TUNE_STYLES.natural }),
       ctx.createId,
     );
     if (!next) {
@@ -553,7 +561,7 @@ function fixTune(ctx: Ctx): void {
     t.chain = next;
     if (JSON.stringify(t.chain) !== before) changed = true;
   }
-  if (changed) note(ctx, "tune", {});
+  if (changed) note(ctx, "tune", {}, { trackIds: leads.map((t) => t.id), types: ["tune"] });
 }
 
 /** Effective BPM for sync (project tempo, sane fallback). */
@@ -607,6 +615,8 @@ export function planMixAutofix(params: {
   /** Plan limits (FREE/BRONZE: 4 effects per chain, no sidechain). Omitted = no limit. */
   maxEffects?: number;
   allowSidechain?: boolean;
+  /** Key of the project's beat (light pitch correction tunes to it). */
+  beatKey?: TuneKey | null;
 }): MixAutofixPlan {
   const { doc, metrics, verdict } = params;
   const byId = new Map(metrics.tracks.map((m) => [m.trackId, m]));
@@ -629,6 +639,7 @@ export function planMixAutofix(params: {
     bpm: autofixBpm(doc),
     createId: params.createId ?? (() => crypto.randomUUID()),
     notes: [],
+    beatKey: params.beatKey ?? null,
   };
   const order = ([...MIX_AUTOFIX_IDS, "pocket", "rider", "harmony", "voice", "tune"] as const).filter((id) =>
     params.fixes.includes(id),
@@ -640,6 +651,9 @@ export function planMixAutofix(params: {
     if (ctx.notes.length === before) unchanged.push(id);
   }
 
+  let limited = ctx.notes.some((n) => n.key === "chainFull");
+  const fittedByTrack = new Map<string, StudioFxChainV1>();
+  const limitNotes: MixAutofixNote[] = [];
   const ops: MixWorkingOp[] = [];
   if (state.masterGainDb !== doc.project.masterGainDb) {
     ops.push({ op: "set_master_mix", masterGainDb: state.masterGainDb });
@@ -657,11 +671,22 @@ export function planMixAutofix(params: {
       params.maxEffects === undefined && params.allowSidechain === undefined
         ? t.chain
         : clampChainToPlan(t.chain, orig.effectsChain, { maxEffects: params.maxEffects, allowSidechain: params.allowSidechain });
+    fittedByTrack.set(t.id, fitted ?? orig.effectsChain);
+    if (fitted !== t.chain) {
+      limited = true;
+      limitNotes.push({ key: "planLimit", params: { track: t.name, max: params.maxEffects ?? STUDIO_FX_CHAIN_MAX_EFFECTS } });
+    }
     if (fitted && JSON.stringify(fitted) !== JSON.stringify(orig.effectsChain)) {
       ops.push({ op: "set_track_fx", trackId: t.id, effectsChain: fitted });
     }
   }
-  return { fixes: order, ops, notes: ctx.notes, unchanged };
+  // Never announce an effect the plan limit kept out.
+  const notes = ctx.notes.filter(
+    (n) =>
+      !n.fx ||
+      n.fx.trackIds.some((id) => n.fx!.types.every((type) => fittedByTrack.get(id)?.effects.some((e) => e.type === type))),
+  );
+  return { fixes: order, ops, notes: [...notes, ...limitNotes], unchanged, limited };
 }
 
 /** Inverse ops (restore previous controls / chains) for undo. */

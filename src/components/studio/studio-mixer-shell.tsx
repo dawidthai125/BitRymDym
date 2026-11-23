@@ -7,11 +7,13 @@ import { useTranslations } from "next-intl";
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   type ReactNode,
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useStudioScrollLock } from "@/components/studio/use-studio-dialog";
 import { CloseButton } from "@/components/ui/close-button";
 import { StudioGlyph } from "@/components/studio/studio-glyphs";
 
@@ -48,6 +50,12 @@ export function StudioMixerOverlay({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  // In a ref: the editor re-renders often and a new handler must not steal focus back to the X.
+  const closeRef = useRef(onClose);
+  useLayoutEffect(() => {
+    closeRef.current = onClose;
+  });
+  useStudioScrollLock(open);
 
   useEffect(() => {
     if (!open) return;
@@ -63,7 +71,7 @@ export function StudioMixerOverlay({
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        closeRef.current();
         return;
       }
       if (event.key !== "Tab" || !panelRef.current) return;
@@ -76,6 +84,13 @@ export function StudioMixerOverlay({
       const firstItem = items[0]!;
       const lastItem = items[items.length - 1]!;
       const active = document.activeElement;
+      // Focus in a window above this one (effects, history) is not ours to take.
+      if (active?.closest('[role="dialog"], [role="alertdialog"], [role="menu"]') && !panelRef.current.contains(active)) return;
+      if (!panelRef.current.contains(active)) {
+        event.preventDefault();
+        firstItem.focus();
+        return;
+      }
       if (event.shiftKey) {
         if (active === firstItem || active === panelRef.current) {
           event.preventDefault();
@@ -92,7 +107,7 @@ export function StudioMixerOverlay({
       window.removeEventListener("keydown", onKeyDown);
       previouslyFocusedRef.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -104,7 +119,7 @@ export function StudioMixerOverlay({
     >
       <button
         type="button"
-        className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_45%,transparent)]"
+        className="absolute inset-0 bg-black/60"
         aria-label={t("zamknijMixer")}
         data-testid="studio-mixer-backdrop"
         onClick={onClose}
@@ -116,7 +131,7 @@ export function StudioMixerOverlay({
         aria-labelledby={titleId}
         tabIndex={-1}
         data-testid="studio-mixer-sheet"
-        className="relative mt-auto flex max-h-[min(70vh,28rem)] w-full flex-col rounded-t-lg border border-[var(--brd-line)] bg-[var(--brd-bg)] shadow-lg outline-none pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:max-h-[min(75vh,30rem)] md:pb-[env(safe-area-inset-bottom)]"
+        className="relative mt-auto flex max-h-[min(70vh,28rem)] w-full flex-col rounded-t-lg border border-[var(--brd-line)] bg-[var(--brd-bg)] shadow-lg outline-none pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:max-h-[min(80vh,37rem)] lg:pb-[env(safe-area-inset-bottom)]"
       >
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-3 py-2">
           <p
@@ -193,7 +208,7 @@ export function StudioMixerDockChrome({
           role="region"
           aria-label={t("kanalyMixera")}
           data-testid="studio-mixer-panel"
-          className="max-h-[17.5rem] min-h-0 overflow-y-auto overflow-x-hidden p-2"
+          className="max-h-[30rem] min-h-0 overflow-y-auto overflow-x-hidden p-2"
         >
           {children}
         </div>

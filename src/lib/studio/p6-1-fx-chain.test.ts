@@ -8,13 +8,17 @@ import { describe, expect, it } from "vitest";
 
 import { AuthError } from "@/lib/auth/session";
 import {
+  addStudioFxToChain,
   applyStudioFxCasToState,
   assertStudioFxCasMatch,
+  createStudioFxInstance,
   defaultStudioFxParams,
   emptyStudioFxChain,
   parseExpectedDocumentVersion,
   parseStudioFxChainForWrite,
   readStudioFxChain,
+  setStudioFxEnabled,
+  studioFxTypesToAdd,
   STUDIO_FX_CHAIN_MAX_EFFECTS,
   STUDIO_FX_DEFAULTS,
   STUDIO_FX_REGISTRY,
@@ -507,5 +511,28 @@ describe("P6.1 isolation / engine untouched", () => {
     );
     expect(sql).toMatch(/master_fx_chain jsonb NULL/);
     expect(sql).toMatch(/effects_chain jsonb NULL/);
+  });
+});
+
+describe("M46 — the master limiter stays last by itself", () => {
+  const ids = ["3fa85f64-5717-4562-b3fc-2c963f66e001", "3fa85f64-5717-4562-b3fc-2c963f66e002", "3fa85f64-5717-4562-b3fc-2c963f66e003"];
+  const make = (...types: Array<[("eq" | "limiter" | "compressor"), boolean]>) => ({
+    schemaVersion: 1 as const,
+    effects: types.map(([type, enabled], i) => ({ ...createStudioFxInstance(type, () => ids[i]!), enabled })),
+  });
+  const order = (c: { effects: { type: string; enabled: boolean }[] }) => c.effects.map((e) => `${e.type}:${e.enabled ? 1 : 0}`).join(" ");
+  const newId = () => "3fa85f64-5717-4562-b3fc-2c963f66e009";
+
+  it("turning on a limiter that sits before another effect moves it to the end", () => {
+    expect(order(setStudioFxEnabled(make(["limiter", false], ["eq", true]), ids[0]!, true, "master"))).toBe("eq:1 limiter:1");
+  });
+  it("adding an effect after [limiter on, effect off] keeps the limiter last", () => {
+    expect(order(addStudioFxToChain(make(["limiter", true], ["eq", false]), "compressor", "master", newId))).toBe("eq:0 compressor:1 limiter:1");
+  });
+  it("a second limiter is not offered; adding one anyway leaves a single limiter on", () => {
+    const chain = make(["limiter", true]);
+    expect(studioFxTypesToAdd(chain, "master", true)).not.toContain("limiter");
+    expect(studioFxTypesToAdd(chain, "track", true)).toContain("limiter");
+    expect(order(addStudioFxToChain(chain, "limiter", "master", newId))).toBe("limiter:0 limiter:1");
   });
 });

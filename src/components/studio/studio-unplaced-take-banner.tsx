@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
-import { clearUnplacedTakeMemo, readUnplacedTakeMemo, type UnplacedTakeMemo } from "@/lib/studio/unplaced-take-memo";
+import { UNPLACED_TAKE_EVENT, clearUnplacedTakeMemo, readUnplacedTakeMemo, type UnplacedTakeMemo } from "@/lib/studio/unplaced-take-memo";
 
 /**
  * 2026-11-22 (Owner): a recording left READY without „Zachowaj” (page reloaded or closed)
@@ -29,16 +29,29 @@ export function StudioUnplacedTakeBanner({
   const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => {
-    const m = readUnplacedTakeMemo(projectId);
-    if (!m) return;
-    if (placedTakeIds.includes(m.takeId)) {
-      clearUnplacedTakeMemo(projectId, m.takeId);
-      return;
-    }
-    // localStorage is read after hydration (server renders nothing), then shown.
-    const id = window.setTimeout(() => setMemo(m), 0);
-    return () => window.clearTimeout(id);
-    // Read once per open; the editor owns the document after that.
+    let timer = 0;
+    const offer = () => {
+      const m = readUnplacedTakeMemo(projectId);
+      if (!m) return;
+      if (placedTakeIds.includes(m.takeId)) {
+        clearUnplacedTakeMemo(projectId, m.takeId);
+        return;
+      }
+      // localStorage is read after hydration (server renders nothing), then shown.
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        setNote(null);
+        setMemo(m);
+      }, 0);
+    };
+    offer();
+    // The recording panel went away with an undecided take (no page reload).
+    window.addEventListener(UNPLACED_TAKE_EVENT, offer);
+    return () => {
+      window.removeEventListener(UNPLACED_TAKE_EVENT, offer);
+      window.clearTimeout(timer);
+    };
+    // Read once per open and on the panel's signal; the editor owns the document after that.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
@@ -55,7 +68,7 @@ export function StudioUnplacedTakeBanner({
       const res = await fetch(`/api/studio/projects/${projectId}/record/place`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trackId, takeId: memo.takeId, timelineStartMs: memo.startMs, expectedDocumentVersion: documentVersion }),
+        body: JSON.stringify({ trackId, takeId: memo.takeId, timelineStartMs: memo.startMs, sourceOffsetMs: memo.sourceOffsetMs, expectedDocumentVersion: documentVersion }),
       });
       if (res.ok) {
         clearUnplacedTakeMemo(projectId, memo.takeId);

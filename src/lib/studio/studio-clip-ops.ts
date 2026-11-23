@@ -20,6 +20,33 @@ export type StudioClipGeometry = {
   sourceOffsetMs: number;
 };
 
+/**
+ * Source milliseconds played per timeline millisecond. 1 for an ordinary clip.
+ * Tempo is baked as a stretch (2 = twice as long), reverse walks at its own rate.
+ */
+export function clipSourceRate(clip: {
+  stretchRatio?: number | null;
+  scratchReverse?: boolean | null;
+  scratchRate?: number | null;
+}): number {
+  const stretch = clip.stretchRatio && clip.stretchRatio > 0 ? clip.stretchRatio : 1;
+  const rate = clip.scratchReverse && clip.scratchRate && clip.scratchRate > 0 ? clip.scratchRate : 1;
+  return rate / stretch;
+}
+
+/** Clip length after a tempo change: the same part of the source, the new tempo. */
+export function durationAfterStretchMs(params: {
+  durationMs: number;
+  fromStretch: number;
+  toStretch: number;
+  timelineStartMs: number;
+  timelineLengthMs: number;
+}): number {
+  const scaled = Math.round((params.durationMs * params.toStretch) / params.fromStretch);
+  const room = params.timelineLengthMs - params.timelineStartMs;
+  return Math.max(STUDIO_CLIP_MIN_DURATION_MS, Math.min(room, scaled));
+}
+
 export function assertValidClipSource(input: StudioClipSourceInput): void {
   const take = input.sourceTakeId ?? null;
   const beat = input.sourceBeatId ?? null;
@@ -130,6 +157,8 @@ export function trimClipLeft(params: {
   clip: StudioClipGeometry;
   trimMs: number;
   timelineLengthMs: number;
+  /** From clipSourceRate; 1 when the clip has no tempo change. */
+  sourceRate?: number;
 }): StudioClipGeometry {
   assertIntegerMs(params.trimMs, "trimMs");
   if (params.trimMs < 1) {
@@ -141,7 +170,8 @@ export function trimClipLeft(params: {
   const next: StudioClipGeometry = {
     timelineStartMs: params.clip.timelineStartMs + params.trimMs,
     durationMs: params.clip.durationMs - params.trimMs,
-    sourceOffsetMs: params.clip.sourceOffsetMs + params.trimMs,
+    sourceOffsetMs:
+      params.clip.sourceOffsetMs + Math.round(params.trimMs * (params.sourceRate ?? 1)),
   };
   assertClipPlacement({ ...next, timelineLengthMs: params.timelineLengthMs });
   return next;
@@ -176,6 +206,7 @@ export function trimClipLeftToPlayhead(params: {
   clip: StudioClipGeometry;
   playheadMs: number;
   timelineLengthMs: number;
+  sourceRate?: number;
 }): StudioClipGeometry {
   assertIntegerMs(params.playheadMs, "playheadMs");
   const end = clipEndMs(params.clip);
@@ -189,6 +220,7 @@ export function trimClipLeftToPlayhead(params: {
     clip: params.clip,
     trimMs: params.playheadMs - params.clip.timelineStartMs,
     timelineLengthMs: params.timelineLengthMs,
+    sourceRate: params.sourceRate,
   });
 }
 
@@ -228,6 +260,7 @@ export function splitClipGeometry(params: {
   clip: StudioClipGeometry;
   atTimelineMs: number;
   timelineLengthMs: number;
+  sourceRate?: number;
 }): SplitClipResult {
   assertIntegerMs(params.atTimelineMs, "atTimelineMs");
   const end = clipEndMs(params.clip);
@@ -253,7 +286,8 @@ export function splitClipGeometry(params: {
   const right: StudioClipGeometry = {
     timelineStartMs: params.atTimelineMs,
     durationMs: rightDuration,
-    sourceOffsetMs: params.clip.sourceOffsetMs + leftDuration,
+    sourceOffsetMs:
+      params.clip.sourceOffsetMs + Math.round(leftDuration * (params.sourceRate ?? 1)),
   };
   assertClipPlacement({ ...left, timelineLengthMs: params.timelineLengthMs });
   assertClipPlacement({ ...right, timelineLengthMs: params.timelineLengthMs });

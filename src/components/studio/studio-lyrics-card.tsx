@@ -18,6 +18,7 @@ import {
   type LyricsDoc,
   type LyricsRecMode,
 } from "@/lib/studio/lyrics/lyrics";
+import { clearLyricsDirty, readLyricsCopy, unsavedLyricsCopy, writeLyricsCopy } from "@/lib/studio/lyrics/lyrics-device";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 
 type SaveStatus = "idle" | "saving" | "saved" | "local" | "error" | "conflict" | "tooLong";
@@ -25,41 +26,41 @@ type SaveStatus = "idle" | "saving" | "saved" | "local" | "error" | "conflict" |
 const SAVE_DEBOUNCE_MS = 800;
 const FONT_STEPS = ["text-base", "text-lg", "text-xl", "text-2xl"] as const;
 
-function localKey(projectId: string) {
-  return `brd:lyrics:${projectId}`;
-}
-
-function readLocal(projectId: string): LyricsDoc | null {
-  try {
-    const raw = window.localStorage.getItem(localKey(projectId));
-    return raw ? readLyricsDoc(JSON.parse(raw)) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeLocal(projectId: string, doc: LyricsDoc) {
-  try {
-    window.localStorage.setItem(localKey(projectId), JSON.stringify(doc));
-  } catch {
-    /* storage full / private mode — server copy is the source of truth */
-  }
-}
-
 type LoadedLyrics = { available: boolean; doc: LyricsDoc; version: number; fromDevice: boolean };
 
+/** Last save sent while the card was going away; the next load waits for it. */
+const leavingSaves = new Map<string, Promise<unknown>>();
+
+function sendLeavingSave(projectId: string, doc: LyricsDoc, expectedVersion: number): void {
+  const run = fetch(`/api/studio/projects/${projectId}/lyrics`, {
+    method: "PUT",
+    keepalive: true,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expectedVersion, doc }),
+  })
+    .then((res) => {
+      if (res.ok) clearLyricsDirty(projectId);
+    })
+    .catch(() => undefined)
+    .finally(() => {
+      if (leavingSaves.get(projectId) === run) leavingSaves.delete(projectId);
+    });
+  leavingSaves.set(projectId, run);
+}
+
 async function fetchLyrics(projectId: string): Promise<LoadedLyrics> {
+  await leavingSaves.get(projectId);
   try {
     const res = await fetch(`/api/studio/projects/${projectId}/lyrics`, { cache: "no-store" });
     const json = (await res.json()) as { available?: boolean; lyrics?: { doc?: unknown; version?: number } | null };
     if (!res.ok || json.available === false) throw new Error("unavailable");
     const version = typeof json.lyrics?.version === "number" ? json.lyrics.version : 0;
-    // Nothing on the server yet but a device copy exists (e.g. typed while offline) → keep it and upload.
-    const local = version === 0 ? readLocal(projectId) : null;
-    if (local && local.sections.length) return { available: true, doc: local, version, fromDevice: true };
+    // Text the server never confirmed (typed offline, or the card closed too fast) → keep it and upload.
+    const local = unsavedLyricsCopy(projectId, version);
+    if (local) return { available: true, doc: local, version, fromDevice: true };
     return { available: true, doc: readLyricsDoc(json.lyrics?.doc), version, fromDevice: false };
   } catch {
-    return { available: false, doc: readLocal(projectId) ?? emptyLyricsDoc(), version: 0, fromDevice: true };
+    return { available: false, doc: readLyricsCopy(projectId) ?? emptyLyricsDoc(), version: 0, fromDevice: true };
   }
 }
 
@@ -69,12 +70,32 @@ function useProjectLyrics(projectId: string) {
   const [saveState, setSaveState] = useState<SaveStatus>("idle");
   const [available, setAvailable] = useState(true);
   const [loaded, setLoaded] = useState(false);
+  /** Bumped when another copy replaced the text (the open editor must show it). */
+  const [revision, setRevision] = useState(0);
   const versionRef = useRef(0);
   const dirtyRef = useRef(false);
+  const savingRef = useRef(false);
+  const availableRef = useRef(true);
   const docRef = useRef(doc);
   useEffect(() => {
     docRef.current = doc;
-  }, [doc]);
+    availableRef.current = available;
+  }, [doc, available]);
+
+  // Leaving the card (or the page) inside the save delay must not lose the last words.
+  useEffect(() => {
+    const flush = () => {
+      if (!dirtyRef.current || savingRef.current || !availableRef.current) return;
+      if (lyricsCharCount(docRef.current) > LYRICS_LIMITS.maxTotalChars) return;
+      dirtyRef.current = false;
+      sendLeavingSave(projectId, docRef.current, versionRef.current);
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [projectId]);
 
   const adopt = useCallback((r: LoadedLyrics) => {
     versionRef.current = r.version;
@@ -82,6 +103,7 @@ function useProjectLyrics(projectId: string) {
     setAvailable(r.available);
     setDoc(r.doc);
     setLoaded(true);
+    setRevision((n) => n + 1);
   }, []);
 
   useEffect(() => {
@@ -97,17 +119,20 @@ function useProjectLyrics(projectId: string) {
   useEffect(() => {
     if (!loaded || !dirtyRef.current) return;
     if (lyricsCharCount(doc) > LYRICS_LIMITS.maxTotalChars) return;
-    writeLocal(projectId, doc);
+    writeLyricsCopy(projectId, doc, versionRef.current);
     if (!available) return;
     const timer = window.setTimeout(async () => {
       setSaveState("saving");
+      const sent = docRef.current;
+      savingRef.current = true;
       try {
         const res = await fetch(`/api/studio/projects/${projectId}/lyrics`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ expectedVersion: versionRef.current, doc: docRef.current }),
+          body: JSON.stringify({ expectedVersion: versionRef.current, doc: sent }),
         });
         if (res.status === 409) {
+          clearLyricsDirty(projectId);
           adopt({ ...(await fetchLyrics(projectId)), fromDevice: false });
           setSaveState("conflict");
           return;
@@ -115,10 +140,18 @@ function useProjectLyrics(projectId: string) {
         const json = (await res.json().catch(() => ({}))) as { lyrics?: { version?: number } };
         if (!res.ok || typeof json.lyrics?.version !== "number") throw new Error("save");
         versionRef.current = json.lyrics.version;
-        dirtyRef.current = false;
+        if (docRef.current === sent) {
+          dirtyRef.current = false;
+          writeLyricsCopy(projectId, sent, null);
+        } else {
+          // More text came while saving: it is now based on the new version.
+          writeLyricsCopy(projectId, docRef.current, json.lyrics.version);
+        }
         setSaveState("saved");
       } catch {
         setSaveState("error");
+      } finally {
+        savingRef.current = false;
       }
     }, SAVE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
@@ -131,7 +164,7 @@ function useProjectLyrics(projectId: string) {
 
   const status: SaveStatus =
     lyricsCharCount(doc) > LYRICS_LIMITS.maxTotalChars ? "tooLong" : !available && loaded ? "local" : saveState;
-  return { doc, update, status, loaded };
+  return { doc, update, status, loaded, revision };
 }
 
 /**
@@ -155,11 +188,18 @@ export function StudioLyricsCard({
 }) {
   const t = useTranslations("studio.lyrics");
   const editorId = useId();
-  const { doc, update, status, loaded } = useProjectLyrics(projectId);
+  const { doc, update, status, loaded, revision } = useProjectLyrics(projectId);
   const [open, setOpen] = useState(true);
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
   const [font, setFont] = useState(1);
+  /** Text before "Zastąp tekst" from AI, for one undo. */
+  const [beforeReplace, setBeforeReplace] = useState<string | null>(null);
+  const [seenRevision, setSeenRevision] = useState(revision);
+  if (revision !== seenRevision) {
+    setSeenRevision(revision);
+    if (editing) setText(lyricsToText(doc));
+  }
   const [focus, setFocus] = useState<{ sectionId: string | null; lineIndex: number | null }>({
     sectionId: null,
     lineIndex: null,
@@ -279,7 +319,24 @@ export function StudioLyricsCard({
           <p className={`text-right text-[11px] ${chars > LYRICS_LIMITS.maxTotalChars ? "text-red-600" : "text-[var(--brd-mute)]"}`}>
             {t("licznik", { n: chars, max: LYRICS_LIMITS.maxTotalChars })}
           </p>
-          <StudioAiLyricsPanel projectId={projectId} currentText={text} onInsert={(generated, how) => onText(mergeAiLyrics(text, generated, how))} />
+          <StudioAiLyricsPanel projectId={projectId} currentText={text} onInsert={(generated, how) => {
+            setBeforeReplace(text);
+            onText(mergeAiLyrics(text, generated, how));
+          }} />
+          {beforeReplace !== null ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-9"
+              onClick={() => {
+                onText(beforeReplace);
+                setBeforeReplace(null);
+              }}
+            >
+              {t("cofnijAi")}
+            </Button>
+          ) : null}
         </div>
       ) : null}
 

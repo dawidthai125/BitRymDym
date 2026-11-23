@@ -1,9 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
+import { requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
 import {
   OFFLINE_EXTRAS,
   OFFLINE_VOCALS,
@@ -22,6 +24,7 @@ type Props = {
 
 export function RecorderSessionCard({ tier }: Props) {
   const t = useTranslations("studio.recorderSession");
+  const router = useRouter();
   const [session, setSession] = useState<RecorderSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -76,6 +79,8 @@ export function RecorderSessionCard({ tier }: Props) {
         return;
       }
       setProjectId(json.document.project.id);
+      requestPlanUsageRefresh();
+      router.refresh();
     } catch {
       setError(t("nieUdaloSieUtworzyc"));
     } finally {
@@ -105,13 +110,17 @@ export function RecorderSessionCard({ tier }: Props) {
           {t("opis")}
         </p>
       </div>
-      <label className="inline-flex min-h-11 cursor-pointer items-center border border-[var(--brd-ink-soft)] px-4 font-poster text-base font-bold uppercase tracking-[0.08em] text-[var(--brd-ink)] hover:bg-[var(--brd-paper)]">
+      <label className="inline-flex min-h-11 cursor-pointer items-center border border-[var(--brd-ink-soft)] px-4 font-poster text-base font-bold uppercase tracking-[0.08em] text-[var(--brd-ink)] hover:bg-[var(--brd-paper)] focus-within:ring-2 focus-within:ring-[var(--brd-amber)]">
         {t("wczytaj")}
         <input
           type="file"
           accept="application/json,.json"
           className="sr-only"
-          onChange={(event) => onFile(event.target.files?.[0])}
+          onChange={(event) => {
+            onFile(event.target.files?.[0]);
+            // The same file picked again must fire change again.
+            event.target.value = "";
+          }}
         />
       </label>
       {error ? (
@@ -167,11 +176,13 @@ export function RecorderSessionCard({ tier }: Props) {
             <BrdButton type="button" variant="secondary" onClick={() => void copyList()}>
               {copied ? t("skopiowane") : t("kopiujSciage")}
             </BrdButton>
-            <BrdButton type="button" variant="primary" disabled={pending} onClick={() => void createProject()}>
-              {pending ? t("tworze") : t("utworzProjekt")}
-            </BrdButton>
+            {projectId ? null : (
+              <BrdButton type="button" variant="primary" disabled={pending} onClick={() => void createProject()}>
+                {pending ? t("tworze") : t("utworzProjekt")}
+              </BrdButton>
+            )}
             {projectId ? (
-              <BrdLink href={`/studio/p/${projectId}`} variant="secondary">
+              <BrdLink href={`/studio/p/${projectId}`} variant="primary">
                 {t("otworzSesje")}
               </BrdLink>
             ) : null}

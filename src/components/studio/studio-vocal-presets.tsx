@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,15 @@ import {
   buildVocalSetOps,
   captureVocalSet,
   cloneChainWithNewIds,
+  fitPresetToPlan,
   vocalSetRoleForTrack,
   type FxPresetKind,
   type FxPresetPayload,
   type OwnFxPreset,
   type VocalPresetSet,
 } from "@/lib/studio/presets/vocal-presets";
-import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
+import { useLibText } from "@/i18n/use-lib-text";
+import { studioFxLabelPl, type StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
 import { clampTuneChainForTier, type TuneKey } from "@/lib/studio/tune/tune";
 import type { PremiumTier } from "@/types/premium";
 
@@ -82,17 +84,23 @@ export function useFxPresets() {
   const remove = useCallback(async (id: string) => {
     const res = await fetch(`/api/studio/fx-presets/${id}`, { method: "DELETE" }).catch(() => null);
     if (res?.ok) setState((s) => ({ ...s, presets: s.presets.filter((p) => p.id !== id) }));
+    return Boolean(res?.ok);
   }, []);
 
-  const publish = useCallback(async (id: string) => {
-    const res = await fetch(`/api/studio/fx-presets/${id}`, { method: "POST" }).catch(() => null);
+  const publish = useCallback(async (id: string, listed: boolean) => {
+    const res = await fetch(`/api/studio/fx-presets/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listed }),
+    }).catch(() => null);
+    if (res?.ok) setState((s) => ({ ...s, presets: s.presets.map((p) => (p.id === id ? { ...p, listed } : p)) }));
     return Boolean(res?.ok);
   }, []);
 
   const market = useCallback(async () => {
     const res = await fetch("/api/studio/fx-presets/market").catch(() => null);
     const json = (await res?.json().catch(() => null)) as { presets?: OwnFxPreset[] } | null;
-    return res?.ok && Array.isArray(json?.presets) ? json.presets : [];
+    return res?.ok && Array.isArray(json?.presets) ? json.presets : null;
   }, []);
 
   const copyListed = useCallback(async (id: string) => {
@@ -117,6 +125,41 @@ function PlanLock({ label, testId }: { label: string; testId: string }) {
       <span aria-hidden>🔒</span>
       {label}
     </p>
+  );
+}
+
+/** Two clicks for things that cannot be taken back with Ctrl+Z. */
+function ConfirmButton({ label, confirmLabel, ariaLabel, disabled, onConfirm }: { label: string; confirmLabel: string; ariaLabel?: string; disabled?: boolean; onConfirm: () => Promise<void> }) {
+  const t = useTranslations("studio.vocalPresets");
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (!asking) {
+    return (
+      <Button type="button" size="sm" variant="ghost" className="min-h-9" aria-label={ariaLabel} disabled={disabled} onClick={() => setAsking(true)}>
+        {label}
+      </Button>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1">
+      <Button
+        type="button"
+        size="sm"
+        className="min-h-9"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          await onConfirm();
+          setBusy(false);
+          setAsking(false);
+        }}
+      >
+        {confirmLabel}
+      </Button>
+      <Button type="button" size="sm" variant="ghost" className="min-h-9" disabled={busy} onClick={() => setAsking(false)}>
+        {t("anuluj")}
+      </Button>
+    </span>
   );
 }
 
@@ -184,10 +227,15 @@ export function StudioVocalPresetPicker({
   bpm,
   tuneKey = null,
   disabled,
+  maxEffects,
+  allowSidechain,
   onApply,
 }: {
   chain: StudioFxChainV1;
   bpm: number;
+  /** Plan limits: a tile says before the click what the plan leaves out. */
+  maxEffects?: number;
+  allowSidechain?: boolean;
   /** Beat key for BRD Tune in the Trap preset. */
   tuneKey?: TuneKey | null;
   disabled?: boolean;
@@ -196,15 +244,35 @@ export function StudioVocalPresetPicker({
   const t = useTranslations("studio.vocalPresets");
   const store = useFxPresets();
   const [message, setMessage] = useState<string | null>(null);
-  const [listed, setListed] = useState<{ id: string; name: string }[]>([]);
+  const tl = useLibText();
+  const [market, setMarket] = useState<{ status: "idle" | "loading" | "error" | "ready"; list: { id: string; name: string }[] }>({ status: "idle", list: [] });
+  const skippedText = (types: readonly Parameters<typeof studioFxLabelPl>[0][]) => [...new Set(types)].map((type) => tl(studioFxLabelPl(type))).join(", ");
+  const skippedByPreset = useMemo(
+    () =>
+      Object.fromEntries(
+        VOCAL_PRESET_IDS.map((id) => [id, fitPresetToPlan(buildVocalPresetChain(id, { bpm, tuneKey }), chain, { maxEffects, allowSidechain }).skipped]),
+      ) as Record<(typeof VOCAL_PRESET_IDS)[number], ReturnType<typeof fitPresetToPlan>["skipped"]>,
+    [bpm, tuneKey, chain, maxEffects, allowSidechain],
+  );
   const own = store.presets.filter((p) => p.kind === "chain");
   const canSave = store.access.maxOwn > 0;
   const full = store.presets.length >= store.access.maxOwn;
 
   async function apply(next: StudioFxChainV1, name: string) {
     // Free/Bronze: BRD Tune hard style → natural (server enforces the same gate).
-    const ok = await onApply(clampTuneChainForTier(store.access.tier as PremiumTier, next));
-    if (ok) setMessage(t("ustawiono", { name }));
+    const fit = fitPresetToPlan(clampTuneChainForTier(store.access.tier as PremiumTier, next), chain, { maxEffects, allowSidechain });
+    if (!fit.chain) {
+      setMessage(t("planZaMaly", { max: maxEffects ?? 0 }));
+      return;
+    }
+    const ok = await onApply(fit.chain);
+    setMessage(
+      !ok
+        ? t("bladUstawienia")
+        : fit.skipped.length > 0
+          ? t("ustawionoBez", { name, lista: skippedText(fit.skipped), max: maxEffects ?? 0 })
+          : t("ustawiono", { name }),
+    );
   }
 
   return (
@@ -218,7 +286,7 @@ export function StudioVocalPresetPicker({
           <button
             key={id}
             type="button"
-            disabled={disabled}
+            disabled={disabled || !store.loaded}
             data-testid={`studio-vocal-preset-${id}`}
             aria-label={t("zastosujAria", { name: t(`nazwy.${id}`) })}
             onClick={() => void apply(buildVocalPresetChain(id, { bpm, tuneKey }), t(`nazwy.${id}`))}
@@ -226,6 +294,11 @@ export function StudioVocalPresetPicker({
           >
             <span className="block text-sm font-semibold text-[var(--brd-ink)]">{t(`nazwy.${id}`)}</span>
             <span className="block text-[11px] leading-tight text-[var(--brd-mute)]">{t(`opisy.${id}`)}</span>
+            {skippedByPreset[id].length > 0 ? (
+              <span data-testid={`studio-vocal-preset-${id}-plan`} className="mt-0.5 block text-[11px] leading-tight text-[var(--brd-amber)]">
+                {t("planBez", { lista: skippedText(skippedByPreset[id]) })}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -258,21 +331,23 @@ export function StudioVocalPresetPicker({
                   >
                     {p.name}
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="min-h-9"
-                    onClick={async () => {
-                      const ok = await store.publish(p.id);
-                      setMessage(ok ? t("wystawiono") : t("bladZapisu"));
+                  <ConfirmButton
+                    label={p.listed ? t("wycofaj") : t("wystaw")}
+                    confirmLabel={p.listed ? t("wycofajPytanie") : t("wystawPytanie")}
+                    onConfirm={async () => {
+                      const ok = await store.publish(p.id, !p.listed);
+                      setMessage(ok ? t(p.listed ? "wycofano" : "wystawiono") : t("bladGieldy"));
                     }}
-                  >
-                    {t("wystaw")}
-                  </Button>
-                  <Button type="button" size="sm" variant="ghost" className="min-h-9" aria-label={t("usunAria", { name: p.name })} onClick={() => void store.remove(p.id)}>
-                    {t("usun")}
-                  </Button>
+                  />
+                  <ConfirmButton
+                    label={t("usun")}
+                    confirmLabel={t("usunPytanie")}
+                    ariaLabel={t("usunAria", { name: p.name })}
+                    onConfirm={async () => {
+                      const ok = await store.remove(p.id);
+                      setMessage(ok ? t("usunieto", { name: p.name }) : t("bladUsuwania"));
+                    }}
+                  />
                 </li>
               ))}
             </ul>
@@ -297,14 +372,28 @@ export function StudioVocalPresetPicker({
       <div className="space-y-1.5" data-testid="studio-preset-market">
         <div className="flex items-center justify-between gap-2">
           <h4 className="text-xs font-medium text-[var(--brd-ink)]">{t("gielda")}</h4>
-          <Button type="button" size="sm" variant="outline" className="min-h-9" onClick={async () => setListed(await store.market())}>
-            {t("gielda")}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-9"
+            disabled={market.status === "loading"}
+            onClick={async () => {
+              setMarket((m) => ({ ...m, status: "loading" }));
+              const list = await store.market();
+              setMarket(list ? { status: "ready", list } : { status: "error", list: [] });
+            }}
+          >
+            {market.status === "loading" ? t("gieldaLaduje") : market.status === "idle" ? t("gieldaPokaz") : t("gieldaOdswiez")}
           </Button>
         </div>
         <p className="text-[11px] text-[var(--brd-mute)]">{t("gieldaOpis")}</p>
-        {listed.length === 0 ? <p className="text-xs text-[var(--brd-mute)]">{t("gieldaPusto")}</p> : null}
+        {market.status === "ready" && market.list.length === 0 ? <p className="text-xs text-[var(--brd-mute)]">{t("gieldaPusto")}</p> : null}
+        {market.status === "error" ? <p role="alert" className="text-xs text-[var(--brd-rec)]">{t("gieldaBlad")}</p> : null}
+        {market.list.length > 0 && store.loaded && !canSave ? <p className="text-xs text-[var(--brd-mute)]">{t("kopiujOdSilver")}</p> : null}
+        {market.list.length > 0 && canSave && full ? <p className="text-xs text-[var(--brd-mute)]">{t("limitPelny", { max: store.access.maxOwn })}</p> : null}
         <ul className="flex flex-col gap-1">
-          {listed.map((p) => (
+          {market.list.map((p) => (
             <li key={p.id} className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
               <Button
@@ -312,10 +401,10 @@ export function StudioVocalPresetPicker({
                 size="sm"
                 variant="outline"
                 className="min-h-9"
-                disabled={!canSave}
+                disabled={!canSave || full}
                 onClick={async () => {
                   const copied = await store.copyListed(p.id);
-                  setMessage(copied ? t("skopiowano", { name: copied.name }) : t("bladZapisu"));
+                  setMessage(copied ? t("skopiowano", { name: copied.name }) : t("bladGieldy"));
                 }}
               >
                 {t("kopiuj")}
@@ -341,10 +430,12 @@ export function StudioVocalSetsCard({
   bpm,
   tuneKey = null,
   disabled,
+  maxEffects,
   onApplyOps,
 }: {
   tracks: readonly SetTrack[];
   bpm: number;
+  maxEffects?: number;
   tuneKey?: TuneKey | null;
   disabled?: boolean;
   onApplyOps: (ops: MixWorkingOp[], description: string) => Promise<boolean>;
@@ -358,9 +449,12 @@ export function StudioVocalSetsCard({
 
   async function applySet(set: VocalPresetSet, name: string) {
     const tier = store.access.tier as PremiumTier;
-    const ops = buildVocalSetOps(vocalTracks, set).map((op) =>
-      op.op === "set_track_fx" ? { ...op, effectsChain: clampTuneChainForTier(tier, op.effectsChain) } : op,
-    );
+    const ops = buildVocalSetOps(vocalTracks, set).flatMap<MixWorkingOp>((op) => {
+      if (op.op !== "set_track_fx") return [op];
+      const current = vocalTracks.find((tr) => tr.id === op.trackId)?.effectsChain ?? { schemaVersion: 1 as const, effects: [] };
+      const fit = fitPresetToPlan(clampTuneChainForTier(tier, op.effectsChain), current, { maxEffects });
+      return fit.chain ? [{ ...op, effectsChain: fit.chain }] : [];
+    });
     if (!ops.length) return;
     setBusy(true);
     const ok = await onApplyOps(ops, t("zestawNazwa", { name }));
@@ -408,9 +502,15 @@ export function StudioVocalSetsCard({
                   >
                     {p.name}
                   </Button>
-                  <Button type="button" size="sm" variant="ghost" className="min-h-9 px-2" aria-label={t("usunAria", { name: p.name })} onClick={() => void store.remove(p.id)}>
-                    ×
-                  </Button>
+                  <ConfirmButton
+                    label="×"
+                    confirmLabel={t("usunPytanie")}
+                    ariaLabel={t("usunAria", { name: p.name })}
+                    onConfirm={async () => {
+                      const ok = await store.remove(p.id);
+                      setMessage(ok ? t("usunieto", { name: p.name }) : t("bladUsuwania"));
+                    }}
+                  />
                 </span>
               ) : null,
             )}

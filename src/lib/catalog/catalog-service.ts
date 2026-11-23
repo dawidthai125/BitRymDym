@@ -198,10 +198,10 @@ export async function loadOwnerCatalogEntry(
   userId: string,
   projectId: string,
   masterJobId: string,
-): Promise<{ enabled: boolean; entry: OwnerCatalogEntry | null }> {
-  if (!isUuid(projectId) || !isUuid(masterJobId)) return { enabled: true, entry: null };
+): Promise<{ enabled: boolean; entry: OwnerCatalogEntry | null; older: { id: string; title: string } | null }> {
+  if (!isUuid(projectId) || !isUuid(masterJobId)) return { enabled: true, entry: null, older: null };
   const admin = adminOrNull();
-  if (!admin) return { enabled: false, entry: null };
+  if (!admin) return { enabled: false, entry: null, older: null };
   const loaded = await admin
     .from(TABLE)
     .select("id, owner_id, project_id, master_job_id, title, allow_ratings, allow_comments, in_rankings, published_at, withdrawn_at")
@@ -209,13 +209,28 @@ export async function loadOwnerCatalogEntry(
     .eq("owner_id", userId)
     .eq("project_id", projectId)
     .maybeSingle();
-  if (missingRelation(loaded.error, TABLE)) return { enabled: false, entry: null };
-  if (loaded.error || !loaded.data) return { enabled: true, entry: null };
+  if (missingRelation(loaded.error, TABLE)) return { enabled: false, entry: null, older: null };
+  // A failed read must not look like "not published": saving that would take the track out of the catalogue.
+  if (loaded.error) throw new Error(loaded.error.message ?? "catalog_works read failed");
+  // An earlier master of the same project that is still public.
+  const before = await admin
+    .from(TABLE)
+    .select("id, title")
+    .eq("owner_id", userId)
+    .eq("project_id", projectId)
+    .neq("master_job_id", masterJobId)
+    .is("withdrawn_at", null)
+    .limit(1)
+    .maybeSingle();
+  if (before.error) throw new Error(before.error.message ?? "catalog_works read failed");
+  const older = before.data ? { id: String(before.data.id), title: String(before.data.title) } : null;
+  if (!loaded.data) return { enabled: true, entry: null, older };
   const row = loaded.data as Row;
   const [card] = await cardsOf([row]);
-  if (!card) return { enabled: true, entry: null };
+  if (!card) throw new Error("catalog_works card read failed");
   return {
     enabled: true,
+    older,
     entry: {
       ...card,
       projectId: row.project_id,
@@ -254,6 +269,8 @@ export async function saveOwnerCatalog(input: {
   masterJobId: string;
   title: unknown;
   publish: boolean;
+  /** Publishing a new master: take the project's earlier public version down (its ratings stay with it). */
+  withdrawOlder?: boolean;
   consents: WorkConsents;
 }): Promise<"ok" | "invalid" | "missing" | "off"> {
   if (!isUuid(input.projectId) || !isUuid(input.masterJobId) || typeof input.publish !== "boolean") return "invalid";
@@ -299,6 +316,16 @@ export async function saveOwnerCatalog(input: {
     : await admin.from(TABLE).insert({ ...patch, published_at: new Date().toISOString() });
   if (missingRelation(saved.error, TABLE)) return "off";
   if (saved.error) return "invalid";
+  if (input.withdrawOlder === true) {
+    const gone = await admin
+      .from(TABLE)
+      .update({ withdrawn_at: new Date().toISOString(), in_rankings: false })
+      .eq("owner_id", input.userId)
+      .eq("project_id", input.projectId)
+      .neq("master_job_id", input.masterJobId)
+      .is("withdrawn_at", null);
+    if (gone.error) console.error("[catalog] older version not withdrawn", input.projectId, gone.error.message);
+  }
   // Public 45 s clip: queue the E3 cut (best effort; never fails the publish).
   await queueWorkClip(admin, input.userId, input.masterJobId);
   return "ok";

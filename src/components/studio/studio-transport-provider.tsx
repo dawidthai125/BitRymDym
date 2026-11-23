@@ -36,7 +36,12 @@ import {
   createStudioSourceAdapterRegistry,
   type StudioResolvedSource,
 } from "@/lib/studio/studio-audio-source-adapter";
-import { resolveStudioBeatSessionSource } from "@/lib/studio/studio-beat-session-source";
+import {
+  isStudioSourceFresh,
+  resolveStudioBeatSessionSource,
+  reuseStudioBeatAccess,
+  type StudioBeatAccessCache,
+} from "@/lib/studio/studio-beat-session-source";
 import {
   STUDIO_METER_NEUTRAL,
   type StudioTrackLevelSnapshot,
@@ -50,6 +55,7 @@ import {
 import type { StudioTransportPhase } from "@/lib/studio/studio-transport";
 import { STUDIO_TAKE_SOURCE_CHANGED_EVENT } from "@/lib/studio/cleanup/cleanup-events";
 import { clampPlayheadMs, formatStudioTimeMs } from "@/lib/studio/studio-time";
+import { studioSongEndMs } from "@/lib/studio/studio-timeline-view";
 
 export type StudioAudioLoadState =
   | "idle"
@@ -67,6 +73,12 @@ export type StudioTransportControlsApi = {
   audioState: StudioAudioLoadState;
   error: string | null;
   hasBeat: boolean;
+  /** Anything to hear: beat, recordings or notes. */
+  hasTimelineAudio: boolean;
+  /** Where playback stops (not while recording) and "End" goes. */
+  songEndMs: number;
+  /** Recording: keep rolling past the song end and play from where the playhead is. */
+  setPlayEndHold: (hold: boolean) => void;
   takePreviewActive: boolean;
   /** BRD Tune (Gold): tracks whose manual notes are being baked for live playback. */
   tuneBakePendingTrackIds: readonly string[];
@@ -159,6 +171,10 @@ export type TakeClipTiming = {
 };
 
 const URL_REFRESH_MS = 15_000;
+/** Beat access answer is reused this long; every call counts against the playback limit. */
+const BEAT_ACCESS_TTL_MS = 90_000;
+/** GRAJ this close to the song end starts again from the beginning. */
+const PLAY_FROM_START_MARGIN_MS = 50;
 const NO_TRACKS: readonly string[] = [];
 
 /** Gaps P1 #5 — signed URL of a take's applied vocal cleanup, or null (play the original). */
@@ -175,6 +191,49 @@ async function resolveCleanedTakeSource(id: string): Promise<StudioResolvedSourc
   } catch {
     return null;
   }
+}
+
+/** Playable source of a take: applied vocal cleanup first, else the signed preview. */
+async function requestTakeSource(
+  id: string,
+  onFailure: (message: string) => void,
+): Promise<StudioResolvedSource | null> {
+  // Gaps P1 #5: an applied vocal cleanup replaces the take's source (same length).
+  const cleaned = await resolveCleanedTakeSource(id);
+  if (cleaned) return cleaned;
+  const res = await fetch("/api/takes/preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ takeId: id }),
+  });
+  const json = (await res.json()) as {
+    success?: boolean;
+    url?: string;
+    expiresAt?: string;
+    error?: string;
+  };
+  if (!res.ok || !json.success || !json.url) {
+    // Expired/deleted take still referenced on the timeline — tell the user once.
+    onFailure(takePreviewFailureMessage(json.error));
+    return null;
+  }
+
+  let playableUrl = json.url;
+  let expiresAt = json.expiresAt
+    ? Date.parse(json.expiresAt)
+    : Date.now() + 60_000;
+
+  if (isAudioSessionDedupEnabled()) {
+    const sessionKey = `take:${id}`;
+    const { objectUrl } = await loadSessionAudioFromUrl(sessionKey, json.url, {
+      enabled: true,
+    });
+    if (objectUrl) {
+      playableUrl = objectUrl;
+      expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+    }
+  }
+  return { url: playableUrl, expiresAt };
 }
 
 /**
@@ -210,6 +269,9 @@ export function StudioTransportProvider({
   const playheadMsRef = useRef(0);
   const beatCacheRef = useRef<Map<string, StudioResolvedSource>>(new Map());
   const takeCacheRef = useRef<Map<string, StudioResolvedSource>>(new Map());
+  const beatAccessRef = useRef<StudioBeatAccessCache>(new Map());
+  const takeLoadsRef = useRef(new Map<string, Promise<StudioResolvedSource | null>>());
+  const playEndHoldRef = useRef(false);
 
   const [phase, setPhase] = useState<StudioTransportPhase>("stopped");
   const [playheadMs, setPlayheadMs] = useState(0);
@@ -241,76 +303,59 @@ export function StudioTransportProvider({
   const trackLevelRetainRef = useRef(0);
 
   const hasTimelineAudio =
-    Boolean(beatId) || engineDocument.clips.some((c) => c.sourceKind === "TAKE");
+    Boolean(beatId) ||
+    engineDocument.clips.some((c) => c.sourceKind === "TAKE") ||
+    engineDocument.tracks.some((track) => (track.midi?.notes.length ?? 0) > 0);
+  const songEndMs = studioSongEndMs(
+    timelineLengthMs,
+    engineDocument.clips,
+    engineDocument.tracks,
+  );
+  const songEndRef = useRef(songEndMs);
 
-  async function resolveBeatUrl(id: string): Promise<StudioResolvedSource | null> {
-    // WAVE 1.1: always re-resolve access so active assetId is known.
-    // URL/blob cache is keyed by beat|assetId — never bare beatId.
-    const result = await requestBeatAudioAccessAction({
+  function resolveBeatUrl(id: string): Promise<StudioResolvedSource | null> {
+    return reuseStudioBeatAccess({
+      cache: beatAccessRef.current,
       beatId: id,
-      purpose: PUBLIC_PLAYBACK_PURPOSE,
-    });
-    return resolveStudioBeatSessionSource({
-      beatId: id,
-      access: result,
-      urlCache: beatCacheRef.current,
-      dedupEnabled: isAudioSessionDedupEnabled(),
-      urlRefreshMs: URL_REFRESH_MS,
+      ttlMs: BEAT_ACCESS_TTL_MS,
+      request: async () => {
+        // WAVE 1.1: access is resolved again so the active assetId is known.
+        // URL/blob cache is keyed by beat|assetId — never bare beatId.
+        const result = await requestBeatAudioAccessAction({
+          beatId: id,
+          purpose: PUBLIC_PLAYBACK_PURPOSE,
+        });
+        return resolveStudioBeatSessionSource({
+          beatId: id,
+          access: result,
+          urlCache: beatCacheRef.current,
+          dedupEnabled: isAudioSessionDedupEnabled(),
+          urlRefreshMs: URL_REFRESH_MS,
+        });
+      },
     });
   }
 
   async function resolveTakeUrl(id: string): Promise<StudioResolvedSource | null> {
     const cached = takeCacheRef.current.get(id);
-    if (cached && cached.expiresAt - Date.now() > URL_REFRESH_MS) {
+    if (cached && isStudioSourceFresh(cached)) {
       return cached;
     }
-    // Gaps P1 #5: an applied vocal cleanup replaces the take's source (same length).
-    const cleaned = await resolveCleanedTakeSource(id);
-    if (cleaned) {
-      takeCacheRef.current.set(id, cleaned);
-      return cleaned;
-    }
-    const res = await fetch("/api/takes/preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ takeId: id }),
-    });
-    const json = (await res.json()) as {
-      success?: boolean;
-      url?: string;
-      expiresAt?: string;
-      error?: string;
-    };
-    if (!res.ok || !json.success || !json.url) {
-      // Expired/deleted take still referenced on the timeline — tell the user once.
-      setError(takePreviewFailureMessage(json.error));
-      return null;
-    }
-
-    let playableUrl = json.url;
-    let expiresAt = json.expiresAt
-      ? Date.parse(json.expiresAt)
-      : Date.now() + 60_000;
-
-    if (isAudioSessionDedupEnabled()) {
-      const sessionKey = `take:${id}`;
-      const { objectUrl } = await loadSessionAudioFromUrl(
-        sessionKey,
-        json.url,
-        { enabled: true },
-      );
-      if (objectUrl) {
-        playableUrl = objectUrl;
-        expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+    // Several clips of one take (split, duplicate) share one request.
+    const loading = takeLoadsRef.current.get(id);
+    if (loading) return loading;
+    const load = requestTakeSource(id, (message) => setError(message));
+    takeLoadsRef.current.set(id, load);
+    try {
+      const source = await load;
+      // Dropped meanwhile (cleaned ↔ original switched): do not keep the old file.
+      if (source && takeLoadsRef.current.get(id) === load) {
+        takeCacheRef.current.set(id, source);
       }
+      return source;
+    } finally {
+      if (takeLoadsRef.current.get(id) === load) takeLoadsRef.current.delete(id);
     }
-
-    const source: StudioResolvedSource = {
-      url: playableUrl,
-      expiresAt,
-    };
-    takeCacheRef.current.set(id, source);
-    return source;
   }
 
   // Gaps P1 #5: cleaned ↔ original switched for a take → forget its URL + voices.
@@ -319,6 +364,7 @@ export function StudioTransportProvider({
       const takeId = (e as CustomEvent<{ takeId?: string }>).detail?.takeId;
       if (!takeId) return;
       takeCacheRef.current.delete(takeId);
+      takeLoadsRef.current.delete(takeId);
       engineRef.current?.invalidateTakeSource(takeId);
     };
     window.addEventListener(STUDIO_TAKE_SOURCE_CHANGED_EVENT, onChange);
@@ -345,13 +391,8 @@ export function StudioTransportProvider({
             endMs: loop.endMs,
             timelineLengthMs: length,
           });
-          if (region && clamped >= region.endMs) {
-            // Ignore wrap after user Stop — engine may still emit a final playhead.
-            if (phaseRef.current === "stopped") {
-              playheadMsRef.current = 0;
-              setPlayheadMs(0);
-              return;
-            }
+          // Only playback wraps. Paused or stopped: the playhead may sit outside the loop.
+          if (region && phaseRef.current === "playing" && clamped >= region.endMs) {
             clamped = wrapLoopPlayhead(clamped, region.startMs, region.endMs);
             playheadMsRef.current = clamped;
             setPlayheadMs(clamped);
@@ -411,6 +452,9 @@ export function StudioTransportProvider({
             setAudioState("error");
           }
         },
+        onPreviewEnded() {
+          setTakePreviewActive(false);
+        },
         onTuneBake(pending) {
           setTuneBakePending(pending.length ? [...pending] : NO_TRACKS);
         },
@@ -429,14 +473,15 @@ export function StudioTransportProvider({
             void engine.seek(region.startMs, true);
             return;
           }
+          // The engine already reported the end position (song end or project length).
+          phaseRef.current = "stopped";
           setPhase("stopped");
-          playheadMsRef.current = length;
-          setPlayheadMs(length);
           setAudioState((s) => (s === "error" || s === "no_beat" ? s : "ready"));
         },
       },
     });
     engineRef.current = engine;
+    engine.setPlayEndMs(playEndHoldRef.current ? null : songEndRef.current);
     engine.setDocument(engineDocument);
     const unsubMeter = engine.subscribeMeter(setMeter);
     const unsubTrackMeter = engine.subscribeTrackMeter(setTrackMeter);
@@ -509,6 +554,16 @@ export function StudioTransportProvider({
     engineRef.current?.setDocument(engineDocument);
   }, [engineDocument]);
 
+  useEffect(() => {
+    songEndRef.current = songEndMs;
+    engineRef.current?.setPlayEndMs(playEndHoldRef.current ? null : songEndMs);
+  }, [songEndMs]);
+
+  const setPlayEndHold = useCallback((hold: boolean) => {
+    playEndHoldRef.current = hold;
+    engineRef.current?.setPlayEndMs(hold ? null : songEndRef.current);
+  }, []);
+
   const getPlayheadMs = useCallback(
     () => clampPlayheadMs(playheadMsRef.current, timelineLengthMs),
     [timelineLengthMs],
@@ -525,7 +580,19 @@ export function StudioTransportProvider({
     setTakePreviewActive(false);
     setError(null);
     setAudioState("loading");
-    void engine.play(playheadMsRef.current);
+    lastClickBeatRef.current = -1;
+    let from = playheadMsRef.current;
+    if (!playEndHoldRef.current && from >= songEndRef.current - PLAY_FROM_START_MARGIN_MS) {
+      const loop = loopRef.current;
+      const region = loopRegionOrNull({
+        enabled: loop.enabled,
+        startMs: loop.startMs,
+        endMs: loop.endMs,
+        timelineLengthMs: engineDocumentRef.current.timelineLengthMs,
+      });
+      from = region?.startMs ?? 0;
+    }
+    void engine.play(from);
   }, [hasTimelineAudio, t]);
 
   const pause = useCallback(() => {
@@ -542,6 +609,7 @@ export function StudioTransportProvider({
     engineRef.current?.stop();
     phaseRef.current = "stopped";
     setPhase("stopped");
+    lastClickBeatRef.current = -1;
     playheadMsRef.current = 0;
     setPlayheadMs(0);
     setAudioState((s) =>
@@ -552,6 +620,7 @@ export function StudioTransportProvider({
   const seek = useCallback(
     (ms: number) => {
       const clamped = clampPlayheadMs(ms, timelineLengthMs);
+      lastClickBeatRef.current = -1;
       playheadMsRef.current = clamped;
       setPlayheadMs(clamped);
       const playing = phaseRef.current === "playing";
@@ -692,9 +761,13 @@ export function StudioTransportProvider({
     () => ({
       phase,
       timelineLengthMs,
-      audioState,
+      // A beat or a recording may arrive after the project opened empty.
+      audioState: audioState === "no_beat" && hasTimelineAudio ? "idle" : audioState,
       error,
       hasBeat: Boolean(beatId),
+      hasTimelineAudio,
+      songEndMs,
+      setPlayEndHold,
       takePreviewActive,
       tuneBakePendingTrackIds: tuneBakePending,
       getPlayheadMs,
@@ -727,6 +800,9 @@ export function StudioTransportProvider({
       audioState,
       error,
       beatId,
+      hasTimelineAudio,
+      songEndMs,
+      setPlayEndHold,
       takePreviewActive,
       tuneBakePending,
       getPlayheadMs,

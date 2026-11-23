@@ -356,7 +356,7 @@ describe("STU-10-D — unguardable unmount (xl breakpoint) recovers the editor",
     (phase) => {
       const s = crossToDesktop(driveTo(openRecordOnMobile(), phase));
       expect(s.recordingLocked).toBe(false);
-      expect(s.interruptedNotice).toMatch(/Moje Take'i/);
+      expect(s.interruptedNotice).toMatch(/Moje nagrania/);
       expect(s.interruptedNotice).not.toMatch(/nie zostało zapisane/);
     },
   );
@@ -425,8 +425,10 @@ describe("STU-10-E — wiring contracts", () => {
       /aria-label="Zamknij Inspektor"[\s\S]{0,120}onClick=\{onClose\}/,
     );
     expect(shell).toMatch(/<CloseButton [^>]*onClick=\{onClose\}/);
-    expect(shell).toMatch(/event\.key === "Escape"[\s\S]{0,80}onClose\(\);/);
-    // prop type, destructure, Escape, effect deps, backdrop, X button.
+    expect(shell).toMatch(/event\.key === "Escape"[\s\S]{0,80}closeRef\.current\(\);/);
+    // Escape goes through a ref that always holds the gate.
+    expect(shell).toMatch(/closeRef\.current = onClose;/);
+    // prop type, destructure, ref init, ref update, backdrop, X button.
     expect((shell.match(/onClose/g) ?? []).length).toBe(6);
   });
 

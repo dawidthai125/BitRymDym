@@ -341,6 +341,22 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
     }
   });
 
+  it("says which plan, what is missing and when to retry instead of 'try again'", () => {
+    const plan = mapStudioExportHttpResult({ httpStatus: 403, json: { code: "PLAN", error: "Eksport WAV jest w planie Gold." } });
+    expect(plan.ok === false && plan.code === "PLAN" && plan.message).toMatch(/Gold/);
+    const own = mapStudioExportHttpResult({ httpStatus: 400, json: { code: "INVALID", error: "Dodaj własne nagranie, sample lub nuty. Sam bit nie jest do pobrania." } });
+    expect(own.ok === false && own.message).toMatch(/Dodaj własne nagranie/);
+    const raw = mapStudioExportHttpResult({ httpStatus: 400, json: { code: "INVALID", error: "idempotencyKey is required." } });
+    expect(raw.ok === false && raw.message).not.toMatch(/idempotencyKey/);
+    // The request limiter answers with plain text, so there is no JSON at all.
+    const limited = mapStudioExportHttpResult({ httpStatus: 429, json: {} });
+    expect(limited.ok === false && limited.message).toMatch(/Odczekaj/);
+    const refused = mapStudioExportDownloadHttpResult({ httpStatus: 403, json: { error: "Czas przechowywania utworu minął." } });
+    expect(refused.ok === false && refused.message).toBe("Czas przechowywania utworu minął.");
+    const english = mapStudioExportDownloadHttpResult({ httpStatus: 403, json: { error: "Artifact expired." } });
+    expect(english.ok === false && english.message).toBe("Brak uprawnień do pobrania tego pliku.");
+  });
+
   it("bounds polling attempts", () => {
     expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS).toBeGreaterThan(0);
     // Still bounded, but must outlast the worker timeout (3 min) — 60 s gave up mid-render (2026-11-21).

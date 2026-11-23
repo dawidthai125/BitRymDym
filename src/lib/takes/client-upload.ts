@@ -116,6 +116,8 @@ export class TakeReplaceRequiredError extends Error {
 /** Transport failure with the raw API message kept for non-UI decisions. */
 export class TakeTransportError extends Error {
   readonly rawMessage: string;
+  /** Set when the audio is already on the server and only the finalize step failed. */
+  uploadedTakeId: string | null = null;
 
   constructor(rawMessage: string) {
     super(toUserFacingTakeUploadError(rawMessage));
@@ -138,7 +140,7 @@ async function postTakeFinalize(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ takeId }),
   });
-  const finalizeJson = (await finalizeRes.json()) as TakeUploadTransportResult & {
+  const finalizeJson = ((await finalizeRes.json().catch(() => null)) ?? {}) as TakeUploadTransportResult & {
     success?: boolean;
     error?: string;
   };
@@ -181,7 +183,7 @@ async function runTakeUploadTransport(params: {
       replaceTakeId: params.replaceTakeId ?? null,
     }),
   });
-  const sessionJson = (await sessionRes.json()) as {
+  const sessionJson = ((await sessionRes.json().catch(() => null)) ?? {}) as {
     success?: boolean;
     error?: string;
     code?: string;
@@ -238,7 +240,16 @@ async function runTakeUploadTransport(params: {
     takeId: sessionJson.takeId,
   });
 
-  return postTakeFinalize(params.finalizePath, sessionJson.takeId);
+  try {
+    return await postTakeFinalize(params.finalizePath, sessionJson.takeId);
+  } catch (error) {
+    const failure =
+      error instanceof TakeTransportError
+        ? error
+        : new TakeTransportError("Take finalize failed.");
+    failure.uploadedTakeId = sessionJson.takeId;
+    throw failure;
+  }
 }
 
 export async function uploadTakeRecordingBlob(params: {
@@ -291,6 +302,8 @@ export async function uploadStemBlob(params: {
   projectId: string;
   blob: Blob;
   contentType: string;
+  /** "Sam mastering": a project without a beat. */
+  masterOnly?: boolean;
   onStage?: (stage: TakeUploadStage) => void | Promise<void>;
 }): Promise<TakeUploadTransportResult> {
   return runTakeUploadTransport({
@@ -298,7 +311,7 @@ export async function uploadStemBlob(params: {
     blob: params.blob,
     contentType: params.contentType,
     onStage: params.onStage,
-    sessionPath: `/api/studio/projects/${encodeURIComponent(params.projectId)}/stems/session`,
+    sessionPath: `/api/studio/projects/${encodeURIComponent(params.projectId)}/stems/session${params.masterOnly ? "?masterOnly=1" : ""}`,
     finalizePath: "/api/takes/finalize",
   });
 }

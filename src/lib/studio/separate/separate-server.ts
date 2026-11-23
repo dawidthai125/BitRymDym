@@ -63,7 +63,10 @@ export async function latestSeparateJob(ownerId: string, projectId: string): Pro
     for (const name of STEM_NAMES) {
       const key = row.stems[name];
       if (typeof key !== "string" || !key.startsWith(`separate/${ownerId}/`)) continue;
-      const signed = await admin.storage.from("audio-artifacts").createSignedUrl(key, SIGNED_SECONDS);
+      const signed = await admin.storage.from("audio-artifacts").createSignedUrl(key, SIGNED_SECONDS, {
+        // The browser saves the file instead of opening it in the tab.
+        download: `${name}${/\.[a-z0-9]{2,4}$/i.exec(key)?.[0] ?? ""}`,
+      });
       if (signed.data?.signedUrl) stems[name] = signed.data.signedUrl;
     }
   }

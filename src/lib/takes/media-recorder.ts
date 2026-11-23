@@ -97,6 +97,8 @@ export class TakeMediaRecorder {
   private stopRejecter: ((error: TakeRecorderError) => void) | null = null;
   private cancelled = false;
   private cancelResolvers: Array<() => void> = [];
+  /** Bumped by cancel(): a getUserMedia that resolves later must not leave the mic on. */
+  private generation = 0;
 
   constructor(private readonly deps: TakeRecorderDeps = {}) {}
 
@@ -138,6 +140,83 @@ export class TakeMediaRecorder {
     }
   }
 
+  /**
+   * Open the microphone without recording yet (permission and device wake-up happen before
+   * the count-in). start() then records this stream; cancel() stops it.
+   */
+  async acquire(options?: { audioDeviceId?: string; rawAudio?: boolean }): Promise<void> {
+    const { getUserMedia } = resolveDeps(this.deps);
+    if (!getUserMedia) {
+      throw new TakeRecorderError("UNSUPPORTED", "MediaRecorder unavailable.");
+    }
+    if (this.hasLiveStream()) return;
+    await this.openStream(getUserMedia, options);
+  }
+
+  private hasLiveStream(): boolean {
+    return Boolean(
+      this.stream?.getTracks().some((track) => track.readyState !== "ended"),
+    );
+  }
+
+  private async openStream(
+    getUserMedia: GetUserMedia,
+    options?: { audioDeviceId?: string; rawAudio?: boolean },
+  ): Promise<void> {
+    const generation = this.generation;
+    let stream: MediaStream;
+    try {
+      // P5.8: prefer ideal (not exact) so stale deviceId can soft-fail browser-side.
+      const raw: MediaTrackConstraints = options?.rawAudio
+        ? {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          }
+        : {};
+      const audio: MediaTrackConstraints | boolean = options?.audioDeviceId
+        ? { ...raw, deviceId: { ideal: options.audioDeviceId } }
+        : options?.rawAudio
+          ? raw
+          : true;
+      stream = await getUserMedia({
+        audio,
+        video: false,
+      });
+    } catch (error) {
+      const name =
+        error && typeof error === "object" && "name" in error
+          ? String((error as { name: string }).name)
+          : "";
+      if (
+        name === "NotAllowedError" ||
+        name === "PermissionDeniedError" ||
+        name === "SecurityError"
+      ) {
+        throw new TakeRecorderError(
+          "PERMISSION_DENIED",
+          "Microphone permission denied.",
+        );
+      }
+      throw new TakeRecorderError(
+        "RECORDING_ERROR",
+        error instanceof Error ? error.message : "getUserMedia failed.",
+      );
+    }
+    if (generation !== this.generation) {
+      // Cancelled while the browser was still opening the microphone.
+      for (const track of stream.getTracks()) {
+        try {
+          track.stop();
+        } catch {
+          // ignore
+        }
+      }
+      throw new TakeRecorderError("CANCELLED", "Recording was cancelled.");
+    }
+    this.stream = stream;
+  }
+
   async start(options?: {
     audioDeviceId?: string;
     /** Called for every non-empty chunk, in order, including the final one after stop/cancel. */
@@ -171,43 +250,12 @@ export class TakeMediaRecorder {
       );
     }
 
-    try {
-      // P5.8: prefer ideal (not exact) so stale deviceId can soft-fail browser-side.
-      const raw: MediaTrackConstraints = options?.rawAudio
-        ? {
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false,
-          }
-        : {};
-      const audio: MediaTrackConstraints | boolean = options?.audioDeviceId
-        ? { ...raw, deviceId: { ideal: options.audioDeviceId } }
-        : options?.rawAudio
-          ? raw
-          : true;
-      this.stream = await getUserMedia({
-        audio,
-        video: false,
-      });
-    } catch (error) {
-      const name =
-        error && typeof error === "object" && "name" in error
-          ? String((error as { name: string }).name)
-          : "";
-      if (
-        name === "NotAllowedError" ||
-        name === "PermissionDeniedError" ||
-        name === "SecurityError"
-      ) {
-        throw new TakeRecorderError(
-          "PERMISSION_DENIED",
-          "Microphone permission denied.",
-        );
-      }
-      throw new TakeRecorderError(
-        "RECORDING_ERROR",
-        error instanceof Error ? error.message : "getUserMedia failed.",
-      );
+    if (!this.hasLiveStream()) {
+      await this.openStream(getUserMedia, options);
+    }
+    const stream = this.stream;
+    if (!stream) {
+      throw new TakeRecorderError("CANCELLED", "Recording was cancelled.");
     }
 
     this.chunks = [];
@@ -217,7 +265,7 @@ export class TakeMediaRecorder {
     this.startedPerfMs = null;
 
     try {
-      this.recorder = new MediaRecorderCtor(this.stream, {
+      this.recorder = new MediaRecorderCtor(stream, {
         mimeType: support.mimeType,
       });
     } catch (error) {
@@ -337,6 +385,7 @@ export class TakeMediaRecorder {
    * stopped, i.e. after the final `onChunk` delivery.
    */
   cancel(): Promise<void> {
+    this.generation += 1;
     this.cancelled = true;
     const recorder = this.recorder;
     if (recorder && (recorder.state !== "inactive" || this.stopRejecter)) {

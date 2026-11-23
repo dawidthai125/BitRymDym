@@ -76,7 +76,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
           <div className="flex items-center justify-between gap-2">
             <Link
               href="/studio"
-              className="min-h-11 text-sm text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+              className="-my-1 inline-flex min-h-11 items-center text-sm text-[var(--brd-mute)] sm:min-h-8 underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               {t("wszystkieProjekty")}
             </Link>

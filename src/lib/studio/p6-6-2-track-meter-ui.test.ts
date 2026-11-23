@@ -154,8 +154,8 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(editor).toMatch(/data-testid="studio-mobile-mini-transport"/);
     expect(editor).toMatch(/aria-label=\"Transport Studio\"/);
     // Visual Parity V2 — Play label may include noBeat “wymaga bitu” suffix.
-    expect(editor).toMatch(/aria-label=\{noBeat \? \"Odtwórz — wymaga bitu\" : \"Odtwórz\"\}/);
-    expect(editor).toMatch(/aria-label=\"Stop\"/);
+    expect(editor).toMatch(/aria-label=\{noAudio \? \"Odtwórz — wymaga bitu\" : \"Odtwórz\"\}/);
+    expect(editor).toMatch(/aria-label=\{recording \? [^:]+ : \"Stop\"\}/);
     expect(editor).toMatch(/min-h-11/);
   });
 

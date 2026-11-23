@@ -119,7 +119,7 @@ export function StudioAutomationLane({
   const fmt = (v: number) => (param === "gainDb" ? `${v > 0 ? "+" : ""}${v.toFixed(1)} dB` : v === 0 ? t("srodek") : `${v < 0 ? "L" : "R"} ${Math.abs(Math.round(v * 100))}`);
 
   return (
-    <div className="absolute inset-0 z-[3]" data-testid="studio-automation-lane" data-track-id={trackId} data-param={param}>
+    <div className="absolute inset-0 z-[3]" data-testid="studio-automation-lane" data-track-id={trackId} data-param={param} onClick={(e) => e.stopPropagation()}>
       <svg
         ref={svgRef}
         width={widthPx}
@@ -183,6 +183,12 @@ export function StudioAutomationLane({
               const next = draftRef.current;
               if (next) commit(next);
             }}
+            onPointerCancel={() => {
+              // Touch scroll took over: drop the unfinished drag.
+              dragIndex.current = null;
+              draftRef.current = null;
+              setDraft(null);
+            }}
             onDoubleClick={(e) => {
               e.stopPropagation();
               if (disabled) return;
@@ -214,7 +220,7 @@ export function StudioAutomationLane({
         <Button type="button" size="sm" variant="ghost" className="h-7 min-h-7 px-2" disabled={disabled || points.length === 0} onClick={() => commit([])}>
           {t("wyczysc")}
         </Button>
-        <Button type="button" size="sm" variant="ghost" className="h-7 min-h-7 px-2" onClick={onClose}>
+        <Button type="button" size="sm" variant="ghost" className="h-8 min-h-8 px-2" onClick={onClose}>
           {t("gotowe")}
         </Button>
         <span className="px-1 text-[var(--brd-mute)]">{points.length ? t("licznik", { n: points.length }) : t("podpowiedz")}</span>

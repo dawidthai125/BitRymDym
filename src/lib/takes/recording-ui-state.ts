@@ -260,7 +260,7 @@ export function recordingInterruptedNoticePl(
     return "Nagrywanie przerwane — panel nagrywania został zamknięty. Nagranie nie zostało zapisane.";
   }
   if (phase === "UPLOADING" || phase === "PROCESSING") {
-    return "Panel nagrywania został zamknięty podczas zapisu. Jeśli zapis się powiedzie, nagranie znajdziesz w „Moje Take'i”.";
+    return "Panel nagrywania został zamknięty podczas zapisu. Jeśli zapis się powiedzie, nagranie znajdziesz na liście „Moje nagrania”.";
   }
   return null;
 }
@@ -301,6 +301,48 @@ export function transportRecordAction(
   if (phase === "READY_TAKE") return "none";
   if (canStartNewRecording(phase)) return "prepare-then-start";
   return "none";
+}
+
+/**
+ * Why the record panel must stay mounted although its view was left (tab, step, width).
+ * arming = mic prompt or count-in, capture = recording, saving = upload in flight,
+ * decision = a finished take waits for Zachowaj / Odrzuć, retry = the take was not uploaded yet.
+ */
+export type RecordHold = "arming" | "capture" | "saving" | "decision" | "retry" | null;
+
+export function recordHoldFor(input: {
+  phase: RecordingUiPhase;
+  /** Mic prompt / count-in of a take that is about to start. */
+  arming: boolean;
+  /** A finished recording is kept in memory because the upload failed. */
+  unsentTake: boolean;
+}): RecordHold {
+  if (input.phase === "RECORDING") return "capture";
+  if (input.arming || input.phase === "REQUESTING_MIC") return "arming";
+  if (isRecordingBusy(input.phase)) return "saving";
+  if (input.phase === "READY_TAKE") return "decision";
+  if (input.unsentTake) return "retry";
+  return null;
+}
+
+/** A take that is only being prepared is called off when the user leaves the record view. */
+export function shouldCancelArmingOnLeave(input: {
+  phase: RecordingUiPhase;
+  arming: boolean;
+  visible: boolean;
+}): boolean {
+  if (input.visible) return false;
+  return input.phase === "REQUESTING_MIC" || (input.phase === "READY" && input.arming);
+}
+
+/** Seconds left before the plan limit, shown only near the end of a take. */
+export function recordingSecondsLeft(input: {
+  elapsedMs: number;
+  maxSeconds: number;
+  warnSeconds?: number;
+}): number | null {
+  const left = Math.ceil(input.maxSeconds - input.elapsedMs / 1000);
+  return left <= (input.warnSeconds ?? 10) ? Math.max(0, left) : null;
 }
 
 export function displayMaxRecordingSeconds(beatDurationSeconds: number): number {

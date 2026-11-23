@@ -34,13 +34,13 @@ describe("Studio UX audit 2026-11-21", () => {
   });
 
   it("locked Mastering step shows why, visibly", () => {
-    expect(editor).toMatch(/data-testid=\{!active && s === "master" \? "studio-tab-master-locked" : undefined\}/);
+    expect(editor).toMatch(/data-testid=\{!active && s === "master" \? "studio-tab-master-locked" : !active \? "studio-tab-mix-locked" : undefined\}/);
     expect(editor).toMatch(/tMix\("krokMasteringZamek"\)/);
   });
 
   it("beat picker shows the beat title; lane chip is readable", () => {
     expect(editor).toMatch(/beatTitle \|\| doc\.tracks\.find/);
-    expect(css).toMatch(/\.studio-desk \[data-testid="studio-timeline"\] \.studio-lane-title\.sticky \{\s*background: #f2a93b !important;/);
+    expect(css).toMatch(/\.studio-desk \[data-testid="studio-timeline"\] \.studio-lane-title\.sticky:not\(\.studio-lane-empty\) \{\s*background: #f2a93b !important;/);
   });
 
   it("new projects get the creation time in the title; dates are not read twice", () => {

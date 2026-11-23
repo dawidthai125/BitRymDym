@@ -73,10 +73,24 @@ export function useMicAnalyser(
     let windowMax = 0;
     const intervalMs = 1000 / hz;
 
-    async function start() {
+    function unwake() {
+      window.removeEventListener("pointerdown", wake);
+      window.removeEventListener("keydown", wake);
+    }
+    function wake() {
+      unwake();
+      if (ctx?.state === "suspended") void ctx.resume().catch(() => undefined);
+    }
+
+    function start() {
       try {
         ctx = new AudioContext({ latencyHint: "interactive" });
-        if (ctx.state === "suspended") await ctx.resume();
+        // Without a user gesture resume() never settles: do not wait for it, try again on the next tap.
+        if (ctx.state === "suspended") {
+          void ctx.resume().catch(() => undefined);
+          window.addEventListener("pointerdown", wake);
+          window.addEventListener("keydown", wake);
+        }
         if (cancelled || !stream) return;
 
         source = ctx.createMediaStreamSource(stream);
@@ -131,10 +145,11 @@ export function useMicAnalyser(
       }
     }
 
-    void start();
+    start();
 
     return () => {
       cancelled = true;
+      unwake();
       if (raf) cancelAnimationFrame(raf);
       try {
         source?.disconnect();

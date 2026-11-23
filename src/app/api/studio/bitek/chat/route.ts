@@ -1,3 +1,4 @@
+import { parseTrackIds, refsToTrackIds } from "@/lib/studio/bitek/chat/apply-plan";
 import { createHash } from "node:crypto";
 
 import { NextResponse } from "next/server";
@@ -106,6 +107,8 @@ export async function POST(request: Request) {
             meta: {
               provider: result.provider,
               proposals: result.proposals,
+              // Never sent to the model: which tracks the refs meant (a later reorder must not move the change).
+              trackIds: refsToTrackIds(parseTrackIds((body as { trackIds?: unknown }).trackIds), result.proposals, result.jobs ?? []),
               ...(result.jobs?.length ? { jobs: result.jobs } : {}),
               ...(result.backToMix ? { backToMix: true } : {}),
               ...(result.relative ? { relative: result.relative } : {}),

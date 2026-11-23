@@ -424,10 +424,10 @@ describe("Phase 3 wiring + architecture", () => {
 
   it("playhead remains transport SSOT — no waveformPlayheadMs", () => {
     expect(waveform).not.toMatch(/waveformPlayheadMs/);
-    // Phase 7.1.5 — playhead via StudioTimelinePlayheadBound + useStudioTransportPlayhead.
-    expect(editor).toMatch(/StudioTimelinePlayheadBound/);
+    // Phase 7.1.5 — playhead via the TimelinePlayhead leaf + useStudioTransportPlayhead.
+    expect(editor).toMatch(/<TimelinePlayhead /);
     expect(editor).toMatch(/useStudioTransportPlayhead/);
-    expect(editor).toMatch(/playheadMs=\{playheadMs\}/);
+    expect(editor).toMatch(/data-playhead-ms=\{playheadMs\}/);
   });
 
   it("Phase 3.1 — hover guide is DOM-local (no setHover on mousemove)", () => {

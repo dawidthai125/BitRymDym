@@ -12,6 +12,7 @@ type Project = { id: string; title: string };
 type Step =
   | { name: "idle" }
   | { name: "projects"; projects: Project[]; selected: string }
+  | { name: "done"; projectId: string; trackName: string; at: string }
   | { name: "track"; projectId: string; tracks: { id: string; name: string }[]; selected: string };
 
 const field = "min-h-11 max-w-full rounded-[var(--brd-r-cta)] border-2 border-[var(--brd-line)] bg-[var(--brd-bg)] px-3 text-[var(--brd-ink)]";
@@ -51,7 +52,10 @@ export function UseSampleButton({ sampleId, signedIn }: { sampleId: string; sign
   const add = (projectId: string, trackId?: string) =>
     run(async () => {
       const r = await addSampleToProject({ projectId, sampleId, trackId });
-      if (r.ok) return router.push(`/studio/p/${projectId}`);
+      if (r.ok) {
+        const sec = Math.floor(r.startMs / 1000);
+        return setStep({ name: "done", projectId, trackName: r.trackName, at: `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}` });
+      }
       if (r.kind === "auth") return router.push(signIn);
       if (r.kind === "capacity") return setStep({ name: "track", projectId, tracks: r.tracks, selected: r.tracks[0]!.id });
       setError(r.message || t("uzyjBlad"));
@@ -79,6 +83,12 @@ export function UseSampleButton({ sampleId, signedIn }: { sampleId: string; sign
             </select>
           </label>
           <BrdButton onClick={() => void add(step.selected)} disabled={busy}>{busy ? t("uzyjCzekaj") : t("uzyjWstaw")}</BrdButton>
+        </div>
+      ) : null}
+      {step.name === "done" ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm" role="status">{t("uzyjWstawiono", { track: step.trackName, at: step.at })}</p>
+          <BrdButton onClick={() => router.push(`/studio/p/${step.projectId}`)}>{t("uzyjOtworz")}</BrdButton>
         </div>
       ) : null}
       {step.name === "track" ? (

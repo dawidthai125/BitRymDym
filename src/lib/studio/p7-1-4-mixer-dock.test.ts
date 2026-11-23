@@ -73,7 +73,7 @@ describe("Phase 7.1.4 desktop dock + collapse", () => {
     expect(shell).toMatch(/data-testid="studio-mixer-collapse"/);
     expect(shell).toMatch(/aria-expanded=\{expanded\}/);
     expect(shell).toMatch(/aria-controls=\{panelId\}/);
-    expect(shell).toMatch(/max-h-\[17\.5rem\]/);
+    expect(shell).toMatch(/max-h-\[30rem\]/);
     expect(editor).toMatch(/mixerPanelId=\{mixerPanelId\}/);
     expect(readFileSync(join(process.cwd(), "src/components/studio/studio-edit-toolbar.tsx"), "utf8")).toMatch(/aria-controls=\{props\.mixerPanelId\}/);
   });
@@ -103,9 +103,11 @@ describe("Phase 7.1.4 channels + Master sticky-first", () => {
     // Visual Shell OD-VS-05=A — mirror chips, not a second state source.
     expect(channels).toMatch(/StudioToggleChip/);
     expect(channels).toMatch(/data-testid="studio-mix-track-msr"/);
-    expect(channels).toMatch(/patchTrack\(track\.id, \{ muted:/);
-    expect(channels).toMatch(/patchTrack\(track\.id, \{ solo:/);
-    expect(channels).toMatch(/recordArmed:/);
+    expect(channels).toMatch(/toggleTrackFlag\(track\.id, "muted"\)/);
+    expect(channels).toMatch(/toggleTrackFlag\(track\.id, "solo"\)/);
+    expect(channels).toMatch(/toggleTrackFlag\(track\.id, "recordArmed"\)/);
+    // One path to the server: the toggle ends in patchTrack.
+    expect(editor).toMatch(/patchTrack\(trackId, \{ \[flag\]: next \}\)/);
     expect(channels).not.toMatch(/useState\([^\)]*muted/);
     expect(channels).not.toMatch(/mixerMuteStore|msrStore/);
   });

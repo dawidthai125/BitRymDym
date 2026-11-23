@@ -58,6 +58,13 @@ export function handleStudioDialogKeydown(options: {
   const lastItem = items[items.length - 1]!;
   const active = activeElement;
 
+  // Focus got out of the dialog (a click on plain text, a disabled button): bring it back.
+  if (active && typeof panel.contains === "function" && !panel.contains(active)) {
+    event.preventDefault();
+    (event.shiftKey ? lastItem : firstItem).focus();
+    return;
+  }
+
   if (event.shiftKey) {
     if (active === firstItem || active === panel) {
       event.preventDefault();
@@ -67,4 +74,45 @@ export function handleStudioDialogKeydown(options: {
     event.preventDefault();
     firstItem.focus();
   }
+}
+
+type ScrollLockBody = { style: { overflow: string; paddingRight: string } };
+type ScrollLockView = { innerWidth: number; clientWidth: number };
+
+let scrollLocks = 0;
+let scrollRestore: (() => void) | null = null;
+
+/**
+ * Locks page scroll while a Studio dialog is open. Ref-counted: stacked dialogs (effects over the
+ * mixer) keep the lock until the last one closes. The removed scrollbar is replaced with padding,
+ * so the page does not jump sideways. Returns the unlock function (safe to call twice).
+ */
+export function lockStudioPageScroll(
+  body: ScrollLockBody = document.body,
+  view: ScrollLockView = {
+    innerWidth: window.innerWidth,
+    clientWidth: document.documentElement.clientWidth,
+  },
+): () => void {
+  if (scrollLocks === 0) {
+    const overflow = body.style.overflow;
+    const paddingRight = body.style.paddingRight;
+    const bar = Math.max(0, view.innerWidth - view.clientWidth);
+    body.style.overflow = "hidden";
+    if (bar > 0) body.style.paddingRight = `${bar}px`;
+    scrollRestore = () => {
+      body.style.overflow = overflow;
+      body.style.paddingRight = paddingRight;
+    };
+  }
+  scrollLocks += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    scrollLocks -= 1;
+    if (scrollLocks > 0) return;
+    scrollRestore?.();
+    scrollRestore = null;
+  };
 }

@@ -32,7 +32,10 @@ import {
 
 type StudioScratchPanelProps = {
   sourceDurationMs: number;
-  playheadInSourceMs: number;
+  /** Playhead inside the scratched clip, read at the moment of the click. */
+  getPlayheadInSourceMs: () => number;
+  /** No clip chosen: the jog would change the speed of everything, so it is off. */
+  disabled?: boolean;
   onLiveRate: (rate: number, reverse: boolean, jogging: boolean) => void;
   onCueJump: (cueMs: number) => void;
   onApprove?: (approved: StudioScratchApprovedState) => void;
@@ -42,7 +45,8 @@ const JOG_KEYBOARD_STEP = 0.05;
 
 export function StudioScratchPanel({
   sourceDurationMs,
-  playheadInSourceMs,
+  getPlayheadInSourceMs,
+  disabled = false,
   onLiveRate,
   onCueJump,
   onApprove,
@@ -87,6 +91,7 @@ export function StudioScratchPanel({
   }
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>): void {
+    if (disabled) return;
     // Stop vertical page scroll / Inspector swipe from stealing the jog.
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -115,6 +120,7 @@ export function StudioScratchPanel({
   }
 
   function onJogKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    if (disabled) return;
     if (event.key === "ArrowRight" || event.key === "ArrowUp") {
       event.preventDefault();
       applyLive({
@@ -175,7 +181,8 @@ export function StudioScratchPanel({
       <div
         id={jogId}
         role="slider"
-        tabIndex={0}
+        tabIndex={disabled ? -1 : 0}
+        aria-disabled={disabled}
         aria-label={t("jogScratch")}
         aria-valuemin={25}
         aria-valuemax={400}
@@ -204,8 +211,9 @@ export function StudioScratchPanel({
           type="button"
           size="sm"
           className="min-h-11 w-full"
+          disabled={disabled}
           onClick={() => {
-            const next = setScratchCue(live, playheadInSourceMs, sourceDurationMs);
+            const next = setScratchCue(live, getPlayheadInSourceMs(), sourceDurationMs);
             applyLive(next);
           }}
         >
@@ -215,6 +223,7 @@ export function StudioScratchPanel({
           type="button"
           size="sm"
           className="min-h-11 w-full"
+          disabled={disabled}
           onClick={() => onCueJump(live.cueMs)}
         >
           {t("wrocDoCue")}{live.cueMs} {t("ms")}
@@ -223,6 +232,7 @@ export function StudioScratchPanel({
           type="button"
           size="sm"
           className="min-h-11 w-full"
+          disabled={disabled}
           aria-pressed={live.reverse}
           onClick={() => applyLive(toggleScratchReverse(live))}
         >
@@ -232,6 +242,7 @@ export function StudioScratchPanel({
           type="button"
           size="sm"
           className="min-h-11 w-full"
+          disabled={disabled}
           onClick={() => {
             const nextApproved = approveScratchLive(live);
             setApproved(nextApproved);
@@ -251,6 +262,7 @@ export function StudioScratchPanel({
           max={400}
           step={1}
           value={Math.round(live.rate * 100)}
+          disabled={disabled}
           aria-label={t("tempoScratch")}
           className="mt-2 h-11 w-full accent-[var(--brd-green)]"
           onChange={(event) => {

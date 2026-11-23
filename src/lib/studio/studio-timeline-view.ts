@@ -400,3 +400,47 @@ export function studioTimelineFitLengthMs(
   const padded = Math.round(end + Math.max(8_000, end * 0.08));
   return Math.min(timelineLengthMs, Math.max(STUDIO_TIMELINE_FIT_MIN_MS, padded));
 }
+
+/** Shortest song length shown by the clock and the position slider. */
+export const STUDIO_SONG_MIN_MS = 30_000;
+
+/**
+ * Where the song ends: the end of the last clip or note. The project canvas (6:00) only leaves room
+ * for recording; the clock, End, the loop and the position slider use this length instead.
+ */
+export function studioSongEndMs(
+  timelineLengthMs: number,
+  clips: ReadonlyArray<{ timelineStartMs: number; durationMs: number }>,
+  tracks: ReadonlyArray<{
+    midi?: { notes: ReadonlyArray<{ t: number; dur: number }> } | null;
+  }> = [],
+): number {
+  let end = 0;
+  for (const c of clips) {
+    const e = c.timelineStartMs + c.durationMs;
+    if (Number.isFinite(e) && e > end) end = e;
+  }
+  for (const track of tracks) {
+    for (const note of track.midi?.notes ?? []) {
+      const e = note.t + note.dur;
+      if (Number.isFinite(e) && e > end) end = e;
+    }
+  }
+  return Math.min(timelineLengthMs, Math.max(STUDIO_SONG_MIN_MS, Math.ceil(end)));
+}
+
+/**
+ * Next scrollLeft that keeps the playhead on screen during playback (pages forward), or null when
+ * it is already visible.
+ */
+export function followPlayheadScrollLeft(params: {
+  playheadPx: number;
+  scrollLeft: number;
+  viewportPx: number;
+}): number | null {
+  const { playheadPx, scrollLeft, viewportPx } = params;
+  if (viewportPx < 1) return null;
+  const edge = Math.min(24, viewportPx * 0.1);
+  if (playheadPx >= scrollLeft && playheadPx <= scrollLeft + viewportPx - edge) return null;
+  return Math.max(0, Math.round(playheadPx - viewportPx * 0.1));
+}

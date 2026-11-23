@@ -17,7 +17,8 @@ const SCOPES: PlacementScope[] = ["once", "section", "song"];
 /**
  * POST — Bitek places a sample in the song.
  * { sampleId, trackId, playheadMs, scope, apply?: boolean, expectedDocumentVersion? }
- * apply=false (default) → { plan } only. apply=true → { clips, documentVersion, plan } (CAS).
+ * apply=false (default) → { plan } only. apply=true → { clips, documentVersion, plan } (CAS);
+ * 207 with partial: true when only some clips were saved.
  */
 export async function POST(request: Request, context: RouteContext) {
   try {
@@ -45,6 +46,12 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "expectedDocumentVersion jest wymagane." }, { status: 400 });
     }
     const result = await applyBitekSamplePlacement(auth, { ...req, expectedDocumentVersion: body.expectedDocumentVersion });
+    if (result.partial) {
+      return NextResponse.json(
+        { ...result, error: `Wstawiłem ${result.clips.length} z ${result.plan.starts.length} miejsc, dalej się nie udało. Sprawdź klipy na ścieżce.` },
+        { status: 207 },
+      );
+    }
     return NextResponse.json(result);
   } catch (error) {
     return studioApiErrorResponse(error);

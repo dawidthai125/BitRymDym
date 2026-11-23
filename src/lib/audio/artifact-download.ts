@@ -30,6 +30,10 @@ import {
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
+  canDownloadPremiumQuality,
+  unlockCreditsForTier,
+} from "@/config/premium-export-policy";
+import {
   evaluatePremiumDownloadGate,
   premiumQualityFromRenderTier,
 } from "@/lib/premium/premium-download-authz";
@@ -37,6 +41,10 @@ import {
   denyMessageForPremiumDownloadReason,
   loadPremiumWorkDownloadContext,
 } from "@/lib/premium/premium-download-context";
+import {
+  ensureStudioProjectUnlockedFor,
+  PremiumUnlockError,
+} from "@/lib/premium/premium-unlock-service";
 import {
   assertOwnedThenMixRouteDomain,
   classifyAudioArtifactDomain,
@@ -53,6 +61,42 @@ export type ArtifactDownloadResult = {
   durationMs: number;
   qualityTier: string;
 };
+
+async function unlockOwnStudioExport(
+  context: AuthContext,
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  projectId: string,
+): Promise<void> {
+  const { data: project, error } = await admin
+    .from("studio_projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("owner_id", context.userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!project) throw new AuthError("FORBIDDEN", "Brak dostępu do tego projektu.");
+  try {
+    await ensureStudioProjectUnlockedFor(context, projectId);
+  } catch (unlockError) {
+    if (!(unlockError instanceof PremiumUnlockError)) throw unlockError;
+    if (unlockError.code === "UNAVAILABLE") {
+      throw new RenderJobDomainError("Pobieranie eksportu jest chwilowo niedostępne.", "DISABLED");
+    }
+    if (unlockError.code === "NO_CREDITS") {
+      const product = await resolveProductEntitlementForAuthContext(context);
+      throw new AuthError(
+        "FORBIDDEN",
+        `Wykorzystałeś odblokowania utworów na 7 dni (${unlockCreditsForTier(product.premiumTier)}). Ten projekt pobierzesz, gdy odnowi się pula.`,
+      );
+    }
+    throw new AuthError(
+      "FORBIDDEN",
+      unlockError.code === "EXPIRED_OR_NOT_READY"
+        ? denyMessageForPremiumDownloadReason("RETENTION_EXPIRED")
+        : unlockError.message,
+    );
+  }
+}
 
 export async function createOwnArtifactDownloadSignedUrlFor(
   context: AuthContext,
@@ -126,12 +170,42 @@ export async function createOwnArtifactDownloadSignedUrlFor(
   }
   assertAudioCapability(entitlement, capabilityForRenderTier(qualityTier));
 
+  // FINDING-03 — READY alone is insufficient; owning job must be SUCCEEDED.
+  const { data: job, error: jobError } = await admin
+    .from("render_jobs")
+    .select("id, owner_id, status, kind")
+    .eq("id", artifact.render_job_id as string)
+    .maybeSingle();
+  if (jobError) throw new Error(jobError.message);
+  if (!job) {
+    throw new AuthError("FORBIDDEN", "Render job missing for artifact.");
+  }
+  if ((job.owner_id as string) !== context.userId) {
+    throw new AuthError("FORBIDDEN", "Job owner mismatch.");
+  }
+  if ((job.status as string) !== "SUCCEEDED") {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Artifact is not Final Truth (job not SUCCEEDED).",
+    );
+  }
+
   // PREMIUM-01/04/09 — quality live (D-3) + sticky unlock + R1 retention before mint.
   // FREE never downloads ready MIX artifacts. Client never supplies unlock/tier.
   const product = await resolveProductEntitlementForAuthContext(context);
   const premiumQuality = premiumQualityFromRenderTier(qualityTier);
   if (!premiumQuality) {
     throw new AuthError("FORBIDDEN", "Nieobsługiwana jakość pliku.");
+  }
+  // A Studio export has no separate "unlock" step: the owner's first download marks the project ready and spends
+  // the unlock (sticky per project, same credits, retention and owner checks in the database). Only when the plan
+  // covers this quality, so nothing is spent on a file that would be refused below.
+  if (
+    domain === "LEGACY_STUDIO" &&
+    (job.kind as string | null) === "STUDIO_EXPORT" &&
+    canDownloadPremiumQuality({ premiumTier: product.premiumTier, quality: premiumQuality })
+  ) {
+    await unlockOwnStudioExport(context, admin, artifact.project_id as string);
   }
   const workCtx = await loadPremiumWorkDownloadContext({
     admin,
@@ -152,26 +226,6 @@ export async function createOwnArtifactDownloadSignedUrlFor(
     throw new AuthError(
       "FORBIDDEN",
       denyMessageForPremiumDownloadReason(gate.reason),
-    );
-  }
-
-  // FINDING-03 — READY alone is insufficient; owning job must be SUCCEEDED.
-  const { data: job, error: jobError } = await admin
-    .from("render_jobs")
-    .select("id, owner_id, status")
-    .eq("id", artifact.render_job_id as string)
-    .maybeSingle();
-  if (jobError) throw new Error(jobError.message);
-  if (!job) {
-    throw new AuthError("FORBIDDEN", "Render job missing for artifact.");
-  }
-  if ((job.owner_id as string) !== context.userId) {
-    throw new AuthError("FORBIDDEN", "Job owner mismatch.");
-  }
-  if ((job.status as string) !== "SUCCEEDED") {
-    throw new AuthError(
-      "FORBIDDEN",
-      "Artifact is not Final Truth (job not SUCCEEDED).",
     );
   }
 

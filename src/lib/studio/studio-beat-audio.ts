@@ -109,6 +109,16 @@ export function resolvePrimaryBeatRef(params: {
   return null;
 }
 
+/** Highest boost any Studio fader offers (track, clip, Master, automation). */
+const STUDIO_MAX_BOOST_DB = 12;
+
+/** Linear gain for a Web Audio GainNode: boosts above 0 dB are heard, as in the mix render. */
+export function gainDbToLinear(gainDb: number): number {
+  if (!Number.isFinite(gainDb)) return 1;
+  return Math.pow(10, Math.min(STUDIO_MAX_BOOST_DB, gainDb) / 20);
+}
+
+/** 0..1 for HTMLAudioElement.volume, which cannot boost. */
 export function gainDbToLinearVolume(gainDb: number): number {
   if (!Number.isFinite(gainDb)) return 1;
   const linear = Math.pow(10, gainDb / 20);

@@ -86,8 +86,8 @@ describe("P6.4.3 Mix UX integration contracts", () => {
     expect(editor).toMatch(/studioFxEntryLabel/);
     expect(editor).toMatch(/aria-label=\"Mix\"/);
     // Headers + mixer both expose M/S/R; strip order is Visual Shell OD freeze.
-    const muteIdx = editor.indexOf('title="Wycisz"');
-    const soloIdx = editor.indexOf('title="Solo"');
+    const muteIdx = editor.indexOf('onClick={() => toggleTrackFlag(track.id, "muted")}');
+    const soloIdx = editor.indexOf('onClick={() => toggleTrackFlag(track.id, "solo")}');
     const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
     expect(mixerStart).toBeGreaterThan(0);
     const mixer = editor.slice(mixerStart);
@@ -137,8 +137,9 @@ describe("P6.4.3 Mix UX integration contracts", () => {
   it("Mute/Solo use StudioToggleChip with aria-pressed", () => {
     expect(chip).toMatch(/aria-pressed=\{active\}/);
     expect(editor).toMatch(/StudioToggleChip/);
-    expect(editor).toMatch(/title=\"Wycisz\"/);
-    expect(editor).toMatch(/title=\"Solo\"/);
+    // The spoken label also names the track.
+    expect(editor).toMatch(/title=\{`.{0,12}[wW]ycisz.{0,4} · \$\{(?:tl\()?track\.name\)?\}`\}/);
+    expect(editor).toMatch(/title=\{`.{0,12}[sS]olo.{0,4} · \$\{(?:tl\()?track\.name\)?\}`\}/);
   });
 
   it("FX sheet/drawer sits above bottom-nav (z-50) with safe-area", () => {
@@ -164,8 +165,8 @@ describe("P6.4.3 Mix UX integration contracts", () => {
     expect(editor).toMatch(/data-testid="studio-mobile-mini-transport"/);
     expect(editor).toMatch(/aria-label=\"Transport Studio\"/);
     // Visual Parity V2 — Play label may include noBeat “wymaga bitu” suffix.
-    expect(editor).toMatch(/aria-label=\{noBeat \? \"Odtwórz — wymaga bitu\" : \"Odtwórz\"\}/);
-    expect(editor).toMatch(/aria-label=\"Stop\"/);
+    expect(editor).toMatch(/aria-label=\{noAudio \? \"Odtwórz — wymaga bitu\" : \"Odtwórz\"\}/);
+    expect(editor).toMatch(/aria-label=\{recording \? [^:]+ : \"Stop\"\}/);
     expect(editor).toMatch(/min-h-11/);
   });
 

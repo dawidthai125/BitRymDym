@@ -4,7 +4,7 @@ import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
   findIdenticalTakeClipPlacement,
-  findOverlappingTakeClip,
+  findOverlappingTakeClips,
   geometryForStudioRecording,
 } from "@/lib/studio/studio-record-ops";
 import { parseExpectedDocumentVersion } from "@/lib/studio/studio-fx-chain";
@@ -51,6 +51,8 @@ export async function placeReadyTakeAsStudioClipFor(
   takeId: string;
   durationMs: number;
   reusedExisting: boolean;
+  /** Clips that `replaceOverlapping` took off the track (the client removes them too). */
+  removedClipIds: string[];
   documentVersion: number;
 }> {
   if (!input.projectId || !input.trackId || !input.takeId) {
@@ -108,31 +110,24 @@ export async function placeReadyTakeAsStudioClipFor(
       takeId: input.takeId,
       durationMs: existing.durationMs,
       reusedExisting: true,
+      removedClipIds: [],
       documentVersion: document.project.documentVersion,
     };
   }
 
-  let expectedVersion = input.expectedDocumentVersion;
-  if (input.replaceOverlapping) {
-    const overlapping = findOverlappingTakeClip(document.clips, {
-      trackId: input.trackId,
-      startMs: geometry.timelineStartMs,
-      durationMs: geometry.durationMs,
-    });
-    if (overlapping) {
-      const deleted = await deleteStudioClipFor(context, {
-        projectId: input.projectId,
-        clipId: overlapping.id,
-        expectedDocumentVersion: expectedVersion,
-      });
-      expectedVersion = deleted.documentVersion;
-    }
-  }
+  const overlapping = input.replaceOverlapping
+    ? findOverlappingTakeClips(document.clips, {
+        trackId: input.trackId,
+        startMs: geometry.timelineStartMs,
+        durationMs: geometry.durationMs,
+      })
+    : [];
 
+  // The new clip goes in first: when that fails, the old ones are still on the track.
   const placed = await addStudioClipFor(context, {
     projectId: input.projectId,
     trackId: input.trackId,
-    expectedDocumentVersion: expectedVersion,
+    expectedDocumentVersion: input.expectedDocumentVersion,
     sourceKind: "TAKE",
     sourceTakeId: input.takeId,
     timelineStartMs: geometry.timelineStartMs,
@@ -140,12 +135,31 @@ export async function placeReadyTakeAsStudioClipFor(
     sourceOffsetMs: geometry.sourceOffsetMs,
   });
 
+  let documentVersion = placed.documentVersion;
+  const removedClipIds: string[] = [];
+  for (const clip of overlapping) {
+    try {
+      const deleted = await deleteStudioClipFor(context, {
+        projectId: input.projectId,
+        clipId: clip.id,
+        expectedDocumentVersion: documentVersion,
+      });
+      documentVersion = deleted.documentVersion;
+      removedClipIds.push(clip.id);
+    } catch (error) {
+      // The new clip is saved; the answer must say so, with the clips that really went away.
+      console.error("[studio-record] replace: old clip not removed", error);
+      break;
+    }
+  }
+
   return {
     clip: placed.clip,
     takeId: input.takeId,
     durationMs: geometry.durationMs,
     reusedExisting: false,
-    documentVersion: placed.documentVersion,
+    removedClipIds,
+    documentVersion,
   };
 }
 
@@ -156,6 +170,7 @@ export async function placeReadyTakeAsStudioClip(
   takeId: string;
   durationMs: number;
   reusedExisting: boolean;
+  removedClipIds: string[];
   documentVersion: number;
 }> {
   return placeReadyTakeAsStudioClipFor(await requireUser(), input);
@@ -173,20 +188,34 @@ export async function listReadyTakesForStudioPlaceFor(
   const projectBeatId = document.project.beatId;
   const admin = createSupabaseAdminClient();
 
-  const { data: rows, error } = await admin
-    .from("takes")
-    .select(
-      "id, title, beat_id, status, deleted_at, expires_at, duration_seconds, created_at",
-    )
-    .eq("owner_id", context.userId)
-    .eq("status", "READY")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(40);
-  if (error) throw new Error(error.message);
+  const recent = () =>
+    admin
+      .from("takes")
+      .select(
+        "id, title, beat_id, status, deleted_at, expires_at, duration_seconds, created_at",
+      )
+      .eq("owner_id", context.userId)
+      .eq("status", "READY")
+      // Imported stems are tracks of their own project, not recordings to pick from.
+      .eq("is_stem", false)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(40);
+  // This beat first and on its own, so takes of other beats cannot push it off the list.
+  const [sameBeat, newest] = await Promise.all([
+    projectBeatId ? recent().eq("beat_id", projectBeatId) : null,
+    recent(),
+  ]);
+  if (sameBeat?.error) throw new Error(sameBeat.error.message);
+  if (newest.error) throw new Error(newest.error.message);
+  const rows = [
+    ...new Map(
+      [...(sameBeat?.data ?? []), ...(newest.data ?? [])].map((r) => [r.id as string, r]),
+    ).values(),
+  ];
 
   const beatIds = [
-    ...new Set((rows ?? []).map((r) => r.beat_id as string).filter(Boolean)),
+    ...new Set(rows.map((r) => r.beat_id as string).filter(Boolean)),
   ];
   const titleByBeat = new Map<string, string>();
   if (beatIds.length > 0) {
@@ -200,7 +229,7 @@ export async function listReadyTakesForStudioPlaceFor(
   }
 
   const takes: StudioPlaceableTakeDto[] = [];
-  for (const row of rows ?? []) {
+  for (const row of rows) {
     if (isTakeExpired({ expiresAt: row.expires_at as string })) continue;
     const beatId = row.beat_id as string;
     takes.push({

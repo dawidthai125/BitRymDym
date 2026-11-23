@@ -41,6 +41,12 @@ type Take = {
   clipped: boolean;
   seconds: number;
   source: "live" | "import";
+  /** What it was recorded as: later changes of the settings above must not relabel it. */
+  type: LabSampleType;
+  bpm: number | null;
+  bars: number | null;
+  beatId: string | null;
+  beatKey: string | null;
 };
 
 type Status = "off" | "starting" | "ready" | "countin" | "recording";
@@ -50,13 +56,15 @@ const label = "mb-1.5 block text-xs font-medium uppercase tracking-[0.06em] text
 const control =
   "min-h-11 w-full rounded-md border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 text-sm text-[var(--brd-ink)] outline-none focus-visible:border-[var(--brd-amber)]";
 
-export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boolean }) {
+export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /** Silver+: the server saves recordings and imports only for them. */ canRecord: boolean; /** Bronze+. */ canUseAi: boolean }) {
   const t = useTranslations("studio.sampleLab");
 
   // Settings
   const [mode, setMode] = useState<"beat" | "free">(beats.length ? "beat" : "free");
   const [beatId, setBeatId] = useState(beats[0]?.id ?? "");
   const [freeBpm, setFreeBpm] = useState(90);
+  const [bpmText, setBpmText] = useState("90");
+  const recordLock = useRef(false);
   const [metronome, setMetronome] = useState(true);
   const [type, setType] = useState<LabSampleType>("oneshot");
   const [bars, setBars] = useState(4);
@@ -141,6 +149,7 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
       beatAudio.current = null;
       void engine.current?.close();
       engine.current = null;
+      stopPlay.current?.();
       void playCtx.current?.close();
     };
   }, []);
@@ -186,7 +195,18 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
 
   async function record() {
     const e = engine.current;
-    if (!e || status !== "ready") return;
+    if (!e || status !== "ready" || recordLock.current) return;
+    recordLock.current = true;
+    try {
+      await startRecording(e);
+    } catch {
+      setError(t("bladMikrofonu"));
+    } finally {
+      recordLock.current = false;
+    }
+  }
+
+  async function startRecording(e: LabEngine) {
     setSaved(null);
     if (e.ctx.state === "suspended") await e.ctx.resume();
     const audio = await prepareBeat().catch(() => null);
@@ -254,7 +274,14 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
       setError(t("zaKrotkie"));
       return;
     }
-    const take: Take = { id: crypto.randomUUID(), channels: res.channels, sampleRate, note: res.note, key: res.key, clipped, seconds: Math.min(seconds, SAMPLE_MAX_MS / 1000), source };
+    const take: Take = { id: crypto.randomUUID(), channels: res.channels, sampleRate, note: res.note, key: res.key, clipped, seconds: Math.min(seconds, SAMPLE_MAX_MS / 1000),
+      source,
+      type,
+      bpm: type === "loop" || (usesClock && type === "phrase") ? Math.round(bpm * 10) / 10 : null,
+      bars: type === "loop" ? effectiveBars : null,
+      beatId: mode === "beat" ? (beat?.id ?? null) : null,
+      beatKey: mode === "beat" ? (beat?.key ?? null) : null,
+    };
     if (seconds > SAMPLE_MAX_MS / 1000) take.channels = take.channels.map((ch) => ch.slice(0, Math.floor((SAMPLE_MAX_MS / 1000) * sampleRate)));
     setError(null);
     setTakes((list) => [take, ...list].slice(0, 8));
@@ -285,7 +312,7 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
     playCtx.current = ctx;
     void ctx.resume();
     setPlaying(take.id);
-    stopPlay.current = playChannels(ctx, take.channels, take.sampleRate, type === "loop", () => setPlaying((p) => (p === take.id ? null : p)));
+    stopPlay.current = playChannels(ctx, take.channels, take.sampleRate, take.type === "loop", () => setPlaying((p) => (p === take.id ? null : p)));
   }
 
   async function save() {
@@ -296,19 +323,19 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
     const wav = encodeWav16(take.channels, take.sampleRate);
     const form = new FormData();
     form.set("file", new File([wav.buffer as ArrayBuffer], "sample.wav", { type: "audio/wav" }));
-    const autoTitle = [t(`instrument.${instrument}`), take.note ?? take.key ?? "", type === "loop" ? `${Math.round(bpm)} BPM` : ""].filter(Boolean).join(" ");
+    const autoTitle = [t(`instrument.${instrument}`), take.note ?? take.key ?? "", take.bpm ? `${Math.round(take.bpm)} BPM` : ""].filter(Boolean).join(" ");
     form.set("title", (title.trim() || autoTitle).slice(0, 80));
     form.set("kind", instrumentKind(instrument as never));
     form.set("instrument", instrument);
     form.set("rightsAccepted", rights ? "1" : "0");
     form.set("lab", "1");
-    form.set("sampleType", type);
+    form.set("sampleType", take.type);
     form.set("source", take.source);
-    if (type === "loop" || (usesClock && type === "phrase")) form.set("bpm", String(Math.round(bpm * 10) / 10));
-    if (type === "loop") form.set("bars", String(effectiveBars));
-    const musicalKey = take.note ?? take.key ?? (mode === "beat" ? beat?.key ?? "" : "");
+    if (take.bpm) form.set("bpm", String(take.bpm));
+    if (take.bars) form.set("bars", String(take.bars));
+    const musicalKey = take.note ?? take.key ?? take.beatKey ?? "";
     if (musicalKey && /^[A-G]#?(m|-?[0-9])?$/.test(musicalKey)) form.set("musicalKey", musicalKey);
-    if (mode === "beat" && beat) form.set("beatId", beat.id);
+    if (take.beatId) form.set("beatId", take.beatId);
     try {
       const res = await fetch("/api/studio/samples", { method: "POST", body: form });
       const body = (await res.json().catch(() => ({}))) as { message?: string };
@@ -328,34 +355,12 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
     }
   }
 
-  if (!allowed) {
-    return (
-      <div className="space-y-6">
-        <div className={cn(panel, "text-center")}>
-          <p className="text-lg font-semibold">{t("zablokowaneTytul")}</p>
-          <p className="mx-auto mt-2 max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("zablokowaneOpis")}</p>
-          <StoreAppHidden>
-            <Link href="/premium" className="mt-4 inline-flex min-h-11 items-center rounded-md bg-[var(--brd-amber)] px-5 font-semibold text-[var(--brd-on-media)]">
-              {t("zobaczPlany")}
-            </Link>
-          </StoreAppHidden>
-        </div>
-        <MySamples refreshKey={refreshKey} />
-      </div>
-    );
-  }
-
   const meterPct = Math.max(0, Math.min(100, ((level + 60) / 60) * 100));
   const hot = level > -6;
   const take = takes.find((x) => x.id === chosen) ?? null;
 
-  return (
-    <div className="space-y-6">
-      <PlayStudio bpm={bpm} beatId={beat?.id ?? null} canUseAi={allowed} />
-      {/* 1. What */}
-      <section className={panel} aria-labelledby="lab-what">
-        <h2 id="lab-what" className="mb-4 text-base font-semibold">{t("krok1")}</h2>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+  const tempoPicker = (
+    <>
           <div>
             <span className={label}>{t("tryb")}</span>
             <Segmented
@@ -385,12 +390,35 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
                 type="number"
                 min={40}
                 max={240}
-                value={freeBpm}
-                onChange={(e) => setFreeBpm(Math.max(40, Math.min(240, Number(e.target.value) || 90)))}
+                value={bpmText}
+                onChange={(e) => {
+                  // Typed freely; a full valid number counts at once, the rest is fixed on blur.
+                  setBpmText(e.target.value);
+                  const n = Number(e.target.value);
+                  if (n >= 40 && n <= 240) setFreeBpm(n);
+                }}
+                onBlur={() => {
+                  const n = Math.max(40, Math.min(240, Math.round(Number(bpmText.replace(",", "."))) || freeBpm));
+                  setFreeBpm(n);
+                  setBpmText(String(n));
+                }}
                 className={control}
               />
             </label>
           )}
+    </>
+  );
+
+  return (
+    <div className="space-y-6">
+      <PlayStudio bpm={bpm} beatId={beat?.id ?? null} canUseAi={canUseAi} onSaved={() => setRefreshKey((k) => k + 1)} />
+      {canRecord ? (
+      <>
+      {/* 1. What */}
+      <section className={panel} aria-labelledby="lab-what">
+        <h2 id="lab-what" className="mb-4 text-base font-semibold">{t("krok1")}</h2>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {tempoPicker}
           <div>
             <span className={label}>{t("rodzaj")}</span>
             <Segmented
@@ -512,7 +540,12 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
           <h2 id="lab-rec" className="text-base font-semibold">{t("krok3")}</h2>
           <label className="cursor-pointer text-sm text-[var(--brd-amber)] underline-offset-4 hover:underline">
             {t("importuj")}
-            <input type="file" accept="audio/*" className="sr-only" onChange={(e) => e.target.files?.[0] && void importFile(e.target.files[0])} />
+            <input type="file" accept="audio/*" className="sr-only" onChange={(e) => {
+                const file = e.target.files?.[0];
+                // Cleared so the same file can be picked again after a failed try.
+                e.target.value = "";
+                if (file) void importFile(file);
+              }} />
           </label>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-4">
@@ -565,7 +598,14 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
                     #{takes.length - i} · {x.seconds.toFixed(1)} s{x.note ? ` · ${x.note}` : ""}{x.key ? ` · ${t("tonacja")} ${x.key}` : ""}
                   </span>
                   {x.clipped ? <span className="text-xs font-semibold text-[var(--brd-rec)]">{t("przester")}</span> : null}
-                  <button type="button" onClick={() => setTakes((l) => l.filter((y) => y.id !== x.id))} className="ml-auto text-xs text-[var(--brd-ink-soft)] hover:text-[var(--brd-rec)]">
+                  <button type="button" onClick={() => {
+                    if (playing === x.id) {
+                      stopPlay.current?.();
+                      stopPlay.current = null;
+                      setPlaying(null);
+                    }
+                    setTakes((l) => l.filter((y) => y.id !== x.id));
+                  }} className="ml-auto text-xs text-[var(--brd-ink-soft)] hover:text-[var(--brd-rec)]">
                     {t("usun")}
                   </button>
                 </div>
@@ -597,6 +637,19 @@ export function SampleLab({ beats, allowed }: { beats: LabBeat[]; allowed: boole
           ) : null}
         </section>
       ) : null}
+      </>
+      ) : (
+        <section className={panel} aria-labelledby="lab-locked" data-testid="sample-lab-locked">
+          <div className="grid gap-4 md:grid-cols-2">{tempoPicker}</div>
+          <h2 id="lab-locked" className="mt-5 text-lg font-semibold">{t("zablokowaneTytul")}</h2>
+          <p className="mt-2 max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("zablokowaneOpis")}</p>
+          <StoreAppHidden>
+            <Link href="/premium" className="mt-4 inline-flex min-h-11 items-center rounded-md bg-[var(--brd-amber)] px-5 font-semibold text-[var(--brd-on-media)]">
+              {t("zobaczPlany")}
+            </Link>
+          </StoreAppHidden>
+        </section>
+      )}
       {saved ? <p role="status" className="text-sm text-[var(--brd-green)]">{saved}</p> : null}
 
       <MySamples refreshKey={refreshKey} />

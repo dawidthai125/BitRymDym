@@ -9,7 +9,8 @@ import type { StudioClipDto, StudioProjectDocument, StudioProjectSummary, Studio
 type FetchLike = typeof fetch;
 
 export type UseSampleResult =
-  | { ok: true }
+  /** Where the sample landed (the timeline may be long). */
+  | { ok: true; startMs: number; trackName: string }
   /** The plan has no free track: the user may choose an existing one. */
   | { ok: false; kind: "capacity"; message: string; tracks: { id: string; name: string }[] }
   | { ok: false; kind: "auth" | "error"; message: string | null };
@@ -56,6 +57,7 @@ export async function addSampleToProject(
 
   const own = doc.tracks.filter((t) => t.trackType !== "BEAT");
   let trackId = input.trackId ? own.find((t) => t.id === input.trackId)?.id : own.find((t) => t.trackType === "SAMPLE")?.id;
+  let trackName = own.find((t) => t.id === trackId)?.name ?? "Sample";
   if (!trackId) {
     const add = await fetchImpl(`${base}/tracks`, json("POST", { expectedDocumentVersion: version, trackType: "SAMPLE" }));
     const added = await readJson<{ track?: StudioTrackDto; documentVersion?: number; error?: string; message?: string; code?: string }>(add);
@@ -66,6 +68,7 @@ export async function addSampleToProject(
         : { ok: false, kind: add.status === 401 ? "auth" : "error", message };
     }
     trackId = added.track.id;
+    trackName = added.track.name || trackName;
     version = added.documentVersion ?? version + 1;
     // Same role the Studio gives its sample tracks; the sample still lands when this fails.
     const role = await fetchImpl(`${base}/tracks/${trackId}`, json("PATCH", { expectedDocumentVersion: version, trackRole: "instrument" }));
@@ -73,15 +76,18 @@ export async function addSampleToProject(
     if (role.ok && typeof patched?.documentVersion === "number") version = patched.documentVersion;
   }
 
+  const startMs = nextFreeStartMs(doc.clips, trackId);
   const placed = await placeOwnedStudioSample(
     {
       projectId: input.projectId,
       sampleId: input.sampleId,
       trackId,
-      timelineStartMs: nextFreeStartMs(doc.clips, trackId),
+      timelineStartMs: startMs,
       expectedDocumentVersion: version,
     },
     fetchImpl,
   );
-  return placed.ok ? { ok: true } : { ok: false, kind: placed.status === 401 ? "auth" : "error", message: placed.error };
+  return placed.ok
+    ? { ok: true, startMs, trackName }
+    : { ok: false, kind: placed.status === 401 ? "auth" : "error", message: placed.error };
 }

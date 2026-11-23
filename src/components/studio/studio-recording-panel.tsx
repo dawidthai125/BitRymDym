@@ -3,7 +3,7 @@
 import { useLibText } from "@/i18n/use-lib-text";
 
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import Link from "@/components/ui/app-link";
@@ -13,7 +13,10 @@ import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
 import { Button } from "@/components/ui/button";
 import { StudioMarkersPanel } from "@/components/studio/studio-markers-panel";
 import { StudioScratchPanel } from "@/components/studio/studio-scratch-panel";
-import { useStudioTransport } from "@/components/studio/studio-transport-provider";
+import {
+  useStudioTransportControls,
+  useStudioTransportPlayhead,
+} from "@/components/studio/studio-transport-provider";
 import { StudioStemImport } from "@/components/studio/studio-stem-import";
 import { StudioQuotaLine } from "@/components/studio/studio-quota-line";
 // Lyrics card (setup pane) and Sample Lab desk / play keys (Sample tab) are hidden on first open.
@@ -34,6 +37,7 @@ import {
   STUDIO_COUNT_IN_BARS,
   countInDurationMs,
   countInSeekMs,
+  findOverlappingTakeClips,
   normalizePunchWindow,
   shouldAutoStopPunch,
   type StudioCountInBars,
@@ -90,8 +94,12 @@ import {
   studioDeviceErrorMessagePl,
 } from "@/lib/studio/studio-input-devices";
 import {
+  TakeReplaceRequiredError,
+  TakeTransportError,
+  finalizeTakeRecordingUpload,
   toUserFacingTakeUploadError,
   uploadTakeRecordingBlob,
+  type TakeUploadTransportResult,
 } from "@/lib/takes/client-upload";
 import {
   liveTakeStatusForPhase,
@@ -107,8 +115,12 @@ import {
   createInitialRecordingUiSnapshot,
   isRecordingBusy,
   isRecordingCaptureActive,
+  recordHoldFor,
   recordingInterruptedNoticePl,
+  recordingSecondsLeft,
   reduceRecordingUi,
+  shouldCancelArmingOnLeave,
+  type RecordHold,
   transportRecordAction,
   type RecordingUiPhase,
 } from "@/lib/takes/recording-ui-state";
@@ -132,7 +144,30 @@ import {
   getTakeRecoveryTabClaimant,
   getTakeRecoveryViewerUserId,
 } from "@/lib/takes/take-recording-recovery-idb";
-import { clearUnplacedTakeMemo, writeUnplacedTakeMemo } from "@/lib/studio/unplaced-take-memo";
+import type { ReplaceableTakeSummary } from "@/lib/takes/claim-errors";
+import {
+  nextMicHold,
+  startMicHold,
+  type MicHoldStatus,
+} from "@/lib/studio/recording/mic-level-hold";
+import {
+  RECORD_LEAD_MS,
+  countInPlan,
+  countInPlayheadMoved,
+  readRecordSettings,
+  resolveRecordTrackId,
+  writeRecordSettings,
+} from "@/lib/studio/recording/record-settings";
+import {
+  UNPLACED_TAKE_EVENT,
+  clearPendingPlacement,
+  clearUnplacedTakeMemo,
+  clipDurationCapMs,
+  readTakePlacement,
+  rememberTakePlacement,
+  writePendingPlacement,
+  writeUnplacedTakeMemo,
+} from "@/lib/studio/unplaced-take-memo";
 import {
   classifyPersistHttpFailure,
   classifyPersistNetworkFailure,
@@ -150,14 +185,43 @@ type WorkflowActionBusy =
   | "import"
   | null;
 
+/** Finished audio that is not on the server yet (failed upload), kept in memory for a retry. */
+type UnsentTake = {
+  beatId: string;
+  blob: Blob;
+  mimeType: string;
+  /** Audio already uploaded: only the finalize step is left. */
+  uploadedTakeId: string | null;
+  startMs: number;
+  trackId: string;
+  writer: TakeRecoveryWriter | null;
+};
+
+/** 180 → "3:00". */
+function clock(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/** Only this label follows the playhead, not the whole panel. */
+function PlayheadTime() {
+  const tl = useLibText();
+  const { playheadMs } = useStudioTransportPlayhead();
+  return <>{tl(formatStudioTimeMs(playheadMs))}</>;
+}
+
 export function StudioRecordingPanel({
   projectId,
   getExpectedDocumentVersion,
   enqueuePersistAsync,
   onDocumentVersionAck,
   tracks,
+  clips = [],
   onClipCreated,
+  onClipUpdated,
   onTrackCreated,
+  visible = true,
+  onHoldChange,
   onRecordingActiveChange,
   onCaptureInterrupted,
   onLocalRecoveryChanged,
@@ -168,7 +232,8 @@ export function StudioRecordingPanel({
   samplesMode = false,
   /** Phase 7.1.3 — Studio selection SSOT; no third track store. */
   preferredTrackId = null,
-  lastScratchClipId,
+  selectedClipId = null,
+  lastScratchClipId: editorScratchClipId,
   onLastScratchClipIdChange,
   onBitekBubble,
   onDocumentReplaced,
@@ -188,11 +253,24 @@ export function StudioRecordingPanel({
   /** Marker / Inspector ack → editor docRef (clip-move CAS). */
   onDocumentVersionAck?: (ack: unknown) => number;
   tracks: StudioTrackDto[];
+  clips?: StudioClipDto[];
   onClipCreated: (
     clip: StudioClipDto,
     documentVersion: number,
-    options?: { keepRecordPanel?: boolean },
+    options?: {
+      keepRecordPanel?: boolean;
+      /** A kept take: select the clip, but stay in the recording panel. */
+      stayOnRecord?: boolean;
+      /** Clips the server took off the track (replace). */
+      removedClipIds?: string[];
+    },
   ) => void;
+  /** Saved scratch state of a clip that is already on the timeline. */
+  onClipUpdated?: (clip: StudioClipDto, documentVersion: number) => void;
+  /** The panel is on screen (it stays mounted without a host while a take is held). */
+  visible?: boolean;
+  /** Why the panel must not be unmounted now. */
+  onHoldChange?: (hold: RecordHold) => void;
   onTrackCreated?: (track: StudioTrackDto, documentVersion: number) => void;
   onRecordingActiveChange?: (active: boolean) => void;
   /**
@@ -209,10 +287,12 @@ export function StudioRecordingPanel({
   /** Record-step simple view: mic, record, import, keep or discard. */
   simple?: boolean;
   /** Plan limits shown under the record button (from plan-policy, server enforces). */
-  planLimits?: { sessionsPerDay: number; retentionDays: number } | null;
+  planLimits?: { sessionsPerDay: number; maxTakeSeconds: number; takeHours: number } | null;
   /** Sample tab: instruments and the sample desk, without the microphone. */
   samplesMode?: boolean;
   preferredTrackId?: string | null;
+  /** Clip selected on the timeline (the scratch tab edits it). */
+  selectedClipId?: string | null;
   /** Editor SSOT — scratch clip survives panel unmount. */
   lastScratchClipId: string | null;
   onLastScratchClipIdChange: (clipId: string | null) => void;
@@ -235,6 +315,7 @@ export function StudioRecordingPanel({
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioRecordingPanel");
+  const locale = useLocale();
   const getBaseVersionRef = useRef(getExpectedDocumentVersion);
   getBaseVersionRef.current = getExpectedDocumentVersion;
   const persistVersionTipRef = useRef<StudioPersistVersionTip | null>(null);
@@ -252,7 +333,10 @@ export function StudioRecordingPanel({
     },
     [onDocumentVersionAck, persistVersionTip],
   );
-  const transport = useStudioTransport();
+  // Controls only: the playhead and meter bands would re-render this panel every frame.
+  const transport = useStudioTransportControls();
+  const getPlayheadMs = transport.getPlayheadMs;
+  const getAuxContext = transport.getContextForAux;
   const [localTracks, setLocalTracks] = useState<StudioTrackDto[]>([]);
   const [trackCreateBusy, setTrackCreateBusy] = useState<
     "SAMPLE" | "SCRATCH" | null
@@ -414,14 +498,14 @@ export function StudioRecordingPanel({
     },
     [ackDocumentVersion, enqueuePersistAsync, onClipCreated, persistVersionTip, projectId, tr],
   );
-  const trackChoices =
-    recordableTracks.length > 0 ? recordableTracks : tracks;
-  const defaultTrack =
-    trackChoices.find((t) => t.recordArmed) ?? trackChoices[0];
-  const preferredTrack =
-    preferredTrackId && trackChoices.some((t) => t.id === preferredTrackId)
-      ? preferredTrackId
-      : null;
+  // Scratch edits the selected recording, else the last clip added here.
+  const scratchClip =
+    clips.find((c) => c.id === selectedClipId && c.sourceKind === "TAKE") ??
+    clips.find((c) => c.id === editorScratchClipId && c.sourceKind === "TAKE") ??
+    null;
+  const lastScratchClipId = scratchClip?.id ?? null;
+  // Never the Bit track: a vocal there would sit under the beat's clip.
+  const trackChoices = recordableTracks;
 
   /** Manual override is valid only for the preferredTrackId it was chosen against. */
   const [manualTrackId, setManualTrackId] = useState<string | null>(null);
@@ -432,10 +516,13 @@ export function StudioRecordingPanel({
     manualTrackId && manualForPreferred === (preferredTrackId ?? null)
       ? manualTrackId
       : null;
-  const trackId =
-    trackIdOverride ?? preferredTrack ?? defaultTrack?.id ?? "";
+  const trackId = resolveRecordTrackId({
+    tracks: trackChoices,
+    manualId: trackIdOverride,
+    selectedId: preferredTrackId,
+  });
   const [beatId, setBeatId] = useState<string | null>(null);
-  const [maxSeconds, setMaxSeconds] = useState(180);
+  const [maxSeconds, setMaxSeconds] = useState(planLimits?.maxTakeSeconds ?? 180);
   const [contextError, setContextError] = useState<string | null>(null);
   const [recordStartMs, setRecordStartMs] = useState<number | null>(null);
   const [workflowError, setWorkflowError] = useState<string | null>(null);
@@ -447,22 +534,36 @@ export function StudioRecordingPanel({
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryBusyId, setLibraryBusyId] = useState<string | null>(null);
   const [libraryPreviewId, setLibraryPreviewId] = useState<string | null>(null);
-  const [countInBars, setCountInBars] = useState<StudioCountInBars>(1);
-  const [punchEnabled, setPunchEnabled] = useState(false);
-  const [punchInMs, setPunchInMs] = useState(0);
-  const [punchOutMs, setPunchOutMs] = useState(4000);
+  const [savedSettings] = useState(() => readRecordSettings(projectId));
+  const [countInBars, setCountInBars] = useState<StudioCountInBars>(savedSettings.countInBars);
+  const [punchEnabled, setPunchEnabled] = useState(savedSettings.punchEnabled);
+  const [punchInMs, setPunchInMs] = useState(savedSettings.punchInMs);
+  const [punchOutMs, setPunchOutMs] = useState(savedSettings.punchOutMs);
   const [countInActive, setCountInActive] = useState(false);
-  const [monitorOn, setMonitorOn] = useState(false);
-  /** Light headphone reverb for confidence; never printed into the recorded WAV. */
-  const [monitorReverbOn, setMonitorReverbOn] = useState(true);
+  const [monitorOn, setMonitorOn] = useState(savedSettings.monitorOn);
+  /** Light headphone reverb for confidence; never printed into the recorded file. */
+  const [monitorReverbOn, setMonitorReverbOn] = useState(savedSettings.monitorReverbOn);
+  const [unsent, setUnsent] = useState<UnsentTake | null>(null);
+  const unsentRef = useRef<UnsentTake | null>(null);
+  const [replaceCandidates, setReplaceCandidates] = useState<ReplaceableTakeSummary[] | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [stemsBusy, setStemsBusy] = useState(false);
+  const [lyricsOpen, setLyricsOpen] = useState(false);
+  /** The user asked for a microphone test; nothing opens the mic on its own. */
+  const [testerOn, setTesterOn] = useState(false);
+  const [outputError, setOutputError] = useState(false);
+  /** Every start / prepare / cancel bumps it: a late answer of an older one changes nothing. */
+  const startRunRef = useRef(0);
+  const auxStopRef = useRef<(() => void) | null>(null);
   const [catalogMessage, setCatalogMessage] = useState<string | null>(null);
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
   const takeWorkflowRef = useRef<HTMLDivElement | null>(null);
+  const unsentBoxRef = useRef<HTMLDivElement | null>(null);
 
   const [state, dispatch] = useReducer(
     reduceRecordingUi,
     undefined,
-    () => createInitialRecordingUiSnapshot({ maxRecordingSeconds: 180 }),
+    () => createInitialRecordingUiSnapshot({ maxRecordingSeconds: maxSeconds }),
   );
 
   const phaseRef = useRef<RecordingUiPhase>("IDLE");
@@ -473,7 +574,7 @@ export function StudioRecordingPanel({
   const keepInFlightRef = useRef(false);
   const placedTakeIdsRef = useRef<Set<string>>(new Set());
   const beatIdRef = useRef<string | null>(null);
-  const maxSecondsRef = useRef(180);
+  const maxSecondsRef = useRef(maxSeconds);
   const trackIdRef = useRef(trackId);
   const captureTrackIdRef = useRef<string>("");
   const recordStartMsRef = useRef<number | null>(null);
@@ -502,13 +603,15 @@ export function StudioRecordingPanel({
   // ── Recording P0: latency, section loop / punch line, take lanes ──
   const tRec = useTranslations("studio.recTools");
   const tBitek = useTranslations("studio.bitek");
-  const [recMode, setRecMode] = useState<RecToolsMode>("single");
-  const [sectionBars, setSectionBars] = useState<SectionBars>(4);
-  const [sectionStartMs, setSectionStartMs] = useState<number | null>(null);
-  const [punchLine, setPunchLine] = useState(0);
+  const [recMode, setRecMode] = useState<RecToolsMode>(savedSettings.recMode);
+  const [sectionBars, setSectionBars] = useState<SectionBars>(savedSettings.sectionBars);
+  const [sectionStartMs, setSectionStartMs] = useState<number | null>(savedSettings.sectionStartMs);
+  const [punchLine, setPunchLine] = useState(savedSettings.punchLine);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [calibration, setCalibration] = useState<CalibrationUi>({ status: "idle" });
   const [latencyOpenSignal, setLatencyOpenSignal] = useState(0);
+  /** Simple view: the card appears only when BITEK's "Kalibruj" asked for it. */
+  const [latencyShown, setLatencyShown] = useState(false);
   const calibAbortRef = useRef<AbortController | null>(null);
   const [lanesBusy, setLanesBusy] = useState(false);
   const [laneMessage, setLaneMessage] = useState<string | null>(null);
@@ -525,6 +628,8 @@ export function StudioRecordingPanel({
     compensationMs: number;
     countdownTarget: number | null;
     prerollMs: number;
+    /** Recorded time before startMs (count-in lead, pre-roll). */
+    headMs: number;
     restore: (() => void) | null;
     placement: { takeId: string; timelineStartMs: number; sourceOffsetMs: number } | null;
   }>({
@@ -537,9 +642,24 @@ export function StudioRecordingPanel({
     compensationMs: 0,
     countdownTarget: null,
     prerollMs: 0,
+    headMs: 0,
     restore: null,
     placement: null,
   });
+  useEffect(() => {
+    writeRecordSettings(projectId, {
+      recMode,
+      sectionBars,
+      sectionStartMs,
+      punchLine,
+      countInBars,
+      punchEnabled,
+      punchInMs,
+      punchOutMs,
+      monitorOn,
+      monitorReverbOn,
+    });
+  }, [projectId, recMode, sectionBars, sectionStartMs, punchLine, countInBars, punchEnabled, punchInMs, punchOutMs, monitorOn, monitorReverbOn]);
   const captureActive = isRecordingCaptureActive(state.phase);
   const showWorkflow = state.phase === "READY_TAKE" && state.takeId;
 
@@ -552,10 +672,20 @@ export function StudioRecordingPanel({
       const startMs = recordStartMsRef.current;
       const memoTrack = captureTrackIdRef.current || trackIdRef.current;
       if (startMs != null && memoTrack) {
+        const placement = alignRef.current.placement;
+        const aligned = placement?.takeId === state.takeId ? placement : null;
+        rememberTakePlacement(projectId, {
+          takeId: state.takeId,
+          trackId: memoTrack,
+          timelineStartMs: aligned?.timelineStartMs ?? startMs,
+          sourceOffsetMs: aligned?.sourceOffsetMs ?? 0,
+        });
+        clearPendingPlacement(projectId);
         writeUnplacedTakeMemo(projectId, {
           takeId: state.takeId,
           trackId: memoTrack,
-          startMs,
+          startMs: aligned?.timelineStartMs ?? startMs,
+          sourceOffsetMs: aligned?.sourceOffsetMs ?? 0,
           durationSeconds: state.takeDurationSeconds ?? null,
         });
       }
@@ -570,6 +700,19 @@ export function StudioRecordingPanel({
       ? micStream ?? testerStream
       : testerStream;
   const mic = useMicAnalyser(meterStream, { barCount: 32, hz: 15 });
+  const micHoldRef = useRef(startMicHold(0));
+  const [micStatus, setMicStatus] = useState<MicHoldStatus>("checking");
+  useEffect(() => {
+    micHoldRef.current = startMicHold(Date.now());
+    const timer = window.setTimeout(() => setMicStatus("checking"), 0);
+    return () => window.clearTimeout(timer);
+  }, [meterStream]);
+  useEffect(() => {
+    if (!meterStream) return;
+    const next = nextMicHold(micHoldRef.current, mic.level, Date.now());
+    if (next.status !== micHoldRef.current.status) setMicStatus(next.status);
+    micHoldRef.current = next;
+  }, [mic, meterStream]);
 
   const inputDevices = useStudioInputDevices({
     recordingActive: captureActive,
@@ -578,7 +721,9 @@ export function StudioRecordingPanel({
   const setOutputSinkId = transport.setOutputSinkId;
   const onSinkIdChange = useCallback(
     (sinkId: string | null) => {
-      void setOutputSinkId(sinkId);
+      void setOutputSinkId(sinkId)
+        .then((result) => setOutputError(!result.applied && result.reason !== "no_context" && sinkId != null))
+        .catch(() => setOutputError(sinkId != null));
     },
     [setOutputSinkId],
   );
@@ -595,7 +740,7 @@ export function StudioRecordingPanel({
   const latency = useStudioLatency({
     inputLabel,
     outputLabel,
-    readContextEstimate: () => contextLatencyEstimate(transport.getContextForAux()),
+    readContextEstimate: () => contextLatencyEstimate(getAuxContext()),
     signedIn: true,
   });
   const laneStore = useTakeLanes(projectId, true);
@@ -607,7 +752,7 @@ export function StudioRecordingPanel({
           startMs: sectionStartMs,
           bars: sectionBars,
           barMs,
-          timelineLengthMs: transport.state.timelineLengthMs,
+          timelineLengthMs: transport.timelineLengthMs,
         })
       : null;
   const lines = section ? sectionLines(section, barMs) : [];
@@ -627,7 +772,6 @@ export function StudioRecordingPanel({
   const [liveCue, setLiveCue] = useState<LiveCoachCue | null>(null);
   const hasBeat = transport.hasBeat;
   const tempoBpm = transport.tempoBpm;
-  const getPlayheadMs = transport.getPlayheadMs;
   useEffect(() => {
     const prev = prevRecPhase.current;
     prevRecPhase.current = state.phase;
@@ -731,12 +875,12 @@ export function StudioRecordingPanel({
           id: "calibrate",
           label: tBitek("akcja.calibrate"),
           primary: true,
-          onClick: () => setLatencyOpenSignal((n) => n + 1),
+          onClick: openLatencyCard,
         },
         {
           id: "manualLatency",
           label: tBitek("akcja.manualLatency"),
-          onClick: () => setLatencyOpenSignal((n) => n + 1),
+          onClick: openLatencyCard,
         },
       ],
     });
@@ -746,7 +890,7 @@ export function StudioRecordingPanel({
 
   useEffect(() => {
     if (!monitorOn || !meterStream) return;
-    const ctx = transport.getContextForAux() as unknown as AudioContext | null;
+    const ctx = getAuxContext() as unknown as AudioContext | null;
     if (!ctx?.createMediaStreamSource || !ctx.createGain) return;
     const source = ctx.createMediaStreamSource(meterStream);
     const dry = ctx.createGain();
@@ -780,12 +924,15 @@ export function StudioRecordingPanel({
         }
       }
     };
-  }, [meterStream, monitorOn, monitorReverbOn, transport]);
+  }, [meterStream, monitorOn, monitorReverbOn, getAuxContext]);
 
-  // AUD-01 — auto live mic tester (reuse useMicAnalyser; hold stream, no Studio engine).
+  // AUD-01 — live mic tester on request (reuse useMicAnalyser; hold stream, no Studio engine).
   useEffect(() => {
     let cancelled = false;
     const blockTester =
+      !testerOn ||
+      !visible ||
+      samplesMode ||
       captureArming ||
       state.phase === "REQUESTING_MIC" ||
       state.phase === "RECORDING" ||
@@ -803,7 +950,7 @@ export function StudioRecordingPanel({
         testerStreamRef.current = null;
         if (!cancelled) {
           setTesterStream(null);
-          setTesterError(null);
+          if (testerOn) setTesterError(null);
         }
         return;
       }
@@ -831,6 +978,8 @@ export function StudioRecordingPanel({
         stopMediaStreamTracks(testerStreamRef.current);
         testerStreamRef.current = null;
         setTesterStream(null);
+        // No new prompt until the user asks again.
+        setTesterOn(false);
         if (
           result.code === "DEVICE_PERMISSION_DENIED" ||
           result.code === "DEVICE_PERMISSION_BLOCKED"
@@ -860,6 +1009,9 @@ export function StudioRecordingPanel({
       testerStreamRef.current = null;
     };
   }, [
+    testerOn,
+    visible,
+    samplesMode,
     captureArming,
     state.phase,
     inputDevices.selectedDeviceId,
@@ -870,6 +1022,23 @@ export function StudioRecordingPanel({
   useEffect(() => {
     phaseRef.current = state.phase;
   }, [state.phase]);
+
+  // Stop / Pause in the transport (or the end of the timeline) ends the take: same as Stop here.
+  const transportPhase = transport.phase;
+  const transportPhaseRef = useRef(transportPhase);
+  const transportPlayedRef = useRef(false);
+  useEffect(() => {
+    transportPhaseRef.current = transportPhase;
+    if (transportPhase === "playing") {
+      transportPlayedRef.current = true;
+      return;
+    }
+    if (state.phase === "RECORDING" && transportPlayedRef.current) {
+      transportPlayedRef.current = false;
+      void stopAndFinalize();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- transport- and phase-driven only
+  }, [transportPhase, state.phase]);
 
   // Top-bar REC = real record key (prod bug 2026-10-30): IDLE → mic + auto-start,
   // READY → start, RECORDING → stop. Declared after the ref-sync effects above.
@@ -890,15 +1059,26 @@ export function StudioRecordingPanel({
     if (!showWorkflow) return;
     takeWorkflowRef.current?.scrollIntoView({
       behavior: "smooth",
-      block: "start",
+      block: "center",
     });
   }, [showWorkflow, state.takeId]);
 
   useEffect(() => {
+    if (unsent) unsentBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [unsent]);
+
+  useEffect(() => {
     if (recoverySavedKey === 0) return;
-    if (phaseRef.current === "UPLOAD_ERROR" || phaseRef.current === "FINALIZE_ERROR") {
-      dispatch({ type: "RETRY_IDLE" });
-    }
+    const timer = window.setTimeout(() => {
+      // The recovery banner saved this take: nothing is left to send from here.
+      unsentRef.current = null;
+      setUnsent(null);
+      setReplaceCandidates(null);
+      if (phaseRef.current === "UPLOAD_ERROR" || phaseRef.current === "FINALIZE_ERROR") {
+        dispatch({ type: "RETRY_IDLE" });
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [recoverySavedKey]);
 
   useEffect(() => {
@@ -934,23 +1114,17 @@ export function StudioRecordingPanel({
     const live = studioLiveTakeStore.get();
     if (state.phase !== "RECORDING" || !startedAtRef.current || !live) return;
     // Recorder clock (not the transport) — matches the final take length even with no beat.
-    studioLiveTakeStore.sample(live.startMs + (Date.now() - startedAtRef.current), mic.windowPeak);
+    studioLiveTakeStore.sample(
+      live.startMs + (Date.now() - startedAtRef.current) - alignRef.current.headMs,
+      mic.windowPeak,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sampled per analyser snapshot (15 Hz)
   }, [mic]);
 
   useEffect(() => {
     if (!recordRequest) return;
     onRecordRequestHandled?.();
-    const action = transportRecordAction(
-      phaseRef.current,
-      Boolean(trackIdRef.current),
-    );
-    if (action === "start") void startRecording();
-    else if (action === "stop") void stopAndFinalize();
-    else if (action === "prepare-then-start") {
-      autoStartAfterMicRef.current = true;
-      void prepareMicrophone();
-    }
+    pressRecord();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- press-driven only
   }, [recordRequest]);
 
@@ -958,6 +1132,20 @@ export function StudioRecordingPanel({
     isRecordingBusy(state.phase) ||
     state.phase === "READY" ||
     state.phase === "READY_TAKE";
+  const hold: RecordHold = stemsBusy
+    ? "saving"
+    : recordHoldFor({ phase: state.phase, arming: captureArming, unsentTake: unsent !== null });
+  useEffect(() => {
+    onHoldChange?.(hold);
+  }, [hold, onHoldChange]);
+  // Leaving the record view calls off a take that has not started (mic prompt, count-in).
+  useEffect(() => {
+    if (shouldCancelArmingOnLeave({ phase: state.phase, arming: captureArming, visible: visible && !samplesMode })) {
+      const timer = window.setTimeout(() => cancelRecording(), 0);
+      return () => window.clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- view-driven only
+  }, [visible, samplesMode, state.phase, captureArming]);
   useEffect(() => {
     // Lock timeline only while capture / finalize is in flight — playhead may still
     // be adjusted in READY before ● Nagraj. READY_TAKE is decision UI (not locked).
@@ -973,6 +1161,9 @@ export function StudioRecordingPanel({
       if (phaseRef.current !== "RECORDING") return;
       clearTick();
       clearMic();
+      stopAlignSampler();
+      restoreLoopAfterCapture();
+      transport.pause();
       const writer = recoveryWriterRef.current;
       recoveryWriterRef.current = null;
       let stopped: Promise<void> = Promise.resolve();
@@ -996,6 +1187,7 @@ export function StudioRecordingPanel({
     return () => {
       track.removeEventListener("ended", onEnded);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handler reads refs; re-subscribed per stream
   }, [state.phase, micStream, tr]);
 
   useEffect(() => {
@@ -1028,8 +1220,18 @@ export function StudioRecordingPanel({
 
   useEffect(() => {
     mountedRef.current = true;
+    const align = alignRef.current;
     return () => {
       mountedRef.current = false;
+      startRunRef.current += 1;
+      auxStopRef.current?.();
+      calibAbortRef.current?.abort();
+      passAudioRef.current?.pause();
+      passAudioRef.current = null;
+      if (align.sampler != null) {
+        window.clearInterval(align.sampler);
+        align.sampler = null;
+      }
       const capturePhase =
         phaseRef.current === "RECORDING" || phaseRef.current === "STOPPING";
       const writer = capturePhase ? recoveryWriterRef.current : null;
@@ -1045,7 +1247,9 @@ export function StudioRecordingPanel({
         // ignore
       }
       if (writer) sealInterruptedRecovery(writer, stopped);
+      restoreLoopAfterCapture();
       transport.stopTakePreview();
+      if (phaseRef.current === "READY_TAKE") window.dispatchEvent(new Event(UNPLACED_TAKE_EVENT));
       // The host's lock mirrors captureActive; nobody else can clear it now.
       if (interruptedNotice) {
         const report = captureReportRef.current;
@@ -1073,7 +1277,10 @@ export function StudioRecordingPanel({
       const playheadMs = transport.getPlayheadMs();
       const sample = { perfMs: performance.now(), playheadMs };
       const prev = a.samples[a.samples.length - 1];
-      if ((!prev || prev.playheadMs !== playheadMs) && a.samples.length < 20_000) {
+      // One take: the first seconds decide, so a later jump of the playhead cannot spoil them.
+      const enough =
+        a.mode === "single" && a.recT0 != null && sample.perfMs - a.recT0 > a.headMs + 5_000;
+      if (!enough && (!prev || prev.playheadMs !== playheadMs) && a.samples.length < 20_000) {
         a.samples.push(sample);
       }
       if (a.countdownTarget != null) {
@@ -1096,12 +1303,40 @@ export function StudioRecordingPanel({
     }, 20);
   }
 
-  /** Visual + click count-in on the Studio context when there is no room before the section. */
-  async function auxCountIn(beats: number): Promise<void> {
-    const ctx = transport.getContextForAux() as unknown as AudioContext | null;
+  /**
+   * Visual + click count-in on the Studio context when there is no room before the start.
+   * Resolves false when it was called off. `onLead` fires `leadMs` before the end.
+   */
+  async function auxCountIn(
+    beats: number,
+    current: () => boolean,
+    lead?: { leadMs: number; onLead: () => void },
+  ): Promise<boolean> {
+    const sources: { stop: () => void }[] = [];
+    let wake: (() => void) | null = null;
+    auxStopRef.current = () => {
+      for (const src of sources.splice(0)) {
+        try {
+          src.stop();
+        } catch {
+          // already ended
+        }
+      }
+      wake?.();
+    };
+    const wait = (ms: number) =>
+      new Promise<void>((resolve) => {
+        const id = window.setTimeout(resolve, Math.max(0, ms));
+        wake = () => {
+          window.clearTimeout(id);
+          resolve();
+        };
+      });
+    const ctx = getAuxContext() as unknown as AudioContext | null;
     if (ctx && typeof ctx.createBuffer === "function") {
       try {
-        if (ctx.state !== "running") await ctx.resume();
+        if (ctx.state !== "running") await Promise.race([ctx.resume(), wait(500)]);
+        if (!current()) return false;
         const pcm = renderCalibrationClick(ctx.sampleRate, 0.35);
         const buf = ctx.createBuffer(1, pcm.length, ctx.sampleRate);
         buf.copyToChannel(pcm, 0);
@@ -1110,23 +1345,97 @@ export function StudioRecordingPanel({
           src.buffer = buf;
           src.connect(ctx.destination);
           src.start(ctx.currentTime + 0.05 + (i * beatMs) / 1000);
+          sources.push(src);
         }
       } catch {
         // clicks are a nicety — the countdown still shows
       }
     }
     for (let i = beats; i >= 1; i -= 1) {
+      if (!current()) return false;
       setCountdown(i);
-      await new Promise((r) => window.setTimeout(r, beatMs));
+      const leadMs = i === 1 && lead ? Math.min(beatMs, lead.leadMs) : 0;
+      await wait(beatMs - leadMs);
+      if (leadMs > 0 && current()) {
+        lead?.onLead();
+        await wait(leadMs);
+      }
     }
+    auxStopRef.current = null;
+    if (!current()) return false;
     setCountdown(null);
+    return true;
+  }
+
+  /** Count-in over the beat: wait until the playhead gets to `untilMs`. */
+  function waitForCountIn(params: {
+    fromMs: number;
+    untilMs: number;
+    targetMs: number;
+    timeoutMs: number;
+    current: () => boolean;
+  }): Promise<"ready" | "moved" | "cancelled"> {
+    const deadline = Date.now() + params.timeoutMs;
+    return new Promise((resolve) => {
+      const id = window.setInterval(() => {
+        const done = (result: "ready" | "moved" | "cancelled") => {
+          window.clearInterval(id);
+          resolve(result);
+        };
+        if (!params.current()) return done("cancelled");
+        const playheadMs = getPlayheadMs();
+        // Stop / Pause or a moved playhead during the count-in calls the take off.
+        if (transportPlayedRef.current && transportPhaseRef.current !== "playing") return done("moved");
+        if (countInPlayheadMoved({ playheadMs, fromMs: params.fromMs, targetMs: params.targetMs })) return done("moved");
+        if (playheadMs >= params.untilMs || Date.now() >= deadline) done("ready");
+      }, 20);
+    });
+  }
+
+  /** Bitek's "Kalibruj": show the card where it lives. */
+  function openLatencyCard() {
+    setRecordPane("setup");
+    setLatencyShown(true);
+    setLatencyOpenSignal((n) => n + 1);
+  }
+
+  /** The one record key: panel button, transport REC and keyboard all end here. */
+  function pressRecord() {
+    const phase = phaseRef.current;
+    if (captureArmingRef.current || phase === "REQUESTING_MIC") {
+      cancelRecording();
+      return;
+    }
+    if (phase === "RECORDING") {
+      void stopAndFinalize();
+      return;
+    }
+    if (samplesMode) return;
+    if (phase === "READY_TAKE") {
+      setWorkflowError(tr("najpierwZachowajAlboOdrzuc"));
+      takeWorkflowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    if (unsentRef.current) {
+      setWorkflowError(tr("najpierwWyslijAlboOdrzuc"));
+      return;
+    }
+    const action = transportRecordAction(phase, Boolean(trackIdRef.current));
+    if (action === "start") void startRecording();
+    else if (action === "prepare-then-start") {
+      calibAbortRef.current?.abort();
+      autoStartAfterMicRef.current = true;
+      void prepareMicrophone();
+    } else if (!trackIdRef.current) {
+      setWorkflowError(tr("wybierzSciezkeDoNagrania"));
+    }
   }
 
   async function runCalibration(mode: "click" | "clap") {
     if (captureActive || calibration.status === "running") return;
     transport.pause();
     transport.stopTakePreview();
-    const ctx = transport.getContextForAux() as unknown as AudioContext | null;
+    const ctx = getAuxContext() as unknown as AudioContext | null;
     if (!ctx || typeof ctx.decodeAudioData !== "function") {
       setCalibration({ status: "failed", reason: "ERROR" });
       return;
@@ -1202,9 +1511,16 @@ export function StudioRecordingPanel({
             code?: string;
           } | null;
           if (!res.ok || !body?.document) {
+            if (res.status >= 500) {
+              // Several saves in a row: some may have landed, so show what the server has now.
+              const fresh = (await fetch(`/api/studio/projects/${projectId}`)
+                .then((r) => (r.ok ? r.json() : null))
+                .catch(() => null)) as { document?: StudioProjectDocument } | null;
+              if (fresh?.document) onDocumentReplaced?.(fresh.document);
+            }
             return classifyPersistHttpFailure({
-              status: res.status,
-              message: body?.error ?? tRec("compBlad"),
+              status: res.status >= 500 ? 422 : res.status,
+              message: res.status >= 500 ? tRec("compBlad") : body?.error ?? tRec("compBlad"),
               code: body?.code,
             });
           }
@@ -1380,18 +1696,26 @@ export function StudioRecordingPanel({
     const res = await fetch(
       `/api/studio/projects/${projectId}/record/context`,
     );
-    const json = (await res.json()) as {
+    const json = (await res.json().catch(() => null)) as {
       success?: boolean;
       beatId?: string;
       error?: string;
-    };
-    if (!res.ok || !json.beatId) {
+    } | null;
+    if (!res.ok || !json?.beatId) {
       throw new Error(
-        json.error ?? tr("nieUdaloSiePrzygotowac"),
+        json?.error ?? tr("nieUdaloSiePrzygotowac"),
       );
     }
     setBeatId(json.beatId);
     return json.beatId;
+  }
+
+  /** Known errors keep their text; anything unknown says what really failed, never raw English. */
+  function failureText(error: unknown, fallback: string): string {
+    const raw = error instanceof Error ? error.message : typeof error === "string" ? error : "";
+    if (!raw) return fallback;
+    const shown = toUserFacingTakeUploadError(raw);
+    return shown === toUserFacingTakeUploadError("?") ? fallback : shown;
   }
 
   async function prepareMicrophone() {
@@ -1415,19 +1739,25 @@ export function StudioRecordingPanel({
       return;
     }
 
+    const run = ++startRunRef.current;
+    /** Cancelled, replaced by a newer press, or unmounted: a late answer changes nothing. */
+    const stale = () => run !== startRunRef.current || !mountedRef.current;
     transport.stopTakePreview();
     stopTesterStream();
+    setTesterOn(false);
     setWorkflowError(null);
     setKeptMessage(null);
     dispatch({ type: "REQUEST_MIC" });
     try {
       const resolvedBeatId = beatIdRef.current ?? (await loadContext());
+      if (stale()) return;
+      beatIdRef.current = resolvedBeatId;
       const eligRes = await fetch("/api/takes/eligibility", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ beatId: resolvedBeatId }),
       });
-      const elig = (await eligRes.json()) as {
+      const elig = ((await eligRes.json().catch(() => null)) ?? {}) as {
         success?: boolean;
         allowed?: boolean;
         message?: string;
@@ -1435,12 +1765,11 @@ export function StudioRecordingPanel({
         maxRecordingSeconds?: number;
         error?: string;
       };
+      if (stale()) return;
       if (!eligRes.ok || !elig.success) {
         dispatch({
           type: "RECORDING_FAILED",
-          message: toUserFacingTakeUploadError(
-            elig.error ?? tr("nieUdaloSieSprawdzic"),
-          ),
+          message: failureText(elig.error, tr("nieUdaloSieSprawdzic")),
         });
         return;
       }
@@ -1455,9 +1784,11 @@ export function StudioRecordingPanel({
         elig.maxRecordingSeconds > 0
       ) {
         setMaxSeconds(Math.floor(elig.maxRecordingSeconds));
+        maxSecondsRef.current = Math.floor(elig.maxRecordingSeconds);
       }
 
       const probe = await inputDevices.probeMicrophone();
+      if (stale()) return;
       if (!probe.ok) {
         if (
           probe.code === "DEVICE_PERMISSION_DENIED" ||
@@ -1475,17 +1806,14 @@ export function StudioRecordingPanel({
         });
         return;
       }
-      recorderRef.current = new TakeMediaRecorder();
+      recorderRef.current ??= new TakeMediaRecorder();
       dispatch({ type: "MIC_READY" });
     } catch (error) {
+      if (stale()) return;
       recorderRef.current = null;
       dispatch({
         type: "RECORDING_FAILED",
-        message: toUserFacingTakeUploadError(
-          error instanceof Error
-            ? error.message
-            : tr("nieUdaloSieUruchomic"),
-        ),
+        message: failureText(error, tr("nieUdaloSiePrzygotowac")),
       });
     }
   }
@@ -1499,6 +1827,9 @@ export function StudioRecordingPanel({
       });
       return;
     }
+    const run = ++startRunRef.current;
+    /** False after Anuluj, a newer start or an unmount: this start must leave no recorder behind. */
+    const current = () => run === startRunRef.current && mountedRef.current;
     submittingRef.current = true;
     // AUD-01: arm before stop — effect must not re-open tester during recorder.start.
     captureArmingRef.current = true;
@@ -1506,11 +1837,12 @@ export function StudioRecordingPanel({
     stopTesterStream();
     const flow: RecToolsMode = recMode !== "single" && section ? recMode : "single";
     const flowLine = flow === "punch" ? lines[Math.min(punchLine, lines.length - 1)] ?? null : null;
+    const giveUp = (message: string) => {
+      cancelRecording();
+      setWorkflowError(message);
+    };
     if (flow === "punch" && !flowLine) {
-      captureArmingRef.current = false;
-      setCaptureArming(false);
-      submittingRef.current = false;
-      setWorkflowError(tRec("brakLinijki"));
+      giveUp(tRec("brakLinijki"));
       return;
     }
     const align = alignRef.current;
@@ -1521,20 +1853,31 @@ export function StudioRecordingPanel({
     align.placement = null;
     align.recT0 = null;
     align.restore = null;
+    align.headMs = 0;
+    align.samples = [];
     const punchWin = flowLine ? punchLineWindow({ line: flowLine, barMs, beatMs }) : null;
-    const punch = flow === "single" && punchEnabled
+    const wantsPunch = flow === "single" && punchEnabled;
+    const punch = wantsPunch
       ? normalizePunchWindow({
           punchInMs,
           punchOutMs,
-          timelineLengthMs: transport.state.timelineLengthMs,
+          timelineLengthMs: transport.timelineLengthMs,
         })
       : null;
+    if (wantsPunch && !punch) {
+      giveUp(tr("punchZlyZakres"));
+      return;
+    }
     const startMs =
       flow === "loop" && section
         ? section.startMs
         : punchWin
           ? punchWin.recordFromMs
-          : punch?.punchInMs ?? transport.state.playheadMs;
+          : punch?.punchInMs ?? Math.round(getPlayheadMs());
+    if (startMs > transport.timelineLengthMs - 500) {
+      giveUp(tr("glowicaNaKoncuOsi"));
+      return;
+    }
     punchOutRef.current = punchWin ? punchWin.stopAtMs : punch?.punchOutMs ?? null;
     // Loop / punch run their own 1-bar pre-roll after the recorder starts.
     const countMs =
@@ -1545,53 +1888,23 @@ export function StudioRecordingPanel({
             countInBars,
             transport.timeSignatureNum,
           );
-    if (countMs > 0) {
-      setCountInActive(true);
-      transport.seek(countInSeekMs(startMs, countMs));
-      transport.play();
-      const deadline = Date.now() + countMs + 400;
-      await new Promise<void>((resolve) => {
-        const id = window.setInterval(() => {
-          if (
-            transport.getPlayheadMs() >= startMs ||
-            Date.now() >= deadline
-          ) {
-            window.clearInterval(id);
-            resolve();
-          }
-        }, 30);
-      });
-      setCountInActive(false);
-      if (!mountedRef.current) {
-        submittingRef.current = false;
-        captureArmingRef.current = false;
-        setCaptureArming(false);
-        return;
-      }
-    }
-    setRecordStartMs(startMs);
-    recordStartMsRef.current = startMs;
-    captureTrackIdRef.current = trackIdRef.current;
+    const countIn = countInPlan({ startMs, countMs });
+    const beatsPerBar = transport.timeSignatureNum > 0 ? transport.timeSignatureNum : 4;
     setWorkflowError(null);
     setKeptMessage(null);
 
     const recorder = recorderRef.current ?? new TakeMediaRecorder();
     recorderRef.current = recorder;
-    const [recoveryStore, ownerUserId] = await Promise.all([
-      getBrowserTakeRecoveryStore().catch(() => null),
-      getTakeRecoveryViewerUserId(true),
-    ]);
     let writer: TakeRecoveryWriter | null = null;
     const chunkBuffer = createTakeRecoveryChunkBuffer();
     const onChunk = chunkBuffer.onChunk;
 
     try {
-      let started: { mimeType: string };
+      // The microphone opens before the count-in: permission and device wake-up cost no words.
       try {
-        started = await recorder.start({
+        await recorder.acquire({
           audioDeviceId:
             inputDevices.audioDeviceIdForRecorder || undefined,
-          onChunk,
         });
       } catch (firstStartError) {
         // Stale preference: one retry with system default (P5.8 AC-07).
@@ -1600,10 +1913,83 @@ export function StudioRecordingPanel({
           firstStartError instanceof TakeRecorderError &&
           firstStartError.code === "RECORDING_ERROR"
         ) {
-          started = await recorder.start({ onChunk });
+          await recorder.acquire();
         } else {
           throw firstStartError;
         }
+      }
+      const [recoveryStore, ownerUserId] = await Promise.all([
+        getBrowserTakeRecoveryStore().catch(() => null),
+        getTakeRecoveryViewerUserId(true),
+      ]);
+      if (!current()) {
+        void recorder.cancel();
+        return;
+      }
+      const countInStream = recorder.getStream();
+      setMicStream(countInStream);
+      transportPlayedRef.current = transportPhaseRef.current === "playing";
+
+      let clicksDone: Promise<boolean> | null = null;
+      if (countIn === "transport") {
+        setCountInActive(true);
+        const fromMs = countInSeekMs(startMs, countMs);
+        const prevMetronome = transport.metronomeEnabled;
+        transport.seek(fromMs);
+        transport.setMetronomeEnabled(true);
+        if (transportPhaseRef.current !== "playing") transport.play();
+        startAlignSampler();
+        align.prerollMs = countMs;
+        align.countdownTarget = startMs;
+        align.restore = () => {
+          if (!prevMetronome) transport.setMetronomeEnabled(false);
+        };
+        const result = await waitForCountIn({
+          fromMs,
+          untilMs: startMs - RECORD_LEAD_MS,
+          targetMs: startMs,
+          timeoutMs: countMs + 8_000,
+          current,
+        });
+        setCountInActive(false);
+        if (result === "moved") {
+          giveUp(tr("odliczaniePrzerwane"));
+          return;
+        }
+        align.headMs = RECORD_LEAD_MS;
+      } else if (countIn === "clicks") {
+        // No room before the start (usually 0:00): clicks alone, then the beat from the start.
+        setCountInActive(true);
+        transport.pause();
+        transport.seek(startMs);
+        await new Promise<void>((resolve) => {
+          clicksDone = auxCountIn(beatsPerBar * countInBars, current, {
+            leadMs: RECORD_LEAD_MS,
+            onLead: resolve,
+          });
+          void clicksDone.then(() => resolve());
+        });
+        setCountInActive(false);
+        align.headMs = RECORD_LEAD_MS;
+      } else if (flow === "single" && Math.abs(getPlayheadMs() - startMs) > 1 && punch) {
+        transport.seek(startMs);
+      }
+      if (!current()) {
+        void recorder.cancel();
+        return;
+      }
+      setRecordStartMs(startMs);
+      recordStartMsRef.current = startMs;
+      captureTrackIdRef.current = trackIdRef.current;
+
+      const started = await recorder.start({
+        audioDeviceId:
+          inputDevices.audioDeviceIdForRecorder || undefined,
+        onChunk,
+      });
+      if (run !== startRunRef.current) {
+        void recorder.cancel();
+        return;
       }
       // Unmounted while getUserMedia was pending: start() reset the cancel flag.
       if (!mountedRef.current) {
@@ -1630,7 +2016,12 @@ export function StudioRecordingPanel({
       setLocalSafety(writer.state);
       setMicStream(recorder.getStream());
       align.recT0 = (await recorder.waitForStarted(800)) ?? performance.now();
-      startAlignSampler();
+      if (!current()) {
+        void recorder.cancel();
+        void writer.discard();
+        return;
+      }
+      if (countIn !== "transport") startAlignSampler();
       if (flow === "loop" && section) {
         const prevLoop = {
           enabled: transport.loopEnabled,
@@ -1639,8 +2030,11 @@ export function StudioRecordingPanel({
         };
         const prevMetronome = transport.metronomeEnabled;
         transport.setLoop({ enabled: true, startMs: section.startMs, endMs: section.endMs });
-        const restoreLoop = () => transport.setLoop(prevLoop);
-        const beatsPerBar = transport.timeSignatureNum > 0 ? transport.timeSignatureNum : 4;
+        loopRestoreRef.current = () => {
+          transport.setLoop(prevLoop);
+          if (!prevMetronome) transport.setMetronomeEnabled(false);
+        };
+        align.headMs = barMs;
         if (section.startMs >= barMs) {
           transport.seek(section.startMs - barMs);
           transport.setMetronomeEnabled(true);
@@ -1650,13 +2044,12 @@ export function StudioRecordingPanel({
             if (!prevMetronome) transport.setMetronomeEnabled(false);
           };
         } else {
+          transport.pause();
           transport.seek(section.startMs);
-          await auxCountIn(beatsPerBar);
+          setCountInActive(true);
+          await auxCountIn(beatsPerBar, current);
+          setCountInActive(false);
         }
-        loopRestoreRef.current = () => {
-          restoreLoop();
-          if (!prevMetronome) transport.setMetronomeEnabled(false);
-        };
       } else if (punchWin && flowLine) {
         transport.seek(punchWin.recordFromMs);
         if (punchWin.prerollMs > 0) {
@@ -1664,17 +2057,30 @@ export function StudioRecordingPanel({
           align.countdownTarget = flowLine.startMs;
         }
       }
-      // Keep beat playing under the new take when possible.
-      transport.play();
+      if (clicksDone) await clicksDone;
+      if (!current()) {
+        void recorder.cancel();
+        void writer.discard();
+        return;
+      }
+      writePendingPlacement(projectId, {
+        trackId: captureTrackIdRef.current,
+        timelineStartMs: startMs,
+        sourceOffsetMs: Math.max(0, Math.round(align.headMs + align.compensationMs)),
+      });
+      // Keep beat playing under the new take when possible (already playing after the count-in).
+      transportPlayedRef.current = transportPhaseRef.current === "playing";
+      if (transportPhaseRef.current !== "playing") transport.play();
       dispatch({ type: "START_RECORDING" });
-      startedAtRef.current = Date.now();
+      // Counted from the recorder start: the plan limit covers the lead and the pre-roll too.
+      startedAtRef.current = Math.round(Date.now() - Math.max(0, performance.now() - align.recT0));
       clearTick();
       tickRef.current = setInterval(() => {
         const elapsed = Date.now() - startedAtRef.current;
         dispatch({ type: "TICK", elapsedMs: elapsed });
         if (
           elapsed >= maxSecondsRef.current * 1000 ||
-          shouldAutoStopPunch(transport.getPlayheadMs(), punchOutRef.current)
+          shouldAutoStopPunch(getPlayheadMs(), punchOutRef.current)
         ) {
           void stopAndFinalize();
         }
@@ -1682,8 +2088,16 @@ export function StudioRecordingPanel({
       captureArmingRef.current = false;
       setCaptureArming(false);
     } catch (error) {
+      if (run !== startRunRef.current) {
+        // Called off meanwhile: cancelRecording() already cleaned up the shared state.
+        void recorder.cancel();
+        void writer?.discard();
+        return;
+      }
       captureArmingRef.current = false;
       setCaptureArming(false);
+      setCountInActive(false);
+      auxStopRef.current?.();
       clearTick();
       clearMic();
       clearCapturePlacement();
@@ -1695,6 +2109,7 @@ export function StudioRecordingPanel({
       } catch {
         // ignore
       }
+      recorderRef.current = null;
       recoveryWriterRef.current = null;
       setLocalSafety(null);
       void writer?.discard();
@@ -1714,18 +2129,19 @@ export function StudioRecordingPanel({
           type: "UNSUPPORTED",
           message: tr("taPrzegladarkaNieObsluguje"),
         });
+      } else if (
+        error instanceof TakeRecorderError &&
+        error.code === "CANCELLED"
+      ) {
+        dispatch({ type: "RETRY_IDLE" });
       } else {
         dispatch({
           type: "RECORDING_FAILED",
-          message: toUserFacingTakeUploadError(
-            error instanceof Error
-              ? error.message
-              : tr("nieUdaloSieZaczac"),
-          ),
+          message: failureText(error, tr("nieUdaloSieZaczac")),
         });
       }
     } finally {
-      submittingRef.current = false;
+      if (run === startRunRef.current) submittingRef.current = false;
     }
   }
 
@@ -1757,8 +2173,18 @@ export function StudioRecordingPanel({
 
     const writer = recoveryWriterRef.current;
     let locallySecured = false;
+    let captured: UnsentTake | null = null;
     try {
       const result = await recorder.stop();
+      captured = {
+        beatId: beatIdRef.current,
+        blob: result.blob,
+        mimeType: result.mimeType,
+        uploadedTakeId: null,
+        startMs,
+        trackId: captureTrackIdRef.current || trackIdRef.current,
+        writer,
+      };
       dispatch({ type: "UPLOAD_START" });
       recoveryWriterRef.current = null;
       locallySecured = writer ? await writer.finish("COMPLETE", 3_000) : false;
@@ -1773,42 +2199,11 @@ export function StudioRecordingPanel({
           .confirmSaved(uploaded.takeId)
           .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
       }
-      dispatch({ type: "FINALIZE_START" });
-
-      // Take is READY after uploadTakeRecordingBlob finalize — do not auto-place.
-      const align = alignRef.current;
-      if (align.recT0 != null) {
-        const recPositionMs = recordingPositionOf({
-          samples: align.samples,
-          targetMs: startMs,
-          recordStartPerfMs: align.recT0,
-        });
-        align.placement = {
-          takeId: uploaded.takeId,
-          ...alignedPlacement({
-            startMs,
-            // Unknown playhead sample → treat as 0; still apply device latency
-            // (estimate/calibration). Dropping compensation here left vocals late
-            // on Windows when sampling missed the start.
-            recPositionMs: recPositionMs ?? 0,
-            compensationMs: align.compensationMs,
-          }),
-        };
-      }
-      dispatch({
-        type: "TAKE_READY",
-        takeId: uploaded.takeId,
-        previewUrl: null,
-        takeDurationSeconds: uploaded.durationSeconds,
-      });
-      setWorkflowError(null);
-      setKeptMessage(null);
-      // Preserve recordStartMs / captureTrackId for Zachowaj placement.
-      if (align.mode !== "single") {
-        void finishLaneCapture(uploaded.takeId, uploaded.durationSeconds ?? null);
-      }
+      acceptUploadedTake(uploaded, startMs);
     } catch (error) {
-      clearCapturePlacement();
+      // Another tab finalizes the copy after a lost lease; this one must not send it again.
+      if (captured && !(error instanceof TakeRecoveryLeaseLostError)) keepUnsent(captured, error);
+      else clearCapturePlacement();
       const cancelled =
         error instanceof TakeRecorderError && error.code === "CANCELLED";
       if (writer && !cancelled && recoveryWriterRef.current === writer) {
@@ -1827,15 +2222,16 @@ export function StudioRecordingPanel({
         const raw =
           error instanceof Error
             ? error.message
-            : tr("nieUdaloSieZapisac2");
+            : "";
         if (writer && locallySecured && recoveryWriterRef.current !== writer) {
           void writer
             .release()
             .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
         }
+        const shown = failureText(error, tr("nieUdaloSieZapisac2"));
         const message = locallySecured
-          ? tr("nagranieJestZabezpieczoneLokalnie", { v0: toUserFacingTakeUploadError(raw) })
-          : toUserFacingTakeUploadError(raw);
+          ? tr("nagranieJestZabezpieczoneLokalnie", { v0: shown })
+          : shown;
         if (/finaliz|duration|READY|MIME/i.test(raw)) {
           dispatch({ type: "FINALIZE_FAILED", message });
         } else {
@@ -1849,6 +2245,115 @@ export function StudioRecordingPanel({
     }
   }
 
+  /** The take is READY on the server: show the decision, or put loop passes on the lane. */
+  function acceptUploadedTake(uploaded: TakeUploadTransportResult, startMs: number) {
+    unsentRef.current = null;
+    setUnsent(null);
+    setReplaceCandidates(null);
+    dispatch({ type: "FINALIZE_START" });
+
+    // Take is READY after uploadTakeRecordingBlob finalize — do not auto-place.
+    const align = alignRef.current;
+    if (align.recT0 != null) {
+      const recPositionMs = recordingPositionOf({
+        samples: align.samples,
+        targetMs: startMs,
+        recordStartPerfMs: align.recT0,
+      });
+      align.placement = {
+        takeId: uploaded.takeId,
+        ...alignedPlacement({
+          startMs,
+          // Unknown playhead sample → the planned lead; still apply device latency
+          // (estimate/calibration). Dropping compensation here left vocals late
+          // on Windows when sampling missed the start.
+          recPositionMs: recPositionMs ?? align.headMs,
+          compensationMs: align.compensationMs,
+        }),
+      };
+    }
+    dispatch({
+      type: "TAKE_READY",
+      takeId: uploaded.takeId,
+      previewUrl: null,
+      takeDurationSeconds: uploaded.durationSeconds,
+    });
+    setWorkflowError(null);
+    setKeptMessage(null);
+    // Preserve recordStartMs / captureTrackId for Zachowaj placement.
+    if (align.mode !== "single") {
+      void finishLaneCapture(uploaded.takeId, uploaded.durationSeconds ?? null);
+    }
+  }
+
+  /** The upload failed: the finished audio stays here until it is sent or discarded by the user. */
+  function keepUnsent(take: UnsentTake, error: unknown) {
+    const next: UnsentTake = {
+      ...take,
+      uploadedTakeId:
+        error instanceof TakeTransportError ? error.uploadedTakeId : null,
+    };
+    unsentRef.current = next;
+    if (!mountedRef.current) return;
+    setUnsent(next);
+    setReplaceCandidates(
+      error instanceof TakeReplaceRequiredError ? error.replaceableTakes : null,
+    );
+  }
+
+  async function retryUnsent(replaceTakeId?: string) {
+    const take = unsentRef.current;
+    if (!take || submittingRef.current) return;
+    submittingRef.current = true;
+    setWorkflowError(null);
+    setRecordStartMs(take.startMs);
+    recordStartMsRef.current = take.startMs;
+    captureTrackIdRef.current = take.trackId;
+    dispatch({ type: "UPLOAD_START" });
+    try {
+      const uploaded =
+        take.uploadedTakeId && !replaceTakeId
+          ? await finalizeTakeRecordingUpload(take.uploadedTakeId)
+          : await uploadTakeRecordingBlob({
+              beatId: take.beatId,
+              blob: take.blob,
+              contentType: take.mimeType,
+              replaceTakeId: replaceTakeId ?? null,
+            });
+      if (take.writer) {
+        void take.writer
+          .discard()
+          .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
+      }
+      acceptUploadedTake(uploaded, take.startMs);
+    } catch (error) {
+      // A finalize that failed twice starts over with a fresh upload next time.
+      keepUnsent(take, take.uploadedTakeId ? null : error);
+      dispatch({
+        type: "UPLOAD_FAILED",
+        message: failureText(error, tr("nieUdaloSieZapisac2")),
+      });
+    } finally {
+      submittingRef.current = false;
+    }
+  }
+
+  function discardUnsent() {
+    const take = unsentRef.current;
+    unsentRef.current = null;
+    setUnsent(null);
+    setReplaceCandidates(null);
+    setConfirmDiscard(false);
+    clearPendingPlacement(projectId);
+    clearCapturePlacement();
+    if (take?.writer) {
+      void take.writer
+        .discard()
+        .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
+    }
+    dispatch({ type: "RETRY_IDLE" });
+  }
+
   function sealInterruptedRecovery(
     writer: TakeRecoveryWriter,
     stopped: Promise<void>,
@@ -1859,6 +2364,14 @@ export function StudioRecordingPanel({
   }
 
   function cancelRecording() {
+    startRunRef.current += 1;
+    autoStartAfterMicRef.current = false;
+    auxStopRef.current?.();
+    auxStopRef.current = null;
+    submittingRef.current = false;
+    captureArmingRef.current = false;
+    setCaptureArming(false);
+    setCountInActive(false);
     clearTick();
     clearMic();
     stopAlignSampler();
@@ -1905,10 +2418,15 @@ export function StudioRecordingPanel({
     takeId: string;
     busy: Exclude<WorkflowActionBusy, null>;
     successMessage: string;
+    durationSeconds?: number | null;
   }): Promise<boolean> {
     const takeId = params.takeId;
     const startMs = recordStartMsRef.current;
-    const placeTrackId = captureTrackIdRef.current || trackIdRef.current;
+    const captureTrackId = captureTrackIdRef.current;
+    const placeTrackId =
+      captureTrackId && mergedTracks.some((t) => t.id === captureTrackId)
+        ? captureTrackId
+        : trackIdRef.current;
     if (startMs == null || !placeTrackId) {
       setWorkflowError(tr("brakPozycjiNagraniaNa"));
       return false;
@@ -1925,6 +2443,16 @@ export function StudioRecordingPanel({
     keepInFlightRef.current = true;
     setWorkflowBusy(params.busy);
     setWorkflowError(null);
+    const aligned =
+      alignRef.current.placement?.takeId === takeId ? alignRef.current.placement : null;
+    const timelineStartMs = aligned?.timelineStartMs ?? startMs;
+    const sourceOffsetMs = aligned?.sourceOffsetMs ?? 0;
+    const durationMs = clipDurationCapMs({
+      timelineStartMs,
+      sourceOffsetMs,
+      takeDurationSeconds: params.durationSeconds ?? null,
+      timelineLengthMs: transport.timelineLengthMs,
+    });
     try {
       const result = await enqueuePersistAsync(async () => {
         try {
@@ -1936,17 +2464,15 @@ export function StudioRecordingPanel({
               body: JSON.stringify({
                 trackId: placeTrackId,
                 takeId,
-                ...(alignRef.current.placement?.takeId === takeId
-                  ? {
-                      timelineStartMs: alignRef.current.placement.timelineStartMs,
-                      sourceOffsetMs: alignRef.current.placement.sourceOffsetMs,
-                    }
-                  : { timelineStartMs: startMs }),
+                timelineStartMs,
+                ...(aligned ? { sourceOffsetMs } : {}),
+                ...(durationMs != null ? { durationMs } : {}),
                 expectedDocumentVersion: persistVersionTip.expected(),
               }),
             },
           );
-          const placed = (await placeRes.json()) as {
+          const placed = ((await placeRes.json().catch(() => null)) ?? {}) as {
+            removedClipIds?: string[];
             success?: boolean;
             clip?: StudioClipDto;
             reusedExisting?: boolean;
@@ -1980,7 +2506,7 @@ export function StudioRecordingPanel({
             apply: () => {
               placedTakeIdsRef.current.add(takeId);
               if (!reused) {
-                onClipCreated(clip, nextVersion);
+                onClipCreated(clip, nextVersion, { stayOnRecord: true });
               }
             },
           };
@@ -2014,6 +2540,7 @@ export function StudioRecordingPanel({
       takeId: state.takeId,
       busy: "keep",
       successMessage: tr("nagranieZachowaneNaOsi"),
+      durationSeconds: state.takeDurationSeconds,
     });
   }
 
@@ -2051,7 +2578,7 @@ export function StudioRecordingPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ beatId: resolvedBeatId }),
       });
-      const elig = (await eligRes.json()) as {
+      const elig = ((await eligRes.json().catch(() => null)) ?? {}) as {
         success?: boolean;
         allowed?: boolean;
         message?: string;
@@ -2060,11 +2587,7 @@ export function StudioRecordingPanel({
         error?: string;
       };
       if (!eligRes.ok || !elig.success) {
-        setWorkflowError(
-          toUserFacingTakeUploadError(
-            elig.error ?? tr("nieUdaloSieSprawdzic"),
-          ),
-        );
+        setWorkflowError(failureText(elig.error, tr("nieUdaloSieSprawdzic")));
         return;
       }
       if (!elig.allowed) {
@@ -2081,12 +2604,24 @@ export function StudioRecordingPanel({
         // Check length before reserving a take, so a rejected file does not use the daily limit.
         const importSeconds = await probeStudioVocalImportDurationSeconds(file);
         if (isStudioVocalImportTooLong(importSeconds, elig.maxRecordingSeconds)) {
-          setWorkflowError(STUDIO_VOCAL_IMPORT_TOO_LONG_MESSAGE);
+          setWorkflowError(
+            importSeconds != null
+              ? tr("importZaDlugi", {
+                  max: clock(elig.maxRecordingSeconds),
+                  len: clock(Math.ceil(importSeconds)),
+                })
+              : STUDIO_VOCAL_IMPORT_TOO_LONG_MESSAGE,
+          );
           return;
         }
       }
 
-      const startMs = transport.state.playheadMs;
+      const startMs = Math.round(getPlayheadMs());
+      if (startMs > transport.timelineLengthMs - 500) {
+        setWorkflowError(tr("glowicaNaKoncuOsi"));
+        return;
+      }
+      alignRef.current.placement = null;
       setRecordStartMs(startMs);
       recordStartMsRef.current = startMs;
       captureTrackIdRef.current = trackIdRef.current;
@@ -2105,10 +2640,19 @@ export function StudioRecordingPanel({
         takeDurationSeconds: uploaded.durationSeconds,
       });
 
+      const importOverlaps =
+        findOverlappingTakeClips(clips, {
+          trackId: captureTrackIdRef.current,
+          startMs,
+          durationMs: Math.max(1, Math.round((uploaded.durationSeconds ?? 0) * 1000)),
+        }).length > 0;
       const placed = await placeReadyTakeOnTimeline({
         takeId: uploaded.takeId,
         busy: "import",
-        successMessage: tr("wokalZaimportowanyNaOs"),
+        successMessage: importOverlaps
+          ? tr("wokalZaimportowanyNaInnym")
+          : tr("wokalZaimportowanyNaOs"),
+        durationSeconds: uploaded.durationSeconds,
       });
       if (!placed) {
         // READY take kept — user can Zachowaj from workflow panel.
@@ -2119,8 +2663,8 @@ export function StudioRecordingPanel({
       const raw =
         error instanceof Error
           ? error.message
-          : tr("nieUdaloSieZaimportowac");
-      const message = toUserFacingTakeUploadError(raw);
+          : "";
+      const message = failureText(error, tr("nieUdaloSieZaimportowac"));
       if (/finaliz|duration|READY|MIME|probe/i.test(raw)) {
         dispatch({ type: "FINALIZE_FAILED", message });
       } else if (/upload|przesł/i.test(raw)) {
@@ -2140,11 +2684,7 @@ export function StudioRecordingPanel({
 
   async function onDiscardWorkflowTake() {
     if (!state.takeId || workflowBusy) return;
-    const confirmed = window.confirm(
-      tr("odrzucicNagranieNagranieZostanie"),
-    );
-    if (!confirmed) return;
-
+    setConfirmDiscard(false);
     setWorkflowBusy("discard");
     setWorkflowError(null);
     transport.stopTakePreview();
@@ -2154,16 +2694,11 @@ export function StudioRecordingPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ takeId: state.takeId }),
       });
-      const json = (await res.json()) as {
+      const json = (await res.json().catch(() => null)) as {
         success?: boolean;
-        error?: string;
-      };
-      if (!res.ok || !json.success) {
-        setWorkflowError(
-          toUserFacingTakeUploadError(
-            json.error ?? tr("nieUdaloSieUsunac2"),
-          ),
-        );
+      } | null;
+      if (!res.ok || !json?.success) {
+        setWorkflowError(tr("nieUdaloSieUsunac2"));
         return;
       }
       clearCapturePlacement();
@@ -2181,8 +2716,12 @@ export function StudioRecordingPanel({
     transport.stopTakePreview();
     setWorkflowError(null);
     setKeptMessage(null);
+    // Same place again: the transport stopped at the end of the previous take.
+    const againFromMs = recordStartMsRef.current;
     // Preserve previous Takes/Clips — only start a new capture lifecycle.
     clearCapturePlacement();
+    if (againFromMs != null) transport.seek(againFromMs);
+    autoStartAfterMicRef.current = true;
     void prepareMicrophone();
   }
 
@@ -2193,19 +2732,16 @@ export function StudioRecordingPanel({
       const res = await fetch(
         `/api/studio/projects/${projectId}/record/takes`,
       );
-      const json = (await res.json()) as {
+      const json = (await res.json().catch(() => null)) as {
         success?: boolean;
         takes?: StudioPlaceableTakeDto[];
-        error?: string;
-      };
-      if (!res.ok || !json.success || !json.takes) {
-        throw new Error(json.error ?? tr("nieUdaloSieWczytac2"));
+      } | null;
+      if (!res.ok || !json?.success || !json.takes) {
+        throw new Error("takes");
       }
       setLibraryTakes(json.takes);
-    } catch (e) {
-      setLibraryError(
-        e instanceof Error ? e.message : tr("nieUdaloSieWczytac"),
-      );
+    } catch {
+      setLibraryError(tr("nieUdaloSieWczytac"));
       setLibraryTakes([]);
     } finally {
       setLibraryLoading(false);
@@ -2241,7 +2777,10 @@ export function StudioRecordingPanel({
     take: StudioPlaceableTakeDto,
     replaceOverlapping = false,
   ) {
-    if (!trackIdRef.current) {
+    const remembered = readTakePlacement(projectId, take.id);
+    const rememberedTrack = remembered && trackChoices.some((t) => t.id === remembered.trackId) ? remembered : null;
+    const placeTrackId = rememberedTrack?.trackId ?? trackIdRef.current;
+    if (!placeTrackId) {
       setLibraryError(tr("wybierzSciezkeDoNagrania"));
       return;
     }
@@ -2249,8 +2788,15 @@ export function StudioRecordingPanel({
     setLibraryError(null);
     transport.stopTakePreview();
     try {
-      const placeTrackId = trackIdRef.current;
-      const timelineStartMs = transport.state.playheadMs;
+      // Back where it was recorded (with the latency correction); unknown takes go to the playhead.
+      const timelineStartMs = rememberedTrack?.timelineStartMs ?? Math.round(getPlayheadMs());
+      const sourceOffsetMs = rememberedTrack?.sourceOffsetMs ?? 0;
+      const durationMs = clipDurationCapMs({
+        timelineStartMs,
+        sourceOffsetMs,
+        takeDurationSeconds: take.durationSeconds,
+        timelineLengthMs: transport.timelineLengthMs,
+      });
       const result = await enqueuePersistAsync(async () => {
         try {
           const placeRes = await fetch(
@@ -2262,12 +2808,15 @@ export function StudioRecordingPanel({
                 trackId: placeTrackId,
                 takeId: take.id,
                 timelineStartMs,
+                ...(sourceOffsetMs > 0 ? { sourceOffsetMs } : {}),
+                ...(durationMs != null ? { durationMs } : {}),
                 expectedDocumentVersion: persistVersionTip.expected(),
                 replaceOverlapping,
               }),
             },
           );
-          const placed = (await placeRes.json()) as {
+          const placed = ((await placeRes.json().catch(() => null)) ?? {}) as {
+            removedClipIds?: string[];
             success?: boolean;
             clip?: StudioClipDto;
             reusedExisting?: boolean;
@@ -2298,7 +2847,10 @@ export function StudioRecordingPanel({
             documentVersion: nextVersion,
             apply: () => {
               if (!reused) {
-                onClipCreated(clip, nextVersion);
+                onClipCreated(clip, nextVersion, {
+                  stayOnRecord: true,
+                  removedClipIds: placed.removedClipIds,
+                });
               }
             },
           };
@@ -2313,6 +2865,7 @@ export function StudioRecordingPanel({
         return;
       }
       setKeptMessage(tr("nagranieUmieszczoneNaOsi"));
+      clearUnplacedTakeMemo(projectId, take.id);
     } catch {
       setLibraryError(tr("nieUdaloSieUmiescic"));
     } finally {
@@ -2320,18 +2873,22 @@ export function StudioRecordingPanel({
     }
   }
 
+  const secondsLeft =
+    state.phase === "RECORDING"
+      ? recordingSecondsLeft({ elapsedMs: state.elapsedMs, maxSeconds })
+      : null;
   const primaryLabel =
     state.phase === "REQUESTING_MIC"
       ? tr("prosbaODostepDo")
-      : state.phase === "READY"
-        ? tr("nagraj")
+      : captureArming
+        ? tr("countIn2")
         : state.phase === "RECORDING"
           ? tr("zatrzymajNagrywanie")
           : state.phase === "STOPPING" ||
               state.phase === "UPLOADING" ||
               state.phase === "PROCESSING"
             ? tr("zapisywanieNagrania")
-            : tr("przygotujMikrofon");
+            : tr("nagraj");
 
   const primaryDisabled =
     state.phase === "REQUESTING_MIC" ||
@@ -2339,7 +2896,20 @@ export function StudioRecordingPanel({
     state.phase === "UPLOADING" ||
     state.phase === "PROCESSING" ||
     state.phase === "READY_TAKE" ||
+    captureArming ||
     !trackId;
+
+  /** Where "Dodaj na ścieżkę" will put a listed take. */
+  function placementLabel(takeId: string) {
+    const remembered = libraryShown ? readTakePlacement(projectId, takeId) : null;
+    return remembered && trackChoices.some((t) => t.id === remembered.trackId)
+      ? tr("miejsceNagrania", { time: formatStudioTimeMs(remembered.timelineStartMs) })
+      : (
+        <>
+          {tr("playhead")} <PlayheadTime />
+        </>
+      );
+  }
 
   const workflowDisabled = Boolean(workflowBusy);
   const visiblePane = showWorkflow ? "take" : recordPane;
@@ -2352,16 +2922,23 @@ export function StudioRecordingPanel({
     : null;
   const simpleTakeSig = state.phase === "IDLE" || state.phase === "READY_TAKE" ? `${state.phase}:${state.takeId ?? ""}` : null;
   useEffect(() => {
-    if (!simple || samplesMode || simpleTakeSig === null) return;
+    if (samplesMode || simpleTakeSig === null) return;
+    if (!simple && !libraryOpen && recordPane !== "lanes") return;
     const timer = setTimeout(() => void loadLibraryTakes(), 0);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [simple, samplesMode, simpleTakeSig, projectId]);
+  }, [simple, samplesMode, simpleTakeSig, projectId, recordPane]);
   const setupOpen = !simple && !samplesMode && visiblePane === "setup";
   const gearOutputOpen = setupOpen || (simple && !samplesMode);
   const lanesOpen = !simple && !samplesMode && visiblePane === "lanes";
   const scratchOpen = !simple && !samplesMode && visiblePane === "scratch";
   const takeOpen = !samplesMode && (simple || visiblePane === "take");
+  const libraryShown = libraryOpen || lanesOpen;
+  // A calibration nobody can see would keep the microphone on.
+  const calibrationVisible = setupOpen || (simple && !samplesMode && visible);
+  useEffect(() => {
+    if (!calibrationVisible) calibAbortRef.current?.abort();
+  }, [calibrationVisible]);
 
   /**
    * Samples are not vocals: when the chosen track is a vocal role, put the sample on its own
@@ -2432,7 +3009,7 @@ export function StudioRecordingPanel({
         const res = await fetch(`/api/studio/projects/${projectId}/samples/bitek`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sampleId, trackId, scope, playheadMs: Math.floor(transport.getPlayheadMs()) }),
+          body: JSON.stringify({ sampleId, trackId, scope, playheadMs: Math.floor(getPlayheadMs()) }),
         });
         const body = (await res.json().catch(() => null)) as { plan?: SamplePlacementPlan; error?: string } | null;
         if (!res.ok || !body?.plan) return { ok: false, message: body?.error ?? tr("bitekBlad") };
@@ -2441,7 +3018,7 @@ export function StudioRecordingPanel({
         return { ok: false, message: tr("bitekBlad") };
       }
     },
-    [projectId, trackId, transport, tr],
+    [projectId, trackId, getPlayheadMs, tr],
   );
   const bitekSampleApply = useCallback<BitekApply>(
     async (sampleId, scope) => {
@@ -2451,6 +3028,7 @@ export function StudioRecordingPanel({
       setCatalogMessage(null);
       setWorkflowError(null);
       const result = await enqueuePersistAsync(async () => {
+        try {
         const res = await fetch(`/api/studio/projects/${projectId}/samples/bitek`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2458,7 +3036,7 @@ export function StudioRecordingPanel({
             sampleId,
             trackId: placeTrackId,
             scope,
-            playheadMs: Math.floor(transport.getPlayheadMs()),
+            playheadMs: Math.floor(getPlayheadMs()),
             apply: true,
             expectedDocumentVersion: persistVersionTip.expected(),
           }),
@@ -2467,6 +3045,8 @@ export function StudioRecordingPanel({
           clips?: StudioClipDto[];
           documentVersion?: number;
           error?: string;
+          /** 207: only some of the clips were saved. */
+          partial?: boolean;
         } | null;
         if (!res.ok || !body?.clips || typeof body.documentVersion !== "number") {
           return classifyPersistHttpFailure({ status: res.status, message: body?.error ?? tr("bitekBlad") });
@@ -2479,15 +3059,19 @@ export function StudioRecordingPanel({
           apply: () => {
             for (const clip of clips) onClipCreated(clip, documentVersion, { keepRecordPanel: true });
             if (clips.length) onLastScratchClipIdChange(clips[clips.length - 1].id);
-            setCatalogMessage(tr("bitekWstawil"));
+            if (body.partial) setWorkflowError(body.error ?? tr("bitekBlad"));
+            else setCatalogMessage(tr("bitekWstawil"));
           },
         };
+        } catch {
+          return classifyPersistNetworkFailure(tr("bitekBlad"));
+        }
       });
       if (!result.ok) return { ok: false, message: result.message };
       return { ok: true };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [projectId, trackId, transport, tr, resolveSampleTrackId],
+    [projectId, trackId, getPlayheadMs, tr, resolveSampleTrackId],
   );
 
   return (
@@ -2509,7 +3093,7 @@ export function StudioRecordingPanel({
             <button
               type="button"
               data-testid="studio-rec-floating-stop"
-              className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-1/2 z-[60] flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-full border-2 border-white/80 bg-[var(--brd-rec)] px-5 text-sm font-semibold whitespace-nowrap text-white shadow-2xl lg:hidden"
+              className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-1/2 z-[55] flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-full border-2 border-white/80 bg-[var(--brd-rec)] px-5 text-sm font-semibold whitespace-nowrap text-white shadow-2xl lg:hidden"
               onClick={() => void stopAndFinalize()}
             >
               {tr("zatrzymajNagrywanie")}
@@ -2522,13 +3106,18 @@ export function StudioRecordingPanel({
         : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-medium text-[var(--brd-ink)]">
-          {samplesMode ? tr("sampleTytul") : tr("nagrywanie")}
+          {samplesMode ? tr("sampleNaglowek") : tr("nagrywanie")}
         </h2>
         {state.phase === "RECORDING" ? (
           <div className="space-y-0.5 text-right">
             <p className="text-xs font-medium text-destructive" role="status">
               {tr("trybNagrywania")}{" "}{tl(formatStudioTimeMs(Math.round(state.elapsedMs)))}
             </p>
+            {secondsLeft != null ? (
+              <p className="text-sm font-semibold text-destructive" role="status" data-testid="studio-record-left">
+                {tr("zostalo", { time: clock(secondsLeft) })}
+              </p>
+            ) : null}
             {localSafety ? (
               <p
                 className="text-[11px] text-[var(--brd-mute)]"
@@ -2541,7 +3130,7 @@ export function StudioRecordingPanel({
           </div>
         ) : (
           <p className="text-xs text-[var(--brd-mute)]">
-            {tr("startPlayhead")}{" "}{tl(formatStudioTimeMs(transport.state.playheadMs))}
+            {tr("startPlayhead")}{" "}<PlayheadTime />
           </p>
         )}
       </div>
@@ -2616,7 +3205,20 @@ export function StudioRecordingPanel({
         onCalibrate={(mode) => void runCalibration(mode)}
         onCancel={() => calibAbortRef.current?.abort()}
         openSignal={latencyOpenSignal}
+        onOpenSignalHandled={() => setLatencyOpenSignal(0)}
       />
+      ) : null}
+
+      {simple && !samplesMode && latencyShown ? (
+        <StudioLatencyCard
+          latency={latency}
+          calibration={calibration}
+          disabled={captureActive || captureArming || state.phase === "READY_TAKE"}
+          onCalibrate={(mode) => void runCalibration(mode)}
+          onCancel={() => calibAbortRef.current?.abort()}
+          openSignal={latencyOpenSignal}
+          onOpenSignalHandled={() => setLatencyOpenSignal(0)}
+        />
       ) : null}
 
       {setupOpen ? (
@@ -2653,10 +3255,16 @@ export function StudioRecordingPanel({
           createStemTrack={createStemTrack}
           placeStemTake={placeStemTake}
           disabled={isRecordingBusy(state.phase)}
+          onBusyChange={setStemsBusy}
         />
       ) : null}
 
       <StudioCountdown beatsLeft={countdown} label={tRec("wejscieZa")} />
+      {countInActive && countdown == null ? (
+        <p className="text-xs font-medium text-destructive" role="status">
+          {tr("countIn2")}
+        </p>
+      ) : null}
       {state.phase === "RECORDING" && liveCue ? (
         <p role="status" data-testid="studio-live-coach" data-cue={liveCue} className="border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm">
           <span className="font-semibold">BITEK: </span>
@@ -2682,7 +3290,7 @@ export function StudioRecordingPanel({
           >
             {STUDIO_COUNT_IN_BARS.map((bars) => (
               <option key={bars} value={bars}>
-                {tl(bars === 0 ? tr("wylaczone") : tr("takt", { v0: bars, v1: bars === 1 ? "" : "y" }))}
+                {tl(bars === 0 ? tr("wylaczone") : tr("takt", { n: bars }))}
               </option>
             ))}
           </select>
@@ -2704,8 +3312,9 @@ export function StudioRecordingPanel({
                 className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
                 type="number"
                 min={0}
-                value={punchInMs}
-                onChange={(e) => setPunchInMs(Number(e.target.value) || 0)}
+                step={0.1}
+                value={punchInMs / 1000}
+                onChange={(e) => setPunchInMs(Math.round((Number(e.target.value) || 0) * 1000))}
                 aria-label={tr("punchInMs")}
               />
             </label>
@@ -2714,18 +3323,20 @@ export function StudioRecordingPanel({
               <input
                 className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
                 type="number"
-                min={1}
-                value={punchOutMs}
-                onChange={(e) => setPunchOutMs(Number(e.target.value) || 0)}
+                min={0.1}
+                step={0.1}
+                value={punchOutMs / 1000}
+                onChange={(e) => setPunchOutMs(Math.round((Number(e.target.value) || 0) * 1000))}
                 aria-label={tr("punchOutMs")}
               />
             </label>
+            <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setPunchInMs(Math.round(getPlayheadMs()))}>
+              {tr("zGlowicy")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setPunchOutMs(Math.round(getPlayheadMs()))}>
+              {tr("zGlowicy")}
+            </Button>
           </div>
-        ) : null}
-        {countInActive ? (
-          <p className="text-xs font-medium text-destructive" role="status">
-            {tr("countIn2")}
-          </p>
         ) : null}
       </div>
       ) : null}
@@ -2771,7 +3382,8 @@ export function StudioRecordingPanel({
               className="w-full"
               variant="outline"
               disabled={workflowDisabled}
-              onClick={() => void onDiscardWorkflowTake()}
+              aria-expanded={confirmDiscard}
+              onClick={() => setConfirmDiscard(true)}
             >
               {tl(workflowBusy === "discard" ? tr("usuwanie") : tr("odrzuc"))}
             </Button>
@@ -2786,6 +3398,28 @@ export function StudioRecordingPanel({
               {tr("nagrajPonownie")}
             </Button>
           </div>
+          {confirmDiscard ? (
+            <div className="space-y-2 rounded border border-destructive/60 p-2" role="alert">
+              <p className="text-sm whitespace-pre-line text-[var(--brd-ink)]">
+                {tr("odrzucicNagranieNagranieZostanie")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  className="min-h-11"
+                  disabled={workflowDisabled}
+                  onClick={() => void onDiscardWorkflowTake()}
+                >
+                  {tr("odrzucTak")}
+                </Button>
+                <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setConfirmDiscard(false)}>
+                  {tr("anuluj")}
+                </Button>
+              </div>
+            </div>
+          ) : null}
           <p className="text-[11px] text-[var(--brd-mute)]">
             {tr("zachowajUmieszczaNagranieNa")}
           </p>
@@ -2805,7 +3439,11 @@ export function StudioRecordingPanel({
         onUseForSection={(lane, pass) => void updateLane(setSectionChoice(lane, pass.id))}
         onLineChoice={(lane, line, passId) => void updateLane(setLineChoice(lane, line, passId))}
         onApply={(lane) => void applyLane(lane)}
-        onDelete={(lane) => void laneStore.remove(lane.id)}
+        onDelete={(lane) =>
+          void laneStore.remove(lane.id).then((ok) => {
+            if (!ok) setLaneMessage(tRec("zapomnijBlad"));
+          })
+        }
       />
       {laneMessage ? (
         <p className="text-xs text-[var(--brd-mute)]" role="status" data-testid="studio-lane-message">
@@ -2839,11 +3477,12 @@ export function StudioRecordingPanel({
           setCatalogMessage(null);
           setWorkflowError(null);
           const result = await enqueuePersistAsync(async () => {
+            try {
             const placed = await placeOwnedStudioSample({
               projectId,
               sampleId,
               trackId: target.trackId,
-              timelineStartMs: Math.floor(transport.getPlayheadMs()),
+              timelineStartMs: Math.floor(getPlayheadMs()),
               expectedDocumentVersion: persistVersionTip.expected(),
             });
             if (!placed.ok) {
@@ -2872,6 +3511,9 @@ export function StudioRecordingPanel({
                 );
               },
             };
+            } catch {
+              return classifyPersistNetworkFailure(tr("sampleBlad"));
+            }
           });
           if (!result.ok) {
             return { ok: false as const, message: result.message };
@@ -2925,14 +3567,28 @@ export function StudioRecordingPanel({
           onDocumentVersionAck={ackDocumentVersion}
           tempoBpm={transport.tempoBpm}
         />
+        <p className="text-xs text-[var(--brd-mute)]" role="status">
+          {scratchClip
+            ? tr("scratchKlip", { time: formatStudioTimeMs(scratchClip.timelineStartMs) })
+            : tr("scratchWybierzKlip")}
+        </p>
         <StudioScratchPanel
-          sourceDurationMs={Math.max(1, transport.timelineLengthMs)}
-          playheadInSourceMs={Math.floor(transport.getPlayheadMs())}
+          key={lastScratchClipId ?? "none"}
+          disabled={!lastScratchClipId}
+          sourceDurationMs={Math.max(1, scratchClip ? scratchClip.sourceOffsetMs + scratchClip.durationMs : 1)}
+          getPlayheadInSourceMs={() =>
+            scratchClip
+              ? Math.max(0, Math.floor(getPlayheadMs() - scratchClip.timelineStartMs + scratchClip.sourceOffsetMs))
+              : 0
+          }
           onLiveRate={(rate, reverse) => {
+            if (!lastScratchClipId) return;
             transport.applyScratchLive(rate, lastScratchClipId, reverse);
           }}
           onCueJump={(cueMs) => {
-            transport.seek(cueMs);
+            if (scratchClip) {
+              transport.seek(Math.max(0, scratchClip.timelineStartMs + cueMs - scratchClip.sourceOffsetMs));
+            }
           }}
           onApprove={(approved) => {
             if (!lastScratchClipId) {
@@ -2976,6 +3632,7 @@ export function StudioRecordingPanel({
                   ok: true as const,
                   documentVersion: ackDocumentVersion(body.documentVersion),
                   apply: () => {
+                    onClipUpdated?.(body.clip!, getBaseVersionRef.current());
                     setCatalogMessage(tr("zapisanoZatwierdzonyStanScratch"));
                   },
                 };
@@ -3014,7 +3671,7 @@ export function StudioRecordingPanel({
             <option value="">
               {tr("automatycznieUrzadzenieSystemowe")}
             </option>
-            {inputDevices.inputs.map((d) => (
+            {inputDevices.inputs.filter((d) => d.deviceId).map((d) => (
               <option key={d.deviceId} value={d.deviceId}>
                 {tl(d.label)}
               </option>
@@ -3035,22 +3692,24 @@ export function StudioRecordingPanel({
 
         <div className="w-full space-y-1 pt-1">
           <p className="studio-gear-label text-xs text-[var(--brd-mute)]">{tr("testMikrofonu")}</p>
-          {testerError ? (
+          {testerError && !state.error ? (
             <p className="text-xs text-destructive" role="alert">
               {tl(testerError)}
             </p>
           ) : meterStream ? (
             <>
               <p className="text-xs text-[var(--brd-ink)]" role="status">
-                {tl(mic.level === "silent"
-                  ? tr("brakSygnaluSprawdzMikrofon")
-                  : mic.level === "quiet"
-                    ? tr("sygnalJestBardzoSlaby")
-                    : mic.level === "clip" || mic.level === "hot"
-                      ? tr("uwagaSygnalBliskoPrzesterowania")
-                      : tr("mikrofonDziala"))}
+                {tl(micStatus === "checking"
+                  ? tr("powiedzCos")
+                  : micStatus === "silent"
+                    ? tr("brakSygnaluSprawdzMikrofon")
+                    : micStatus === "quiet"
+                      ? tr("sygnalJestBardzoSlaby")
+                      : micStatus === "clip" || micStatus === "hot"
+                        ? tr("uwagaSygnalBliskoPrzesterowania")
+                        : tr("mikrofonDziala"))}
               </p>
-              <BrdInputMonitor level={mic.level} peak={mic.peak} />
+              <BrdInputMonitor level={micStatus === "checking" ? "quiet" : micStatus} peak={mic.peak} />
               <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--brd-ink)]">
                 <input
                   type="checkbox"
@@ -3080,9 +3739,25 @@ export function StudioRecordingPanel({
             </>
           ) : (
             <p className="text-xs text-[var(--brd-mute)]" role="status">
-              {tr("oczekiwanieNaUprawnienia")}
+              {testerOn || state.phase === "REQUESTING_MIC" ? tr("oczekiwanieNaUprawnienia") : tr("testMikrofonuOpis")}
             </p>
           )}
+          {!captureActive && !captureArming && state.phase !== "READY_TAKE" && state.phase !== "REQUESTING_MIC" ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11"
+              data-testid="studio-mic-test"
+              aria-pressed={testerOn}
+              onClick={() => {
+                setTesterError(null);
+                setTesterOn((on) => !on);
+              }}
+            >
+              {testerOn ? tr("zatrzymajTest") : tr("sprawdzMikrofon")}
+            </Button>
+          ) : null}
         </div>
       </div>
       ) : null}
@@ -3106,7 +3781,7 @@ export function StudioRecordingPanel({
               aria-label={tr("wybierzUrzadzenieOdsluchu")}
             >
               <option value="">{tr("automatyczneUrzadzenieSystemowe")}</option>
-              {outputDevices.outputs.map((d) => (
+              {outputDevices.outputs.filter((d) => d.deviceId).map((d) => (
                 <option key={d.deviceId} value={d.deviceId}>
                   {tl(d.label)}
                 </option>
@@ -3118,6 +3793,11 @@ export function StudioRecordingPanel({
             {tr("automatycznyUrzadzenieSystemoweWybor")}
           </p>
         )}
+        {outputError ? (
+          <p className="text-xs text-destructive" role="alert">
+            {tr("wyjscieNieDziala")}
+          </p>
+        ) : null}
         {outputDevices.softNotice ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
             {tl(outputDevices.softNotice)}
@@ -3138,7 +3818,7 @@ export function StudioRecordingPanel({
       </div>
       {simple ? (
         <p className="pt-2 text-[11px] text-[var(--brd-mute)]">
-          {tr("limit")}{" "}{maxSeconds}{tr("sIstniejaceLimityKonta")}
+          {tr("limitNagrania", { time: clock(maxSeconds) })}
         </p>
       ) : null}
       </details>
@@ -3156,9 +3836,77 @@ export function StudioRecordingPanel({
         </p>
       ) : null}
 
-      {takeOpen && !showWorkflow ? (
-        <div className="flex w-full flex-col gap-2">
-          <StudioQuotaLine />
+      {unsent && !samplesMode && !captureActive && state.phase !== "READY_TAKE" ? (
+        <div ref={unsentBoxRef} className="space-y-2 rounded border border-[var(--brd-amber)] p-2" data-testid="studio-unsent-take">
+          <p className="text-sm text-[var(--brd-ink)]">{tr("niewyslaneOpis")}</p>
+          {replaceCandidates ? (
+            replaceCandidates.length > 0 ? (
+              <ul className="max-h-48 space-y-1 overflow-y-auto" aria-label={tr("zastapLista")}>
+                <li className="text-xs text-[var(--brd-mute)]">{tr("zastapOpis")}</li>
+                {replaceCandidates.map((take) => (
+                  <li key={take.id} className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="min-w-0 flex-1 truncate">
+                      {tl(take.beatTitle ?? "—")}
+                      {take.durationSeconds != null ? ` · ${clock(take.durationSeconds)}` : ""}
+                      {` · ${new Date(take.createdAt).toLocaleString(locale, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}`}
+                    </span>
+                    <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void retryUnsent(take.id)}>
+                      {tr("zastapTo")}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-[var(--brd-mute)]">{tr("zastapBrak")}</p>
+            )
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" className="min-h-11" data-testid="studio-unsent-retry" onClick={() => void retryUnsent()}>
+              {tr("wyslijPonownie")}
+            </Button>
+            {confirmDiscard ? (
+              <>
+                <Button type="button" size="sm" variant="destructive" className="min-h-11" onClick={discardUnsent}>
+                  {tr("odrzucTak")}
+                </Button>
+                <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setConfirmDiscard(false)}>
+                  {tr("anuluj")}
+                </Button>
+              </>
+            ) : (
+              <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setConfirmDiscard(true)}>
+                {tr("odrzuc")}
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {takeOpen ? (
+        <details
+          className="rounded border border-[var(--brd-line)] px-2"
+          open={lyricsOpen}
+          onToggle={(e) => setLyricsOpen(e.currentTarget.open)}
+          data-testid="studio-record-lyrics"
+        >
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm text-[var(--brd-mute)]">{tr("tekstUtworu")}</summary>
+          {lyricsOpen ? (
+            <div className="pb-2">
+              <StudioLyricsCard
+                projectId={projectId}
+                getPlayheadMs={getPlayheadMs}
+                mode={section ? recMode : "single"}
+                loopStartMs={section?.startMs ?? null}
+                punchLine={recMode === "punch" && lines.length ? Math.min(punchLine, lines.length - 1) : null}
+              />
+            </div>
+          ) : null}
+        </details>
+      ) : null}
+
+      {!samplesMode && !showWorkflow ? (
+        <div className={`flex w-full flex-col gap-2 bg-[var(--brd-paper)] py-1 ${simple ? "xl:sticky xl:bottom-0 xl:z-10" : "sticky bottom-0 z-10"}`} data-testid="studio-record-bar">
+          {takeOpen ? <StudioQuotaLine /> : null}
           <div className={`flex w-full flex-col gap-2 ${simple ? "" : "sm:flex-row sm:flex-wrap"}`}>
           <Button
             type="button"
@@ -3166,12 +3914,8 @@ export function StudioRecordingPanel({
             className={simple ? "studio-rec-button min-h-14 w-full text-base font-semibold" : "studio-rec-button w-full sm:w-auto"}
             variant={state.phase === "RECORDING" ? "destructive" : "default"}
             disabled={primaryDisabled}
-            onClick={() => {
-              if (state.phase === "READY") void startRecording();
-              else if (state.phase === "RECORDING") void stopAndFinalize();
-              else if (canStartNewRecording(state.phase))
-                void prepareMicrophone();
-            }}
+            data-testid="studio-record-primary"
+            onClick={pressRecord}
           >
             {tl(primaryLabel)}
           </Button>
@@ -3187,6 +3931,7 @@ export function StudioRecordingPanel({
               if (file) void onImportVocalFile(file);
             }}
           />
+          {takeOpen ? (
           <Button
             type="button"
             size="sm"
@@ -3194,6 +3939,7 @@ export function StudioRecordingPanel({
             variant="outline"
             disabled={
               primaryDisabled ||
+              unsent !== null ||
               workflowBusy === "import" ||
               !canStartNewRecording(state.phase) ||
               state.phase === "READY" ||
@@ -3202,12 +3948,11 @@ export function StudioRecordingPanel({
             onClick={() => importFileInputRef.current?.click()}
             aria-label={tr("importujGotowyPlikWokalu")}
           >
-            {tl(workflowBusy === "import" ||
-            state.phase === "UPLOADING" ||
-            state.phase === "PROCESSING"
+            {tl(workflowBusy === "import"
               ? tr("importowanie")
               : tr("importujWokal"))}
           </Button>
+          ) : null}
           {(state.phase === "READY" ||
             state.phase === "RECORDING" ||
             state.phase === "REQUESTING_MIC") && (
@@ -3225,8 +3970,11 @@ export function StudioRecordingPanel({
         </div>
       ) : null}
 
-      {takeOpen ? (
+      {takeOpen || lanesOpen ? (
       <div className="space-y-2 border-t border-[var(--brd-line)] pt-2">
+        {lanesOpen ? (
+        <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("mojeNagraniaTytul")}</p>
+        ) : (
         <Button
           type="button"
           size="sm"
@@ -3249,7 +3997,8 @@ export function StudioRecordingPanel({
                 : tr("mojeTakeI2"),
           )}
         </Button>
-        {libraryOpen ? (
+        )}
+        {libraryShown ? (
           <div className="space-y-2" aria-label={tr("listaReadyTake")}>
             {libraryLoading ? (
               <p className="text-xs text-[var(--brd-mute)]">{tr("wczytywanie")}</p>
@@ -3263,6 +4012,9 @@ export function StudioRecordingPanel({
               <p className="text-xs text-[var(--brd-mute)]">
                 {simple ? tr("brakUjecDoWyboru") : tr("brakGotowychNagranDo")}
               </p>
+            ) : null}
+            {!libraryLoading && !libraryError && simpleTakes && simpleTakes.length === 0 && libraryTakes.length > 0 ? (
+              <p className="text-xs text-[var(--brd-mute)]">{tr("brakUjecDoWyboru")}</p>
             ) : null}
             {simple && libraryOpen ? (
               <p className="text-[11px] text-[var(--brd-mute)]" data-testid="studio-record-simple-takes-hint">
@@ -3287,9 +4039,9 @@ export function StudioRecordingPanel({
                     {tl(take.durationSeconds != null
                       ? `${take.durationSeconds.toFixed(1)}s`
                       : "—")}
-                    {simple ? ` · ${new Date(take.createdAt).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                    {` · ${new Date(take.createdAt).toLocaleString(locale, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}`}
                     {" · "}
-                    {tr("playhead")}{" "}{tl(formatStudioTimeMs(transport.state.playheadMs))}
+                    {placementLabel(take.id)}
                   </p>
                   <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <Button
@@ -3300,7 +4052,11 @@ export function StudioRecordingPanel({
                       disabled={libraryBusyId === take.id}
                       onClick={() => void onLibraryPreview(take.id)}
                     >
-                      {simple ? tr("posluchajUjecia") : tr("odtworz")}
+                      {transport.takePreviewActive && libraryPreviewId === take.id
+                        ? tr("zatrzymaj")
+                        : simple
+                          ? tr("posluchajUjecia")
+                          : tr("odtworz")}
                     </Button>
                     <Button
                       type="button"
@@ -3340,14 +4096,14 @@ export function StudioRecordingPanel({
 
       {samplesMode || simple ? null : (
       <p className="text-[11px] text-[var(--brd-mute)]">
-        {tr("limit")}{" "}{maxSeconds}{tr("sIstniejaceLimityKonta")}
+        {tr("limitNagrania", { time: clock(maxSeconds) })}
       </p>
       )}
       {samplesMode || !planLimits ? null : (
       <p className="text-[11px] text-[var(--brd-mute)]" data-testid="studio-record-plan-limits">
         {tr("limityPlanu", {
           sessions: planLimits.sessionsPerDay,
-          days: planLimits.retentionDays,
+          hours: planLimits.takeHours,
         })}
       </p>
       )}

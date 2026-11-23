@@ -5,9 +5,10 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { useStudioDialog } from "@/components/studio/use-studio-dialog";
+import { CloseButton } from "@/components/ui/close-button";
 import {
   classifyPersistHttpFailure,
   classifyPersistNetworkFailure,
@@ -24,6 +25,9 @@ type PickerBeat = {
   producer: string | null;
   bpm: number | null;
 };
+
+/** Error text that came from our API (safe to show). */
+class PickerError extends Error {}
 
 const TABS: Array<{ id: PickerTab; label: string }> = [
   { id: "catalog", label: "Katalog" },
@@ -82,15 +86,14 @@ export function StudioBeatPicker({
         };
         if (cancelled) return;
         if (!res.ok || !json.success || !Array.isArray(json.beats)) {
-          throw new Error(json.error ?? tr("nieUdaloSieWczytac2"));
+          throw new PickerError(json.error ?? tr("nieUdaloSieWczytac2"));
         }
         setBeats(json.beats);
       } catch (e) {
         if (cancelled) return;
         setBeats([]);
-        setError(
-          e instanceof Error ? e.message : tr("nieUdaloSieWczytac"),
-        );
+        // Network / parse errors carry English browser text.
+        setError(e instanceof PickerError ? e.message : tr("nieUdaloSieWczytac"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -100,14 +103,12 @@ export function StudioBeatPicker({
     };
   }, [open, tab, tr]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  /** The beat is being attached: a stray click or Escape must not hide the result. */
+  const closeUnlessAttaching = () => {
+    if (attachingId === null) onClose();
+  };
+  useStudioDialog({ open, onClose: closeUnlessAttaching, panelRef });
 
   async function attach(beatId: string, beatTitle: string) {
     setAttachingId(beatId);
@@ -159,8 +160,8 @@ export function StudioBeatPicker({
         return;
       }
       onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tr("nieUdaloSiePowiazac"));
+    } catch {
+      setError(tr("nieUdaloSiePowiazac"));
     } finally {
       setAttachingId(null);
     }
@@ -170,14 +171,17 @@ export function StudioBeatPicker({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label={tr("wybierzBit")}
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
+      onClick={closeUnlessAttaching}
     >
       <div
-        className="flex max-h-[85dvh] w-full max-w-lg flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] sm:rounded"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={tr("wybierzBit")}
+        tabIndex={-1}
+        data-testid="studio-beat-picker"
+        className="flex max-h-[85dvh] w-full max-w-lg flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] pb-[env(safe-area-inset-bottom)] outline-none sm:rounded"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between gap-3 border-b border-[var(--brd-line)] px-4 py-3">
@@ -189,9 +193,7 @@ export function StudioBeatPicker({
               {tr("wybierzBit")}
             </h2>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
-            {tr("zamknij")}
-          </Button>
+          <CloseButton label={tr("zamknijWyborBitu")} onClick={onClose} />
         </header>
 
         <div className="flex gap-1 border-b border-[var(--brd-line)] px-2 py-2">
@@ -215,7 +217,7 @@ export function StudioBeatPicker({
         <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {loading ? (
             <p className="px-2 py-6 text-sm text-[var(--brd-mute)]">{tr("ladowanie")}</p>
-          ) : beats.length === 0 ? (
+          ) : error && beats.length === 0 ? null : beats.length === 0 ? (
             <p className="px-2 py-6 text-sm text-[var(--brd-mute)]">
               {tr("brakBitowWTej")}
             </p>
@@ -239,7 +241,7 @@ export function StudioBeatPicker({
                       </span>
                     </span>
                     <span className="shrink-0 text-xs text-[var(--brd-green)]">
-                      {tl(attachingId === beat.id ? "…" : "Wybierz")}
+                      {attachingId === beat.id ? "…" : tr("wybierz")}
                     </span>
                   </button>
                 </li>

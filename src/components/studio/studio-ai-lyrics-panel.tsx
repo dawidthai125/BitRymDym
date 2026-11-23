@@ -63,7 +63,7 @@ export function StudioAiLyricsPanel({ projectId, currentText, onInsert }: Props)
   async function generate() {
     setBusy(true);
     setError(null);
-    setDraft(null);
+    // The previous draft stays until a new one arrives.
     try {
       const res = await fetch(`/api/studio/projects/${projectId}/lyrics/generate`, {
         method: "POST",

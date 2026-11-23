@@ -358,7 +358,25 @@ export function sampleCopyTakeTitle(sampleId: string): string {
   return `smp:${sampleId.toLowerCase()}`;
 }
 
-export function sampleUserMessage(error: string): string {
+/** Why a file was refused, in plain words (from the `details` of the checks above). */
+function invalidSampleMessage(details: readonly string[]): string | null {
+  const text = details.join(" ");
+  if (/byte size/.test(text)) return `Plik jest za duży. Maksymalnie ${SAMPLE_MAX_BYTES / 1024 / 1024} MB.`;
+  if (/duration must be/.test(text)) return `Sampel musi mieć od ${SAMPLE_MIN_MS / 1000} do ${SAMPLE_MAX_MS / 1000} sekund.`;
+  if (/duration could not be read/.test(text)) return "Nie mogę odczytać tego pliku. Wgraj zwykły WAV albo MP3.";
+  if (/title/.test(text)) return "Wpisz nazwę sampla.";
+  if (/bpm/.test(text)) return "Podaj tempo od 40 do 240 BPM i liczbę taktów.";
+  if (/instrument/.test(text)) return "Wybierz instrument z listy.";
+  if (/content|format|sniff|type/.test(text)) return "Ten format nie przejdzie. Wgraj WAV albo MP3.";
+  return null;
+}
+
+export function sampleUserMessage(error: string, details: readonly string[] = []): string {
+  if (error === SAMPLE_INVALID) return invalidSampleMessage(details) ?? "Nie udało się zapisać sampla.";
+  if (error === SAMPLE_FORBIDDEN && details.includes("sample lab needs Silver or Gold")) {
+    return "Zapis własnych nagrań i importów jest od planu Silver.";
+  }
+  if (error === SAMPLE_COPY_FAILED) return "Nie udało się zapisać pliku. Spróbuj jeszcze raz.";
   switch (error) {
     case SAMPLE_TABLE_UNAVAILABLE:
       return "Katalog sampli nie jest jeszcze włączony.";

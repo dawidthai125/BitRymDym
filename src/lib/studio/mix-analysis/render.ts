@@ -9,7 +9,15 @@
 
 import { automationLane, clampAutomationValue, createLaneEvaluator, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
 import type { AcousticBank } from "@/lib/studio/acoustic-bank";
+import {
+  bakedReverseTimelineMs,
+  bakedTimelineMs,
+  clampClipPlayback,
+  clipPlaybackIdentity,
+  renderClipPlaybackMono,
+} from "@/lib/studio/studio-clip-playback";
 import { renderMidiNotes, type StudioMidiV1 } from "@/lib/studio/studio-midi";
+import { resolveScratchSourceMs } from "@/lib/studio/studio-scratch-state";
 import type { StudioTrackRole } from "@/config/studio";
 import {
   buildStudioOfflineFxChain,
@@ -31,12 +39,21 @@ export type MixAnalysisClip = {
   muted: boolean;
   fadeInMs: number;
   fadeOutMs: number;
+  /** Clip tempo / pitch (baked like playback and export). Absent = original. */
+  stretchRatio?: number;
+  pitchCents?: number;
+  /** Approved Scratch DJ fields / „Odwróć”. Absent = plain forward read. */
+  scratchCueMs?: number;
+  scratchReverse?: boolean;
+  scratchRate?: number;
 };
 
 export type MixAnalysisTrack = {
   id: string;
   name: string;
   role: StudioTrackRole;
+  /** BEAT keys the user sidechain (same rule as the live engine). */
+  trackType?: string;
   gainDb: number;
   pan: number;
   muted: boolean;
@@ -170,6 +187,66 @@ function trackStrip(track: MixAnalysisTrack, sr: number): { gainAt: (n: number) 
   };
 }
 
+/** Stretch + pitch bakes, one per source and setting (a looped sample reuses the same bake). */
+const bakedSources = new WeakMap<MixAnalysisSource, Map<string, Float32Array[]>>();
+
+function bakedChannels(src: MixAnalysisSource, playback: { stretch: number; pitchCents: number }): Float32Array[] {
+  const sig = `${playback.stretch}|${playback.pitchCents}`;
+  let bySig = bakedSources.get(src);
+  if (!bySig) {
+    bySig = new Map();
+    bakedSources.set(src, bySig);
+  }
+  let hit = bySig.get(sig);
+  if (!hit) {
+    hit = src.channels.slice(0, 2).map((ch) => renderClipPlaybackMono(ch, playback));
+    bySig.set(sig, hit);
+  }
+  return hit;
+}
+
+type ClipPcm = {
+  c0: Float32Array;
+  c1: Float32Array;
+  mono: boolean;
+  /** Clip-local sample → source sample. Outside the source = silence. */
+  indexAt: (k: number) => number;
+  /** Samples left in a plain forward source; Infinity when the read position is mapped. */
+  available: number;
+};
+
+/** The clip's samples the way playback reads them: tempo, pitch, reverse and approved scratch included. */
+function clipPcm(input: MixAnalysisInput, clip: MixAnalysisClip): ClipPcm | null {
+  const src = input.sources[clip.sourceKey];
+  if (!src || src.channels.length === 0) return null;
+  const sr = input.sampleRate;
+  const playback = clampClipPlayback({ stretch: clip.stretchRatio ?? 1, pitchCents: clip.pitchCents ?? 0 });
+  const shaped = !clipPlaybackIdentity(playback);
+  const channels = shaped ? bakedChannels(src, playback) : src.channels;
+  const mono = channels.length === 1;
+  const c0 = channels[0];
+  const c1 = mono ? c0 : channels[1];
+  const reverse = Boolean(clip.scratchReverse);
+  const cueMs = clip.scratchCueMs ?? 0;
+  const rate = clip.scratchRate ?? 1;
+  const sourceDurationMs = (c0.length / sr) * 1000;
+  // Same rounding as the export: floor(ms → frame); the epsilon keeps whole frames whole.
+  const frame = (ms: number) => Math.floor((ms / 1000) * sr + 1e-5);
+  if (!shaped && !reverse && cueMs === 0 && rate === 1) {
+    const off = Math.round((clip.sourceOffsetMs / 1000) * sr);
+    return { c0, c1, mono, indexAt: (k) => off + k, available: c0.length - off };
+  }
+  const local = (k: number) => (k / sr) * 1000;
+  const indexAt = shaped
+    ? reverse
+      ? (k: number) =>
+          frame(bakedReverseTimelineMs({ sourceOffsetMs: clip.sourceOffsetMs, localMs: local(k), stretch: playback.stretch, cueMs, rate, bakedDurationMs: sourceDurationMs }))
+      : (k: number) => frame(bakedTimelineMs({ sourceOffsetMs: clip.sourceOffsetMs, localMs: local(k), stretch: playback.stretch }))
+    : (k: number) =>
+        frame(resolveScratchSourceMs({ sourceOffsetMs: clip.sourceOffsetMs, localMs: local(k), approved: { cueMs, reverse, rate }, sourceDurationMs }));
+  return { c0, c1, mono, indexAt, available: Infinity };
+}
+
 /** Overlap-add is inside renderMidiNotes. Gain here; pan now or later (FX path pans the whole bus). */
 function addRenderedMidi(
   input: MixAnalysisInput,
@@ -222,24 +299,24 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
   if (fx) return renderTrackWithFx(input, track, audible, strip, fx);
   for (const clip of input.clips) {
     if (clip.trackId !== track.id || clip.muted || clip.durationMs < 1) continue;
-    const src = input.sources[clip.sourceKey];
-    if (!src || src.channels.length === 0) continue;
-    const mono = src.channels.length === 1;
-    const c0 = src.channels[0];
-    const c1 = mono ? c0 : src.channels[1];
+    const pcm = clipPcm(input, clip);
+    if (!pcm) continue;
+    const { c0, c1, mono, indexAt } = pcm;
     const start = Math.round((clip.timelineStartMs / 1000) * sr);
     const dur = Math.round((clip.durationMs / 1000) * sr);
-    const off = Math.round((clip.sourceOffsetMs / 1000) * sr);
     const fi = Math.round((Math.max(0, clip.fadeInMs) / 1000) * sr);
     const fo = Math.round((Math.max(0, clip.fadeOutMs) / 1000) * sr);
     const cg = dbToLin(clip.gainDb);
-    const end = Math.min(len, start + dur, start + (c0.length - off));
+    const end = Math.min(len, start + dur, start + pcm.available);
     if (end <= start) continue;
-    activeRanges.push([Math.max(0, start), end]);
+    let first = -1;
+    let last = -1;
     for (let n = Math.max(0, start); n < end; n++) {
       const k = n - start;
-      const si = off + k;
-      if (si < 0) continue;
+      const si = indexAt(k);
+      if (si < 0 || si >= c0.length) continue;
+      if (first < 0) first = n;
+      last = n;
       let g = cg * strip.gainAt(n);
       if (fi > 0 && k < fi) g *= k / fi;
       if (fo > 0 && dur - k <= fo) g *= Math.max(0, (dur - k) / fo);
@@ -247,6 +324,7 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
       left[n] += pl;
       right[n] += pr;
     }
+    if (first >= 0) activeRanges.push([first, last + 1]);
   }
   addRenderedMidi(input, track, left, right, activeRanges, strip, true);
   return { track, left, right, activeRanges, audible };
@@ -268,31 +346,32 @@ function renderTrackWithFx(
   let allMono = true;
   for (const clip of input.clips) {
     if (clip.trackId !== track.id || clip.muted || clip.durationMs < 1) continue;
-    const src = input.sources[clip.sourceKey];
-    if (!src || src.channels.length === 0) continue;
-    const mono = src.channels.length === 1;
+    const pcm = clipPcm(input, clip);
+    if (!pcm) continue;
+    const { c0, c1, mono, indexAt } = pcm;
     if (!mono) allMono = false;
-    const c0 = src.channels[0];
-    const c1 = mono ? c0 : src.channels[1];
     const start = Math.round((clip.timelineStartMs / 1000) * sr);
     const dur = Math.round((clip.durationMs / 1000) * sr);
-    const off = Math.round((clip.sourceOffsetMs / 1000) * sr);
     const fi = Math.round((Math.max(0, clip.fadeInMs) / 1000) * sr);
     const fo = Math.round((Math.max(0, clip.fadeOutMs) / 1000) * sr);
     const cg = dbToLin(clip.gainDb);
-    const end = Math.min(len, start + dur, start + (c0.length - off));
+    const end = Math.min(len, start + dur, start + pcm.available);
     if (end <= start) continue;
-    activeRanges.push([Math.max(0, start), end]);
+    let first = -1;
+    let last = -1;
     for (let n = Math.max(0, start); n < end; n++) {
       const k = n - start;
-      const si = off + k;
-      if (si < 0) continue;
+      const si = indexAt(k);
+      if (si < 0 || si >= c0.length) continue;
+      if (first < 0) first = n;
+      last = n;
       let g = cg * strip.gainAt(n);
       if (fi > 0 && k < fi) g *= k / fi;
       if (fo > 0 && dur - k <= fo) g *= Math.max(0, (dur - k) / fo);
       left[n] += c0[si] * g;
       right[n] += c1[si] * g;
     }
+    if (first >= 0) activeRanges.push([first, last + 1]);
   }
   addRenderedMidi(input, track, left, right, activeRanges, strip, false);
   if (activeRanges.length > 0) applyFxInPlace(fx, left, right);

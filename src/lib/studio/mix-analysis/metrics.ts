@@ -7,6 +7,8 @@
 import type { StudioTrackRole } from "@/config/studio";
 import { percentile, powerToDb, stftBandPowers } from "@/lib/studio/mix-analysis/dsp";
 import { measureLoudness } from "@/lib/studio/mix-analysis/loudness";
+import { duckBeatMids, isPocketBeat, isPocketLead, pocketLeadStage } from "@/lib/studio/mix-analysis/rap-pocket";
+import { isSidechainKey, mixHasTrackSidechain, SidechainBus, trackSidechain } from "@/lib/studio/mix-analysis/track-sidechain";
 import {
   analysisFxChain,
   applyFxInPlace,
@@ -94,6 +96,18 @@ function noiseFloor(r: RenderedTrack, sampleRate: number): number | null {
   return percentile(levels, 10);
 }
 
+/** Room noise is judged without reverb and echo: their tail is not noise and a gate would not remove it. */
+function dryForNoise(input: MixAnalysisInput, r: RenderedTrack, anySolo: boolean): RenderedTrack {
+  const chain = r.track.effectsChain as { effects?: { type?: string; enabled?: boolean }[] } | null | undefined;
+  const effects = chain?.effects;
+  if (!Array.isArray(effects) || !effects.some((e) => e.enabled !== false && (e.type === "reverb" || e.type === "delay"))) return r;
+  return renderTrack(
+    input,
+    { ...r.track, effectsChain: { ...chain, effects: effects.filter((e) => e.type !== "reverb" && e.type !== "delay") } },
+    anySolo,
+  );
+}
+
 const MASK_BANDS = (() => {
   const out: { loHz: number; hiHz: number }[] = [];
   const lo = 200;
@@ -179,7 +193,11 @@ export function stereoMetrics(l: Float32Array, r: Float32Array): { correlation: 
 
 export type MixProgress = (fraction: number) => void;
 
-/** Streaming: renders one track at a time, keeps only the three stems. */
+/**
+ * Streaming: renders one track at a time, keeps only the three stems.
+ * Rap pocket and sidechain are heard in playback and in the master, so they are measured too:
+ * pocketed leads first (held), then the beat that ducks under them and keys the sidechain, then the rest.
+ */
 export function computeMixMetrics(input: MixAnalysisInput, onProgress?: MixProgress): MixMetrics {
   const sr = input.sampleRate;
   const anySolo = input.tracks.some((t) => t.solo);
@@ -192,13 +210,14 @@ export function computeMixMetrics(input: MixAnalysisInput, onProgress?: MixProgr
   const beatM = new Float32Array(len);
   let vocalCount = 0;
   let beatCount = 0;
-  const tracks: TrackMetrics[] = [];
+  const tracks = new Array<TrackMetrics>(input.tracks.length);
   const steps = input.tracks.length + 2;
-  input.tracks.forEach((t, idx) => {
-    const r = renderTrack(input, t, anySolo);
+  let measured = 0;
+  const measure = (idx: number, r: RenderedTrack) => {
+    const t = input.tracks[idx]!;
     const hasAudio = r.activeRanges.length > 0;
     const lo = hasAudio ? measureLoudness([r.left, r.right], sr, { truePeak: false }) : null;
-    tracks.push({
+    tracks[idx] = {
       trackId: t.id,
       name: t.name,
       role: t.role,
@@ -209,8 +228,8 @@ export function computeMixMetrics(input: MixAnalysisInput, onProgress?: MixProgr
       shortTermMaxLufs: lo?.shortTermMaxLufs ?? -Infinity,
       samplePeakDbfs: lo?.samplePeakDbfs ?? -120,
       clipEvents: hasAudio ? countClipEvents(r.left, r.right) : 0,
-      noiseFloorDbfs: hasAudio && VOCAL_ROLES.includes(t.role) ? noiseFloor(r, sr) : null,
-    });
+      noiseFloorDbfs: hasAudio && VOCAL_ROLES.includes(t.role) ? noiseFloor(dryForNoise(input, r, anySolo), sr) : null,
+    };
     if (r.audible && hasAudio) {
       for (let i = 0; i < len; i++) {
         masterL[i] += r.left[i];
@@ -224,8 +243,39 @@ export function computeMixMetrics(input: MixAnalysisInput, onProgress?: MixProgr
         for (let i = 0; i < len; i++) beatM[i] += 0.5 * (r.left[i] + r.right[i]);
       }
     }
-    onProgress?.((idx + 1) / steps);
-  });
+    measured++;
+    onProgress?.(measured / steps);
+  };
+  const bus = mixHasTrackSidechain(input.tracks) ? new SidechainBus(sr, len) : null;
+  const duck = (r: RenderedTrack) => {
+    const params = bus ? trackSidechain(r.track) : null;
+    if (bus && params) bus.duck(r.left, r.right, params);
+  };
+  const leads = input.tracks.flatMap((t, idx) => (isPocketLead(t) ? [{ idx, r: renderTrack(input, t, anySolo) }] : []));
+  const pocketed = leads.filter((l) => l.r.audible && l.r.activeRanges.length > 0);
+  const pocket = pocketLeadStage(
+    pocketed.map(({ r }) => ({ role: r.track.role, effectsChain: r.track.effectsChain, left: r.left, right: r.right })),
+    sr,
+    input.lengthMs,
+    input.markers ?? [],
+  );
+  const rest = input.tracks.map((t, idx) => ({ t, idx })).filter(({ t }) => !isPocketLead(t));
+  // Key (BEAT) tracks before the tracks they duck; without a sidechain the project order stays.
+  if (bus) rest.sort((x, y) => Number(isSidechainKey(y.t)) - Number(isSidechainKey(x.t)) || x.idx - y.idx);
+  const renderRest = ({ t, idx }: { t: (typeof input.tracks)[number]; idx: number }) => {
+    const r = renderTrack(input, t, anySolo);
+    if (pocket && isPocketBeat(t)) duckBeatMids(r, pocket.key, sr, pocket.params.depth);
+    if (bus && isSidechainKey(t)) {
+      if (r.audible) bus.addKey(r.left, r.right);
+    } else duck(r);
+    measure(idx, r);
+  };
+  for (const item of rest) renderRest(item);
+  pocket?.finish();
+  for (const { idx, r } of leads) {
+    duck(r);
+    measure(idx, r);
+  }
   const masterFx = analysisFxChain(input.masterEffectsChain, "master", sr);
   if (masterFx) applyFxInPlace(masterFx, masterL, masterR);
   const mg = Number.isFinite(input.masterGainDb) ? Math.pow(10, input.masterGainDb / 20) : 1;

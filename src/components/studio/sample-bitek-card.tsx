@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { PlacementScope, SamplePlacementPlan } from "@/lib/studio/samples/sample-bitek-plan";
 import { cn } from "@/lib/utils";
@@ -27,26 +27,49 @@ export function SampleBitekCard({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // The host re-renders with the meters: the plan is asked once per sample and scope, not per render.
+  const previewRef = useRef(preview);
+  useLayoutEffect(() => {
+    previewRef.current = preview;
+  });
   useEffect(() => {
     let alive = true;
-    preview(sampleId, scope).then((res) => {
-      if (!alive) return;
-      if (res.ok) {
-        setPlan(res.plan);
-        setError(null);
-      } else setError(res.message);
-    });
+    previewRef.current(sampleId, scope).then(
+      (res) => {
+        if (!alive) return;
+        if (res.ok) {
+          setPlan(res.plan);
+          setError(null);
+        } else setError(res.message);
+      },
+      () => {
+        if (alive) setError(tr("bitekBlad"));
+      },
+    );
     return () => {
       alive = false;
     };
-  }, [sampleId, scope, preview]);
+  }, [sampleId, scope, tr]);
+
+  /** A new scope is a new plan: "Zastosuj" waits for it. */
+  function chooseScope(next: PlacementScope) {
+    if (next === scope) return;
+    setPlan(null);
+    setError(null);
+    setScope(next);
+  }
 
   async function go() {
     setBusy(true);
-    const res = await apply(sampleId, scope);
-    setBusy(false);
-    if (res.ok) onClose(true);
-    else setError(res.message);
+    try {
+      const res = await apply(sampleId, scope);
+      if (res.ok) onClose(true);
+      else setError(res.message);
+    } catch {
+      setError(tr("bitekBlad"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   const e = plan?.explain;
@@ -61,7 +84,8 @@ export function SampleBitekCard({
             type="button"
             role="radio"
             aria-checked={scope === s}
-            onClick={() => setScope(s)}
+            disabled={busy}
+            onClick={() => chooseScope(s)}
             className={cn(
               "min-h-9 rounded border px-1 text-xs",
               scope === s ? "border-[var(--brd-amber)] bg-[var(--brd-amber)] font-semibold text-[var(--brd-on-media)]" : "border-[var(--brd-line)] text-[var(--brd-ink-soft)]",

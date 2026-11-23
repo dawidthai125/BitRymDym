@@ -517,7 +517,7 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
   text-transform: uppercase;
 }
 .studio-desk .studio-bit-picker {
-  min-width: min(100%, 16rem);
+  min-width: min(16rem, 50vw);
   border: 1px solid #5c4c3c;
   background: #17130f;
   color: #f1e7d3;
@@ -608,7 +608,7 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
   box-shadow: none;
 }
 .studio-desk .studio-counter-time {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: #f2a93b;
 }
 .studio-desk .studio-sel-cell {
@@ -656,7 +656,7 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
   color: #f1e7d3;
   border-color: #5c4c3c;
 }
-.studio-desk [data-testid="studio-timeline"] .sticky,
+.studio-desk [data-testid="studio-timeline"] .sticky:not(.studio-lane-empty),
 .studio-desk [data-testid="studio-track-list"] > div:first-child {
   background: #0b0907 !important;
 }
@@ -683,29 +683,31 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
 .studio-desk [data-studio-clip-lane] {
   background: #120e0b;
 }
-.studio-desk [data-studio-clip-lane][data-track-type="BEAT"] {
-  background-color: #6b4a1c;
-  background-image:
-    linear-gradient(#f2a93b, #f2a93b),
-    repeating-linear-gradient(90deg, transparent 0, transparent 63px, #8a6326 63px, #8a6326 64px),
-    repeating-linear-gradient(#8a6326 0 1px, transparent 1px 32px);
-  background-size: 100% 26px, auto, auto;
-  background-repeat: no-repeat, repeat, repeat;
-  background-position: top, 0 26px, 0 26px;
-}
+/* The beat color belongs to the beat clip: a painted lane looked like a 6:00 beat. */
 .studio-desk [data-studio-clip-lane][data-track-type="BEAT"] [data-studio-clip] {
   top: 28px;
   bottom: 2px;
   border-radius: 0;
-  background: transparent !important;
+  background-color: #6b4a1c !important;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0, transparent 63px, #8a6326 63px, #8a6326 64px),
+    repeating-linear-gradient(#8a6326 0 1px, transparent 1px 32px);
   box-shadow: none;
+}
+.studio-desk [data-studio-clip-lane][data-track-type="BEAT"] [data-studio-clip]::before {
+  content: "";
+  position: absolute;
+  inset: -27px 0 auto;
+  height: 26px;
+  background: #f2a93b;
+  pointer-events: none;
 }
 .studio-desk [data-studio-clip-lane]:not([data-track-type="BEAT"]) [data-studio-clip] {
   background: color-mix(in srgb, var(--studio-lane-edge, #e8735a) 82%, #1a1006) !important;
   border-radius: 2px;
 }
 /* The timeline .sticky rule (higher specificity, !important) paints sticky children near-black. */
-.studio-desk [data-testid="studio-timeline"] .studio-lane-title.sticky {
+.studio-desk [data-testid="studio-timeline"] .studio-lane-title.sticky:not(.studio-lane-empty) {
   background: #f2a93b !important;
 }
 .studio-desk .studio-lane-title {
@@ -1030,6 +1032,12 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
 @media (min-width: 640px) {
   html:has(main[data-brd-surface="control-room"] [data-testid="studio-transport"]) {
     scroll-padding-top: 14rem;
+  }
+}
+/* The Studio keeps the clicked clip in place itself (studio-transport-bar); browser anchoring would move it twice. */
+@media all {
+  html:has(main[data-brd-surface="control-room"] [data-testid="studio-transport"]) {
+    overflow-anchor: none;
   }
 }
 

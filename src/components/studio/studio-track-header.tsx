@@ -43,6 +43,7 @@ export function StudioTrackHeader({
   onSelect,
   onToggleMenu,
   patchTrack,
+  onToggleFlag,
   reorder,
   setDoc,
 }: {
@@ -59,6 +60,8 @@ export function StudioTrackHeader({
   onSelect: (trackId: string | null) => void;
   onToggleMenu: () => void;
   patchTrack: PatchTrack;
+  /** M / S / R: shown at once, then saved. */
+  onToggleFlag: (trackId: string, flag: "muted" | "solo" | "recordArmed") => void;
   reorder: (trackId: string, direction: "up" | "down") => void;
   setDoc: Dispatch<SetStateAction<StudioProjectDocument>>;
 }) {
@@ -74,7 +77,7 @@ export function StudioTrackHeader({
         data-track-type={track.trackType}
         data-track-role={track.trackRole}
         data-selected={isSelected ? "true" : "false"}
-        className="studio-track-strip flex items-stretch gap-1 border py-1 pl-1.5 pr-1 max-lg:pr-14"
+        className="studio-track-strip flex items-stretch gap-1 border py-1 pl-1.5 pr-1 max-sm:pr-14"
         style={{
           height: STUDIO_DAW_LANE_HEIGHT_PX,
           borderColor: isBeat ? "#b9761e" : STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
@@ -111,35 +114,29 @@ export function StudioTrackHeader({
           <StudioToggleChip
             active={track.muted}
             label="M"
-            title={tr("wycisz")}
+            title={`${tr("wycisz")} · ${tl(track.name)}`}
             tone="mute"
             className={STUDIO_DAW_CHIP_CLASS}
-            onClick={() => {
-              patchTrack(track.id, { muted: !track.muted });
-            }}
+            onClick={() => onToggleFlag(track.id, "muted")}
           />
           <StudioToggleChip
             active={track.solo}
             label="S"
-            title={tr("solo")}
+            title={`${tr("solo")} · ${tl(track.name)}`}
             tone="solo"
             className={STUDIO_DAW_CHIP_CLASS}
-            onClick={() => {
-              patchTrack(track.id, { solo: !track.solo });
-            }}
+            onClick={() => onToggleFlag(track.id, "solo")}
           />
+          {isBeat ? null : (
           <StudioToggleChip
             active={track.recordArmed}
             label="R"
-            title={tr("uzbrojenieNagrywania")}
+            title={`${tr("uzbrojenieNagrywania")} · ${tl(track.name)}`}
             tone="record"
             className={STUDIO_DAW_CHIP_CLASS}
-            onClick={() => {
-              patchTrack(track.id, {
-                recordArmed: !track.recordArmed,
-              });
-            }}
+            onClick={() => onToggleFlag(track.id, "recordArmed")}
           />
+          )}
           {!isBeat ? (
             <span
               aria-hidden
@@ -231,6 +228,7 @@ export function StudioTrackHeader({
               disabled={recordingLocked || pending}
               title={tr("menuSciezki")}
               aria-label={tr("menuSciezki2", { v0: track.name })}
+              aria-haspopup="menu"
               aria-expanded={menuOpen}
               onClick={onToggleMenu}
             >

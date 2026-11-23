@@ -10,6 +10,7 @@ import type {
   MixRevisionKind,
 } from "@/lib/studio/mix-working/mix-working-types";
 import type { StudioProjectDocument } from "@/lib/studio/studio-types";
+import { looksLikePolishUserMessage } from "@/lib/ui/user-errors";
 
 export type MixRevisionListItem = Omit<MixRevision, "snapshot" | "ops"> & {
   hasSnapshot: boolean;
@@ -236,6 +237,11 @@ export function groupMixRevisionDiffChanges(
   return out;
 }
 
+/** Only our own Polish sentences reach the screen, never an English validation detail. */
+function polishOr(raw: string, fallback: string): string {
+  return looksLikePolishUserMessage(raw) ? raw : fallback;
+}
+
 function mapHttpFailure(input: {
   httpStatus: number;
   code?: unknown;
@@ -328,7 +334,7 @@ function mapHttpFailure(input: {
       ok: false,
       httpStatus: input.httpStatus,
       code,
-      message: raw,
+      message: polishOr(raw, "Nie udało się wykonać tej operacji. Odśwież historię i spróbuj ponownie."),
       kind: "validation",
     };
   }
@@ -336,7 +342,7 @@ function mapHttpFailure(input: {
     ok: false,
     httpStatus: input.httpStatus,
     code,
-    message: raw,
+    message: polishOr(raw, "Nie udało się odczytać historii mixu. Spróbuj ponownie."),
     kind: "unknown",
   };
 }

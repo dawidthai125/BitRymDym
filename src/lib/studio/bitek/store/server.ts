@@ -33,6 +33,8 @@ export async function listBitekMessages(params: { ownerId: string; projectId: st
     .select("id, role, kind, content, meta, created_at")
     .eq("project_id", params.projectId)
     .eq("owner_id", params.ownerId)
+    // Old bubble-state rows (now kept on the device) must not push the conversation out of the limit.
+    .neq("kind", "state")
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(Math.min(params.limit ?? BITEK_STORE_LIMITS.listLimit, BITEK_STORE_LIMITS.listLimit));

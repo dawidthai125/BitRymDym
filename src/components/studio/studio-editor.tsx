@@ -6,6 +6,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 
 import { useLocale, useTranslations } from "next-intl";
+import { createPortal } from "react-dom";
 
 import {
   useEffect,
@@ -23,7 +24,6 @@ import { Button } from "@/components/ui/button";
 // Panels hidden on first open (Mix/Mastering steps, BITKA chat, FX sheet, spectrogram) load lazily.
 import {
   StudioBitekChat,
-  StudioClipSpectrogram,
   StudioFxChainEditor,
   StudioFxSheet,
   StudioLazyPanelsIdlePrefetch,
@@ -44,7 +44,7 @@ import {
 } from "@/components/studio/studio-inspector-context";
 import { StudioInspectorFilePanel } from "@/components/studio/studio-inspector-file-panel";
 import { StudioInspectorOverlay } from "@/components/studio/studio-inspector-shell";
-import { StudioLeaveGuardDialog, useStudioLeaveGuard } from "@/components/studio/studio-leave-guard-dialog";
+import { StudioLeaveGuardDialog, useStudioLeaveGuard, useStudioSaveLeaveGuard } from "@/components/studio/studio-leave-guard-dialog";
 import { studioPageUnloadPrompt } from "@/components/studio/studio-leave-guard";
 import {
   StudioMixerDockChrome,
@@ -52,8 +52,11 @@ import {
 } from "@/components/studio/studio-mixer-shell";
 import { StudioAutomationLane } from "@/components/studio/studio-automation-lane";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
+import { StudioRecordSlot, useStudioRecordHost } from "@/components/studio/studio-record-slot";
+import type { RecordHold } from "@/lib/takes/recording-ui-state";
+import { adoptRecoveredTake } from "@/lib/studio/unplaced-take-memo";
 import { PLAN_POLICY, clipPitchForTier, maxFxEffectsForTier, maxStemsForTier, sidechainForTier } from "@/config/plan-policy";
-import type { AutomationParam, StudioAutomationV1 } from "@/lib/studio/studio-automation";
+import { emptyAutomation, type AutomationParam, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
 import { bassLineAt, drumPatternAt, emptyMidi, hasMidi, midiPhraseAt, reviewPlayedNotes, type StudioMidiV1 } from "@/lib/studio/studio-midi";
 import { fadeEdgePreset } from "@/lib/studio/studio-clip-fade";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
@@ -63,11 +66,17 @@ import { StudioStepNav } from "@/components/studio/studio-step-nav";
 import { StudioTrackHeader } from "@/components/studio/studio-track-header";
 import {
   TrackInspectorPanel,
+  TrackNameField,
   StudioMasterMeterLive,
   StudioTrackMeterLive,
   ClipEditPanelPlayheadBound,
 } from "@/components/studio/studio-inspector-panels";
-import { StudioTimelinePlayheadBound } from "@/components/studio/studio-timeline";
+import { StudioTimeline } from "@/components/studio/studio-timeline";
+import { STUDIO_MARKERS_CHANGED_EVENT, type StudioMarkersChangedDetail } from "@/components/studio/studio-markers-events";
+import { StudioProjectTitle } from "@/components/studio/studio-project-title";
+import { StudioClipSpectrogramSection } from "@/components/studio/studio-clip-spectrogram-section";
+import { StudioDeleteTrackDialog, StudioTrackMenu } from "@/components/studio/studio-track-menu";
+import { isStudioTypingTarget, studioControlKeepsKey, studioModalState } from "@/lib/studio/studio-shortcut-guard";
 import {
   STUDIO_DAW_CHIP_CLASS,
   STUDIO_DAW_LANE_HEIGHT_PX,
@@ -75,13 +84,12 @@ import {
   STUDIO_TRACK_GAIN_DB_MIN,
   type StudioTimelineMode,
 } from "@/components/studio/studio-daw-layout";
-import { playheadInsideClip } from "@/lib/studio/studio-clip-ops";
-import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
+import { clipSourceRate, durationAfterStretchMs, playheadInsideClip } from "@/lib/studio/studio-clip-ops";
+import { applyClipGeometryCommit, type StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import {
   StudioTransportProvider,
   useStudioTransportControls,
-  useStudioTransportPlayhead,
 } from "@/components/studio/studio-transport-provider";
 import {
   FX_CHAIN_CONFLICT_UI_PL,
@@ -115,6 +123,7 @@ import {
   createDefaultSnapConfig,
   cycleStudioSnapConfig,
   fitPxPerMs,
+  studioSongEndMs,
   studioTimelineFitLengthMs,
   nudgeClipTimelineStartMs,
   resolveNudgeStepMs,
@@ -150,10 +159,7 @@ import {
   subscribeStudioTransportKeyboardMode,
   resolveStudioTransportKeyAction,
 } from "@/lib/studio/transport-keyboard-mode";
-import {
-  planDoubledClipStartMs,
-  planVocalDoubler,
-} from "@/lib/studio/vocal-doubler-plan";
+import { planVocalDoubler } from "@/lib/studio/vocal-doubler-plan";
 import {
   canAddStudioTrack,
   shouldShowStudioTrackUpgradeCta,
@@ -173,6 +179,7 @@ import {
   type StudioUndoOp,
 } from "@/lib/studio/studio-undo-history";
 import {
+  applyTrackDouble,
   canRunStudioStructuralOp,
   isStudioStructuralUndoOp,
   resolveStudioStructuralOpIds,
@@ -180,6 +187,7 @@ import {
   runStudioStructuralOp,
   type StudioApiCall,
   type StudioStructuralUndoOp,
+  type StudioTrackDouble,
 } from "@/lib/studio/studio-undo-structural";
 import { StudioBitekDock, type BitekBubble, type BitekMood } from "@/components/studio/studio-bitek-dock";
 import { useBitekProject } from "@/components/studio/use-bitek-project";
@@ -296,7 +304,8 @@ export function StudioEditor({
 
   return (
     <StudioTransportProvider
-      key={`${doc.project.id}:${beatRef?.beatId ?? "none"}`}
+      // Project only: choosing a beat must not remount the editor (undo history, step, running saves).
+      key={doc.project.id}
       timelineLengthMs={doc.project.timelineLengthMs}
       beatId={beatRef?.beatId ?? null}
       engineDocument={engineDocument}
@@ -332,7 +341,6 @@ function StudioEditorInner({
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
-  const { playheadMs } = useStudioTransportPlayhead();
   const tInspector = useTranslations("studio.inspectorTitle");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -341,6 +349,8 @@ function StudioEditorInner({
     generation: 0,
     inFlight: false,
     queued: false,
+    blocking: false,
+    unsaved: false,
     autoRetryCount: 0,
     label: "Gotowe",
     conflict: false,
@@ -356,8 +366,11 @@ function StudioEditorInner({
   const undoHistoryRef = useRef(undoHistory);
   /** Stage 0 undo — recreated rows: old id → new id (history keeps old ids). */
   const undoAliasRef = useRef(new Map<string, string>());
-  /** Disable conflicting controls while a persist is in-flight or queued. */
-  const pending = persistSnap.inFlight || persistSnap.queued;
+  /** Rows are being added / removed / split: lock controls until it is saved. Never true while a failed save waits. */
+  const pending = persistSnap.blocking;
+  /** History before / after the undo being saved, so a refused undo can be put back. */
+  const writeSeqRef = useRef(new Map<string, number>());
+  const undoRevertRef = useRef<{ before: StudioUndoHistory; after: StudioUndoHistory } | null>(null);
   const [mode, setMode] = useState<TimelineMode>("seek");
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [pxPerMs, setPxPerMs] = useState(STUDIO_TIMELINE_DEFAULT_PX_PER_MS);
@@ -386,12 +399,23 @@ function StudioEditorInner({
   const [recordFullView, setRecordFullView] = useState(() => studioAdvancedRecordAllowed(trackCapacity.premiumTier));
   // After a reload: an approved master for the unchanged mix reopens Mastering (with downloads).
   const restoreProjectId = doc.project.id;
+  /** Document version that already has a master: Mastering opens again without a new mix analysis. */
+  const [masterOpenVersion, setMasterOpenVersion] = useState<number | null>(null);
   useEffect(() => {
     let live = true;
+    // A slow answer must not pull the user away from what they already started.
+    const onUserAction = () => {
+      live = false;
+    };
+    window.addEventListener("pointerdown", onUserAction, true);
+    window.addEventListener("keydown", onUserAction, true);
     void fetch(`/api/studio/projects/${restoreProjectId}/master`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        if (live && j?.approved?.id) {
+        // Also a running or finished but not yet approved master of this very mix (another one would cost the limit again).
+        const open = j?.latest && j.latest.sourceDocumentVersion === j.documentVersion && ["queued", "running", "succeeded"].includes(j.latest.status);
+        if (j?.approved?.id || open) setMasterOpenVersion(j.documentVersion ?? null);
+        if (live && (j?.approved?.id || open)) {
           setSampleTab(false);
           setStudioStep((cur) => (cur === "record" ? "master" : cur));
         }
@@ -399,6 +423,8 @@ function StudioEditorInner({
       .catch(() => {});
     return () => {
       live = false;
+      window.removeEventListener("pointerdown", onUserAction, true);
+      window.removeEventListener("keydown", onUserAction, true);
     };
   }, [restoreProjectId]);
   const tMix = useTranslations("studio.mixStep");
@@ -415,16 +441,6 @@ function StudioEditorInner({
   }, [doc.tracks, doc.clips, doc.project.beatId]);
   const canGoMix = !recordingLocked && doc.clips.some((c) => !doc.tracks.some((t) => t.id === c.trackId && t.trackType === "BEAT"));
   const studioLocale = useLocale();
-  /** BITEK proposal → same optimistic local update + patchTrack path as the mixer controls (undoable). */
-  function applyBitekProposal(trackId: string, patch: Record<string, number | boolean>) {
-    if (recordingLockedRef.current) return;
-    if (!docRef.current.tracks.some((t) => t.id === trackId)) return;
-    setDoc((prev) => ({
-      ...prev,
-      tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, ...patch } : t)),
-    }));
-    patchTrack(trackId, patch);
-  }
   const getRecordChatContext = () =>
     buildBitekClientContext({ doc: docRef.current, lang: studioLocale === "en" ? "en" : "pl", step: "record" });
   /** STU-14 — re-read browser-local recovery copies. */
@@ -478,10 +494,28 @@ function StudioEditorInner({
   const recordingLockedRef = useRef(false);
   const unloadAllowedRef = useRef<() => boolean>(() => false);
   const leaveGuard = useStudioLeaveGuard(recordingLocked, studioShellRef);
+  const saveLeaveGuard = useStudioSaveLeaveGuard(persistSnap.unsaved && !persistSnap.conflict && !recordingLocked, studioShellRef);
   const pendingZoomScrollLeftRef = useRef<number | null>(null);
   const pxPerMsRef = useRef(pxPerMs);
   const anySolo = doc.tracks.some((t) => t.solo);
   const length = doc.project.timelineLengthMs;
+  /** End of the last clip / note: clock, End key, loop and position slider (the canvas stays 6:00). */
+  const songEndMs = studioSongEndMs(length, doc.clips, doc.tracks);
+  /** Focus came from the mouse / touch: Space is play / record, not a second press of that button. */
+  const pointerFocusRef = useRef(false);
+  // The markers panel saved a change: show it on the ruler.
+  useEffect(() => {
+    const onMarkers = (event: Event) => {
+      const detail = (event as CustomEvent<StudioMarkersChangedDetail>).detail;
+      const withMarkers = (prev: StudioProjectDocument) =>
+        prev.project.id === detail.projectId ? { ...prev, markers: detail.markers } : prev;
+      committedDocRef.current = withMarkers(committedDocRef.current);
+      docRef.current = withMarkers(docRef.current);
+      setDoc(withMarkers);
+    };
+    window.addEventListener(STUDIO_MARKERS_CHANGED_EVENT, onMarkers);
+    return () => window.removeEventListener(STUDIO_MARKERS_CHANGED_EVENT, onMarkers);
+  }, [setDoc]);
   const timelineMode: TimelineMode = recordingLocked ? "seek" : mode;
   const activeSelectedId = resolveSelectedClipId(
     selectedClipId,
@@ -533,6 +567,21 @@ function StudioEditorInner({
     selectedClipId: activeSelectedId,
     selectedTrackId: activeSelectedTrackId,
   });
+
+  const recordHost = useStudioRecordHost();
+  /** Why the record panel may not be unmounted now (recording, undecided take, unsent take). */
+  const [recordHold, setRecordHold] = useState<RecordHold>(null);
+  const recordHoldRef = useRef<RecordHold>(null);
+  useLayoutEffect(() => {
+    recordHoldRef.current = recordHold;
+  }, [recordHold]);
+  const recordPanelVisible =
+    inspectorContext === "record" &&
+    studioStep === "record" &&
+    (recordSimple || inspectorDesktopRail || inspectorOverlayOpen);
+  const recordPanelMounted =
+    recordHold !== null ||
+    (inspectorContext === "record" && (studioStep === "record" || inspectorOverlayOpen));
 
   // Stage 2b — BITEK the raccoon: per-project memory, bubble + chat overlay.
   const tBitek = useTranslations("studio.bitek");
@@ -682,10 +731,14 @@ function StudioEditorInner({
       }
     : null;
   const stepBubble = studioStep === "master" ? masterBubble : studioStep === "mix" ? mixBubble : recordBubble;
+  // The greeting never hides a question, a failed save or "working" in Mix / Mastering.
+  const urgentBubble = studioStep !== "record" && (stepBubble?.mood === "alert" || stepBubble?.mood === "thinking");
   const bitekBubble =
-    welcomeBubble && bitekBubbleState.dismissedKey !== "welcome" && !bitekBubbleUi?.dismissedKey ? welcomeBubble : stepBubble;
+    !urgentBubble && welcomeBubble && bitekBubbleState.dismissedKey !== "welcome" && !bitekBubbleUi?.dismissedKey ? welcomeBubble : stepBubble;
 
   function openInspectorOverlay() {
+    // On desktop the inspector is always on screen: opening a tab must not fold the mixer dock.
+    if (inspectorDesktopRail) return;
     setMixerOpen(false);
     setInspectorOverlayOpen(true);
   }
@@ -718,6 +771,33 @@ function StudioEditorInner({
     return true;
   }
 
+  /** Show the recording panel: step 1, record tab, sheet below xl. */
+  function showRecordPanel() {
+    setSampleTab(false);
+    setStudioStep("record");
+    setInspectorPreferRecord(true);
+    if (!inspectorDesktopRail) openInspectorOverlay();
+  }
+
+  /**
+   * One record key for the bar, the keyboard and BITEK: the panel starts, stops or calls off the
+   * count-in. From Mix, Mastering and Sample the bar first goes to step 1; the keys do nothing there.
+   */
+  function requestRecord(source: "button" | "key") {
+    if (recordingLockedRef.current || recordHoldRef.current === "arming") {
+      // Stop / cancel: never move the user to another view.
+      setTransportRecordRequest((n) => n + 1);
+      return;
+    }
+    if (source === "key" && (studioStep !== "record" || sampleTab)) return;
+    showRecordPanel();
+    setTransportRecordRequest((n) => n + 1);
+  }
+  const requestRecordRef = useRef(requestRecord);
+  useLayoutEffect(() => {
+    requestRecordRef.current = requestRecord;
+  });
+
   function openMixerSurface() {
     if (!closeInspectorOverlay()) return;
     setMixerOpen(true);
@@ -749,6 +829,8 @@ function StudioEditorInner({
       } else {
         // Avoid auto-opening <xl Mixer overlay when leaving desktop.
         setMixerOpen(false);
+        // A take in progress or undecided keeps its panel on screen in the sheet.
+        if (recordHoldRef.current) setInspectorOverlayOpen(true);
       }
     };
     apply();
@@ -756,44 +838,77 @@ function StudioEditorInner({
     return () => mq.removeEventListener("change", apply);
   }, []);
 
+  const { setPlayEndHold } = transport;
+  // From the mic prompt on: a count-in or a take must not be cut at the song end.
+  const playEndHold = recordingLocked || recordHold === "arming" || recordHold === "capture";
   useEffect(() => {
-    docRef.current = doc;
+    setPlayEndHold(playEndHold);
+  }, [playEndHold, setPlayEndHold]);
+
+  useEffect(() => {
+    // An older render must not take back a version the server already acknowledged.
+    if (doc.project.documentVersion >= docRef.current.project.documentVersion) {
+      docRef.current = doc;
+    }
   }, [doc]);
+
+  const onPersistRejectedRef = useRef<(message: string, awaited: boolean) => void>(() => {});
+  useLayoutEffect(() => {
+    onPersistRejectedRef.current = (message, awaited) => {
+      const revert = undoRevertRef.current;
+      undoRevertRef.current = null;
+      if (revert && undoHistoryRef.current === revert.after) {
+        undoHistoryRef.current = revert.before;
+        setUndoHistory(revert.before);
+      }
+      setStatus(null);
+      // Awaited callers show their own error.
+      if (!awaited) setError(`${message} ${tr("zmianaWycofana")}`);
+    };
+  });
 
   useEffect(() => {
     const orch = new StudioPersistOrchestrator({
       onChange: (snap) => setPersistSnap(snap),
+      onRejected: (failure, info) => onPersistRejectedRef.current(failure.message, info.awaited),
+      onRollback: () => {
+        const saved = committedDocRef.current;
+        docRef.current = saved;
+        setDoc(saved);
+      },
     });
     persistRef.current = orch;
     const onOnline = () => orch.onOnline();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") orch.retryNow();
+    };
     window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onVisible);
+      // Finishes the queue in the background instead of dropping it.
       orch.dispose();
       persistRef.current = null;
     };
-  }, []);
+  }, [setDoc]);
 
   useEffect(() => {
     recordingLockedRef.current = recordingLocked;
-    unloadAllowedRef.current = leaveGuard.unloadAllowed;
+    unloadAllowedRef.current = () => leaveGuard.unloadAllowed() || saveLeaveGuard.unloadAllowed();
   });
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       const snap = persistRef.current?.getSnapshot();
-      const persistGuarded = Boolean(
-        snap &&
-          (snap.status === "DIRTY" ||
-            snap.status === "SAVING" ||
-            snap.status === "SAVE_FAILED" ||
-            snap.queued ||
-            snap.inFlight),
-      );
+      const persistGuarded = Boolean(snap?.unsaved);
       if (
         !studioPageUnloadPrompt({
           unloadAllowed: unloadAllowedRef.current(),
-          captureActive: recordingLockedRef.current,
+          captureActive:
+            recordingLockedRef.current ||
+            recordHoldRef.current === "saving" ||
+            recordHoldRef.current === "retry",
           persistGuarded,
         })
       ) {
@@ -810,8 +925,11 @@ function StudioEditorInner({
     pxPerMsRef.current = pxPerMs;
   }, [pxPerMs]);
 
-  function enqueuePersist(executor: () => Promise<StudioPersistResult>) {
-    persistRef.current?.requestPersist(executor);
+  function enqueuePersist(
+    executor: () => Promise<StudioPersistResult>,
+    options?: { blocking?: boolean },
+  ) {
+    persistRef.current?.requestPersist(executor, options);
   }
 
   async function enqueuePersistAsync(
@@ -831,8 +949,8 @@ function StudioEditorInner({
 
   async function flushPersist(
     executor?: () => Promise<StudioPersistResult>,
-  ): Promise<void> {
-    await persistRef.current?.flush(executor);
+  ): Promise<StudioPersistSnapshot | undefined> {
+    return persistRef.current?.flush(executor);
   }
 
   /**
@@ -841,12 +959,28 @@ function StudioEditorInner({
    */
   function applyPersistedDoc(
     mutate: (prev: StudioProjectDocument) => StudioProjectDocument,
+    /** What the screen takes from this ack; default everything. */
+    display: (prev: StudioProjectDocument) => StudioProjectDocument = mutate,
   ): void {
-    setDoc((prev) => {
-      const next = mutate(prev);
-      docRef.current = next;
-      committedDocRef.current = next;
-      return next;
+    // Now, not in the setDoc updater: React may run that only at the next render,
+    // after the queue already started the next save with the old version.
+    committedDocRef.current = mutate(committedDocRef.current);
+    docRef.current = display(docRef.current);
+    setDoc(display);
+  }
+
+  /** For optimistic writes: returns a check that no newer write of the same thing was made since. */
+  function beginWrite(key: string): () => boolean {
+    const seq = (writeSeqRef.current.get(key) ?? 0) + 1;
+    writeSeqRef.current.set(key, seq);
+    return () => writeSeqRef.current.get(key) === seq;
+  }
+
+  /** Ack of a write the user already changed again: only the version is news for the screen. */
+  function versionOnly(documentVersion: number) {
+    return (prev: StudioProjectDocument): StudioProjectDocument => ({
+      ...prev,
+      project: { ...prev.project, documentVersion },
     });
   }
 
@@ -933,6 +1067,22 @@ function StudioEditorInner({
           quiet,
         );
         return true;
+      case "clip_playback":
+        if (!committedClip(op.clipId)) return false;
+        saveClipPlayback(
+          op.clipId,
+          { stretch: op.stretch, pitchCents: op.pitchCents },
+          { ...quiet, durationMs: op.durationMs },
+        );
+        return true;
+      case "track_automation":
+      case "track_midi":
+      case "track_reorder":
+        if (!committedDocRef.current.tracks.some((t) => t.id === op.trackId)) return false;
+        if (op.kind === "track_automation") saveTrackAutomation(op.trackId, op.automation, quiet);
+        else if (op.kind === "track_midi") saveTrackMidi(op.trackId, op.midi, quiet);
+        else reorder(op.trackId, op.direction, quiet);
+        return true;
       case "track_fx":
       case "master_fx":
         if (op.kind === "track_fx" && !committedDocRef.current.tracks.some((t) => t.id === op.trackId)) return false;
@@ -963,14 +1113,18 @@ function StudioEditorInner({
     options?: { asUser?: boolean },
   ): Promise<StudioPersistResult> {
     setError(null);
+    // One key per action: a retry after a lost answer is recognised, not applied twice.
+    const requestId = crypto.randomUUID();
     return enqueuePersistAsync(async () => {
       try {
         const res = await fetch(`/api/studio/projects/${docRef.current.project.id}/mix-working/apply`, {
+          // A hung request counts as no network: BITEK's buttons come back (the same requestId is retried).
+          signal: AbortSignal.timeout(30_000),
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             expectedDocumentVersion: docRef.current.project.documentVersion,
-            requestId: crypto.randomUUID(),
+            requestId,
             ops,
             ...(revision ? { revision } : {}),
           }),
@@ -1016,7 +1170,13 @@ function StudioEditorInner({
     options?: { asUser?: boolean },
   ): Promise<{ ok: true; before: StudioProjectDocument } | { ok: false; conflict: boolean }> {
     if (recordingLockedRef.current || ops.length === 0) return { ok: false, conflict: false };
-    await flushPersist();
+    const flushed = await flushPersist();
+    // Earlier changes are still waiting for the server: do not mix on top of them.
+    if (flushed?.conflict) return { ok: false, conflict: true };
+    if (flushed?.queued) {
+      setError(flushed.lastError ?? tr("nieZapisano"));
+      return { ok: false, conflict: false };
+    }
     const before = committedDocRef.current;
     const inverse = inverseMixAutofixOps(before, ops);
     // Gaps P0 #3 — user-picked vocal sets are a USER version (server default), BITEK fixes stay "AI".
@@ -1027,11 +1187,17 @@ function StudioEditorInner({
   }
 
   const studioApiCall: StudioApiCall = async (method, path, body) => {
-    const res = await fetch(path, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    let res: Response;
+    try {
+      res = await fetch(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      // Status 0 = no network. Multi-step operations must see it as a failed step, not start over.
+      return { ok: false, status: 0, json: {} };
+    }
     let json: Record<string, unknown> = {};
     try {
       json = (await res.json()) as Record<string, unknown>;
@@ -1086,25 +1252,40 @@ function StudioEditorInner({
       } catch {
         return classifyPersistNetworkFailure();
       }
-    });
+    }, { blocking: true });
   }
 
   function undoStudioEdit(): void {
-    const taken = takeStudioUndo(undoHistoryRef.current);
-    if (!taken) return;
-    undoHistoryRef.current = taken.history;
-    setUndoHistory(taken.history);
-    if (runUndoOp(taken.op)) setStatus(tr("cofnietoZmiane"));
-    else setStatus(tr("nieMoznaCofnac"));
+    void stepStudioHistory(takeStudioUndo, "cofnietoZmiane");
   }
 
   function redoStudioEdit(): void {
-    const taken = takeStudioRedo(undoHistoryRef.current);
+    void stepStudioHistory(takeStudioRedo, "ponowionoZmiane");
+  }
+
+  async function stepStudioHistory(
+    take: typeof takeStudioUndo,
+    doneKey: "cofnietoZmiane" | "ponowionoZmiane",
+  ): Promise<void> {
+    const orch = persistRef.current;
+    // Entries are recorded on ack: wait, so the step applies to the change just made.
+    await orch?.whenIdle();
+    if (orch !== persistRef.current) return;
+    const before = undoHistoryRef.current;
+    const taken = take(before);
     if (!taken) return;
     undoHistoryRef.current = taken.history;
     setUndoHistory(taken.history);
-    if (runUndoOp(taken.op)) setStatus(tr("ponowionoZmiane"));
-    else setStatus(tr("nieMoznaCofnac"));
+    if (!runUndoOp(taken.op)) {
+      setStatus(tr("nieMoznaCofnac"));
+      return;
+    }
+    setStatus(tr(doneKey));
+    const revert = { before, after: taken.history };
+    undoRevertRef.current = revert;
+    void orch?.whenIdle().then((snap) => {
+      if (!snap.queued && undoRevertRef.current === revert) undoRevertRef.current = null;
+    });
   }
 
   function persistFxChainForHistory(
@@ -1208,6 +1389,19 @@ function StudioEditorInner({
   useLayoutEffect(() => {
     fitLengthRef.current = fitLength;
   }, [fitLength]);
+  /** Whole song from 0: auto-fit and CAŁOŚĆ always show the start of the timeline. */
+  function fitTimeline(el: HTMLDivElement | null) {
+    const viewport = el?.clientWidth;
+    const next = fitPxPerMs(
+      fitLengthRef.current,
+      typeof viewport === "number" && viewport > 0 ? viewport : 360,
+    );
+    pendingZoomScrollLeftRef.current = 0;
+    // Same zoom = no re-render, so the layout effect below would not run.
+    if (el) el.scrollLeft = 0;
+    pxPerMsRef.current = next;
+    setPxPerMs(next);
+  }
   /** Mobile / narrow lane: auto-Fit while the user has not manually zoomed. */
   useEffect(() => {
     let ro: ResizeObserver | null = null;
@@ -1226,8 +1420,7 @@ function StudioEditorInner({
       ) {
         return;
       }
-      const next = fitPxPerMs(fitLengthRef.current, viewport);
-      zoomAroundViewportX(next, viewport / 2);
+      fitTimeline(el);
     }
 
     function attach() {
@@ -1297,7 +1490,7 @@ function StudioEditorInner({
     timelineStartMs: number,
     options?: { applySnapGrid?: boolean },
   ): void {
-    const clip = doc.clips.find((c) => c.id === clipId);
+    const clip = docRef.current.clips.find((c) => c.id === clipId);
     if (!clip) return;
     const maxStart = Math.max(0, length - clip.durationMs);
     const applyGrid = options?.applySnapGrid !== false;
@@ -1319,6 +1512,14 @@ function StudioEditorInner({
   ): void {
     setError(null);
     const record = opts?.history !== false;
+    // Shown at once: a dropped clip must not jump back while the save runs (rollback = onRollback).
+    setDoc((prev) => ({
+      ...prev,
+      clips: prev.clips.map((c) =>
+        c.id === clipId ? { ...c, ...applyClipGeometryCommit(c, commit, clipSourceRate(c)) } : c,
+      ),
+    }));
+    const isLatest = beginWrite(`clip:${clipId}`);
     enqueuePersist(async () => {
       const beforeClip = committedClip(clipId);
       try {
@@ -1381,17 +1582,30 @@ function StudioEditorInner({
             if (record && beforeClip) {
               recordUndo({ undo: clipGeometryOp(beforeClip), redo: clipGeometryOp(clip) });
             }
-            applyPersistedDoc((prev) => ({
+            const take = (prev: StudioProjectDocument): StudioProjectDocument => ({
               ...prev,
               project: { ...prev.project, documentVersion },
               clips: prev.clips.map((c) => (c.id === clip.id ? clip : c)),
-            }));
+            });
+            applyPersistedDoc(take, isLatest() ? take : versionOnly(documentVersion));
           },
         };
       } catch {
         return classifyPersistNetworkFailure();
       }
     });
+  }
+
+  /** M / S / R: heard and seen at once; a fast second click turns it back (never the same value twice). */
+  function toggleTrackFlag(trackId: string, flag: "muted" | "solo" | "recordArmed"): void {
+    const track = docRef.current.tracks.find((t) => t.id === trackId);
+    if (!track) return;
+    const next = !track[flag];
+    setDoc((prev) => ({
+      ...prev,
+      tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, [flag]: next } : t)),
+    }));
+    patchTrack(trackId, { [flag]: next });
   }
 
   function patchTrack(
@@ -1455,7 +1669,12 @@ function StudioEditorInner({
               ...prev,
               project: { ...prev.project, documentVersion },
               tracks: prev.tracks.map((t) =>
-                t.id === trackId ? track : t,
+                t.id !== trackId
+                  ? t
+                  : "trackRole" in body
+                    ? track
+                    : // Only the saved fields: another click on this track may still be waiting in the queue.
+                      { ...t, ...pickStudioPatchBefore(track as unknown as Record<string, unknown>, body) },
               ),
             }));
           },
@@ -1467,9 +1686,10 @@ function StudioEditorInner({
   }
 
   /** Silver/Gold: replace a track's gain / pan automation (CAS). Shows the new envelope at once, then confirms. */
-  function saveTrackAutomation(trackId: string, automation: StudioAutomationV1): void {
+  function saveTrackAutomation(trackId: string, automation: StudioAutomationV1, opts?: { history?: boolean }): void {
     setError(null);
     setDoc((prev) => ({ ...prev, tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, automation } : t)) }));
+    const isLatest = beginWrite(`automation:${trackId}`);
     enqueuePersist(async () => {
       try {
         const expected = docRef.current.project.documentVersion;
@@ -1495,11 +1715,19 @@ function StudioEditorInner({
           ok: true,
           documentVersion,
           apply: () => {
-            applyPersistedDoc((prev) => ({
+            if (opts?.history !== false) {
+              const before = committedDocRef.current.tracks.find((t) => t.id === trackId)?.automation;
+              recordUndo({
+                undo: { kind: "track_automation", trackId, automation: before ?? emptyAutomation() },
+                redo: { kind: "track_automation", trackId, automation: saved },
+              });
+            }
+            const take = (prev: StudioProjectDocument): StudioProjectDocument => ({
               ...prev,
               project: { ...prev.project, documentVersion },
               tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, automation: saved } : t)),
-            }));
+            });
+            applyPersistedDoc(take, isLatest() ? take : versionOnly(documentVersion));
           },
         };
       } catch {
@@ -1509,9 +1737,10 @@ function StudioEditorInner({
   }
 
   /** Replace a track's MIDI notes (CAS). Empty notes clear the column. */
-  function saveTrackMidi(trackId: string, midi: StudioMidiV1): void {
+  function saveTrackMidi(trackId: string, midi: StudioMidiV1, opts?: { history?: boolean }): void {
     setError(null);
     setDoc((prev) => ({ ...prev, tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, midi } : t)) }));
+    const isLatest = beginWrite(`midi:${trackId}`);
     enqueuePersist(async () => {
       try {
         const expected = docRef.current.project.documentVersion;
@@ -1537,11 +1766,19 @@ function StudioEditorInner({
           ok: true,
           documentVersion,
           apply: () => {
-            applyPersistedDoc((prev) => ({
+            if (opts?.history !== false) {
+              const before = committedDocRef.current.tracks.find((t) => t.id === trackId)?.midi;
+              recordUndo({
+                undo: { kind: "track_midi", trackId, midi: before ?? emptyMidi() },
+                redo: { kind: "track_midi", trackId, midi: saved },
+              });
+            }
+            const take = (prev: StudioProjectDocument): StudioProjectDocument => ({
               ...prev,
               project: { ...prev.project, documentVersion },
               tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, midi: saved } : t)),
-            }));
+            });
+            applyPersistedDoc(take, isLatest() ? take : versionOnly(documentVersion));
           },
         };
       } catch {
@@ -1633,7 +1870,7 @@ function StudioEditorInner({
     });
   }
 
-  function reorder(trackId: string, direction: "up" | "down") {
+  function reorder(trackId: string, direction: "up" | "down", opts?: { history?: boolean }) {
     setError(null);
     enqueuePersist(async () => {
       try {
@@ -1679,6 +1916,13 @@ function StudioEditorInner({
           ok: true,
           documentVersion,
           apply: () => {
+            const order = (list: readonly StudioTrackDto[]) => list.map((t) => t.id).join();
+            if (opts?.history !== false && order(tracks) !== order(committedDocRef.current.tracks)) {
+              recordUndo({
+                undo: { kind: "track_reorder", trackId, direction: direction === "up" ? "down" : "up" },
+                redo: { kind: "track_reorder", trackId, direction },
+              });
+            }
             applyPersistedDoc((prev) => ({
               ...prev,
               project: { ...prev.project, documentVersion },
@@ -1689,7 +1933,7 @@ function StudioEditorInner({
       } catch {
         return classifyPersistNetworkFailure();
       }
-    });
+    }, { blocking: true });
   }
 
   /** Phase 5 / 7.1.6 — add VOCAL track via CAS + serial orchestrator. */
@@ -1755,7 +1999,7 @@ function StudioEditorInner({
       } catch {
         return classifyPersistNetworkFailure();
       }
-    });
+    }, { blocking: true });
   }
 
   /** Phase 6 / 7.1.6 — duplicate track via CAS + serial orchestrator. */
@@ -1763,8 +2007,13 @@ function StudioEditorInner({
     setError(null);
     setTrackMenuId(null);
     const asDouble = Boolean(opts?.asVocalDouble);
-    const doublePlan = asDouble ? planVocalDoubler("R") : null;
     enqueuePersist(async () => {
+      // A second double goes to the other side.
+      const doublePlan = asDouble
+        ? planVocalDoubler(
+            committedDocRef.current.tracks.some((t) => t.trackRole === "double" && t.pan > 0) ? "L" : "R",
+          )
+        : null;
       try {
         const res = await fetch(
           `/api/studio/projects/${projectId()}/tracks/${trackId}/duplicate`,
@@ -1818,9 +2067,30 @@ function StudioEditorInner({
           }
           return failure;
         }
-        const track = json.track;
-        const clips = json.clips;
-        const documentVersion = json.documentVersion;
+        const double: StudioTrackDouble | undefined = doublePlan
+          ? {
+              pan: doublePlan.pan,
+              gainDb: doublePlan.gainDb,
+              trackRole: doublePlan.trackRole,
+              nameSuffix: doublePlan.nameSuffix,
+              offsetMs: doublePlan.offsetMs,
+              pitchCents: clipPitchForTier(trackCapacity.premiumTier) ? doublePlan.pitchCents : null,
+            }
+          : undefined;
+        const saved = {
+          version: json.documentVersion,
+          track: json.track,
+          clips: json.clips,
+          partial: false,
+        };
+        const { track, clips, version: documentVersion, partial } = double
+          ? await applyTrackDouble(double, {
+              base: `/api/studio/projects/${projectId()}`,
+              api: studioApiCall,
+              ...saved,
+              timelineLengthMs: docRef.current.project.timelineLengthMs,
+            })
+          : saved;
         return {
           ok: true as const,
           documentVersion,
@@ -1847,36 +2117,17 @@ function StudioEditorInner({
                 sourceTrackId: trackId,
                 duplicateTrackId: track.id,
                 duplicateClipIds: dupClipIds,
+                ...(double ? { double } : {}),
               },
             });
-            if (doublePlan) {
-              patchTrack(track.id, {
-                pan: doublePlan.pan,
-                gainDb: doublePlan.gainDb,
-                trackRole: doublePlan.trackRole,
-                name: `${track.name} · ${doublePlan.nameSuffix}`.slice(0, 80),
-              });
-              for (const clip of clips) {
-                persistClipMove(
-                  clip.id,
-                  planDoubledClipStartMs(clip.timelineStartMs, doublePlan.offsetMs),
-                  { applySnapGrid: false },
-                );
-                if (clipPitchForTier(trackCapacity.premiumTier)) {
-                  saveClipPlayback(clip.id, {
-                    stretch: clip.stretchRatio ?? 1,
-                    pitchCents: doublePlan.pitchCents,
-                  });
-                }
-              }
-              setStatus(tr("dubelGotowy"));
-            }
+            if (partial) setError(tr("dubelNiepelny"));
+            else if (double) setStatus(tr("dubelGotowy"));
           },
         };
       } catch {
         return classifyPersistNetworkFailure();
       }
-    });
+    }, { blocking: true });
   }
 
   /** Phase 5 / 7.1.6 — delete track via CAS + serial orchestrator. */
@@ -1947,7 +2198,7 @@ function StudioEditorInner({
       } catch {
         return classifyPersistNetworkFailure();
       }
-    });
+    }, { blocking: true });
   }
 
   /** Clip PATCH ops (move/trim/…) via CAS + serial orchestrator. */
@@ -2091,6 +2342,7 @@ function StudioEditorInner({
     const clipId = opts?.clipId ?? selectedClip?.id;
     if (!clipId) return;
     setError(null);
+    setDoc((prev) => ({ ...prev, clips: prev.clips.map((c) => (c.id === clipId ? { ...c, gainDb } : c)) }));
     const record = opts?.history !== false;
     enqueuePersist(async () => {
       const beforeClip = committedClip(clipId);
@@ -2223,9 +2475,36 @@ function StudioEditorInner({
     });
   }
 
-  function saveClipPlayback(clipId: string, next: { stretch: number; pitchCents: number }) {
+  /** Tempo / pitch. A new tempo also changes the clip length, so the same part of the recording plays. */
+  function saveClipPlayback(
+    clipId: string,
+    next: { stretch: number; pitchCents: number },
+    opts?: { history?: boolean; durationMs?: number },
+  ) {
     setError(null);
+    setDoc((prev) => ({
+      ...prev,
+      clips: prev.clips.map((c) =>
+        c.id !== clipId
+          ? c
+          : {
+              ...c,
+              stretchRatio: next.stretch,
+              pitchCents: next.pitchCents,
+              durationMs:
+                opts?.durationMs ??
+                durationAfterStretchMs({
+                  durationMs: c.durationMs,
+                  fromStretch: c.stretchRatio ?? 1,
+                  toStretch: next.stretch,
+                  timelineStartMs: c.timelineStartMs,
+                  timelineLengthMs: prev.project.timelineLengthMs,
+                }),
+            },
+      ),
+    }));
     enqueuePersist(async () => {
+      const beforeClip = committedClip(clipId);
       try {
         const res = await fetch(
           `/api/studio/projects/${docRef.current.project.id}/clips/${clipId}`,
@@ -2249,18 +2528,72 @@ function StudioEditorInner({
         if (!res.ok || !json.clip || typeof json.documentVersion !== "number") {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się zapisać tempa klipu.",
+            message: json.error ?? tr("nieUdaloSieZapisacTempa"),
             code: json.code,
           });
           if (!failure.retryable || failure.kind === "conflict") setError(failure.message);
           return failure;
         }
-        const saved = json.clip;
-        const documentVersion = json.documentVersion;
+        let saved = json.clip;
+        let documentVersion = json.documentVersion;
+        const fromStretch = beforeClip?.stretchRatio ?? 1;
+        const toStretch = saved.stretchRatio ?? next.stretch;
+        const durationMs =
+          opts?.durationMs ??
+          (fromStretch === toStretch
+            ? saved.durationMs
+            : durationAfterStretchMs({
+                durationMs: saved.durationMs,
+                fromStretch,
+                toStretch,
+                timelineStartMs: saved.timelineStartMs,
+                timelineLengthMs: docRef.current.project.timelineLengthMs,
+              }));
+        const geometry = {
+          kind: "set_geometry" as const,
+          timelineStartMs: saved.timelineStartMs,
+          durationMs,
+          sourceOffsetMs: saved.sourceOffsetMs,
+        };
+        let lengthSaved = durationMs === saved.durationMs;
+        if (!lengthSaved) {
+          const res2 = await studioApiCall("PATCH", `/api/studio/projects/${projectId()}/clips/${clipId}`, {
+            op: "set_geometry",
+            timelineStartMs: geometry.timelineStartMs,
+            durationMs,
+            sourceOffsetMs: geometry.sourceOffsetMs,
+            expectedDocumentVersion: documentVersion,
+          });
+          if (res2.ok && res2.json.clip && typeof res2.json.documentVersion === "number") {
+            saved = res2.json.clip as StudioClipDto;
+            documentVersion = res2.json.documentVersion;
+            lengthSaved = true;
+          }
+        }
         return {
           ok: true as const,
           documentVersion,
           apply: () => {
+            if (opts?.history !== false && beforeClip) {
+              recordUndo({
+                undo: {
+                  kind: "clip_playback",
+                  clipId,
+                  stretch: fromStretch,
+                  pitchCents: beforeClip.pitchCents ?? 0,
+                  durationMs: beforeClip.durationMs,
+                },
+                redo: {
+                  kind: "clip_playback",
+                  clipId,
+                  stretch: toStretch,
+                  pitchCents: saved.pitchCents ?? next.pitchCents,
+                  durationMs,
+                },
+              });
+            }
+            // The length did not go through yet: it stays in the queue on its own.
+            if (!lengthSaved) persistClipGeometryCommit(clipId, geometry, { history: false });
             applyPersistedDoc((prev) => ({
               ...prev,
               project: { ...prev.project, documentVersion },
@@ -2376,8 +2709,12 @@ function StudioEditorInner({
     setError(null);
     setFragmentConfirmDelete(false);
     const atTimelineMs = getPlayheadMs();
-    const beforeSplit = committedClip(clipId);
+    if (!playheadInsideClip(selectedClip, atTimelineMs)) {
+      setStatus(tr("glowicaPozaFragmentem"));
+      return;
+    }
     enqueuePersist(async () => {
+      const beforeSplit = committedClip(clipId);
       try {
         const res = await fetch(
           `/api/studio/projects/${projectId()}/clips/${clipId}/split`,
@@ -2443,20 +2780,27 @@ function StudioEditorInner({
       } catch {
         return classifyPersistNetworkFailure();
       }
-    });
+    }, { blocking: true });
   }
 
   useEffect(() => {
-    function isTypingTarget(target: EventTarget | null): boolean {
-      if (!(target instanceof HTMLElement)) return false;
-      const tag = target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
-      if (target.isContentEditable) return true;
-      return Boolean(target.closest("input, textarea, select, [contenteditable=true]"));
-    }
-
     function onKeyDown(event: KeyboardEvent) {
-      if (isTypingTarget(event.target)) return;
+      if (event.key === "Tab") pointerFocusRef.current = false;
+      // Handled by the focused part (automation point, BITEK, a dialog).
+      if (event.defaultPrevented) return;
+      if (isStudioTypingTarget(event.target)) return;
+      const modal = studioModalState(document);
+      if (modal === "modal") return;
+      if (
+        !recordingLocked &&
+        studioControlKeepsKey({
+          target: event.target,
+          key: event.key,
+          focusedByPointer: pointerFocusRef.current,
+        })
+      ) {
+        return;
+      }
 
       // Transport keys — mode from localStorage (quick_rec vs standard_daw).
       // Record must work while recordingLocked so Space/R can stop an in-progress take.
@@ -2469,22 +2813,34 @@ function StudioEditorInner({
         altKey: event.altKey,
       });
       if (transportAction === "record") {
-        if (pending) return;
+        // Holding the key must not start and stop the take again and again.
+        if (event.repeat) {
+          event.preventDefault();
+          return;
+        }
+        // First: Space must never scroll the page.
         event.preventDefault();
-        setInspectorPreferRecord(true);
-        openInspectorOverlay();
-        setTransportRecordRequest((n) => n + 1);
+        if (pending && !recordingLockedRef.current) return;
+        requestRecordRef.current("key");
         return;
       }
       if (transportAction === "play") {
-        if (recordingLocked || pending) return;
         event.preventDefault();
+        if (recordingLocked) return;
         if (transport.phase === "playing") transport.pause();
         else transport.play();
         return;
       }
 
-      if (recordingLocked || pending) return;
+      if (recordingLocked || pending || modal !== "none") return;
+
+      if (event.key === "Escape") {
+        if (!selectedClip) return;
+        setSelectedClipId(clearClipSelection());
+        setConfirmDelete(false);
+        setFragmentConfirmDelete(false);
+        return;
+      }
 
       // Stage 0 — Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl+Y redo.
       const undoAction = studioUndoShortcut(event);
@@ -2502,7 +2858,7 @@ function StudioEditorInner({
       }
       if (event.key === "End") {
         event.preventDefault();
-        transport.seek(length);
+        transport.seek(songEndMs);
         return;
       }
 
@@ -2545,28 +2901,37 @@ function StudioEditorInner({
       if (event.key === "=" || event.key === "+") {
         if (event.metaKey || event.ctrlKey) return;
         event.preventDefault();
+        userAdjustedZoomRef.current = true;
         zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current));
         return;
       }
       if (event.key === "-" || event.key === "_") {
         if (event.metaKey || event.ctrlKey) return;
         event.preventDefault();
+        userAdjustedZoomRef.current = true;
         zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current));
       }
     }
 
+    const onPointerDown = () => {
+      pointerFocusRef.current = true;
+    };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("pointerdown", onPointerDown, true);
+    };
     // Intentional: handlers close over latest selected clip / length / pending / transport.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Phase 2 keyboard precision + 7.1.5.3
-  }, [recordingLocked, pending, selectedClip, length, transport]);
+  }, [recordingLocked, pending, selectedClip, length, songEndMs, transport]);
 
   function deleteSelectedClip(): void {
     const clipId = selectedClip?.id;
     if (!clipId) return;
     setError(null);
-    const beforeDelete = committedClip(clipId);
     enqueuePersist(async () => {
+      const beforeDelete = committedClip(clipId);
       try {
         const res = await fetch(
           `/api/studio/projects/${projectId()}/clips/${clipId}`,
@@ -2627,7 +2992,7 @@ function StudioEditorInner({
       } catch {
         return classifyPersistNetworkFailure();
       }
-    });
+    }, { blocking: true });
   }
 
   /** V1 / 7.1.6 — Duplicate Clip via CAS + serial orchestrator. */
@@ -2700,7 +3065,7 @@ function StudioEditorInner({
       } catch {
         return classifyPersistNetworkFailure();
       }
-    });
+    }, { blocking: true });
   }
 
   const conflictActive =
@@ -2711,7 +3076,7 @@ function StudioEditorInner({
   const saveStatusLabel = conflictActive
     ? (error ?? persistSnap?.lastError ?? FX_CHAIN_CONFLICT_UI_PL)
     : persistSnap?.status === "SAVE_FAILED"
-      ? (persistSnap.lastError ?? tr("nieZapisano"))
+      ? (error ?? persistSnap.lastError ?? tr("nieZapisano"))
       : persistSnap && persistSnap.label !== "Gotowe"
         ? persistSnap.label
         : pending
@@ -2736,6 +3101,9 @@ function StudioEditorInner({
     },
     onMarkDirty: () => {
       persistRef.current?.markDirty();
+    },
+    onClearDirty: () => {
+      persistRef.current?.clearDirty();
     },
     onSaveMute: (muted: boolean) => {
       saveClipMute(muted);
@@ -2844,6 +3212,142 @@ function StudioEditorInner({
     );
   }
 
+  /** Rendered once for the whole editor; StudioRecordSlot only shows it. Never unmounted while a take is in progress or undecided. */
+  const recordPanelNode = recordHost && recordPanelMounted ? createPortal(
+        <StudioRecordingPanel
+          projectId={doc.project.id}
+          getExpectedDocumentVersion={expectedDocumentVersion}
+          enqueuePersistAsync={enqueuePersistAsync}
+          onDocumentVersionAck={applyAckedDocumentVersion}
+          recordRequest={transportRecordRequest}
+          onRecordRequestHandled={() => setTransportRecordRequest(0)}
+          tracks={doc.tracks}
+          clips={doc.clips}
+          embedded={!recordSimple}
+          simple={recordSimple}
+          visible={recordPanelVisible}
+          planLimits={{
+            sessionsPerDay: PLAN_POLICY[trackCapacity.premiumTier].recording.sessionsPerDay,
+            maxTakeSeconds: PLAN_POLICY[trackCapacity.premiumTier].recording.maxTakeSeconds,
+            takeHours: Math.round(PLAN_POLICY[trackCapacity.premiumTier].recording.takeTtlSeconds / 3600),
+          }}
+          samplesMode={onSampleTab}
+          stemLimit={maxStemsForTier(trackCapacity.premiumTier)}
+          trackLimit={maxTracks}
+          onSaveTrackMidi={saveTrackMidi}
+          preferredTrackId={activeSelectedTrackId}
+          selectedClipId={activeSelectedId}
+          lastScratchClipId={lastScratchClipId}
+          onLastScratchClipIdChange={setLastScratchClipId}
+          onHoldChange={setRecordHold}
+          onRecordingActiveChange={(active) => {
+            setRecordingLocked(active);
+            setInspectorPreferRecord((prev) =>
+              studioPreferRecordAfterCaptureReport(prev, active),
+            );
+            if (active) {
+              setMode("seek");
+              setSelectedClipId(clearClipSelection());
+              setConfirmDelete(false);
+              setCaptureInterruptedNotice(null);
+            } else {
+              setInspectorCloseRejected(false);
+            }
+            if (active) setInspectorPreferRecord(true);
+          }}
+          onCaptureInterrupted={(message) => {
+            transport.pause();
+            setCaptureInterruptedNotice(message);
+          }}
+          onLocalRecoveryChanged={() => setRecoveryRefreshKey((key) => key + 1)}
+          recoverySavedKey={recoverySavedKey}
+          onBitekBubble={setRecToolsBubble}
+          onDocumentReplaced={(next) => {
+            // Comp apply = several server CAS ops → fresh document, no partial undo.
+            applyPersistedDoc(() => next);
+            undoHistoryRef.current = EMPTY_STUDIO_UNDO_HISTORY;
+            setUndoHistory(EMPTY_STUDIO_UNDO_HISTORY);
+            undoAliasRef.current = new Map();
+          }}
+          onClipUpdated={(clip, nextDocumentVersion) => {
+            const before = committedDocRef.current.clips.find((c) => c.id === clip.id);
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion: nextDocumentVersion },
+              clips: prev.clips.map((c) => (c.id === clip.id ? clip : c)),
+            }));
+            if (before) {
+              recordUndo({
+                undo: { kind: "clip_scratch", clipId: clip.id, cueMs: before.scratchCueMs ?? 0, reverse: Boolean(before.scratchReverse), rate: before.scratchRate ?? 1 },
+                redo: { kind: "clip_scratch", clipId: clip.id, cueMs: clip.scratchCueMs ?? 0, reverse: Boolean(clip.scratchReverse), rate: clip.scratchRate ?? 1 },
+              });
+            }
+          }}
+          onClipCreated={(clip, nextDocumentVersion, options) => {
+            const removedIds = options?.removedClipIds ?? [];
+            const replaced = committedDocRef.current.clips.filter((c) => removedIds.includes(c.id));
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: {
+                ...prev.project,
+                documentVersion: nextDocumentVersion,
+              },
+              clips: [...prev.clips.filter((c) => !removedIds.includes(c.id)), clip].sort(
+                (a, b) => a.timelineStartMs - b.timelineStartMs,
+              ),
+            }));
+            for (const old of replaced) {
+              recordUndo({
+                undo: { kind: "clip_restore", clip: old },
+                redo: { kind: "clip_remove", clipId: old.id },
+              });
+            }
+            recordUndo({
+              undo: { kind: "clip_remove", clipId: clip.id },
+              redo: { kind: "clip_restore", clip },
+            });
+            if (options?.keepRecordPanel) {
+              setInspectorPreferRecord(
+                studioPreferRecordAfterClipCreated({ keepRecordPanel: true }),
+              );
+              setLastScratchClipId(clip.id);
+              return;
+            }
+            if (!options?.stayOnRecord) {
+              setInspectorPreferRecord(false);
+              setInspectorTab("file");
+            }
+            setSelectedClipId(selectClipId(null, clip.id));
+            setSelectedTrackId(clip.trackId);
+            setStatus(tr("nagranieDodaneNaOs"));
+          }}
+          onTrackCreated={(track, nextDocumentVersion) => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: {
+                ...prev.project,
+                documentVersion: nextDocumentVersion,
+              },
+              tracks: [...prev.tracks, track].sort(
+                (a, b) => a.sortOrder - b.sortOrder,
+              ),
+            }));
+          }}
+        />,
+        recordHost,
+      )
+    : null;
+
+  const spectrogramSection = selectedClip ? (
+    <StudioClipSpectrogramSection
+      key={selectedClip.id}
+      clipId={selectedClip.id}
+      projectId={doc.project.id}
+      takeId={selectedClip.sourceKind === "TAKE" ? selectedClip.sourceTakeId : null}
+      resolveUrl={() => resolveClipSourceUrl(selectedClip)}
+    />
+  ) : null;
+
   const inspectorContent = (
     <div
       className="min-h-0 flex-1 space-y-2 overflow-y-auto"
@@ -2929,105 +3433,15 @@ function StudioEditorInner({
         </p>
       )}
 
-      {inspectorContext === "record" ? (
-        <StudioRecordingPanel
-          projectId={doc.project.id}
-          getExpectedDocumentVersion={expectedDocumentVersion}
-          enqueuePersistAsync={enqueuePersistAsync}
-          onDocumentVersionAck={applyAckedDocumentVersion}
-          recordRequest={transportRecordRequest}
-          onRecordRequestHandled={() => setTransportRecordRequest(0)}
-          tracks={doc.tracks}
-          embedded={!recordSimple}
-          simple={recordSimple}
-          planLimits={{
-            sessionsPerDay: PLAN_POLICY[trackCapacity.premiumTier].recording.sessionsPerDay,
-            retentionDays: PLAN_POLICY[trackCapacity.premiumTier].retentionDays,
-          }}
-          samplesMode={onSampleTab}
-          stemLimit={maxStemsForTier(trackCapacity.premiumTier)}
-          trackLimit={maxTracks}
-          onSaveTrackMidi={saveTrackMidi}
-          preferredTrackId={activeSelectedTrackId}
-          lastScratchClipId={lastScratchClipId}
-          onLastScratchClipIdChange={setLastScratchClipId}
-          onRecordingActiveChange={(active) => {
-            setRecordingLocked(active);
-            setInspectorPreferRecord((prev) =>
-              studioPreferRecordAfterCaptureReport(prev, active),
-            );
-            if (active) {
-              setMode("seek");
-              setSelectedClipId(clearClipSelection());
-              setConfirmDelete(false);
-              setCaptureInterruptedNotice(null);
-            } else {
-              setInspectorCloseRejected(false);
-            }
-            if (active) setInspectorPreferRecord(true);
-          }}
-          onCaptureInterrupted={(message) => {
-            transport.pause();
-            setCaptureInterruptedNotice(message);
-          }}
-          onLocalRecoveryChanged={() => setRecoveryRefreshKey((key) => key + 1)}
-          recoverySavedKey={recoverySavedKey}
-          onBitekBubble={setRecToolsBubble}
-          onDocumentReplaced={(next) => {
-            // Comp apply = several server CAS ops → fresh document, no partial undo.
-            applyPersistedDoc(() => next);
-            undoHistoryRef.current = EMPTY_STUDIO_UNDO_HISTORY;
-            setUndoHistory(EMPTY_STUDIO_UNDO_HISTORY);
-            undoAliasRef.current = new Map();
-          }}
-          onClipCreated={(clip, nextDocumentVersion, options) => {
-            applyPersistedDoc((prev) => ({
-              ...prev,
-              project: {
-                ...prev.project,
-                documentVersion: nextDocumentVersion,
-              },
-              clips: [...prev.clips, clip].sort(
-                (a, b) => a.timelineStartMs - b.timelineStartMs,
-              ),
-            }));
-            recordUndo({
-              undo: { kind: "clip_remove", clipId: clip.id },
-              redo: { kind: "clip_restore", clip },
-            });
-            if (options?.keepRecordPanel) {
-              setInspectorPreferRecord(
-                studioPreferRecordAfterClipCreated({ keepRecordPanel: true }),
-              );
-              setLastScratchClipId(clip.id);
-              return;
-            }
-            setInspectorPreferRecord(false);
-            setInspectorTab("file");
-            setSelectedClipId(selectClipId(null, clip.id));
-            setSelectedTrackId(clip.trackId);
-            setStatus(tr("nagranieDodaneNaOs"));
-          }}
-          onTrackCreated={(track, nextDocumentVersion) => {
-            applyPersistedDoc((prev) => ({
-              ...prev,
-              project: {
-                ...prev.project,
-                documentVersion: nextDocumentVersion,
-              },
-              tracks: [...prev.tracks, track].sort(
-                (a, b) => a.sortOrder - b.sortOrder,
-              ),
-            }));
-          }}
-        />
-      ) : null}
+      {inspectorContext === "record" ? <StudioRecordSlot host={recordHost} /> : null}
 
       {inspectorContext === "track" && selectedTrack ? (
         <TrackInspectorPanel
           track={selectedTrack}
           trackCount={trackCount}
           maxTracks={maxTracks}
+          disabled={recordingLocked || pending}
+          onRename={(name) => patchTrack(selectedTrack.id, { name })}
           onOpenEffects={() => openEffects({ role: "track", trackId: selectedTrack.id })}
           onOpenRecord={() => {
             setInspectorPreferRecord(true);
@@ -3052,6 +3466,8 @@ function StudioEditorInner({
           }}
         />
       ) : null}
+
+      {inspectorContext === "clip" ? spectrogramSection : null}
 
       {inspectorContext === "effects" ? (
         <div className="space-y-2" data-testid="studio-inspector-effects">
@@ -3144,9 +3560,9 @@ function StudioEditorInner({
     >
       <li
         data-testid="studio-mix-master"
-        className="studio-channel studio-channel-master sticky left-0 z-[1] flex w-[7.5rem] shrink-0 flex-col p-2"
+        className="studio-channel studio-channel-master sticky left-0 z-[1] flex w-[7.5rem] shrink-0 flex-col p-2 sm:w-[9.5rem]"
       >
-        <p className="studio-scribble truncate text-xs font-semibold">{tr("master")}</p>
+        <p className="studio-scribble shrink-0 truncate text-xs font-semibold">{tr("master")}</p>
         <p className="mb-1 mt-1 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
           {tr("out")}
         </p>
@@ -3218,11 +3634,8 @@ function StudioEditorInner({
             data-testid="studio-mix-track"
             data-track-id={track.id}
             data-selected={isSelected ? "true" : "false"}
-            className={
-              isSelected
-                ? "studio-channel flex w-[7.5rem] shrink-0 flex-col p-2"
-                : "studio-channel flex w-[7.5rem] shrink-0 flex-col p-2"
-            }
+            // 9.5rem = 3 × 44 px M/S/R + gaps + padding; narrower strips overlapped the next one.
+            className="studio-channel flex w-[9.5rem] shrink-0 flex-col p-2"
           >
             <button
               type="button"
@@ -3247,14 +3660,17 @@ function StudioEditorInner({
                 {tl(isSelected ? tr("meter") : "")}
               </p>
             </button>
+            {/* Same height with and without the meter: selecting a strip must not move its sliders. */}
+            <div className="mb-1 flex h-[4.5rem] shrink-0 flex-col justify-end overflow-hidden">
             {isSelected ? (
               <StudioTrackMeterLive trackName={track.name} />
             ) : (
               <div
-                className="studio-vu-idle mb-1 h-8"
+                className="studio-vu-idle h-8"
                 aria-hidden
               />
             )}
+            </div>
             <StudioMixControl
               label={tr("level")}
               ariaLabel={tr("glosnoscSciezki", { v0: track.name })}
@@ -3306,35 +3722,29 @@ function StudioEditorInner({
               <StudioToggleChip
                 active={track.muted}
                 label="M"
-                title={tr("wycisz")}
+                title={`${tr("wycisz")} · ${tl(track.name)}`}
                 tone="mute"
                 className={STUDIO_DAW_CHIP_CLASS}
-                onClick={() => {
-                  patchTrack(track.id, { muted: !track.muted });
-                }}
+                onClick={() => toggleTrackFlag(track.id, "muted")}
               />
               <StudioToggleChip
                 active={track.solo}
                 label="S"
-                title={tr("solo")}
+                title={`${tr("solo")} · ${tl(track.name)}`}
                 tone="solo"
                 className={STUDIO_DAW_CHIP_CLASS}
-                onClick={() => {
-                  patchTrack(track.id, { solo: !track.solo });
-                }}
+                onClick={() => toggleTrackFlag(track.id, "solo")}
               />
+              {isBeat ? null : (
               <StudioToggleChip
                 active={track.recordArmed}
                 label="R"
-                title={tr("uzbrojenieNagrywania")}
+                title={`${tr("uzbrojenieNagrywania")} · ${tl(track.name)}`}
                 tone="record"
                 className={STUDIO_DAW_CHIP_CLASS}
-                onClick={() => {
-                  patchTrack(track.id, {
-                    recordArmed: !track.recordArmed,
-                  });
-                }}
+                onClick={() => toggleTrackFlag(track.id, "recordArmed")}
               />
+              )}
             </div>
             <Button
               type="button"
@@ -3364,7 +3774,7 @@ function StudioEditorInner({
       data-studio-visual-parity="v2"
       data-record-view={studioStep === "record" ? (recordSimple ? "simple" : "full") : undefined}
       data-studio-tab={onSampleTab ? "samples" : studioStep}
-      className="studio-desk flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-clip max-lg:pb-[var(--bitek-dock-h,0px)] max-sm:pb-[max(var(--bitek-dock-h,0px),5rem)]"
+      className="studio-desk flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-clip max-lg:pb-[var(--bitek-dock-h,0px)] lg:pb-[min(var(--bitek-dock-h,0px),5.5rem)] max-sm:pb-[max(var(--bitek-dock-h,0px),5rem)]"
     >
       <header
         data-testid="studio-header"
@@ -3372,10 +3782,12 @@ function StudioEditorInner({
       >
         <span className="studio-brand">BitRymDym</span>
         <span className="studio-kicker">{tr("studioOnline")}</span>
-        <h1 className="min-w-0 flex-1 truncate text-sm leading-none text-[var(--brd-mute)]">
-          {tl(doc.project.title)}
-        </h1>
-      <div className="flex min-w-0 items-center gap-2 max-sm:w-full">
+        <StudioProjectTitle
+          projectId={doc.project.id}
+          title={doc.project.title}
+          onRenamed={(title) => applyPersistedDoc((prev) => ({ ...prev, project: { ...prev.project, title } }))}
+        />
+      <div className="flex min-w-0 items-center gap-2 max-sm:w-full sm:max-w-[50%] sm:shrink-0">
         <span className="studio-gear-label">BIT</span>
         <button
           type="button"
@@ -3400,7 +3812,10 @@ function StudioEditorInner({
         songReady={autoMixMasterMaterial({ beatId: doc.project.beatId, tracks: doc.tracks, clips: doc.clips }).ready}
         advancedRecord={advancedRecord}
         recordFullView={recordFullView}
-        onRecord={() => setSampleTab(false)}
+        onRecord={() => {
+          setSampleTab(false);
+          setStudioStep("record");
+        }}
         onSamples={() => {
           if (studioStep !== "record") setStudioStep("record");
           setSampleTab(true);
@@ -3409,6 +3824,14 @@ function StudioEditorInner({
           setSampleTab(false);
           setStudioStep("mix");
         }}
+        onMaster={
+          masterOpenVersion !== null && masterOpenVersion === doc.project.documentVersion
+            ? () => {
+                setSampleTab(false);
+                setStudioStep("master");
+              }
+            : undefined
+        }
         onToggleFullView={() => {
           const next = !recordFullView;
           setRecordFullView(next);
@@ -3434,12 +3857,20 @@ function StudioEditorInner({
           undoAliasRef.current = new Map();
           setError(null);
         }}
-        onChooseBeat={() => setBeatPickerOpen(true)}
-        onRecord={() => {
-          setInspectorPreferRecord(true);
-          openInspectorOverlay();
-          setTransportRecordRequest((n) => n + 1);
+        onFlushPersist={async () => {
+          const snap = await flushPersist();
+          return !snap?.unsaved;
         }}
+        onChooseBeat={() => setBeatPickerOpen(true)}
+        onRecord={() => requestRecord("button")}
+        recordState={
+          recordHold === "arming" || recordHold === "capture"
+            ? "recording"
+            : recordHold === "saving"
+              ? "busy"
+              : "idle"
+        }
+        onRecordStop={() => requestRecord("button")}
         transportKeyboardMode={transportKeyboardMode}
         onTransportKeyboardModeChange={(mode) => {
           setStudioTransportKeyboardModeLive(mode);
@@ -3447,12 +3878,17 @@ function StudioEditorInner({
         tempoBpm={doc.project.tempoBpm}
         timeSignatureNum={doc.project.timeSignatureNum}
         timeSignatureDen={doc.project.timeSignatureDen}
-        durationMs={length}
+        durationMs={songEndMs}
         masterGainDb={doc.project.masterGainDb}
         pending={pending}
         saveStatusLabel={saveStatusLabel}
         saveIsError={Boolean(error) || persistSnap.status === "SAVE_FAILED"}
         conflictActive={conflictActive}
+        onRetrySave={
+          persistSnap.status === "SAVE_FAILED" && persistSnap.queued
+            ? () => persistRef.current?.retryNow()
+            : null
+        }
         onMasterGainLocal={(masterGainDb) =>
           setDoc((prev) => ({
             ...prev,
@@ -3465,6 +3901,8 @@ function StudioEditorInner({
         canUndo={undoHistory.past.length > 0 && !recordingLocked}
         canRedo={undoHistory.future.length > 0 && !recordingLocked}
         showFragmentTools={studioStep === "record"}
+        exportLocked={trackCapacity.premiumTier !== "GOLD"}
+        fragmentClipId={activeSelectedId}
         fragmentEnabled={Boolean(selectedClip) && !recordingLocked}
         fragmentConfirmDelete={fragmentConfirmDelete}
         onFragmentSplit={() => {
@@ -3531,15 +3969,6 @@ function StudioEditorInner({
         }
       />
 
-      {selectedClip ? (
-        <StudioClipSpectrogram
-          clipId={selectedClip.id}
-          projectId={doc.project.id}
-          takeId={selectedClip.sourceKind === "TAKE" ? selectedClip.sourceTakeId : null}
-          resolveUrl={() => resolveClipSourceUrl(selectedClip)}
-        />
-      ) : null}
-
       <StudioBeatPicker
         projectId={doc.project.id}
         open={beatPickerOpen}
@@ -3554,15 +3983,18 @@ function StudioEditorInner({
         }}
       />
 
-      {trackMenuTrack && trackMenuTrack.trackType !== "BEAT" ? (
-        <div
-          role="menu"
-          data-testid="studio-track-menu-panel"
-          className="flex flex-wrap items-center gap-2 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 shadow-sm"
+      {studioStep === "record" && trackMenuTrack && trackMenuTrack.trackType !== "BEAT" ? (
+        <StudioTrackMenu
+          trackId={trackMenuTrack.id}
+          trackName={trackMenuTrack.name}
+          onClose={() => setTrackMenuId(null)}
         >
-          <span className="px-1 text-xs text-[var(--brd-mute)]">
-            {tl(trackMenuTrack.name)}
-          </span>
+          <TrackNameField
+            key={trackMenuTrack.name}
+            name={trackMenuTrack.name}
+            disabled={recordingLocked || pending}
+            onRename={(name) => patchTrack(trackMenuTrack.id, { name })}
+          />
           <Button
             type="button"
             size="sm"
@@ -3642,7 +4074,7 @@ function StudioEditorInner({
             title={tr("melodiaOpis")}
             onClick={() => {
               if (hasMidi(trackMenuTrack.midi)) return;
-              saveTrackMidi(trackMenuTrack.id, midiPhraseAt(playheadMs));
+              saveTrackMidi(trackMenuTrack.id, midiPhraseAt(getPlayheadMs()));
               setTrackMenuId(null);
             }}
           >
@@ -3659,7 +4091,7 @@ function StudioEditorInner({
             title={tr("basOpis")}
             onClick={() => {
               if (hasMidi(trackMenuTrack.midi)) return;
-              saveTrackMidi(trackMenuTrack.id, bassLineAt(playheadMs, doc.project.tempoBpm));
+              saveTrackMidi(trackMenuTrack.id, bassLineAt(getPlayheadMs(),doc.project.tempoBpm));
               setTrackMenuId(null);
             }}
           >
@@ -3676,7 +4108,7 @@ function StudioEditorInner({
             title={tr("perkusjaOpis")}
             onClick={() => {
               if (hasMidi(trackMenuTrack.midi)) return;
-              saveTrackMidi(trackMenuTrack.id, drumPatternAt(playheadMs, doc.project.tempoBpm));
+              saveTrackMidi(trackMenuTrack.id, drumPatternAt(getPlayheadMs(),doc.project.tempoBpm));
               setTrackMenuId(null);
             }}
           >
@@ -3712,61 +4144,19 @@ function StudioEditorInner({
           >
             {tr("usun")}
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="min-h-11"
-            onClick={() => setTrackMenuId(null)}
-          >
-            {tr("anuluj")}
-          </Button>
-        </div>
+        </StudioTrackMenu>
       ) : null}
 
       {trackPendingDelete ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="studio-delete-track-title"
-          data-testid="studio-delete-track-confirm"
-          className="rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 shadow-sm"
-        >
-          <p
-            id="studio-delete-track-title"
-            className="text-sm font-medium text-[var(--brd-ink)]"
-          >
-            {tr("usunacSciezke")}{" "}{tl(trackPendingDelete.name)}?
-          </p>
-          <p className="mt-1 text-xs text-[var(--brd-mute)]">
-            {tr("sciezkaIJejKlipy")}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="min-h-11"
-              disabled={pending}
-              onClick={() => setConfirmDeleteTrackId(null)}
-            >
-              {tr("anuluj")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="destructive"
-              className="min-h-11"
-              data-testid="studio-delete-track-confirm-btn"
-              disabled={recordingLocked || pending}
-              onClick={() => {
-                deleteTrack(trackPendingDelete.id);
-              }}
-            >
-              {tr("usun")}
-            </Button>
-          </div>
-        </div>
+        <StudioDeleteTrackDialog
+          trackName={trackPendingDelete.name}
+          disabled={recordingLocked || pending}
+          onCancel={() => setConfirmDeleteTrackId(null)}
+          onConfirm={() => {
+            setConfirmDeleteTrackId(null);
+            deleteTrack(trackPendingDelete.id);
+          }}
+        />
       ) : null}
 
       {recordingLocked ? (
@@ -3776,6 +4166,18 @@ function StudioEditorInner({
         >
           {tr("trybNagrywaniaEdycjaKlipow")}
         </p>
+      ) : null}
+      {(recordHold === "decision" || recordHold === "retry") && !(recordPanelVisible && !onSampleTab) ? (
+        <div
+          className="flex flex-wrap items-center gap-2 rounded border border-[var(--brd-amber)] px-3 py-2 text-sm text-[var(--brd-ink)]"
+          role="status"
+          data-testid="studio-take-waiting"
+        >
+          <span>{tr(recordHold === "decision" ? "nagranieCzeka" : "nagranieNiewyslane")}</span>
+          <Button type="button" size="sm" className="min-h-10" onClick={showRecordPanel}>
+            {tr("pokazNagranie")}
+          </Button>
+        </div>
       ) : null}
       {captureInterruptedNotice ? (
         <p
@@ -3791,6 +4193,13 @@ function StudioEditorInner({
         onStay={leaveGuard.stay}
         onLeave={leaveGuard.leave}
       />
+      <StudioLeaveGuardDialog
+        open={saveLeaveGuard.open}
+        onStay={saveLeaveGuard.stay}
+        onLeave={saveLeaveGuard.leave}
+        title={tr("niezapisaneTytul")}
+        body={tr("niezapisaneOpis")}
+      />
 
       <TakeRecordingRecoveryBanner
         surface="STUDIO"
@@ -3798,7 +4207,10 @@ function StudioEditorInner({
         authenticated
         refreshKey={recoveryRefreshKey}
         hidden={recordingLocked}
-        onSaved={() => setRecoverySavedKey((key) => key + 1)}
+        onSaved={(takeId) => {
+          setRecoverySavedKey((key) => key + 1);
+          adoptRecoveredTake(doc.project.id, takeId);
+        }}
       />
 
       <StudioBitekDock
@@ -3811,8 +4223,8 @@ function StudioEditorInner({
         chatOpen={bitekChatOpen}
         onChatOpenChange={setBitekChatOpen}
         recording={recordingLocked}
-        recordContext={studioStep === "record" || recordingContextActive}
-        inspectorSheetOpen={inspectorOverlayOpen && !inspectorDesktopRail}
+        recordContext={studioStep === "record" || recordingLocked}
+        inspectorSheetOpen={inspectorOverlayOpen && !inspectorDesktopRail && !recordSimple}
         chat={
           <StudioBitekChat
             projectId={doc.project.id}
@@ -3823,9 +4235,10 @@ function StudioEditorInner({
                   ? mixChatContextRef.current()
                   : getRecordChatContext()
             }
-            onApplyProposal={applyBitekProposal}
+            maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}
+            allowSidechain={sidechainForTier(trackCapacity.premiumTier)}
             onApplyFxOps={async (ops, description) => (await applyMixAutofix(ops, description)).ok}
-            onApplyMasterProposal={(key, value) => masterApplyRef.current?.(key, value)}
+            onApplyMasterProposal={studioStep === "master" ? (key, value) => masterApplyRef.current?.(key, value) : undefined}
             onBackToMix={studioStep === "master" ? () => {
               setSampleTab(false);
               setStudioStep("mix");
@@ -3871,6 +4284,8 @@ function StudioEditorInner({
           }}
           bitekBase={bitekBase}
           onApplyAutofix={applyMixAutofix}
+          onSaveTrackMidi={saveTrackMidi}
+          onOpenMixer={toggleMixerSurface}
           onAbOverride={onMixAbOverride}
           onBitekBubble={setMixBubble}
           onBitekNote={(content: string, meta: Record<string, unknown>) => bitekStore.append([{ kind: "fix", content, meta }])}
@@ -3925,29 +4340,23 @@ function StudioEditorInner({
         }}
         onFit={() => {
           userAdjustedZoomRef.current = false;
-          const el = timelineScrollRef.current;
-          const viewport = el?.clientWidth;
-          zoomAtViewportCenter(
-            fitPxPerMs(
-              studioTimelineFitLengthMs(length, doc.clips),
-              typeof viewport === "number" && viewport > 0 ? viewport : 360,
-            ),
-          );
+          fitTimeline(timelineScrollRef.current);
         }}
       />
       )}
 
-      <div className={`flex min-h-0 flex-col gap-3 xl:items-start ${onSampleTab ? "" : "xl:flex-row"}`}>
+      <div className={`flex min-h-0 flex-col gap-3 lg:items-start ${onSampleTab ? "" : recordSimple ? "lg:flex-row" : "xl:flex-row"}`}>
         {recordSimple ? (
         <div
           data-testid="studio-record-simple"
           className={`flex flex-col gap-2 ${
             onSampleTab
-              ? "xl:order-first xl:basis-full"
-              : "xl:order-2 xl:max-h-[max(30rem,calc(100dvh-17rem))] xl:w-[24rem] xl:shrink-0 xl:overflow-y-auto xl:rounded xl:border xl:border-[var(--brd-line)] xl:bg-[var(--brd-paper)] xl:p-3"
+              ? "w-full xl:order-first xl:basis-full"
+              : "lg:order-2 lg:max-h-[max(30rem,calc(100dvh-17rem))] lg:w-[20rem] lg:shrink-0 lg:overflow-y-auto lg:rounded lg:border lg:border-[var(--brd-line)] lg:bg-[var(--brd-paper)] lg:p-3 xl:w-[24rem]"
           }`}
         >
           {inspectorContent}
+          {recordingLocked ? null : spectrogramSection}
           {selectedClip && !recordingLocked ? (
             <div className="flex flex-wrap items-center gap-2" data-testid="studio-record-simple-clip">
               {confirmDelete ? (
@@ -3994,11 +4403,13 @@ function StudioEditorInner({
           ) : null}
         </div>
         ) : null}
-        <div className="min-w-0 flex-1 max-xl:w-full xl:order-1 xl:w-full">
-          <StudioTimelinePlayheadBound
+        <div className={`min-w-0 max-xl:w-full xl:order-1 xl:w-full ${recordSimple ? "lg:order-1 lg:flex-1" : "flex-1"}`}>
+          <StudioTimeline
             tracks={doc.tracks}
             clips={doc.clips}
             timelineLengthMs={length}
+            songEndMs={songEndMs}
+            markers={doc.markers}
             pxPerMs={pxPerMs}
             mode={timelineMode}
             interactionLocked={recordingLocked}
@@ -4036,6 +4447,7 @@ function StudioEditorInner({
                 onSelect={setSelectedTrackId}
                 onToggleMenu={() => setTrackMenuId((prev) => (prev === track.id ? null : track.id))}
                 patchTrack={patchTrack}
+                onToggleFlag={toggleTrackFlag}
                 reorder={reorder}
                 setDoc={setDoc}
               />
@@ -4053,6 +4465,12 @@ function StudioEditorInner({
               const clip = doc.clips.find((c) => c.id === id);
               if (clip) setSelectedTrackId(clip.trackId);
               setMode("edit");
+              setConfirmDelete(false);
+              setFragmentConfirmDelete(false);
+            }}
+            onClearSelection={() => {
+              if (recordingLocked) return;
+              setSelectedClipId(clearClipSelection());
               setConfirmDelete(false);
               setFragmentConfirmDelete(false);
             }}
@@ -4132,6 +4550,7 @@ function StudioEditorInner({
       </StudioFxSheet>
       ) : null}
       <StudioLazyPanelsIdlePrefetch />
+      {recordPanelNode}
     </div>
   );
 }

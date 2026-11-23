@@ -1,3 +1,5 @@
+import { maxFxEffectsForTier } from "@/config/plan-policy";
+import { fxChainWriteAllowed } from "@/lib/studio/plan-feature-gates";
 import { describe, expect, it } from "vitest";
 
 import { interpretStudioFxChainForPlayback } from "@/lib/studio/studio-fx-chain";
@@ -5,6 +7,7 @@ import { buildStudioOfflineFxChain } from "@/lib/studio/studio-offline-fx";
 
 import {
   buildVocalPresetChain,
+  fitPresetToPlan,
   buildVocalPresetSet,
   buildVocalSetOps,
   captureVocalSet,
@@ -107,5 +110,17 @@ describe("own preset validation", () => {
     expect(parseFxPresetName("  Mój wokal ")).toBe("Mój wokal");
     expect(() => parseFxPresetName("")).toThrow();
     expect(() => parseFxPresetName("x".repeat(41))).toThrow();
+  });
+});
+
+describe("M2 — presets on a capped plan", () => {
+  it.each([...VOCAL_PRESET_IDS])("%s is cut to what the FREE server gate accepts, and says what is missing", (id) => {
+    const empty = { schemaVersion: 1 as const, effects: [] };
+    const full = buildVocalPresetChain(id, { bpm: 90 });
+    const fit = fitPresetToPlan(full, empty, { maxEffects: maxFxEffectsForTier("FREE"), allowSidechain: false });
+    expect(fit.chain).not.toBeNull();
+    expect(fxChainWriteAllowed({ tier: "FREE", nextCount: fit.chain!.effects.length, previousCount: 0, nextHasSidechain: false }).ok).toBe(true);
+    expect(fit.chain!.effects.length + fit.skipped.length).toBe(full.effects.length);
+    expect(fitPresetToPlan(full, empty, { maxEffects: maxFxEffectsForTier("GOLD") }).skipped).toEqual([]);
   });
 });

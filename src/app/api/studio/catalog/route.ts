@@ -17,10 +17,11 @@ export async function GET(request: Request) {
     const masterJobId = url.searchParams.get("masterJobId") ?? "";
     const loaded = await loadOwnerCatalogEntry(auth.userId, projectId, masterJobId);
     if (!loaded.enabled) return NextResponse.json({ result: "off", entry: null }, { status: 503 });
-    return NextResponse.json({ result: "ok", entry: loaded.entry });
+    return NextResponse.json({ result: "ok", entry: loaded.entry, older: loaded.older });
   } catch (error) {
-    if (error instanceof AuthError) return NextResponse.json({ result: "invalid" }, { status: 401 });
-    return NextResponse.json({ result: "invalid" }, { status: 500 });
+    if (error instanceof AuthError) return NextResponse.json({ result: "signed_out" }, { status: 401 });
+    console.error("[studio-catalog] read failed", error);
+    return NextResponse.json({ result: "error" }, { status: 500 });
   }
 }
 
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
       allowRatings?: unknown;
       allowComments?: unknown;
       inRankings?: unknown;
+      withdrawOlder?: unknown;
     };
     if (typeof body.projectId !== "string" || typeof body.masterJobId !== "string" || typeof body.publish !== "boolean") {
       return NextResponse.json({ result: "invalid" }, { status: 400 });
@@ -45,6 +47,7 @@ export async function POST(request: Request) {
       masterJobId: body.masterJobId,
       title: body.title,
       publish: body.publish,
+      withdrawOlder: flag(body.withdrawOlder),
       consents: {
         allowRatings: flag(body.allowRatings),
         allowComments: flag(body.allowComments),
@@ -54,7 +57,8 @@ export async function POST(request: Request) {
     const status = result === "ok" ? 200 : result === "missing" ? 404 : result === "off" ? 503 : 400;
     return NextResponse.json({ result }, { status });
   } catch (error) {
-    if (error instanceof AuthError) return NextResponse.json({ result: "invalid" }, { status: 401 });
-    return NextResponse.json({ result: "invalid" }, { status: 500 });
+    if (error instanceof AuthError) return NextResponse.json({ result: "signed_out" }, { status: 401 });
+    console.error("[studio-catalog] save failed", error);
+    return NextResponse.json({ result: "error" }, { status: 500 });
   }
 }

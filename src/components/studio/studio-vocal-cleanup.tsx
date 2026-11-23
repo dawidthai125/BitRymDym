@@ -22,7 +22,11 @@ type Take = { takeId: string; label: string };
 
 const pct = (v: number) => Math.round(v * 100);
 
-export function StudioVocalCleanup({ doc }: { doc: StudioProjectDocument }) {
+export function StudioVocalCleanup({ doc, onAppliedChange }: {
+  doc: StudioProjectDocument;
+  /** Fingerprint of the applied cleanups (the mix analysis goes stale when it changes). */
+  onAppliedChange?: (sig: string) => void;
+}) {
   const t = useTranslations("studio.cleanup");
   const projectId = doc.project.id;
   const base = `/api/studio/projects/${projectId}/cleanup`;
@@ -30,6 +34,7 @@ export function StudioVocalCleanup({ doc }: { doc: StudioProjectDocument }) {
   const [settings, setSettings] = useState<Record<string, { noise: number; reverb: number }>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -51,30 +56,52 @@ export function StudioVocalCleanup({ doc }: { doc: StudioProjectDocument }) {
   const pending = !!st?.jobs.some((j) => j.status === "queued" || j.status === "running");
   useEffect(() => {
     let alive = true;
-    const tick = () => fetch(base).then((r) => r.json()).then((j) => { if (alive) apply(j); }).catch(() => undefined);
+    const tick = () => fetch(base).then((r) => r.json()).then((j) => { if (alive) { setLoadFailed(false); apply(j); } }).catch(() => { if (alive) setLoadFailed(true); });
     void tick();
     const id = pending ? window.setInterval(tick, 3000) : null;
     return () => { alive = false; if (id) window.clearInterval(id); };
   }, [base, apply, pending]);
   useEffect(() => () => audioRef.current?.pause(), []);
+  const appliedSig = st ? st.jobs.filter((j) => j.applied).map((j) => j.id).sort().join(",") : null;
+  useEffect(() => {
+    if (appliedSig !== null) onAppliedChange?.(appliedSig);
+  }, [appliedSig, onAppliedChange]);
 
+  if (!st && loadFailed && takes.length > 0) {
+    return (
+      <section data-testid="studio-cleanup" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--brd-line)] p-3">
+        <p role="alert" className="text-xs text-[var(--brd-amber)]">{t("error.load")}</p>
+        <Button type="button" size="sm" variant="outline" className="min-h-9" onClick={() => void load()}>{t("retry")}</Button>
+      </section>
+    );
+  }
   if (!st || !st.available || takes.length === 0) return null;
   const left = Math.max(0, st.perDay - st.usedToday);
 
-  async function run(takeId: string) {
+  /** One request: the button always comes back, and a network error is a message. */
+  async function send(takeId: string, method: "POST" | "PATCH", body: unknown, onDone: (ok: boolean, error?: string) => void) {
     setBusy(takeId); setMsg(null);
-    const res = await fetch(base, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ takeId, settings: settings[takeId] ?? { noise: 0.6, reverb: 0.4 } }) });
-    const j = (await res.json().catch(() => null)) as { error?: string } | null;
-    if (!res.ok) setMsg(t(`error.${j?.error === "daily_limit" || j?.error === "in_progress" || j?.error === "take_unavailable" ? j.error : "generic"}`));
-    await load(); setBusy(null);
+    try {
+      const res = await fetch(base, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(30000) });
+      const j = (await res.json().catch(() => null)) as { error?: string } | null;
+      onDone(res.ok, j?.error);
+      await load();
+    } catch {
+      setMsg(t("error.generic"));
+    } finally {
+      setBusy(null);
+    }
   }
 
-  async function use(takeId: string, jobId: string | null) {
-    setBusy(takeId); setMsg(null);
-    const res = await fetch(base, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ takeId, jobId }) });
-    if (res.ok) emitStudioTakeSourceChanged(takeId); else setMsg(t("error.generic"));
-    await load(); setBusy(null);
-  }
+  const run = (takeId: string) =>
+    send(takeId, "POST", { takeId, settings: settings[takeId] ?? { noise: 0.6, reverb: 0.4 } }, (ok, error) => {
+      if (!ok) setMsg(t(`error.${error === "daily_limit" || error === "in_progress" || error === "take_unavailable" ? error : "generic"}`));
+    });
+
+  const use = (takeId: string, jobId: string | null) =>
+    send(takeId, "PATCH", { takeId, jobId }, (ok) => {
+      if (ok) emitStudioTakeSourceChanged(takeId); else setMsg(t("error.generic"));
+    });
 
   async function preview(takeId: string, jobId: string | null) {
     const key = `${takeId}:${jobId ?? "orig"}`;
@@ -119,7 +146,7 @@ export function StudioVocalCleanup({ doc }: { doc: StudioProjectDocument }) {
                 {(["noise", "reverb"] as const).map((k) => (
                   <label key={k} className="flex items-center gap-2 text-xs">
                     <span className="w-24 shrink-0">{t(`slider.${k}`)}</span>
-                    <input type="range" min={0} max={100} step={5} value={pct(s[k])} className="min-h-9 flex-1" data-testid={`studio-cleanup-${k}`}
+                    <input type="range" min={0} max={100} step={5} value={pct(s[k])} className="min-h-9 flex-1 accent-[var(--brd-amber)]" data-testid={`studio-cleanup-${k}`}
                       onChange={(e) => setSettings((p) => ({ ...p, [takeId]: { ...s, [k]: Number(e.target.value) / 100 } }))} />
                     <span className="w-9 text-right tabular-nums">{pct(s[k])}%</span>
                   </label>

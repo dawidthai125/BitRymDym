@@ -769,6 +769,17 @@ function assertMasterLimiterLast(effects: StudioFxInstance[]): void {
   }
 }
 
+/** Master rule kept for the user: an enabled limiter moves to the end, and only one limiter is on. */
+function withMasterLimiterLast(effects: StudioFxInstance[], limiterId?: string): StudioFxInstance[] {
+  const on = effects.filter((e) => e.type === "limiter" && e.enabled);
+  const keep = on.find((e) => e.id === limiterId) ?? on[on.length - 1];
+  if (!keep) return effects;
+  const rest = effects
+    .filter((e) => e.id !== keep.id)
+    .map((e) => (e.type === "limiter" && e.enabled ? { ...e, enabled: false } : e));
+  return [...rest, keep];
+}
+
 export function emptyStudioFxChain(): StudioFxChainV1 {
   return { schemaVersion: 1, effects: [] };
 }
@@ -1131,6 +1142,16 @@ export function sidechainParamsOf(chain: { effects?: readonly { type: string; en
   return params as StudioFxSidechainParams;
 }
 
+/** Effects the „Dodaj efekt” list offers: registry, plan, and one limiter on the master. */
+export function studioFxTypesToAdd(chain: StudioFxChainV1, role: StudioFxChainRole, allowSidechain: boolean): StudioFxType[] {
+  return STUDIO_FX_TYPES.filter(
+    (type) =>
+      STUDIO_FX_REGISTRY[type][role] &&
+      (type !== "sidechain" || allowSidechain) &&
+      (type !== "limiter" || role !== "master" || !chain.effects.some((e) => e.type === "limiter")),
+  );
+}
+
 /** Compact Mix entry label: count + optional bypass hint (P6.4.3). */
 export function studioFxEntryLabel(chain: StudioFxChainV1): string {
   const count = chain.effects.length;
@@ -1290,22 +1311,9 @@ export function addStudioFxToChain(
   }
   if (role === "master" && !STUDIO_FX_REGISTRY[type].master) invalid("track-only effect on master");
   const effect = createStudioFxInstance(type, createId);
-  const effects = [...chain.effects];
-  if (role === "master") {
-    if (type === "limiter") {
-      effects.push(effect);
-    } else {
-      const last = effects[effects.length - 1];
-      if (last?.type === "limiter" && last.enabled) {
-        effects.splice(effects.length - 1, 0, effect);
-      } else {
-        effects.push(effect);
-      }
-    }
-    assertMasterLimiterLast(effects);
-  } else {
-    effects.push(effect);
-  }
+  const appended = [...chain.effects, effect];
+  const effects = role === "master" ? withMasterLimiterLast(appended, effect.id) : appended;
+  if (role === "master") assertMasterLimiterLast(effects);
   return { schemaVersion: 1, effects };
 }
 
@@ -1325,9 +1333,10 @@ export function setStudioFxEnabled(
   enabled: boolean,
   role: StudioFxChainRole,
 ): StudioFxChainV1 {
-  const effects = chain.effects.map((e) =>
+  const toggled = chain.effects.map((e) =>
     e.id === effectId ? { ...e, enabled } : e,
   ) as StudioFxInstance[];
+  const effects = role === "master" ? withMasterLimiterLast(toggled, effectId) : toggled;
   if (role === "master") assertMasterLimiterLast(effects);
   return { schemaVersion: 1, effects };
 }

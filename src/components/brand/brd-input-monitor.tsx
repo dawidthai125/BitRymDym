@@ -33,9 +33,6 @@ export function BrdInputMonitor({
   return (
     <div
       className={cn("space-y-1.5", className)}
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
     >
       <div className="flex items-baseline justify-between gap-2">
         <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">

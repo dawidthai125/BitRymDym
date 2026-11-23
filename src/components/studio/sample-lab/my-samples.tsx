@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ConsentSwitches } from "@/components/community/consent-switches";
@@ -25,7 +25,10 @@ async function fetchSamples(): Promise<{ ok: true; list: NonNullable<ListState> 
 export function MySamples({ refreshKey }: { refreshKey: number }) {
   const t = useTranslations("studio.sampleLab");
   const tc = useTranslations("community.consents");
+  const locale = useLocale();
   const [list, setList] = useState<ListState>(null);
+  const [listFailed, setListFailed] = useState(false);
+  const playSeq = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
@@ -41,6 +44,7 @@ export function MySamples({ refreshKey }: { refreshKey: number }) {
     let alive = true;
     fetchSamples().then((result) => {
       if (!alive) return;
+      setListFailed(!result.ok);
       if (result.ok) setList(result.list);
       else setError(result.message ?? t("bladListy"));
     });
@@ -52,19 +56,27 @@ export function MySamples({ refreshKey }: { refreshKey: number }) {
   useEffect(() => () => audio.current?.pause(), []);
 
   async function play(id: string) {
+    const seq = ++playSeq.current;
     audio.current?.pause();
     if (playing === id) {
       setPlaying(null);
       return;
     }
-    const res = await fetch(`/api/studio/samples/${id}/play`);
-    const body = (await res.json().catch(() => ({}))) as { url?: string };
-    if (!body.url) return;
-    const el = new Audio(body.url);
-    audio.current = el;
-    el.onended = () => setPlaying(null);
     setPlaying(id);
-    void el.play();
+    try {
+      const res = await fetch(`/api/studio/samples/${id}/play`);
+      const body = (await res.json().catch(() => ({}))) as { url?: string; message?: string };
+      if (seq !== playSeq.current) return;
+      if (!body.url) throw new Error(body.message ?? "");
+      const el = new Audio(body.url);
+      audio.current = el;
+      el.onended = () => setPlaying((p) => (p === id ? null : p));
+      await el.play();
+    } catch (cause) {
+      if (seq !== playSeq.current) return;
+      setPlaying(null);
+      setError(cause instanceof Error && cause.message && cause.name === "Error" ? cause.message : t("bladOdsluchu"));
+    }
   }
 
   async function share(id: string, next: ListingConsents) {
@@ -90,15 +102,20 @@ export function MySamples({ refreshKey }: { refreshKey: number }) {
   async function act(id: string, kind: "submit" | "delete") {
     setBusy(id);
     setAsking(null);
+    if (kind === "delete" && playing === id) {
+      playSeq.current += 1;
+      audio.current?.pause();
+      setPlaying(null);
+    }
     const res = await fetch(kind === "submit" ? `/api/studio/samples/${id}/submit` : `/api/studio/samples/${id}`, {
       method: kind === "submit" ? "POST" : "DELETE",
       ...(kind === "submit"
         ? { headers: { "content-type": "application/json" }, body: JSON.stringify(wishes[id] ?? {}) }
         : {}),
-    });
-    const body = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+    }).catch(() => null);
+    const body = ((await res?.json().catch(() => ({}))) ?? {}) as { message?: string; error?: string };
     setBusy(null);
-    if (!res.ok) setError(body.message ?? body.error ?? t("bladAkcji"));
+    if (!res?.ok) setError(body.message ?? t("bladAkcji"));
     else {
       setError(null);
       load();
@@ -115,7 +132,13 @@ export function MySamples({ refreshKey }: { refreshKey: number }) {
       </div>
       {error ? <p role="alert" className="mb-2 text-sm text-[var(--brd-rec)]">{error}</p> : null}
       {!list ? (
-        <p className="text-sm text-[var(--brd-ink-soft)]">{t("wczytuje")}</p>
+        listFailed ? (
+          <button type="button" onClick={() => { setError(null); setListFailed(false); load(); }} className="min-h-11 rounded-md border border-[var(--brd-line)] px-4 text-sm">
+            {t("sprobujPonownie")}
+          </button>
+        ) : (
+          <p className="text-sm text-[var(--brd-ink-soft)]">{t("wczytuje")}</p>
+        )
       ) : list.samples.length === 0 ? (
         <p className="text-sm text-[var(--brd-ink-soft)]">{t("brakSampli")}</p>
       ) : (
@@ -139,7 +162,7 @@ export function MySamples({ refreshKey }: { refreshKey: number }) {
                     s.bpm ? `${Math.round(s.bpm)} BPM` : null,
                     s.bars ? t("taktow", { n: s.bars }) : null,
                     s.musicalKey,
-                    `${(s.durationMs / 1000).toFixed(1)} s`,
+                    `${(s.durationMs / 1000).toLocaleString(locale === "en" ? "en-US" : "pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} s`,
                   ]
                     .filter(Boolean)
                     .join(" · ")}

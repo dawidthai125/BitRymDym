@@ -28,6 +28,20 @@ describe("summarizeMixChanges", () => {
     ]);
   });
 
+  it("the same changes read in English, with the editor's effect names", () => {
+    const out = summarizeMixChanges(
+      [
+        { path: "tracks.v.gainDb", before: 3.5, after: 5.5 },
+        { path: "tracks.v.pan", before: 0, after: 0.3 },
+        { path: "tracks.b.muted", before: false, after: true },
+        { path: "tracks.v.effectsChain", before: { effects: [] }, after: { effects: [{ id: "1", type: "limiter", enabled: true, params: {} }] } },
+      ],
+      { v: "Vocal", b: "Beat" },
+      { lang: "en", label: () => "Volume ceiling" },
+    );
+    expect(out).toEqual(["Vocal: volume +3.5 → +5.5 dB (+2)", "Vocal: pan centre → R30", "Beat: muted", "Vocal: added effect Volume ceiling"]);
+  });
+
   it("an unknown track id stays generic and never leaks the id", () => {
     const out = summarizeMixChanges([{ path: "tracks.zzz.gainDb", before: 0, after: 1 }], names);
     expect(out[0]).toBe("Ścieżka: głośność 0 → +1 dB (+1)");
@@ -46,7 +60,7 @@ describe("summarizeChainChange", () => {
       "Wokal: efekt Echo wyłączony",
     ]);
     expect(summarizeChainChange({ effects: [eff("compressor", { ratio: 2, thresholdDb: -18 })] }, { effects: [eff("compressor", { ratio: 3, thresholdDb: -18 })] }, "Wokal")).toEqual([
-      "Wokal: Kompresor: kompresja 2 → 3",
+      "Wokal: Wyrównaj głośność: kompresja 2 → 3",
     ]);
   });
   it("nested EQ bands and a cap on listed parameters", () => {

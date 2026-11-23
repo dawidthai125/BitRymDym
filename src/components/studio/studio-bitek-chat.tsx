@@ -13,12 +13,11 @@ import {
   type BitekDecision,
   type BitekStoredChange,
 } from "@/lib/studio/bitek/chat/decisions";
-import { NOVA_PASS_FIXES } from "@/lib/studio/mix-autofix/plan";
-import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekJob, type BitekMasterSetting, type BitekProposal, type BitekSpaceLevel, type BitekTuneLevel } from "@/lib/studio/bitek/chat/types";
+import { bitekProposalTarget, planBitekChanges, refsToTrackIds } from "@/lib/studio/bitek/chat/apply-plan";
+import { clampChainToPlan, NOVA_PASS_FIXES } from "@/lib/studio/mix-autofix/plan";
+import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekJob, type BitekMasterSetting, type BitekProposal } from "@/lib/studio/bitek/chat/types";
 import { emitStudioTakeSourceChanged } from "@/lib/studio/cleanup/cleanup-events";
 import { addStudioFxToChain } from "@/lib/studio/studio-fx-chain";
-import { bitekSpaceChain } from "@/lib/studio/bitek/chat/space-apply";
-import { bitekTuneChain } from "@/lib/studio/bitek/chat/tune-apply";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import type { PremiumTier } from "@/types/premium";
 import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
@@ -26,11 +25,12 @@ import { useFxPresets } from "@/components/studio/studio-vocal-presets";
 import type { BitekStoredMessage } from "@/lib/studio/bitek/store/messages";
 import type { BitekProjectStore } from "@/components/studio/use-bitek-project";
 
-export type BitekApplyProposal = (trackId: string, patch: Record<string, number | boolean>) => void;
+/** The chat route tries several providers; after this the user gets the text back. */
+const CHAT_TIMEOUT_MS = 45000;
 
 type Entry =
   | { id: string; role: "user"; content: string }
-  | { id: string; role: "assistant"; content: string; provider: BitekChatResult["provider"] | null; proposals: BitekProposal[]; jobs: BitekJob[]; note: boolean; backToMix: boolean };
+  | { id: string; role: "assistant"; content: string; provider: BitekChatResult["provider"] | null; proposals: BitekProposal[]; jobs: BitekJob[]; note: boolean; backToMix: boolean; trackIds: Record<string, string> | null };
 
 function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
   const out: Entry[] = [];
@@ -40,7 +40,7 @@ function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
       out.push({ id: m.id, role: "user", content: m.content });
       continue;
     }
-    const meta = m.meta as { provider?: BitekChatResult["provider"]; proposals?: BitekProposal[]; jobs?: BitekJob[]; backToMix?: boolean };
+    const meta = m.meta as { provider?: BitekChatResult["provider"]; proposals?: BitekProposal[]; jobs?: BitekJob[]; backToMix?: boolean; trackIds?: Record<string, string> };
     out.push({
       id: m.id,
       role: "assistant",
@@ -50,6 +50,7 @@ function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
       jobs: m.kind === "chat" && Array.isArray(meta.jobs) ? meta.jobs : [],
       note: m.kind !== "chat",
       backToMix: m.kind === "chat" && meta.backToMix === true,
+      trackIds: meta.trackIds && typeof meta.trackIds === "object" ? meta.trackIds : null,
     });
   }
   return out.slice(-60);
@@ -59,23 +60,26 @@ function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
 export function StudioBitekChat({
   projectId,
   getContext,
-  onApplyProposal,
   disabled,
   store,
   onBusyChange,
   onApplyMasterProposal,
   onBackToMix,
   onApplyFxOps,
+  maxEffects,
+  allowSidechain,
 }: {
-  /** BRD Tune proposals: one set_track_fx op through the Mix Working apply (undoable). */
+  /** Plan limits (the server enforces the same). */
+  maxEffects?: number;
+  allowSidechain?: boolean;
+  /** Every track change goes through one Mix Working apply (saved, undoable, result known). */
   onApplyFxOps?: (ops: MixWorkingOp[], description: string) => Promise<boolean>;
-  /** Stage 3 — whole-song setting proposals (trackRef "master"). */
+  /** Stage 3 — whole-song setting proposals (trackRef "master"). Only in the Mastering step. */
   onApplyMasterProposal?: (key: BitekMasterSetting, value: number) => void;
   /** Stage 3 — shown under a Mastering reply that needs Mix work. */
   onBackToMix?: () => void;
   projectId: string;
   getContext: () => BitekClientContext;
-  onApplyProposal: BitekApplyProposal;
   disabled?: boolean;
   store: BitekProjectStore;
   onBusyChange?: (busy: boolean) => void;
@@ -89,6 +93,13 @@ export function StudioBitekChat({
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  /** Message being answered (shown in the list, moved to history with the reply). */
+  const [asking, setAsking] = useState<string | null>(null);
+  /** One change at a time: proposals, jobs and undo share this lock. */
+  const [working, setWorking] = useState<string | null>(null);
+  const workingRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLOListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -97,8 +108,27 @@ export function StudioBitekChat({
   }, [entries.length, busy]);
 
   useEffect(() => {
-    onBusyChange?.(busy);
-  }, [busy, onBusyChange]);
+    onBusyChange?.(busy || working !== null);
+  }, [busy, working, onBusyChange]);
+  // Closing the chat never leaves the avatar "thinking".
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
+
+  /** Runs one change with the lock; a thrown request is a message, never a stuck button. */
+  async function exclusive(key: string, work: () => Promise<void>) {
+    if (workingRef.current) return;
+    workingRef.current = true;
+    setWorking(key);
+    setError(null);
+    setNotice(null);
+    try {
+      await work();
+    } catch {
+      setError(t("blad"));
+    } finally {
+      workingRef.current = false;
+      setWorking(null);
+    }
+  }
 
   const tooLong = text.length > BITEK_LIMITS.messageMaxChars;
 
@@ -109,10 +139,23 @@ export function StudioBitekChat({
       .filter((m) => m.kind === "chat")
       .slice(-12)
       .map((m) => ({ role: m.role, content: m.content }));
-    store.addLocal([{ id: crypto.randomUUID(), role: "user", kind: "chat", content: message, meta: {}, createdAt: new Date().toISOString() }]);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let timedOut = false;
+    const timer = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, CHAT_TIMEOUT_MS);
+    const fail = (messageText: string | null) => {
+      // The text goes back to the field, so "try again" is one click.
+      setText((cur) => cur || message);
+      setError(messageText);
+    };
+    setAsking(message);
     setText("");
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       const { context, trackIdByRef } = getContext();
       // Conversational mode: "więcej / za dużo / cofnij" act on the last change the user applied.
@@ -120,10 +163,12 @@ export function StudioBitekChat({
       const res = await fetch("/api/studio/bitek/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history, context: { ...context, lastChange }, projectId }),
+        // trackIds never reach the model: the server only keeps the ones the reply uses (stable after a reorder).
+        body: JSON.stringify({ message, history, context: { ...context, lastChange }, projectId, trackIds: trackIdByRef }),
+        signal: controller.signal,
       });
       if (res.status === 429) {
-        setError(t("limit"));
+        fail(t("limit"));
         return;
       }
       const json = (await res.json()) as Partial<BitekChatResult> & {
@@ -131,10 +176,21 @@ export function StudioBitekChat({
         messageIds?: { user?: string; assistant?: string };
       };
       if (!res.ok || !json.success || typeof json.reply !== "string") {
-        setError(t("blad"));
+        fail(t("blad"));
         return;
       }
+      const proposals = Array.isArray(json.proposals) ? json.proposals : [];
+      const jobs = Array.isArray(json.jobs) ? json.jobs : [];
+      const now = new Date().toISOString();
       store.addLocal([
+        {
+          id: typeof json.messageIds?.user === "string" ? json.messageIds.user : crypto.randomUUID(),
+          role: "user",
+          kind: "chat",
+          content: message,
+          meta: {},
+          createdAt: now,
+        },
         {
           // DB id when saved, so Zostaw/Cofnij decisions stay attached to this reply after a reload.
           id: typeof json.messageIds?.assistant === "string" ? json.messageIds.assistant : crypto.randomUUID(),
@@ -143,16 +199,19 @@ export function StudioBitekChat({
           content: json.reply as string,
           meta: {
             provider: json.provider ?? "rules",
-            proposals: Array.isArray(json.proposals) ? json.proposals : [],
-            ...(Array.isArray(json.jobs) && json.jobs.length ? { jobs: json.jobs } : {}),
+            proposals,
+            trackIds: refsToTrackIds(trackIdByRef, proposals, jobs),
+            ...(jobs.length ? { jobs } : {}),
             ...(json.backToMix ? { backToMix: true } : {}),
           },
-          createdAt: new Date().toISOString(),
+          createdAt: now,
         },
       ]);
     } catch {
-      setError(t("blad"));
+      fail(controller.signal.aborted && !timedOut ? null : t(timedOut ? "zaDlugo" : "blad"));
     } finally {
+      window.clearTimeout(timer);
+      setAsking(null);
       setBusy(false);
       // Keep focus in the chat after the reply (the input was disabled while waiting).
       window.setTimeout(() => inputRef.current?.focus(), 0);
@@ -168,67 +227,64 @@ export function StudioBitekChat({
     );
   }
 
-  /** Apply one value to a track or the whole song; returns the value it had before. */
-  function applyValue(target: string, param: BitekProposal["param"], value: number | boolean): number | boolean | null {
-    const { context, trackIdByRef } = getContext();
-    if (target === BITEK_MASTER_REF) {
-      if (!onApplyMasterProposal || typeof value !== "number") return null;
-      const from = context.master?.settings[param as BitekMasterSetting] ?? 0;
-      onApplyMasterProposal(param as BitekMasterSetting, value);
-      return from;
+  /** Applies a list of values as one save. Returns the values from before, or null when nothing changed. */
+  async function applyValues(items: { target: string; param: BitekProposal["param"]; value: number | boolean }[]): Promise<(number | boolean)[] | null> {
+    const client = getContext();
+    const plan = planBitekChanges({
+      client,
+      items,
+      beatKey: beatKey?.key ?? null,
+      tier: fxAccess.tier as PremiumTier,
+      canMaster: Boolean(onApplyMasterProposal),
+      maxEffects,
+      allowSidechain,
+    });
+    if (!plan.ok) {
+      setError(plan.reason === "limit" ? t("limitEfektow", { max: maxEffects ?? 0 }) : t("nieDaSie"));
+      return null;
     }
-    const ref = Object.keys(trackIdByRef).find((r) => trackIdByRef[r] === target);
-    const track = context.tracks.find((x) => x.ref === ref);
-    if (!track) return null;
-    if (param === "tune") {
-      const chain = getContext().effectsChainByTrackId[target];
-      if (!onApplyFxOps || !chain || typeof value !== "number") return null;
-      const next = bitekTuneChain({
-        chain,
-        level: value as BitekTuneLevel,
-        beatKey: beatKey?.key ?? null,
-        tier: fxAccess.tier as PremiumTier,
-      });
-      if (!next) return null;
-      void onApplyFxOps([{ op: "set_track_fx", trackId: target, effectsChain: next }], `BITEK: ${track.name}`);
-      return track.tune ?? 0;
+    if (plan.ops.length > 0) {
+      if (!onApplyFxOps || !(await onApplyFxOps(plan.ops, `BITEK: ${plan.names.join(", ")}`))) {
+        setError(t("nieZapisano"));
+        return null;
+      }
     }
-    if (param === "space") {
-      const chain = getContext().effectsChainByTrackId[target];
-      if (!onApplyFxOps || !chain || typeof value !== "number") return null;
-      const next = bitekSpaceChain({ chain, level: value as BitekSpaceLevel });
-      if (!next) return null;
-      void onApplyFxOps([{ op: "set_track_fx", trackId: target, effectsChain: next }], `BITEK: ${track.name}`);
-      return track.space ?? 0;
-    }
-    const from = param === "gainDb" ? track.gainDb : param === "pan" ? track.pan : param === "muted" ? track.muted : null;
-    if (from === null) return null;
-    onApplyProposal(target, { [param]: value });
-    return from;
+    for (const m of plan.master) onApplyMasterProposal?.(m.key as BitekMasterSetting, m.value);
+    return plan.from;
   }
 
-  function apply(entry: Extract<Entry, { role: "assistant" }>, index: number, p: BitekProposal) {
-    // Map the model-facing ref back to a real track id on the client, against the *current* doc.
-    const target = p.trackRef === BITEK_MASTER_REF ? BITEK_MASTER_REF : getContext().trackIdByRef[p.trackRef];
-    if (!target) return;
-    const from = applyValue(target, p.param, p.value);
-    if (from === null) return;
-    const prev = decisions.get(entry.id);
-    const kept = prev && prev.decision !== "undone" ? prev.changes.filter((c) => c.i !== index) : [];
-    const changes = [...kept, { i: index, target, param: p.param, from, to: p.value }];
-    recordDecision(entry.id, "applied", changes, changes.map((c) => entry.proposals[c.i]?.label ?? p.label));
-  }
+  const apply = (entry: Extract<Entry, { role: "assistant" }>, index: number, p: BitekProposal) =>
+    exclusive(`${entry.id}-${index}`, async () => {
+      // The ref of that reply → the real track id it meant then (tracks may have moved since).
+      const target = bitekProposalTarget(p.trackRef, entry.trackIds, getContext().trackIdByRef);
+      if (!target) return setError(t("staraPropozycja"));
+      const from = await applyValues([{ target, param: p.param, value: p.value }]);
+      if (!from) return;
+      const prev = decisions.get(entry.id);
+      const kept = prev && prev.decision !== "undone" ? prev.changes.filter((c) => c.i !== index) : [];
+      const changes = [...kept, { i: index, target, param: p.param, from: from[0]!, to: p.value }];
+      recordDecision(entry.id, "applied", changes, changes.map((c) => entry.proposals[c.i]?.label ?? p.label));
+    });
 
-  async function applyJob(job: BitekJob) {
+  const mixFixError = (reason: "no-analysis" | "empty" | "limit" | "failed") =>
+    reason === "empty"
+      ? t("juzJest")
+      : reason === "limit"
+        ? t("limitEfektow", { max: maxEffects ?? 0 })
+        : reason === "no-analysis"
+          ? t("bezPomiaru")
+          : t("nieZapisano");
+
+  async function applyJob(job: BitekJob, trackIds: Record<string, string> | null) {
     const client = getContext();
     if (job.kind === "novaPass") {
       if (!client.applyMixFix) {
-        setError(t("nieDaSie"));
+        setError(t("tylkoMix"));
         return;
       }
       const res = await client.applyMixFix(NOVA_PASS_FIXES);
       if (!res.ok) {
-        setError(res.reason === "empty" ? t("juzJest") : res.reason === "no-analysis" ? t("bezPomiaru") : t("nieDaSie"));
+        setError(mixFixError(res.reason));
         return;
       }
       store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
@@ -236,19 +292,20 @@ export function StudioBitekChat({
     }
     if (job.kind === "mixFix") {
       if (!client.applyMixFix) {
-        setError(t("nieDaSie"));
+        setError(t("tylkoMix"));
         return;
       }
       const res = await client.applyMixFix(job.fixes);
       if (!res.ok) {
-        setError(res.reason === "empty" ? t("juzJest") : res.reason === "no-analysis" ? t("bezPomiaru") : t("nieDaSie"));
+        setError(mixFixError(res.reason));
         return;
       }
       store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
       return;
     }
     if (job.kind === "masterStyle") {
-      if (!client.applyMasterStyle || !client.applyMasterStyle(job.style)) {
+      if (!client.applyMasterStyle) return setError(t("tylkoMaster"));
+      if (!client.applyMasterStyle(job.style)) {
         setError(t("juzJest"));
         return;
       }
@@ -256,7 +313,8 @@ export function StudioBitekChat({
       return;
     }
     if (job.kind === "masterClarity") {
-      if (!client.applyMasterClarity?.(job.patch)) {
+      if (!client.applyMasterClarity) return setError(t("tylkoMaster"));
+      if (!client.applyMasterClarity(job.patch)) {
         setError(t("juzJest"));
         return;
       }
@@ -264,7 +322,8 @@ export function StudioBitekChat({
       return;
     }
     if (job.kind === "masterTarget") {
-      if (!client.applyMasterTarget?.(job.target)) {
+      if (!client.applyMasterTarget) return setError(t("tylkoMaster"));
+      if (!client.applyMasterTarget(job.target)) {
         setError(t("juzJest"));
         return;
       }
@@ -278,12 +337,15 @@ export function StudioBitekChat({
         return;
       }
       const base = `/api/studio/projects/${projectId}/cleanup`;
+      setNotice(t("czyszcze"));
+      let pending = false;
       const wanted = new Map<string, string | null>();
       for (const takeId of ids) {
         const res = await fetch(base, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ takeId, settings: { noise: 0.7, reverb: 0.35 } }),
+          signal: AbortSignal.timeout(20000),
         });
         const body = (await res.json().catch(() => null)) as { error?: string; job?: { id?: string } } | null;
         if (body?.error === "daily_limit" || res.status === 429) {
@@ -300,14 +362,17 @@ export function StudioBitekChat({
         }
         wanted.set(takeId, body.job.id);
       }
-      if (!wanted.size) return;
+      if (!wanted.size) {
+        setNotice(null);
+        return;
+      }
       // 23 rounds of 2 s ≈ 45 s of waiting for the cleanup job (a counter, not the clock: render-pure).
       const done = new Set<string>();
       let applied = 0;
       for (let round = 0; round < 23; round += 1) {
-        const list = (await fetch(base).then((r) => r.json()).catch(() => null)) as { jobs?: { id: string; takeId: string; status: string; applied: boolean }[] } | null;
+        const list = (await fetch(base, { signal: AbortSignal.timeout(15000) }).then((r) => r.json()).catch(() => null)) as { jobs?: { id: string; takeId: string; status: string; applied: boolean }[] } | null;
         const jobs = list?.jobs ?? [];
-        let pending = false;
+        pending = list === null;
         let seen = 0;
         for (const [takeId, jobId] of wanted) {
           const job = jobId ? jobs.find((j) => j.id === jobId) : jobs.find((j) => j.takeId === takeId);
@@ -319,8 +384,9 @@ export function StudioBitekChat({
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ takeId: job.takeId, jobId: job.id }),
-          });
-          if (!patch.ok) continue;
+            signal: AbortSignal.timeout(15000),
+          }).catch(() => null);
+          if (!patch?.ok) continue;
           done.add(job.id);
           emitStudioTakeSourceChanged(job.takeId);
           applied += 1;
@@ -328,18 +394,25 @@ export function StudioBitekChat({
         if (seen === wanted.size && !pending) break;
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
+      setNotice(null);
+      if (!applied && pending) {
+        // The job goes on after this wait; the Mix step shows it when it is ready.
+        setNotice(t("czyszczeDalej"));
+        return;
+      }
       if (!applied) {
-        setError(t("nieDaSie"));
+        setError(t("szumBlad"));
         return;
       }
       store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
       return;
     }
     if (job.kind === "trackFx") {
-      const trackId = client.trackIdByRef[job.trackRef];
+      const trackId = bitekProposalTarget(job.trackRef, trackIds, client.trackIdByRef);
+      if (!trackId) return setError(t("staraPropozycja"));
       const chain = trackId ? client.effectsChainByTrackId[trackId] : undefined;
-      const track = client.context.tracks.find((t) => t.ref === job.trackRef);
-      if (!trackId || !chain || !onApplyFxOps || !track || track.hasAudio === false) {
+      const track = client.context.tracks.find((x) => client.trackIdByRef[x.ref] === trackId);
+      if (!chain || !onApplyFxOps || !track || track.hasAudio === false) {
         setError(t("nieDaSie"));
         return;
       }
@@ -354,9 +427,11 @@ export function StudioBitekChat({
         setError(t("nieDaSie"));
         return;
       }
-      const ok = await onApplyFxOps([{ op: "set_track_fx", trackId, effectsChain: next }], `BITEK: ${job.label}`);
+      const fitted = clampChainToPlan(next, chain, { maxEffects, allowSidechain });
+      if (!fitted || !fitted.effects.some((e) => e.type === job.effect)) return setError(t("limitEfektow", { max: maxEffects ?? 0 }));
+      const ok = await onApplyFxOps([{ op: "set_track_fx", trackId, effectsChain: fitted }], `BITEK: ${job.label}`);
       if (!ok) {
-        setError(t("nieDaSie"));
+        setError(t("nieZapisano"));
         return;
       }
       store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
@@ -372,13 +447,17 @@ export function StudioBitekChat({
     recordDecision(entry.id, "kept", d.changes, d.changes.map((c) => entry.proposals[c.i]?.label ?? ""));
   }
 
-  function undo(entry: Extract<Entry, { role: "assistant" }>) {
-    const d = decisions.get(entry.id);
-    if (!d) return;
-    for (const c of [...d.changes].reverse()) applyValue(c.target, c.param, c.from);
-    recordDecision(entry.id, "undone", d.changes, d.changes.map((c) => entry.proposals[c.i]?.label ?? ""));
-  }
+  const undo = (entry: Extract<Entry, { role: "assistant" }>) =>
+    exclusive(`${entry.id}-undo`, async () => {
+      const d = decisions.get(entry.id);
+      if (!d) return;
+      const back = await applyValues([...d.changes].reverse().map((c) => ({ target: c.target, param: c.param, value: c.from })));
+      if (!back) return;
+      recordDecision(entry.id, "undone", d.changes, d.changes.map((c) => entry.proposals[c.i]?.label ?? ""));
+    });
 
+  const refs = entries.some((e) => e.role === "assistant" && e.proposals.length > 0) ? getContext().trackIdByRef : {};
+  const locked = disabled || working !== null;
   return (
     <div className="flex flex-col gap-2" data-testid="studio-bitek-chat">
       <p className="text-xs text-[var(--brd-mute)]">{t("info")}</p>
@@ -405,6 +484,14 @@ export function StudioBitekChat({
                   {e.proposals.map((p, i) => {
                     const d = decisions.get(e.id);
                     const done = Boolean(d && d.decision !== "undone" && d.changes.some((c) => c.i === i));
+                    const why =
+                      p.trackRef === BITEK_MASTER_REF
+                        ? onApplyMasterProposal
+                          ? null
+                          : t("tylkoMaster")
+                        : bitekProposalTarget(p.trackRef, e.trackIds, refs)
+                          ? null
+                          : t("staraPropozycja");
                     return (
                       <li key={`${p.trackRef}-${p.param}`} className="flex flex-col gap-0.5">
                         <div className="flex flex-wrap items-center gap-2">
@@ -414,14 +501,15 @@ export function StudioBitekChat({
                             size="sm"
                             variant={done ? "outline" : "default"}
                             className="min-h-9"
-                            disabled={done || disabled}
+                            disabled={done || locked || why !== null}
                             aria-label={t("propozycjaAria", { label: p.label || p.param })}
                             data-testid="studio-bitek-apply"
-                            onClick={() => apply(e, i, p)}
+                            onClick={() => void apply(e, i, p)}
                           >
-                            {done ? "✓" : t("zastosuj")}
+                            {done ? "✓" : working === `${e.id}-${i}` ? t("zapisuje") : t("zastosuj")}
                           </Button>
                         </div>
+                        {why && !done ? <span className="text-xs text-[var(--brd-mute)]">{why}</span> : null}
                         {p.why ? (
                           <span data-testid="studio-bitek-why" className="text-xs text-[var(--brd-mute)]">
                             {p.why}
@@ -432,9 +520,9 @@ export function StudioBitekChat({
                   })}
                   <BitekDecisionRow
                     decision={decisions.get(e.id)?.decision ?? null}
-                    disabled={disabled}
+                    disabled={locked}
                     onKeep={() => keep(e)}
-                    onUndo={() => undo(e)}
+                    onUndo={() => void undo(e)}
                   />
                 </ul>
               ) : null}
@@ -447,11 +535,11 @@ export function StudioBitekChat({
                         type="button"
                         size="sm"
                         className="min-h-9"
-                        disabled={disabled}
+                        disabled={locked}
                         data-testid="studio-bitek-job"
-                        onClick={() => void applyJob(job)}
+                        onClick={() => void exclusive(`${e.id}-${job.kind}-${job.label}`, async () => void (await applyJob(job, e.trackIds)))}
                       >
-                        {t("zastosuj")}
+                        {working === `${e.id}-${job.kind}-${job.label}` ? t("zapisuje") : t("zastosuj")}
                       </Button>
                     </li>
                   ))}
@@ -468,9 +556,18 @@ export function StudioBitekChat({
             </li>
           ),
         )}
+        {asking ? (
+          <li data-testid="studio-bitek-chat-user" className="self-end max-w-[90%] rounded-[2px] bg-[var(--brd-recess)] px-2 py-1 text-sm">
+            <span className="sr-only">{t("ty")}: </span>
+            {asking}
+          </li>
+        ) : null}
         {busy ? (
           <li data-testid="studio-bitek-typing" className="text-sm italic text-[var(--brd-mute)]">
-            {t("pisze")}
+            {t("pisze")}{" "}
+            <button type="button" className="underline not-italic" data-testid="studio-bitek-cancel" onClick={() => abortRef.current?.abort()}>
+              {t("przerwij")}
+            </button>
           </li>
         ) : null}
       </ol>
@@ -479,6 +576,7 @@ export function StudioBitekChat({
           {error}
         </p>
       ) : null}
+      {notice ? <p role="status" className="border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm">{notice}</p> : null}
       <form
         className="flex flex-col gap-1"
         onSubmit={(ev) => {
@@ -504,7 +602,7 @@ export function StudioBitekChat({
             className="h-9 min-w-0 flex-1 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-recess)] px-2 text-sm"
           />
           <Button type="submit" size="sm" className="min-h-9" disabled={busy || !text.trim() || tooLong} data-testid="studio-bitek-send">
-            {t("wyslij")}
+            {error && text.trim() && !busy ? t("ponow") : t("wyslij")}
           </Button>
         </div>
         <div className="flex items-center justify-between gap-2 pr-9 text-xs text-[var(--brd-mute)]">

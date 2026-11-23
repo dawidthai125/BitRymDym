@@ -32,6 +32,28 @@ type StudioFragmentToolsProps = {
   onCancelDelete: () => void;
 };
 
+const TEMPO_MIN = 0.5;
+const TEMPO_MAX = 2;
+
+/** Tempo on the slider (1.25 = faster) to the stored stretch ratio (0.8 = shorter). */
+export function stretchFromTempo(tempo: number): number {
+  const safe = Number.isFinite(tempo) && tempo > 0 ? tempo : 1;
+  return Math.min(2, Math.max(0.5, Math.round((1 / safe) * 10_000) / 10_000));
+}
+
+const COMMIT_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
+
+/** Save after the mouse, a slider key or leaving the field, so keyboard changes are not lost. */
+function commitHandlers(commit: () => void) {
+  return {
+    onPointerUp: commit,
+    onBlur: commit,
+    onKeyUp: (event: { key: string }) => {
+      if (COMMIT_KEYS.has(event.key)) commit();
+    },
+  };
+}
+
 /**
  * Cut, move and delete the selected timeline fragment.
  * Presentational. The editor owns the clip and the undo.
@@ -81,9 +103,21 @@ export function StudioFragmentTools({
     setGainLocal(gainDb);
   }
 
+  /** "Tempo" 2 = twice as fast, the stored stretch is the opposite (2 = twice as long). */
+  const tempoLocal = Math.round((1 / stretchLocal) * 100) / 100;
+  const commitStretch = (next: number) => {
+    if (next !== stretch) onPlayback?.({ stretch: next, pitchCents: pitchLocal });
+  };
+  const commitPitch = (next: number) => {
+    if (next !== pitchCents) onPlayback?.({ stretch: stretchLocal, pitchCents: next });
+  };
+  const commitGain = (next: number) => {
+    if (next !== gainDb) onGain?.(next);
+  };
+
   return (
     <div
-      className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]"
+      className="contents"
       role="group"
       aria-label={t("fragmentyAria")}
       data-testid="studio-fragment-tools"
@@ -109,6 +143,18 @@ export function StudioFragmentTools({
         </>
       ) : (
         <>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 shrink-0 px-2 studio-tool-danger"
+            data-testid="studio-fragment-delete"
+            disabled={locked}
+            title={t("usunFragmentOpis")}
+            onClick={onAskDelete}
+          >
+            {t("usun")}
+          </Button>
           <Button
             type="button"
             size="sm"
@@ -227,16 +273,20 @@ export function StudioFragmentTools({
                 {t("tempoKlipuEtykieta")}
                 <input
                   type="range"
-                  min={0.5}
-                  max={2}
+                  min={TEMPO_MIN}
+                  max={TEMPO_MAX}
                   step={0.05}
-                  value={stretchLocal}
+                  value={tempoLocal}
                   disabled={locked}
                   aria-label={t("tempoKlipuAria")}
+                  aria-valuetext={`${tempoLocal.toFixed(2)}×`}
                   data-testid="studio-fragment-stretch"
-                  onChange={(event) => setStretchLocal(Number(event.target.value))}
-                  onPointerUp={(event) => onPlayback({ stretch: Number(event.currentTarget.value), pitchCents: pitchLocal })}
+                  onChange={(event) => setStretchLocal(stretchFromTempo(Number(event.target.value)))}
+                  {...commitHandlers(() => commitStretch(stretchLocal))}
                 />
+                <span className="w-11 tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-stretch-value">
+                  {tempoLocal.toFixed(2)}×
+                </span>
               </label>
               <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
                 {t("wysokoscKlipuEtykieta")}
@@ -251,8 +301,11 @@ export function StudioFragmentTools({
                   title={pitchLocked ? t("wysokoscKlipuOdSilver") : undefined}
                   data-testid="studio-fragment-pitch"
                   onChange={(event) => setPitchLocal(Number(event.target.value))}
-                  onPointerUp={(event) => onPlayback({ stretch: stretchLocal, pitchCents: Number(event.currentTarget.value) })}
+                  {...commitHandlers(() => commitPitch(pitchLocal))}
                 />
+                <span className="w-16 tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-pitch-value">
+                  {t("poltony", { v0: `${pitchLocal > 0 ? "+" : ""}${pitchLocal / 100}` })}
+                </span>
               </label>
               {pitchLocked && pitchLocal !== 0 ? (
                 <Button
@@ -282,7 +335,7 @@ export function StudioFragmentTools({
                 aria-label={t("gainKlipuAria")}
                 data-testid="studio-fragment-gain"
                 onChange={(event) => setGainLocal(Number(event.target.value))}
-                onPointerUp={(event) => onGain(Number(event.currentTarget.value))}
+                {...commitHandlers(() => commitGain(gainLocal))}
               />
               <span className="tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-gain-value">
                 {gainLocal > 0 ? "+" : ""}
@@ -290,18 +343,6 @@ export function StudioFragmentTools({
               </span>
             </label>
           ) : null}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 shrink-0 px-2 studio-tool-danger"
-            data-testid="studio-fragment-delete"
-            disabled={locked}
-            title={t("usunFragmentOpis")}
-            onClick={onAskDelete}
-          >
-            {t("usun")}
-          </Button>
           <p className="sr-only" data-testid="studio-fragment-hint">
             {enabled ? t("fragmentEdycja") : t("zaznaczFragment")}
           </p>

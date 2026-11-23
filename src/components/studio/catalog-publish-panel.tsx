@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "@/components/ui/app-link";
 import { useTranslations } from "next-intl";
 
@@ -32,6 +32,10 @@ export function CatalogPublishPanel({
   const t = useTranslations("community.works");
   const [ready, setReady] = useState(false);
   const [off, setOff] = useState(false);
+  /** The entry was not read: no form, because saving an unknown state would take the track out. */
+  const [loadError, setLoadError] = useState<"error" | "signed_out" | null>(null);
+  const [older, setOlder] = useState<{ id: string; title: string } | null>(null);
+  const [withdrawOlder, setWithdrawOlder] = useState(true);
   const [publish, setPublish] = useState(false);
   const [title, setTitle] = useState(defaultTitle.slice(0, 80));
   const [allowRatings, setAllowRatings] = useState(false);
@@ -46,31 +50,30 @@ export function CatalogPublishPanel({
     setLive(entry?.listed && entry.id ? { id: entry.id, title: entry.title, author: entry.author ?? "" } : null);
   }
 
+  const url = `/api/studio/catalog?projectId=${encodeURIComponent(projectId)}&masterJobId=${encodeURIComponent(masterJobId)}`;
+
   async function refreshLive() {
     try {
-      const response = await fetch(`/api/studio/catalog?projectId=${encodeURIComponent(projectId)}&masterJobId=${encodeURIComponent(masterJobId)}`);
-      const payload = (await response.json().catch(() => null)) as { entry?: Entry | null } | null;
-      applyLive(payload?.entry);
+      const response = await fetch(url);
+      const payload = (await response.json().catch(() => null)) as { entry?: Entry | null; older?: { id: string; title: string } | null } | null;
+      if (!response.ok || !payload) return;
+      applyLive(payload.entry);
+      setOlder(payload.older ?? null);
     } catch {
-      setLive(null);
+      // saved anyway; the share block appears after a reload
     }
   }
 
-  useEffect(() => {
-    const controller = new AbortController();
-    void (async () => {
-      try {
-        const response = await fetch(
-          `/api/studio/catalog?projectId=${encodeURIComponent(projectId)}&masterJobId=${encodeURIComponent(masterJobId)}`,
-          { signal: controller.signal },
-        );
-        const payload = (await response.json().catch(() => null)) as { result?: string; entry?: Entry | null } | null;
-        if (controller.signal.aborted) return;
-        if (!payload || payload.result === "off") {
-          setOff(true);
-          setReady(true);
-          return;
-        }
+  const load = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const response = await fetch(url, { signal });
+      const payload = (await response.json().catch(() => null)) as { result?: string; entry?: Entry | null; older?: { id: string; title: string } | null } | null;
+      if (signal?.aborted) return;
+      if (payload?.result === "off") setOff(true);
+      else if (!response.ok || payload?.result !== "ok") setLoadError(response.status === 401 ? "signed_out" : "error");
+      else {
+        setLoadError(null);
+        setOlder(payload.older ?? null);
         if (payload.entry) {
           setTitle(payload.entry.title);
           setPublish(payload.entry.listed);
@@ -79,46 +82,75 @@ export function CatalogPublishPanel({
           setInRankings(payload.entry.listed && payload.entry.inRankings);
           applyLive(payload.entry);
         }
-        setReady(true);
-      } catch {
-        if (!controller.signal.aborted) {
-          setOff(true);
-          setReady(true);
-        }
       }
-    })();
+      setReady(true);
+    } catch {
+      if (signal?.aborted) return;
+      setLoadError("error");
+      setReady(true);
+    }
+  }, [url]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void Promise.resolve().then(() => load(controller.signal));
     return () => controller.abort();
-  }, [masterJobId, projectId]);
+  }, [load]);
 
   async function save() {
-    setBusy(true);
-    setNote(null);
-    const response = await fetch("/api/studio/catalog", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        projectId,
-        masterJobId,
-        title,
-        publish,
-        allowRatings,
-        allowComments,
-        inRankings,
-      }),
-    });
-    const payload = (await response.json().catch(() => ({}))) as { result?: string };
-    setBusy(false);
-    if (payload.result === "ok") {
-      setNote(publish ? t("saved") : t("withdrawn"));
-      if (publish) await refreshLive();
-      else setLive(null);
+    if (busy) return;
+    if (!publish && !live) {
+      setNote(t("notListed"));
       return;
     }
-    setNote(payload.result === "off" ? t("off") : payload.result === "missing" ? t("missing") : t("invalid"));
+    setBusy(true);
+    setNote(null);
+    try {
+      const response = await fetch("/api/studio/catalog", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          projectId,
+          masterJobId,
+          title,
+          publish,
+          allowRatings,
+          allowComments,
+          inRankings,
+          ...(publish && older ? { withdrawOlder } : {}),
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { result?: string };
+      if (payload.result === "ok") {
+        setNote(publish ? t("saved") : t("withdrawn"));
+        if (publish) await refreshLive();
+        else setLive(null);
+        return;
+      }
+      setNote(
+        payload.result === "off" ? t("off")
+          : payload.result === "missing" ? t("missing")
+            : response.status === 401 ? t("signedOut")
+              : response.status === 400 ? t("invalid")
+                : t("saveError"),
+      );
+    } catch {
+      setNote(t("saveError"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (!ready) return null;
   if (off) return <p className="text-sm text-[var(--brd-mute)]">{t("off")}</p>;
+  if (loadError) {
+    return (
+      <p role="alert" data-testid="catalog-publish-load-error" className="flex flex-wrap items-center gap-2 text-sm">
+        {loadError === "signed_out" ? t("signedOut") : t("loadError")}
+        {loadError === "error" ? <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void load()}>{t("retry")}</Button> : null}
+      </p>
+    );
+  }
 
   return (
     <section aria-labelledby="catalog-publish-title" data-testid="catalog-publish" className="flex flex-col gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3">
@@ -153,6 +185,17 @@ export function CatalogPublishPanel({
               setInRankings(next.inRankings);
             }}
           />
+        </div>
+      ) : null}
+      {older ? (
+        <div className="border-l-4 border-l-[var(--brd-amber)] px-3 py-1 text-sm" data-testid="catalog-publish-older">
+          <p>{t("olderLive", { title: older.title })}</p>
+          {publish ? (
+            <label className="flex min-h-11 items-center gap-2">
+              <input type="checkbox" checked={withdrawOlder} onChange={(event) => setWithdrawOlder(event.target.checked)} />
+              {t("withdrawOlder")}
+            </label>
+          ) : null}
         </div>
       ) : null}
       <Button type="button" className="min-h-11 self-start px-4" disabled={busy || (publish && title.trim().length === 0)} onClick={() => void save()}>

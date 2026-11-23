@@ -345,14 +345,19 @@ export function StudioPlayKeys({
     form.set("kind", tonal ? "instrument" : "effect");
     form.set("instrument", tonal ? line.instrument : "");
     form.set("rightsAccepted", "1");
-    const response = await fetch("/api/studio/samples", { method: "POST", body: form });
-    const body = (await response.json().catch(() => null)) as { message?: string } | null;
-    setSampleBusy(false);
-    if (!response.ok) {
-      setNotice(body?.message || tr("sampleBlad"));
-      return;
+    try {
+      const response = await fetch("/api/studio/samples", { method: "POST", body: form, signal: AbortSignal.timeout(60_000) });
+      const body = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) {
+        setNotice(body?.message || tr("sampleBlad"));
+        return;
+      }
+      setSampleSaved(tr("sampleZapisano"));
+    } catch {
+      setNotice(tr("sampleBrakSieci"));
+    } finally {
+      setSampleBusy(false);
     }
-    setSampleSaved(tr("sampleZapisano"));
   }
 
   const scratchOn = midi?.instrument === "scratch" && midi.notes.length > 0;
@@ -374,7 +379,8 @@ export function StudioPlayKeys({
               : "keysLineOk";
   const mood: BitekMood = review?.code === "line-ok" || review?.code === "drums-ok" || scratchOn ? "done" : review ? "thinking" : "happy";
   const played = new Set(locked === instrument ? (midi?.notes.map((note) => note.pitch) ?? []) : []);
-  const pianoBase = 60;
+  // The on-screen keyboard follows the octave buttons, like the computer keys do.
+  const pianoBase = 60 + octave * 12;
 
   return (
     <div

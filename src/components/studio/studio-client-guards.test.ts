@@ -12,7 +12,10 @@ describe("studio client guards", () => {
   it("Play studio ignores keys typed into fields (shared guard from studio-play-keys)", () => {
     expect(playKeys).toContain("export function isTypingTarget");
     expect(playStudio).toContain('from "@/components/studio/studio-play-keys"');
-    expect(playStudio.match(/isTypingTarget\(ev\.target\)/g)).toHaveLength(2);
+// keydown: typing never starts a note. keyup only ends a note that is already sounding (M63),
+    // so a key released inside a field cannot hang it and typing cannot play anything.
+    expect(playStudio).toMatch(/const down = [\s\S]{0,220}isTypingTarget\(ev\.target\)\) return;/);
+    expect(playStudio).toMatch(/const up = [^\n]*if \(pressed\.current\.has\(ev\.code\)\) keyHandlers\.current\.noteOff/);
   });
 
   it("Master A/B detaches the old source's onended before stopping it", () => {

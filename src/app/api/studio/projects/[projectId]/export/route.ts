@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 
-import { RenderJobDomainError } from "@/lib/audio/render-job-core";
+import { AudioEntitlementError, hasAudioCapability } from "@/lib/audio/effective-entitlement";
+import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import { capabilityForRenderTier, RenderJobDomainError } from "@/lib/audio/render-job-core";
 import {
   createStudioExportJob,
   getLatestOwnStudioExportJob,
   getOwnStudioExportJob,
 } from "@/lib/audio/studio-export-service";
-import { AuthError } from "@/lib/auth/session";
+import { STUDIO_EXPORT_MVP_TIER } from "@/config/audio-render";
+import { AuthError, requireUser } from "@/lib/auth/session";
 import { takeApiErrorResponse } from "@/lib/takes/api-error";
 
 export const runtime = "nodejs";
@@ -67,11 +70,28 @@ export async function POST(
         { status },
       );
     }
+    if (error instanceof AudioEntitlementError) {
+      return planErrorResponse(error);
+    }
     if (error instanceof AuthError) {
       return takeApiErrorResponse(error);
     }
     return takeApiErrorResponse(error);
   }
+}
+
+/** The plan does not cover the export: say which one does instead of a generic "try again". */
+function planErrorResponse(error: AudioEntitlementError) {
+  if (error.code === "UNAUTHENTICATED") {
+    return NextResponse.json({ error: "Zaloguj się, aby eksportować projekt.", code: "UNAUTHENTICATED" }, { status: 401 });
+  }
+  return NextResponse.json({ error: "Eksport WAV jest w planie Gold.", code: "PLAN" }, { status: 403 });
+}
+
+/** UI mirror of the plan check in createStudioExportJobFor (the server decides again on POST). */
+async function canExportWav(): Promise<boolean> {
+  const entitlement = await resolveAudioEntitlementForAuthContext(await requireUser());
+  return hasAudioCapability(entitlement, capabilityForRenderTier(STUDIO_EXPORT_MVP_TIER));
 }
 
 function studioExportJobStatusJson(job: {
@@ -117,16 +137,19 @@ export async function GET(
     // I.45AU — latest recovery (no enqueue). Empty ≠ error; does not POST.
     if (!jobId) {
       const latest = await getLatestOwnStudioExportJob(projectId);
+      const canExport = await canExportWav();
       if (!latest) {
         return NextResponse.json({
           success: true,
           found: false,
           projectId,
+          canExport,
         });
       }
       return NextResponse.json({
         ...studioExportJobStatusJson(latest),
         found: true,
+        canExport,
       });
     }
 

@@ -7,7 +7,7 @@
  * is selected. Phones: the bar is not sticky; a mini transport docks above the bottom nav instead.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,32 @@ import type { StudioTransportKeyboardMode } from "@/lib/studio/transport-keyboar
 /** Transport keys: 44px hit area on phones, Button size=sm (h-8) from sm. */
 const STUDIO_TRANSPORT_KEY = "min-h-11 min-w-11 px-2 sm:min-h-8 sm:min-w-8";
 const STUDIO_TRANSPORT_KEY_WIDE = "min-h-11 px-2 sm:min-h-8";
+
+/** Song length in the clock: mm:ss is enough next to the running mm:ss.mmm. */
+function clockTotal(ms: number): string {
+  return formatStudioTimeMs(ms).split(".")[0]!;
+}
+
+/** Clock leaf: the only part of the bar that renders on every playback frame. */
+function TransportClock({ durationMs }: { durationMs: number }) {
+  const tl = useLibText();
+  const { timeLabel } = useStudioTransportPlayhead();
+  return (
+    <span className="studio-counter-time text-sm font-medium tracking-tight">
+      {tl(timeLabel)}
+      <span className="studio-counter-dim"> / </span>
+      {tl(clockTotal(durationMs))}
+    </span>
+  );
+}
+
+function MiniTransportClock() {
+  const tl = useLibText();
+  const { timeLabel } = useStudioTransportPlayhead();
+  return (
+    <span className="studio-counter-time min-w-0 truncate px-1 font-mono text-xs tabular-nums">{tl(timeLabel)}</span>
+  );
+}
 
 export function StudioTransportBar({
   projectId,
@@ -81,7 +107,24 @@ export function StudioTransportBar({
   selectionStartMs,
   selectionEndMs,
   simple = false,
+  exportLocked = false,
+  fragmentClipId = null,
+  onRetrySave = null,
+  onFlushPersist,
+  recordState = "idle",
+  onRecordStop,
 }: {
+  /** The plan has no WAV export: the button shows a padlock. */
+  exportLocked?: boolean;
+  /** Selected clip: local slider drafts never move to another clip. */
+  fragmentClipId?: string | null;
+  /** Set while a failed save waits for another try. */
+  onRetrySave?: (() => void) | null;
+  /** Finishes the save queue before a mix restore; false = something could not be saved. */
+  onFlushPersist?: () => Promise<boolean>;
+  /** recording: REC and Stop end the take, playback keys are off. busy: the take is being saved. */
+  recordState?: "idle" | "recording" | "busy";
+  onRecordStop?: () => void;
   /** Simple record view: start, play/pause, stop, record, undo, metronome, clock. The rest is hidden. */
   simple?: boolean;
   projectId: string;
@@ -142,16 +185,19 @@ export function StudioTransportBar({
     audioState,
     error,
     hasBeat,
+    hasTimelineAudio,
     metronomeEnabled,
     setMetronomeEnabled,
     loopEnabled,
     setLoop,
     tuneBakePendingTrackIds,
   } = useStudioTransportControls();
-  const { timeLabel } = useStudioTransportPlayhead();
+  const [moreOpen, setMoreOpen] = useState(false);
   const busy = audioState === "loading";
-  const noBeat =
-    audioState === "no_beat" || (!hasBeat && audioState !== "loading");
+  const noBeat = !hasBeat;
+  /** Nothing to hear at all: no beat, no recording, no notes. */
+  const noAudio = !hasTimelineAudio;
+  const recording = recordState === "recording";
   const statusLabel =
     audioState === "loading"
       ? tr("ladowanieBitu")
@@ -162,16 +208,18 @@ export function StudioTransportBar({
           : audioState === "error"
             ? tr("bladOdtwarzania")
             : audioState === "playing"
-              ? "Odtwarzanie"
+              ? tr("stanOdtwarzanie")
               : audioState === "paused"
-                ? "Pauza"
+                ? tr("pauza")
                 : audioState === "ready"
-                  ? "Gotowy"
+                  ? tr("stanGotowy")
                   : hasBeat
                     ? tr("bitOczekujeNaZaladowanie")
                     : tr("nieMaszJeszczeWybranego");
 
-  const beatControlsDisabled = noBeat || busy;
+  const beatControlsDisabled = noAudio || busy || recording;
+  const saveProblem = saveIsError || conflictActive;
+  const extraKeys = simple || moreOpen ? "" : "max-sm:hidden";
   /** Phones: the transport is not sticky (too tall when wrapped) — a mini transport docks once it scrolls away. */
   const transportRef = useRef<HTMLDivElement | null>(null);
   const [transportOffscreen, setTransportOffscreen] = useState(false);
@@ -192,6 +240,15 @@ export function StudioTransportBar({
     return () => ro.disconnect();
   }, []);
   const hasSelection = selectionStartMs != null || selectionEndMs != null;
+  const toolsShown = hasSelection || (showFragmentTools && (fragmentEnabled || fragmentConfirmDelete));
+  /** Clip tools appear above the timeline: scroll by the same amount, so the clicked clip stays under the pointer. */
+  const toolsLayoutRef = useRef<{ shown: boolean; height: number } | null>(null);
+  useLayoutEffect(() => {
+    const height = transportRef.current?.offsetHeight ?? 0;
+    const prev = toolsLayoutRef.current;
+    toolsLayoutRef.current = { shown: toolsShown, height };
+    if (prev && prev.shown !== toolsShown && prev.height !== height) window.scrollBy(0, height - prev.height);
+  });
 
   return (
     <div
@@ -217,7 +274,7 @@ export function StudioTransportBar({
               variant="outline"
               className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
               onClick={() => seek(0)}
-              disabled={noBeat}
+              disabled={noAudio || recording}
               title={tr("poczatek")}
               aria-label={tr("poczatek")}
             >
@@ -229,8 +286,8 @@ export function StudioTransportBar({
               className={`studio-key studio-key-play ${STUDIO_TRANSPORT_KEY}`}
               onClick={play}
               disabled={beatControlsDisabled || phase === "playing"}
-              title={tl(noBeat ? tr("odtworzNajpierwWybierzBit") : tr("odtworz"))}
-              aria-label={tl(noBeat ? tr("odtworzWymagaBitu") : tr("odtworz"))}
+              title={tl(noAudio ? tr("odtworzNajpierwWybierzBit") : tr("odtworz"))}
+              aria-label={tl(noAudio ? tr("odtworzWymagaBitu") : tr("odtworz"))}
             >
               {busy ? "…" : (
                 <>
@@ -244,10 +301,10 @@ export function StudioTransportBar({
               size="sm"
               variant="outline"
               className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
-              onClick={stop}
-              disabled={noBeat}
-              title={tr("stop")}
-              aria-label={tr("stop")}
+              onClick={recording && onRecordStop ? onRecordStop : stop}
+              disabled={noAudio && !recording}
+              title={recording ? tr("zatrzymajNagrywanie") : tr("stop")}
+              aria-label={recording ? tr("zatrzymajNagrywanie") : tr("stop")}
             >
               <StudioGlyph name="stop" />
               <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("stop")}</span>
@@ -257,29 +314,37 @@ export function StudioTransportBar({
               size="sm"
               variant="outline"
               className="studio-rec-button min-h-11 min-w-11 gap-1.5 px-2.5 sm:min-h-8 sm:min-w-8 sm:gap-1 sm:px-2"
-              onClick={onRecord}
-              disabled={noBeat}
+              onClick={recording && onRecordStop ? onRecordStop : onRecord}
+              disabled={(noBeat && !recording) || recordState === "busy"}
+              aria-pressed={recording}
+              data-record-state={recordState}
               title={
-                tl(noBeat
-                  ? tr("nagrajNajpierwWybierzBit")
-                  : tr("nagrajOtwieraIstniejacyKontekst"))
+                tl(recording
+                  ? tr("zatrzymajNagrywanie")
+                  : noBeat
+                    ? tr("nagrajNajpierwWybierzBit")
+                    : tr("nagrajOtwieraIstniejacyKontekst"))
               }
               aria-label={
-                tl(noBeat
-                  ? tr("nagrajWymagaBitu")
-                  : tr("nagrajOtwieraPanelNagrywania"))
+                tl(recording
+                  ? tr("zatrzymajNagrywanie")
+                  : noBeat
+                    ? tr("nagrajWymagaBitu")
+                    : tr("nagrajOtwieraPanelNagrywania"))
               }
               data-testid="studio-transport-record"
             >
               <StudioRecLamp />
-              <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("nagraj")}</span>
+              <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">
+                {recording ? tr("stop") : tr("nagraj")}
+              </span>
             </Button>
             {!simple ? (
             <Button
               type="button"
               size="sm"
               variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE}`}
+              className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE} ${extraKeys}`}
               data-testid="studio-transport-keyboard-mode"
               title={
                 transportKeyboardMode === "quick_rec"
@@ -324,7 +389,7 @@ export function StudioTransportBar({
               type="button"
               size="sm"
               variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
+              className={`studio-key ${STUDIO_TRANSPORT_KEY} ${extraKeys}`}
               onClick={onRedo}
               disabled={!canRedo || pending}
               title={tr("ponowSkrot")}
@@ -339,9 +404,9 @@ export function StudioTransportBar({
               type="button"
               size="sm"
               variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
+              className={`studio-key ${STUDIO_TRANSPORT_KEY} ${extraKeys}`}
               onClick={pause}
-              disabled={noBeat || phase !== "playing"}
+              disabled={noAudio || phase !== "playing" || recording}
               title={tr("pauza")}
               aria-label={tr("pauza")}
             >
@@ -355,10 +420,10 @@ export function StudioTransportBar({
               variant="outline"
               className={
                 loopEnabled
-                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY}`
-                  : `studio-key ${STUDIO_TRANSPORT_KEY}`
+                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY} ${extraKeys}`
+                  : `studio-key ${STUDIO_TRANSPORT_KEY} ${extraKeys}`
               }
-              disabled={noBeat}
+              disabled={noAudio || recording}
               aria-pressed={loopEnabled}
               title={tl(loopEnabled ? tr("loopWlaczony") : tr("loopRegionu"))}
               aria-label={tl(loopEnabled ? tr("loopWlaczony") : tr("wlaczLoopRegionu"))}
@@ -366,8 +431,9 @@ export function StudioTransportBar({
               onClick={() =>
                 setLoop({
                   enabled: !loopEnabled,
-                  startMs: 0,
-                  endMs: durationMs,
+                  // The selected clip, or the whole song (not the 6:00 canvas).
+                  startMs: selectionStartMs ?? 0,
+                  endMs: selectionEndMs ?? durationMs,
                 })
               }
             >
@@ -380,10 +446,10 @@ export function StudioTransportBar({
               variant="outline"
               className={
                 metronomeEnabled
-                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY}`
-                  : `studio-key ${STUDIO_TRANSPORT_KEY}`
+                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY} ${extraKeys}`
+                  : `studio-key ${STUDIO_TRANSPORT_KEY} ${extraKeys}`
               }
-              disabled={noBeat}
+              disabled={noAudio || recording}
               aria-pressed={metronomeEnabled}
               title={
                 tl(metronomeEnabled ? tr("metronomWlaczony") : tr("metronomKlikRuntime"))
@@ -407,6 +473,7 @@ export function StudioTransportBar({
               }
               variant={noBeat ? "default" : "outline"}
               onClick={onChooseBeat}
+              disabled={recordState !== "idle"}
               title={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
               aria-label={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
               data-testid="studio-transport-choose-beat"
@@ -414,20 +481,26 @@ export function StudioTransportBar({
               {tl(noBeat ? tr("wybierzBit2") : tr("beatButton"))}
             </Button>
             ) : null}
+            {simple ? null : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE} sm:hidden`}
+              aria-expanded={moreOpen}
+              data-testid="studio-transport-more"
+              onClick={() => setMoreOpen((v) => !v)}
+            >
+              {moreOpen ? tr("mniej") : tr("wiecej")}
+            </Button>
+            )}
           </div>
 
           <div
             className="studio-counter flex min-h-11 min-w-0 max-w-full flex-wrap items-center gap-1.5 px-2 sm:shrink-0 sm:flex-nowrap font-mono text-xs tabular-nums sm:min-h-8 sm:gap-1 sm:px-1.5"
             data-testid="studio-transport-meta"
           >
-            <span
-              aria-live="polite"
-              className="studio-counter-time text-sm font-medium tracking-tight"
-            >
-              {tl(timeLabel)}
-              <span className="studio-counter-dim"> / </span>
-              {tl(formatStudioTimeMs(durationMs))}
-            </span>
+            <TransportClock durationMs={durationMs} />
             <span className="studio-counter-dim" aria-label={tr("tempo")}>
               {tempoBpm} {tr("bpm")}
             </span>
@@ -449,7 +522,7 @@ export function StudioTransportBar({
 
           {simple ? null : (
           <div
-            className="ml-auto flex min-w-[9rem] max-w-[14rem] shrink-0 items-center gap-2 [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]"
+            className={`flex w-[8.5rem] shrink-0 items-center gap-2 sm:ml-auto ${extraKeys} [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]`}
             data-testid="studio-transport-master"
           >
             <StudioMixControl
@@ -460,7 +533,7 @@ export function StudioTransportBar({
               min={STUDIO_MASTER_GAIN_DB_MIN}
               max={STUDIO_MASTER_GAIN_DB_MAX}
               step={0.5}
-              compact
+              stacked
               disabled={pending}
               onLocalChange={onMasterGainLocal}
               onCommit={onMasterGainCommit}
@@ -468,49 +541,70 @@ export function StudioTransportBar({
           </div>
           )}
 
-          <p
-            title={tl(saveStatusLabel)}
-            className={`min-h-11 max-w-[18rem] shrink-0 truncate text-xs leading-[2.75rem] sm:min-h-8 sm:leading-8 ${simple ? "ml-auto" : ""} ${
-              saveIsError || conflictActive
-                ? "text-[var(--brd-warn)]"
-                : "text-[var(--brd-mute)]"
-            }`}
-            role={saveIsError || conflictActive ? "alert" : "status"}
-            data-testid="studio-transport-save"
+          {/* A problem gets its own full row: the whole text and the way out must be visible. */}
+          <div
+            className={`flex min-w-0 items-center gap-2 ${
+              saveProblem ? "order-last basis-full flex-wrap" : "max-w-[16rem]"
+            } ${simple && !saveProblem ? "ml-auto" : ""}`}
+            data-testid="studio-transport-save-row"
           >
-            {tl(saveStatusLabel)}
+            <p
+              title={tl(saveStatusLabel)}
+              className={`min-w-0 text-xs ${
+                saveProblem
+                  ? "py-1 leading-snug text-[var(--brd-warn)]"
+                  : "truncate leading-8 text-[var(--brd-mute)]"
+              }`}
+              role={saveProblem ? "alert" : "status"}
+              data-testid="studio-transport-save"
+            >
+              {tl(saveStatusLabel)}
+            </p>
             {conflictActive ? (
-              <>
-                {" "}
-                <button
-                  type="button"
-                  className="underline"
-                  onClick={() => window.location.reload()}
-                >
-                  {tr("odswiez")}
-                </button>
-              </>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="studio-key min-h-11 sm:min-h-8"
+                data-testid="studio-transport-reload"
+                onClick={() => window.location.reload()}
+              >
+                {tr("odswiez")}
+              </Button>
+            ) : onRetrySave ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="studio-key min-h-11 sm:min-h-8"
+                data-testid="studio-transport-retry-save"
+                onClick={onRetrySave}
+              >
+                {tr("sprobujPonownie")}
+              </Button>
             ) : null}
-          </p>
+          </div>
 
           {simple ? null : (
-          <>
+          <div className="flex shrink-0 items-center gap-1 max-sm:w-full sm:ml-auto">
           <StudioMixRevisionHistoryControl
             projectId={projectId}
             tipDocumentVersion={tipDocumentVersion}
             getExpectedDocumentVersion={getExpectedDocumentVersion}
             onDocumentRefreshed={onDocumentRefreshed}
             trackNames={trackNames}
+            onBeforeRestore={onFlushPersist}
             disabled={pending}
           />
           <StudioExportControl
             projectId={projectId}
             getExpectedDocumentVersion={getExpectedDocumentVersion}
+            planLocked={exportLocked}
           />
-          </>
+          </div>
           )}
         </div>
-        {hasSelection || (showFragmentTools && (fragmentEnabled || fragmentConfirmDelete)) ? (
+        {toolsShown ? (
         <div className="flex min-w-0 flex-wrap items-center gap-1" data-testid="studio-transport-row-tools">
           {hasSelection ? (
           <div className="flex shrink-0 flex-nowrap gap-0.5" data-testid="studio-selection-readout">
@@ -537,6 +631,7 @@ export function StudioTransportBar({
           ) : null}
           {showFragmentTools ? (
             <StudioFragmentTools
+              key={fragmentClipId ?? "none"}
               enabled={fragmentEnabled}
               pending={pending}
               confirmDelete={fragmentConfirmDelete}
@@ -568,7 +663,7 @@ export function StudioTransportBar({
           </p>
         ) : null}
       </div>
-      {transportOffscreen && !noBeat ? (
+      {transportOffscreen && (!noAudio || recording) ? (
         <div
           role="group"
           aria-label={tr("transportStudio")}
@@ -581,11 +676,12 @@ export function StudioTransportBar({
             variant="outline"
             className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
             onClick={() => seek(0)}
+            disabled={recording}
             aria-label={tr("poczatek")}
           >
             <span className="font-mono text-[13px] font-semibold">|◀</span>
           </Button>
-          {phase === "playing" ? (
+          {phase === "playing" && !recording ? (
             <Button
               type="button"
               size="sm"
@@ -613,12 +709,12 @@ export function StudioTransportBar({
             size="sm"
             variant="outline"
             className={`studio-key ${STUDIO_TRANSPORT_KEY}`}
-            onClick={stop}
-            aria-label={tr("stop")}
+            onClick={recording && onRecordStop ? onRecordStop : stop}
+            aria-label={recording ? tr("zatrzymajNagrywanie") : tr("stop")}
           >
             <StudioGlyph name="stop" />
           </Button>
-          <span className="studio-counter-time min-w-0 truncate px-1 font-mono text-xs tabular-nums">{tl(timeLabel)}</span>
+          <MiniTransportClock />
         </div>
       ) : null}
       {noBeat ? (

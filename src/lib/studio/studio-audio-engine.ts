@@ -25,6 +25,7 @@ import {
   type StudioEngineClip,
   type StudioEngineDocument,
   type StudioEngineTrack,
+  type StudioVoicePlan,
 } from "@/lib/studio/studio-audio-schedule";
 import { automationLane, automationSignature } from "@/lib/studio/studio-automation";
 import { MASTER_RENDER_SAMPLE_RATE } from "@/lib/studio/master/client";
@@ -167,6 +168,9 @@ export type StudioMediaElement = {
   playbackRate?: number;
   /** HTMLMediaElement.readyState — optional for lightweight test hosts. */
   readyState?: number;
+  /** Seconds; NaN until the metadata is known. */
+  duration?: number;
+  ended?: boolean;
   play(): Promise<void>;
   pause(): void;
   load(): void;
@@ -238,6 +242,8 @@ export type StudioAudioEngineListener = {
     clipId?: string;
   }) => void;
   onTimelineEnded: () => void;
+  /** The take preview played to its end. */
+  onPreviewEnded?: () => void;
   /** Tracks whose manual-note tuning is being (re)computed for live playback. */
   onTuneBake?: (pendingTrackIds: readonly string[]) => void;
 };
@@ -279,9 +285,41 @@ type Voice = {
   reverseLoad: boolean;
   reverseToken: number;
   playbackSig: string;
+  /** Baked tempo / pitch. Kept for the life of the voice, so Play and seek do not bake again. */
   playbackBuffer: StudioAudioBufferLike | null;
-  playbackLoad: boolean;
+  playbackLoad: Promise<boolean> | null;
+  /** What the running (or already finished) baked source was started for: clock epoch + geometry. */
+  playbackStart: { epoch: StudioClockEpoch; geometry: string } | null;
+  /** Clip source this voice was made for (kind + id). */
+  sourceRef: string;
+  /** Transport generation of the last element start. */
+  startGeneration: number;
+  starting: boolean;
+  startedAtMs: number;
+  /** The one fine correction after a start is done. */
+  startChecked: boolean;
 };
+
+/** Start within this distance of the source end = nothing left to play. */
+const SOURCE_END_GUARD_SEC = 0.02;
+/** Load clips that begin within this window ahead of the playhead. */
+const PRELOAD_AHEAD_MS = 15_000;
+const PRELOAD_INTERVAL_MS = 500;
+/** One fine correction, once a started element has settled. */
+const START_CHECK_AFTER_MS = 200;
+const START_CHECK_SKEW_MS = 60;
+
+function clipSourceRef(clip: StudioEngineClip): string {
+  return `${clip.sourceKind}:${clip.sourceTakeId ?? ""}:${clip.sourceBeatId ?? ""}`;
+}
+
+function bufferDurationSec(buffer: StudioAudioBufferLike): number {
+  return buffer.duration || (buffer.sampleRate > 0 ? buffer.length / buffer.sampleRate : 0);
+}
+
+function clipGeometryKey(clip: StudioEngineClip): string {
+  return `${clip.timelineStartMs}|${clip.sourceOffsetMs}`;
+}
 
 const PREVIEW_VOICE_ID = "__studio_preview__";
 
@@ -456,6 +494,17 @@ export class StudioAudioEngine {
   /** Rate-limit corrective MediaElement seeks while playing (seek-storm → stutter). */
   private lastVoiceSeekCorrectMs = 0;
   private failedClips = new Set<string>();
+  /** One load per clip; the key changes when the clip's source does. */
+  private loadingVoices = new Map<string, { key: string; promise: Promise<Voice | null> }>();
+  /** Clips whose source (beat master) is checked again at the next load. Set by Play only. */
+  private revalidateClips = new Set<string>();
+  private preloadTried = new Set<string>();
+  private lastPreloadMs = 0;
+  /** Song end for playback; null = project length. */
+  private playEndMs: number | null = null;
+  /** Rendered notes per track, reused by every Play / seek / loop wrap. */
+  private midiPcm = new Map<string, { sig: string; pcm: Float32Array }>();
+  private midiCheck: { document: StudioEngineDocument; epoch: StudioClockEpoch; bank: unknown } | null = null;
   /** BRD Tune live bakes: clip bake key → entry. */
   private tuneBakes = new Map<string, TuneBakeEntry>();
   /** trackId → clipId → ready bake key currently played for that clip. */
@@ -976,6 +1025,7 @@ export class StudioAudioEngine {
     voice.bufferSource = null;
     voice.scratchReverse = false;
     voice.reverseAnchor = null;
+    voice.playbackStart = null;
     if (!source) return;
     try {
       source.onended = null;
@@ -1013,14 +1063,19 @@ export class StudioAudioEngine {
     }
     if (!this.ctx || !this.masterGain) return;
     this.syncGraphParams();
-    if (this.lifecycle === "playing" && this.epoch) {
-      const playhead = playheadMsFromContextClock({
-        epoch: this.epoch,
-        contextTime: this.ctx.currentTime,
-        timelineLengthMs: document.timelineLengthMs,
-      });
-      void this.syncVoices(playhead, true);
-    }
+    this.followNow();
+  }
+
+  /** Stop playback here instead of at the project length (null = project length). */
+  setPlayEndMs(ms: number | null): void {
+    this.playEndMs = ms;
+  }
+
+  /** Re-follow the playhead outside the clock tick. While Play / seek still loads, its own start covers it. */
+  private followNow(): void {
+    if (this.lifecycle !== "playing" || this.tickId == null) return;
+    const playhead = this.livePlayheadMs();
+    if (playhead != null) this.followPlayhead(playhead);
   }
 
   /**
@@ -1043,25 +1098,29 @@ export class StudioAudioEngine {
     }
     let dropped = false;
     for (const clip of document.clips) {
-      if (clip.sourceTakeId === takeId && this.voices.has(clip.id)) {
+      if (clip.sourceTakeId !== takeId) continue;
+      // A load in flight may still bring the old file.
+      this.loadingVoices.delete(clip.id);
+      if (this.voices.has(clip.id)) {
         this.disposeVoice(clip.id);
         dropped = true;
       }
     }
-    if (!dropped || !this.ctx || this.lifecycle !== "playing" || !this.epoch) return;
-    const playhead = playheadMsFromContextClock({
-      epoch: this.epoch,
-      contextTime: this.ctx.currentTime,
-      timelineLengthMs: document.timelineLengthMs,
-    });
-    void this.syncVoices(playhead, true);
+    if (dropped) this.followNow();
   }
 
   async play(playheadMs: number): Promise<void> {
     if (!this.initialize() || !this.ctx) return;
     this.bumpVoiceSyncGeneration();
+    const generation = this.voiceSyncGeneration;
     this.stopPreviewInternal();
-    this.failedClips.clear();
+    this.stopClock();
+    this.pauseAllTimelineVoices();
+    this.resetLoadAttempts();
+    // A replaced beat master is picked up here, not on every clock tick.
+    for (const clip of this.document?.clips ?? []) {
+      if (clip.sourceBeatId) this.revalidateClips.add(clip.id);
+    }
     try {
       if (this.ctx.state === "suspended") {
         await this.ctx.resume();
@@ -1070,11 +1129,21 @@ export class StudioAudioEngine {
       this.listener.onError({ code: "AUDIO_CONTEXT_UNAVAILABLE" });
       return;
     }
+    if (generation !== this.voiceSyncGeneration || !this.ctx) return;
     if (this.ctx.state === "suspended") {
       this.listener.onError({ code: "AUDIO_CONTEXT_UNAVAILABLE" });
       return;
     }
-    // Provisional epoch so sync can resolve live offsets while loading; re-anchored
+    await this.startAt(playheadMs, generation);
+  }
+
+  /**
+   * Play / seek-while-playing: load metadata and set positions while paused,
+   * anchor the clock, then start every voice together.
+   */
+  private async startAt(playheadMs: number, generation: number): Promise<void> {
+    if (!this.ctx) return;
+    // Provisional epoch so a pause during loading has a position; re-anchored
     // after voices are primed so the playhead does not run ahead of MediaElements.
     this.epoch = createStudioClockEpoch({
       contextTime: this.ctx.currentTime,
@@ -1083,21 +1152,31 @@ export class StudioAudioEngine {
     this.setLifecycle("playing");
     this.listener.onPlayhead(playheadMs);
     this.startMetering();
+    const stale = () =>
+      generation !== this.voiceSyncGeneration || this.lifecycle !== "playing" || !this.ctx;
+    if (stale()) return;
     // 1) Load + seek while paused — TAKE signed URL can take ~1–2 s.
     await this.syncVoices(playheadMs, false);
-    if (this.lifecycle !== "playing" || !this.ctx) return;
+    if (stale() || !this.ctx) return;
     // 2) Anchor clock at the audible start, then start all voices together.
     this.epoch = createStudioClockEpoch({
       contextTime: this.ctx.currentTime,
       playheadMs,
     });
     this.listener.onPlayhead(playheadMs);
+    if (stale()) return;
     await this.syncVoices(playheadMs, true);
-    if (this.lifecycle !== "playing") return;
+    if (stale()) return;
     postPocketPlayhead(playheadMs);
     this.applyPocketBeatDuck();
     this.applySidechain();
     this.startClock();
+  }
+
+  private resetLoadAttempts(): void {
+    this.failedClips.clear();
+    this.preloadTried.clear();
+    this.lastPreloadMs = 0;
   }
 
   pause(): void {
@@ -1128,38 +1207,27 @@ export class StudioAudioEngine {
       return;
     }
     this.bumpVoiceSyncGeneration();
+    const generation = this.voiceSyncGeneration;
     this.stopPreviewInternal();
-    this.failedClips.clear();
+    // The clock stands still until the voices are in place again.
+    this.stopClock();
+    this.pauseAllTimelineVoices();
+    this.resetLoadAttempts();
+    if (shouldPlay) {
+      await this.startAt(playheadMs, generation);
+      return;
+    }
     this.epoch = createStudioClockEpoch({
       contextTime: this.ctx.currentTime,
       playheadMs,
     });
     this.listener.onPlayhead(playheadMs);
-    if (shouldPlay) {
-      this.setLifecycle("playing");
-      this.startMetering();
-    } else {
-      this.stopMetering({ reset: false });
-    }
-    if (shouldPlay) {
-      await this.syncVoices(playheadMs, false);
-      if (this.lifecycle !== "playing" || !this.ctx) return;
-      this.epoch = createStudioClockEpoch({
-        contextTime: this.ctx.currentTime,
-        playheadMs,
-      });
-      this.listener.onPlayhead(playheadMs);
-      await this.syncVoices(playheadMs, true);
-    } else {
-      await this.syncVoices(playheadMs, false);
-    }
-    if (shouldPlay && this.lifecycle !== "playing") return;
+    this.stopMetering({ reset: false });
+    await this.syncVoices(playheadMs, false);
+    if (generation !== this.voiceSyncGeneration) return;
     postPocketPlayhead(playheadMs);
     this.applyPocketBeatDuck();
     this.applySidechain();
-    if (shouldPlay && this.lifecycle === "playing") {
-      this.startClock();
-    }
   }
 
   stop(): void {
@@ -1184,6 +1252,7 @@ export class StudioAudioEngine {
       });
       throw new Error("AUDIO_PLAYBACK_FAILED");
     }
+    this.bumpVoiceSyncGeneration();
     this.pauseAllTimelineVoices();
     this.stopClock();
     this.stopMetering({ reset: false });
@@ -1236,9 +1305,20 @@ export class StudioAudioEngine {
       reverseToken: 0,
       playbackSig: "",
       playbackBuffer: null,
-      playbackLoad: false,
+      playbackLoad: null,
+      playbackStart: null,
+      sourceRef: PREVIEW_VOICE_ID,
+      startGeneration: 0,
+      starting: false,
+      startedAtMs: 0,
+      startChecked: true,
     });
 
+    element.addEventListener?.("ended", () => {
+      if (this.voices.get(PREVIEW_VOICE_ID)?.element !== element) return;
+      this.disposeVoice(PREVIEW_VOICE_ID);
+      this.listener.onPreviewEnded?.();
+    });
     try {
       await element.play();
     } catch {
@@ -1256,6 +1336,9 @@ export class StudioAudioEngine {
   }
 
   dispose(): void {
+    this.bumpVoiceSyncGeneration();
+    this.loadingVoices.clear();
+    this.midiPcm.clear();
     this.haltMidiSources();
     for (const entry of this.tuneBakes.values()) {
       entry.abort.abort();
@@ -1343,8 +1426,12 @@ export class StudioAudioEngine {
       postPocketPlayhead(playhead);
       this.applyPocketBeatDuck();
       this.applySidechain();
-      this.listener.onPlayhead(playhead);
-      if (playhead >= this.document.timelineLengthMs) {
+      const generation = this.voiceSyncGeneration;
+      const end = this.effectiveEndMs();
+      this.listener.onPlayhead(Math.min(playhead, end));
+      // The listener may have seeked (loop wrap) or stopped: that call owns the clock now.
+      if (generation !== this.voiceSyncGeneration || !this.document) return;
+      if (playhead >= end) {
         this.pauseAllTimelineVoices();
         this.stopClock();
         this.stopMetering({ reset: true });
@@ -1352,11 +1439,20 @@ export class StudioAudioEngine {
         this.listener.onTimelineEnded();
         return;
       }
-      void this.syncVoices(playhead, true);
+      this.followPlayhead(playhead);
+      this.preloadUpcoming(playhead);
       this.maybeCheckSync(playhead);
       this.tickId = this.host.requestTick(tick);
     };
     this.tickId = this.host.requestTick(tick);
+  }
+
+  /** Song end, unless playback started behind it (recording, or a seek into the free space). */
+  private effectiveEndMs(): number {
+    const length = this.document?.timelineLengthMs ?? 0;
+    const songEnd = this.playEndMs;
+    if (songEnd == null || songEnd >= length) return length;
+    return (this.epoch?.epochPlayheadMs ?? 0) >= songEnd ? length : songEnd;
   }
 
   private stopClock(): void {
@@ -2326,10 +2422,24 @@ export class StudioAudioEngine {
     shouldPlay: boolean,
   ): void {
     const skewMs = Math.abs(voice.element.currentTime - sourceOffsetSeconds) * 1000;
-    if (skewMs <= MAX_SYNC_SKEW_MS) return;
+    if (skewMs <= MAX_SYNC_SKEW_MS) {
+      if (shouldPlay && !voice.element.paused && this.host.nowMs() - voice.startedAtMs >= START_CHECK_AFTER_MS) {
+        voice.startChecked = true;
+      }
+      return;
+    }
     if (!shouldPlay || voice.element.paused) {
       voice.element.currentTime = sourceOffsetSeconds;
       return;
+    }
+    if (!voice.startChecked && this.host.nowMs() - voice.startedAtMs >= START_CHECK_AFTER_MS) {
+      // Elements start a little apart; line each one up once, then leave it alone.
+      voice.startChecked = true;
+      if (skewMs > START_CHECK_SKEW_MS) {
+        this.lastVoiceSeekCorrectMs = this.host.nowMs();
+        voice.element.currentTime = sourceOffsetSeconds;
+        return;
+      }
     }
     const CORRECT_MIN_SKEW_MS = 250;
     const CORRECT_MIN_INTERVAL_MS = 500;
@@ -2346,140 +2456,255 @@ export class StudioAudioEngine {
     voice.element.currentTime = sourceOffsetSeconds;
   }
 
+  /** Play / seek only. Clock ticks use followPlayhead, which never waits. */
   private async syncVoices(
     playheadMs: number,
     shouldPlay: boolean,
   ): Promise<void> {
     if (!this.document || !this.ctx) return;
-    // Claim this sync as latest — overlapping clock ticks / ensureTimelineVoice
-    // awaits must not both call element.play() after a newer stop or sync.
-    const generation = ++this.voiceSyncGeneration;
+    const generation = this.voiceSyncGeneration;
     this.syncGraphParams();
-    this.syncMidiPlayback(playheadMs, shouldPlay);
+    if (!shouldPlay) {
+      this.haltMidiSources();
+      if (this.lifecycle === "playing") this.renderMidiTracks();
+    }
     const plans = planVoicesAtPlayhead(this.document, playheadMs);
-    const wanted = new Set(plans.map((p) => p.clipId));
+    this.silenceUnplanned(plans);
+    const ready: { plan: StudioVoicePlan; clip: StudioEngineClip; voice: Voice }[] = [];
+    await Promise.all(
+      plans.map(async (plan) => {
+        if (this.failedClips.has(plan.clipId)) return;
+        const clip = this.document?.clips.find((c) => c.id === plan.clipId);
+        if (!clip) return;
+        const voice = await this.ensureTimelineVoice(clip);
+        if (!voice || !this.isVoiceSyncCurrent(generation, shouldPlay)) return;
+        if (!shouldPlay && this.lifecycle === "playing") await this.prepareBufferVoice(voice, clip);
+        if (!voice.disposed) ready.push({ plan, clip, voice });
+      }),
+    );
+    if (!this.isVoiceSyncCurrent(generation, shouldPlay)) return;
 
-    for (const [clipId, voice] of this.voices) {
-      if (voice.role !== "timeline") continue;
-      if (!wanted.has(clipId)) {
+    if (!shouldPlay) {
+      for (const { plan, clip, voice } of ready) {
+        this.applyClipFade(voice, clip, playheadMs, false);
         this.stopBufferSource(voice);
         voice.element.pause();
+        if (!this.pastSourceEnd(voice, plan.sourceOffsetSeconds)) {
+          this.maybeCorrectVoiceSeek(voice, plan.sourceOffsetSeconds, false);
+        }
       }
+      return;
     }
 
+    const elements = ready.filter((r) => !this.playsFromBuffer(r.clip));
+    // Same task for every element: one shared start.
+    await Promise.all(elements.map((r) => this.driveVoice(r.plan, r.clip, r.voice, playheadMs)));
+    if (!this.isVoiceSyncCurrent(generation, shouldPlay)) return;
+    this.anchorToStartedMedia(elements);
+    const now = this.livePlayheadMs() ?? playheadMs;
+    for (const r of ready) {
+      if (this.playsFromBuffer(r.clip)) void this.driveVoice(r.plan, r.clip, r.voice, now);
+    }
+    this.syncMidiPlayback(now, true);
+  }
+
+  /** One clock tick: start what is loaded, request what is not, never block the other voices. */
+  private followPlayhead(playheadMs: number): void {
+    if (!this.document || !this.ctx) return;
+    this.syncGraphParams();
+    this.syncMidiPlayback(playheadMs, true);
+    const plans = planVoicesAtPlayhead(this.document, playheadMs);
+    this.silenceUnplanned(plans);
     for (const plan of plans) {
-      if (!this.isVoiceSyncCurrent(generation, shouldPlay)) {
-        this.pauseAllTimelineVoices();
-        return;
-      }
       if (this.failedClips.has(plan.clipId)) continue;
       const clip = this.document.clips.find((c) => c.id === plan.clipId);
       if (!clip) continue;
-      const voice = await this.ensureTimelineVoice(clip);
-      if (!this.isVoiceSyncCurrent(generation, shouldPlay)) {
-        this.pauseAllTimelineVoices();
-        return;
-      }
-      if (!voice) continue;
-      // Clock ticks: follow the live playhead. Prime/play bootstrap (no tick yet):
-      // stay on the requested playhead — provisional epoch must not drift seeks.
-      const seekPlayhead =
-        this.tickId != null ? (this.livePlayheadMs() ?? playheadMs) : playheadMs;
-      const liveOffset =
-        sourceOffsetSecondsAtPlayhead({
-          playheadMs: seekPlayhead,
-          timelineStartMs: clip.timelineStartMs,
-          sourceOffsetMs: clip.sourceOffsetMs,
-          durationMs: clip.durationMs,
-        }) ?? plan.sourceOffsetSeconds;
-      this.applyClipFade(voice, clip, seekPlayhead, shouldPlay);
-      const jogOwns = scratchJogOwnsClip({
-        clipId: clip.id,
-        liveClipId: this.scratchLive.clipId,
-        liveReverse: this.scratchLive.reverse,
-        liveRate: this.scratchLive.rate,
-      });
-      const persistedReverse = Boolean(clip.scratchReverse) && !jogOwns;
-      const playback = clampClipPlayback({
-        stretch: clip.stretchRatio ?? 1,
-        pitchCents: clip.pitchCents ?? 0,
-      });
-      const persistedPlayback = !clipPlaybackIdentity(playback) && !jogOwns && !persistedReverse;
-      if (persistedPlayback) {
-        this.holdPersistedPlayback(voice, clip, seekPlayhead, playback);
-        try {
-          voice.element.pause();
-        } catch {
-          /* element stays paused while the baked buffer plays */
-        }
+      const voice = this.usableVoice(clip);
+      if (voice) {
+        void this.driveVoice(plan, clip, voice, playheadMs);
         continue;
       }
-      if (!persistedReverse) {
-        this.maybeCorrectVoiceSeek(voice, liveOffset, shouldPlay);
-      }
-      if (!shouldPlay) {
-        this.stopBufferSource(voice);
+      if (this.loadingVoices.has(clip.id)) continue;
+      const generation = this.voiceSyncGeneration;
+      void this.ensureTimelineVoice(clip).then((loaded) => {
+        if (loaded && this.isVoiceSyncCurrent(generation, true)) this.followNow();
+      });
+    }
+  }
+
+  private silenceUnplanned(plans: readonly StudioVoicePlan[]): void {
+    const wanted = new Set(plans.map((p) => p.clipId));
+    for (const [clipId, voice] of this.voices) {
+      if (voice.role !== "timeline" || wanted.has(clipId)) continue;
+      this.stopBufferSource(voice);
+      if (!voice.element.paused) voice.element.pause();
+    }
+  }
+
+  /** Clips that begin soon: load (and bake) them before the playhead gets there. */
+  private preloadUpcoming(playheadMs: number): void {
+    const document = this.document;
+    const now = this.host.nowMs();
+    if (!document || now - this.lastPreloadMs < PRELOAD_INTERVAL_MS) return;
+    this.lastPreloadMs = now;
+    for (const clip of document.clips) {
+      if (clip.timelineStartMs <= playheadMs || clip.timelineStartMs > playheadMs + PRELOAD_AHEAD_MS) continue;
+      if (this.preloadTried.has(clip.id) || this.failedClips.has(clip.id)) continue;
+      if (!planVoicesAtPlayhead(document, clip.timelineStartMs).some((p) => p.clipId === clip.id)) continue;
+      this.preloadTried.add(clip.id);
+      void this.ensureTimelineVoice(clip, { quiet: true }).then((voice) => {
+        if (!voice || voice.disposed || !voice.element.paused) return;
+        this.maybeCorrectVoiceSeek(voice, clip.sourceOffsetMs / 1000, false);
+        void this.prepareBufferVoice(voice, clip);
+      });
+    }
+  }
+
+  /** The source ended before the clip does: playing again would start the file from 0. */
+  private pastSourceEnd(voice: Voice, offsetSec: number): boolean {
+    const duration = voice.element.duration;
+    const known = typeof duration === "number" && Number.isFinite(duration) && duration > 0;
+    if (known && offsetSec >= duration - SOURCE_END_GUARD_SEC) return true;
+    return Boolean(voice.element.ended) && (!known || duration - offsetSec < 0.5);
+  }
+
+  /** Reverse, tempo or pitch: heard from a decoded buffer, not from the media element. */
+  private playsFromBuffer(clip: StudioEngineClip): boolean {
+    if (this.jogOwns(clip)) return false;
+    return (
+      Boolean(clip.scratchReverse) ||
+      !clipPlaybackIdentity(
+        clampClipPlayback({ stretch: clip.stretchRatio ?? 1, pitchCents: clip.pitchCents ?? 0 }),
+      )
+    );
+  }
+
+  private jogOwns(clip: StudioEngineClip): boolean {
+    return scratchJogOwnsClip({
+      clipId: clip.id,
+      liveClipId: this.scratchLive.clipId,
+      liveReverse: this.scratchLive.reverse,
+      liveRate: this.scratchLive.rate,
+    });
+  }
+
+  private async prepareBufferVoice(voice: Voice, clip: StudioEngineClip): Promise<void> {
+    if (!this.playsFromBuffer(clip)) return;
+    if (clip.scratchReverse) {
+      await this.ensureDecodedBuffer(voice);
+      return;
+    }
+    await this.preparePlaybackBuffer(voice, clip);
+  }
+
+  /**
+   * Elements report the real start a little after play(). Move the clock to the sound,
+   * not the sound to the clock: a jump is audible, a 50 ms later playhead is not.
+   */
+  private anchorToStartedMedia(
+    started: readonly { plan: StudioVoicePlan; clip: StudioEngineClip; voice: Voice }[],
+  ): void {
+    if (!this.ctx || !this.epoch) return;
+    const ref = started.find((r) => !r.voice.element.paused);
+    const live = this.livePlayheadMs();
+    if (!ref || live == null) return;
+    const heardMs =
+      ref.clip.timelineStartMs + ref.voice.element.currentTime * 1000 - ref.clip.sourceOffsetMs;
+    const drift = live - heardMs;
+    if (Math.abs(drift) < 5 || Math.abs(drift) > 1500) return;
+    this.epoch = createStudioClockEpoch({
+      contextTime: this.ctx.currentTime,
+      playheadMs: Math.max(0, Math.round(heardMs)),
+    });
+  }
+
+  private async driveVoice(
+    plan: StudioVoicePlan,
+    clip: StudioEngineClip,
+    voice: Voice,
+    playheadMs: number,
+  ): Promise<void> {
+    const liveOffset =
+      sourceOffsetSecondsAtPlayhead({
+        playheadMs,
+        timelineStartMs: clip.timelineStartMs,
+        sourceOffsetMs: clip.sourceOffsetMs,
+        durationMs: clip.durationMs,
+      }) ?? plan.sourceOffsetSeconds;
+    this.applyClipFade(voice, clip, playheadMs, true);
+    const jogOwns = this.jogOwns(clip);
+    if (this.playsFromBuffer(clip)) {
+      if (clip.scratchReverse) this.holdPersistedReverse(voice, clip, playheadMs);
+      else this.holdPersistedPlayback(voice, clip, playheadMs);
+      try {
         voice.element.pause();
-        continue;
+      } catch {
+        /* element stays paused while the buffer plays */
       }
-      if (jogOwns) {
-        if (voice.scratchReverse || voice.bufferSource) continue;
-      } else if (persistedReverse) {
-        this.holdPersistedReverse(voice, clip, seekPlayhead);
-        try {
-          voice.element.pause();
-        } catch {
-          /* ignore */
-        }
-        continue;
-      } else if (voice.scratchReverse || voice.bufferSource) {
-        this.stopBufferSource(voice);
+      return;
+    }
+    if (jogOwns) {
+      if (voice.scratchReverse || voice.bufferSource) return;
+    } else if (voice.scratchReverse || voice.bufferSource) {
+      this.stopBufferSource(voice);
+    }
+    if (this.pastSourceEnd(voice, liveOffset)) {
+      if (!voice.element.paused) voice.element.pause();
+      return;
+    }
+    this.maybeCorrectVoiceSeek(voice, liveOffset, true);
+    if (!voice.element.paused || voice.starting) return;
+
+    const generation = this.voiceSyncGeneration;
+    voice.starting = true;
+    voice.startGeneration = generation;
+    voice.startedAtMs = this.host.nowMs();
+    voice.startChecked = false;
+    try {
+      await voice.element.play();
+    } catch {
+      if (this.isVoiceSyncCurrent(generation, true) && !voice.disposed && voice.element.paused) {
+        // Do not retry 60 times a second; Play and seek try again.
+        this.failedClips.add(clip.id);
+        this.listener.onError({
+          code: "AUDIO_PLAYBACK_FAILED",
+          sourceKind: plan.sourceKind,
+          clipId: plan.clipId,
+        });
       }
-      if (voice.element.paused) {
-        try {
-          await voice.element.play();
-        } catch {
-          this.listener.onError({
-            code: "AUDIO_PLAYBACK_FAILED",
-            sourceKind: plan.sourceKind,
-            clipId: plan.clipId,
-          });
-        }
-        if (!this.isVoiceSyncCurrent(generation, shouldPlay)) {
-          try {
-            voice.element.pause();
-          } catch {
-            /* ignore */
-          }
-          this.pauseAllTimelineVoices();
-          return;
-        }
+    } finally {
+      voice.starting = false;
+    }
+    if (!this.isVoiceSyncCurrent(generation, true) && voice.startGeneration === generation) {
+      try {
+        voice.element.pause();
+      } catch {
+        /* ignore */
       }
     }
   }
 
-  /** Stretch and pitch baked once, then played from a buffer. Reverse of that bake is a separate start. */
-  private holdPersistedPlayback(
-    voice: Voice,
-    clip: StudioEngineClip,
-    playheadMs: number,
-    playback: { stretch: number; pitchCents: number },
-  ): void {
+  /** Stretch and pitch baked once per voice, then played from a buffer. Reverse of that bake is a separate start. */
+  private preparePlaybackBuffer(voice: Voice, clip: StudioEngineClip): Promise<boolean> {
+    const playback = clampClipPlayback({
+      stretch: clip.stretchRatio ?? 1,
+      pitchCents: clip.pitchCents ?? 0,
+    });
     const sig = `${playback.stretch}|${playback.pitchCents}`;
     if (voice.playbackSig !== sig) {
       voice.playbackSig = sig;
       voice.playbackBuffer = null;
+      voice.playbackLoad = null;
       this.stopBufferSource(voice);
     }
-    if (voice.bufferSource && voice.playbackBuffer) return;
-    if (voice.playbackLoad || !this.ctx?.createBuffer) return;
-    voice.playbackLoad = true;
-    const token = sig;
-    const generation = this.voiceSyncGeneration;
-    void this.ensureDecodedBuffer(voice).then((ok) => {
-      voice.playbackLoad = false;
-      if (!ok || voice.disposed || voice.playbackSig !== token || !this.ctx || !voice.decodedBuffer) return;
-      if (!this.isVoiceSyncCurrent(generation, true)) return;
+    if (voice.playbackBuffer) return Promise.resolve(true);
+    if (voice.playbackLoad) return voice.playbackLoad;
+    if (!this.ctx?.createBuffer) return Promise.resolve(false);
+    const load: Promise<boolean> = this.ensureDecodedBuffer(voice).then((ok) => {
+      if (voice.playbackLoad === load) voice.playbackLoad = null;
+      if (!ok || voice.disposed || voice.playbackSig !== sig || !this.ctx?.createBuffer || !voice.decodedBuffer) {
+        return false;
+      }
       const decoded = voice.decodedBuffer;
       const channels = Math.max(1, decoded.numberOfChannels);
       const left = renderClipPlaybackMono(decoded.getChannelData(0), playback);
@@ -2487,26 +2712,61 @@ export class StudioAudioEngine {
         ? renderClipPlaybackMono(decoded.getChannelData(1), playback)
         : left;
       const length = Math.min(left.length, right.length);
-      if (length < 1) return;
+      if (length < 1) return false;
       const raw = this.ctx.createBuffer(channels > 1 ? 2 : 1, length, decoded.sampleRate);
       raw.getChannelData(0).set(left.subarray(0, length));
       if (channels > 1) raw.getChannelData(1).set(right.subarray(0, length));
-      const buffer: StudioAudioBufferLike = {
-        numberOfChannels: raw.numberOfChannels,
-        length: raw.length,
-        sampleRate: raw.sampleRate,
-        duration: raw.length / decoded.sampleRate,
-        getChannelData: (channel) => raw.getChannelData(channel),
-      };
-      voice.playbackBuffer = buffer;
-      const localMs = Math.max(0, playheadMs - clip.timelineStartMs);
-      const heardMs = bakedTimelineMs({
-        sourceOffsetMs: clip.sourceOffsetMs,
-        localMs,
-        stretch: playback.stretch,
-      });
-      this.startPlainBuffer(voice, buffer, heardMs / 1000);
+      // The real AudioBuffer: a wrapper object cannot be assigned to an AudioBufferSourceNode.
+      voice.playbackBuffer = raw as StudioAudioBufferLike;
+      return true;
     });
+    voice.playbackLoad = load;
+    return load;
+  }
+
+  private holdPersistedPlayback(
+    voice: Voice,
+    clip: StudioEngineClip,
+    playheadMs: number,
+  ): void {
+    const generation = this.voiceSyncGeneration;
+    if (!voice.playbackBuffer || voice.playbackSig !== this.playbackSigOf(clip)) {
+      if (voice.playbackLoad && voice.playbackSig === this.playbackSigOf(clip)) return;
+      void this.preparePlaybackBuffer(voice, clip).then((ok) => {
+        if (!ok || voice.disposed || !this.isVoiceSyncCurrent(generation, true)) return;
+        const fresh = this.document?.clips.find((c) => c.id === clip.id);
+        const live = this.livePlayheadMs();
+        if (!fresh || live == null || !this.playsFromBuffer(fresh) || fresh.scratchReverse) return;
+        // Baking took time: start where the playhead is now.
+        const inside = live >= fresh.timelineStartMs && live < fresh.timelineStartMs + fresh.durationMs;
+        if (inside) this.holdPersistedPlayback(voice, fresh, live);
+      });
+      return;
+    }
+    if (!this.epoch) return;
+    const geometry = clipGeometryKey(clip);
+    const start = voice.playbackStart;
+    // Running, or already played to its end: only a new Play / seek or a moved clip starts it again.
+    if (start && start.epoch === this.epoch && start.geometry === geometry) return;
+    const offsetSec =
+      bakedTimelineMs({
+        sourceOffsetMs: clip.sourceOffsetMs,
+        localMs: Math.max(0, playheadMs - clip.timelineStartMs),
+        stretch: clip.stretchRatio ?? 1,
+      }) / 1000;
+    this.stopBufferSource(voice);
+    if (offsetSec < bufferDurationSec(voice.playbackBuffer) - SOURCE_END_GUARD_SEC) {
+      this.startPlainBuffer(voice, voice.playbackBuffer, offsetSec);
+    }
+    voice.playbackStart = { epoch: this.epoch, geometry };
+  }
+
+  private playbackSigOf(clip: StudioEngineClip): string {
+    const playback = clampClipPlayback({
+      stretch: clip.stretchRatio ?? 1,
+      pitchCents: clip.pitchCents ?? 0,
+    });
+    return `${playback.stretch}|${playback.pitchCents}`;
   }
 
   private startPlainBuffer(voice: Voice, buffer: StudioAudioBufferLike, offsetSec: number): boolean {
@@ -2522,7 +2782,7 @@ export class StudioAudioEngine {
       source.buffer = buffer;
       source.playbackRate.value = 1;
       source.connect(voice.clipGain);
-      const duration = buffer.duration || 0;
+      const duration = bufferDurationSec(buffer);
       const offset = Math.max(0, Math.min(duration, offsetSec));
       source.start(0, offset);
       source.onended = () => {
@@ -2598,7 +2858,9 @@ export class StudioAudioEngine {
         pitchCents: heardClip.pitchCents ?? 0,
       });
       const shapedNow = !clipPlaybackIdentity(heardPlayback);
-      const baked = shapedNow ? this.bakeReversedPlayback(voice, heardPlayback) : null;
+      const baked = shapedNow
+        ? (voice.playbackBuffer ?? this.bakeReversedPlayback(voice, heardPlayback))
+        : null;
       if (shapedNow && !baked) return;
       if (baked) voice.playbackBuffer = baked;
       const heard = this.heardSecForPersistedReverse(voice, heardClip, playhead);
@@ -2698,97 +2960,102 @@ export class StudioAudioEngine {
     }
   }
 
-  private async ensureTimelineVoice(
+  /** The clip's loaded voice, or null while it must be (re)loaded or its metadata is on the way. */
+  private usableVoice(clip: StudioEngineClip): Voice | null {
+    if (this.loadingVoices.has(clip.id)) return null;
+    const voice = this.voices.get(clip.id);
+    if (!voice || voice.disposed) return null;
+    const baked = this.tuneBakedSourceFor(clip);
+    if (baked) return voice.sourceUrl === baked.url ? voice : null;
+    if (voice.sourceRef !== clipSourceRef(clip)) return null;
+    // TAKE identity is immutable (replace → new take id). A beat master can be
+    // replaced under the same id: Play asks for one fresh check.
+    return this.revalidateClips.has(clip.id) ? null : voice;
+  }
+
+  private ensureTimelineVoice(
     clip: StudioEngineClip,
+    opts: { quiet?: boolean } = {},
+  ): Promise<Voice | null> {
+    const usable = this.usableVoice(clip);
+    if (usable) return Promise.resolve(usable);
+    const baked = this.tuneBakedSourceFor(clip);
+    const key = baked ? `bake:${baked.url}` : clipSourceRef(clip);
+    const inFlight = this.loadingVoices.get(clip.id);
+    if (inFlight && inFlight.key === key) return inFlight.promise;
+
+    const entry: { key: string; promise: Promise<Voice | null> } = { key, promise: Promise.resolve(null) };
+    const isLatest = () =>
+      this.lifecycle !== "disposed" &&
+      this.loadingVoices.get(clip.id) === entry &&
+      Boolean(this.document?.clips.some((c) => c.id === clip.id && clipSourceRef(c) === clipSourceRef(clip)));
+    this.loadingVoices.set(clip.id, entry);
+    entry.promise = this.loadTimelineVoice(clip, baked, isLatest, Boolean(opts.quiet)).finally(() => {
+      if (this.loadingVoices.get(clip.id) === entry) this.loadingVoices.delete(clip.id);
+    });
+    return entry.promise;
+  }
+
+  private async loadTimelineVoice(
+    clip: StudioEngineClip,
+    baked: { url: string; key: string } | null,
+    isLatest: () => boolean,
+    quiet: boolean,
   ): Promise<Voice | null> {
     if (!this.ctx) return null;
+    const fail = (code: StudioAudioErrorCode): null => {
+      // A quiet preload is tried again, loudly, when the playhead gets there.
+      if (quiet) return null;
+      this.failedClips.add(clip.id);
+      this.listener.onError({ code, sourceKind: clip.sourceKind, clipId: clip.id });
+      return null;
+    };
 
     const adapter = this.registry.get(clip.sourceKind);
-    if (!adapter) {
-      this.failedClips.add(clip.id);
-      this.listener.onError({
-        code: "AUDIO_SOURCE_UNAVAILABLE",
-        sourceKind: clip.sourceKind,
-        clipId: clip.id,
-      });
-      return null;
-    }
+    if (!adapter) return fail("AUDIO_SOURCE_UNAVAILABLE");
 
-    const baked = this.tuneBakedSourceFor(clip);
-    if (baked) {
-      const existing = this.voices.get(clip.id);
-      if (existing && !existing.disposed && existing.sourceUrl === baked.url) return existing;
-      if (existing) this.disposeVoice(clip.id);
-      try {
+    try {
+      if (baked) {
+        this.disposeVoice(clip.id);
         const voice = this.createVoice(
           clip,
           { url: baked.url, expiresAt: Number.MAX_SAFE_INTEGER },
           `tune-bake:${baked.key}`,
         );
         await this.awaitMediaReady(voice.element);
-        if (voice.disposed) return null;
-        return voice;
-      } catch {
-        this.failedClips.add(clip.id);
-        this.listener.onError({ code: "AUDIO_OUTPUT_ERROR", sourceKind: clip.sourceKind, clipId: clip.id });
-        return null;
+        return voice.disposed ? null : voice;
       }
-    }
 
-    // TAKE identity is immutable (replace → new take id). BEAT_REF must
-    // re-resolve so master replacement (new assetId) can replace the voice.
-    const existingEarly = this.voices.get(clip.id);
-    if (
-      existingEarly &&
-      !existingEarly.disposed &&
-      clip.sourceKind !== "BEAT_REF"
-    ) {
-      return existingEarly;
-    }
+      const resolved = await adapter.resolve(clip);
+      if (!isLatest() || !this.ctx) return null;
+      this.revalidateClips.delete(clip.id);
+      const nextIdentity = studioClipSourceIdentity(clip);
 
-    const resolved = await adapter.resolve(clip);
-    const nextIdentity = studioClipSourceIdentity(clip);
-
-    // WAVE 1.1: after await, reuse only when identity still matches.
-    const existingAfterResolve = this.voices.get(clip.id);
-    if (existingAfterResolve && !existingAfterResolve.disposed) {
-      if (
-        shouldReuseStudioVoice({
-          existingIdentityKey: existingAfterResolve.identityKey,
-          nextIdentityKey: nextIdentity,
-          existingSourceUrl: existingAfterResolve.sourceUrl,
-          nextSourceUrl: resolved.ok ? resolved.source.url : null,
-        })
-      ) {
-        return existingAfterResolve;
+      // WAVE 1.1: after await, reuse only when identity still matches.
+      const existing = this.voices.get(clip.id);
+      if (existing && !existing.disposed) {
+        if (
+          existing.sourceRef === clipSourceRef(clip) &&
+          shouldReuseStudioVoice({
+            existingIdentityKey: existing.identityKey,
+            nextIdentityKey: nextIdentity,
+            existingSourceUrl: existing.sourceUrl,
+            nextSourceUrl: resolved.ok ? resolved.source.url : null,
+          })
+        ) {
+          return existing;
+        }
+        // Master (or identity) changed — drop stale MediaElement before create.
+        this.disposeVoice(clip.id);
       }
-      // Master (or identity) changed — drop stale MediaElement before create.
-      this.disposeVoice(clip.id);
-    }
 
-    if (!resolved.ok) {
-      this.failedClips.add(clip.id);
-      this.listener.onError({
-        code: resolved.code,
-        sourceKind: clip.sourceKind,
-        clipId: clip.id,
-      });
-      return null;
-    }
+      if (!resolved.ok) return fail(resolved.code);
 
-    try {
       const voice = this.createVoice(clip, resolved.source, nextIdentity);
       await this.awaitMediaReady(voice.element);
-      if (voice.disposed) return null;
-      return voice;
+      return voice.disposed ? null : voice;
     } catch {
-      this.failedClips.add(clip.id);
-      this.listener.onError({
-        code: "AUDIO_OUTPUT_ERROR",
-        sourceKind: clip.sourceKind,
-        clipId: clip.id,
-      });
-      return null;
+      return isLatest() ? fail("AUDIO_OUTPUT_ERROR") : null;
     }
   }
 
@@ -2870,7 +3137,13 @@ export class StudioAudioEngine {
       reverseToken: 0,
       playbackSig: "",
       playbackBuffer: null,
-      playbackLoad: false,
+      playbackLoad: null,
+      playbackStart: null,
+      sourceRef: clipSourceRef(clip),
+      startGeneration: 0,
+      starting: false,
+      startedAtMs: 0,
+      startChecked: true,
     };
     this.voices.set(clip.id, voice);
     if (this.scratchLive.reverse || this.scratchLive.rate !== 1) {
@@ -2885,6 +3158,7 @@ export class StudioAudioEngine {
     const sources = this.midiSources;
     this.midiSources = [];
     this.midiSig = "";
+    this.midiCheck = null;
     for (const source of sources) {
       try {
         source.onended = null;
@@ -2900,6 +3174,43 @@ export class StudioAudioEngine {
     }
   }
 
+  private midiSampleRate(): number {
+    const sr = this.ctx?.sampleRate;
+    return sr && sr > 0 ? sr : MASTER_RENDER_SAMPLE_RATE;
+  }
+
+  private trackMidiSig(track: StudioEngineTrack): string {
+    const notes = track.midi?.notes ?? [];
+    if (!track.midi || notes.length === 0) return "";
+    return `${track.midi.instrument}:${notes.map((n) => `${n.t}.${n.dur}.${n.pitch}.${n.vel}`).join(",")}`;
+  }
+
+  /** Notes of every track as PCM, up to the last note only; rendered again only when they change. */
+  private renderMidiTracks(): void {
+    const document = this.document;
+    if (!document || !this.ctx) return;
+    const sr = this.midiSampleRate();
+    const bank = peekAcousticBank();
+    for (const track of document.tracks) {
+      const body = this.trackMidiSig(track);
+      if (!body || !track.midi) {
+        this.midiPcm.delete(track.id);
+        continue;
+      }
+      const sig = `${sr}|${bank ? "rec" : "syn"}|${body}`;
+      if (this.midiPcm.get(track.id)?.sig === sig) continue;
+      const lastNoteMs = track.midi.notes.reduce((end, n) => Math.max(end, n.t + n.dur), 0);
+      const pcm = renderMidiNotes({
+        notes: track.midi.notes,
+        instrument: track.midi.instrument,
+        sampleRate: sr,
+        durationMs: Math.min(document.timelineLengthMs, lastNoteMs),
+        bank,
+      });
+      this.midiPcm.set(track.id, { sig, pcm });
+    }
+  }
+
   /**
    * Schedule rendered note PCM on each track input of this AudioContext.
    * Mute / solo / gain / pan stay on the track strip. Replanned only when the clock epoch or the notes change.
@@ -2911,46 +3222,33 @@ export class StudioAudioEngine {
       this.haltMidiSources();
       return;
     }
-    if (typeof window !== "undefined" && !peekAcousticBank()) {
-      void preloadAcousticBank().then(() => {
-        this.midiSig = "";
-      });
-    }
-    const sr = ctx.sampleRate && ctx.sampleRate > 0 ? ctx.sampleRate : MASTER_RENDER_SAMPLE_RATE;
-    const body = document.tracks
-      .map((t) => {
-        const notes = t.midi?.notes ?? [];
-        if (!t.midi || notes.length === 0) return `${t.id}:`;
-        return `${t.id}:${t.midi.instrument}:${notes.map((n) => `${n.t}.${n.dur}.${n.pitch}.${n.vel}`).join(",")}`;
-      })
-      .join("|");
-    const sig = `${this.epoch.epochContextTime}|${this.epoch.epochPlayheadMs}|${sr}|${peekAcousticBank() ? "rec" : "syn"}|${body}`;
+    const bank = peekAcousticBank();
+    const checked = this.midiCheck;
+    if (checked && checked.document === document && checked.epoch === this.epoch && checked.bank === bank) return;
+    this.midiCheck = { document, epoch: this.epoch, bank };
+    if (typeof window !== "undefined" && !bank) void preloadAcousticBank();
+    const sr = this.midiSampleRate();
+    const body = document.tracks.map((t) => `${t.id}:${this.trackMidiSig(t)}`).join("|");
+    const sig = `${this.epoch.epochContextTime}|${this.epoch.epochPlayheadMs}|${sr}|${bank ? "rec" : "syn"}|${body}`;
     if (sig === this.midiSig) return;
+    this.renderMidiTracks();
+    const midiCheck = this.midiCheck;
     this.haltMidiSources();
+    this.midiCheck = midiCheck;
     this.midiSig = sig;
     if (!ctx.createBuffer || !ctx.createBufferSource) return;
     for (const track of document.tracks) {
-      const notes = track.midi?.notes ?? [];
-      if (!track.midi || notes.length === 0) continue;
-      const pcm = renderMidiNotes({
-        notes,
-        instrument: track.midi.instrument,
-        sampleRate: sr,
-        durationMs: document.timelineLengthMs,
-        bank: peekAcousticBank(),
-      });
-      if (pcm.length === 0) continue;
+      const pcm = this.midiPcm.get(track.id)?.pcm;
+      if (!pcm || pcm.length === 0 || !track.midi?.notes.length) continue;
       try {
+        // Rendering took time: start where the clock is now.
+        const offset = Math.max(0, (this.livePlayheadMs() ?? playheadMs) / 1000);
+        if (offset >= pcm.length / sr) continue;
         const buffer = ctx.createBuffer(1, pcm.length, sr);
         buffer.getChannelData(0).set(pcm);
         const source = ctx.createBufferSource();
         source.buffer = buffer as StudioAudioBufferLike;
         source.connect(this.ensureTrackGraph(track.id).input);
-        const offset = Math.max(0, playheadMs / 1000);
-        if (offset >= pcm.length / sr) {
-          source.disconnect();
-          continue;
-        }
         this.midiSources.push(source);
         source.start(ctx.currentTime, offset);
       } catch {

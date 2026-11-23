@@ -1,7 +1,7 @@
 "use client";
 
 import { StoreAppHidden, useStoreApp } from "@/components/site/store-app-context";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -69,10 +69,11 @@ export function StudioMasterStyleReference({
   const t = useTranslations("studio.masterStep");
   // Store app: no plan / pack links and no prices (store rules).
   const storeApp = useStoreApp();
+  const locale = useLocale();
   const ids = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [upload, setUpload] = useState<{ pct: number } | null>(null);
-  const [error, setError] = useState<ReferenceUploadError | "upload" | "locked" | "odczyt" | null>(null);
+  const [error, setError] = useState<ReferenceUploadError | "upload" | "locked" | "odczyt" | "usuwanie" | null>(null);
 
   // Access + current reference (after reload the uploaded file is still there until used / 24 h).
   useEffect(() => {
@@ -90,14 +91,18 @@ export function StudioMasterStyleReference({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per project
   }, [projectId]);
 
+  const picking = useRef(false);
   async function pick(file: File) {
+    // Reading the length takes a moment: a second choice meanwhile would start a second upload.
+    if (picking.current) return;
+    picking.current = true;
     setError(null);
-    const durationMs = await mediaDurationMs(file);
-    if (durationMs === null) return setError("odczyt");
-    const v = validateReferenceUpload({ fileName: file.name, mime: file.type, byteSize: file.size, durationMs });
-    if (!v.ok) return setError(v.error);
     setUpload({ pct: 0 });
     try {
+      const durationMs = await mediaDurationMs(file);
+      if (durationMs === null) return setError("odczyt");
+      const v = validateReferenceUpload({ fileName: file.name, mime: file.type, byteSize: file.size, durationMs });
+      if (!v.ok) return setError(v.error);
       const prep = await fetch(`/api/studio/projects/${projectId}/master/reference`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "prepare", fileName: file.name, mime: file.type, byteSize: file.size, durationMs }),
@@ -124,20 +129,30 @@ export function StudioMasterStyleReference({
     } catch {
       setError("upload");
     } finally {
+      picking.current = false;
       setUpload(null);
       if (fileRef.current) fileRef.current.value = "";
     }
   }
 
   async function remove() {
-    const id = refState.reference?.id;
-    if (!id) return;
+    const removed = refState.reference;
+    if (!removed) return;
+    setError(null);
     onRefState({ ...refState, reference: null });
-    await fetch(`/api/studio/projects/${projectId}/master/reference?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
+    try {
+      const r = await fetch(`/api/studio/projects/${projectId}/master/reference?id=${encodeURIComponent(removed.id)}`, { method: "DELETE" });
+      if (r.ok || r.status === 404) return;
+    } catch {
+      // put back below
+    }
+    // Not deleted on the server: it would come back after a reload, so show it now.
+    onRefState({ ...refState, reference: removed });
+    setError("usuwanie");
   }
 
   const gate = refState.gate;
-  const price = PLAN_ADDON_PRICE_PLN.reference_mastering.monthlyPln.toLocaleString("pl-PL", { minimumFractionDigits: 2 });
+  const price = PLAN_ADDON_PRICE_PLN.reference_mastering.monthlyPln.toLocaleString(locale === "en" ? "en-GB" : "pl-PL", { minimumFractionDigits: 2 });
 
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">

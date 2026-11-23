@@ -78,6 +78,25 @@ describe("studio undo history", () => {
   });
 });
 
+describe("ops added 2026-11-23", () => {
+  it("tempo, notes, automation and track order are history entries", () => {
+    const entries: StudioUndoEntry[] = [
+      {
+        undo: { kind: "clip_playback", clipId: "c", stretch: 1, pitchCents: 0, durationMs: 4000 },
+        redo: { kind: "clip_playback", clipId: "c", stretch: 2, pitchCents: 0, durationMs: 8000 },
+      },
+      {
+        undo: { kind: "track_reorder", trackId: "t", direction: "down" },
+        redo: { kind: "track_reorder", trackId: "t", direction: "up" },
+      },
+    ];
+    let h = EMPTY_STUDIO_UNDO_HISTORY;
+    for (const entry of entries) h = pushStudioUndoEntry(h, entry);
+    expect(takeStudioUndo(h)?.op).toEqual(entries[1]!.undo);
+    expect(h.past).toHaveLength(2);
+  });
+});
+
 describe("studio editor undo wiring", () => {
   it("records on CAS ack and exposes transport buttons + shortcuts", async () => {
     const { readFileSync } = await import("node:fs");
@@ -88,7 +107,8 @@ describe("studio editor undo wiring", () => {
     expect(editor).toMatch(/studioUndoShortcut\(event\)/);
     expect(editor).toMatch(/data-testid="studio-transport-undo"/);
     expect(editor).toMatch(/data-testid="studio-transport-redo"/);
-    expect(editor).toMatch(/committedDocRef\.current = next/);
+    // Acked document is written at once, not inside the setDoc updater (React may run that too late).
+    expect(editor).toMatch(/committedDocRef\.current = mutate\(committedDocRef\.current\);\s+docRef\.current = display\(docRef\.current\);\s+setDoc\(display\);/);
     expect(editor).toMatch(/history: false/);
     expect(editor).toMatch(/kind: "master_session"/);
     expect(editor).toMatch(/onCommitMasterSession/);

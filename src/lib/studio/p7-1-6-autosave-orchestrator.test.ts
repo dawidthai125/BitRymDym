@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   classifyPersistHttpFailure,
   classifyPersistNetworkFailure,
+  PERSIST_SLOW_RETRY_MS,
   persistBackoffMs,
   StudioPersistOrchestrator,
   type StudioPersistResult,
@@ -16,6 +17,13 @@ const root = process.cwd();
 function read(rel: string): string {
   return readFileSync(join(root, rel), "utf8");
 }
+
+/** Fires retries right away; the 30 s retry and label timers never fire. */
+const immediateSchedule = (fn: () => void, ms: number) => {
+  if (ms === 2000 || ms >= PERSIST_SLOW_RETRY_MS) return { cancel: () => undefined };
+  const id = setTimeout(fn, 0);
+  return { cancel: () => clearTimeout(id) };
+};
 
 describe("P7.1.6 persist orchestrator state machine", () => {
   it("CLEAN → DIRTY → SAVING → CLEAN", async () => {
@@ -317,25 +325,22 @@ describe("P7.1.6 persist orchestrator state machine", () => {
     orch.dispose();
   });
 
-  it("stale superseded failure does not overwrite newer pending mutation", async () => {
-    const applied: number[] = [];
-    let releaseA!: () => void;
-    const gateA = new Promise<void>((r) => {
-      releaseA = r;
-    });
-    const orch = new StudioPersistOrchestrator();
+  it("a failed save is retried before the newer mutation; neither is lost", async () => {
+    const applied: string[] = [];
+    let attemptsA = 0;
+    const orch = new StudioPersistOrchestrator({ schedule: immediateSchedule });
     orch.requestPersist(async () => {
-      await gateA;
-      return classifyPersistNetworkFailure("stale-A");
+      attemptsA += 1;
+      if (attemptsA === 1) return classifyPersistNetworkFailure("first-A");
+      return { ok: true, documentVersion: 8, apply: () => applied.push("A") };
     });
     orch.requestPersist(async () => ({
       ok: true,
       documentVersion: 9,
-      apply: () => applied.push(9),
+      apply: () => applied.push("B"),
     }));
-    releaseA();
     await vi.waitFor(() => expect(orch.getSnapshot().status).toBe("CLEAN"));
-    expect(applied).toEqual([9]);
+    expect(applied).toEqual(["A", "B"]);
     expect(orch.getSnapshot().lastError).toBeNull();
     orch.dispose();
   });
@@ -790,34 +795,30 @@ describe("P7.1.6 cross-surface persistence boundary", () => {
     orch.dispose();
   });
 
-  it("A network fail with B queued: B still sees unchanged version (no stale apply)", async () => {
+  it("A network fail with B queued: A retries on the same version, B runs after its ack", async () => {
     const versionRef = { current: 40 };
-    const expectedSeen: number[] = [];
-    let releaseA!: () => void;
-    const gateA = new Promise<void>((r) => {
-      releaseA = r;
+    const seen: string[] = [];
+    let attemptsA = 0;
+    const orch = new StudioPersistOrchestrator({ schedule: immediateSchedule });
+    const ack = () => ({
+      ok: true as const,
+      documentVersion: versionRef.current + 1,
+      apply: () => {
+        versionRef.current += 1;
+      },
     });
-    const orch = new StudioPersistOrchestrator();
     orch.requestPersist(async () => {
-      expectedSeen.push(versionRef.current);
-      await gateA;
-      return classifyPersistNetworkFailure("A-fail");
+      seen.push(`A${versionRef.current}`);
+      attemptsA += 1;
+      return attemptsA === 1 ? classifyPersistNetworkFailure("A-fail") : ack();
     });
     orch.requestPersist(async () => {
-      expectedSeen.push(versionRef.current);
-      return {
-        ok: true as const,
-        documentVersion: versionRef.current + 1,
-        apply: () => {
-          versionRef.current += 1;
-        },
-      };
+      seen.push(`B${versionRef.current}`);
+      return ack();
     });
-    expect(expectedSeen).toEqual([40]);
-    releaseA();
     await vi.waitFor(() => expect(orch.getSnapshot().status).toBe("CLEAN"));
-    expect(expectedSeen).toEqual([40, 40]);
-    expect(versionRef.current).toBe(41);
+    expect(seen).toEqual(["A40", "A40", "B41"]);
+    expect(versionRef.current).toBe(42);
     orch.dispose();
   });
 
@@ -887,5 +888,215 @@ describe("P7.1.6 cross-surface persistence boundary", () => {
     await vi.waitFor(() => expect(orch.getSnapshot().status).toBe("CLEAN"));
     expect(order).toEqual(["A-start", "A-end", "B", "C"]);
     orch.dispose();
+  });
+});
+
+describe("persist failures: nothing lost, nothing frozen, nothing re-run", () => {
+  const clientFailure = (message = "nie wolno") =>
+    classifyPersistHttpFailure({ status: 400, message });
+
+  it("429 and 408 are retried, 400/403/404 are not", () => {
+    expect(classifyPersistHttpFailure({ status: 429 }).retryable).toBe(true);
+    expect(classifyPersistHttpFailure({ status: 408 }).retryable).toBe(true);
+    for (const status of [400, 403, 404]) {
+      expect(classifyPersistHttpFailure({ status }).retryable).toBe(false);
+    }
+  });
+
+  it("a refused operation is dropped, reported, rolled back and never re-run", async () => {
+    let runs = 0;
+    const rejected: string[] = [];
+    let rollbacks = 0;
+    const orch = new StudioPersistOrchestrator({
+      onRejected: (f, info) => rejected.push(`${f.message}:${info.awaited}`),
+      onRollback: () => {
+        rollbacks += 1;
+      },
+    });
+    orch.requestPersist(
+      async () => {
+        runs += 1;
+        return clientFailure();
+      },
+      { blocking: true },
+    );
+    await orch.whenIdle();
+    const snap = orch.getSnapshot();
+    expect(snap.status).toBe("SAVE_FAILED");
+    expect(snap.lastError).toBe("nie wolno");
+    expect(snap.queued).toBe(false);
+    expect(snap.blocking).toBe(false);
+    expect(snap.unsaved).toBe(false);
+    expect(rejected).toEqual(["nie wolno:false"]);
+    expect(rollbacks).toBe(1);
+
+    orch.requestPersist(async () => ({ ok: true, documentVersion: 2 }));
+    await vi.waitFor(() => expect(orch.getSnapshot().status).toBe("CLEAN"));
+    expect(runs).toBe(1);
+    orch.dispose();
+  });
+
+  it("a refusal followed by a success in the same burst is not reported as saved", async () => {
+    const applied: string[] = [];
+    const order: string[] = [];
+    const orch = new StudioPersistOrchestrator({
+      onRollback: () => order.push("rollback"),
+    });
+    orch.requestPersist(async () => clientFailure("limit"));
+    orch.requestPersist(async () => ({
+      ok: true,
+      documentVersion: 2,
+      apply: () => {
+        applied.push("B");
+        order.push("B");
+      },
+    }));
+    await orch.whenIdle();
+    expect(applied).toEqual(["B"]);
+    // Roll back only once the queue is done, so B's acked value survives.
+    expect(order).toEqual(["B", "rollback"]);
+    expect(orch.getSnapshot().label).toBe("Nie zapisano");
+    expect(orch.getSnapshot().lastError).toBe("limit");
+    orch.dispose();
+  });
+
+  it("offline: keeps every change in order, flush returns, controls are not locked, retryNow saves all", async () => {
+    let online = false;
+    const applied: string[] = [];
+    const make = (name: string) => async (): Promise<StudioPersistResult> =>
+      online
+        ? { ok: true, documentVersion: 1, apply: () => applied.push(name) }
+        : classifyPersistNetworkFailure();
+    const orch = new StudioPersistOrchestrator({ schedule: immediateSchedule });
+    orch.requestPersist(make("A"), { blocking: true });
+    orch.requestPersist(make("B"));
+    await orch.whenIdle();
+    let snap = await orch.flush();
+    expect(snap.status).toBe("SAVE_FAILED");
+    expect(snap.queued).toBe(true);
+    expect(snap.unsaved).toBe(true);
+    expect(snap.blocking).toBe(false);
+    expect(applied).toEqual([]);
+    online = true;
+    orch.retryNow();
+    snap = await orch.whenIdle();
+    expect(applied).toEqual(["A", "B"]);
+    expect(snap.status).toBe("CLEAN");
+    orch.dispose();
+  });
+
+  it("awaited operation: retried, then settled with failure and never run again", async () => {
+    let runs = 0;
+    const orch = new StudioPersistOrchestrator({ schedule: immediateSchedule });
+    const result = await orch.requestPersistAsync(async () => {
+      runs += 1;
+      return classifyPersistNetworkFailure("sieć");
+    });
+    expect(result.ok).toBe(false);
+    expect(runs).toBe(4);
+    expect(orch.getSnapshot().queued).toBe(false);
+    orch.retryNow();
+    orch.requestPersist(async () => ({ ok: true, documentVersion: 2 }));
+    await vi.waitFor(() => expect(orch.getSnapshot().status).toBe("CLEAN"));
+    expect(runs).toBe(4);
+    orch.dispose();
+  });
+
+  it("awaited operation that recovers on retry settles with success", async () => {
+    let runs = 0;
+    const orch = new StudioPersistOrchestrator({ schedule: immediateSchedule });
+    const result = await orch.requestPersistAsync(async () => {
+      runs += 1;
+      return runs === 1
+        ? classifyPersistNetworkFailure()
+        : { ok: true, documentVersion: 5 };
+    });
+    expect(result.ok).toBe(true);
+    orch.dispose();
+  });
+
+  it("every awaited promise settles: throw, conflict, waiting behind a conflict or a stalled save", async () => {
+    const thrown = new StudioPersistOrchestrator({ schedule: immediateSchedule });
+    const t = await thrown.requestPersistAsync(async () => {
+      throw new Error("boom");
+    });
+    expect(t).toMatchObject({ ok: false, message: expect.stringContaining("Brak połączenia") });
+
+    const conflicted = new StudioPersistOrchestrator();
+    const head = conflicted.requestPersistAsync(async () =>
+      classifyPersistHttpFailure({ status: 409, message: "zmieniony" }),
+    );
+    const behind = conflicted.requestPersistAsync(async () => ({ ok: true, documentVersion: 1 }));
+    expect(await head).toMatchObject({ ok: false, kind: "conflict" });
+    expect(await behind).toMatchObject({ ok: false, kind: "conflict" });
+
+    const stalled = new StudioPersistOrchestrator({ schedule: immediateSchedule });
+    let lateRuns = 0;
+    stalled.requestPersist(async () => classifyPersistNetworkFailure());
+    const late = await stalled.requestPersistAsync(async () => {
+      lateRuns += 1;
+      return { ok: true, documentVersion: 1 };
+    });
+    expect(late).toMatchObject({ ok: false, kind: "network" });
+    expect(lateRuns).toBe(0);
+    expect(stalled.getSnapshot().queued).toBe(true);
+  });
+
+  it("a draft returned to the saved value stops being dirty", () => {
+    const orch = new StudioPersistOrchestrator();
+    orch.markDirty();
+    expect(orch.getSnapshot().unsaved).toBe(true);
+    orch.clearDirty();
+    expect(orch.getSnapshot().status).toBe("CLEAN");
+  });
+
+  it("markDirty does not cancel a waiting retry", async () => {
+    let runs = 0;
+    let fire: (() => void) | null = null;
+    const orch = new StudioPersistOrchestrator({
+      schedule: (fn) => {
+        fire = fn;
+        return {
+          cancel: () => {
+            if (fire === fn) fire = null;
+          },
+        };
+      },
+    });
+    orch.requestPersist(async () => {
+      runs += 1;
+      return runs === 1 ? classifyPersistNetworkFailure() : { ok: true, documentVersion: 2 };
+    });
+    await vi.waitFor(() => expect(fire).not.toBeNull());
+    orch.markDirty();
+    expect(orch.getSnapshot().status).toBe("SAVE_FAILED");
+    expect(orch.getSnapshot().lastError).not.toBeNull();
+    (fire as unknown as () => void)();
+    expect(runs).toBe(2);
+    orch.dispose();
+  });
+
+  it("dispose finishes the queue silently instead of dropping it", async () => {
+    const saved: string[] = [];
+    let notifications = 0;
+    let release!: () => void;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const orch = new StudioPersistOrchestrator({
+      onChange: () => {
+        notifications += 1;
+      },
+    });
+    orch.requestPersist(async () => {
+      await gate;
+      return { ok: true, documentVersion: 2, apply: () => saved.push("A") };
+    });
+    orch.requestPersist(async () => ({ ok: true, documentVersion: 3, apply: () => saved.push("B") }));
+    const before = notifications;
+    orch.dispose();
+    release();
+    await vi.waitFor(() => expect(saved).toEqual(["A", "B"]));
+    expect(notifications).toBe(before);
   });
 });

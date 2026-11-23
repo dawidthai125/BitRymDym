@@ -7,6 +7,7 @@ import {
   isStudioExportPublicErrorCode,
   studioExportPublicErrorMessage,
 } from "@/lib/audio/studio-export-failure-contract";
+import { looksLikePolishUserMessage } from "@/lib/ui/user-errors";
 import { STUDIO_TAKE_EXPIRED_ERROR_PL } from "@/lib/studio/studio-audio-errors";
 
 /**
@@ -154,11 +155,18 @@ export function mapStudioExportDownloadHttpResult(input: {
     };
   }
   if (input.httpStatus === 403) {
+    // The server explains a refused download in Polish (plan, unlocks used up, storage time over).
     return {
       ok: false,
       httpStatus: 403,
-      message: "Brak uprawnień do pobrania tego pliku.",
+      message:
+        typeof input.json.error === "string" && /[ąćęłńóśźż]|Twoim planie/i.test(input.json.error)
+          ? input.json.error
+          : "Brak uprawnień do pobrania tego pliku.",
     };
+  }
+  if (input.httpStatus === 429) {
+    return { ok: false, httpStatus: 429, message: STUDIO_EXPORT_RATE_LIMITED };
   }
   if (input.httpStatus === 404) {
     return {
@@ -205,7 +213,13 @@ export type StudioExportApiPayload = {
   errorMessage?: string | null;
   code?: string;
   error?: string;
+  /** Latest GET: the plan covers WAV export (the server checks again on POST). */
+  canExport?: boolean;
 };
+
+export const STUDIO_EXPORT_PLAN_MESSAGE =
+  "Eksport WAV jest w planie Gold. Po masteringu pobierzesz utwór w jakości swojego planu.";
+export const STUDIO_EXPORT_RATE_LIMITED = "Za dużo prób naraz. Odczekaj minutę i spróbuj ponownie.";
 
 export type StudioExportMappedResult =
   | {
@@ -264,6 +278,10 @@ export function mapStudioExportHttpResult(input: {
 
   const { httpStatus, json } = input;
 
+  if (httpStatus === 403 && json.code === "PLAN") {
+    return { ok: false, phase: "FAILED", httpStatus, code: "PLAN", message: STUDIO_EXPORT_PLAN_MESSAGE };
+  }
+
   if (httpStatus === 401 || httpStatus === 403) {
     return {
       ok: false,
@@ -285,6 +303,15 @@ export function mapStudioExportHttpResult(input: {
       code: json.code,
       message: "Projekt lub zadanie eksportu nie zostało znalezione.",
     };
+  }
+
+  if (httpStatus === 429) {
+    return { ok: false, phase: "FAILED", httpStatus, code: json.code, message: STUDIO_EXPORT_RATE_LIMITED };
+  }
+
+  // "Dodaj własne nagranie…" and the like: our own Polish explanation beats "try again".
+  if (httpStatus === 400 && json.code === "INVALID" && typeof json.error === "string" && looksLikePolishUserMessage(json.error)) {
+    return { ok: false, phase: "FAILED", httpStatus, code: "INVALID", message: json.error };
   }
 
   if (httpStatus === 409 && json.code === "CONFLICT") {

@@ -222,7 +222,9 @@ describe("device profile + warnings", () => {
       join(process.cwd(), "src/components/studio/studio-recording-panel.tsx"),
       "utf8",
     );
-    expect(panel).toMatch(/recPositionMs:\s*recPositionMs\s*\?\?\s*0/);
+    // The planned lead (0 without a count-in) stands in for a missing sample; compensation stays.
+    expect(panel).toMatch(/recPositionMs:\s*recPositionMs\s*\?\?\s*align\.headMs/);
+    expect(panel).toMatch(/align\.headMs = 0;/);
     expect(panel).toMatch(/compensationMs:\s*align\.compensationMs/);
     // Lane/punch must not drop null samples (empty starts → no capture).
     expect(panel).toMatch(/recordingPositionOf\([\s\S]*?\)\s*\?\?\s*0/);
