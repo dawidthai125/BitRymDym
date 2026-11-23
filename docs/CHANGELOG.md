@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (13) — Profile marki
+
+- Kanał YouTube @bitrymdym (konto marki na Google Dawida, ID UCW_rCfBRpEUgAHPpo1V36nA). `src/lib/seo/social.ts` → link w stopce (`rel="me"`) + `sameAs`/`email` w JSON-LD Organization.
+
 ## 2026-11-23 (12) — SEO: słownik rymów
 
 - `/rymy` (wyszukiwarka, `?q=` noindex) i `/rymy/[słowo]` dla ~3000 najczęstszych słów + stała lista słownictwa rapowego. Silnik `src/lib/rymy/rhyme.ts` (akcent na przedostatnią, ó/rz/ch, zmiękczenia, ubezdźwięcznienie): rymy wielosylabowe, dokładne, niedokładne. Dane `src/lib/rymy/words.json` (FrequencyWords CC BY-SA 4.0, filtr SJP.PL CC BY 4.0; `scripts/build-rymy-words.mjs`, README w katalogu). Sitemap, stopka, strona główna.

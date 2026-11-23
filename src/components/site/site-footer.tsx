@@ -8,6 +8,7 @@ import { siteConfig } from "@/config/site";
 import { LEGAL_PATHS } from "@/lib/legal/legal-config";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { EN_LANDING_PAGES, englishLandingPath } from "@/lib/seo/landing-pages-en";
+import { SOCIAL_PROFILES } from "@/lib/seo/social";
 import { isStoreApp } from "@/lib/site/store-app-server";
 
 export async function SiteFooter() {
@@ -60,6 +61,11 @@ export async function SiteFooter() {
           <Link href={LEGAL_PATHS.privacy} className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{t("prywatnosc")}</Link>
           <Link href={LEGAL_PATHS.cookies} className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{t("cookies")}</Link>
           {storeApp ? null : <CookieSettingsButton />}
+          {SOCIAL_PROFILES.map((p) => (
+            <a key={p.url} href={p.url} rel="me noopener" target="_blank" className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">
+              {p.name}
+            </a>
+          ))}
         </nav>
         <LanguageSwitcher />
       </div>

@@ -3,6 +3,7 @@
  * Serialized through serializeJsonLd so DB text cannot close the <script> tag
  * (Next.js JSON-LD guide: escape "<").
  */
+import { SOCIAL_PROFILES } from "@/lib/seo/social";
 import { absoluteUrl } from "@/lib/share/share-links";
 
 export type JsonLdObject = { [key: string]: JsonLdValue };
@@ -128,6 +129,8 @@ export function organizationJsonLd(origin: string): JsonLdObject {
     name: BRAND,
     url,
     logo: absoluteUrl(origin, LOGO_PATH),
+    email: "kontakt@bitrymdym.pl",
+    sameAs: SOCIAL_PROFILES.map((p) => p.url),
   };
 }
 
