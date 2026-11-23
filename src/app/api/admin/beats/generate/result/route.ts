@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { pollBeatGeneration, requireAdminGenerator } from "@/lib/beats/ai-beat/generate";
+import { pollBeatGeneration, requireAdminGenerator, ensureDistinctBeatTitle } from "@/lib/beats/ai-beat/generate";
 import { ingestGeneratedBeat } from "@/lib/beats/ai-beat/ingest";
 import {
   normalizeBeatDescription,
@@ -80,10 +80,11 @@ export async function POST(request: Request) {
 
     ownsSave = true;
     saving.add(generationId);
+    const title = await ensureDistinctBeatTitle(sanitizeBeatTitle(body?.title), description);
     const stored = await ingestGeneratedBeat({
       bytes: polled.bytes,
       contentType: polled.contentType,
-      title: sanitizeBeatTitle(body?.title),
+      title,
       description,
       style: sanitizeBeatStyle(body?.style),
       styleDescription: sanitizeBeatOpis(body?.opis),

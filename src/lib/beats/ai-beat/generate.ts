@@ -3,7 +3,7 @@ import "server-only";
 import { AuthError, requirePermission } from "@/lib/auth/session";
 import { BeatRequestError } from "@/lib/beats/request-error";
 import { rewriteBeatPrompt, suggestDistinctTitle } from "@/lib/beats/ai-beat/rewrite";
-import { pickDistinctTitle } from "@/lib/beats/ai-beat/title-variety";
+import { pickDistinctTitle, titleRejectReason } from "@/lib/beats/ai-beat/title-variety";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   STABLE_AUDIO_MODEL,
@@ -31,7 +31,7 @@ export async function requireAdminGenerator() {
 }
 
 /** Titles already in the catalogue (newest first) — new names must not echo them. */
-async function existingBeatTitles(): Promise<string[]> {
+export async function existingBeatTitles(): Promise<string[]> {
   try {
     const { data } = await createSupabaseAdminClient()
       .from("beats")
@@ -42,6 +42,21 @@ async function existingBeatTitles(): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+/**
+ * Last check before a generated beat is saved (result route, 120 s budget): a title that
+ * echoes the catalogue gets up to two fresh suggestions; otherwise it is kept.
+ */
+export async function ensureDistinctBeatTitle(title: string, description: string): Promise<string> {
+  const existing = await existingBeatTitles();
+  if (titleRejectReason(title, existing) === null) return title;
+  const xai = { apiKey: process.env.XAI_API_KEY, model: process.env.BITEK_XAI_MODEL || "grok-4.7" };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const next = await suggestDistinctTitle(description, existing, xai);
+    if (next) return next;
+  }
+  return title;
 }
 
 function stabilityKey(): string {
