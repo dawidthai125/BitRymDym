@@ -12,7 +12,7 @@ Format: data, zakres, skrót.
 
 ## 2026-11-23 (14) — Profile marki (2)
 
-- `social.ts`: Instagram, Facebook (strona 61596562513740), SoundCloud, Bluesky `@bitrymdym.pl` (TXT `_atproto` w Vercel DNS). TikTok — po potwierdzeniu nicka.
+- `social.ts`: Instagram, Facebook (strona 61596562513740), SoundCloud, Bluesky `@bitrymdym.pl` (TXT `_atproto` w Vercel DNS). TikTok `@bitrymdym` dopisany (feb2986+1).
 
 ## 2026-11-23 (13) — Profile marki
 
