@@ -4,6 +4,7 @@ import { catalogLaneOf } from "@/lib/beats/catalog-lane";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { listPublicWorkSitemapEntries } from "@/lib/catalog/catalog-service";
 import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
+import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
 /** Public, indexable pages only (no auth-gated or API routes). */
@@ -18,6 +19,7 @@ const PUBLIC_PATHS = [
   "/about",
   "/jak-nagrac",
   "/nagrywarka",
+  "/mastering",
   "/premium",
 ];
 
@@ -33,6 +35,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${base}${path === "/" ? "" : path}`,
     changeFrequency: path === "/beats" ? "daily" : "weekly",
     priority: path === "/" ? 1 : 0.7,
+  }));
+
+  // Keyword landing pages (src/lib/seo/landing-pages.ts): evergreen copy, high priority.
+  const landingEntries: MetadataRoute.Sitemap = LANDING_PAGES.map((page) => ({
+    url: `${base}${landingPath(page.slug)}`,
+    changeFrequency: "weekly",
+    priority: 0.8,
   }));
 
   // Same visibility as /beats and /utwory (PUBLISHED + public; live works). A DB hiccup
@@ -66,5 +75,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticEntries, ...genreEntries, ...beatEntries, ...workEntries];
+  return [...staticEntries, ...landingEntries, ...genreEntries, ...beatEntries, ...workEntries];
 }

@@ -5,6 +5,7 @@ import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { InstallAppButton } from "@/components/site/pwa-install";
 import { siteConfig } from "@/config/site";
 import { LEGAL_PATHS } from "@/lib/legal/legal-config";
+import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { isStoreApp } from "@/lib/site/store-app-server";
 
 export async function SiteFooter() {
@@ -36,6 +37,13 @@ export async function SiteFooter() {
             <Link href="/premium" className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{nav("premium")}</Link>
           )}
           <InstallAppButton />
+        </nav>
+        <nav aria-label="Na skróty" className="flex w-full flex-wrap gap-x-4 gap-y-0 text-xs text-[var(--brd-mute)]" data-testid="footer-landing-links">
+          {LANDING_PAGES.filter((p) => !(p.webOnly && storeApp)).map((p) => (
+            <Link key={p.slug} href={landingPath(p.slug)} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+              {p.navLabel}
+            </Link>
+          ))}
         </nav>
         <nav aria-label={t("nawigacja")} className="flex flex-wrap gap-x-4 gap-y-0">
           <Link href={LEGAL_PATHS.terms} className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{t("regulamin")}</Link>

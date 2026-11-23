@@ -199,3 +199,20 @@ export function beatListJsonLd(
     })),
   };
 }
+
+/** FAQPage for keyword landing pages (questions answered on the page itself). */
+export function faqPageJsonLd(
+  origin: string,
+  input: { path: string; items: readonly { q: string; a: string }[] },
+): JsonLdObject {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "@id": `${absoluteUrl(origin, input.path)}#faq`,
+    mainEntity: input.items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
+}

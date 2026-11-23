@@ -6,6 +6,13 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (3) — SEO: strony pod frazy, FAQ, IndexNow
+
+- **7 stron pod frazy** (`src/lib/seo/landing-pages.ts`, widok `src/components/seo/landing-page-view.tsx`): `/darmowe-bity-do-rapu`, `/podklady-do-rapu`, `/studio-nagran-online`, `/nagrywanie-rapu-w-domu`, `/mix-i-mastering-online`, `/program-do-nagrywania-rapu`, `/bity-na-wylacznosc` (tylko web; w aplikacji ze sklepu 404). Każda: treść, FAQ z JSON-LD `FAQPage`, okruszki, najnowsze bity z katalogu, linki „Zobacz też”.
+- Stopka: rząd „Na skróty” z linkami do tych stron (link wewnętrzny z każdej podstrony).
+- Sitemap: strony pod frazy (priorytet 0.8) i brakujące `/mastering`.
+- IndexNow: klucz `public/6545ce2448cf1e9a928a15254fa51754.txt`, `node scripts/indexnow-ping.mjs` zgłasza całą sitemap do Bing/Yandex/Seznam.
+
 ## 2026-11-23 (2) — SEO: poradnik i lżejsze listy (775bd69, wdrożone)
 
 - **/jak-nagrac:** sekcja „Jak nagrać rap w domu — krok po kroku” (7 kroków, `common.howToPage.kroki.k1–k7`, linki /beats, /nagrywarka, /utwory); zgłoszona do indeksowania w GSC.
