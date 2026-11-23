@@ -1,0 +1,10 @@
+[Unit]
+Description=BitRymDym catalogue files backup every Sunday
+
+[Timer]
+OnCalendar=Sun *-*-* 03:20:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

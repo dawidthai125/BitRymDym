@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (26) — Kopia plików katalogu na Contabo
+
+- `scripts/files-backup.mjs` + `deploy/systemd/bitrymdym-files-backup.{service,timer}` (niedziela 3:20): bity, sample z katalogu i okładki ze Storage, szyfrowane kluczem publicznym GPG w locie. Klucz prywatny poza serwerem. Tylko nowe i zmienione pliki, usunięte trzymane 30 dni, 12 ostatnich spisów, mail przy błędzie. Bez nagrań i prywatnych sampli użytkowników. Testy: `node --test scripts/files-backup.test.mjs`.
+
 ## 2026-11-23 (25) — Vercel: wstrzymanie strony i mniejsze zużycie procesora
 
 - Vercel (plan Hobby) wstrzymał wszystkie projekty: limit 4 h Fluid Active CPU / 30 dni, zużyte 4 h 45 min (BitRymDym 4 h 28 min). Dawid przeszedł na Pro, strona wróciła.

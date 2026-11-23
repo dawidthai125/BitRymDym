@@ -1,0 +1,25 @@
+[Unit]
+Description=BitRymDym weekly encrypted copy of catalogue files
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+StateDirectory=bitrymdym-files-backup
+StateDirectoryMode=0700
+UMask=0077
+EnvironmentFile=/etc/bitrymdym-e3-worker/worker.env
+EnvironmentFile=/etc/bitrymdym-e3-worker/master.env
+EnvironmentFile=/etc/bitrymdym-site-watch/alert.env
+Environment=BACKUP_PUBLIC_KEY=/opt/bitrymdym-files-backup/public.asc
+ExecStart=/usr/bin/node /opt/bitrymdym-files-backup/files-backup.mjs
+TimeoutStartSec=3h
+Nice=15
+IOSchedulingClass=idle
+CPUQuota=100%
+MemoryMax=1G
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
