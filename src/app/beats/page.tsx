@@ -17,6 +17,9 @@ import { listPublishedBeats } from "@/lib/beats/service";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { isStoreApp } from "@/lib/site/store-app-server";
 import { presentBeats } from "@/lib/ui/demo-beats";
+import { beatListJsonLd } from "@/lib/seo/json-ld";
+import { JsonLdScript } from "@/lib/seo/json-ld-script";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -32,6 +35,7 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const tl = await getLibText();
   const t = await getTranslations("beats.beatsPage");
   const catalog = await getTranslations("community.catalog");
+  const seoTitle = (await getTranslations("beats.genrePage"))("okruszekBity");
   const params = searchParams ? await searchParams : {};
   const source = params.zrodlo === "user" ? "USER" : "PLATFORM";
   const mine = params.katalog === "moj";
@@ -59,6 +63,10 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
+        {/* Canonical /beats view only (free platform catalogue); filtered variants share the canonical URL. */}
+        {!mine && !paid && source === "PLATFORM" && beats.length > 0 ? (
+          <JsonLdScript data={beatListJsonLd(getPublicSiteUrl(), { name: seoTitle, path: "/beats", beats })} />
+        ) : null}
         <PageFrame width="wide" className="py-5 sm:py-6">
           <CommunityShelf current="beats" />
           <CommunitySource kind="beats" source={source === "USER" ? "user" : "brd"} />

@@ -14,7 +14,7 @@ import { loadWorkClips } from "@/lib/catalog/work-clip-server";
 import { loadThread } from "@/lib/community/community-service";
 import { absoluteUrl, clampText } from "@/lib/share/share-links";
 import { getPublicSiteUrl } from "@/lib/site-url";
-import { workRecordingJsonLd } from "@/lib/seo/json-ld";
+import { breadcrumbJsonLd, workRecordingJsonLd } from "@/lib/seo/json-ld";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
 
 type Props = { params: Promise<{ id: string }> };
@@ -59,6 +59,12 @@ export default async function FinishedWorkPage({ params }: Props) {
             datePublished: work.publishedAt,
             image: `/utwor/${work.id}/opengraph-image`,
           })}
+        />
+        <JsonLdScript
+          data={breadcrumbJsonLd(getPublicSiteUrl(), [
+            { name: t("okruszekUtwory"), path: "/utwory" },
+            { name: work.title, path: `/utwor/${work.id}` },
+          ])}
         />
         <PageFrame width="wide" className="py-5 sm:py-6">
           <CommunityShelf current="works" />

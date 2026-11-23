@@ -7,7 +7,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: "/",
+      // Beat covers live under /api/ but are public images (Google Images, JSON-LD image).
+      allow: ["/", "/api/beats/*/cover"],
       disallow: [
         "/api/",
         "/admin",
@@ -17,6 +18,7 @@ export default function robots(): MetadataRoute.Robots {
         "/studio",
         "/auth/",
         "/listen/",
+        "/r/",
       ],
     },
     sitemap: `${base}/sitemap.xml`,

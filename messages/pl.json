@@ -22,7 +22,7 @@
     },
     "howToPage": {
       "metaTitle": "Jak nagrać utwór na BitRymDym",
-      "metaDescription": "Wskazówki do nagrania, limity planów i zasady licencji na utwór.",
+      "metaDescription": "Jak nagrać rap w przeglądarce krok po kroku: wybór bitu, nagranie zwrotki w Studiu online, mix, mastering, limity planów i licencja na utwór.",
       "etykieta": "Jak to działa",
       "tytul": "Jak nagrać utwór",
       "wstep": "Ta strona zbiera zasady: jak wygląda nagranie w praktyce, ile wolno na Twoim planie i co wolno zrobić z gotowym utworem. Pełny opis produktu i film są w sekcji „Jak to działa” na stronie głównej.",
@@ -53,7 +53,7 @@
     },
     "aboutPage": {
       "metaTitle": "O BitRymDym",
-      "metaDescription": "Bity, nagranie i Studio. BITEK proponuje mix i mastering po Twojej prośbie.",
+      "metaDescription": "O BitRymDym — darmowe bity, nagrywanie online i Studio z mixem i masteringiem. Zobacz, jak działa serwis od bitu do gotowego kawałka.",
       "oBitrymdym": "O BitRymDym",
       "bitGlosStudio": "Bit. Głos. Studio.",
       "bitrymdymToMiejsceW": "BitRymDym to miejsce, w którym znajdujesz bity, nagrywasz głos i składasz numer w Studiu. BITEK proponuje mix i mastering — stosujesz je, gdy chcesz.",
@@ -1874,7 +1874,20 @@
       "lead": "Same bity {genre}, za darmo. Słuchasz, wybierasz, a jak siądzie — nagrywasz zwrotkę w Studiu online. Bez instalowania i bez kombinowania.",
       "licznik": "{count, plural, one {# bit} few {# bity} many {# bitów} other {# bitu}} · słuchaj, potem nagraj",
       "wszystkieBity": "← Wszystkie bity",
-      "inneGatunki": "Inne gatunki"
+      "inneGatunki": "Inne gatunki",
+      "okruszekBity": "Darmowe bity",
+      "oGatunku": "Bity {genre} — o co chodzi",
+      "introDefault": "Tu masz wszystkie darmowe bity {genre} z katalogu BitRymDym w jednym miejscu. Każdy odsłuchasz za free, a ten, który siądzie, odpalasz w Studiu online i nagrywasz na nim zwrotkę prosto w przeglądarce.",
+      "intro": {
+        "boom-bap": "Boom bap to klasyka rapu: ciężki kick, suchy, mocny werbel, sample z winyli i bujający swing. Tempo zwykle kręci się koło 85–95 BPM, więc jest miejsce na gęste wersy i storytelling. Jak lubisz brzmienie złotej ery i nawijkę, która niesie się na bębnach, to tu jest Twój bit.",
+        "hip-hop": "Hip-hop to szeroki worek: od klasycznych bębnów po nowocześniejsze, czyste produkcje. Te bity sprawdzą się pod zwrotkę, refren i freestyle, a średnie tempo daje swobodę flow — możesz nawijać spokojnie albo dociskać double time.",
+        "lo-fi-hip-hop": "Lo-fi hip-hop to ciepłe, przybrudzone brzmienie: szum taśmy, przytłumione klawisze, miękkie bębny i luźny groove. Wolniejsze tempo i spokojny klimat idealnie siadają pod refleksyjne teksty, melodyjne nawijki i nagrania na luzie.",
+        "trap": "Trap to ciężkie 808, szybkie hi-haty z rolkami i mroczne melodie. Tempo zwykle zapisuje się jako 130–160 BPM, ale bębny grają w połowie, więc flow może być zarówno leniwy, jak i szybki, z triolami. Pod bangery, autotune i mocne refreny."
+      },
+      "tempoRange": "Tempo w tym katalogu: {min}–{max} BPM",
+      "tempoOne": "Tempo w tym katalogu: {bpm} BPM",
+      "tonacje": "Najczęstsze tonacje: {keys}",
+      "jakNagrac": "Nagrywasz w <studio>Studiu online</studio> — bez instalowania, wystarczy mikrofon i przeglądarka. Na Windowsie możesz też użyć <nagrywarka>Nagrywarki</nagrywarka>."
     },
     "beatsUploadPage": {
       "metaTitle": "Dodaj bit",
@@ -5030,7 +5043,8 @@
       "featuredNote": "Słowo od ekipy",
       "featuredOpen": "Wbijaj do utworu",
       "featuredAll": "Wszystkie utwory",
-      "featuredCover": "Okładka: {title}"
+      "featuredCover": "Okładka: {title}",
+      "okruszekUtwory": "Katalog utworów"
     },
     "sampleCatalog": {
       "sortuj": "Sortuj",

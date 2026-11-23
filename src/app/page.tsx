@@ -22,6 +22,9 @@ import { listPublishedBeats } from "@/lib/beats/service";
 import { loadFeaturedWorkOfWeek } from "@/lib/catalog/featured-work-server";
 import { isStoreApp } from "@/lib/site/store-app-server";
 import { presentBeats } from "@/lib/ui/demo-beats";
+import { organizationJsonLd, webApplicationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
+import { JsonLdScript } from "@/lib/seo/json-ld-script";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import type { PremiumTier } from "@/types/premium";
 import { cn } from "@/lib/utils";
 
@@ -91,6 +94,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 
 export default async function HomePage() {
   const t = await getTranslations("home.page");
+  const seo = await getTranslations("meta.pages");
   const tc = await getTranslations("home.page.consts");
   const locale = await getLocale();
   const money = new Intl.NumberFormat(locale === "en" ? "en-GB" : "pl-PL", {
@@ -287,6 +291,9 @@ export default async function HomePage() {
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-surface tape-grain overflow-hidden">
+        <JsonLdScript data={organizationJsonLd(getPublicSiteUrl())} />
+        <JsonLdScript data={websiteJsonLd(getPublicSiteUrl(), seo("homeDescription"))} />
+        <JsonLdScript data={webApplicationJsonLd(getPublicSiteUrl(), seo("homeDescription"))} />
         {/* HERO — poster type + the loaded tape */}
         <section aria-labelledby="home-hero" className="border-b border-tape-line">
           <div

@@ -11,7 +11,7 @@ type PageProps = { searchParams?: Promise<{ next?: string | string[] }> };
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("auth.signUpPage");
-  return { title: t("metaTitle") };
+  return { title: t("metaTitle"), robots: { index: false, follow: true } };
 }
 
 export default async function SignUpPage({ searchParams }: PageProps) {

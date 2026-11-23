@@ -102,3 +102,54 @@ describe("JSON-LD", () => {
     ).toMatchObject({ "@type": "MusicRecording", url: "https://x.pl/utwor/w1", byArtist: { name: "Ktoś" } });
   });
 });
+
+describe("site-level JSON-LD", () => {
+  const origin = "https://www.bitrymdym.pl";
+
+  it("links WebSite and WebApplication to the Organization", async () => {
+    const { organizationJsonLd, websiteJsonLd, webApplicationJsonLd } = await import("@/lib/seo/json-ld");
+    const org = organizationJsonLd(origin);
+    expect(org["@id"]).toBe("https://www.bitrymdym.pl/#organization");
+    expect(org.logo).toBe("https://www.bitrymdym.pl/brand/bitrymdym-logo.png");
+    expect(websiteJsonLd(origin, "opis").publisher).toEqual({ "@id": org["@id"] });
+    const app = webApplicationJsonLd(origin, "opis");
+    expect(app["@type"]).toBe("WebApplication");
+    expect(app.offers).toEqual({ "@type": "Offer", price: "0", priceCurrency: "PLN" });
+  });
+
+  it("builds breadcrumbs with absolute URLs and positions", async () => {
+    const { breadcrumbJsonLd } = await import("@/lib/seo/json-ld");
+    const ld = breadcrumbJsonLd(origin, [
+      { name: "Darmowe bity", path: "/beats" },
+      { name: "Boom bap", path: "/beats/gatunek/boom-bap" },
+    ]);
+    expect(ld.itemListElement).toEqual([
+      { "@type": "ListItem", position: 1, name: "Darmowe bity", item: "https://www.bitrymdym.pl/beats" },
+      { "@type": "ListItem", position: 2, name: "Boom bap", item: "https://www.bitrymdym.pl/beats/gatunek/boom-bap" },
+    ]);
+  });
+
+  it("lists beat URLs and caps the list", async () => {
+    const { beatListJsonLd } = await import("@/lib/seo/json-ld");
+    const beats = Array.from({ length: 60 }, (_, i) => ({ id: `b${i}`, title: `Bit ${i}` }));
+    const ld = beatListJsonLd(origin, { name: "Bity", path: "/beats", beats });
+    expect(ld.numberOfItems).toBe(50);
+    expect((ld.itemListElement as Array<{ url: string }>)[0]!.url).toBe("https://www.bitrymdym.pl/beat/b0");
+  });
+});
+
+describe("genreStats", () => {
+  it("reports the real tempo range and most common keys", async () => {
+    const { genreStats } = await import("@/lib/seo/genre-pages");
+    expect(
+      genreStats([
+        { bpm: 88.4, key: "Am" },
+        { bpm: 92, key: "Am" },
+        { bpm: 0, key: "Dm" },
+        { bpm: 85, key: "—" },
+        { bpm: null, key: null },
+      ]),
+    ).toEqual({ bpmMin: 85, bpmMax: 92, topKeys: ["Am", "Dm"] });
+    expect(genreStats([])).toEqual({ bpmMin: null, bpmMax: null, topKeys: [] });
+  });
+});

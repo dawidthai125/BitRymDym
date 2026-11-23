@@ -114,3 +114,88 @@ export function workRecordingJsonLd(input: WorkRecordingInput): JsonLdObject {
     datePublished: clean(input.datePublished),
   };
 }
+
+const BRAND = "BitRymDym";
+const LOGO_PATH = "/brand/bitrymdym-logo.png";
+
+/** Organization behind the site (home page). */
+export function organizationJsonLd(origin: string): JsonLdObject {
+  const url = absoluteUrl(origin, "/");
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${url}#organization`,
+    name: BRAND,
+    url,
+    logo: absoluteUrl(origin, LOGO_PATH),
+  };
+}
+
+/** WebSite entity (home page): site name for Google results. */
+export function websiteJsonLd(origin: string, description: string): JsonLdObject {
+  const url = absoluteUrl(origin, "/");
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${url}#website`,
+    name: BRAND,
+    url,
+    inLanguage: "pl-PL",
+    description,
+    publisher: { "@id": `${url}#organization` },
+  };
+}
+
+/** Browser Studio as a free web application (home page). */
+export function webApplicationJsonLd(origin: string, description: string): JsonLdObject {
+  const url = absoluteUrl(origin, "/");
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: `${BRAND} Studio`,
+    url,
+    description,
+    applicationCategory: "MultimediaApplication",
+    operatingSystem: "Web",
+    inLanguage: "pl-PL",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "PLN" },
+    publisher: { "@id": `${url}#organization` },
+  };
+}
+
+export type BreadcrumbItem = { name: string; path: string };
+
+/** BreadcrumbList; the last item is the current page. */
+export function breadcrumbJsonLd(origin: string, items: readonly BreadcrumbItem[]): JsonLdObject {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(origin, item.path),
+    })),
+  };
+}
+
+/** ItemList of beat pages for catalogue / genre pages (summary list: URLs only). */
+export function beatListJsonLd(
+  origin: string,
+  input: { name: string; path: string; beats: readonly { id: string; title: string }[]; max?: number },
+): JsonLdObject {
+  const beats = input.beats.slice(0, input.max ?? 50);
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: input.name,
+    url: absoluteUrl(origin, input.path),
+    numberOfItems: beats.length,
+    itemListElement: beats.map((beat, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: absoluteUrl(origin, `/beat/${beat.id}`),
+      name: beat.title,
+    })),
+  };
+}

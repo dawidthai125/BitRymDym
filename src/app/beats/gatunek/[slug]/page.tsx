@@ -13,7 +13,10 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { listFavoriteBeatIds } from "@/lib/beats/favorites";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
-import { beatsInGenre, collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
+import { beatsInGenre, collectGenres, genrePagePath, genreStats } from "@/lib/seo/genre-pages";
+import { beatListJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import { JsonLdScript } from "@/lib/seo/json-ld-script";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import { presentBeats } from "@/lib/ui/demo-beats";
 
 type GenrePageProps = { params: Promise<{ slug: string }> };
@@ -50,10 +53,30 @@ export default async function BeatsGenrePage({ params }: GenrePageProps) {
   const favoriteIds = session ? await listFavoriteBeatIds(session.userId) : [];
   const beats = presentBeats(inGenre.map(toPublicCatalogItem));
   const others = genres.filter((g) => g.slug !== genre.slug);
+  const origin = getPublicSiteUrl();
+  const path = genrePagePath(genre.slug);
+  const h1 = t("h1", { genre: genre.label });
+  const stats = genreStats(beats);
+  const introKey = `intro.${genre.slug}` as const;
+  const intro = t.has(introKey) ? t(introKey) : t("introDefault", { genre: genre.label });
+  const tempo =
+    stats.bpmMin != null && stats.bpmMax != null
+      ? stats.bpmMin === stats.bpmMax
+        ? t("tempoOne", { bpm: stats.bpmMin })
+        : t("tempoRange", { min: stats.bpmMin, max: stats.bpmMax })
+      : null;
+  const keys = stats.topKeys.length ? t("tonacje", { keys: stats.topKeys.join(", ") }) : null;
 
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
+        <JsonLdScript
+          data={breadcrumbJsonLd(origin, [
+            { name: t("okruszekBity"), path: "/beats" },
+            { name: h1, path },
+          ])}
+        />
+        <JsonLdScript data={beatListJsonLd(origin, { name: h1, path, beats })} />
         <PageFrame width="wide" className="py-5 sm:py-6">
           <CommunityShelf current="beats" />
           <Link
@@ -65,7 +88,7 @@ export default async function BeatsGenrePage({ params }: GenrePageProps) {
           <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b-4 border-[var(--brd-ink)] pb-4 pt-2 sm:pt-4">
             <div className="min-w-0 space-y-1">
               <h1 className="brd-display text-[length:var(--tape-text-xl)] leading-[0.88]">
-                {t("h1", { genre: genre.label })}
+                {h1}
               </h1>
               <p className="brd-meta pt-2 text-xs uppercase tracking-[0.14em] text-[var(--brd-green)]">
                 {t("licznik", { count: beats.length })}
@@ -77,6 +100,34 @@ export default async function BeatsGenrePage({ params }: GenrePageProps) {
           </header>
 
           <BeatsCatalogClient beats={beats} favoriteIds={favoriteIds} signedIn={session != null} />
+
+          <section
+            aria-labelledby="genre-about"
+            className="mt-10 max-w-3xl space-y-3 border-t border-[var(--brd-line)] pt-6 text-[0.95rem] leading-relaxed text-[var(--brd-ink-soft)]"
+            data-testid="beats-genre-about"
+          >
+            <h2 id="genre-about" className="brd-display text-xl text-[var(--brd-ink)]">
+              {t("oGatunku", { genre: genre.label })}
+            </h2>
+            <p>{intro}</p>
+            {tempo || keys ? (
+              <p className="brd-meta text-sm text-[var(--brd-mute)]">{[tempo, keys].filter(Boolean).join(" · ")}</p>
+            ) : null}
+            <p>
+              {t.rich("jakNagrac", {
+                studio: (chunks) => (
+                  <Link href="/jak-nagrac" className="underline underline-offset-4 hover:text-[var(--brd-ink)]">
+                    {chunks}
+                  </Link>
+                ),
+                nagrywarka: (chunks) => (
+                  <Link href="/nagrywarka" className="underline underline-offset-4 hover:text-[var(--brd-ink)]">
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </p>
+          </section>
 
           {others.length > 0 ? (
             <nav

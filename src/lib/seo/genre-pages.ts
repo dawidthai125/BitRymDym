@@ -60,3 +60,32 @@ export function beatsInGenre<T extends { genre: string | null | undefined }>(
 ): T[] {
   return beats.filter((beat) => genreSlug(beat.genre) === slug);
 }
+
+export type GenreStats = {
+  /** Rounded min/max tempo, null when no beat has a positive BPM. */
+  bpmMin: number | null;
+  bpmMax: number | null;
+  /** Most common keys, most beats first (max 3). */
+  topKeys: string[];
+};
+
+/** Real tempo range and common keys of a genre's beats (unique text for the landing page). */
+export function genreStats(beats: readonly { bpm?: number | null; key?: string | null }[]): GenreStats {
+  const bpms = beats
+    .map((b) => b.bpm)
+    .filter((v): v is number => typeof v === "number" && Number.isFinite(v) && v > 0)
+    .map((v) => Math.round(v));
+  const keys = new Map<string, number>();
+  for (const b of beats) {
+    const k = b.key?.trim();
+    if (k && k !== "—") keys.set(k, (keys.get(k) ?? 0) + 1);
+  }
+  return {
+    bpmMin: bpms.length ? Math.min(...bpms) : null,
+    bpmMax: bpms.length ? Math.max(...bpms) : null,
+    topKeys: [...keys.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 3)
+      .map(([k]) => k),
+  };
+}

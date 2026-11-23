@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("auth.forgotPasswordPage");
-  return { title: t("metaTitle") };
+  return { title: t("metaTitle"), robots: { index: false, follow: true } };
 }
 
 export default async function ForgotPasswordPage() {

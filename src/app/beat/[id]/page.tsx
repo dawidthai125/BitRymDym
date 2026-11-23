@@ -31,7 +31,8 @@ import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 import { presentBeat, presentBeats } from "@/lib/ui/demo-beats";
 import { absoluteUrl, clampText } from "@/lib/share/share-links";
 import { getPublicSiteUrl } from "@/lib/site-url";
-import { beatRecordingJsonLd } from "@/lib/seo/json-ld";
+import { beatRecordingJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import { genrePagePath, genreSlug } from "@/lib/seo/genre-pages";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
 import {
   canDownloadBeatByOwnerChoice,
@@ -75,6 +76,7 @@ export async function generateMetadata({ params }: BeatDetailPageProps) {
 export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   const tl = await getLibText();
   const tr = await getTranslations("beats.beatPage");
+  const tg = await getTranslations("beats.genrePage");
   const { id } = await params;
   const beat = await getPublishedBeat(id);
   if (!beat) notFound();
@@ -212,10 +214,25 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
           dateModified: beat.updatedAt,
         });
 
+  // Free public beats link to their genre landing page (internal linking + breadcrumb).
+  const genreSlugValue =
+    beat.visibility !== "private" && catalogLaneOf(beat.catalogLane) === "free" ? genreSlug(presented.genre) : null;
+  const genreLink = genreSlugValue && presented.genre
+    ? { href: genrePagePath(genreSlugValue), label: presented.genre.trim() }
+    : null;
+  const breadcrumb = jsonLd
+    ? breadcrumbJsonLd(getPublicSiteUrl(), [
+        { name: tg("okruszekBity"), path: "/beats" },
+        ...(genreLink ? [{ name: tg("h1", { genre: genreLink.label }), path: genreLink.href }] : []),
+        { name: presented.title, path: `/beat/${beat.id}` },
+      ])
+    : null;
+
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
         {jsonLd ? <JsonLdScript data={jsonLd} /> : null}
+        {breadcrumb ? <JsonLdScript data={breadcrumb} /> : null}
         <PageFrame className="py-6 sm:py-8">
           <CommunityShelf current="beats" />
           <Link
@@ -224,6 +241,15 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
           >
             {tr("katalog")}
           </Link>
+          {genreLink ? (
+            <Link
+              href={genreLink.href}
+              className="ml-4 inline-flex min-h-11 items-center text-sm text-[var(--brd-mute)] underline underline-offset-4 hover:text-[var(--brd-ink)]"
+              data-testid="beat-genre-link"
+            >
+              {tg("h1", { genre: genreLink.label })}
+            </Link>
+          ) : null}
           <div className="mt-4">
             <BeatDetailClient
               beat={presented}

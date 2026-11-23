@@ -22,7 +22,7 @@
     },
     "howToPage": {
       "metaTitle": "How to record a track on BitRymDym",
-      "metaDescription": "Recording tips, plan limits and track licence rules.",
+      "metaDescription": "How to record rap in your browser step by step: pick a beat, record a verse in the online Studio, mix, master, plan limits and track licence.",
       "etykieta": "How it works",
       "tytul": "How to record a track",
       "wstep": "This page collects the rules: what recording looks like in practice, what your plan allows and what you may do with the finished track. The full product walkthrough and film are in the “How it works” section on the home page.",
@@ -53,7 +53,7 @@
     },
     "aboutPage": {
       "metaTitle": "About BitRymDym",
-      "metaDescription": "Beats, recording and Studio. BITEK suggests a mix and a master when you ask.",
+      "metaDescription": "About BitRymDym — free beats, online recording and a Studio with mixing and mastering. See how it works, from beat to finished track.",
       "oBitrymdym": "About BitRymDym",
       "bitGlosStudio": "Beat. Voice. Studio.",
       "bitrymdymToMiejsceW": "BitRymDym is where you find beats, record your voice and build a track in Studio. BITEK suggests a mix and a master — you apply them when you want.",
@@ -1874,7 +1874,20 @@
       "lead": "Only {genre} beats, all free. Listen, pick one, and when it clicks, record your verse in the online Studio. Nothing to install, no hassle.",
       "licznik": "{count, plural, one {# beat} other {# beats}} · listen, then record",
       "wszystkieBity": "← All beats",
-      "inneGatunki": "Other genres"
+      "inneGatunki": "Other genres",
+      "okruszekBity": "Free beats",
+      "oGatunku": "{genre} beats — the lowdown",
+      "introDefault": "All free {genre} beats from the BitRymDym catalogue in one place. Listen to any of them for free, then open the one that clicks in the online Studio and record your verse right in the browser.",
+      "intro": {
+        "boom-bap": "Boom bap is rap's classic sound: a heavy kick, a dry, punchy snare, vinyl samples and a swinging bounce. Tempo usually sits around 85–95 BPM, leaving room for dense bars and storytelling.",
+        "hip-hop": "Hip-hop covers a lot of ground, from classic drums to cleaner modern production. These beats work for verses, hooks and freestyles, and the mid tempo lets you rap laid-back or push double time.",
+        "lo-fi-hip-hop": "Lo-fi hip-hop is warm and dusty: tape hiss, muffled keys, soft drums and a loose groove. The slower tempo and calm mood suit reflective lyrics, melodic flows and relaxed sessions.",
+        "trap": "Trap means heavy 808s, fast hi-hat rolls and dark melodies. Tempo is usually written as 130–160 BPM, but the drums play half-time, so your flow can be lazy or fast with triplets."
+      },
+      "tempoRange": "Tempo in this catalogue: {min}–{max} BPM",
+      "tempoOne": "Tempo in this catalogue: {bpm} BPM",
+      "tonacje": "Most common keys: {keys}",
+      "jakNagrac": "Record in the <studio>online Studio</studio> — nothing to install, just a mic and a browser. On Windows you can also use the <nagrywarka>Recorder</nagrywarka>."
     },
     "beatsUploadPage": {
       "metaTitle": "Add beat",
@@ -5030,7 +5043,8 @@
       "featuredNote": "A word from the crew",
       "featuredOpen": "Go to the track",
       "featuredAll": "All tracks",
-      "featuredCover": "Cover: {title}"
+      "featuredCover": "Cover: {title}",
+      "okruszekUtwory": "Tracks catalogue"
     },
     "sampleCatalog": {
       "sortuj": "Sort",

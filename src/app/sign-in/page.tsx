@@ -13,7 +13,7 @@ type PageProps = { searchParams?: Promise<{ next?: string | string[]; haslo?: st
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("auth.signInPage");
-  return { title: t("metaTitle") };
+  return { title: t("metaTitle"), robots: { index: false, follow: true } };
 }
 
 export default async function SignInPage({ searchParams }: PageProps) {
