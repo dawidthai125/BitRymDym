@@ -109,3 +109,8 @@ export async function processCoverImage(input: Uint8Array): Promise<ProcessedCov
     throw new BeatRequestError("Nie udało się przetworzyć okładki.");
   }
 }
+
+/** Downscale a stored thumb to the mini list size (WebP). */
+export async function resizeCoverMini(thumb: ArrayBuffer | Uint8Array, px: number): Promise<Buffer> {
+  return sharp(thumb).resize(px, px, { fit: "cover" }).webp({ quality: 76 }).toBuffer();
+}

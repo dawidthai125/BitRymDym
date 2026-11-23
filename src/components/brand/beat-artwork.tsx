@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
+import { beatCoverMiniUrl } from "@/lib/beats/cover/cover-url";
 import { artworkVariantToVisual } from "@/lib/ui/demo-visuals";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +50,7 @@ export function BeatArtwork({
         // Owner cover: already square WebP from our API (no next/image proxy).
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={coverUrl}
+          src={size === "xs" || size === "sm" ? (beatCoverMiniUrl(coverUrl) ?? coverUrl) : coverUrl}
           alt=""
           loading="lazy"
           decoding="async"

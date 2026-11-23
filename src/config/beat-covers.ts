@@ -20,6 +20,8 @@ export const BEAT_COVER_MAX_EDGE_PX = 8000;
 /** Square outputs (WebP, metadata stripped). */
 export const BEAT_COVER_FULL_PX = 1024;
 export const BEAT_COVER_THUMB_PX = 320;
+/** Small list covers (44–76 CSS px at 2x): resized on the fly from the thumb, cached by the CDN. */
+export const BEAT_COVER_MINI_PX = 160;
 
 /** Any category score ≥ this → auto-reject (never stored). */
 export const BEAT_COVER_AUTO_REJECT_SCORE = 0.8;

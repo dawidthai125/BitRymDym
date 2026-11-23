@@ -153,3 +153,13 @@ describe("genreStats", () => {
     expect(genreStats([])).toEqual({ bpmMin: null, bpmMax: null, topKeys: [] });
   });
 });
+
+describe("beatCoverMiniUrl", () => {
+  it("switches API thumbs to the mini variant and leaves other URLs", async () => {
+    const { beatCoverMiniUrl } = await import("@/lib/beats/cover/cover-url");
+    expect(beatCoverMiniUrl("/api/beats/abc/cover?s=thumb&v=1")).toBe("/api/beats/abc/cover?s=mini&v=1");
+    expect(beatCoverMiniUrl("/api/beats/abc/cover?s=full&v=1")).toBe("/api/beats/abc/cover?s=full&v=1");
+    expect(beatCoverMiniUrl("https://cdn.example/x.webp")).toBe("https://cdn.example/x.webp");
+    expect(beatCoverMiniUrl(null)).toBeNull();
+  });
+});

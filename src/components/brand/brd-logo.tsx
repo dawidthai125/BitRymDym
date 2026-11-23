@@ -78,7 +78,7 @@ export function BrdLogoHomeLink({
         width={width}
         height={height}
         priority={priority}
-        sizes="(max-width: 640px) 176px, 240px"
+        sizes="(max-width: 640px) 88px, 120px"
         className="brd-logo-img h-auto w-[5.5rem] object-contain object-left sm:w-[7.5rem]"
       />
     </Link>

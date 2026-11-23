@@ -49,7 +49,39 @@
       "pobranieWav": "MP3 i WAV",
       "planyUwaga": "Sesje liczymy w dobie UTC. Wartości pochodzą z aktualnych limitów planów.",
       "przegladajBity": "Przeglądaj bity",
-      "zobaczPlany": "Zobacz plany"
+      "zobaczPlany": "Zobacz plany",
+      "poradnikTytul": "Jak nagrać rap w domu — krok po kroku",
+      "poradnikWstep": "Nie potrzebujesz studia ani drogiego sprzętu. Wystarczy mikrofon, słuchawki i przeglądarka. Tak wygląda cała droga od bitu do gotowego kawałka:",
+      "kroki": {
+        "k1": {
+          "tytul": "Wybierz bit",
+          "tekst": "Wejdź w <bity>darmowe bity</bity> i słuchaj bez zakładania konta. Filtruj po gatunku, tempie (BPM) i tonacji. Szukaj bitu, który pasuje do Twojego flow, a nie tylko „ładnie brzmi”."
+        },
+        "k2": {
+          "tytul": "Przygotuj sprzęt i miejsce",
+          "tekst": "Na start wystarczy mikrofon USB albo nawet ten ze słuchawek. Nagrywaj w słuchawkach, żeby bit nie wchodził do mikrofonu. Wybierz najcichszy pokój — koc, zasłony czy szafa z ciuchami gaszą pogłos lepiej niż goła ściana."
+        },
+        "k3": {
+          "tytul": "Zrób próbę mikrofonu",
+          "tekst": "Załóż konto i zrób krótką próbę. Mów z odległości około dłoni od mikrofonu i ustaw głośność mikrofonu w systemie tak, żeby najgłośniejsze wejścia nie przesterowywały. Lepiej trochę ciszej niż za głośno — przester zostaje na zawsze."
+        },
+        "k4": {
+          "tytul": "Nagraj zwrotkę",
+          "tekst": "Nagrywasz w Studiu online w przeglądarce albo w <nagrywarka>Nagrywarce na Windowsa</nagrywarka>. Zrób kilka podejść — „Nagraj ponownie” jest po to, żeby z niego korzystać. Długość jednego nagrania zależy od planu."
+        },
+        "k5": {
+          "tytul": "Złóż kawałek w Studiu",
+          "tekst": "Tniesz nagranie, układasz je na osi i dokładasz kolejne ścieżki: dublowanie końcówek, refren, wstawki. Liczba ścieżek zależy od planu."
+        },
+        "k6": {
+          "tytul": "Mix i mastering",
+          "tekst": "Poproś BITKA o propozycję mixu i masteringu. Wyrówna głośność wokalu z bitem i przygotuje master pod streaming. Ty decydujesz, czy zmianę przyjmujesz."
+        },
+        "k7": {
+          "tytul": "Pobierz albo pokaż ludziom",
+          "tekst": "Gotowy plik pobierasz w jakości ze swojego planu albo publikujesz w <utwory>katalogu utworów</utwory>, gdzie inni mogą go posłuchać i ocenić. Przed publikacją podpisz autora bitu."
+        }
+      }
     },
     "aboutPage": {
       "metaTitle": "O BitRymDym",

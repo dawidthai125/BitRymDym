@@ -19,3 +19,9 @@ export function beatCoverUrl(
   const v = beat.coverUpdatedAt ? Date.parse(beat.coverUpdatedAt) || 0 : 0;
   return `/api/beats/${beat.id}/cover?s=${size}&v=${v}`;
 }
+
+/** Same cover at the small list size (`s=mini`); other URLs pass through. */
+export function beatCoverMiniUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  return url.startsWith("/api/beats/") ? url.replace("?s=thumb", "?s=mini") : url;
+}

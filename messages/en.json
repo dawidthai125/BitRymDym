@@ -49,7 +49,39 @@
       "pobranieWav": "MP3 and WAV",
       "planyUwaga": "Sessions are counted per UTC day. Values come from the current plan limits.",
       "przegladajBity": "Browse beats",
-      "zobaczPlany": "See plans"
+      "zobaczPlany": "See plans",
+      "poradnikTytul": "How to record rap at home — step by step",
+      "poradnikWstep": "No studio or expensive gear needed. A mic, headphones and a browser are enough. Here is the whole path from beat to finished track:",
+      "kroki": {
+        "k1": {
+          "tytul": "Pick a beat",
+          "tekst": "Open the <bity>free beats</bity> and listen without an account. Filter by genre, tempo (BPM) and key. Look for a beat that fits your flow, not just one that sounds nice."
+        },
+        "k2": {
+          "tytul": "Set up your gear and room",
+          "tekst": "A USB mic, or even a headset mic, is fine to start. Record with headphones so the beat does not bleed into the mic. Pick the quietest room — blankets, curtains or a wardrobe full of clothes kill echo better than a bare wall."
+        },
+        "k3": {
+          "tytul": "Test your mic",
+          "tekst": "Create an account and do a short test. Stay about a hand's width from the mic and set the mic level in your system so your loudest lines do not clip. A bit too quiet beats too loud — clipping stays forever."
+        },
+        "k4": {
+          "tytul": "Record your verse",
+          "tekst": "Record in the online Studio in your browser or in the <nagrywarka>Windows Recorder</nagrywarka>. Do several takes — that is what “Record again” is for. Take length depends on your plan."
+        },
+        "k5": {
+          "tytul": "Build the track in the Studio",
+          "tekst": "Trim the take, place it on the timeline and add more tracks: doubles, a hook, ad-libs. The number of tracks depends on your plan."
+        },
+        "k6": {
+          "tytul": "Mix and master",
+          "tekst": "Ask BITEK for a mix and master proposal. It balances your vocal with the beat and prepares a streaming-ready master. You decide whether to accept the change."
+        },
+        "k7": {
+          "tytul": "Download or share",
+          "tekst": "Download the finished file in your plan's quality or publish it in the <utwory>tracks catalogue</utwory>, where others can listen and rate it. Credit the beat's author before publishing."
+        }
+      }
     },
     "aboutPage": {
       "metaTitle": "About BitRymDym",

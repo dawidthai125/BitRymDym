@@ -1,7 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { BEAT_COVER_MAX_INPUT_BYTES } from "@/config/beat-covers";
+import { BEAT_COVER_MAX_INPUT_BYTES, BEAT_COVER_MINI_PX } from "@/config/beat-covers";
+import { resizeCoverMini } from "@/lib/beats/cover/cover-image";
 import { requireUser } from "@/lib/auth/session";
 import { isUuid } from "@/lib/beats/audio-validation";
 import {
@@ -29,18 +30,21 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /**
  * User beats 2026-10-30 — cover image.
- * GET  /api/beats/[id]/cover?s=thumb|full  (visibility-checked; private bucket)
+ * GET  /api/beats/[id]/cover?s=mini|thumb|full  (visibility-checked; private bucket; mini = thumb downscaled)
  * POST /api/beats/[id]/cover  multipart field "cover" (owner; filtered)
  * DELETE /api/beats/[id]/cover (owner)
  */
 export async function GET(request: Request, context: RouteContext) {
   const { id: beatId } = await context.params;
   if (!isUuid(beatId)) return new NextResponse(null, { status: 404 });
-  const size = new URL(request.url).searchParams.get("s") === "full" ? "full" : "thumb";
+  const requested = new URL(request.url).searchParams.get("s");
+  const size = requested === "full" ? "full" : "thumb";
   try {
     const cover = await loadBeatCoverForViewer(beatId, size);
     if (!cover) return new NextResponse(null, { status: 404 });
-    return new NextResponse(cover.bytes, {
+    const bytes =
+      requested === "mini" ? new Uint8Array(await resizeCoverMini(cover.bytes, BEAT_COVER_MINI_PX)) : cover.bytes;
+    return new NextResponse(bytes, {
       status: 200,
       headers: {
         "Content-Type": "image/webp",

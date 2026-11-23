@@ -15,6 +15,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 }
 
 const PLANS = ["FREE", "BRONZE", "SILVER", "GOLD"] as const;
+const STEPS = ["k1", "k2", "k3", "k4", "k5", "k6", "k7"] as const;
 
 export default async function HowToRecordPage() {
   const t = await getTranslations("common.howToPage");
@@ -40,6 +41,28 @@ export default async function HowToRecordPage() {
               {t("przegladLink")}
             </Link>
           </p>
+
+          <section aria-labelledby="how-to-guide" className="mt-10" data-testid="how-to-guide">
+            <h2 id="how-to-guide" className="text-2xl font-semibold text-[var(--brd-ink)]">{t("poradnikTytul")}</h2>
+            <p className="mt-3 leading-relaxed text-[var(--brd-ink-soft)]">{t("poradnikWstep")}</p>
+            <ol className="mt-5 space-y-5">
+              {STEPS.map((k, i) => (
+                <li key={k} className="flex gap-4">
+                  <span aria-hidden className="brd-display shrink-0 text-2xl leading-none text-[var(--brd-green)]">{i + 1}</span>
+                  <div>
+                    <h3 className="font-medium text-[var(--brd-ink)]">{t(`kroki.${k}.tytul`)}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-[var(--brd-ink-soft)]">
+                      {t.rich(`kroki.${k}.tekst`, {
+                        bity: (c) => <Link href="/beats" className="underline underline-offset-4 hover:text-[var(--brd-ink)]">{c}</Link>,
+                        nagrywarka: (c) => <Link href="/nagrywarka" className="underline underline-offset-4 hover:text-[var(--brd-ink)]">{c}</Link>,
+                        utwory: (c) => <Link href="/utwory" className="underline underline-offset-4 hover:text-[var(--brd-ink)]">{c}</Link>,
+                      })}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
 
           <h2 className="mt-8 text-xl font-medium text-[var(--brd-ink)]">{t("wskazowkiTytul")}</h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[var(--brd-ink-soft)]" data-testid="how-to-tips">
