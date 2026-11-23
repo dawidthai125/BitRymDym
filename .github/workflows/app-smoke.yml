@@ -1,0 +1,264 @@
+name: app-smoke
+
+# Test dymny aplikacji na wirtualnych telefonach: iOS (symulator, Capacitor z ios-app/)
+# i Android (emulator, TWA z android-twa/ podpisana kluczem uploadu, żeby przeszła weryfikacja assetlinks).
+# Wynik: zrzuty ekranu i logi jako artifacts. Niczego nie publikuje.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [app-smoke]
+    paths:
+      - ".github/workflows/app-smoke.yml"
+      - "android-twa/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUNDLE_ID: pl.bitrymdym.app
+
+jobs:
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: ios-app
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: ios-app/package-lock.json
+
+      - name: Wybierz Xcode 26
+        run: |
+          XCODE="$(ls -d /Applications/Xcode_26*.app | grep -viE 'beta|_rc' | sort -V | tail -1)"
+          test -n "$XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i simulator
+
+      - name: npm ci + projekt Xcode
+        run: |
+          npm ci --no-audit --no-fund
+          npx cap add ios
+          bash scripts/patch-ios.sh >/dev/null
+          npx cap sync ios
+
+      - name: Wybierz symulator iPhone
+        run: |
+          xcrun simctl list devices available | grep -i iphone || true
+          UDID="$(xcrun simctl list devices available -j | python3 -c '
+          import json,sys,re
+          d=json.load(sys.stdin)["devices"]
+          best=None
+          for rt,devs in d.items():
+              if "iOS" not in rt: continue
+              for x in devs:
+                  if not x["name"].startswith("iPhone"): continue
+                  score=(rt, 2 if x["name"]=="iPhone 17" else (1 if "Pro" in x["name"] and "Max" not in x["name"] else 0))
+                  if best is None or score>best[0]: best=(score,x["udid"],x["name"],rt)
+          print(best[1]); print(best[2]+" | "+best[3], file=sys.stderr)
+          ')"
+          test -n "$UDID"
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
+
+      - name: Build dla symulatora
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination "id=$SIM_UDID" \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/build.log" | grep -E '^(\*\*|error:)' || true
+          APP="$(ls -d "$RUNNER_TEMP"/dd/Build/Products/Debug-iphonesimulator/App.app)"
+          test -d "$APP" || { tail -80 "$RUNNER_TEMP/build.log"; exit 1; }
+          echo "APP_PATH=$APP" >> "$GITHUB_ENV"
+
+      - name: Uruchom w symulatorze i zrób zrzuty
+        run: |
+          OUT="$GITHUB_WORKSPACE/smoke-ios"; mkdir -p "$OUT"
+          LOG="$OUT/ios-smoke.log"
+          {
+            xcrun simctl boot "$SIM_UDID" || true
+            xcrun simctl bootstatus "$SIM_UDID" -b
+            xcrun simctl status_bar "$SIM_UDID" override --time 9:41 --batteryState charged --batteryLevel 100 || true
+            xcrun simctl install "$SIM_UDID" "$APP_PATH"
+            echo "--- launch"
+            xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID"
+          } >>"$LOG" 2>&1
+          sleep 25
+          xcrun simctl io "$SIM_UDID" screenshot "$OUT/ios-01-start-25s.png" >>"$LOG" 2>&1
+          echo "--- privacy grant microphone" >>"$LOG"
+          if xcrun simctl privacy "$SIM_UDID" grant microphone "$BUNDLE_ID" >>"$LOG" 2>&1; then
+            echo "privacy grant microphone: OK" | tee -a "$LOG"
+          else
+            echo "privacy grant microphone: BŁĄD (kod $?)" | tee -a "$LOG"
+          fi
+          sleep 10
+          xcrun simctl io "$SIM_UDID" screenshot "$OUT/ios-02-po-10s.png" >>"$LOG" 2>&1
+          # Ponowne uruchomienie po nadaniu mikrofonu (ciasteczko brd_app już ustawione).
+          xcrun simctl terminate "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1 || true
+          xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1
+          sleep 20
+          xcrun simctl io "$SIM_UDID" screenshot "$OUT/ios-03-relaunch.png" >>"$LOG" 2>&1
+          # Wariant testowy: ta sama aplikacja, start od /premium?app=ios (bez tapania w symulatorze).
+          CFG="$APP_PATH/capacitor.config.json"
+          python3 - "$CFG" <<'PY'
+          import json,sys
+          p=sys.argv[1]; c=json.load(open(p))
+          c["server"]["url"]="https://www.bitrymdym.pl/premium?app=ios"
+          json.dump(c,open(p,"w"))
+          PY
+          grep -o '"url": *"[^"]*"' "$CFG" >>"$LOG" || true
+          xcrun simctl terminate "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1 || true
+          xcrun simctl install "$SIM_UDID" "$APP_PATH" >>"$LOG" 2>&1
+          xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1
+          sleep 25
+          xcrun simctl io "$SIM_UDID" screenshot "$OUT/ios-04-premium.png" >>"$LOG" 2>&1
+          sleep 12
+          xcrun simctl io "$SIM_UDID" screenshot "$OUT/ios-05-premium-pozniej.png" >>"$LOG" 2>&1
+          xcrun simctl spawn "$SIM_UDID" log show --last 3m --style compact \
+            --predicate 'process == "App"' 2>/dev/null | tail -300 > "$OUT/ios-app-log.txt" || true
+          ls -l "$OUT"; cat "$LOG"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: smoke-ios
+          path: smoke-ios/
+          if-no-files-found: warn
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "9.9.2"
+
+      - name: Build APK release (bez podpisu)
+        working-directory: android-twa
+        run: gradle --no-daemon assembleRelease
+
+      - name: Podpisz APK kluczem uploadu (apksigner)
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          ( umask 077; printf '%s' "$KS_B64" | base64 --decode > "$RUNNER_TEMP/upload.p12" )
+          UNSIGNED="$(ls android-twa/app/build/outputs/apk/release/*.apk | head -1)"
+          "$BT/zipalign" -f -p 4 "$UNSIGNED" "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" sign --ks "$RUNNER_TEMP/upload.p12" --ks-type PKCS12 \
+            --ks-pass env:KS_PASS --key-pass env:KS_PASS --ks-key-alias "$KS_ALIAS" \
+            --out "$RUNNER_TEMP/brd-signed.apk" "$RUNNER_TEMP/aligned.apk"
+          rm -f "$RUNNER_TEMP/upload.p12"
+          mkdir -p smoke-android
+          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/brd-signed.apk" | grep -i 'SHA-256' | tee smoke-android/apk-cert.txt
+          curl -fsS https://www.bitrymdym.pl/.well-known/assetlinks.json | tee -a smoke-android/apk-cert.txt
+          echo "SIGNED_APK=$RUNNER_TEMP/brd-signed.apk" >> "$GITHUB_ENV"
+
+      - name: Włącz KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Skrypt testu
+        run: |
+          cat > "$RUNNER_TEMP/smoke.sh" <<'EOF'
+          #!/usr/bin/env bash
+          set -x
+          OUT="$GITHUB_WORKSPACE/smoke-android"; mkdir -p "$OUT"
+          shot() { adb exec-out screencap -p > "$OUT/$1.png"; }
+          acts() { echo "=== $1" >> "$OUT/activities.txt"; adb shell dumpsys activity activities | grep -i -E "mResumedActivity|topResumedActivity|CustomTab|TrustedWebActivity" >> "$OUT/activities.txt"; }
+          adb wait-for-device
+          adb shell getprop ro.build.version.release
+          adb shell dumpsys package com.android.chrome | grep -m2 -E "versionName" | tee "$OUT/chrome-version.txt"
+          # Chrome: pominięcie ekranu powitalnego (userdebug -> plik command-line jest czytany)
+          adb root || true; sleep 3
+          adb shell 'echo "_ --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line'
+          adb shell chmod 644 /data/local/tmp/chrome-command-line
+          adb shell am set-debug-app --persistent com.android.chrome || true
+          adb shell am force-stop com.android.chrome
+          adb install -r "$SIGNED_APK"
+          # Emulator: bez okien ANR (Pixel Launcher) zasłaniających zrzuty; launcher ma czas się uspokoić.
+          adb shell settings put global hide_error_dialogs 1 || true
+          adb shell settings put global anr_show_background 0 || true
+          sleep 45
+          adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS || true
+          adb shell pm grant pl.bitrymdym.app android.permission.POST_NOTIFICATIONS || true
+          adb logcat -c
+          adb shell monkey -p pl.bitrymdym.app -c android.intent.category.LAUNCHER 1
+          sleep 12; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null; shot android-00-start-12s; acts "start+12s"
+          sleep 28; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null; shot android-01-start-40s; acts "start+40s"
+          # Ekran powitalny Chrome, jeśli jednak się pokazał: spróbuj zamknąć
+          if adb shell dumpsys activity activities | grep -i -E "mResumedActivity.*(FirstRun|fre)" ; then
+            adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml "$OUT/ui-fre.xml"
+            for t in "Use without an account" "Accept & continue" "No thanks" "Continue" "Got it"; do
+              adb shell uiautomator dump /sdcard/ui.xml >/dev/null
+              B="$(adb shell cat /sdcard/ui.xml | grep -o "text=\"$t\"[^>]*bounds=\"[^\"]*\"" | grep -o 'bounds="[^"]*"' | head -1)"
+              if [ -n "$B" ]; then
+                X=$(echo "$B" | sed -E 's/.*\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\].*/\1 \3/' | awk '{print int(($1+$2)/2)}')
+                Y=$(echo "$B" | sed -E 's/.*\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\].*/\2 \4/' | awk '{print int(($1+$2)/2)}')
+                adb shell input tap "$X" "$Y"; sleep 4
+              fi
+            done
+            sleep 15; shot android-02-po-fre; acts "po-fre"
+          fi
+          # UI dump: czy jest pasek adresu (url_bar) Custom Tab
+          adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml "$OUT/ui-start.xml"
+          grep -o -E 'resource-id="com.android.chrome:id/(url_bar|title_bar|toolbar|close_button)"' "$OUT/ui-start.xml" | sort -u > "$OUT/toolbar-ids.txt" || true
+          # Podstrona /premium w TWA (LauncherActivity przyjmuje URL z intencji)
+          adb shell am start -n pl.bitrymdym.app/com.google.androidbrowserhelper.trusted.LauncherActivity -a android.intent.action.VIEW -d "https://www.bitrymdym.pl/premium?app=android"
+          sleep 20; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null; shot android-03-premium; acts "premium"
+          adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml "$OUT/ui-premium.xml"
+          # Mikrofon: uprawnienie Chrome (TWA używa uprawnień przeglądarki)
+          adb shell pm grant com.android.chrome android.permission.RECORD_AUDIO && echo "pm grant RECORD_AUDIO chrome: OK" >> "$OUT/mic.txt" || echo "pm grant RECORD_AUDIO chrome: BŁĄD" >> "$OUT/mic.txt"
+          adb shell dumpsys package com.android.chrome | grep -i "RECORD_AUDIO" >> "$OUT/mic.txt"
+          adb logcat -d | grep -i -E "TWA|TrustedWeb|Digital Asset|OriginVerifier|DelegationService|customtabs|verif" | tail -200 > "$OUT/logcat-twa.txt"
+          adb logcat -d -b crash > "$OUT/logcat-crash.txt"
+          adb logcat -d | grep -A40 "FATAL EXCEPTION" | head -200 > "$OUT/logcat-fatal.txt"
+          adb logcat -d | gzip > "$OUT/logcat-full.txt.gz"
+          cat "$OUT/logcat-crash.txt" | head -80
+          ls -l "$OUT"
+          cat "$OUT/activities.txt" "$OUT/toolbar-ids.txt" "$OUT/mic.txt"
+          exit 0
+          EOF
+          chmod +x "$RUNNER_TEMP/smoke.sh"
+
+      - name: Emulator + test
+        uses: reactivecircus/android-emulator-runner@v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: bash "$RUNNER_TEMP/smoke.sh"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: smoke-android
+          path: smoke-android/
+          if-no-files-found: warn
