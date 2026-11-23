@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { InstallAppButton } from "@/components/site/pwa-install";
 import { siteConfig } from "@/config/site";
 import { LEGAL_PATHS } from "@/lib/legal/legal-config";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
+import { EN_LANDING_PAGES, englishLandingPath } from "@/lib/seo/landing-pages-en";
 import { isStoreApp } from "@/lib/site/store-app-server";
 
 export async function SiteFooter() {
@@ -16,6 +17,13 @@ export async function SiteFooter() {
     getTranslations("nav.siteMainNav"),
     isStoreApp(),
   ]);
+  const english = (await getLocale()) === "en";
+  const shortcuts = english
+    ? EN_LANDING_PAGES.map((p) => ({ href: englishLandingPath(p.slug), label: p.navLabel }))
+    : [
+        ...LANDING_PAGES.filter((p) => !(p.webOnly && storeApp)).map((p) => ({ href: landingPath(p.slug), label: p.navLabel })),
+        { href: "/poradniki", label: "Poradniki" },
+      ];
   return (
     <footer className="border-t border-[var(--brd-line)] px-4 py-6 sm:px-6">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 text-sm text-[var(--brd-ink-soft)]">
@@ -38,15 +46,12 @@ export async function SiteFooter() {
           )}
           <InstallAppButton />
         </nav>
-        <nav aria-label="Na skróty" className="flex w-full flex-wrap gap-x-4 gap-y-0 text-xs text-[var(--brd-mute)]" data-testid="footer-landing-links">
-          {LANDING_PAGES.filter((p) => !(p.webOnly && storeApp)).map((p) => (
-            <Link key={p.slug} href={landingPath(p.slug)} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
-              {p.navLabel}
+        <nav aria-label={english ? "Shortcuts" : "Na skróty"} className="flex w-full flex-wrap gap-x-4 gap-y-0 text-xs text-[var(--brd-mute)]" data-testid="footer-landing-links">
+          {shortcuts.map((l) => (
+            <Link key={l.href} href={l.href} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+              {l.label}
             </Link>
           ))}
-          <Link href="/poradniki" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
-            Poradniki
-          </Link>
         </nav>
         <nav aria-label={t("nawigacja")} className="flex flex-wrap gap-x-4 gap-y-0">
           <Link href={LEGAL_PATHS.terms} className="inline-flex min-h-11 min-w-11 items-center justify-center underline-offset-4 hover:underline">{t("regulamin")}</Link>

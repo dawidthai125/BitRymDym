@@ -107,3 +107,22 @@ describe("app and video JSON-LD", () => {
     expect(v.thumbnailUrl).toEqual([`${o}/promo/jak-to-dziala-poster.jpg`]);
   });
 });
+
+describe("English keyword landings", () => {
+  it("have a route, a Polish twin, search-sized meta and no prices", async () => {
+    const { EN_LANDING_PAGES, isEnglishLandingPath, englishTwinOf } = await import("@/lib/seo/landing-pages-en");
+    const { stripEnglishPrefix } = await import("@/lib/seo/locale-paths");
+    for (const p of EN_LANDING_PAGES) {
+      expect(existsSync(path.join(process.cwd(), "src/app/en", p.slug, "page.tsx"))).toBe(true);
+      expect(LANDING_PAGES.some((pl) => pl.slug === p.plSlug)).toBe(true);
+      expect(englishTwinOf(p.plSlug)?.slug).toBe(p.slug);
+      expect(p.metaDescription.length).toBeLessThanOrEqual(170);
+      expect(p.metaTitle.length).toBeLessThanOrEqual(70);
+      expect(JSON.stringify(p)).not.toMatch(/\d\s?zł|PayU|PLN/);
+      expect(isEnglishLandingPath(`/en/${p.slug}`)).toBe(true);
+      // Not mistaken for an /en twin of a Polish route.
+      expect(stripEnglishPrefix(`/en/${p.slug}`)).toBeNull();
+    }
+    expect(isEnglishLandingPath("/en/beats")).toBe(false);
+  });
+});

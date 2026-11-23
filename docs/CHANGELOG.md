@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (10) — SEO: angielskie strony pod frazy
+
+- `/en/free-rap-beats`, `/en/online-recording-studio`, `/en/mix-and-mastering-online`, `/en/rap-recording-software` (`src/lib/seo/landing-pages-en.ts`), każda z hreflang do polskiej odpowiedniczki (i odwrotnie). Middleware wymusza `en` dla tych tras (bez rewrite). Widok landingów dwujęzyczny (FAQ, „See also”, gatunki → `/en/beats/gatunek/...`). Stopka: skróty zależne od języka. Sitemap z alternates.
+
 ## 2026-11-23 (9) — SEO: dane strukturalne programu i filmu
 
 - `/nagrywarka`: JSON-LD `SoftwareApplication` (Windows, darmowa). Strona główna: `VideoObject` filmu „Jak działa BitRymDym” (`/promo/jak-to-dziala.mp4`).

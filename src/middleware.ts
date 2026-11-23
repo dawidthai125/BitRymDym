@@ -12,6 +12,7 @@ import { decideStoreAppEntry, STORE_APP_COOKIE, storeAppCookieOptions } from "@/
 import { userAccessBearer } from "@/lib/supabase/access-bearer";
 import { LOCALE_COOKIE } from "@/i18n/config";
 import { englishHostRedirect, LOCALE_OVERRIDE_HEADER, stripEnglishPrefix } from "@/lib/seo/locale-paths";
+import { isEnglishLandingPath } from "@/lib/seo/landing-pages-en";
 
 import {
   createMaintenanceStateCache,
@@ -281,10 +282,14 @@ export async function middleware(request: NextRequest) {
   headers.delete(LOCALE_OVERRIDE_HEADER);
   const englishPath = stripEnglishPrefix(request.nextUrl.pathname);
   let target: URL | null = null;
+  const englishOnly = !englishPath && isEnglishLandingPath(request.nextUrl.pathname);
   if (englishPath) {
     headers.set(LOCALE_OVERRIDE_HEADER, "en");
     target = request.nextUrl.clone();
     target.pathname = englishPath;
+  } else if (englishOnly) {
+    // English keyword landings live at their own /en/<slug> route: force English, no rewrite.
+    headers.set(LOCALE_OVERRIDE_HEADER, "en");
   }
   let response = await handleRequest(
     target ? new NextRequest(target, { headers, method: request.method }) : new NextRequest(request, { headers }),
@@ -298,7 +303,7 @@ export async function middleware(request: NextRequest) {
     for (const cookie of response.cookies.getAll()) rewrite.cookies.set(cookie);
     response = rewrite;
   }
-  if (target) {
+  if (target || englishOnly) {
     // Later unprefixed links stay English for this visitor (same cookie as the language switcher).
     response.cookies.set(LOCALE_COOKIE, "en", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
   }

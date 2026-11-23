@@ -7,6 +7,7 @@ import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 import { GUIDE_BASE, GUIDES, guidePath } from "@/lib/seo/guides";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { isLocalizedPath, localizedPath } from "@/lib/seo/locale-paths";
+import { EN_LANDING_PAGES, englishLandingPath, englishTwinOf } from "@/lib/seo/landing-pages-en";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
 /** Public, indexable pages only (no auth-gated or API routes). */
@@ -86,7 +87,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  const all = [...staticEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...workEntries];
+  // English keyword landings + hreflang with their Polish twins.
+  const enLandingEntries: MetadataRoute.Sitemap = EN_LANDING_PAGES.map((page) => {
+    const pl = `${base}${landingPath(page.plSlug)}`;
+    const en = `${base}${englishLandingPath(page.slug)}`;
+    return { url: en, changeFrequency: "weekly", priority: 0.7, alternates: { languages: { pl, en, "x-default": pl } } };
+  });
+  for (const entry of landingEntries) {
+    const slug = entry.url.slice(base.length + 1);
+    const twin = englishTwinOf(slug);
+    if (twin) entry.alternates = { languages: { pl: entry.url, en: `${base}${englishLandingPath(twin.slug)}`, "x-default": entry.url } };
+  }
+
+  const all = [...staticEntries, ...enLandingEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...workEntries];
   return withEnglish(all, base);
 }
 
