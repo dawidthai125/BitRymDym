@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (14) — Profile marki (2)
+
+- `social.ts`: Instagram, Facebook (strona 61596562513740), SoundCloud, Bluesky `@bitrymdym.pl` (TXT `_atproto` w Vercel DNS). TikTok — po potwierdzeniu nicka.
+
 ## 2026-11-23 (13) — Profile marki
 
 - Kanał YouTube @bitrymdym (konto marki na Google Dawida, ID UCW_rCfBRpEUgAHPpo1V36nA). `src/lib/seo/social.ts` → link w stopce (`rel="me"`) + `sameAs`/`email` w JSON-LD Organization.
