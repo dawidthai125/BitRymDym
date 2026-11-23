@@ -28,8 +28,8 @@ import {
   type SampleGenRequest,
 } from "@/lib/studio/samples/sample-generator";
 import { encodeWav16 } from "@/lib/studio/samples/sample-lab-dsp";
-import { instrumentKind, SAMPLE_MAX_COUNT, STUDIO_SAMPLES_TABLE } from "@/lib/studio/samples/sample-policy";
-import { createStudioSample, type StudioSampleDto } from "@/lib/studio/samples/sample-service";
+import { instrumentKind, SAMPLE_INVALID, SAMPLE_MAX_COUNT, STUDIO_SAMPLES_TABLE } from "@/lib/studio/samples/sample-policy";
+import { createStudioSample, reviewStudioSample, submitStudioSample, type StudioSampleDto } from "@/lib/studio/samples/sample-service";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 /** Stricter prompt adherence for a single, named instrument (stable-audio-3, default 1). */
@@ -147,15 +147,22 @@ export async function finishSampleGeneration(params: {
   return { status: "ready", sample: created.sample, measured: { key: measuredKey, bpm: measuredBpm, retunedFrom } };
 }
 
-/** The admin's generated sample goes into the public catalog. */
+/**
+ * The admin's own generated sample enters the catalog through the normal submit + review, so it
+ * gets its catalog asset. (Setting PUBLISHED directly left it without one: other users could
+ * listen but the Studio refused the copy — found 2026-11-23 before any such sample was public.)
+ */
 export async function publishGeneratedSample(sampleId: string): Promise<void> {
   const context = await requireRole(["ADMIN"]);
-  const { error } = await createSupabaseAdminClient()
-    .from(STUDIO_SAMPLES_TABLE)
-    .update({ status: "PUBLISHED", public_listing: true, updated_at: new Date().toISOString() })
-    .eq("id", sampleId)
-    .eq("owner_id", context.userId);
-  if (error) throw new BeatRequestError("Nie udało się wydać sampla.");
+  const submitted = await submitStudioSample(context, sampleId);
+  // "Invalid" = already waiting (an earlier approve failed): review it again; it checks the state itself.
+  if (!submitted.ok && submitted.error !== SAMPLE_INVALID) throw new BeatRequestError("Nie udało się wydać sampla.");
+  if (!submitted.ok) {
+    const { data } = await createSupabaseAdminClient().from(STUDIO_SAMPLES_TABLE).select("owner_id").eq("id", sampleId).maybeSingle();
+    if (data?.owner_id !== context.userId) throw new BeatRequestError("Nie udało się wydać sampla.");
+  }
+  const reviewed = await reviewStudioSample(context, { sampleId, action: "approve", note: null });
+  if (!reviewed.ok) throw new BeatRequestError("Nie udało się wydać sampla.");
 }
 
 /** Tempo and key of a catalog beat for "under this beat". The key is measured from its master. */

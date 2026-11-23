@@ -11,6 +11,7 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { listPublicSamples, pickSampleOfTheWeek } from "@/lib/community/community-service";
 import { toCatalogSampleItems } from "@/lib/community/sample-items";
 import { parseCatalogSource } from "@/lib/community/share-policy";
+import { parseCatalogPage } from "@/lib/ui/paginate";
 import { LIVE_SAMPLE_INSTRUMENTS, SAMPLE_INSTRUMENTS, SAMPLE_TYPES } from "@/lib/studio/samples/sample-policy";
 
 export async function generateMetadata() {
@@ -22,7 +23,7 @@ export async function generateMetadata() {
 export default async function SampleCatalogPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ zrodlo?: string }>;
+  searchParams?: Promise<{ zrodlo?: string; strona?: string }>;
 }) {
   const t = await getTranslations("community.catalog");
   const tl = await getTranslations("studio.sampleLab");
@@ -86,7 +87,7 @@ export default async function SampleCatalogPage({
               {source === "brd" ? t("samplesEmptyBrd") : t("samplesEmptyUser")}
             </p>
           ) : (
-            <SampleCatalog items={items} signedIn={Boolean(session)} isAdmin={isAdmin} instruments={instruments} types={types} linkTitles />
+            <SampleCatalog key={source} paging={{ initialPage: parseCatalogPage(params.strona), query: source === "user" ? "zrodlo=user" : "" }} items={items} signedIn={Boolean(session)} isAdmin={isAdmin} instruments={instruments} types={types} linkTitles />
           )}
         </PageFrame>
       </main>

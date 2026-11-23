@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (22) — Katalogi po 20 na stronę, wydawanie sampli z generatora
+
+- Bity (`/beats`, gatunki) i sample (`/sampel`): 20 na stronę, `?strona=N`, prawdziwe linki (`src/lib/ui/paginate.ts`, `catalog-pager.tsx`). Filtr, szukanie i sortowanie działają na całości i wracają na stronę 1; `#id` z rankingu otwiera właściwą stronę.
+- „Do katalogu” w generatorze sampli idzie przez zwykłe zgłoszenie + zatwierdzenie, więc sampel dostaje plik katalogowy (wcześniej inni użytkownicy nie mogliby go użyć w Studiu; żaden taki nie był publiczny).
+
 ## 2026-11-23 (21) — Sample: własne opisy i „Użyj w Studiu” jednym kliknięciem
 
 - Migracja `20261123170000_studio_samples_description.sql` (zastosowana): `description`, `description_en` (do 600 znaków). Pola w edycji sampla (admin), opisy 18 sampli BitRymDym. Puste = opis z faktów.

@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { removeCatalogSampleAction, updateCatalogSampleAction } from "@/app/sampel/actions";
+import { CatalogPager } from "@/components/ui/catalog-pager";
 import { SampleTalk } from "@/components/community/sample-talk";
 import { catalogNumber } from "@/lib/community/share-policy";
+import { pageOfRow, paginate } from "@/lib/ui/paginate";
 
 export type CatalogSampleItem = {
   id: string;
@@ -64,6 +66,7 @@ export function SampleCatalog({
   showTalk = true,
   showFilters = true,
   linkTitles = false,
+  paging,
   extra,
 }: {
   items: CatalogSampleItem[];
@@ -76,6 +79,8 @@ export function SampleCatalog({
   showFilters?: boolean;
   /** Title links to the sample page /sampel/[id] (public catalog only; drafts have no page). */
   linkTitles?: boolean;
+  /** 20 rows per page (public catalog); absent = one list. */
+  paging?: { initialPage: number; query: string };
   /** Extra controls per row, e.g. "Do katalogu" in the admin generator. */
   extra?: (item: CatalogSampleItem) => ReactNode;
 }) {
@@ -115,6 +120,31 @@ export function SampleCatalog({
       ),
     [items, typeFilter, instrumentFilter, removed, sort, showFilters],
   );
+  // A page belongs to one filter/sort view; any other view starts at page 1.
+  const viewKey = `${typeFilter}|${instrumentFilter}|${sort}`;
+  const [pageState, setPageState] = useState({ view: viewKey, page: paging?.initialPage ?? 1 });
+  const listRef = useRef<HTMLOListElement | null>(null);
+  const paged = paginate(shown, pageState.view === viewKey ? pageState.page : 1, paging ? undefined : Math.max(1, shown.length));
+
+  // #<sample id> (rankings, sample of the week) opens the page that holds the sample.
+  useEffect(() => {
+    if (!paging) return;
+    const jump = () => {
+      const id = window.location.hash.slice(1);
+      const target = id ? pageOfRow(shown, id) : null;
+      if (!target) return;
+      setPageState({ view: viewKey, page: target });
+      window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: "center" }), 0);
+    };
+    const first = window.setTimeout(jump, 0);
+    window.addEventListener("hashchange", jump);
+    return () => {
+      window.clearTimeout(first);
+      window.removeEventListener("hashchange", jump);
+    };
+    // The hash is read when it changes, not on every filter change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const typeCounts = useMemo(() => {
     const m = new Map<string, number>();
     for (const s of items) if (s.sampleType) m.set(s.sampleType, (m.get(s.sampleType) ?? 0) + 1);
@@ -252,8 +282,8 @@ export function SampleCatalog({
         </p>
       ) : null}
 
-      <ol className="divide-y divide-[var(--brd-line)] rounded-xl border border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_60%,transparent)]">
-        {shown.map((s) => {
+      <ol ref={listRef} className="scroll-mt-4 divide-y divide-[var(--brd-line)] rounded-xl border border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_60%,transparent)]">
+        {paged.rows.map((s) => {
           const isCurrent = current === s.id;
           const total = isCurrent && duration > 0 ? duration : s.durationMs / 1000;
           const progress = isCurrent && total > 0 ? Math.min(1, time / total) : 0;
@@ -383,6 +413,17 @@ export function SampleCatalog({
           );
         })}
       </ol>
+      {paging ? (
+        <CatalogPager
+          page={paged.page}
+          pages={paged.pages}
+          query={paging.query}
+          onPage={(page) => {
+            setPageState({ view: viewKey, page });
+            listRef.current?.scrollIntoView({ block: "start" });
+          }}
+        />
+      ) : null}
       {shown.length === 0 ? <p className="text-sm text-[var(--brd-mute)]">{t("brakWFiltrze")}</p> : null}
     </div>
   );

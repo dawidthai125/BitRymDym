@@ -197,6 +197,14 @@
       "dodajDoUlubionychWkrotce": "Dodaj do ulubionych",
       "ulubioneWkrotce": "Ulubione"
     },
+    "catalogPager": {
+      "aria": "Strony katalogu",
+      "poprzednia": "← Poprzednia",
+      "poprzedniaAria": "Poprzednia strona",
+      "nastepna": "Następna →",
+      "nastepnaAria": "Następna strona",
+      "stronaAria": "Strona {page} z {pages}"
+    },
     "beatsCatalogClient": {
       "szukajBitow": "Szukaj bitów",
       "szukajBituProducentaGatunku": "Szukaj bitu, producenta, gatunku…",

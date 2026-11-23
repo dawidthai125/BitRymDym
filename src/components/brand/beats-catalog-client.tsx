@@ -15,6 +15,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
+import { CatalogPager } from "@/components/ui/catalog-pager";
 import { BeatCatalogRow } from "@/components/brand/beat-catalog-row";
 import {
   attachModalFocusTrap,
@@ -35,6 +36,7 @@ import {
   catalogKeysFromBeats,
   type PresentedBeat,
 } from "@/lib/ui/demo-beats";
+import { paginate } from "@/lib/ui/paginate";
 import { formatBeatCountLabel } from "@/lib/ui/format-beat-count-label";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +75,10 @@ type BeatsCatalogClientProps = {
   initialQuery?: string;
   favoriteIds?: readonly string[];
   signedIn?: boolean;
+  /** Page from ?strona= (20 beats per page). */
+  initialPage?: number;
+  /** Other query parameters kept in page links, e.g. "katalog=platny". */
+  pageQuery?: string;
 };
 
 /**
@@ -84,6 +90,8 @@ export function BeatsCatalogClient({
   initialQuery = "",
   favoriteIds = [],
   signedIn = false,
+  initialPage = 1,
+  pageQuery = "",
 }: BeatsCatalogClientProps) {
   const tl = useLibText();
   const t = useTranslations("common.beatsCatalogClient");
@@ -99,6 +107,10 @@ export function BeatsCatalogClient({
     () => catalogBpmBoundsFromBeats(beats).max,
   );
   const [sort, setSort] = useState<SortId>("newest");
+  // A page belongs to one filter/sort view; any other view starts at page 1.
+  const viewKey = JSON.stringify([query, genres, keys, bpmFilterActive, bpmMin, bpmMax, sort]);
+  const [pageState, setPageState] = useState({ view: viewKey, page: initialPage });
+  const listTopRef = useRef<HTMLDivElement | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const portalReady = useSyncExternalStore(
     () => () => {},
@@ -146,6 +158,8 @@ export function BeatsCatalogClient({
     const list = filterPresentedBeatsCatalogByQuery(chipFiltered, query);
     return sortPresentedBeatsCatalog(list, sort);
   }, [beats, query, genres, keys, bpmFilterActive, bpmMin, bpmMax, sort]);
+
+  const paged = paginate(filtered, pageState.view === viewKey ? pageState.page : 1);
 
   const liveResultStatus = beatsCatalogResultStatusMessage(
     filtered.length,
@@ -255,7 +269,7 @@ export function BeatsCatalogClient({
             {filterPanel}
           </aside>
 
-          <div className="min-w-0">
+          <div className="min-w-0 scroll-mt-4" ref={listTopRef}>
             <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--brd-line)] pb-2">
               <div
                 className="sr-only"
@@ -300,17 +314,26 @@ export function BeatsCatalogClient({
               </div>
             ) : (
               <ul>
-                {filtered.map((beat, index) => (
+                {paged.rows.map((beat, index) => (
                   <BeatCatalogRow
                     key={beat.id}
                     beat={beat}
-                    featured={index === 0}
+                    featured={index === 0 && paged.page === 1}
                     favorited={favoriteIds.includes(beat.id)}
                     signedIn={signedIn}
                   />
                 ))}
               </ul>
             )}
+            <CatalogPager
+              page={paged.page}
+              pages={paged.pages}
+              query={pageQuery}
+              onPage={(page) => {
+                setPageState({ view: viewKey, page });
+                listTopRef.current?.scrollIntoView({ block: "start" });
+              }}
+            />
           </div>
         </div>
       </div>

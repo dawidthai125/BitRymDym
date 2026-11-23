@@ -17,6 +17,7 @@ import { beatsInGenre, collectGenres, genrePagePath, genreStats } from "@/lib/se
 import { beatListJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
 import { getPublicSiteUrl } from "@/lib/site-url";
+import { parseCatalogPage } from "@/lib/ui/paginate";
 import { presentBeats } from "@/lib/ui/demo-beats";
 
 type GenrePageProps = { params: Promise<{ slug: string }> };
@@ -44,7 +45,7 @@ export async function generateMetadata({ params }: GenrePageProps): Promise<Meta
   return pageMetadata({ title, description, path, image: { url: `${path}/opengraph-image`, width: 1200, height: 630, alt: title } });
 }
 
-export default async function BeatsGenrePage({ params }: GenrePageProps) {
+export default async function BeatsGenrePage({ params, searchParams }: GenrePageProps & { searchParams?: Promise<{ strona?: string }> }) {
   const { slug } = await params;
   const { genre, genres, beats: inGenre } = await loadGenre(slug);
   if (!genre || inGenre.length === 0) notFound();
@@ -99,7 +100,7 @@ export default async function BeatsGenrePage({ params }: GenrePageProps) {
             </p>
           </header>
 
-          <BeatsCatalogClient beats={beats} favoriteIds={favoriteIds} signedIn={session != null} />
+          <BeatsCatalogClient beats={beats} favoriteIds={favoriteIds} signedIn={session != null} initialPage={parseCatalogPage((await searchParams)?.strona)} />
 
           <section
             aria-labelledby="genre-about"

@@ -16,6 +16,7 @@ import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { isStoreApp } from "@/lib/site/store-app-server";
+import { parseCatalogPage } from "@/lib/ui/paginate";
 import { presentBeats } from "@/lib/ui/demo-beats";
 import { beatListJsonLd } from "@/lib/seo/json-ld";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
@@ -28,7 +29,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 }
 
 type BeatsPageProps = {
-  searchParams?: Promise<{ q?: string; zrodlo?: string; katalog?: string }>;
+  searchParams?: Promise<{ q?: string; zrodlo?: string; katalog?: string; strona?: string }>;
 };
 
 export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps) {
@@ -42,6 +43,12 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const paid = !mine && params.katalog === "platny";
   const lane = paid ? "paid" : "free";
   const session = await getCurrentProfile();
+  const page = parseCatalogPage(params.strona);
+  const pageQuery = new URLSearchParams({
+    ...(paid ? { katalog: "platny" } : {}),
+    ...(source === "USER" ? { zrodlo: "user" } : {}),
+    ...(typeof params.q === "string" && params.q ? { q: params.q.slice(0, 80) } : {}),
+  }).toString();
   const storeApp = await isStoreApp();
   // Store apps (Google Play / App Store) sell nothing: no paid catalogue there (exclusive beats are bought on the web).
   if (storeApp && paid) redirect("/beats");
@@ -159,10 +166,13 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
               </div>
               {beats.length > 0 ? (
                 <BeatsCatalogClient
+                key={pageQuery}
                   beats={beats}
                   initialQuery={initialQuery}
                   favoriteIds={favoriteIds}
                   signedIn={session != null}
+                  initialPage={page}
+                  pageQuery={pageQuery}
                 />
               ) : null}
             </div>
@@ -175,10 +185,13 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
             </div>
           ) : (
             <BeatsCatalogClient
+                key={pageQuery}
               beats={beats}
               initialQuery={initialQuery}
               favoriteIds={favoriteIds}
               signedIn={session != null}
+              initialPage={page}
+              pageQuery={pageQuery}
             />
           )}
         </PageFrame>

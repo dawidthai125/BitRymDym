@@ -197,6 +197,14 @@
       "dodajDoUlubionychWkrotce": "Add to favourites",
       "ulubioneWkrotce": "Favourites"
     },
+    "catalogPager": {
+      "aria": "Catalogue pages",
+      "poprzednia": "← Previous",
+      "poprzedniaAria": "Previous page",
+      "nastepna": "Next →",
+      "nastepnaAria": "Next page",
+      "stronaAria": "Page {page} of {pages}"
+    },
     "beatsCatalogClient": {
       "szukajBitow": "Search beats",
       "szukajBituProducentaGatunku": "Search beats, producers, genres…",
