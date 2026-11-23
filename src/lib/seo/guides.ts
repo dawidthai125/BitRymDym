@@ -348,6 +348,222 @@ export const GUIDES: readonly Guide[] = [
       { href: "/jak-nagrac", label: "Licencja i limity planów" },
     ],
   },
+  {
+    slug: "jak-zrobic-flow",
+    datePublished: "2026-11-23",
+    navLabel: "Jak zrobić flow",
+    metaTitle: "Flow w rapie — jak go wyćwiczyć i dopasować do bitu",
+    metaDescription:
+      "Co to jest flow w rapie i jak go wyćwiczyć: rytm, akcenty, pauzy, triole i zmiany tempa. Ćwiczenia na bicie, które pomogą Ci brzmieć pewniej i ciekawiej.",
+    h1: "Flow w rapie — jak go wyćwiczyć",
+    lead: "Flow to sposób, w jaki układasz słowa na bicie: rytm, akcenty i oddech. Ten sam tekst może brzmieć nudno albo świetnie — różnicę robi właśnie flow.",
+    sections: [
+      {
+        h2: "Rytm i akcenty",
+        paragraphs: [
+          "Bit ma stały puls. Flow polega na tym, gdzie w tym pulsie stawiasz sylaby i które z nich akcentujesz. Spróbuj wyklaskać rytm wersu, zanim go nawiniesz — od razu usłyszysz, czy siedzi na bębnach, czy się z nimi kłóci.",
+        ],
+      },
+      {
+        h2: "Pauzy są częścią flow",
+        paragraphs: [
+          "Nie musisz wypełniać każdej ćwierćnuty. Krótka pauza przed puentą wersu albo zaczęcie frazy chwilę po werblu dodaje napięcia i daje słuchaczowi czas na złapanie sensu. Oddech zaplanuj tak samo jak rymy.",
+        ],
+      },
+      {
+        h2: "Zmieniaj schematy",
+        paragraphs: [
+          "Najprostszy sposób na ciekawszy flow to zmiana schematu co kilka wersów: przejście z równych ósemek na triole, przyspieszenie (double time) albo zwolnienie na końcówce. Kontrast trzyma uwagę.",
+          "Na trapie bębny grają często w połowie tempa, więc triole i szybkie wejścia brzmią tam naturalnie. Na boom bapie lepiej sprawdza się bujanie z akcentem na werbel.",
+        ],
+      },
+      {
+        h2: "Ćwicz na różnych bitach",
+        paragraphs: [
+          "Ten sam tekst nawiń na trzech bitach w różnym tempie i nagraj każdą wersję. Odsłuch pokaże, gdzie flow siedzi najlepiej. Darmowe bity w BitRymDym mają podane BPM, więc łatwo wybrać wolniejszy i szybszy.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: "Co to jest flow w rapie?",
+        a: "Sposób układania słów na bicie: rytm sylab, akcenty, pauzy i tempo nawijki.",
+      },
+      {
+        q: "Jak poprawić flow?",
+        a: "Wyklaskuj rytm wersów, planuj pauzy i oddech, zmieniaj schematy co kilka wersów i nagrywaj próby na bitach w różnym tempie.",
+      },
+      {
+        q: "Co to są triole w rapie?",
+        a: "Podział, w którym na jedno uderzenie przypadają trzy sylaby zamiast dwóch lub czterech. Często słychać go w trapie.",
+      },
+    ],
+    beats: "free",
+    cta: [
+      { href: "/darmowe-bity-do-rapu", label: "Bity do ćwiczenia flow" },
+      { href: "/poradniki/co-to-jest-bpm-i-tonacja", label: "BPM i tonacja" },
+    ],
+  },
+  {
+    slug: "mikrofon-do-rapu",
+    datePublished: "2026-11-23",
+    navLabel: "Mikrofon do rapu",
+    metaTitle: "Mikrofon do rapu — USB czy XLR, dynamiczny czy pojemnościowy",
+    metaDescription:
+      "Jaki mikrofon do nagrywania rapu w domu: USB czy XLR z interfejsem, dynamiczny czy pojemnościowy, pop filtr i ustawienie. Prosty przewodnik dla początkujących.",
+    h1: "Mikrofon do rapu — jak wybrać",
+    lead: "Dobry mikrofon pomaga, ale nie zastąpi cichego pokoju i dobrej techniki. Oto, na co patrzeć przy wyborze pierwszego mikrofonu do nagrywania rapu w domu.",
+    sections: [
+      {
+        h2: "USB czy XLR",
+        paragraphs: [
+          "Mikrofon USB podłączasz prosto do komputera — bez dodatkowego sprzętu. To najprostszy start. Mikrofon XLR wymaga interfejsu audio, ale daje więcej możliwości rozbudowy i zwykle lepszą kontrolę poziomu.",
+        ],
+      },
+      {
+        h2: "Dynamiczny czy pojemnościowy",
+        paragraphs: [
+          "Mikrofony dynamiczne są mniej czułe, więc łapią mniej odbić i hałasu z pokoju — dobry wybór do nieprzygotowanego pomieszczenia. Pojemnościowe łapią więcej detali, ale też więcej pogłosu, więc lepiej sprawdzają się w wyciszonym miejscu.",
+        ],
+      },
+      {
+        h2: "Akcesoria, które robią różnicę",
+        paragraphs: [
+          "Pop filtr albo osłona przeciwwietrzna gasi „p” i „b”. Statyw trzyma mikrofon w stałej odległości. Słuchawki zamknięte nie przepuszczają bitu do mikrofonu.",
+        ],
+      },
+      {
+        h2: "Ustawienie i poziom",
+        paragraphs: [
+          "Mów z odległości mniej więcej dłoni, lekko obok osi mikrofonu, i ustaw głośność wejścia tak, żeby najgłośniejsze fragmenty nie przesterowywały. Przed nagraniem w Studiu BitRymDym zrób próbę mikrofonu, a w Nagrywarce na Windows użyj przycisku „Próba mikrofonu”.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: "Jaki mikrofon do rapu na start?",
+        a: "Najprościej mikrofon USB. Do głośnego, niewyciszonego pokoju lepszy będzie mikrofon dynamiczny.",
+      },
+      {
+        q: "Czy da się nagrać rap na mikrofonie ze słuchawek?",
+        a: "Tak, na próby wystarczy. Do nagrań, które chcesz wydać, warto mieć osobny mikrofon.",
+      },
+      {
+        q: "Czy potrzebuję interfejsu audio?",
+        a: "Do mikrofonu USB nie. Do mikrofonu XLR tak.",
+      },
+    ],
+    beats: null,
+    cta: [
+      { href: "/nagrywanie-rapu-w-domu", label: "Jak nagrać rap w domu" },
+      { href: "/studio-nagran-online", label: "Studio nagrań online" },
+    ],
+  },
+  {
+    slug: "nagrywanie-rapu-na-telefonie",
+    datePublished: "2026-11-23",
+    navLabel: "Nagrywanie rapu na telefonie",
+    metaTitle: "Jak nagrać rap na telefonie — bit, słuchawki i przeglądarka",
+    metaDescription:
+      "Jak nagrać rap na telefonie: słuchawki, ciche miejsce, ustawienie telefonu i nagranie zwrotki na bicie w przeglądarce. Proste kroki bez instalowania aplikacji.",
+    h1: "Jak nagrać rap na telefonie",
+    lead: "Nie masz komputera ani mikrofonu? Pierwszą zwrotkę nagrasz na telefonie. Kilka prostych zasad zrobi dużą różnicę w brzmieniu.",
+    sections: [
+      {
+        h2: "Słuchawki i cisza",
+        paragraphs: [
+          "Bit puszczaj w słuchawkach, nie z głośnika — inaczej wejdzie do nagrania. Nagrywaj w najcichszym miejscu, z dala od okna i ulicy. Pokój z meblami, zasłonami i dywanem brzmi lepiej niż łazienka czy pusty korytarz.",
+        ],
+      },
+      {
+        h2: "Telefon jako mikrofon",
+        paragraphs: [
+          "Mikrofon telefonu jest zwykle na dole obudowy. Trzymaj go w stałej odległości od ust, mniej więcej na szerokość dłoni, i nie zasłaniaj go palcami. Jeśli masz słuchawki z mikrofonem, sprawdź, który brzmi lepiej.",
+        ],
+      },
+      {
+        h2: "Nagrywanie w przeglądarce",
+        paragraphs: [
+          "W BitRymDym nie musisz instalować aplikacji: wybierasz darmowy bit i nagrywasz zwrotkę w przeglądarce, a Studio ma układ dopasowany do telefonu. Stronę możesz też dodać do ekranu głównego jak aplikację.",
+          "Po nagraniu BITEK zaproponuje mix i mastering, a gotowy plik pobierzesz albo pokażesz w katalogu utworów.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: "Czy da się nagrać dobry rap na telefonie?",
+        a: "Na próby i pierwsze numery — tak, jeśli nagrywasz w słuchawkach i w cichym miejscu. Osobny mikrofon da lepszą jakość.",
+      },
+      {
+        q: "Jak nagrać rap na telefonie bez aplikacji?",
+        a: "Przez przeglądarkę: w BitRymDym wybierasz bit i nagrywasz wokal w Studiu online.",
+      },
+      {
+        q: "Dlaczego w nagraniu słychać bit?",
+        a: "Bo leciał z głośnika telefonu. Puść bit w słuchawkach.",
+      },
+    ],
+    beats: "free",
+    cta: [
+      { href: "/darmowe-bity-do-rapu", label: "Wybierz bit" },
+      { href: "/studio-nagran-online", label: "Studio online" },
+    ],
+  },
+  {
+    slug: "dublowanie-wokalu",
+    datePublished: "2026-11-23",
+    navLabel: "Dublowanie wokalu",
+    metaTitle: "Dublowanie wokalu w rapie — jak nagrać dubel i adlibsy",
+    metaDescription:
+      "Jak nagrać dubel wokalu w rapie: dublowanie końcówek, pełne dublowanie refrenu, adlibsy, panorama lewo–prawo i głośność warstw. Poradnik krok po kroku.",
+    h1: "Dublowanie wokalu w rapie",
+    lead: "Dubel to druga (albo trzecia) warstwa tego samego tekstu nagrana pod główny wokal. Dodaje energii i szerokości — o ile nie przesadzisz.",
+    sections: [
+      {
+        h2: "Dubel końcówek",
+        paragraphs: [
+          "Najczęstsza technika w zwrotkach: dublujesz tylko ostatnie słowa wersów albo najważniejsze akcenty. Główny wokal zostaje czytelny, a puenty mocniej uderzają.",
+        ],
+      },
+      {
+        h2: "Pełny dubel refrenu",
+        paragraphs: [
+          "Refren często nagrywa się w całości dwa lub trzy razy. Warstwy rozkłada się lekko w lewo i w prawo, a główny wokal zostaje na środku. Dzięki temu refren brzmi szeroko i wyróżnia się na tle zwrotek.",
+        ],
+      },
+      {
+        h2: "Adlibsy",
+        paragraphs: [
+          "Adlibsy to krótkie wstawki między wersami: okrzyki, powtórzenia, komentarze. Nagrywaj je na osobnej ścieżce, ciszej niż główny wokal i najlepiej z innym ustawieniem w panoramie.",
+        ],
+      },
+      {
+        h2: "Jak to zrobić w Studiu",
+        paragraphs: [
+          "Każdą warstwę nagrywasz na osobnej ścieżce. Dubel ustaw ciszej niż główny wokal i rozłóż w panoramie, a adlibsy jeszcze ciszej. W Studiu BitRymDym dodajesz ścieżki (ich liczba zależy od planu), ustawiasz głośność i panoramę, a BITEK proponuje mix całości.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: "Co to jest dubel w rapie?",
+        a: "Dodatkowe nagranie tego samego tekstu (całego albo końcówek) pod głównym wokalem, które wzmacnia i poszerza brzmienie.",
+      },
+      {
+        q: "Jak głośno ustawić dubel?",
+        a: "Wyraźnie ciszej niż główny wokal — dubel ma wspierać, nie konkurować.",
+      },
+      {
+        q: "Czy dublować całe zwrotki?",
+        a: "Zwykle nie. W zwrotkach dubluje się końcówki i akcenty, a w całości — refren.",
+      },
+    ],
+    beats: null,
+    cta: [
+      { href: "/studio-nagran-online", label: "Nagraj w Studiu" },
+      { href: "/poradniki/jak-zmiksowac-wokal", label: "Jak zmiksować wokal" },
+    ],
+  },
 ];
 
 export function guidePath(slug: string): string {

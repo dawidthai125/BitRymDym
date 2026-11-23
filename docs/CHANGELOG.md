@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (8) — SEO: 4 nowe poradniki, linki na stronie głównej
+
+- Poradniki: flow, mikrofon do rapu, nagrywanie rapu na telefonie, dublowanie wokalu (razem 10).
+- Strona główna (tylko PL): sekcja „Poradniki dla raperów” z linkami do poradników i stron pod frazy.
+
 ## 2026-11-23 (7) — Dodatkowe domeny
 
 - Vercel: dodane `bitrymdym.com`, `bitrymdym.eu` (+ www) — middleware 308 na `https://www.bitrymdym.pl/en/<ścieżka>` (`englishHostRedirect`); `bitrymdym.online`, `bitrymdym.com.pl` (+ www) — przekierowanie domeny Vercel 308 na `www.bitrymdym.pl`. DNS w cyberFolks: A `@` → 76.76.21.21, CNAME `www` → cname.vercel-dns.com.

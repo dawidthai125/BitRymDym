@@ -23,6 +23,8 @@ import { loadFeaturedWorkOfWeek } from "@/lib/catalog/featured-work-server";
 import { isStoreApp } from "@/lib/site/store-app-server";
 import { presentBeats } from "@/lib/ui/demo-beats";
 import { organizationJsonLd, webApplicationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
+import { GUIDES, guidePath } from "@/lib/seo/guides";
+import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import type { PremiumTier } from "@/types/premium";
@@ -589,6 +591,33 @@ export default async function HomePage() {
           </div>
         </section>
         )}
+
+        {/* Poradniki + strony pod frazy: Polish-only copy, so only on the Polish home page. */}
+        {locale === "pl" ? (
+          <section aria-labelledby="home-poradniki" className="border-b border-tape-line" data-testid="home-guides">
+            <div className={`${wrap} py-10`}>
+              <h2 id="home-poradniki" className="font-poster text-2xl font-black uppercase text-tape-cream">
+                Poradniki dla raperów
+              </h2>
+              <ul className="mt-4 grid gap-x-6 gap-y-1 text-tape-cream-soft sm:grid-cols-2 lg:grid-cols-3">
+                {GUIDES.map((g) => (
+                  <li key={g.slug}>
+                    <Link href={guidePath(g.slug)} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+                      {g.navLabel}
+                    </Link>
+                  </li>
+                ))}
+                {LANDING_PAGES.filter((p) => !(p.webOnly && storeApp)).map((p) => (
+                  <li key={p.slug}>
+                    <Link href={landingPath(p.slug)} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+                      {p.navLabel}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        ) : null}
 
         {/* CLOSING POSTER */}
         <section aria-labelledby="home-cta">
