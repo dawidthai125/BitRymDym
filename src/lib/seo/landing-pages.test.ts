@@ -93,3 +93,17 @@ describe("English domains", () => {
     expect(englishHostRedirect(null, "/", "", o)).toBeNull();
   });
 });
+
+describe("app and video JSON-LD", () => {
+  it("describe the free Windows recorder and the promo film", async () => {
+    const { recorderAppJsonLd, promoVideoJsonLd } = await import("@/lib/seo/json-ld");
+    const o = "https://www.bitrymdym.pl";
+    const app = recorderAppJsonLd(o, { name: "N", description: "D" });
+    expect(app["@type"]).toBe("SoftwareApplication");
+    expect(app.operatingSystem).toBe("Windows");
+    expect(app.offers).toEqual({ "@type": "Offer", price: "0", priceCurrency: "PLN" });
+    const v = promoVideoJsonLd(o, { name: "F", description: "D", uploadDate: "2026-11-19" });
+    expect(v.contentUrl).toBe(`${o}/promo/jak-to-dziala.mp4`);
+    expect(v.thumbnailUrl).toEqual([`${o}/promo/jak-to-dziala-poster.jpg`]);
+  });
+});

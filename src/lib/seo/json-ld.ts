@@ -238,3 +238,36 @@ export function articleJsonLd(
     publisher: { "@type": "Organization", name: "BitRymDym", url: absoluteUrl(origin, "/") },
   };
 }
+
+/** Windows recorder (/nagrywarka): free desktop app, same account as the site. */
+export function recorderAppJsonLd(origin: string, input: { name: string; description: string }): JsonLdObject {
+  const url = absoluteUrl(origin, "/nagrywarka");
+  return {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "@id": `${url}#app`,
+    name: input.name,
+    description: input.description,
+    url,
+    applicationCategory: "MultimediaApplication",
+    operatingSystem: "Windows",
+    inLanguage: ["pl-PL", "en"],
+    offers: { "@type": "Offer", price: "0", priceCurrency: "PLN" },
+    publisher: { "@id": `${absoluteUrl(origin, "/")}#organization` },
+  };
+}
+
+/** Promo film on the home page (/promo/jak-to-dziala.mp4). */
+export function promoVideoJsonLd(origin: string, input: { name: string; description: string; uploadDate: string }): JsonLdObject {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: input.name,
+    description: input.description,
+    thumbnailUrl: [absoluteUrl(origin, "/promo/jak-to-dziala-poster.jpg")],
+    contentUrl: absoluteUrl(origin, "/promo/jak-to-dziala.mp4"),
+    uploadDate: input.uploadDate,
+    inLanguage: "pl-PL",
+    publisher: { "@id": `${absoluteUrl(origin, "/")}#organization` },
+  };
+}

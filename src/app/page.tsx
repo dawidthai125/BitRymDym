@@ -22,7 +22,7 @@ import { listPublishedBeats } from "@/lib/beats/service";
 import { loadFeaturedWorkOfWeek } from "@/lib/catalog/featured-work-server";
 import { isStoreApp } from "@/lib/site/store-app-server";
 import { presentBeats } from "@/lib/ui/demo-beats";
-import { organizationJsonLd, webApplicationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
+import { organizationJsonLd, promoVideoJsonLd, webApplicationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
 import { GUIDES, guidePath } from "@/lib/seo/guides";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
@@ -296,6 +296,13 @@ export default async function HomePage() {
         <JsonLdScript data={organizationJsonLd(getPublicSiteUrl())} />
         <JsonLdScript data={websiteJsonLd(getPublicSiteUrl(), seo("homeDescription"))} />
         <JsonLdScript data={webApplicationJsonLd(getPublicSiteUrl(), seo("homeDescription"))} />
+        <JsonLdScript
+          data={promoVideoJsonLd(getPublicSiteUrl(), {
+            name: t("promoFilm"),
+            description: seo("homeDescription"),
+            uploadDate: "2026-11-19",
+          })}
+        />
         {/* HERO — poster type + the loaded tape */}
         <section aria-labelledby="home-hero" className="border-b border-tape-line">
           <div

@@ -4,6 +4,9 @@ import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { BrdLink } from "@/components/brand/brd-button";
 import { AppShell } from "@/components/site/app-shell";
 import { pageMetadata } from "@/config/site";
+import { recorderAppJsonLd } from "@/lib/seo/json-ld";
+import { JsonLdScript } from "@/lib/seo/json-ld-script";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getSessionUser } from "@/lib/auth/session";
 import { PLAN_POLICY } from "@/config/plan-policy";
@@ -36,6 +39,7 @@ export default async function RecorderPage() {
   return (
     <AppShell tone="public">
       <main>
+        <JsonLdScript data={recorderAppJsonLd(getPublicSiteUrl(), { name: "BitRymDym Nagrywarka", description: t("metaDescription") })} />
         <PageFrame className="max-w-3xl py-12">
           <SectionLabel>{t("kicker")}</SectionLabel>
           <h1 className="brd-display mt-2 text-4xl font-semibold tracking-tight">

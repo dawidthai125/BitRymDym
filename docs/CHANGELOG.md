@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (9) — SEO: dane strukturalne programu i filmu
+
+- `/nagrywarka`: JSON-LD `SoftwareApplication` (Windows, darmowa). Strona główna: `VideoObject` filmu „Jak działa BitRymDym” (`/promo/jak-to-dziala.mp4`).
+- Lighthouse (mobile, lab): SEO/dostępność/dobre praktyki 100, wydajność 86–91 (LCP ~3,9 s na throttlingu — do obserwacji w CrUX/GSC).
+- Poczta domeny: `*@bitrymdym.pl` → Gmail przez ImprovMX (MX w Vercel DNS). SaaSHub: wpis BitRymDym (EN) czeka na akceptację.
+
 ## 2026-11-23 (8) — SEO: 4 nowe poradniki, linki na stronie głównej
 
 - Poradniki: flow, mikrofon do rapu, nagrywanie rapu na telefonie, dublowanie wokalu (razem 10).
