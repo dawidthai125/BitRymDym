@@ -1,0 +1,137 @@
+name: appstore-shots
+
+# Zrzuty ekranu do App Store (iPhone 6,9": symulator iPhone 17 Pro Max, 1320x2868).
+# Aplikacja Capacitor z ios-app/ zbudowana na symulator; dla każdego ekranu podmieniamy server.url
+# w kopii testowej (capacitor.config.json w App.app) i robimy zrzut po pełnym załadowaniu.
+# Wynik: PNG jako artifact. Niczego nie publikuje. Gałąź robocza appstore-shots (bez merge do main).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [appstore-shots]
+    paths:
+      - ".github/workflows/appstore-shots.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: appstore-shots-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUNDLE_ID: pl.bitrymdym.app
+
+jobs:
+  shots:
+    runs-on: macos-26
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: ios-app
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: ios-app/package-lock.json
+
+      - name: Wybierz Xcode 26
+        run: |
+          XCODE="$(ls -d /Applications/Xcode_26*.app | grep -viE 'beta|_rc' | sort -V | tail -1)"
+          test -n "$XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: npm ci + projekt Xcode
+        run: |
+          npm ci --no-audit --no-fund
+          npx cap add ios
+          bash scripts/patch-ios.sh >/dev/null
+          npx cap sync ios
+
+      - name: Symulator iPhone 17 Pro Max
+        run: |
+          xcrun simctl list devices available | grep -i "iphone" || true
+          UDID="$(xcrun simctl list devices available -j | python3 -c '
+          import json,sys
+          d=json.load(sys.stdin)["devices"]
+          best=None
+          for rt,devs in d.items():
+              if "iOS" not in rt: continue
+              for x in devs:
+                  if x["name"]!="iPhone 17 Pro Max": continue
+                  if best is None or rt>best[0]: best=(rt,x["udid"])
+          print(best[1] if best else "")
+          ')"
+          if [ -z "$UDID" ]; then
+            RT="$(xcrun simctl list runtimes -j | python3 -c 'import json,sys; r=[x for x in json.load(sys.stdin)["runtimes"] if x["platform"]=="iOS" and x["isAvailable"]]; print(sorted(r,key=lambda x:x["version"])[-1]["identifier"])')"
+            UDID="$(xcrun simctl create "iPhone 17 Pro Max" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max "$RT")"
+          fi
+          test -n "$UDID"
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
+
+      - name: Build dla symulatora
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -sdk iphonesimulator -destination "id=$SIM_UDID" \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/build.log" | grep -E '^(\*\*|error:)' || true
+          APP="$(ls -d "$RUNNER_TEMP"/dd/Build/Products/Release-iphonesimulator/App.app)"
+          test -d "$APP" || { tail -80 "$RUNNER_TEMP/build.log"; exit 1; }
+          echo "APP_PATH=$APP" >> "$GITHUB_ENV"
+
+      - name: Zrzuty ekranów
+        run: |
+          OUT="$GITHUB_WORKSPACE/appstore-shots"; mkdir -p "$OUT"
+          LOG="$OUT/shots.log"
+          xcrun simctl boot "$SIM_UDID" >>"$LOG" 2>&1 || true
+          xcrun simctl bootstatus "$SIM_UDID" -b >>"$LOG" 2>&1
+          xcrun simctl ui "$SIM_UDID" appearance dark >>"$LOG" 2>&1 || true
+          sleep 20
+          xcrun simctl status_bar booted override --time 9:41 --batteryState charged --batteryLevel 100 \
+            --cellularMode active --cellularBars 4 --dataNetwork wifi --wifiMode active --wifiBars 3 >>"$LOG" 2>&1 || true
+          CFG="$APP_PATH/capacitor.config.json"
+          BASE="https://www.bitrymdym.pl"
+          i=0
+          while read -r NAME PATH_Q; do
+            [ -z "$NAME" ] && continue
+            i=$((i+1))
+            python3 - "$CFG" "$BASE$PATH_Q" <<'PY'
+          import json,sys
+          p,u=sys.argv[1],sys.argv[2]; c=json.load(open(p))
+          c["server"]["url"]=u
+          json.dump(c,open(p,"w"))
+          PY
+            echo "--- $NAME $PATH_Q" >>"$LOG"
+            xcrun simctl terminate "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1 || true
+            xcrun simctl install "$SIM_UDID" "$APP_PATH" >>"$LOG" 2>&1
+            xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1
+            sleep 28
+            xcrun simctl status_bar booted override --time 9:41 --batteryState charged --batteryLevel 100 \
+              --cellularMode active --cellularBars 4 --wifiBars 3 >>"$LOG" 2>&1 || true
+            sleep 2
+            xcrun simctl io "$SIM_UDID" screenshot "$OUT/$(printf '%02d' $i)-$NAME.png" >>"$LOG" 2>&1
+          done <<'LIST'
+          start /?app=ios
+          beats /beats?app=ios
+          trap /beats/gatunek/trap?app=ios
+          jak-nagrac /jak-nagrac?app=ios
+          bit /beat/cf6d9a70-5a5e-443c-a117-263f678a72f1?app=ios
+          studio /studio?app=ios
+          o-nas /o-nas?app=ios
+          LIST
+          sips -g pixelWidth -g pixelHeight "$OUT"/*.png >>"$LOG" 2>&1 || true
+          ls -l "$OUT"; cat "$LOG"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: appstore-shots
+          path: appstore-shots/
+          if-no-files-found: warn
