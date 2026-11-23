@@ -2,7 +2,7 @@
 
 import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useEffect, useId, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";

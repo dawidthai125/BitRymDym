@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { removeCatalogSampleAction, updateCatalogSampleAction } from "@/app/sampel/actions";

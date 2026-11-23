@@ -6,7 +6,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { createPortal } from "react-dom";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";

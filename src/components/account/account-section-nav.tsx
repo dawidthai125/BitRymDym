@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { usePathname } from "next/navigation";
 
 /** Persistent profile sections. The account layout keeps this mounted while the page under it changes. */

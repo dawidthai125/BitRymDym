@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { PurchaseConsent } from "@/components/legal/consent-checkbox";
 import { useStoreApp } from "@/components/site/store-app-context";
 import { requestPurchasedBeatWavAction } from "@/lib/beats/purchased-wav-action";

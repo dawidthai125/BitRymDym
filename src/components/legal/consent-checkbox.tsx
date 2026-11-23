@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useTranslations } from "next-intl";
 
 import { BrdCheckbox } from "@/components/brand/brd-checkbox";

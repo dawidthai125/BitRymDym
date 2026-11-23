@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { AppShell } from "@/components/site/app-shell";

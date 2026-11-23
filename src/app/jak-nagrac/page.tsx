@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/site/app-shell";
 import { pageMetadata } from "@/config/site";

@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { ForgotPasswordForm } from "@/components/auth/auth-forms";
 import { AuthThemeBar } from "@/components/site/auth-theme-bar";

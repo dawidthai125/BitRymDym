@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { DELETE_CONFIRM_WORD, resolveLocale } from "@/i18n/config";
 
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useActionState } from "react";
 
 import {

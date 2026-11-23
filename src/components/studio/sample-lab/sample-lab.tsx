@@ -2,7 +2,7 @@
 
 import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";

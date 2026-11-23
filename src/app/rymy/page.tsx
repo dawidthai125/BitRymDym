@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { RhymeAttribution, RhymeCta, RhymeSearchForm, RhymeSections } from "@/components/rymy/rhyme-sections";

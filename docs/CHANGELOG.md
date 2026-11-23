@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (25) — Vercel: wstrzymanie strony i mniejsze zużycie procesora
+
+- Vercel (plan Hobby) wstrzymał wszystkie projekty: limit 4 h Fluid Active CPU / 30 dni, zużyte 4 h 45 min (BitRymDym 4 h 28 min). Dawid przeszedł na Pro, strona wróciła.
+- Przyczyna po naszej stronie: `next/link` ładował z góry każdy widoczny link (59–93 zapytania na wejście, każde przez middleware). Teraz `src/components/ui/app-link.tsx` (używać zamiast `next/link`): ładowanie dopiero po najechaniu, dotknięciu lub fokusie. Zmierzone: 0 zapytań w tle.
+- Middleware tworzy klienta Supabase dopiero, gdy jest potrzebny.
+
 ## 2026-11-23 (24) — Katalog i rankingi: te same wybory autora dla bitów, sampli i utworów
 
 - Migracja `20261123190000_listing_consents.sql` (zastosowana): `allow_ratings`, `in_rankings` w `beats` i `studio_samples`; ranking wymaga ocen i komentarzy (CHECK jak w `catalog_works`). Nowe rzeczy użytkownika startują bez zgód (trigger), BitRymDym ze wszystkimi. Wycofanie utworu nie wymaga już gotowego mastera.

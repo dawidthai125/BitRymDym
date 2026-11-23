@@ -2,7 +2,7 @@ import { getLibText } from "@/i18n/get-lib-text";
 import type { AppLocale } from "@/i18n/config";
 import { localeAlternates, localizedPath } from "@/lib/seo/locale-paths";
 import { getLocale, getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 

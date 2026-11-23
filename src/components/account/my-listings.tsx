@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { ConsentSwitches } from "@/components/community/consent-switches";
 import type { ListingConsents } from "@/lib/community/consents";

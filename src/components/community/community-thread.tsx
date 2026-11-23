@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { REPORT_DETAILS_MAX, REPORT_REASONS, type ReportReason } from "@/lib/community/comment-moderation-policy";
 

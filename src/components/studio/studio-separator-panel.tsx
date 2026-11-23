@@ -2,7 +2,7 @@
 
 import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useEffect, useState } from "react";
 
 type ProjectOpt = { id: string; title: string };

@@ -9,7 +9,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { LockedAction } from "@/components/plans/locked-action";
 import { useStoreApp } from "@/components/site/store-app-context";

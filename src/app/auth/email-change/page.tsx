@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { ConsumeEmailChangeNotice } from "@/components/auth/consume-email-change-notice";
 import { EmailChangeNotice } from "@/components/auth/email-change-notice";

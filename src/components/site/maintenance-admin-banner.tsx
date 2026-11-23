@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { MAINTENANCE_ADMIN_HEADER } from "@/lib/site/maintenance-gate";
 

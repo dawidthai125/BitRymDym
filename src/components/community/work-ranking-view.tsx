@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { readHalfYearPlaces, readWorkBoard } from "@/lib/catalog/catalog-service";

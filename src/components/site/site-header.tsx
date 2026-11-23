@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { BrdLogoHomeLink } from "@/components/brand/brd-logo";
 import { PageFrame } from "@/components/brand/chrome";

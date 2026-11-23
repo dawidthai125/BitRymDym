@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { WorkClipButton } from "@/app/utwory/work-clip-button";
 import type { FeaturedWorkView } from "@/lib/catalog/featured-work-server";

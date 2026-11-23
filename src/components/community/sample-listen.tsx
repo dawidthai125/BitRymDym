@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 export function SampleListen({ id }: { id: string }) {
   const t = useTranslations("community.catalog");

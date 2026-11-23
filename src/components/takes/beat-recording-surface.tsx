@@ -2,7 +2,7 @@
 
 import { useLibText } from "@/i18n/use-lib-text";
 
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef } from "react";

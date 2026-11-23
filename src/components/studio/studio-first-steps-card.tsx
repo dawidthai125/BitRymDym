@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useId, useSyncExternalStore } from "react";
 
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";

@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { notFound, redirect } from "next/navigation";
 
 import { AdminUserDeskTabs } from "@/components/admin/admin-user-desk-tabs";

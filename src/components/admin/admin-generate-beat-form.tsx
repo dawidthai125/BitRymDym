@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useState, type FormEvent } from "react";
 
 import { AdminBeatBitek } from "@/components/admin/admin-beat-bitek";

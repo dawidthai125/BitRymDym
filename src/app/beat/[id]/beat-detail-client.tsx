@@ -4,7 +4,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { BeatArtwork } from "@/components/brand/beat-artwork";

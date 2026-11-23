@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { BrdLogo } from "@/components/brand/brd-logo";
 import { intlTag, type AppLocale } from "@/i18n/config";

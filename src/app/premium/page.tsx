@@ -1,7 +1,7 @@
 import { FREE_WATERMARK_PER_DAY, freeWatermarkDownloadEnabled } from "@/lib/studio/deliver/policy";
 import { useLocale, useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { GuestSignUpLink } from "@/components/auth/guest-sign-up-link";
 import { BrdLink } from "@/components/brand/brd-button";

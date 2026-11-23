@@ -133,26 +133,31 @@ async function handleRequest(request: NextRequest) {
     return response;
   }
 
-  const supabase = createServerClient(url, anonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
+  // Built only when needed: a guest request with a warm maintenance flag never uses it.
+  let lazyClient: ReturnType<typeof createServerClient> | null = null;
+  const supabaseClient = () => {
+    lazyClient ??= createServerClient(url, anonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => {
-          request.cookies.set(name, value);
-        });
-        response = NextResponse.next({
-          request: {
-            headers: request.headers,
-          },
-        });
-        cookiesToSet.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options);
-        });
-      },
-    },
-  });
+    });
+    return lazyClient;
+  };
 
   const bearer = userAccessBearer(request.headers.get("authorization"));
   // Guests have no session to refresh. Skipping getUser keeps every public
@@ -162,22 +167,22 @@ async function handleRequest(request: NextRequest) {
   let error: { name?: string; status?: number } | null = null;
   if (shouldReadUser) {
     const result = bearer
-      ? await supabase.auth.getUser(bearer)
-      : await supabase.auth.getUser();
+      ? await supabaseClient().auth.getUser(bearer)
+      : await supabaseClient().auth.getUser();
     user = result.data.user ?? null;
     error = result.error;
   }
 
   // ── Maintenance mode ("Trwają prace") — admin toggle in /admin/site ──────
   const state: MaintenanceState = await maintenanceCache.get(async () => {
-    const { enabled, message, until } = await readMaintenance(supabase);
+    const { enabled, message, until } = await readMaintenance(supabaseClient());
     return { enabled, message, until };
   });
   if (state.enabled) {
     let isAdmin = false;
     if (user) {
       try {
-        isAdmin = (await readMaintenance(supabase)).viewerIsAdmin;
+        isAdmin = (await readMaintenance(supabaseClient())).viewerIsAdmin;
       } catch (roleError) {
         // Fail open like the flag itself: never lock the site on a DB blip.
         console.error(

@@ -1,5 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { FREE_WATERMARK_PER_DAY, freeWatermarkDownloadEnabled } from "@/lib/studio/deliver/policy";
 
 import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-region";

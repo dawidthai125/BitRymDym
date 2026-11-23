@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { redirect } from "next/navigation";
 
 import { SignInForm } from "@/components/auth/auth-forms";

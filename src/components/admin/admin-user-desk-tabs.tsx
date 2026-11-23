@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { useMemo, useState } from "react";
 
 import type { AdminUserDesk } from "@/lib/admin/user-desk";

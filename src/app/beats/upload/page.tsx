@@ -1,6 +1,6 @@
 import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { redirect } from "next/navigation";
 
 import { UserUploadBeatForm } from "@/components/beats/user-upload-beat-form";

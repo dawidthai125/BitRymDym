@@ -5,7 +5,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { Button } from "@/components/ui/button";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";

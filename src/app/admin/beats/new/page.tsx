@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { AdminCreateBeatForm } from "@/components/admin/admin-create-beat-form";
 

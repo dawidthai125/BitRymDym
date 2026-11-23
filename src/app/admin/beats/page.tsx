@@ -1,6 +1,6 @@
 import { getLibText } from "@/i18n/get-lib-text";
 import { getLocale, getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { redirect } from "next/navigation";
 
 import { AdminBeatPlayButton } from "@/components/admin/admin-beat-play-button";

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 
 import { hasRhymePage, rhymePagePath, type RhymeResult } from "@/lib/rymy/dictionary";
 

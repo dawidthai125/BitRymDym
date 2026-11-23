@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import Link from "next/link";
+import Link from "@/components/ui/app-link";
 import { usePathname } from "next/navigation";
 
 import { isSiteNavHrefActive } from "@/components/site/site-nav-active";
