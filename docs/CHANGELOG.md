@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (18) — SEO: tytuły bitów, filmy YouTube na stronach bitów, 4 poradniki
+
+- `/beat/[id]`: tytuł i opis z frazami („Nocny Pościg — darmowy bit trap 98 BPM do rapu”, „… na wyłączność”), PL/EN — `src/lib/seo/beat-meta.ts` (testy).
+- Film z kanału @bitrymdym na stronie bitu (fasada: miniatura → embed youtube-nocookie po kliknięciu) + JSON-LD VideoObject. Źródła: `beat-videos-data.ts` (stała lista) + RSS kanału (revalidate 1 h). CSP: img-src i.ytimg.com, frame-src www.youtube-nocookie.com.
+- Poradniki: jak-zaczac-rapowac, rymy-wielokrotne, oddech-w-rapie, ile-sylab-w-wersie (14 łącznie).
+
 ## 2026-11-23 (17) — SEO: darmowe narzędzia dla raperów
 
 - `/narzedzia` + `/narzedzia/metronom-online`, `/narzedzia/licznik-bpm` (tap tempo + BPM z pliku liczone w przeglądarce), `/narzedzia/licznik-sylab` (sylaby na wers, odchylenie od średniej).

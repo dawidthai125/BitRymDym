@@ -564,6 +564,196 @@ export const GUIDES: readonly Guide[] = [
       { href: "/poradniki/jak-zmiksowac-wokal", label: "Jak zmiksować wokal" },
     ],
   },
+  {
+    slug: "jak-zaczac-rapowac",
+    datePublished: "2026-11-23",
+    navLabel: "Jak zacząć rapować",
+    metaTitle: "Jak zacząć rapować — pierwsze kroki dla początkujących",
+    metaDescription:
+      "Jak zacząć rapować od zera: słuchanie, pierwszy tekst, ćwiczenie flow z metronomem, nagranie pierwszej zwrotki na darmowym bicie. Plan na pierwsze tygodnie.",
+    h1: "Jak zacząć rapować",
+    lead: "Nie potrzebujesz studia ani drogiego sprzętu. Potrzebujesz bitu, kartki i nawyku. Oto prosty plan na pierwsze tygodnie — od pierwszego wersu do pierwszej nagranej zwrotki.",
+    sections: [
+      {
+        h2: "Słuchaj świadomie",
+        paragraphs: [
+          "Wybierz kilku raperów, których lubisz, i słuchaj ich numerów z tekstem przed oczami. Zwracaj uwagę, gdzie oddychają, które sylaby akcentują i jak rymy układają się w wersie. To najszybsza szkoła flow.",
+          "Rapuj razem z nagraniem, a potem spróbuj sam na tym samym bicie. Szybko poczujesz, ile sylab mieści się w takcie.",
+        ],
+      },
+      {
+        h2: "Pierwszy tekst: krótko i konkretnie",
+        paragraphs: [
+          "Zacznij od 8 wersów, nie od całego numeru. Jeden temat, konkretne obrazy, proste rymy. Lepiej skończyć krótką zwrotkę niż utknąć na długiej.",
+          "Gdy brakuje słowa, sięgnij po słownik rymów — ale wybieraj rymy, które pasują do sensu, a nie tylko brzmią.",
+        ],
+      },
+      {
+        h2: "Ćwicz rytm codziennie",
+        paragraphs: [
+          "Kwadrans dziennie daje więcej niż dwie godziny raz w tygodniu. Włącz metronom albo bit w tempie 85–95 BPM i rapuj swoją zwrotkę, aż każdy wers trafia w takt. Potem przyspiesz o kilka BPM.",
+          "Licz sylaby w wersach — jeśli jeden jest dużo dłuższy od reszty, tam będziesz się spieszyć.",
+        ],
+      },
+      {
+        h2: "Nagraj się wcześnie",
+        paragraphs: [
+          "Własny głos z nagrania brzmi na początku dziwnie — to normalne. Nagrywaj się od pierwszego tygodnia: dopiero na nagraniu słychać, co poprawić. W BitRymDym wybierzesz darmowy bit i nagrasz zwrotkę w przeglądarce, bez instalowania programów.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Czy do rapowania potrzebny jest talent?", a: "Pomaga, ale najwięcej daje regularne ćwiczenie: słuchanie, pisanie i nagrywanie. Flow i dykcję wyrabia się jak każdą umiejętność." },
+      { q: "Od jakiego tempa bitu zacząć?", a: "Od wolniejszych bitów, około 80–95 BPM. Łatwiej w nich zmieścić wersy i zapanować nad oddechem." },
+      { q: "Jaki sprzęt na start?", a: "Wystarczą słuchawki i mikrofon w telefonie albo prosty mikrofon USB. Słuchawki są ważne, żeby bit nie wchodził do nagrania." },
+    ],
+    beats: "free",
+    cta: [
+      { href: "/darmowe-bity-do-rapu", label: "Wybierz pierwszy bit" },
+      { href: "/narzedzia/metronom-online", label: "Metronom online" },
+    ],
+  },
+  {
+    slug: "rymy-wielokrotne",
+    datePublished: "2026-11-23",
+    navLabel: "Rymy wielokrotne",
+    metaTitle: "Rymy wielokrotne w rapie — jak je pisać, z przykładami",
+    metaDescription:
+      "Czym są rymy wielokrotne (wielosylabowe) i wewnętrzne, jak je budować krok po kroku i jak szukać ich w słowniku rymów. Przykłady i ćwiczenia dla raperów.",
+    h1: "Rymy wielokrotne w rapie",
+    lead: "Rym wielokrotny to rym na kilku sylabach naraz — właśnie on sprawia, że wers „siada” i brzmi technicznie. Zobacz, jak go zbudować i jak ćwiczyć.",
+    sections: [
+      {
+        h2: "Czym jest rym wielokrotny",
+        paragraphs: [
+          "W rymie prostym zgadza się końcówka jednego słowa: „noga — droga”. W rymie wielokrotnym zgadzają się samogłoski kilku kolejnych sylab, np. „ulica nocą — mi pomoc”. Słuchacz łapie powtarzający się układ dźwięków, nawet gdy pisownia jest zupełnie inna.",
+          "Liczy się brzmienie, nie litery: „ó” i „u” brzmią tak samo, a końcówka „-ą” często rymuje się z „-om”.",
+        ],
+      },
+      {
+        h2: "Jak budować rym krok po kroku",
+        paragraphs: [
+          "Weź mocne słowo kończące wers i wypisz jego samogłoski od akcentowanej sylaby, np. „kaŁAMarz” → a-a-a. Teraz szukaj słów i zbitek słów o tym samym układzie samogłosek: „parasol”, „na zawsze”, „mam ją w garść”.",
+          "Zbitki dwóch–trzech słów dają najwięcej możliwości. Rym nie musi mieścić się w jednym słowie.",
+        ],
+      },
+      {
+        h2: "Rymy wewnętrzne i łańcuchy",
+        paragraphs: [
+          "Rym wewnętrzny pojawia się w środku wersu, a nie tylko na końcu. Gdy ten sam układ dźwięków powtarzasz kilka razy w kolejnych wersach, powstaje łańcuch rymów — charakterystyczny dla technicznego rapu.",
+          "Nie przesadzaj: tekst wypchany rymami bez sensu męczy. Najpierw treść, potem technika.",
+        ],
+      },
+      {
+        h2: "Gdzie szukać rymów",
+        paragraphs: [
+          "Słownik rymów BitRymDym pokazuje rymy wielosylabowe, dokładne i niedokładne do ponad 40 tysięcy polskich słów — zaczynając od tych najczęściej używanych. To dobry punkt startu, a resztę dopisze ucho.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Czym różni się rym dokładny od wielokrotnego?", a: "Rym dokładny dotyczy końcówki jednego słowa. Wielokrotny obejmuje kilka sylab naraz, często w kilku słowach." },
+      { q: "Czy rym niedokładny jest błędem?", a: "Nie. W rapie rymy niedokładne (inna samogłoska pod akcentem, ta sama końcówka) są powszechne i często brzmią naturalniej." },
+      { q: "Jak ćwiczyć rymy wielokrotne?", a: "Wybierz jedno słowo dziennie i wypisz do niego 10 rymów na 2–3 sylabach, także zbitek kilku słów. Potem użyj najlepszych w czterech wersach." },
+    ],
+    beats: null,
+    cta: [
+      { href: "/rymy", label: "Słownik rymów" },
+      { href: "/poradniki/jak-napisac-tekst-rapowy", label: "Jak napisać tekst rapowy" },
+    ],
+  },
+  {
+    slug: "oddech-w-rapie",
+    datePublished: "2026-11-23",
+    navLabel: "Oddech w rapie",
+    metaTitle: "Oddech w rapie — jak oddychać i nie tracić tchu na zwrotce",
+    metaDescription:
+      "Jak oddychać, rapując: planowanie oddechów w tekście, ćwiczenia przeponowe, dykcja i nagrywanie zwrotki w częściach. Praktyczne porady dla raperów.",
+    h1: "Oddech w rapie",
+    lead: "Brak tchu w połowie zwrotki to jeden z najczęstszych problemów na początku. Dobra wiadomość: oddech da się zaplanować i wyćwiczyć.",
+    sections: [
+      {
+        h2: "Zaplanuj oddechy w tekście",
+        paragraphs: [
+          "Przeczytaj zwrotkę na głos z bitem i zaznacz w tekście miejsca, w których bierzesz oddech — np. ukośnikiem. Zwykle to koniec wersu albo co drugi wers. Jeśli wers jest tak długi, że nie ma gdzie odetchnąć, skróć go.",
+          "Krótki „podkradany” oddech przez usta między frazami wystarcza, jeśli jest regularny.",
+        ],
+      },
+      {
+        h2: "Ćwiczenia oddechowe",
+        paragraphs: [
+          "Oddychaj przeponą: przy wdechu brzuch idzie do przodu, ramiona się nie unoszą. Ćwicz długi, równy wydech na „sss” — zacznij od 15 sekund i wydłużaj.",
+          "Rapuj zwrotkę, idąc albo wchodząc po schodach. Gdy dasz radę w ruchu, przy mikrofonie będzie łatwiej.",
+        ],
+      },
+      {
+        h2: "Dykcja i tempo",
+        paragraphs: [
+          "Gdy połykasz końcówki, zwykle rapujesz za szybko jak na swój oddech. Zwolnij metronom o 5–10 BPM, wyćwicz tekst wyraźnie, a potem wróć do tempa bitu.",
+          "Ćwicz łamańce językowe i trudne zbitki spółgłosek z tekstu osobno, zanim nagrasz całość.",
+        ],
+      },
+      {
+        h2: "Nagrywaj w częściach",
+        paragraphs: [
+          "Nie musisz nagrać 16 wersów na jednym oddechu. Profesjonaliści często nagrywają zwrotkę po 4–8 wersów i sklejają ujęcia. W Studiu BitRymDym nagrasz kilka ujęć, przytniesz je i ułożysz na osi czasu.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Jak nie tracić tchu podczas rapowania?", a: "Zaplanuj oddechy w tekście, skróć zbyt długie wersy, ćwicz oddech przeponowy i na początek nagrywaj zwrotkę w częściach." },
+      { q: "Oddychać nosem czy ustami?", a: "Podczas rapowania szybkie wdechy bierze się zwykle ustami — są krótsze i cichsze w nagraniu niż głośne wdechy nosem." },
+      { q: "Czy wdechy słychać w nagraniu?", a: "Trochę tak i to naturalne. Zbyt głośne wdechy można ściszyć w miksie albo wyciąć między ujęciami." },
+    ],
+    beats: "free",
+    cta: [
+      { href: "/narzedzia/metronom-online", label: "Ćwicz z metronomem" },
+      { href: "/studio-nagran-online", label: "Nagraj zwrotkę w częściach" },
+    ],
+  },
+  {
+    slug: "ile-sylab-w-wersie",
+    datePublished: "2026-11-23",
+    navLabel: "Ile sylab w wersie",
+    metaTitle: "Ile sylab w wersie rapowym — jak liczyć sylaby pod bit",
+    metaDescription:
+      "Ile sylab mieści się w wersie przy danym tempie bitu, jak liczyć sylaby w tekście rapowym i wyrównać wersy w zwrotce. Darmowy licznik sylab online.",
+    h1: "Ile sylab w wersie rapowym",
+    lead: "Nie ma jednej poprawnej liczby, ale są dobre punkty odniesienia. Zobacz, jak tempo bitu wpływa na długość wersu i jak wyrównać zwrotkę.",
+    sections: [
+      {
+        h2: "Tempo bitu a długość wersu",
+        paragraphs: [
+          "Wers to zwykle jeden takt, czyli cztery uderzenia. Przy bitach 85–95 BPM w takcie mieści się wygodnie około 10–14 sylab, przy szybkim flow nawet 16 i więcej. Przy trapie liczonym w half-time (np. 140 BPM czuje się jak 70) wersy bywają krótsze, ale gęściej „sypane”.",
+          "Ważniejsza od samej liczby jest powtarzalność: wersy o podobnej długości łatwiej rapować równo.",
+        ],
+      },
+      {
+        h2: "Jak liczyć sylaby po polsku",
+        paragraphs: [
+          "Sylabę tworzy samogłoska: a, ą, e, ę, i, o, ó, u, y. Litera „i” przed inną samogłoską tylko zmiękcza spółgłoskę — „nie”, „się”, „pierwszy” mają odpowiednio 1, 1 i 2 sylaby.",
+          "Licznik sylab BitRymDym robi to za Ciebie: wklejasz tekst, a przy każdym wersie widzisz liczbę sylab i odchylenie od średniej zwrotki.",
+        ],
+      },
+      {
+        h2: "Wyrównaj zwrotkę",
+        paragraphs: [
+          "Wersy, które odstają o 3–4 sylaby od reszty, to kandydaci do skrócenia albo rozłożenia na dwa takty. Czasem wystarczy zmienić jedno słowo na krótszy synonim.",
+          "Pamiętaj o pauzach: celowe przerwy i akcenty też są częścią flow. Licznik jest wskazówką, nie wyrocznią — decyduje ucho na bicie.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Ile sylab powinien mieć wers rapowy?", a: "Przy tempie 85–95 BPM zwykle 10–14 sylab na takt. Najważniejsze, żeby wersy w zwrotce miały podobną długość." },
+      { q: "Jak policzyć sylaby w tekście?", a: "Policz samogłoski, pomijając „i” przed inną samogłoską. Najszybciej zrobisz to w darmowym liczniku sylab online." },
+      { q: "Co zrobić z za długim wersem?", a: "Skróć go synonimem, usuń zbędne słowo albo rozłóż na dwa takty." },
+    ],
+    beats: "free",
+    cta: [
+      { href: "/narzedzia/licznik-sylab", label: "Licznik sylab online" },
+      { href: "/narzedzia/licznik-bpm", label: "Sprawdź BPM bitu" },
+    ],
+  },
 ];
 
 export function guidePath(slug: string): string {

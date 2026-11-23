@@ -33,7 +33,10 @@ import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 import { presentBeat, presentBeats } from "@/lib/ui/demo-beats";
 import { absoluteUrl, clampText } from "@/lib/share/share-links";
 import { getPublicSiteUrl } from "@/lib/site-url";
-import { beatRecordingJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import { beatRecordingJsonLd, beatVideoJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import { beatMetaDescription, beatMetaTitle } from "@/lib/seo/beat-meta";
+import { getBeatVideo } from "@/lib/seo/beat-videos";
+import { BeatVideo } from "@/components/beats/beat-video";
 import { genrePagePath, genreSlug } from "@/lib/seo/genre-pages";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
 import {
@@ -62,16 +65,27 @@ export async function generateMetadata({ params }: BeatDetailPageProps) {
     return { title: t("beatUnavailable") };
   }
   const presented = presentBeat(toPublicBeatDetail(beat));
-  const description = clampText(beat.description, 200) || `Odsłuch: ${presented.title}`;
+  const locale = (await getLocale()) as AppLocale;
+  const metaInput = {
+    title: presented.title,
+    genre: beat.genre,
+    bpm: beat.bpm,
+    key: beat.key,
+    description: beat.description,
+    lane: beat.ownershipType === "PLATFORM" ? catalogLaneOf(beat.catalogLane) : null,
+    locale: locale === "en" ? ("en" as const) : ("pl" as const),
+  };
+  const title = beatMetaTitle(metaInput);
+  const description = beatMetaDescription(metaInput) || clampText(beat.description, 200) || `Odsłuch: ${presented.title}`;
   // Card image: ./opengraph-image + ./twitter-image (dynamic, beat cover when public).
   return {
-    title: presented.title,
+    title,
     description,
-    alternates: localeAlternates((await getLocale()) as AppLocale, `/beat/${id}`),
+    alternates: localeAlternates(locale, `/beat/${id}`),
     // Private user beats open by link only; keep them out of search results.
     ...(beat.visibility === "private" ? { robots: { index: false, follow: false } } : {}),
-    openGraph: { type: "music.song", title: presented.title, description, url: localizedPath((await getLocale()) as AppLocale, `/beat/${id}`) },
-    twitter: { card: "summary_large_image", title: presented.title, description },
+    openGraph: { type: "music.song", title, description, url: localizedPath(locale, `/beat/${id}`) },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
@@ -216,6 +230,19 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
           dateModified: beat.updatedAt,
         });
 
+  const video = beat.visibility === "private" || beat.ownershipType !== "PLATFORM" ? null : await getBeatVideo(beat.id);
+  const videoLocale = locale as AppLocale;
+  const videoLabel = videoLocale === "en" ? "Video on YouTube" : "Film na YouTube";
+  const videoJsonLd = video
+    ? beatVideoJsonLd(getPublicSiteUrl(), {
+        beatId: beat.id,
+        videoId: video.videoId,
+        name: video.title ?? `${presented.title} — BitRymDym`,
+        description: clampText(beat.description, 300) || `${presented.title} — ${presented.genre ?? "bit"} ${presented.bpm} BPM`,
+        uploadDate: video.uploadDate,
+      })
+    : null;
+
   // Free public beats link to their genre landing page (internal linking + breadcrumb).
   const genreSlugValue =
     beat.visibility !== "private" && catalogLaneOf(beat.catalogLane) === "free" ? genreSlug(presented.genre) : null;
@@ -235,6 +262,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
       <main data-surface="tape" className="tape-grain">
         {jsonLd ? <JsonLdScript data={jsonLd} /> : null}
         {breadcrumb ? <JsonLdScript data={breadcrumb} /> : null}
+        {videoJsonLd ? <JsonLdScript data={videoJsonLd} /> : null}
         <PageFrame className="py-6 sm:py-8">
           <CommunityShelf current="beats" />
           <Link
@@ -274,6 +302,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               related={related}
             />
           </div>
+          {video ? <BeatVideo videoId={video.videoId} title={presented.title} label={videoLabel} /> : null}
           <LicenseSummary className="mt-6 border-t border-[var(--brd-line)] pt-4" />
           <div className="mt-6 border-t border-[var(--brd-line)] pt-4">
             <ShareButtons url={absoluteUrl(getPublicSiteUrl(), `/beat/${detail.id}`)} text={`${presented.title} — BitRymDym`} testId="beat-share" />

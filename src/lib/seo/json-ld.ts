@@ -294,3 +294,20 @@ export function webToolJsonLd(origin: string, input: { path: string; name: strin
     publisher: { "@id": `${absoluteUrl(origin, "/")}#organization` },
   };
 }
+
+/** YouTube video of a beat page (VideoObject → video results in Google). */
+export function beatVideoJsonLd(origin: string, input: { beatId: string; videoId: string; name: string; description: string; uploadDate: string }): JsonLdObject {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: input.name,
+    description: input.description,
+    thumbnailUrl: [`https://i.ytimg.com/vi/${input.videoId}/hqdefault.jpg`],
+    uploadDate: input.uploadDate,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${input.videoId}`,
+    contentUrl: `https://www.youtube.com/watch?v=${input.videoId}`,
+    url: absoluteUrl(origin, `/beat/${input.beatId}`),
+    inLanguage: "pl-PL",
+    publisher: { "@id": `${absoluteUrl(origin, "/")}#organization` },
+  };
+}
