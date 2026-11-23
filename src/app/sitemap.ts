@@ -6,6 +6,7 @@ import { listPublicWorkSitemapEntries } from "@/lib/catalog/catalog-service";
 import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 import { GUIDE_BASE, GUIDES, guidePath } from "@/lib/seo/guides";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
+import { isLocalizedPath, localizedPath } from "@/lib/seo/locale-paths";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
 /** Public, indexable pages only (no auth-gated or API routes). */
@@ -85,5 +86,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...workEntries];
+  const all = [...staticEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...workEntries];
+  return withEnglish(all, base);
+}
+
+/** Localized pages: hreflang alternates on the Polish entry + an /en twin with the same alternates. */
+function withEnglish(entries: MetadataRoute.Sitemap, base: string): MetadataRoute.Sitemap {
+  const out: MetadataRoute.Sitemap = [];
+  for (const entry of entries) {
+    const path = entry.url.slice(base.length) || "/";
+    if (!isLocalizedPath(path)) {
+      out.push(entry);
+      continue;
+    }
+    const pl = `${base}${path === "/" ? "" : path}`;
+    const en = `${base}${localizedPath("en", path)}`;
+    const alternates = { languages: { pl, en, "x-default": pl } };
+    out.push({ ...entry, alternates }, { ...entry, url: en, priority: Math.max(0.1, (entry.priority ?? 0.5) - 0.1), alternates });
+  }
+  return out;
 }

@@ -1,4 +1,6 @@
 import { getLibText } from "@/i18n/get-lib-text";
+import type { AppLocale } from "@/i18n/config";
+import { localeAlternates, localizedPath } from "@/lib/seo/locale-paths";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -65,10 +67,10 @@ export async function generateMetadata({ params }: BeatDetailPageProps) {
   return {
     title: presented.title,
     description,
-    alternates: { canonical: `/beat/${id}` },
+    alternates: localeAlternates((await getLocale()) as AppLocale, `/beat/${id}`),
     // Private user beats open by link only; keep them out of search results.
     ...(beat.visibility === "private" ? { robots: { index: false, follow: false } } : {}),
-    openGraph: { type: "music.song", title: presented.title, description, url: `/beat/${id}` },
+    openGraph: { type: "music.song", title: presented.title, description, url: localizedPath((await getLocale()) as AppLocale, `/beat/${id}`) },
     twitter: { card: "summary_large_image", title: presented.title, description },
   };
 }

@@ -10,6 +10,8 @@ import {
 import { buildCsp, cspHeaderName, generateNonce, NONCE_HEADER } from "@/lib/security/csp";
 import { decideStoreAppEntry, STORE_APP_COOKIE, storeAppCookieOptions } from "@/lib/site/store-app";
 import { userAccessBearer } from "@/lib/supabase/access-bearer";
+import { LOCALE_COOKIE } from "@/i18n/config";
+import { LOCALE_OVERRIDE_HEADER, stripEnglishPrefix } from "@/lib/seo/locale-paths";
 
 import {
   createMaintenanceStateCache,
@@ -267,7 +269,31 @@ export async function middleware(request: NextRequest) {
   const headers = new Headers(request.headers);
   headers.set(NONCE_HEADER, nonce);
   headers.set(headerName, csp);
-  const response = await handleRequest(new NextRequest(request, { headers }));
+  // English URLs: /en/<path> renders <path> with the locale forced to "en" (never trust the header from outside).
+  headers.delete(LOCALE_OVERRIDE_HEADER);
+  const englishPath = stripEnglishPrefix(request.nextUrl.pathname);
+  let target: URL | null = null;
+  if (englishPath) {
+    headers.set(LOCALE_OVERRIDE_HEADER, "en");
+    target = request.nextUrl.clone();
+    target.pathname = englishPath;
+  }
+  let response = await handleRequest(
+    target ? new NextRequest(target, { headers, method: request.method }) : new NextRequest(request, { headers }),
+  );
+  if (target && response.headers.get("x-middleware-next")) {
+    // Same pass-through, but rendered from the unprefixed route (request-header overrides kept).
+    const rewrite = NextResponse.rewrite(target);
+    response.headers.forEach((value, key) => {
+      if (key !== "x-middleware-next" && key !== "set-cookie") rewrite.headers.set(key, value);
+    });
+    for (const cookie of response.cookies.getAll()) rewrite.cookies.set(cookie);
+    response = rewrite;
+  }
+  if (target) {
+    // Later unprefixed links stay English for this visitor (same cookie as the language switcher).
+    response.cookies.set(LOCALE_COOKIE, "en", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  }
   response.headers.set(headerName, csp);
   // "Zaproś znajomego": `?ref=KOD` on any page → 30-day cookie, read at sign-up.
   const referral = referralCodeToStore({

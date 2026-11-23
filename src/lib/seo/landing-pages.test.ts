@@ -60,3 +60,24 @@ describe("poradniki", () => {
     }
   });
 });
+
+describe("English URLs", () => {
+  it("map /en paths only for localized pages", async () => {
+    const m = await import("@/lib/seo/locale-paths");
+    expect(m.stripEnglishPrefix("/en")).toBe("/");
+    expect(m.stripEnglishPrefix("/en/beats")).toBe("/beats");
+    expect(m.stripEnglishPrefix("/en/beat/abc")).toBe("/beat/abc");
+    expect(m.stripEnglishPrefix("/en/beats/gatunek/trap")).toBe("/beats/gatunek/trap");
+    expect(m.stripEnglishPrefix("/en/studio")).toBeNull();
+    expect(m.stripEnglishPrefix("/en/darmowe-bity-do-rapu")).toBeNull();
+    expect(m.stripEnglishPrefix("/english")).toBeNull();
+    expect(m.stripEnglishPrefix("/beats")).toBeNull();
+    expect(m.localizedPath("en", "/")).toBe("/en");
+    expect(m.localizedPath("en", "/poradniki")).toBe("/poradniki");
+    expect(m.localeAlternates("en", "/beats")).toEqual({
+      canonical: "/en/beats",
+      languages: { pl: "/beats", en: "/en/beats", "x-default": "/beats" },
+    });
+    expect(m.localeAlternates("pl", "/darmowe-bity-do-rapu")).toEqual({ canonical: "/darmowe-bity-do-rapu" });
+  });
+});

@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (6) — SEO: angielskie adresy /en
+
+- `/en/<ścieżka>` = ta sama strona po angielsku (middleware: rewrite na ścieżkę bez prefiksu + nagłówek `x-brd-locale: en` czytany w `src/i18n/request.ts`; ustawia też ciasteczko `NEXT_LOCALE=en`). Lista stron z wersją EN: `src/lib/seo/locale-paths.ts` (strona główna, bity, bit, gatunki, sample, utwory, utwór, rankingi, about, jak-nagrac, nagrywarka, mastering, premium). Landingi i poradniki tylko PL (bez /en → 404).
+- Metadane: canonical zależny od języka + hreflang pl/en/x-default (`pageMetadata`, `/beat/[id]`, `/utwor/[id]`). Sitemap: wpisy /en i alternates.
+
 ## 2026-11-23 (5) — SEO: prawdziwe 404
 
 - Usunięty globalny `src/app/loading.tsx`: owijał każdą stronę w Suspense, więc `notFound()` na `/beat/[id]`, `/utwor/[id]`, `/beats/gatunek/[slug]`, `/poradniki/[slug]` dawało HTTP 200 (soft 404). Ekran ładowania przeniesiony tylko do list: `ranking`, `utwory`, `sampel`, `library`, `settings` (account/admin/studio mają własne).

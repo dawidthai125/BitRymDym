@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+
+import type { AppLocale } from "@/i18n/config";
+import { localeAlternates } from "@/lib/seo/locale-paths";
 
 import { getPublicSiteUrl } from "@/lib/site-url";
 
@@ -69,7 +72,7 @@ export async function pageMetadata(p: {
   absoluteTitle?: boolean;
   image?: OgImage;
 }): Promise<Metadata> {
-  const t = await getTranslations("meta");
+  const [t, locale] = await Promise.all([getTranslations("meta"), getLocale() as Promise<AppLocale>]);
   const asIs = p.absoluteTitle || p.title.includes(siteConfig.name);
   const fullTitle = asIs ? p.title : `${p.title} · ${siteConfig.name}`;
   const image = p.image ?? DEFAULT_OG_IMAGE;
@@ -77,14 +80,14 @@ export async function pageMetadata(p: {
   return {
     title: asIs ? { absolute: p.title } : p.title,
     description: p.description,
-    alternates: { canonical: path },
+    alternates: localeAlternates(locale, path),
     openGraph: {
       type: "website",
       locale: t("ogLocale"),
       siteName: siteConfig.name,
       title: fullTitle,
       description: p.description,
-      url: path,
+      url: localeAlternates(locale, path).canonical,
       images: [image],
     },
     twitter: {

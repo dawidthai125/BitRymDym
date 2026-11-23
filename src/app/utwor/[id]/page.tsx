@@ -1,4 +1,6 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import type { AppLocale } from "@/i18n/config";
+import { localeAlternates, localizedPath } from "@/lib/seo/locale-paths";
 import { notFound } from "next/navigation";
 
 import { PageFrame } from "@/components/brand/chrome";
@@ -29,8 +31,8 @@ export async function generateMetadata({ params }: Props) {
   return {
     title: work.title,
     description,
-    alternates: { canonical: `/utwor/${work.id}` },
-    openGraph: { type: "music.song", title: work.title, description, url: `/utwor/${work.id}` },
+    alternates: localeAlternates((await getLocale()) as AppLocale, `/utwor/${work.id}`),
+    openGraph: { type: "music.song", title: work.title, description, url: localizedPath((await getLocale()) as AppLocale, `/utwor/${work.id}`) },
     twitter: { card: "summary_large_image", title: work.title, description },
   };
 }
