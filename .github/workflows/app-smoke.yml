@@ -110,6 +110,20 @@ jobs:
           xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1
           sleep 20
           xcrun simctl io "$SIM_UDID" screenshot "$OUT/ios-03-relaunch.png" >>"$LOG" 2>&1
+          # Wariant testowy: ta sama aplikacja, start od /premium?app=ios (bez tapania w symulatorze).
+          CFG="$APP_PATH/capacitor.config.json"
+          python3 - "$CFG" <<'PY'
+          import json,sys
+          p=sys.argv[1]; c=json.load(open(p))
+          c["server"]["url"]="https://www.bitrymdym.pl/premium?app=ios"
+          json.dump(c,open(p,"w"))
+          PY
+          grep -o '"url":"[^"]*"' "$CFG" >>"$LOG"
+          xcrun simctl terminate "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1 || true
+          xcrun simctl install "$SIM_UDID" "$APP_PATH" >>"$LOG" 2>&1
+          xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1
+          sleep 25
+          xcrun simctl io "$SIM_UDID" screenshot "$OUT/ios-04-premium.png" >>"$LOG" 2>&1
           xcrun simctl spawn "$SIM_UDID" log show --last 3m --style compact \
             --predicate 'process == "App"' 2>/dev/null | tail -300 > "$OUT/ios-app-log.txt" || true
           ls -l "$OUT"; cat "$LOG"
@@ -206,13 +220,17 @@ jobs:
           adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml "$OUT/ui-start.xml"
           grep -o -E 'resource-id="com.android.chrome:id/(url_bar|title_bar|toolbar|close_button)"' "$OUT/ui-start.xml" | sort -u > "$OUT/toolbar-ids.txt" || true
           # Podstrona /premium w TWA (LauncherActivity przyjmuje URL z intencji)
-          adb shell am start -n pl.bitrymdym.app/com.google.androidbrowserhelper.trusted.LauncherActivity -a android.intent.action.VIEW -d "https://www.bitrymdym.pl/premium"
+          adb shell am start -n pl.bitrymdym.app/com.google.androidbrowserhelper.trusted.LauncherActivity -a android.intent.action.VIEW -d "https://www.bitrymdym.pl/premium?app=android"
           sleep 20; shot android-03-premium; acts "premium"
           adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml "$OUT/ui-premium.xml"
           # Mikrofon: uprawnienie Chrome (TWA używa uprawnień przeglądarki)
           adb shell pm grant com.android.chrome android.permission.RECORD_AUDIO && echo "pm grant RECORD_AUDIO chrome: OK" >> "$OUT/mic.txt" || echo "pm grant RECORD_AUDIO chrome: BŁĄD" >> "$OUT/mic.txt"
           adb shell dumpsys package com.android.chrome | grep -i "RECORD_AUDIO" >> "$OUT/mic.txt"
           adb logcat -d | grep -i -E "TWA|TrustedWeb|Digital Asset|OriginVerifier|DelegationService|customtabs|verif" | tail -200 > "$OUT/logcat-twa.txt"
+          adb logcat -d -b crash > "$OUT/logcat-crash.txt"
+          adb logcat -d | grep -A40 "FATAL EXCEPTION" | head -200 > "$OUT/logcat-fatal.txt"
+          adb logcat -d | gzip > "$OUT/logcat-full.txt.gz"
+          cat "$OUT/logcat-crash.txt" | head -80
           ls -l "$OUT"
           cat "$OUT/activities.txt" "$OUT/toolbar-ids.txt" "$OUT/mic.txt"
           exit 0
