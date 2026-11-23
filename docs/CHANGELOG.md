@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (2) — SEO: poradnik i lżejsze listy (775bd69, wdrożone)
+
+- **/jak-nagrac:** sekcja „Jak nagrać rap w domu — krok po kroku” (7 kroków, `common.howToPage.kroki.k1–k7`, linki /beats, /nagrywarka, /utwory); zgłoszona do indeksowania w GSC.
+- **Okładki list:** `?s=mini` (160 px, sharp z miniatury, cache CDN) dla `BeatArtwork` xs/sm; ok. 18 KB → 4 KB na okładkę.
+- **Logo:** `sizes` 88/120 px zamiast 176/240 px.
+- **Lighthouse mobile /beats:** 824 → 625 KiB, oszczędności obrazów 263 → 15 KiB; wynik 89–91, LCP ~3,3–3,6 s (tekst nagłówka, opóźnienie renderu — otwarte).
+- **Routine:** jednorazowy przegląd GSC 27.11 10:00.
+
 ## 2026-11-23 — SEO (047d2f4, wdrożone)
 
 - **JSON-LD:** strona główna Organization + WebSite + WebApplication (Studio, oferta 0 PLN); `/beats` i gatunki ItemList; bit, gatunek i utwór BreadcrumbList (test Google: „Menu nawigacyjne” prawidłowe). Buildery w `src/lib/seo/json-ld.ts`.
