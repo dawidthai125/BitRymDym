@@ -125,6 +125,8 @@ jobs:
           xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID" >>"$LOG" 2>&1
           sleep 25
           xcrun simctl io "$SIM_UDID" screenshot "$OUT/ios-04-premium.png" >>"$LOG" 2>&1
+          sleep 12
+          xcrun simctl io "$SIM_UDID" screenshot "$OUT/ios-05-premium-pozniej.png" >>"$LOG" 2>&1
           xcrun simctl spawn "$SIM_UDID" log show --last 3m --style compact \
             --predicate 'process == "App"' 2>/dev/null | tail -300 > "$OUT/ios-app-log.txt" || true
           ls -l "$OUT"; cat "$LOG"
@@ -198,11 +200,16 @@ jobs:
           adb shell am set-debug-app --persistent com.android.chrome || true
           adb shell am force-stop com.android.chrome
           adb install -r "$SIGNED_APK"
+          # Emulator: bez okien ANR (Pixel Launcher) zasłaniających zrzuty; launcher ma czas się uspokoić.
+          adb shell settings put global hide_error_dialogs 1 || true
+          adb shell settings put global anr_show_background 0 || true
+          sleep 45
+          adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS || true
           adb shell pm grant pl.bitrymdym.app android.permission.POST_NOTIFICATIONS || true
           adb logcat -c
           adb shell monkey -p pl.bitrymdym.app -c android.intent.category.LAUNCHER 1
-          sleep 12; shot android-00-start-12s; acts "start+12s"
-          sleep 28; shot android-01-start-40s; acts "start+40s"
+          sleep 12; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null; shot android-00-start-12s; acts "start+12s"
+          sleep 28; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null; shot android-01-start-40s; acts "start+40s"
           # Ekran powitalny Chrome, jeśli jednak się pokazał: spróbuj zamknąć
           if adb shell dumpsys activity activities | grep -i -E "mResumedActivity.*(FirstRun|fre)" ; then
             adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml "$OUT/ui-fre.xml"
@@ -222,7 +229,7 @@ jobs:
           grep -o -E 'resource-id="com.android.chrome:id/(url_bar|title_bar|toolbar|close_button)"' "$OUT/ui-start.xml" | sort -u > "$OUT/toolbar-ids.txt" || true
           # Podstrona /premium w TWA (LauncherActivity przyjmuje URL z intencji)
           adb shell am start -n pl.bitrymdym.app/com.google.androidbrowserhelper.trusted.LauncherActivity -a android.intent.action.VIEW -d "https://www.bitrymdym.pl/premium?app=android"
-          sleep 20; shot android-03-premium; acts "premium"
+          sleep 20; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null; shot android-03-premium; acts "premium"
           adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml "$OUT/ui-premium.xml"
           # Mikrofon: uprawnienie Chrome (TWA używa uprawnień przeglądarki)
           adb shell pm grant com.android.chrome android.permission.RECORD_AUDIO && echo "pm grant RECORD_AUDIO chrome: OK" >> "$OUT/mic.txt" || echo "pm grant RECORD_AUDIO chrome: BŁĄD" >> "$OUT/mic.txt"
