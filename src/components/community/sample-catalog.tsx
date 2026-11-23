@@ -63,6 +63,7 @@ export function SampleCatalog({
   types,
   showTalk = true,
   showFilters = true,
+  linkTitles = false,
   extra,
 }: {
   items: CatalogSampleItem[];
@@ -73,6 +74,8 @@ export function SampleCatalog({
   /** Ratings and comments (catalog only; a private draft has none). */
   showTalk?: boolean;
   showFilters?: boolean;
+  /** Title links to the sample page /sampel/[id] (public catalog only; drafts have no page). */
+  linkTitles?: boolean;
   /** Extra controls per row, e.g. "Do katalogu" in the admin generator. */
   extra?: (item: CatalogSampleItem) => ReactNode;
 }) {
@@ -286,7 +289,15 @@ export function SampleCatalog({
                   </button>
                 ) : null}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base text-[var(--brd-ink)]">{s.title}</p>
+                  <p className="truncate text-base text-[var(--brd-ink)]">
+                    {linkTitles ? (
+                      <Link href={`/sampel/${s.id}`} className="underline-offset-4 hover:underline">
+                        {s.title}
+                      </Link>
+                    ) : (
+                      s.title
+                    )}
+                  </p>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--brd-mute)]">
                     <span>{s.author}</span>
                     {s.ratingCount ? (
@@ -335,6 +346,11 @@ export function SampleCatalog({
               )}
 
               <div className="mt-1 flex flex-wrap items-center gap-3 pl-12 sm:pl-[5.25rem]">
+                {linkTitles ? (
+                  <Link href={`/sampel/${s.id}`} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">
+                    {t("opis")}
+                  </Link>
+                ) : null}
                 {showTalk ? <SampleTalk id={s.id} signedIn={signedIn} /> : null}
                 {extra ? extra(s) : null}
                 {isAdmin ? (

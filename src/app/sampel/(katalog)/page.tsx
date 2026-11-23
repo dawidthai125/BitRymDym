@@ -3,13 +3,14 @@ import Link from "next/link";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
-import { SampleCatalog, type CatalogSampleItem } from "@/components/community/sample-catalog";
+import { SampleCatalog } from "@/components/community/sample-catalog";
 import { SamplePromoFilm } from "@/components/community/sample-promo-film";
 import { AppShell } from "@/components/site/app-shell";
 import { pageMetadata } from "@/config/site";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { listPublicSamples, pickSampleOfTheWeek } from "@/lib/community/community-service";
-import { catalogSampleNumbers, parseCatalogSource } from "@/lib/community/share-policy";
+import { toCatalogSampleItems } from "@/lib/community/sample-items";
+import { parseCatalogSource } from "@/lib/community/share-policy";
 import { LIVE_SAMPLE_INSTRUMENTS, SAMPLE_INSTRUMENTS, SAMPLE_TYPES } from "@/lib/studio/samples/sample-policy";
 
 export async function generateMetadata() {
@@ -35,28 +36,12 @@ export default async function SampleCatalogPage({
 
   const instrumentLabel = (id: string | null) => (id && tl.has(`instrument.${id}`) ? tl(`instrument.${id}`) : id);
   const typeLabel = (id: string | null) => (id && tl.has(`typ.${id}`) ? tl(`typ.${id}`) : null);
-  // Stored catalog number (studio_samples.sample_number): stays the same whatever the sort or filter.
-  const numberOf = catalogSampleNumbers(samples);
-  const items: CatalogSampleItem[] = samples
-    .map((s, i) => ({
-      id: s.id,
-      no: numberOf.get(s.id) ?? samples.length - i,
-      title: s.title,
-      author: t("by", { name: s.author }),
-      durationMs: s.durationMs,
-      instrument: s.instrument,
-      instrumentLabel: instrumentLabel(s.instrument),
-      sampleType: s.sampleType,
-      typeLabel: typeLabel(s.sampleType),
-      bpm: s.bpm,
-      bars: s.bars,
-      barsLabel: s.bars ? tl("taktow", { n: s.bars }) : null,
-      musicalKey: s.musicalKey,
-      platform: s.platform,
-      ratingAvg: s.ratingAvg,
-      ratingCount: s.ratingCount,
-    }))
-    .sort((a, b) => b.no - a.no);
+  const items = toCatalogSampleItems(samples, {
+    by: (name) => t("by", { name }),
+    instrument: instrumentLabel,
+    type: typeLabel,
+    bars: (n) => tl("taktow", { n }),
+  });
   const best = source === "user" ? pickSampleOfTheWeek(samples) : null;
   const bestItem = best ? items.find((i) => i.id === best.id) ?? null : null;
   const instruments = [...SAMPLE_INSTRUMENTS, ...LIVE_SAMPLE_INSTRUMENTS].map((o) => ({ id: o.id, label: instrumentLabel(o.id) ?? o.id }));
@@ -101,7 +86,7 @@ export default async function SampleCatalogPage({
               {source === "brd" ? t("samplesEmptyBrd") : t("samplesEmptyUser")}
             </p>
           ) : (
-            <SampleCatalog items={items} signedIn={Boolean(session)} isAdmin={isAdmin} instruments={instruments} types={types} />
+            <SampleCatalog items={items} signedIn={Boolean(session)} isAdmin={isAdmin} instruments={instruments} types={types} linkTitles />
           )}
         </PageFrame>
       </main>

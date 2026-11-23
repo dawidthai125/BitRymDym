@@ -307,6 +307,19 @@ export async function listPublicSamples(source: CatalogSource): Promise<PublicSa
   }));
 }
 
+/** One public sample with its tab siblings (numbers and "similar" need the whole list). */
+export async function findPublicSample(
+  id: string,
+): Promise<{ sample: PublicSampleCard; siblings: PublicSampleCard[] } | null> {
+  if (!isUuid(id)) return null;
+  for (const source of ["brd", "user"] as const) {
+    const siblings = await listPublicSamples(source);
+    const sample = siblings.find((s) => s.id === id);
+    if (sample) return { sample, siblings };
+  }
+  return null;
+}
+
 export type SampleRatingStats = { avg: number | null; count: number; weekAvg: number | null; weekCount: number };
 
 /** Pure: per-sample average and count, all time and over the 7 days before `now`. */

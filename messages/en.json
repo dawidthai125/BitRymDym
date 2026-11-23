@@ -5087,6 +5087,12 @@
       "okruszekUtwory": "Tracks catalogue"
     },
     "sampleCatalog": {
+      "opis": "About",
+      "oSamplu": "About the sample",
+      "podobne": "Similar samples",
+      "uzyjWStudiu": "Use in the Studio",
+      "tylkoStudio": "Free to use in the Studio. The file can't be downloaded.",
+      "wrocDoKatalogu": "← Sample catalogue",
       "sortuj": "Sort",
       "najnowsze": "Newest",
       "najwyzejOceniane": "Top rated",

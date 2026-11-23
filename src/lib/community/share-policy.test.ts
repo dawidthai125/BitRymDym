@@ -44,7 +44,7 @@ describe("sample catalog tab", () => {
 
   it("uses the parser on /sampel and links the shelf and footer to the BitRymDym tab", () => {
     const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
-    expect(read("src/app/sampel/page.tsx")).toContain("parseCatalogSource(params.zrodlo)");
+    expect(read("src/app/sampel/(katalog)/page.tsx")).toContain("parseCatalogSource(params.zrodlo)");
     expect(read("src/components/community/community-shelf.tsx")).toContain('href: "/sampel?zrodlo=brd"');
     expect(read("src/components/site/site-footer.tsx")).toContain('href="/sampel?zrodlo=brd"');
   });

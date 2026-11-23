@@ -311,3 +311,37 @@ export function beatVideoJsonLd(origin: string, input: { beatId: string; videoId
     publisher: { "@id": `${absoluteUrl(origin, "/")}#organization` },
   };
 }
+
+export type SampleRecordingInput = {
+  origin: string;
+  id: string;
+  title: string;
+  author: string | null | undefined;
+  durationSeconds?: number | null;
+  bpm?: number | null;
+  musicalKey?: string | null;
+  description?: string | null;
+  datePublished?: string | null;
+};
+
+/** MusicRecording for /sampel/[id]: free to listen, no contentUrl (samples are not downloadable). */
+export function sampleRecordingJsonLd(input: SampleRecordingInput): JsonLdObject {
+  const url = absoluteUrl(input.origin, `/sampel/${input.id}`);
+  const extra: JsonLdObject[] = [];
+  if (input.bpm && input.bpm > 0) extra.push({ "@type": "PropertyValue", name: "tempo", value: Math.round(input.bpm), unitText: "BPM" });
+  const key = clean(input.musicalKey);
+  if (key) extra.push({ "@type": "PropertyValue", name: "musicalKey", value: key });
+  return {
+    "@context": "https://schema.org",
+    "@type": "MusicRecording",
+    "@id": url,
+    name: input.title,
+    url,
+    byArtist: person(input.author),
+    duration: isoDuration(input.durationSeconds) ?? undefined,
+    description: clean(input.description),
+    datePublished: clean(input.datePublished),
+    isAccessibleForFree: true,
+    additionalProperty: extra.length ? extra : undefined,
+  };
+}

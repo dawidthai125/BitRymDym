@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 describe("Sample promo film", () => {
   it("embeds the Sample how-it-works film on /sampel", () => {
-    const page = readFileSync(join(process.cwd(), "src/app/sampel/page.tsx"), "utf8");
+    const page = readFileSync(join(process.cwd(), "src/app/sampel/(katalog)/page.tsx"), "utf8");
     const film = readFileSync(
       join(process.cwd(), "src/components/community/sample-promo-film.tsx"),
       "utf8",

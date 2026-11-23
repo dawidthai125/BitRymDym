@@ -5087,6 +5087,12 @@
       "okruszekUtwory": "Katalog utworów"
     },
     "sampleCatalog": {
+      "opis": "Opis",
+      "oSamplu": "O samplu",
+      "podobne": "Podobne sample",
+      "uzyjWStudiu": "Użyj w Studiu",
+      "tylkoStudio": "Darmowy, do użycia w Studiu. Pliku nie da się pobrać.",
+      "wrocDoKatalogu": "← Katalog sampli",
       "sortuj": "Sortuj",
       "najnowsze": "Najnowsze",
       "najwyzejOceniane": "Najwyżej oceniane",

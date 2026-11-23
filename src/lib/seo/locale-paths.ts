@@ -25,7 +25,7 @@ const STATIC_PATHS = new Set([
   "/mastering",
   "/premium",
 ]);
-const DYNAMIC_PREFIXES = ["/beat/", "/utwor/", "/beats/gatunek/"];
+const DYNAMIC_PREFIXES = ["/beat/", "/sampel/", "/utwor/", "/beats/gatunek/"];
 
 /** Path without query/hash, no trailing slash (except "/"). */
 function clean(path: string): string {

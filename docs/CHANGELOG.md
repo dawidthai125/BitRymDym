@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-23 (20) — Strony sampli `/sampel/[id]`
+
+- Każdy sampel z katalogu ma stronę: odtwarzacz (ten sam co w katalogu, zalogowani), opis i parametry z faktów w bazie (`src/lib/seo/sample-meta.ts`, bez nowej kolumny), „Użyj w Studiu”, podobne sample, komentarze, udostępnianie. Bez pobierania (dotychczasowa blokada bez zmian).
+- SEO: tytuł/opis PL+EN, hreflang, MusicRecording + breadcrumbs, mapa strony. Lista w grupie `(katalog)`, żeby loading nie dawał 200 dla nieistniejącego sampla.
+
 ## 2026-11-23 (19) — Generator: różne tytuły bitów
 
 - Tytuły generowanych bitów były do siebie podobne („Mroczny Puls w Moll”, „Mroczny Pocket w Moll”, „Ciemny Motyw Ulicy”). Teraz osobne zapytanie do Groka (temperatura 1, 6 propozycji, lista istniejących tytułów, zakaz nadużywanych słów) + kod odrzuca propozycje z tym samym pierwszym słowem, dwoma wspólnymi słowami albo słowem z listy (`src/lib/beats/ai-beat/title-variety.ts`, testy). Działa równolegle z opisem, bez wydłużania generowania.
