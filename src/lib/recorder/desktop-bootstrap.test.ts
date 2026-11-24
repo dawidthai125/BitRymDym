@@ -20,6 +20,11 @@ describe("desktop bootstrap", () => {
     expect(body.beats).toHaveLength(2);
   });
 
+  it("lists the whole catalogue, not the newest 40", () => {
+    const beats = Array.from({ length: 120 }, (_, i) => ({ id: `b${i}`, title: `B${i}`, bpm: 90 }));
+    expect(desktopBootstrapBody({ supabaseUrl: "https://x.supabase.co", anonKey: "k", beats }).beats).toHaveLength(120);
+  });
+
   it("refuses a missing public client", () => {
     expect(() => desktopBootstrapBody({
       supabaseUrl: "",

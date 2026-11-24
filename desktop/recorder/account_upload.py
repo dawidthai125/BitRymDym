@@ -5,10 +5,13 @@ No new API, no second studio, no master. The bearer is the user access token.
 
 from __future__ import annotations
 
+import io
 import json
+import re
 import socket
 import urllib.error
 import urllib.request
+import wave
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable
@@ -17,6 +20,8 @@ from desk import wav_data_offset
 
 
 SITE = "https://www.bitrymdym.pl"
+# The upload cannot go on: the project is gone, changed on the site, or belongs to another account.
+STALE_SEND = "Poprzedniej wysyłki nie da się dokończyć"
 
 
 def signed_put_headers(upload_token: str) -> dict[str, str]:
@@ -82,6 +87,41 @@ def wav_duration_ms(wav: bytes) -> int:
     return max(1, int((len(wav) - offset) / 2 / 48_000 * 1000))
 
 
+def padded_wav(wav: bytes) -> bytes:
+    """The WAV with silence up to the next whole second.
+
+    The site stores a take's length rounded to whole seconds and cuts the clip to it: 4.4 s would lose
+    0.4 s of voice and 0.4 s would be refused. The clip itself keeps its exact durationMs.
+    """
+    offset = wav_data_offset(wav[:4096])
+    if offset is None or wav[:4] != b"RIFF":
+        return wav
+    pcm = wav[offset:]
+    frames = len(pcm) // 2
+    whole = max(1, -(-frames // 48_000)) * 48_000
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as handle:
+        handle.setnchannels(1)
+        handle.setsampwidth(2)
+        handle.setframerate(48_000)
+        handle.writeframes(pcm[: frames * 2] + bytes((whole - frames) * 2))
+    return buffer.getvalue()
+
+
+def error_body(text: str) -> tuple[int, str, str]:
+    """(HTTP status, code, error text) from a SiteClient error. Zeros and blanks when it is not one."""
+    found = re.search(r" -> (\d{3}) ?(.*)$", text, re.S)
+    if not found:
+        return 0, "", ""
+    try:
+        data = json.loads(found.group(2))
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return int(found.group(1)), "", ""
+    return int(found.group(1)), str(data.get("code") or ""), str(data.get("error") or "")
+
+
 def playback_target(payload: dict[str, Any]) -> tuple[str, int | None]:
     """Signed listen URL. The recorder plays it and does not store the beat."""
     url = payload.get("url")
@@ -117,11 +157,22 @@ def project_id(document: dict[str, Any]) -> str:
 
 
 class SiteClient:
-    def __init__(self, site: str, access_token: str) -> None:
+    def __init__(self, site: str, access_token: str, refresh: Callable[[], str] | None = None) -> None:
         self.site = site.rstrip("/")
         self.access_token = access_token
+        self._refresh = refresh
 
     def _json(self, method: str, path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+        """One request. A login that ran out in the middle of a long send is renewed once."""
+        try:
+            return self._request(method, path, body)
+        except RuntimeError as error:
+            if self._refresh is None or not is_unauthorized(error):
+                raise
+            self.access_token = self._refresh()
+            return self._request(method, path, body)
+
+    def _request(self, method: str, path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
         data = None if body is None else json.dumps(body).encode("utf-8")
         request = urllib.request.Request(
             f"{self.site}{path}",
@@ -131,13 +182,14 @@ class SiteClient:
                 "Authorization": f"Bearer {self.access_token}",
                 "Content-Type": "application/json",
                 "Accept": "application/json",
+                "User-Agent": "BitRymDymRecorder",
             },
         )
         try:
             with urllib.request.urlopen(request, timeout=60) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
-            detail = error.read().decode("utf-8", "replace")[:300]
+            detail = error.read().decode("utf-8", "replace")[:2000]
             raise RuntimeError(f"{method} {path} -> {error.code} {detail}") from None
         except NETWORK_ERRORS as error:
             raise RuntimeError(network_message(error)) from None
@@ -148,6 +200,12 @@ class SiteClient:
     def create_project(self, title: str, beat_id: str) -> dict[str, Any]:
         payload = self._json("POST", "/api/studio/projects", {"title": title, "beatId": beat_id})
         document = payload.get("document")
+        if not isinstance(document, dict):
+            raise RuntimeError("Strona nie oddała projektu.")
+        return document
+
+    def project_document(self, project: str) -> dict[str, Any]:
+        document = self._json("GET", f"/api/studio/projects/{project}").get("document")
         if not isinstance(document, dict):
             raise RuntimeError("Strona nie oddała projektu.")
         return document
@@ -205,12 +263,13 @@ class SiteClient:
         except Exception:
             pass
 
-    def delete_project(self, project: str) -> None:
-        """Drops an empty project left by a failed send. Never raises."""
+    def delete_project(self, project: str) -> bool:
+        """Drops an empty project left by a failed send. True when it is gone. Never raises."""
         try:
             self._json("DELETE", f"/api/studio/projects/{project}")
-        except Exception:
-            pass
+        except Exception as error:
+            return error_body(str(error))[0] == 404
+        return True
 
     def plan_usage(self) -> dict[str, Any]:
         return self._json("GET", "/api/account/plan-usage")
@@ -265,6 +324,8 @@ class UploadState:
     take_ids: list[str] = field(default_factory=list)
     # Windows recorder daily send (POST /api/desktop/studio-send), spent once per send.
     send_id: str = ""
+    # Account e-mail of the send. Another account must not continue it.
+    account: str = ""
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -288,6 +349,7 @@ class UploadState:
                 starts_ms=[int(item) for item in raw.get("starts_ms", [])],
                 take_ids=[str(item) for item in raw.get("take_ids", [])],
                 send_id=str(raw.get("send_id") or ""),
+                account=str(raw.get("account") or ""),
             )
         except (KeyError, TypeError, ValueError):
             return None
@@ -335,11 +397,42 @@ def send_one_take(client: Any, beat_id: str, wav: bytes) -> str:
 
 def drop_empty_project(client: Any, state: "UploadState | None") -> "UploadState | None":
     """A failed send that placed nothing leaves an empty project and a resume state with no value.
-    Delete the project and forget the state (the clips stay on the desk, the user presses Gotowe again)."""
+    Delete the project and forget the state (the clips stay on the desk, the user presses Gotowe again).
+    When the delete did not go through (no network), the state stays: the next try continues that project
+    with the same daily send instead of paying for a second one."""
     if state is None or state.placed > 0 or not state.project_id:
         return state
-    client.delete_project(state.project_id)
-    return None
+    return None if client.delete_project(state.project_id) else state
+
+
+def refreshed_state(client: Any, state: "UploadState") -> "UploadState":
+    """A send that continues an existing project: its version and tracks as they are on the site now."""
+    if not state.project_id:
+        return state
+    try:
+        document = client.project_document(state.project_id)
+    except RuntimeError as error:
+        if error_body(str(error))[0] in (403, 404):
+            raise RuntimeError(f"{STALE_SEND}: projektu nie ma już na koncie. Naciśnij Gotowe jeszcze raz, żeby wysłać od nowa.") from None
+        raise
+    known = vocal_track_ids(document)
+    if any(track not in known for track in state.track_ids):
+        raise RuntimeError(f"{STALE_SEND}: w projekcie na stronie brakuje ścieżki. Naciśnij Gotowe jeszcze raz, żeby wysłać od nowa.")
+    return replace(state, version=document_version(document))
+
+
+def _place_take(client: Any, state: "UploadState", index: int, wav: bytes, body: dict[str, Any], saved: Callable[["UploadState"], None]) -> dict[str, Any]:
+    """Place one take. A take sent in an earlier try may have expired on the site: send it once more."""
+    try:
+        return client.place(state.project_id, {**body, "takeId": state.take_ids[index]})
+    except RuntimeError as error:
+        status, code, _text = error_body(str(error))
+        if status not in (403, 404) or code:
+            raise
+        state.take_ids = state.take_ids[:index]
+        state.take_ids.append(send_one_take(client, state.beat_id, padded_wav(wav)))
+        saved(state)
+        return client.place(state.project_id, {**body, "takeId": state.take_ids[index]})
 
 
 def upload_vocals(
@@ -356,6 +449,7 @@ def upload_vocals(
     track_of: list[int] | None = None,
     starts_ms: list[int] | None = None,
     send_id: str = "",
+    account: str = "",
 ) -> str:
     """One project.
 
@@ -392,7 +486,7 @@ def upload_vocals(
     clip_mode = track_of is not None
     noun = "klip" if clip_mode else "ścieżkę"
     if clip_mode:
-        return _upload_timeline(client, title, beat_id, wav_paths, blobs, lanes, starts, chain, say, saved, resume, send_id)
+        return _upload_timeline(client, title, beat_id, wav_paths, blobs, lanes, starts, chain, say, saved, resume, send_id, account)
     if resume is None:
         say("Tworzę projekt na koncie.")
         document = client.create_project(title, beat_id)
@@ -421,7 +515,7 @@ def upload_vocals(
         for index in range(state.placed, len(blobs)):
             wav = blobs[index]
             say(f"Wysyłam {noun} {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
-            take_id = send_one_take(client, state.beat_id, wav)
+            take_id = send_one_take(client, state.beat_id, padded_wav(wav))
             placed = client.place(
                 pid,
                 {
@@ -465,8 +559,12 @@ def _upload_timeline(
     saved: Callable[[UploadState], None],
     resume: UploadState | None,
     send_id: str = "",
+    account: str = "",
 ) -> str:
     """One recorder send: project, tracks, then each take uploaded and placed at once."""
+    if resume is not None:
+        say(f"Dokańczam wysyłkę: {resume.summary()}.")
+        resume = refreshed_state(client, resume)
     state = _with_send(resume, send_id) if resume is not None else UploadState(
         project_id="",
         beat_id=beat_id,
@@ -476,6 +574,7 @@ def _upload_timeline(
         track_of=list(lanes),
         starts_ms=list(starts),
         send_id=send_id,
+        account=account,
     )
     track_count = max(lanes) + 1
     # Project first, then take by take: each take is placed at once, so loose READY takes
@@ -498,20 +597,23 @@ def _upload_timeline(
             wav = blobs[index]
             if len(state.take_ids) <= index:
                 say(f"Wysyłam nagranie {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
-                take_id = send_one_take(client, state.beat_id, wav)
+                take_id = send_one_take(client, state.beat_id, padded_wav(wav))
                 state.take_ids.append(take_id)
                 saved(state)
-            placed = client.place(
-                pid,
+            placed = _place_take(
+                client,
+                state,
+                index,
+                wav,
                 {
                     "trackId": state.track_ids[lanes[index]],
-                    "takeId": state.take_ids[index],
                     "timelineStartMs": starts[index],
                     "sourceOffsetMs": 0,
                     "durationMs": wav_duration_ms(wav),
                     "expectedDocumentVersion": state.version,
                     **_send_field(state.send_id),
                 },
+                saved,
             )
             state.version = _version(placed)
             state.placed = index + 1
@@ -564,9 +666,20 @@ def friendly_upload_error(text: str) -> str:
             f"{head} Dzienny limit wysyłek nagrań w Twoim planie jest na dziś wyczerpany "
             "(każda ścieżka z nagraniem to jedna wysyłka). Spróbuj jutro albo wyślij mniej ścieżek."
         ).strip()
-    if "ACTIVE_READY_CAP" in text:
-        head = text.split(" POST ", 1)[0].strip()
+    head = re.split(r" ?(?:GET|POST|PATCH|DELETE) /api/", text, maxsplit=1)[0].strip()
+    if "ACTIVE_READY_CAP" in text or "REPLACE_REQUIRED" in text:
         return f"{head} Masz za dużo gotowych nagrań czekających na koncie. Użyj ich w Studio albo usuń stare.".strip()
+    if "CONCURRENT_SESSION" in text:
+        return f"{head} Na koncie trwa inne nagrywanie albo wysyłka. Zamknij ją na stronie lub odczekaj 15 minut.".strip()
+    status, _code, said = error_body(text)
+    if status == 503 and not said:
+        return f"{head} Strona ma przerwę. Spróbuj za kilka minut.".strip()
+    if status == 429 and not said:
+        return f"{head} Za dużo prób naraz. Odczekaj minutę i spróbuj jeszcze raz.".strip()
+    if status and said:
+        return f"{head} {said}".strip()
+    if status:
+        return f"{head} Strona odrzuciła wysyłkę (kod {status}). Spróbuj za chwilę.".strip()
     return text
 
 
@@ -640,11 +753,18 @@ def self_test() -> None:
 
 
 class _FakeSite:
+    def project_document(self, project: str) -> dict[str, Any]:
+        self.calls.append(("doc", project))
+        return {
+            "project": {"id": project, "documentVersion": 40},
+            "tracks": [{"id": item, "trackType": "VOCAL"} for item in ("v0", "v1")],
+        }
+
     def delete_take(self, take_id: str) -> None:
         pass
 
-    def delete_project(self, project: str) -> None:
-        pass
+    def delete_project(self, project: str) -> bool:
+        return True
 
     def __init__(self) -> None:
         self.calls: list[object] = []
@@ -945,8 +1065,9 @@ def _self_test_failed_send_cleanup() -> None:
         def delete_take(self, take_id: str) -> None:
             deleted_takes.append(take_id)
 
-        def delete_project(self, project: str) -> None:
+        def delete_project(self, project: str) -> bool:
             deleted_projects.append(project)
+            return True
 
     try:
         send_one_take(_Broken(), "b", b"x" * 50)
@@ -957,6 +1078,94 @@ def _self_test_failed_send_cleanup() -> None:
     assert drop_empty_project(_Broken(), empty) is None and deleted_projects == ["p1"]
     kept = replace(empty, placed=1)
     assert drop_empty_project(_Broken(), kept) is kept and deleted_projects == ["p1"]
+
+    class _Offline(_Broken):
+        def delete_project(self, project: str) -> bool:
+            return False
+
+    assert drop_empty_project(_Offline(), empty) is empty
+    _self_test_stale_resume()
+
+
+def _self_test_stale_resume() -> None:
+    """Resume reads the project again; an expired take is sent once more; padding and messages."""
+    folder = Path(__import__("os").environ.get("TEMP", ".")) / "bitrymdym-upload-stale"
+    folder.mkdir(parents=True, exist_ok=True)
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as handle:
+        handle.setnchannels(1)
+        handle.setsampwidth(2)
+        handle.setframerate(48_000)
+        handle.writeframes(b"\x01\x00" * 211_200)
+    short = buffer.getvalue()
+    grown = padded_wav(short)
+    if wav_duration_ms(short) != 4400 or wav_duration_ms(grown) != 5000 or wav_duration_ms(padded_wav(grown)) != 5000:
+        raise SystemExit("dopełnienie do pełnej sekundy")
+    if grown[44 : 44 + 422_400] != b"\x01\x00" * 211_200 or any(grown[44 + 422_400 :]):
+        raise SystemExit("dopełnienie zmieniło nagranie")
+    clip = folder / "a.wav"
+    clip.write_bytes(short)
+    state = UploadState(
+        project_id="p1", beat_id="b", title="t", version=3, wav_paths=[str(clip)], track_ids=["v0"],
+        track_of=[0], starts_ms=[0], take_ids=["old"], send_id="s",
+    )
+
+    class Expired(_FakeSite):
+        def place(self, project: str, body: dict[str, Any]) -> dict[str, Any]:
+            if body["takeId"] == "old":
+                raise RuntimeError('POST /api/studio/projects/p1/record/place -> 403 {"error":"Nagranie wygasło."}')
+            self.calls.append(("ms", body["durationMs"]))
+            return super().place(project, body)
+
+    site = Expired()
+    if upload_vocals(site, title="t", beat_id="b", wav_paths=[clip], track_of=[0], starts_ms=[0], resume=replace(state)) != "p1":  # type: ignore[arg-type]
+        raise SystemExit("wygasłe nagranie")
+    if site.calls[0] != ("doc", "p1") or ("ms", 4400) not in site.calls or not any(item[:2] == ("place", "p1") and item[3] == 40 for item in site.calls):  # type: ignore[index]
+        raise SystemExit(f"wznowienie ze świeżą wersją {site.calls}")
+    if ("take", "b", len(grown)) not in site.calls:
+        raise SystemExit("ponowna wysyłka wygasłego nagrania")
+
+    class Gone(_FakeSite):
+        def project_document(self, project: str) -> dict[str, Any]:
+            raise RuntimeError('GET /api/studio/projects/p1 -> 404 {"error":"x"}')
+
+    for dead in (Gone(), _FakeSite()):
+        broken = state if isinstance(dead, Gone) else replace(state, track_ids=["inna"])
+        try:
+            upload_vocals(dead, title="t", beat_id="b", wav_paths=[clip], track_of=[0], starts_ms=[0], resume=replace(broken))  # type: ignore[arg-type]
+        except RuntimeError as error:
+            if STALE_SEND not in str(error):
+                raise SystemExit(f"martwa wysyłka: {error}") from error
+        else:
+            raise SystemExit("martwa wysyłka przyjęta")
+    clip.unlink(missing_ok=True)
+    for raw, want in (
+        ('POST /api/takes/session -> 403 {"error":"e","code":"REPLACE_REQUIRED"}', "za dużo gotowych"),
+        ('POST /api/takes/session -> 409 {"error":"e","code":"CONCURRENT_SESSION"}', "15 minut"),
+        ('Projekt p1 jest na koncie (0 z 1). POST /api/studio/projects -> 403 {"error":"Masz już 3 projekty.","code":"LIMIT"}', "Masz już 3 projekty."),
+        ("POST /api/x -> 503 <html>", "przerwę"),
+    ):
+        if want not in friendly_upload_error(raw) or "/api/" in friendly_upload_error(raw):
+            raise SystemExit(f"komunikat {raw} {friendly_upload_error(raw)}")
+
+    class Expiring(SiteClient):
+        tries = 0
+
+        def _request(self, method: str, path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+            self.tries += 1
+            if self.access_token == "stary":
+                raise RuntimeError(f"{method} {path} -> 401 no")
+            return {"ok": True}
+
+    client = Expiring("https://example.invalid", "stary", lambda: "nowy")
+    if client._json("GET", "/api/x") != {"ok": True} or client.tries != 2:
+        raise SystemExit("odnowienie logowania w trakcie wysyłki")
+    try:
+        Expiring("https://example.invalid", "stary", lambda: "stary")._json("GET", "/api/x")
+    except RuntimeError:
+        pass
+    else:
+        raise SystemExit("401 po odnowieniu ma być błędem")
 
 if __name__ == "__main__":
     self_test()

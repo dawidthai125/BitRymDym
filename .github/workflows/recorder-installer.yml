@@ -45,6 +45,7 @@ jobs:
           python account_upload.py;  if ($LASTEXITCODE) { throw "account_upload" }
           python own_fx.py;          if ($LASTEXITCODE) { throw "own_fx" }
           python offline_session.py; if ($LASTEXITCODE) { throw "offline_session" }
+          python countin.py;         if ($LASTEXITCODE) { throw "countin" }
           python timeline.py;        if ($LASTEXITCODE) { throw "timeline" }
           python win_output.py;      if ($LASTEXITCODE) { throw "win_output" }
           python test_updater.py;    if ($LASTEXITCODE) { throw "updater" }
@@ -59,6 +60,11 @@ jobs:
         run: |
           $base = Join-Path $env:RUNNER_TEMP "base"
           Invoke-WebRequest -Uri $env:BASE_URL -OutFile (Join-Path $env:RUNNER_TEMP "base.exe")
+          # Przypięta suma: podmieniony plik w buckecie nie wejdzie do buildu.
+          if ($env:BASE_URL.EndsWith("BitRymDym-Setup-2026.11.13.17.exe")) {
+            $sum = (Get-FileHash (Join-Path $env:RUNNER_TEMP "base.exe") -Algorithm SHA256).Hash.ToLower()
+            if ($sum -ne "1b19d3deba23a65da6160cb0c54cec99135f22d301ee9eac68ee59d190f77984") { throw "poprzedni instalator: inna suma ($sum)" }
+          }
           $p = Start-Process (Join-Path $env:RUNNER_TEMP "base.exe") -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$base" -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "poprzedni instalator: kod $($p.ExitCode)" }
           Get-ChildItem $base | Select-Object Name, Length | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
@@ -75,6 +81,10 @@ jobs:
         run: |
           $zip = Join-Path $env:RUNNER_TEMP "ffmpeg.zip"
           Invoke-WebRequest -Uri "https://github.com/GyanD/codexffmpeg/releases/download/$env:FFMPEG_TAG/ffmpeg-$env:FFMPEG_TAG-full_build-shared.zip" -OutFile $zip
+          if ($env:FFMPEG_TAG -eq "9.0.2") {
+            $sum = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+            if ($sum -ne "8d31e162f1616e37aab3fa2db991b97e1b8dbeb1c8465fd81a81be16ff91b328") { throw "ffmpeg: inna suma ($sum)" }
+          }
           $out = Join-Path $env:RUNNER_TEMP "ffmpeg"
           Expand-Archive $zip $out -Force
           $root = (Get-ChildItem $out -Directory | Select-Object -First 1).FullName
@@ -90,6 +100,10 @@ jobs:
           & "$extras\ffplay.exe" -hide_banner -version | Select-Object -First 1 | Write-Host
           $dev = & "$extras\ffmpeg.exe" -hide_banner -devices 2>&1 | Out-String
           if ($dev -notmatch "dshow") { throw "ffmpeg bez dshow (mikrofon)" }
+          Push-Location desktop\recorder
+          $env:FF = "$extras\ffmpeg.exe"
+          python -c "import os, record_app; record_app.mix_self_test(os.environ['FF'])"; if ($LASTEXITCODE) { throw "mix" }
+          Pop-Location
           Get-ChildItem $extras | Measure-Object Length -Sum | ForEach-Object { "extras: $($_.Count) plików, $([math]::Round($_.Sum/1MB)) MB" } | Write-Host
 
       - name: PyInstaller
@@ -126,7 +140,7 @@ jobs:
           $out = "installer\velopack"
           New-Item -ItemType Directory -Force $out | Out-Null
           $notes = Join-Path $env:RUNNER_TEMP "brd-notes.md"
-          Set-Content -Path $notes -Encoding utf8NoBOM -Value "Fala bitu w Studio Online i Offline. Stopka: BitRymDym.pl, TajskiProjects.pl."
+          Set-Content -Path $notes -Encoding utf8NoBOM -Value "Odliczanie przed nagraniem, zapamiętany odsłuch i poprawki."
           vpk pack --packId BitRymDym.Nagrywarka --packVersion $ver --packDir dist\BitRymDym --mainExe BitRymDym.exe --packTitle BitRymDym --icon assets\cassette.ico --outputDir $out --channel win --runtime win-x64 --shortcuts Desktop,StartMenuRoot --releaseNotes $notes
           if ($LASTEXITCODE) { throw "vpk pack" }
           Remove-Item "$out\*Portable.zip" -ErrorAction SilentlyContinue

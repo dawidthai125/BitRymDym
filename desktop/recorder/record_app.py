@@ -42,13 +42,16 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+import countin
 import offline_session
 import win_output
 from account_upload import (
     NETWORK_ERRORS,
     SITE,
+    STALE_SEND,
     SiteClient,
     UploadState,
+    error_body,
     forget_spent_send,
     friendly_upload_error,
     give_back_send,
@@ -72,6 +75,7 @@ from desk import (
     studio_url,
     file_seconds,
     tail_peak_db,
+    wav_data_offset,
     wav_data_offset_of,
     write_prefs,
 )
@@ -276,7 +280,7 @@ DESK = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-sesja.json"
 DESK_OFFLINE = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-sesja-offline.json"
 
 
-@dataclass
+@dataclass(eq=False)
 class Track:
     """One vocal track. The beat is not a Track and does not count to the plan limit."""
 
@@ -342,6 +346,8 @@ def remote_audio_channels(ffmpeg: str, url: str) -> int:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=20,
             check=False,
             **quiet_kwargs(),
@@ -664,6 +670,57 @@ def count_word(count: int, one: str, few: str, many: str) -> str:
     return f"{count} {many}"
 
 
+def fit_takes(clips: list[Clip], cap: float) -> list[Clip]:
+    """Clips longer than one take of the plan (or of the beat) are cut into pieces that fit."""
+    out: list[Clip] = []
+    for clip in ordered(clips):
+        while clip.length > cap + 0.001:
+            first, *rest = split_at([clip], clip.start + cap)
+            if not rest:
+                break
+            out.append(first)
+            clip = rest[0]
+        out.append(clip)
+    return out
+
+
+def write_atomic(path: Path, text: str) -> None:
+    """A full file or the old one. Never a half of it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(text, encoding="utf-8")
+    temporary.replace(path)
+
+
+def sweep_copies(now: float | None = None, keep: set[str] | None = None) -> None:
+    """Copies the program made itself: unpacked projects after 2 days, files rendered for a send after 14.
+
+    Never the recordings. A .brd1 the user saved and the WAVs in takes stay.
+    """
+    moment = time.time() if now is None else now
+    kept = keep or set()
+    for folder in (TAKES / "projekty").glob("????????????-????????-??????-??????"):
+        try:
+            if folder.is_dir() and moment - folder.stat().st_mtime > 2 * 86_400:
+                shutil.rmtree(folder, ignore_errors=True)
+        except OSError:
+            pass
+    for path in (TAKES / "wysylka").glob("tor-*.wav"):
+        try:
+            if str(path) not in kept and moment - path.stat().st_mtime > 14 * 86_400:
+                path.unlink()
+        except OSError:
+            pass
+
+
+def desk_clip_count(path: Path) -> int:
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return sum(len(item.get("clips") or []) for item in raw.get("tracks") or [])
+    except (OSError, ValueError, AttributeError, TypeError):
+        return 0
+
+
 def group_for_takes(clips: list[Clip], cap: float) -> list[list[Clip]]:
     """Consecutive clips of one track, joined while the span fits in one take of the plan."""
     groups: list[list[Clip]] = []
@@ -785,36 +842,112 @@ def quiet_kwargs() -> dict[str, object]:
     return flags
 
 
-def start_mix(
-    ffmpeg: str, ffplay: str, argv: list[str], output_index: int | None = None
-) -> tuple[subprocess.Popen[bytes], object]:
-    """One mix. The beat URL is not written to disk. A chosen output uses waveOut; default stays on ffplay."""
-    feed = subprocess.Popen(
-        argv,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        **quiet_kwargs(),
-    )
-    if output_index is not None and feed.stdout is not None:
-        fd = os.dup(feed.stdout.fileno())
-        feed.stdout.close()
-        player = win_output.WavePlayer(os.fdopen(fd, "rb"), output_index)
+# About 170 ms of the mix. When these bytes are here the beat has really connected and decoded.
+MIX_FIRST_BYTES = 32_768
+
+
+class MixFeed:
+    """A running mix (ffmpeg WAV on a pipe) with its first sound already read.
+
+    The mic starts after this, so a slow connection to the beat no longer lands inside the take.
+    skip drops sound from the front: a mix prepared while the old one still played joins at the right place.
+    """
+
+    def __init__(self, argv: list[str]) -> None:
+        self.proc = subprocess.Popen(
+            argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, **quiet_kwargs()
+        )
+        self._buffer = b""
+        self._skip = 0
+
+    def warm(self) -> bool:
+        """Wait for the first sound. False when the mix gave none. Call it off the Tk thread."""
+        out = self.proc.stdout
+        self._buffer = out.read(MIX_FIRST_BYTES) if out is not None else b""
+        return (wav_data_offset(self._buffer[:4096]) or 0) > 0 and len(self._buffer) > 1000
+
+    def skip(self, seconds: float) -> None:
+        self._skip = max(0, int(round(seconds * RATE))) * 4
+        offset = wav_data_offset(self._buffer[:4096])
+        if offset is None:
+            return
+        drop = min(self._skip, len(self._buffer) - offset)
+        self._buffer = self._buffer[:offset] + self._buffer[offset + drop :]
+        self._skip -= drop
+        self._head = offset
+
+    _head = 0
+
+    def read(self, size: int) -> bytes:
+        out = self.proc.stdout
+        if out is None:
+            return b""
+        while self._skip > 0 and len(self._buffer) <= self._head:
+            gone = out.read(min(self._skip, 65_536))
+            if not gone:
+                break
+            self._skip -= len(gone)
+        while len(self._buffer) < size:
+            more = out.read(size - len(self._buffer))
+            if not more:
+                break
+            self._buffer += more
+            if self._skip > 0:
+                break
+        data, self._buffer = self._buffer[:size], self._buffer[size:]
+        self._head = max(0, self._head - len(data))
+        return data
+
+    def close(self) -> None:
+        if self.proc.stdout is not None:
+            try:
+                self.proc.stdout.close()
+            except OSError:
+                pass
+
+    def kill(self) -> None:
+        if self.proc.poll() is None:
+            self.proc.kill()
+
+
+def _pump(feed: MixFeed, play: subprocess.Popen[bytes]) -> None:
+    sink = play.stdin
+    if sink is None:
+        return
+    try:
+        while True:
+            data = feed.read(16_384)
+            if not data:
+                break
+            sink.write(data)
+            sink.flush()
+    except (OSError, ValueError):
+        pass
+    try:
+        sink.close()
+    except OSError:
+        pass
+    feed.close()
+
+
+def start_mix(feed: MixFeed, ffplay: str, output_index: int | None = None) -> tuple[subprocess.Popen[bytes], object]:
+    """Play a warmed mix. The beat URL is not written to disk. A chosen output uses waveOut; default stays on ffplay."""
+    if output_index is not None:
+        player = win_output.WavePlayer(feed, output_index)  # type: ignore[arg-type]
         player.start()
-        return feed, player
+        return feed.proc, player
     if not ffplay:
         feed.kill()
         raise RuntimeError(NO_FFPLAY)
     play = subprocess.Popen(
         monitor_argv(ffplay, "pipe:0"),
-        stdin=feed.stdout,
+        stdin=subprocess.PIPE,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         **quiet_kwargs(),
     )
-    if feed.stdout is not None:
-        feed.stdout.close()
-    return feed, play
+    threading.Thread(target=_pump, args=(feed, play), daemon=True, name="brd-mix-pump").start()
+    return feed.proc, play
 
 
 def beat_ceiling(ffmpeg: str, target: str, seconds: int = 12) -> float | None:
@@ -857,8 +990,12 @@ def mix_argv(
     beat_start: float = 0.0,
     beat_gain_db: float = 0.0,
     beat_pan: float = 0.0,
+    clicks: tuple[Path, float] | None = None,
 ) -> list[str]:
-    """Beat from beat_start (the cursor) plus vocal tracks already rendered from the same point."""
+    """Beat from beat_start (the cursor) plus vocal tracks already rendered from the same point.
+
+    clicks = (count-in WAV, its length): the clicks come first, beat and vocals wait for them.
+    """
     argv = [ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin"]
     stems: list[tuple[float, float]] = []
     if beat:
@@ -866,28 +1003,36 @@ def mix_argv(
             argv.extend(["-ss", f"{beat_start:.3f}"])
         if isinstance(limit, int) and limit > 0:
             argv.extend(["-t", str(max(1, int(math.ceil(limit - beat_start))))])
+        if "://" in beat:
+            # A dead connection ends the mix instead of hanging it (microseconds).
+            argv.extend(["-rw_timeout", "20000000"])
         argv.extend(["-i", beat])
         stems.append((max(0.0, min(4.0, 0.85 * 10 ** (beat_gain_db / 20))), beat_pan))
     for path, gain_db, pan in vocals:
         argv.extend(["-i", str(path)])
         stems.append((max(0.0, min(4.0, 10 ** (gain_db / 20))), pan))
-    if not stems:
+    if not stems and clicks is None:
         raise RuntimeError("Najpierw nagraj wokal albo wybierz bit.")
     bodies: list[str] = []
     tags: list[str] = []
+    wait = f"aresample={RATE},adelay={int(round(clicks[1] * RATE))}S:all=1," if clicks is not None else ""
     for index, (volume, pan) in enumerate(stems):
         left, right = pan_gains(pan)
         tag = f"a{index}"
         bodies.append(
-            f"[{index}:a]aformat=channel_layouts=mono,volume={volume:.4f},"
+            f"[{index}:a]aformat=channel_layouts=mono,{wait}volume={volume:.4f},"
             f"pan=stereo|c0={left:.4f}*c0|c1={right:.4f}*c0[{tag}]"
         )
         tags.append(f"[{tag}]")
+    if clicks is not None:
+        argv.extend(["-i", str(clicks[0])])
+        bodies.append(f"[{len(stems)}:a]aformat=channel_layouts=mono,pan=stereo|c0=0.7*c0|c1=0.7*c0[clk]")
+        tags.append("[clk]")
     if len(tags) == 1:
         graph = bodies[0][: -len(tags[0])] + "[out]"
     else:
         graph = ";".join(bodies) + f";{''.join(tags)}amix=inputs={len(tags)}:duration=longest:normalize=0[out]"
-    argv.extend(["-filter_complex", graph, "-map", "[out]", "-f", "wav", "pipe:1"])
+    argv.extend(["-filter_complex", graph, "-map", "[out]", "-ar", str(RATE), "-ac", "2", "-c:a", "pcm_s16le", "-f", "wav", "pipe:1"])
     return argv
 
 
@@ -907,14 +1052,16 @@ def start_monitor(target: str | Path, limit_seconds: int | None = None) -> subpr
 
 
 def stop_monitor(proc: subprocess.Popen[bytes] | None) -> None:
+    """Never raises: a player that will not stop must not keep the take from being saved."""
     if proc is None or proc.poll() is not None:
         return
-    proc.terminate()
-    try:
-        proc.wait(timeout=3)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait(timeout=3)
+    for end in (proc.terminate, proc.kill):
+        try:
+            end()
+            proc.wait(timeout=2)
+            return
+        except (subprocess.TimeoutExpired, OSError):
+            continue
 
 
 def audio_devices(exe: str) -> list[str]:
@@ -1074,8 +1221,7 @@ def stop_capture(proc: subprocess.Popen[bytes]) -> None:
     try:
         proc.wait(timeout=8)
     except subprocess.TimeoutExpired:
-        proc.terminate()
-        proc.wait(timeout=5)
+        stop_monitor(proc)
 
 
 def record_seconds(path: Path, seconds: float) -> None:
@@ -1248,8 +1394,8 @@ def load_pending() -> UploadState | None:
         return None
     if state is None or not all(Path(item).is_file() for item in state.wav_paths):
         return None
-    if state.placed == 0:
-        # Nothing was placed: there is no work to finish, and the old project is empty.
+    if state.placed == 0 and not state.send_id:
+        # Nothing was placed and no daily send is held: there is no work to finish.
         clear_pending()
         return None
     return state
@@ -1257,8 +1403,7 @@ def load_pending() -> UploadState | None:
 
 def save_pending(state: UploadState) -> None:
     try:
-        PENDING.parent.mkdir(parents=True, exist_ok=True)
-        PENDING.write_text(json.dumps(state.to_json()), encoding="utf-8")
+        write_atomic(PENDING, json.dumps(state.to_json()))
     except OSError:
         pass
 
@@ -1294,11 +1439,11 @@ def supabase_refresh_grant(url: str, anon_key: str, refresh_token: str) -> dict[
 
 
 def supabase_logout(url: str, anon_key: str, access_token: str) -> bool:
-    """Ends this session on the server so the saved refresh token stops working. Best effort."""
+    """Ends this session (not the phone or the browser) on the server, so the saved refresh token stops working. Best effort."""
     if not url or not anon_key or not access_token:
         return False
     request = urllib.request.Request(
-        f"{url.rstrip('/')}/auth/v1/logout",
+        f"{url.rstrip('/')}/auth/v1/logout?scope=local",
         data=b"{}",
         method="POST",
         headers={
@@ -1405,6 +1550,17 @@ class RecorderWindow:
         self.playing = False
         self._play_from = 0.0
         self._play_t0 = 0.0
+        # Count-in of the running take. _play_t0 already lies behind it, so the take clock starts at 0.
+        self._lead = 0.0
+        self._lead_bpm = 0.0
+        self._after_count = ""
+        self._take_seconds = 0.0
+        self._warm_feed: MixFeed | None = None
+        self._mix_number = 0
+        self._plan_token = 0
+        self._offline_ok = False
+        self._swept = False
+        self._owner_email = ""
         self._play_after: str | None = None
         self.rec_track = 0
         self.rec_start = 0.0
@@ -1441,6 +1597,7 @@ class RecorderWindow:
         self.sel_len = tk.StringVar(value="—")
         self.device_var = tk.StringVar(value="Szukam mikrofonów…")
         self.output_var = tk.StringVar(value="Domyślne")
+        self.count_var = tk.StringVar(value=countin.DEFAULT_LABEL)
         self.beat_var = tk.StringVar()
         self.title_var = tk.StringVar(value="Nagranie z komputera")
         self.account_line = tk.StringVar(value="Konto")
@@ -1491,6 +1648,12 @@ class RecorderWindow:
         if not self.studio.winfo_manager():
             return None
         widget = event.widget
+        try:
+            # Space on a checkbox or button in a dialog must not start a take behind it.
+            if widget.winfo_toplevel() is not self.root:
+                return None
+        except (AttributeError, tk.TclError):
+            return None
         # Class name: some Tk builds wrap Entry; isinstance alone misses them under SendInput focus.
         name = widget.winfo_class() if hasattr(widget, "winfo_class") else ""
         if isinstance(widget, (tk.Entry, tk.Listbox, tk.Text)) or name in {"Entry", "Listbox", "Text", "TEntry"}:
@@ -1567,10 +1730,11 @@ class RecorderWindow:
             self.root.geometry(f"{width}x{height}")
         email = self.email.get().strip()
         self.account_line.set(f"Konto: {email}" if email else "Konto")
-        if self._pending is not None:
+        pending = self._my_pending()
+        if pending is not None:
             self.status.set(
-                f"Poprzednia wysyłka nie skończyła się ({self._pending.summary()}). "
-                "Naciśnij Gotowe i Wrzuć do Studia, żeby ją dokończyć."
+                f"Poprzednia wysyłka nie skończyła się ({pending.summary()}). "
+                "Naciśnij Gotowe i Dokończ poprzednią wysyłkę."
             )
         self.root.after(50, self._paint_all)
         self.root.after(300, self._warm_listen)
@@ -1613,6 +1777,8 @@ class RecorderWindow:
         self._play_token += 1
         self._cancel_tick()
         self._stop_probe()
+        if self._warm_feed is not None:
+            self._warm_feed.kill()
         self._stop_monitor()
         if self.capture:
             stop_capture(self.capture)
@@ -1682,6 +1848,12 @@ class RecorderWindow:
         self.beat_button = self._tool(setup, "Wybierz bit z katalogu ▾", self.pick_beat, INK)
         self.beat_button.configure(font=(FONT_UI, 10), anchor="w", width=34)
         self.beat_button.pack(side="left", padx=(6, 14))
+        tk.Label(setup, text="ODLICZANIE", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
+        self.count_menu = tk.OptionMenu(
+            setup, self.count_var, *(label for label, _bars in countin.CHOICES), command=lambda _value: self._save_prefs()
+        )
+        self._style_option(self.count_menu, 8)
+        self.count_menu.pack(side="left", padx=(6, 0))
 
         gear = tk.Frame(self.studio, bg=PAPER)
         gear.pack(fill="x", padx=12, pady=(6, 0))
@@ -2033,8 +2205,15 @@ class RecorderWindow:
         self.tracks.pop(index)
         if not self.tracks:
             self.tracks.append(self._new_track())
+        # The armed and the focused track stay the same ones when a track above them goes.
+        if self.armed > index:
+            self.armed -= 1
+        if self.focus > index:
+            self.focus -= 1
         if self.sel and self.sel[0] == index:
             self.sel = None
+        elif self.sel and self.sel[0] > index:
+            self.sel = (self.sel[0] - 1, self.sel[1], self.sel[2])
         self._rebuild_rows()
         self._save_desk()
         self.status.set("Ścieżka usunięta. Cofnij (Ctrl+Z) ją przywraca.")
@@ -2306,15 +2485,16 @@ class RecorderWindow:
                 for beat in raw:
                     if not (isinstance(beat, dict) and beat.get("id") and beat.get("title")):
                         continue
-                    bpm = beat.get("bpm")
+                    tempo = beat.get("bpm")
+                    bpm = int(round(tempo)) if isinstance(tempo, (int, float)) and not isinstance(tempo, bool) else 0
                     seconds = beat.get("durationSeconds")
                     label = str(beat["title"])
-                    if isinstance(bpm, int) and bpm > 0:
+                    if bpm > 0:
                         label = f"{label} ({bpm} BPM)"
                     self.beats.append((str(beat["id"]), label))
                     self.beat_info[str(beat["id"])] = (
                         str(beat["title"]),
-                        bpm if isinstance(bpm, int) else 0,
+                        bpm,
                         float(seconds) if isinstance(seconds, (int, float)) and seconds > 0 else 0.0,
                     )
             if self.beats and not self.beat_var.get():
@@ -2432,8 +2612,12 @@ class RecorderWindow:
             return self._play_from + (time.monotonic() - self._play_t0)
         return self.cursor
 
+    def _count_left(self) -> float:
+        """Seconds of count-in still to come. 0 when the take itself is running."""
+        return max(0.0, self._play_t0 - time.monotonic()) if self.recording and self._lead > 0 else 0.0
+
     def _rec_elapsed(self) -> float:
-        """Seconds since capture and the beat started together. Not the WAV size."""
+        """Seconds since the beat started (after the count-in). Not the WAV size."""
         return max(0.0, time.monotonic() - self._play_t0)
 
     def _paint_ruler(self) -> None:
@@ -2933,15 +3117,11 @@ class RecorderWindow:
                 self.status.set("Nie ma czego cofnąć.")
             return
         snapshot, armed = self.undo_stack.pop()
-        same_shape = len(snapshot) == len(self.tracks)
         self.tracks = snapshot
         self.armed = armed
         self.sel = None
-        if same_shape:
-            self._sync_track_buttons()
-            self._paint_all()
-        else:
-            self._rebuild_rows()
+        # The rows hold the old Track objects. Without new rows their buttons and sliders would do nothing.
+        self._rebuild_rows()
         self._save_desk()
         self.status.set("Cofnięte.")
 
@@ -3031,14 +3211,16 @@ class RecorderWindow:
             data["localBeat"] = self.local_beat_path
             data["localBeatSeconds"] = self.local_beat_seconds
         try:
-            path = self._desk_path()
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(data), encoding="utf-8")
+            write_atomic(self._desk_path(), json.dumps(data))
         except OSError:
             pass
 
     def _restore_desk(self) -> None:
         self.tracks = []
+        # Undo and the clipboard belong to the other studio.
+        self.undo_stack = []
+        self.clipboard = []
+        self.sel = None
         self.local_beat_path = ""
         self.local_beat_seconds = 0.0
         try:
@@ -3176,10 +3358,23 @@ class RecorderWindow:
             return True
         return any(track.clips for track in self.tracks)
 
+    def _other_studio_ok(self) -> bool:
+        """The studio that is not on screen may hold a project too. Closing deletes it."""
+        other, path = ("online", DESK) if self.studio_mode == "offline" else ("offline", DESK_OFFLINE)
+        if other not in self._desk_live or not desk_clip_count(path):
+            return True
+        name = "Studiu Offline" if other == "offline" else "Studiu Online"
+        return messagebox.askyesno(
+            "BitRymDym",
+            f"W {name} masz jeszcze projekt z nagraniami. Po zamknięciu nie wróci. Zamknąć mimo to?",
+        )
+
     def _confirm_close_save(self) -> bool:
         """False leaves the window open. No throws the project away. Yes saves when Offline can."""
         if self.recording or self._arming or self.playing or self._probing:
             self._halt_audio()
+        if not self._other_studio_ok():
+            return False
         if not self._project_dirty():
             return True
         if self.studio_mode == "offline":
@@ -3208,7 +3403,7 @@ class RecorderWindow:
         return True
 
     def new_project(self) -> None:
-        if self._busy() or self._uploading:
+        if self._busy() or self._uploading or self._exporting:
             return
         clips = sum(len(track.clips) for track in self.tracks)
         if clips and not messagebox.askyesno(
@@ -3248,13 +3443,16 @@ class RecorderWindow:
 
     def _save_prefs(self) -> None:
         try:
+            device, output = self.device_var.get(), self.output_var.get()
             write_prefs(
                 PREFS,
                 {
-                    "device": self.device_var.get(),
-                    "output": self.output_var.get(),
+                    # A list that is still loading must not overwrite the earlier choice.
+                    "device": device if device in self.devices else self._pref_device,
+                    "output": output if output != "Domyślne" or len(self.outputs) > 1 else self._pref_output or output,
                     "title": self.title_var.get().strip(),
-                    "beat": self.beat_var.get(),
+                    "beat": self.beat_var.get() or self._pref_beat,
+                    "countIn": self.count_var.get(),
                 },
             )
         except OSError:
@@ -3278,6 +3476,9 @@ class RecorderWindow:
             self._pref_output = output
             if any(label == output for label, _index in self.outputs):
                 self.output_var.set(output)
+        count = prefs.get("countIn")
+        if isinstance(count, str) and count in dict(countin.CHOICES):
+            self.count_var.set(count)
         beat = prefs.get("beat")
         if isinstance(beat, str):
             self._pref_beat = beat
@@ -3285,35 +3486,63 @@ class RecorderWindow:
                 self.beat_var.set(beat)
         self._sync_beat_button()
 
-    def _read_plan(self) -> None:
+    def _read_plan(self, wait: bool = False) -> None:
+        """The plan of the account. Off the Tk thread, except right after signing in (wait)."""
         saved = load_session()
-        token = saved.get("accessToken") if saved else None
-        if not token:
+        self._plan_token += 1
+        if not saved or not saved.get("accessToken"):
             self.tier = "FREE"
             self.plan_text.set("Plan: zaloguj się.")
             self._sync_add_button()
             self._sync_gold_offer()
             return
-        try:
-            payload = self._client().plan_usage()
-            tier, _cap, _side = limits_from_usage(payload)
-        except Exception as error:
-            self.tier = "FREE"
-            self.plan_text.set(str(error)[:120])
-            self._sync_add_button()
-            self._sync_gold_offer()
+        token = self._plan_token
+
+        def ask() -> tuple[str, Exception | None]:
+            try:
+                return limits_from_usage(self._client().plan_usage())[0], None
+            except Exception as error:
+                return "", error
+
+        if wait:
+            self._apply_plan(token, *ask())
             return
-        self.tier = tier
-        self._sync_gold_offer()
-        if self.studio_mode == "offline":
-            self.plan_text.set(self._offline_plan_line())
+
+        def run() -> None:
+            tier, error = ask()
+            try:
+                self.root.after(0, lambda: self._apply_plan(token, tier, error))
+            except (RuntimeError, tk.TclError):
+                pass
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _apply_plan(self, token: int, tier: str, error: Exception | None) -> None:
+        if token != self._plan_token:
+            return
+        if error is not None:
+            # No connection says nothing about the plan: the last known one stays.
+            if is_unauthorized(error):
+                self.tier = "FREE"
+            self.plan_text.set(str(error)[:120])
         else:
-            stems = "stemy: tak" if tier == "GOLD" else "stemy: od Gold"
-            self.plan_text.set(
-                f"Plan {display_tier(tier)}: {max_recording_tracks(tier)} ścieżek, ujęcie do {max_take_seconds(tier)} s, {stems}."
-            )
+            self.tier = tier
+            if self.studio_mode == "offline":
+                self.plan_text.set(self._offline_plan_line())
+            else:
+                stems = "stemy: tak" if tier == "GOLD" else "stemy: od Gold"
+                self.plan_text.set(
+                    f"Plan {display_tier(tier)}: {max_recording_tracks(tier)} ścieżek, nagranie do {max_take_seconds(tier)} s, {stems}."
+                )
+        self._sync_gold_offer()
         self._sync_add_button()
         self._paint_all()
+
+    def _take_cap(self) -> float:
+        """Longest take the site accepts: the plan, and online never more than the beat itself."""
+        cap = float(max_take_seconds(self.tier))
+        seconds = math.floor(self._beat_meta()[2]) if self.studio_mode == "online" else 0
+        return min(cap, float(seconds)) if seconds > 0 else cap
 
     # ---- play and record -------------------------------------------------------
 
@@ -3327,16 +3556,44 @@ class RecorderWindow:
                 found.append((list(track.clips), track.gain_db, track.pan))
         return found
 
-    def _render_for_play(self, plan: list[tuple[list[Clip], float, float]], start: float) -> list[tuple[Path, float, float]]:
-        """Heard tracks from the cursor to their end, as temp WAVs for ffmpeg. Runs off the Tk thread."""
+    def _play_folder(self) -> Path:
+        """Temp files of the mix. Old ones go, the ones still playing stay."""
         folder = Path(os.environ.get("TEMP", ".")) / "bitrymdym-play"
         folder.mkdir(parents=True, exist_ok=True)
+        for old in folder.glob("*.wav"):
+            try:
+                if time.time() - old.stat().st_mtime > 900:
+                    old.unlink()
+            except OSError:
+                pass
+        return folder
+
+    def _warm_mix(self, argv: list[str], alive: Callable[[], bool]) -> MixFeed | None:
+        """Start the mix and wait for its first sound. None when it gave none. Off the Tk thread."""
+        feed = MixFeed(argv)
+        self._warm_feed = feed
+        if not alive():
+            feed.kill()
+        good = feed.warm()
+        if self._warm_feed is feed:
+            self._warm_feed = None
+        if not good:
+            feed.kill()
+            return None
+        return feed
+
+    def _render_for_play(self, plan: list[tuple[list[Clip], float, float]], start: float) -> list[tuple[Path, float, float]]:
+        """Heard tracks from the cursor to their end, as temp WAVs for ffmpeg. Runs off the Tk thread."""
+        folder = self._play_folder()
+        self._mix_number += 1
+        stamp = f"{os.getpid()}-{self._mix_number}"
         out: list[tuple[Path, float, float]] = []
         for number, (clips, gain_db, pan) in enumerate(plan):
             samples = render(clips, start, track_end(clips), self._load)
             if len(samples) < 2:
                 continue
-            path = folder / f"tor-{number}.wav"
+            # A new name every time: Windows does not let a file be replaced while ffmpeg reads it.
+            path = folder / f"tor-{stamp}-{number}.wav"
             replace_mono16(path, samples)
             out.append((path, gain_db, pan))
         return out
@@ -3389,11 +3646,16 @@ class RecorderWindow:
         return self._beat_id_or_empty(), ""
 
     def _prepare_play(
-        self, token: int, start: float, plan: list[tuple[list[Clip], float, float]], beat_id: str, local: str, record_to: Path | None
+        self, token: int, start: float, plan: list[tuple[list[Clip], float, float]], beat_id: str, local: str,
+        record_to: Path | None, count: tuple[int, float] = (0, 0.0),
     ) -> None:
         heard: tuple[str | None, int | None, str] = (None, None, "")
         vocals: list[tuple[Path, float, float]] = []
+        clicks: tuple[Path, float] | None = None
+        feed: MixFeed | None = None
         error = ""
+        # Set when a beat was wanted and did not come: a take without its beat is worth nothing.
+        no_beat = ""
         try:
             if local:
                 if Path(local).is_file():
@@ -3402,34 +3664,82 @@ class RecorderWindow:
                     heard = (None, None, "Nie ma pliku bitu na dysku. Wskaż go jeszcze raz.")
             elif beat_id:
                 heard = self._beat_listen(beat_id)
+            if (local or beat_id) and heard[0] is None:
+                no_beat = heard[2] or "Bit się nie wczytał."
             vocals = self._render_for_play(plan, start)
         except Exception as problem:
             error = str(problem) or "Nie dało się złożyć odsłuchu."
-        self.root.after(0, lambda: self._start_play(token, start, heard, vocals, record_to, error))
-
-    def _start_play(
-        self, token: int, start: float, heard: tuple[str | None, int | None, str],
-        vocals: list[tuple[Path, float, float]], record_to: Path | None, error: str,
-    ) -> None:
-        if token != self._play_token:
-            return
-        self._arming = False
-        if error and record_to is None:
-            self.status.set(error)
-            return
-        if error:
-            heard = (heard[0], heard[1], f"Pozostałych ścieżek nie słychać ({error[:60]}).")
+        bars, bpm = count
+        if record_to is not None and bars > 0:
+            try:
+                path = self._play_folder() / f"odliczanie-{os.getpid()}-{token}.wav"
+                replace_mono16(path, countin.click_samples(bars, bpm))
+                clicks = (path, countin.lead_seconds(bars, bpm))
+            except Exception:
+                clicks = None
         target, limit, note = heard
         beat = target
-        if self.beat_muted:
-            beat = None
-            note = "Bit wyciszony (M)."
         if beat is not None and limit and start >= limit:
             beat = None
             note = f"Podgląd bitu ma tylko {limit} s, dalej gra bez bitu."
+        if not (no_beat and record_to is not None) and (beat is not None or vocals or clicks is not None):
+            try:
+                argv = mix_argv(
+                    ffmpeg_exe(), beat, vocals, limit, beat_start=start,
+                    beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan, clicks=clicks,
+                )
+                feed = self._warm_mix(argv, lambda: token == self._play_token)
+            except Exception as problem:
+                error = str(problem) or "Nie dało się złożyć odsłuchu."
+            if feed is None and token == self._play_token:
+                # The listen address may have run out: ask for a fresh one next time.
+                self._listen_cache = None
+                if beat is not None:
+                    no_beat = "Bit się nie wczytał. Sprawdź internet i spróbuj jeszcze raz."
+                elif not error:
+                    error = "Nie dało się złożyć odsłuchu."
+        lead = clicks[1] if clicks is not None else 0.0
+        self.root.after(0, lambda: self._start_play(token, start, feed, lead, bpm, record_to, note, error, no_beat))
+
+    def _start_play(
+        self, token: int, start: float, feed: MixFeed | None, lead: float, bpm: float,
+        record_to: Path | None, note: str, error: str, no_beat: str,
+    ) -> None:
+        if token != self._play_token:
+            if feed is not None:
+                feed.kill()
+            return
+        self._arming = False
+        self._lead = 0.0
+        self._lead_bpm = bpm
+        if no_beat and (record_to is not None or feed is None):
+            if feed is not None:
+                feed.kill()
+            self._clear_record_mark()
+            self.rec_button.configure(text="● NAGRAJ")
+            self._paint_lamp()
+            self._paint_all()
+            self.status.set(no_beat + (" Bez bitu nagrasz po wyciszeniu go (M)." if record_to is not None else ""))
+            return
+        if error and record_to is None:
+            if feed is not None:
+                feed.kill()
+            self.status.set(error)
+            return
+        if error:
+            note = f"Pozostałych ścieżek nie słychać ({error[:60]})."
         try:
             self._stop_monitor()
+            play = ffplay_exe()
+            output_index = self.selected_output_index()
+            if feed is not None and play is None and output_index is None:
+                feed.kill()
+                feed = None
+                note = NO_FFPLAY
+            if record_to is None and feed is None:
+                raise RuntimeError(note or "Nie ma czego grać.")
             if record_to is not None:
+                # The mix is ready to sound, so the mic opens now and not before the beat has loaded.
                 self.capture = start_capture(record_to, self.selected_device())
                 self.wav_path = record_to
                 self.recording = True
@@ -3437,21 +3747,12 @@ class RecorderWindow:
                 self._live_off = 0
                 self._live_wave_at = 0.0
                 self._drop_live_items()
-            if beat is not None or vocals:
-                ffmpeg = ffmpeg_exe()
-                play = ffplay_exe()
-                output_index = self.selected_output_index()
-                if play is None and output_index is None:
-                    note = NO_FFPLAY
-                else:
-                    argv = mix_argv(
-                        ffmpeg, beat, vocals, limit, beat_start=start,
-                        beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan,
-                    )
-                    self.mix_feed, self.monitor = start_mix(ffmpeg, play or "", argv, output_index)
-            elif record_to is None:
-                raise RuntimeError(note or "Nie ma czego grać.")
+            if feed is not None:
+                self.mix_feed, self.monitor = start_mix(feed, play or "", output_index)
+                self._lead = lead
         except Exception as problem:
+            if feed is not None:
+                feed.kill()
             self._stop_monitor()
             if self.capture is not None:
                 stop_capture(self.capture)
@@ -3462,8 +3763,10 @@ class RecorderWindow:
             self._paint_lamp()
             self.status.set(self._safe_listen_error(problem))
             return
+        if self.beat_muted:
+            note = "Bit wyciszony (M)."
         self._play_from = start
-        self._play_t0 = time.monotonic()
+        self._play_t0 = time.monotonic() + self._lead
         if record_to is None and self.monitor is None:
             self.status.set(note or NO_FFPLAY)
             return
@@ -3473,10 +3776,10 @@ class RecorderWindow:
             self.status.set(f"Gra od {clock_text(start)}. {note}".strip())
         else:
             name = self.tracks[self.rec_track].name
-            extra = f" {heard[2]}" if heard[2] and not self.beat_muted else ""
-            if self.beat_muted:
-                extra = " Bit wyciszony (M)."
-            self.status.set(f"Nagrywam {name} od {clock_text(start)}.{extra}")
+            extra = f" {note}" if note else ""
+            line = f"Nagrywam {name} od {clock_text(start)}.{extra}"
+            self._after_count = line if self._lead > 0 else ""
+            self.status.set(f"Odliczanie, potem nagrywam {name} od {clock_text(start)}." if self._lead > 0 else line)
             self.rec_button.configure(text="● NAGRYWA")
         self._paint_lamp()
         self._paint_all()
@@ -3503,6 +3806,8 @@ class RecorderWindow:
         self.sel = None
         plan = self._mix_plan(self.rec_start, self.rec_track)
         beat_id, local = self._play_beat()
+        count = (countin.bars_of(self.count_var.get()), float(self._beat_meta()[1]))
+        self._take_seconds = self._take_cap()
         TAKES.mkdir(parents=True, exist_ok=True)
         path = TAKES / f"ujecie-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}.wav"
         self._play_token += 1
@@ -3511,22 +3816,28 @@ class RecorderWindow:
         self.rec_button.configure(text="● NAGRYWA")
         self.status.set("Przygotowuję nagranie: bit i pozostałe ścieżki…")
         self._mark_record_armed()
-        threading.Thread(target=self._prepare_play, args=(token, self.rec_start, plan, beat_id, local, path), daemon=True).start()
+        threading.Thread(target=self._prepare_play, args=(token, self.rec_start, plan, beat_id, local, path, count), daemon=True).start()
 
     def stop(self) -> None:
         if self._arming:
             self._play_token += 1
             self._arming = False
+            if self._warm_feed is not None:
+                self._warm_feed.kill()
             self._clear_record_mark()
             self.rec_button.configure(text="● NAGRAJ")
             self.status.set("Przerwane.")
         self._cancel_tick()
         if self.recording:
-            self._stop_monitor()
+            counting = self._count_left() > 0
             if self.capture is not None:
                 stop_capture(self.capture)
                 self.capture = None
-            self._keep_take()
+            self._stop_monitor()
+            if counting:
+                self._drop_take()
+            else:
+                self._keep_take()
             return
         if self.playing:
             self._stop_monitor()
@@ -3535,6 +3846,33 @@ class RecorderWindow:
             self._paint_lamp()
             self._move_head(self.cursor)
             self.status.set("Stop.")
+
+    def _drop_take(self) -> None:
+        """Stop during the count-in: nothing was recorded yet, so no clip and no file stay."""
+        self.recording = False
+        self._clear_record_mark()
+        self.rec_button.configure(text="● NAGRAJ")
+        self._paint_lamp()
+        read_capture_log(self.wav_path)
+        try:
+            self.wav_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        self._paint_all()
+        self._move_head(self.cursor)
+        self.status.set("Przerwane w trakcie odliczania. Nic się nie nagrało.")
+
+    def _cut_lead(self, path: Path) -> float:
+        """Cut the count-in from the take. Returns what is left to skip when the file could not be rewritten."""
+        lead = self._lead
+        if lead <= 0:
+            return 0.0
+        try:
+            rate, samples = read_mono16(path)
+            replace_mono16(path, samples[int(round(lead * rate)) :], rate)
+            return 0.0
+        except Exception:
+            return lead
 
     def _keep_take(self, died: str = "") -> None:
         """The capture is closed: put the take on the armed track as one clip from the record start."""
@@ -3548,16 +3886,17 @@ class RecorderWindow:
             self.status.set(died or "Nagranie jest puste.")
             self._paint_all()
             return
+        skip = self._cut_lead(path)
         self._take_note = self._rate_take(path)
-        seconds = file_seconds(path)
-        cap = float(max_take_seconds(self.tier))
+        seconds = max(0.0, file_seconds(path) - skip)
+        cap = self._take_seconds or self._take_cap()
         length = min(seconds, cap)
         if length < 0.05:
             self.status.set(died or "Nagranie jest za krótkie.")
             self._paint_all()
             return
         self._push_undo()
-        clip = Clip(str(path), round(self.rec_start, 4), 0.0, round(length, 4))
+        clip = Clip(str(path), round(self.rec_start, 4), round(skip, 4), round(skip + length, 4))
         track = self.tracks[self.rec_track]
         track.clips = place(track.clips, [clip])
         self._peaks.pop(str(path), None)
@@ -3568,7 +3907,7 @@ class RecorderWindow:
         self._paint_all()
         prefix = f"{died} " if died else ""
         self.status.set(
-            f"{prefix}Ujęcie {length:.1f} s jest na {track.name} od {clock_text(self.rec_start)}. "
+            f"{prefix}Nagranie {length:.1f} s jest na {track.name} od {clock_text(self.rec_start)}. "
             + (f"{self._take_note} " if self._take_note else "")
             + "Przeciągnij pasek klipu, żeby go przesunąć."
         )
@@ -3582,7 +3921,7 @@ class RecorderWindow:
         offset = wav_data_offset_of(path)
         if offset is None:
             return
-        start = max(self._live_off, offset)
+        start = max(self._live_off, offset + int(round(self._lead * 100)) * 960)
         usable = (size - start) // 960 * 960
         if usable <= 0:
             return
@@ -3600,7 +3939,7 @@ class RecorderWindow:
         live = getattr(proc, "live_peaks", None) if proc is not None else None
         if isinstance(live, list) and live:
             count = len(live)
-            self._live_peaks = live[:count]
+            self._live_peaks = live[int(round(self._lead * 100)) : count]
             return
         try:
             self._read_live()
@@ -3619,8 +3958,17 @@ class RecorderWindow:
                     reason += f" Windows: {fatal[:100]}"
                 self._keep_take(reason)
                 return
+            left = self._count_left()
+            if left > 0:
+                self._move_head(self.rec_start)
+                self.clock.set(f"odliczanie  {countin.count_text(left, self._lead_bpm)}")
+                self._tick_id = self.root.after(40, self._tick)
+                return
+            if self._after_count:
+                self.status.set(self._after_count)
+                self._after_count = ""
             elapsed = self._rec_elapsed()
-            cap = max_take_seconds(self.tier)
+            cap = self._take_seconds or self._take_cap()
             head = self.rec_start + elapsed
             self._pull_live_peaks()
             self._follow(head)
@@ -3629,13 +3977,14 @@ class RecorderWindow:
                 self._paint_live_wave(lane, max(lane.winfo_height(), 4))
             self._grow_live()
             self._move_head(head)
-            self.clock.set(f"{clock_text(head)}  ● {elapsed:.1f}/{cap} s")
+            self.clock.set(f"{clock_text(head)}  ● {elapsed:.1f}/{cap:.0f} s")
             if elapsed >= cap:
                 self._stop_monitor()
                 if self.capture is not None:
                     stop_capture(self.capture)
                     self.capture = None
-                self._keep_take(f"Plan {display_tier(self.tier)} kończy ujęcie po {cap} s.")
+                whole = cap >= max_take_seconds(self.tier)
+                self._keep_take(f"Plan {display_tier(self.tier)} kończy nagranie po {cap:.0f} s." if whole else f"Koniec bitu: nagranie ma {cap:.0f} s.")
                 return
             self._tick_id = self.root.after(40, self._tick)
             return
@@ -3717,10 +4066,17 @@ class RecorderWindow:
             box.destroy()
             self.export_stems()
 
+        pending = self._my_pending()
+        if pending is not None and pending.track_of:
+            def finish() -> None:
+                box.destroy()
+                self.finish_pending()
+
+            self._tool(box, "DOKOŃCZ POPRZEDNIĄ WYSYŁKĘ", finish, INK, RACK, 13).pack(fill="x", padx=16, pady=(14, 0))
         studio = self._tool(box, "WRZUĆ NAGRANIE DO STUDIA", send, ON_AMBER, AMBER, 14)
         studio.pack(fill="x", padx=16, pady=(14, 2))
         tk.Label(
-            box, text="Tworzy projekt na koncie: bit i Twoje ścieżki w tych samych miejscach. Miks i mastering robisz w Studio na stronie.",
+            box, text="Tworzy projekt na koncie: bit i Twoje ścieżki w tych samych miejscach. Mix i mastering robisz w Studio na stronie.",
             bg=PANEL, fg=SOFT, font=(FONT_UI, 9), wraplength=440, justify="left",
         ).pack(anchor="w", padx=16)
         gold = self.tier == "GOLD"
@@ -3739,14 +4095,13 @@ class RecorderWindow:
             stem_button.configure(state="disabled")
         _ = bpm
 
-    def _render_clip_files(self, clips: list[tuple[int, Clip]]) -> tuple[list[Path], list[int], list[int]]:
+    def _render_clip_files(self, clips: list[tuple[int, Clip]], cap: float) -> tuple[list[Path], list[int], list[int]]:
         """One WAV per track (gaps are silence), split only where a track is longer than one take.
 
         Every WAV is one recording send on the site, and the plan allows a few per day.
         """
         folder = TAKES / "wysylka"
         folder.mkdir(parents=True, exist_ok=True)
-        cap = float(max_take_seconds(self.tier))
         by_slot: dict[int, list[Clip]] = {}
         for slot, clip in clips:
             by_slot.setdefault(slot, []).append(clip)
@@ -3754,9 +4109,10 @@ class RecorderWindow:
         slots: list[int] = []
         starts: list[int] = []
         for slot in sorted(by_slot):
-            for group in group_for_takes(ordered(by_slot[slot]), cap):
+            for group in group_for_takes(fit_takes(by_slot[slot], cap), cap):
                 begin, end = group[0].start, max(clip.end for clip in group)
-                name = "-".join(clip_key(clip) for clip in group) + f"-{begin:.3f}"
+                # Every clip's place is in the name: a moved clip must not send the earlier arrangement.
+                name = "-".join(f"{clip_key(clip)}@{clip.start:.4f}" for clip in group)
                 path = folder / f"tor-{hashlib.sha1(name.encode('utf-8')).hexdigest()[:16]}.wav"
                 if not path.is_file():
                     samples = render(group, begin, end, self._load)
@@ -3916,7 +4272,8 @@ class RecorderWindow:
         """Write one .brd1. False means the window should stay (cancelled or failed)."""
         if self.studio_mode != "offline":
             return False
-        if self.tier != "GOLD":
+        # Whoever got into Studio Offline may save: a lost connection must not lock the work in.
+        if not self._offline_ok:
             self.status.set("Zapis projektu jest w planie Premium Gold.")
             return False
         if self._arming:
@@ -3968,7 +4325,7 @@ class RecorderWindow:
     def save_offline_pack(self) -> None:
         if self.studio_mode != "offline":
             return
-        if self.tier != "GOLD":
+        if not self._offline_ok:
             self.status.set("Zapis sesji offline jest w planie Premium Gold.")
             return
         if self._exporting:
@@ -4040,8 +4397,7 @@ class RecorderWindow:
                 self.status.set("To nie jest projekt BitRymDym (.brd1). Plik z bitem w środku jest odrzucany.")
                 return
             document, stems = opened
-            digest = hashlib.sha1(str(target.resolve()).encode("utf-8")).hexdigest()[:12]
-            folder = TAKES / "projekty" / digest
+            folder = self._unpack_folder(target)
             try:
                 folder.mkdir(parents=True, exist_ok=True)
                 for name, data in stems.items():
@@ -4063,7 +4419,23 @@ class RecorderWindow:
         if document is None:
             self.status.set("To nie jest sesja BitRymDym (sesja.brd.json).")
             return
-        self._install_offline_session(document, target.parent)
+        # Own copies: saving stems to the same folder later must not change what is on the timeline.
+        folder = self._unpack_folder(target)
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            for item in document.get("tracks") or []:  # type: ignore[union-attr]
+                stem = str(item.get("stem") or "") if isinstance(item, dict) else ""
+                if stem and Path(stem).name == stem and (target.parent / stem).is_file():
+                    shutil.copyfile(target.parent / stem, folder / stem)
+        except OSError:
+            self.status.set("Nie dało się skopiować stemów z tego folderu.")
+            return
+        self._install_offline_session(document, folder)
+
+    def _unpack_folder(self, source: Path) -> Path:
+        """A new folder for every load, so the clips (and undo) of an earlier load keep their own files."""
+        digest = hashlib.sha1(str(source.resolve()).encode("utf-8")).hexdigest()[:12]
+        return TAKES / "projekty" / f"{digest}-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}"
 
     def _install_offline_session(self, document: dict[str, object], folder: Path) -> None:
         tracks = document.get("tracks")
@@ -4163,7 +4535,29 @@ class RecorderWindow:
         self._uploading = True
         self.done_button.configure(state="disabled")
         self.status.set("Przygotowuję klipy do wysyłki…")
-        threading.Thread(target=self._run_upload, args=(title, beat_id, clips), daemon=True).start()
+        threading.Thread(target=self._run_upload, args=(title, beat_id, clips, self._take_cap()), daemon=True).start()
+
+    def finish_pending(self) -> None:
+        """Send the rest of an interrupted send. The program may have been closed since."""
+        state = self._my_pending()
+        if state is None or self._uploading:
+            return
+        try:
+            self.token()
+        except RuntimeError as error:
+            self.status.set(str(error))
+            return
+        self._uploading = True
+        self.done_button.configure(state="disabled")
+        self.status.set("Dokańczam poprzednią wysyłkę…")
+        threading.Thread(target=self._run_upload, args=(state.title, state.beat_id, [], 0.0, state), daemon=True).start()
+
+    def _my_pending(self) -> UploadState | None:
+        """The interrupted send, when this account started it."""
+        state = self._pending
+        if state is not None and state.account and state.account != self.email.get().strip():
+            return None
+        return state
 
     def _remember_state(self, state: UploadState) -> None:
         self._pending = state
@@ -4172,12 +4566,23 @@ class RecorderWindow:
     def _upload_say(self, text: str) -> None:
         self.root.after(0, lambda: self.status.set(text) if self._uploading else None)
 
-    def _run_upload(self, title: str, beat_id: str, clips: list[tuple[int, Clip]]) -> None:
+    def _run_upload(
+        self, title: str, beat_id: str, clips: list[tuple[int, Clip]], cap: float, finish: UploadState | None = None
+    ) -> None:
         active_send_id = ""
         client = None
+        account = str((load_session() or {}).get("email") or "")
         try:
-            paths, slots, starts = self._render_clip_files(clips)
+            if finish is not None:
+                paths, slots, starts = [Path(item) for item in finish.wav_paths], list(finish.track_of), list(finish.starts_ms)
+            else:
+                paths, slots, starts = self._render_clip_files(clips, cap)
             resume = self._pending if self._pending is not None and self._pending.wav_paths == [str(path) for path in paths] else None
+            if resume is not None and resume.account and resume.account != account:
+                # Another account's project. This one starts its own.
+                resume = None
+                if finish is not None:
+                    raise RuntimeError("Tę wysyłkę zaczęło inne konto. Zaloguj się na nie, żeby ją dokończyć.")
             if self._pending is not None and resume is None:
                 self._pending = None
                 clear_pending()
@@ -4200,12 +4605,16 @@ class RecorderWindow:
                 track_of=slots,
                 starts_ms=starts,
                 send_id=send_id,
+                account=account,
                 progress=self._upload_say,
                 resume=resume,
                 on_state=self._remember_state,
             )
         except Exception as error:
             message = str(error)
+            if STALE_SEND in message:
+                self._pending = None
+                clear_pending()
             # The upload failed: the daily send it held goes back to the user. A saved resume state keeps
             # its clips but loses the send id, so the next "Gotowe i Wrzuć do Studia" claims a fresh one.
             if client is not None:
@@ -4226,19 +4635,25 @@ class RecorderWindow:
                     save_pending(cleared)
             self.root.after(0, lambda: self._upload_done(None, message))
             return
+        for path in paths:
+            # Sent: the rendered copies for the upload are not needed any more.
+            try:
+                path.unlink()
+            except OSError:
+                pass
         self.root.after(0, lambda: self._upload_done(project, ""))
 
     def _upload_done(self, project: str | None, error: str) -> None:
         self._uploading = False
         self.done_button.configure(state="normal")
         if project is None:
-            hint = " Gotowe i Wrzuć do Studia dokończy wysyłkę." if self._pending is not None else ""
-            self.status.set(friendly_upload_error(self._safe_listen_error(RuntimeError(error or "Wysyłka się nie udała."))) + hint)
+            hint = " Gotowe i Dokończ poprzednią wysyłkę wyśle resztę." if self._pending is not None else ""
+            self.status.set(friendly_upload_error(error or "Wysyłka się nie udała.") + hint)
             return
         self._pending = None
         clear_pending()
         self.project_id = project
-        self.status.set("Nagranie jest w Studio na koncie. Otwieram projekt w przeglądarce: tam miks i mastering.")
+        self.status.set("Nagranie jest w Studio na koncie. Otwieram projekt w przeglądarce: tam mix i mastering.")
         webbrowser.open(studio_url(SITE, project))
 
     def export_stems(self) -> None:
@@ -4286,8 +4701,9 @@ class RecorderWindow:
     # ---- small shared bits ------------------------------------------------------
 
     def _stop_monitor(self) -> None:
-        stop_monitor(self.monitor)
+        # The mix first: a player waiting for its bytes then ends by itself.
         stop_monitor(self.mix_feed)
+        stop_monitor(self.monitor)
         self.monitor = None
         self.mix_feed = None
 
@@ -4517,7 +4933,7 @@ class RecorderWindow:
             text=(
                 "Studio Online: jedna lista bitów na koncie (darmowe, własne i kupione). "
                 "Szukasz po nazwie. Liczba ścieżek zależy od planu. Nagranie można wrzucić do Studia na stronie. "
-                "Miks i mastering są na stronie.\n\n"
+                "Mix i mastering są na stronie.\n\n"
                 "Studio Offline: tylko Premium Gold. Bit zostaje plikiem na tym komputerze, program go nie wysyła. "
                 "16 ścieżek wokalu i 6 na podbicia i adliby. Projekt zapisujesz jako .brd1 albo jako stemy. "
                 "Program nie sprawdza, czy bit i wokal są Twoje. Jak wrzucisz na serwis cudzy bit, odpowiadasz za to Ty."
@@ -4739,7 +5155,7 @@ class RecorderWindow:
             text=(
                 "Gotowe darmowe bity. Katalog bitów, które sam wgrałeś. Wykupione płatne bity. "
                 "Jedna lista, szukasz po nazwie. Ścieżki według planu. "
-                "Na końcu możesz wrzucić nagranie do Studia. Miks i mastering są na stronie."
+                "Na końcu możesz wrzucić nagranie do Studia. Mix i mastering są na stronie."
             ),
             bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=420, justify="left",
         )
@@ -4758,7 +5174,7 @@ class RecorderWindow:
                 "Tylko swój bit z pliku, na tym komputerze. "
                 "16 ścieżek wokalu i 6 na podbicia i adliby. "
                 "Mikrofon i odsłuch osobno, także Bluetooth. "
-                "Czysta nagrywka i prosta edycja. Bez automatycznego miksu, masteringu i bez wysyłki na stronę."
+                "Czysta nagrywka i prosta edycja. Bez automatycznego mixu, masteringu i bez wysyłki na stronę."
             ),
             bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=420, justify="left",
         )
@@ -4841,6 +5257,8 @@ class RecorderWindow:
             return
         if mode not in ("online", "offline"):
             return
+        if mode == "offline":
+            self._offline_ok = True
         fresh = mode not in self._desk_live
         if mode != self.studio_mode:
             if self._touched:
@@ -4888,7 +5306,7 @@ class RecorderWindow:
         self._paint_all()
 
     def _offline_plan_line(self) -> str:
-        return "Gold · 16 wokali + 6 podbić i adlibów. Czysta nagrywka, bez miksu i masteringu."
+        return "Gold · 16 wokali + 6 podbić i adlibów. Czysta nagrywka, bez mixu i masteringu."
 
     def _style_option(self, menu: tk.OptionMenu, width: int) -> None:
         menu.configure(
@@ -4897,12 +5315,16 @@ class RecorderWindow:
         )
         menu["menu"].configure(bg=RACK, fg=INK, activebackground=AMBER, activeforeground=ON_AMBER, font=(FONT_UI, 10))
 
+    def _option_chosen(self, variable: tk.StringVar, value: str) -> None:
+        variable.set(value)
+        self._save_prefs()
+
     def _fill_option(self, menu: tk.OptionMenu, variable: tk.StringVar, labels: list[str], preferred: str) -> None:
         choices = labels or ["Brak"]
         widget = menu["menu"]
         widget.delete(0, "end")
         for label in choices:
-            widget.add_command(label=label, command=lambda value=label: variable.set(value))
+            widget.add_command(label=label, command=lambda value=label: self._option_chosen(variable, value))
         variable.set(preferred if preferred in choices else choices[0])
 
     def _boot_background(self) -> None:
@@ -4911,6 +5333,9 @@ class RecorderWindow:
         threading.Thread(target=self._boot_worker, daemon=True).start()
 
     def _boot_worker(self) -> None:
+        if not self._swept:
+            self._swept = True
+            sweep_copies(keep=set(self._pending.wav_paths) if self._pending is not None else None)
         devices: list[str] = []
         device_error = ""
         try:
@@ -5053,13 +5478,16 @@ class RecorderWindow:
         token = self._remix_token
         if self._remix_after:
             self.root.after_cancel(self._remix_after)
+        left = self._count_left()
+        if left > 0:
+            delay = max(delay, int(left * 1000) + 60)
         self._remix_after = self.root.after(delay, lambda: self._kick_remix(token))
 
     def _kick_remix(self, token: int) -> None:
         self._remix_after = None
         if token != self._remix_token or self._arming or not (self.playing or self.recording):
             return
-        head = max(0.0, self._play_from + (time.monotonic() - self._play_t0))
+        head = max(self._play_from, self._play_from + (time.monotonic() - self._play_t0))
         skip = self.rec_track if self.recording else None
         plan = self._mix_plan(head, skip)
         beat_id, local = self._play_beat()
@@ -5070,6 +5498,7 @@ class RecorderWindow:
     ) -> None:
         heard: tuple[str | None, int | None, str] = (None, None, "")
         vocals: list[tuple[Path, float, float]] = []
+        feed: MixFeed | None = None
         error = ""
         try:
             if local and Path(local).is_file():
@@ -5077,39 +5506,48 @@ class RecorderWindow:
             elif beat_id:
                 heard = self._beat_listen(beat_id)
             vocals = self._render_for_play(plan, head)
+            target, limit, _note = heard
+            beat = target
+            if beat is not None and limit and head >= limit:
+                beat = None
+            if (beat_id or local) and target is None:
+                raise RuntimeError(heard[2] or "Bit się nie wczytał.")
+            if beat is not None or vocals:
+                argv = mix_argv(
+                    ffmpeg_exe(), beat, vocals, limit, beat_start=head,
+                    beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan,
+                )
+                feed = self._warm_mix(argv, lambda: token == self._remix_token)
+                if feed is None:
+                    self._listen_cache = None
+                    raise RuntimeError("Odsłuch się nie odświeżył. Zmiana zadziała przy następnym Graj.")
         except Exception as problem:
             error = str(problem) or "Nie dało się złożyć odsłuchu."
-        self.root.after(0, lambda: self._swap_monitor(token, head, heard, vocals, error))
+        self.root.after(0, lambda: self._swap_monitor(token, head, feed, error))
 
-    def _swap_monitor(
-        self, token: int, head: float, heard: tuple[str | None, int | None, str],
-        vocals: list[tuple[Path, float, float]], error: str,
-    ) -> None:
-        if token != self._remix_token or not (self.playing or self.recording):
+    def _swap_monitor(self, token: int, head: float, feed: MixFeed | None, error: str) -> None:
+        if token != self._remix_token or self._arming or not (self.playing or self.recording):
+            if feed is not None:
+                feed.kill()
             return
-        target, limit, _note = heard
-        beat = None if self.beat_muted else target
-        if beat is not None and limit and head >= limit:
-            beat = None
-        self._stop_monitor()
-        if error and beat is None and not vocals:
+        if error:
+            # The old mix plays on: a change that did not load must not cut the sound of a take.
+            if feed is not None:
+                feed.kill()
             self.status.set(error)
             return
         try:
-            if beat is not None or vocals:
-                ffmpeg = ffmpeg_exe()
-                play = ffplay_exe()
-                output_index = self.selected_output_index()
-                if play is None and output_index is None:
-                    raise RuntimeError(NO_FFPLAY)
-                argv = mix_argv(
-                    ffmpeg, beat, vocals, limit, beat_start=head,
-                    beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan,
-                )
-                self.mix_feed, self.monitor = start_mix(ffmpeg, play or "", argv, output_index)
-            if self.playing:
-                self._play_from = head
-                self._play_t0 = time.monotonic()
+            play = ffplay_exe()
+            output_index = self.selected_output_index()
+            if feed is not None and play is None and output_index is None:
+                feed.kill()
+                raise RuntimeError(NO_FFPLAY)
+            self._stop_monitor()
+            if feed is not None:
+                # Loading took a moment and the song went on: join where it is now, not where it was.
+                late = max(0.0, self._play_from + (time.monotonic() - self._play_t0) - head)
+                feed.skip(late)
+                self.mix_feed, self.monitor = start_mix(feed, play or "", output_index)
         except Exception as problem:
             self._stop_monitor()
             self.status.set(self._safe_listen_error(problem))
@@ -5121,8 +5559,9 @@ class RecorderWindow:
 
     def _safe_listen_error(self, error: BaseException) -> str:
         text = str(error)
-        if "->" in text and "404" in text:
-            return "Odsłuch strony nie jest jeszcze na produkcji."
+        status, _code, said = error_body(text)
+        if status:
+            return said or f"Strona nie oddała odsłuchu (kod {status})."
         if "http://" in text.lower() or "https://" in text.lower():
             return "Strona nie oddała odsłuchu."
         return text
@@ -5239,14 +5678,8 @@ class RecorderWindow:
         return client
 
     def _fresh_client(self, token: str) -> SiteClient:
-        client = SiteClient(SITE, token)
-        try:
-            client.plan_usage()
-        except RuntimeError as error:
-            if not is_unauthorized(error):
-                raise
-            client = SiteClient(SITE, self._refresh())
-            client.plan_usage()
+        client = SiteClient(SITE, token, self._refresh)
+        client.plan_usage()
         return client
 
     def _refresh(self) -> str:
@@ -5293,7 +5726,19 @@ class RecorderWindow:
         if self._uploading:
             self.status.set("Wysyłka trwa. Wyloguj po jej końcu.")
             return
+        if self._exporting:
+            self.status.set("Zapis trwa. Wyloguj po jego końcu.")
+            return
+        # The next account must not see, or send, these recordings.
+        if not self._confirm_close_save():
+            return
         self._halt_audio()
+        self._discard_desks()
+        self._desk_live.clear()
+        self._blank_project()
+        self._offline_ok = False
+        self._client_cache = None
+        self._listen_cache = None
         self._signed_in = False
         email = self.email.get().strip()
         old = load_session()
@@ -5343,6 +5788,8 @@ class RecorderWindow:
                     raise RuntimeError(LOGIN_HINT_EXPIRED)
                 else:
                     raise RuntimeError("Wpisz e-mail i hasło.")
+            if self._owner_email and self._owner_email != email and not self._confirm_close_save():
+                return
             if not self.public_url or not self.public_key:
                 self._load_public()
             grant = supabase_password_grant(self.public_url, self.public_key, email, password)
@@ -5352,9 +5799,18 @@ class RecorderWindow:
                 password=password if remember else "",
                 password_until=password_deadline(now) if remember else None,
             )
+            if self._owner_email and self._owner_email != email:
+                # A session that ran out, then another account: its project must not move over.
+                self._discard_desks()
+                self._desk_live.clear()
+                self._blank_project()
+                self._offline_ok = False
+                self.tier = "FREE"
+            self._owner_email = email
+            self._listen_cache = None
             self._signed_in = True
             self.password.delete(0, "end")
-            self._read_plan()
+            self._read_plan(wait=True)
             self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
             self.gate_status.set("")
             self.show_modes()
@@ -5564,6 +6020,15 @@ class RecorderWindow:
             self.update_var.set("Pobrane. Dokończ nagranie, potem Zaktualizuj.")
             self.update_gate_text.set("Pobrane. Dokończ nagranie, potem Zaktualizuj.")
             return
+        # The same question as on close. Anuluj keeps the download ready.
+        if not self._confirm_close_save():
+            self._update_ready = path
+            self._update_busy = False
+            self.update_now.configure(state="normal")
+            self._gate_button_state(getattr(self, "update_go", None), True)
+            self.update_var.set("Pobrane. Zaktualizuj, gdy skończysz.")
+            self.update_gate_text.set("Pobrane. Zaktualizuj, gdy skończysz.")
+            return
         self._update_ready = path
         self._update_busy = True
         self._update_abort = False
@@ -5766,6 +6231,63 @@ def password_keep_self_test() -> None:
         shutil.rmtree(session_dir, ignore_errors=True)
 
 
+def mix_self_test(exe: str) -> None:
+    """Real ffmpeg, no sound card: count-in length, joining a running mix, a stalled address, cut takes."""
+    folder = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mix-ąę-selftest"
+    folder.mkdir(parents=True, exist_ok=True)
+    voice, click = folder / "głos.wav", folder / "stuk.wav"
+    replace_mono16(voice, array.array("h", [(i // 48) % 30000 for i in range(RATE * 3)]))
+    replace_mono16(click, countin.click_samples(1, 93))
+    lead = countin.lead_seconds(1, 93)
+
+    def left_channel(feed: MixFeed, size: int) -> array.array:
+        blob = b""
+        while True:
+            data = feed.read(size)
+            if not data:
+                break
+            blob += data
+        offset = wav_data_offset(blob[:4096]) or 44
+        pcm = array.array("h")
+        pcm.frombytes(blob[offset : offset + (len(blob) - offset) // 4 * 4])
+        return pcm[::2]
+
+    for skip in (0.0, 0.05, 1.7):
+        for size in (12, 15_360):
+            feed = MixFeed(mix_argv(exe, None, [(voice, 0.0, -1.0)], None))
+            if not feed.warm():
+                raise SystemExit("odsłuch nie ruszył")
+            feed.skip(skip)
+            got = left_channel(feed, size)
+            feed.close()
+            if abs(len(got) / RATE - (3.0 - skip)) > 0.001 or abs(got[0] - int(skip * 1000)) > 1:
+                raise SystemExit(f"wejście w trwający odsłuch {skip} {size} {len(got)} {got[0]}")
+    feed = MixFeed(mix_argv(exe, str(voice), [(voice, 0.0, 0.0)], None, beat_start=1.0, clicks=(click, lead)))
+    if not feed.warm():
+        raise SystemExit("odliczanie nie ruszyło")
+    got = left_channel(feed, 15_360)
+    if abs(len(got) / RATE - (lead + 3.0)) > 0.002:
+        raise SystemExit(f"odliczanie: długość {len(got) / RATE}")
+    edge = int(round(lead * RATE))
+    if max(abs(value) for value in got[edge - 8000 : edge - 10]) > 40 or abs(got[edge + 480]) < 300:
+        raise SystemExit("odliczanie: bit nie wszedł po ostatnim stuku")
+    import socket
+
+    with socket.socket() as silent:
+        silent.bind(("127.0.0.1", 0))
+        silent.listen()
+        feed = MixFeed(mix_argv(exe, f"http://127.0.0.1:{silent.getsockname()[1]}/bit", [], None))
+        threading.Timer(0.7, feed.kill).start()
+        begun = time.monotonic()
+        if feed.warm() or time.monotonic() - begun > 10:
+            raise SystemExit("Stop nie przerywa czekania na bit")
+    pieces = fit_takes([Clip("a", 0, 0, 70), Clip("b", 80, 0, 5)], 30.0)
+    if [round(clip.length, 3) for clip in pieces] != [30, 30, 10, 5]:
+        raise SystemExit(f"cięcie do limitu {pieces}")
+    shutil.rmtree(folder, ignore_errors=True)
+    print("mix self-test ok")
+
+
 def self_test_wav_roundtrip() -> None:
     """Header check. Uses a generated tone, not the microphone."""
     from record_wav import self_test
@@ -5790,6 +6312,7 @@ if __name__ == "__main__":
         fx_self_test()
         timeline_self_test()
         offline_self_test()
+        countin.self_test()
         argv = monitor_argv("ffplay", Path("bit.wav"))
         if "-nodisp" not in argv or argv[-1] != "bit.wav" or "-t" in argv or "nobuffer" not in argv:
             raise SystemExit("odsłuch")
@@ -5841,6 +6364,9 @@ if __name__ == "__main__":
         if "wokal.wav" not in graph or "volume=" not in graph or "pan=stereo" not in graph:
             raise SystemExit("miks")
         seek = mix_argv("ffmpeg", "https://example.invalid/bit", [], 20, beat_start=12.5)
+        counted = " ".join(mix_argv("ffmpeg", "bit.mp3", [(Path("wokal.wav"), 0.0, 0.0)], None, clicks=(Path("stuk.wav"), 2.0)))
+        if counted.count("adelay=96000S:all=1") != 2 or "[2:a]" not in counted or "amix=inputs=3" not in counted:
+            raise SystemExit("odliczanie przed bitem")
         if seek[seek.index("-ss") + 1] != "12.500" or seek[seek.index("-t") + 1] != "8" or seek.index("-ss") > seek.index("-i"):
             raise SystemExit("miks od kursora")
         if clock_text(75.5) != "1:15.50" or shade("#ff8000", 0.5) != "#7f4000" or safe_name("a/b c") != "a-b-c" or count_word(22, "a", "b", "c") != "22 b":

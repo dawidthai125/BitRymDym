@@ -21,7 +21,7 @@ TAKE_SECONDS = {"FREE": 30, "BRONZE": 60, "SILVER": 120, "GOLD": 180}
 # plan-policy studio.maxRecordingTracks. The Bit lane is not a recording track.
 RECORDING_TRACKS = {"FREE": 1, "BRONZE": 2, "SILVER": 8, "GOLD": 16}
 RATE = 48_000
-PREF_KEYS = ("device", "title", "effects", "beat")
+PREF_KEYS = ("device", "output", "title", "effects", "beat", "countIn")
 
 
 def max_take_seconds(tier: str) -> int:
@@ -184,6 +184,10 @@ def read_prefs(path: Path) -> dict[str, Any]:
         out["device"] = device
     if isinstance(title, str):
         out["title"] = title
+    for key in ("output", "countIn"):
+        value = raw.get(key)
+        if isinstance(value, str) and value:
+            out[key] = value
     if isinstance(beat, str) and beat:
         out["beat"] = beat
     if isinstance(effects, list):
@@ -235,7 +239,7 @@ def take_level_note(before_db: float, after_db: float, gain_db: float, clipped: 
     if gain_db < 0.5:
         return body
     line = (
-        f"Podniosłem ciche ujęcie o {round(gain_db)} dB "
+        f"Podniosłem ciche nagranie o {round(gain_db)} dB "
         f"(szczyt był {level_text(before_db)}, jest {level_text(after_db)})."
     )
     if before_db < -45:
@@ -330,7 +334,8 @@ def seal_session(
     try:
         blob = protect(json.dumps(secret).encode("utf-8"), SESSION_ENTROPY)
     except Exception:
-        return dict(session)
+        # Tokens stay so the login is not lost. The account password is never written in the clear.
+        return {key: value for key, value in session.items() if key not in ("password", "passwordUntil")}
     public = {key: value for key, value in session.items() if key not in SECRET_KEYS}
     return {**public, "sealed": base64.b64encode(blob).decode("ascii"), "format": "dpapi-v1"}
 
@@ -385,10 +390,10 @@ def self_test() -> None:
     prefs_path = folder / "prefs.json"
     write_prefs(
         prefs_path,
-        {"device": "Mic", "title": "T", "effects": ["eq"], "beat": "Bit", "accessToken": "no"},
+        {"device": "Mic", "title": "T", "effects": ["eq"], "beat": "Bit", "output": "Słuchawki", "countIn": "2 takty", "accessToken": "no"},
     )
     loaded = read_prefs(prefs_path)
-    if "accessToken" in loaded or loaded.get("effects") != ["eq"]:
+    if "accessToken" in loaded or loaded.get("effects") != ["eq"] or loaded.get("output") != "Słuchawki" or loaded.get("countIn") != "2 takty":
         raise SystemExit("prefs")
     prefs_path.unlink(missing_ok=True)
     if studio_url("https://www.bitrymdym.pl", "p1") != "https://www.bitrymdym.pl/studio/p/p1":
@@ -429,7 +434,7 @@ def self_test() -> None:
     if "zgubił próbki (2 razy)" not in quality_note(-12, 0, drops=2):
         raise SystemExit("ocena: próbki")
     raised = take_level_note(-71.2, -12.0, 59.2, 0)
-    if "Podniosłem ciche ujęcie o 59 dB" not in raised or "−71 dB" not in raised or "jeśli to nie Twój głos" not in raised:
+    if "Podniosłem ciche nagranie o 59 dB" not in raised or "−71 dB" not in raised or "jeśli to nie Twój głos" not in raised:
         raise SystemExit(f"ocena: podbicie {raised}")
     if "jeśli to nie Twój głos" in take_level_note(-30.0, -12.0, 18.0, 0):
         raise SystemExit("ocena: zwykłe cicho bez ostrzeżenia o głosie")

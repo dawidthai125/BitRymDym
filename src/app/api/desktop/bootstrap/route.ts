@@ -12,7 +12,8 @@ export async function GET() {
   let beats: DesktopBeatChoice[] = [];
   try {
     const rows = await listPublishedBeats();
-    beats = rows.map((beat) => ({
+    // A beat closed for Studio would be recorded on and then refused at the send.
+    beats = rows.filter((beat) => beat.allowStudioUse !== false).map((beat) => ({
       id: beat.id,
       title: beat.title,
       bpm: beat.bpm,

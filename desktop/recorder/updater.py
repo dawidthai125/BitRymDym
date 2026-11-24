@@ -1,16 +1,17 @@
 """Self-update for the Windows recorder.
 
-The program asks one public file (latest.json on R2) whether a newer build exists. That file is always
-the single newest installer, never the next number in line. A machine several builds behind downloads
-that one file. The installer then replaces the whole program folder, so skipped builds are not applied
-one by one. The file is signed
-with an Ed25519 key. The public half sits below, the private half stays in the OpenBot Vault. A new
-build is installed only when ALL of these hold:
+The program asks one public file (feed/signed.json on R2) whether a newer build exists. That file is always
+the single newest Velopack package, never the next number in line, and it is signed with an Ed25519 key.
+The public half sits below, the private half stays in the OpenBot Vault. A new build is installed only
+when ALL of these hold:
 
   1. the signature over (version, sha256, size, url) verifies against UPDATE_PUBLIC_KEY,
   2. the version is newer than APP_VERSION,
-  3. the installer URL is https and under INSTALLER_PREFIX,
+  3. the package URL is https and under FEED_URL,
   4. the downloaded file has exactly the signed size and SHA-256.
+
+feed/releases.win.json is not signed. Only builds up to 2026.11.36 read it.
+latest.json is the same kind of signed file for the manual Setup.exe link on the site.
 
 So replacing a file in the bucket is not enough to push code onto a user's PC.
 APP_VERSION must equal AppVersion in installer/BitRymDym.iss (the CI workflow checks it).
@@ -30,7 +31,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.36"
+APP_VERSION = "2026.11.37"
 PACK_ID = "BitRymDym.Nagrywarka"
 
 # Velopack runs the main exe with one of these and waits. The process must exit
@@ -45,7 +46,7 @@ VELOPACK_HOOKS = (
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
 FEED_URL = R2_BASE + "feed/"
-MANIFEST_URL = R2_BASE + "latest.json"
+SIGNED_FEED_URL = FEED_URL + "signed.json"
 INSTALLER_PREFIX = R2_BASE
 UPDATE_PUBLIC_KEY = bytes.fromhex("6155276db02091971473e8d771a6670221d2b9a2c31786dffb9c592cca0ddbe9")
 MAX_INSTALLER_BYTES = 600 * 1024 * 1024
@@ -176,68 +177,28 @@ def parse_manifest(raw: bytes, public: bytes = UPDATE_PUBLIC_KEY, prefix: str = 
     return Update(version=version, url=url, sha256=sha256, size=size, notes=notes)
 
 
-def fetch_manifest(timeout: float = 8.0) -> bytes:
+def fetch_signed_feed(timeout: float = 8.0) -> bytes:
     request = urllib.request.Request(
-        f"{MANIFEST_URL}?t={int(time.time())}",
+        f"{SIGNED_FEED_URL}?t={int(time.time())}",
         headers={"Cache-Control": "no-cache", "User-Agent": "BitRymDymRecorder"},
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
         return response.read(65_536)
 
 
-def fetch_feed(timeout: float = 8.0) -> bytes:
-    request = urllib.request.Request(
-        f"{FEED_URL}releases.win.json?t={int(time.time())}",
-        headers={"Cache-Control": "no-cache", "User-Agent": "BitRymDymRecorder"},
-    )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        return response.read(1_000_000)
-
-
-def parse_feed(raw: bytes, current: str = APP_VERSION, feed: str = FEED_URL) -> Update | None:
-    """Newest full package in a Velopack releases.win.json, or None when nothing is newer."""
-    data = json.loads(raw.decode("utf-8"))
-    best: Update | None = None
-    base = feed if feed.endswith("/") else feed + "/"
-    if not base.startswith("https://") or not base.startswith(R2_BASE):
-        raise ValueError("adres")
-    for asset in data.get("Assets") or []:
-        if str(asset.get("Type")) != "Full":
-            continue
-        version = str(asset["Version"])
-        version_key(version)
-        if not is_newer(version, current):
-            continue
-        name = str(asset["FileName"])
-        if not name.endswith(".nupkg") or "/" in name or "\\" in name or ".." in name:
-            raise ValueError("plik")
-        sha256 = str(asset["SHA256"]).lower()
-        size = int(asset["Size"])
-        if len(sha256) != 64 or any(ch not in "0123456789abcdef" for ch in sha256):
-            raise ValueError("suma")
-        if not 1_000_000 <= size <= MAX_INSTALLER_BYTES:
-            raise ValueError("rozmiar")
-        notes = str(asset.get("NotesMarkdown") or "")[:400]
-        candidate = Update(version=version, url=base + name, sha256=sha256, size=size, notes=notes)
-        if best is None or version_key(candidate.version) > version_key(best.version):
-            best = candidate
-    return best
-
-
 def check_for_update(
     fetch: Callable[[], bytes] | None = None,
     current: str = APP_VERSION,
     public: bytes = UPDATE_PUBLIC_KEY,
-    prefix: str = INSTALLER_PREFIX,
+    feed: str = FEED_URL,
 ) -> Update | None:
-    """A newer Velopack package, or None. Network and format problems return None, not an error.
-
-    public and prefix stay in the signature so older callers still import. The feed check uses SHA-256
-    from releases.win.json. latest.json remains the signed file for the manual Setup.exe link.
-    """
-    del public, prefix
+    """A newer signed Velopack package, or None. Network, format and signature problems return None."""
     try:
-        return parse_feed((fetch or fetch_feed)(), current)
+        update = parse_manifest((fetch or fetch_signed_feed)(), public, feed)
+        name = update.url[len(feed):]
+        if not name.endswith(".nupkg") or any(bad in name for bad in "/\\?#%"):
+            return None
+        return update if is_newer(update.version, current) else None
     except Exception:
         return None
 
@@ -476,19 +437,6 @@ def self_test() -> None:
             raise SystemExit(f"haczyk {flag} ze znakiem równości")
     if velopack_hook(["BitRymDym.exe", "--self-test"]) is not None:
         raise SystemExit("samotest nie jest haczykiem")
-    feed = (
-        '{"Assets":['
-        '{"PackageId":"BitRymDym.Nagrywarka","Version":"2026.11.17","Type":"Full",'
-        '"FileName":"old-full.nupkg","SHA256":"' + ("ab" * 32) + '","Size":2000000},'
-        '{"PackageId":"BitRymDym.Nagrywarka","Version":"2026.11.19","Type":"Full",'
-        '"FileName":"new-full.nupkg","SHA256":"' + ("cd" * 32) + '","Size":2000000,"NotesMarkdown":"wraca"}'
-        "]}"
-    )
-    got = parse_feed(feed.encode(), "2026.11.18")
-    if got is None or got.version != "2026.11.19" or not got.url.endswith("/feed/new-full.nupkg") or got.notes != "wraca":
-        raise SystemExit("feed")
-    if parse_feed(feed.encode(), "2026.11.19") is not None:
-        raise SystemExit("feed nie może cofać wersji")
     before = os.getcwd()
     leave_install_dir()
     if os.getcwd() != before:

@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (42) — Nagrywarka 2026.11.37: odliczanie i przegląd całego kodu programu
+
+- Odliczanie przed nagraniem: Bez, 1, 2 albo 4 takty w tempie bitu (`desktop/recorder/countin.py`). Stuki idą w tym samym strumieniu co bit i nie wchodzą do nagrania. Stop w odliczaniu nie zostawia śladu.
+- Słowa: mix, nagranie. Program pamięta wybrany mikrofon, odsłuch i odliczanie (odsłuch wcześniej się nie zapisywał).
+- Nagranie: mikrofon rusza po wczytaniu bitu (wcześniej czas łączenia przesuwał wokal), zmiana głośności w trakcie nagrania nie przesuwa podkładu, brak bitu zatrzymuje nagranie z komunikatem, limit liczy też długość bitu (strona odrzucała dłuższe), STOP zapisuje nagranie także, gdy odsłuch wisi.
+- Projekt: Zaktualizuj, zamknięcie i wylogowanie pytają o zapis (też o projekt w drugim studiu); cofanie nie miesza Studia Online z Offline i nie odcina przycisków ścieżek; ponowne otwarcie .brd1 nie gra starego dźwięku; zapis .brd1, ustawień i stanu przez plik tymczasowy; usunięcie ścieżki nie przezbraja innej; Spacja w okienku nie włącza nagrywania; brak internetu nie zmienia Gold na Free.
+- Wysyłka: nowe ułożenie po przesunięciu klipu (wcześniej szło stare), koniec głosu nie jest ucinany do pełnej sekundy, urwana sieć nie zjada dziennej wysyłki, „Dokończ poprzednią wysyłkę” działa też po ponownym uruchomieniu, odnowienie logowania w trakcie, polskie komunikaty limitów. Wylogowanie kończy tylko sesję programu.
+- Aktualizacje: podpisany `feed/signed.json` (Ed25519) zamiast niepodpisanego feedu; hasło nie leży jawnie, gdy DPAPI zawiedzie; sumy SHA-256 pobieranych plików w workflow.
+- Strona: `/api/desktop/bootstrap` oddaje cały katalog (wcześniej 40 najnowszych z 61) i pomija bity bez zgody na Studio; nieudane pierwsze `record/place` oddaje dzienną wysyłkę; `/nagrywarka` opisuje obecny program.
+- Sprawdzone: testy modułów, scenariusze w oknie programu na Linuksie z udawanym mikrofonem. Nie sprawdzono na Windowsie użytkownika.
+
 ## 2026-11-24 (41) — Rejestracja na telefonie: przycisk motywu nie zasłania pól
 
 - `AuthThemeBar` (rejestracja, logowanie, reset hasła): przewija się ze stroną zamiast wisieć nad polami.

@@ -8,6 +8,9 @@ export type DesktopBeatChoice = {
   durationSeconds?: number;
 };
 
+/** Far above the catalogue (61 on 2026-11-24). The old 40 hid the older beats from the program. */
+export const DESKTOP_BEAT_LIMIT = 1000;
+
 export function desktopBootstrapBody(input: {
   supabaseUrl: string | undefined;
   anonKey: string | undefined;
@@ -25,7 +28,7 @@ export function desktopBootstrapBody(input: {
   return {
     supabaseUrl,
     anonKey,
-    beats: input.beats.slice(0, 40).map((beat) => ({
+    beats: input.beats.slice(0, DESKTOP_BEAT_LIMIT).map((beat) => ({
       id: beat.id,
       title: beat.title,
       bpm: Number.isFinite(beat.bpm) ? beat.bpm : 0,

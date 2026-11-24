@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import zipfile
+import zlib
 from pathlib import Path
 
 FORMAT = "bitrymdym.sesja"
@@ -142,6 +143,8 @@ def probe_media_seconds(ffmpeg: str, path: Path) -> float:
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=20,
                 check=False,
                 **flags,
@@ -156,6 +159,8 @@ def probe_media_seconds(ffmpeg: str, path: Path) -> float:
             [ffmpeg, "-hide_banner", "-i", str(path)],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=20,
             check=False,
             **flags,
@@ -191,6 +196,8 @@ def probe_media_channels(ffmpeg: str, path: Path) -> int:
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=20,
                 check=False,
                 **flags,
@@ -207,6 +214,8 @@ def probe_media_channels(ffmpeg: str, path: Path) -> int:
             [ffmpeg, "-hide_banner", "-i", str(path)],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=20,
             check=False,
             **flags,
@@ -370,14 +379,27 @@ def write_project(path: Path, document: dict[str, object], stems: dict[str, byte
         if not data.startswith(b"RIFF"):
             raise ValueError("wav")
     path.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(PROJECT_SESSION, json.dumps(packed, ensure_ascii=False, indent=2))
-        for name in expected:
-            archive.writestr(_stem_member(name), stems[name])
+    # A full disk or a crash leaves the earlier project whole.
+    temporary = path.with_name(path.name + ".tmp")
+    try:
+        with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(PROJECT_SESSION, json.dumps(packed, ensure_ascii=False, indent=2))
+            for name in expected:
+                archive.writestr(_stem_member(name), stems[name])
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def read_project(path: Path) -> tuple[dict[str, object], dict[str, bytes]] | None:
-    """Session and stem WAVs from a .brd1 file, or None when it is not ours."""
+    """Session and stem WAVs from a .brd1 file, or None when it is not ours or is damaged."""
+    try:
+        return _read_project(path)
+    except (OSError, zipfile.BadZipFile, zlib.error, EOFError, RuntimeError, NotImplementedError):
+        return None
+
+
+def _read_project(path: Path) -> tuple[dict[str, object], dict[str, bytes]] | None:
     try:
         archive = zipfile.ZipFile(path)
     except (OSError, zipfile.BadZipFile):

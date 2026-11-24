@@ -73,13 +73,10 @@ def main() -> None:
     expect_reject(b"not json", public, why="śmieci")
     expect_reject(good[:-5], public, why="ucięty")
     expect_reject(json.dumps(dict(data, signature="@@@")).encode(), public, why="zły base64")
-    def feed(version="2026.12.1", name="app-full.nupkg"):
-        return json.dumps({"Assets": [{
-            "PackageId": u.PACK_ID, "Version": version, "Type": "Full", "FileName": name,
-            "SHA256": "a" * 64, "Size": 2_000_000, "NotesMarkdown": "n",
-        }]}).encode()
+    def feed(version="2026.12.1", name="app-full.nupkg", signer=sign, base=u.FEED_URL):
+        return manifest(signer, version=version, url=base + name)
 
-    # check_for_update reads the Velopack feed: newer yes, same/older no, errors -> None
+    # check_for_update reads the signed feed: newer yes, same/older no, errors and foreign signatures -> None
     if u.check_for_update(lambda: feed(), "2026.11.12.2", public) is None:
         raise SystemExit("nowsza wersja nie wykryta")
     jumped = u.check_for_update(lambda: feed(), "2026.11.12.1", public)
@@ -89,6 +86,16 @@ def main() -> None:
         raise SystemExit("ta sama lub starsza wersja nie może proponować aktualizacji")
     if u.check_for_update(lambda: (_ for _ in ()).throw(OSError("sieć")), "2026.11.12.2", public) is not None:
         raise SystemExit("błąd sieci ma dać None")
+    for why, raw in (
+        ("cudzy podpis", feed(signer=other_sign)),
+        ("podmieniona suma", json.dumps(dict(json.loads(feed()), sha256="b" * 64)).encode()),
+        ("nie paczka", feed(name="app.exe")),
+        ("podkatalog", feed(name="x/app-full.nupkg")),
+        ("poza feed", feed(base=u.R2_BASE)),
+        ("niepodpisany feed Velopack", b'{"Assets":[]}'),
+    ):
+        if u.check_for_update(lambda raw=raw: raw, "2026.11.12.2", public) is not None:
+            raise SystemExit(f"aktualizacja przyjęta: {why}")
     # download: exact bytes accepted; wrong hash, short, long rejected; no leftovers
     payload = os.urandom(2_500_000)
     update = u.Update("2026.12.1", u.INSTALLER_PREFIX + "x.exe", hashlib.sha256(payload).hexdigest(), len(payload))

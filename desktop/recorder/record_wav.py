@@ -198,7 +198,7 @@ def self_test(path: Path) -> None:
     quiet_db = 20.0 * math.log10(9 / 32768.0)
     gain = raise_db_for_peak(quiet_db, 0)
     if not 58.0 <= gain <= 60.0:
-        raise SystemExit(f"podbicie: ciche ujęcie {quiet_db} {gain}")
+        raise SystemExit(f"podbicie: ciche nagranie {quiet_db} {gain}")
     lifted = apply_gain_int16(array.array("h", [9] * 960), gain)
     replace_mono16(path, lifted)
     after, clipped_after, _seconds = take_stats(path)
