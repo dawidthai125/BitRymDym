@@ -1140,7 +1140,7 @@ export function takeRecoveryOutcomePl(
     case "SAVED": {
       const where =
         surface === "STUDIO"
-          ? "Zapis potwierdzony — nagranie jest w „Moje Take'i”."
+          ? "Zapis potwierdzony — nagranie jest w „Moje nagrania”."
           : "Zapis potwierdzony — nagranie zostało zapisane na serwerze.";
       return outcome.localCopyRemoved
         ? `${where} Lokalna kopia została usunięta.`

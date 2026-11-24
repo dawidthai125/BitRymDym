@@ -20,6 +20,7 @@ export function studioEngineDocumentFromProject(
     masterPan: doc.project.masterPan,
     masterFxChain: doc.project.masterFxChain,
     projectBeatId: doc.project.beatId,
+    markers: (doc.markers ?? []).map((m) => ({ kind: m.kind, positionMs: m.positionMs })),
     tracks: doc.tracks.map((t) => ({
       id: t.id,
       gainDb: t.gainDb,
@@ -30,6 +31,7 @@ export function studioEngineDocumentFromProject(
       automation: t.automation,
       midi: t.midi,
       trackType: t.trackType,
+      role: t.trackRole,
     })),
     clips: doc.clips
       .filter((c) => {

@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (31) — Studio: zakładka Sample, pasek klipu na telefonie, „Zrób utwór”, eksport WAV, Graj, pracownia, separator
+
+- Sample: panel w kolumnie obok osi czasu (`lg+`), dwa okna „Sample” / „Klawisze” (oba zamontowane), niższa rolka nut, klawiatura przed rolką.
+- Telefon: pasek zaznaczonego klipu z 560 do 288 px (przyciski w przewijanym rzędzie, suwaki pod „Suwaki”, początek/koniec/długość w jednym rzędzie). Bitek w kroku Nagranie na komputerze stoi na marginesie, nie na klipach.
+- „Zrób utwór”: najpierw wokal w górę (do +12 dB, szczyt ≤ −2 dBFS), bit tylko resztę i nie niżej niż −6 dB na tłumiku; balans liczy wcześniejsze ruchy z tego samego przebiegu.
+- Nowy bit w projekcie: osobista kopia przygotowywana od razu po wyborze (`after()`, limit na godzinę jak przy odtwarzaniu), po 1,5 s czekania widać „Przygotowuję Twój bit…”.
+- Eksport WAV jak odtwarzanie i master: duck z 256-próbkowym kluczem po pasku ścieżki, prawo panoramy `stereoPan` (mono wokal był o 3 dB za głośny), rap pocket. Wymaga podmiany 7 plików workera.
+- „Graj”: cofnięcie nagrania, czyszczenie nut, Stop ucisza od razu. Pracownia sampli: ustawienia z początku nagrania, prawdziwa liczba taktów. Separator: jeden błąd sprawdzania nie kasuje czekania, pobieranie świeżym linkiem.
+
 ## 2026-11-23 (30) — Studio: naprawy po audycie (odtwarzanie, zapis, nagrywanie, mix, master, układ)
 
 - Odtwarzanie: adres bitu pobierany tylko przy Play, jedno ładowanie na klip, głośność > 0 dB, tempo/ton po przewinięciu, koniec na końcu utworu.

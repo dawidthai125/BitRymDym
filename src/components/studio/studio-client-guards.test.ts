@@ -9,13 +9,13 @@ const masterStep = read("src/components/studio/studio-master-step.tsx");
 const sampleLab = read("src/components/studio/sample-lab/sample-lab.tsx");
 
 describe("studio client guards", () => {
-  it("Play studio ignores keys typed into fields (shared guard from studio-play-keys)", () => {
+  it("Play studio ignores keys typed into fields (playKeysBlocked, behaviour in play-keys-blocked.test.ts)", () => {
     expect(playKeys).toContain("export function isTypingTarget");
-    expect(playStudio).toContain('from "@/components/studio/studio-play-keys"');
-// keydown: typing never starts a note. keyup only ends a note that is already sounding (M63),
+    expect(playStudio).toMatch(/playKeysBlocked[^\n]*from "@\/lib\/studio\/play\/keyboard-map"/);
+    // keydown: typing never starts a note. keyup only ends a note that is already sounding (M63),
     // so a key released inside a field cannot hang it and typing cannot play anything.
-    expect(playStudio).toMatch(/const down = [\s\S]{0,220}isTypingTarget\(ev\.target\)\) return;/);
-    expect(playStudio).toMatch(/const up = [^\n]*if \(pressed\.current\.has\(ev\.code\)\) keyHandlers\.current\.noteOff/);
+    expect(playStudio).toMatch(/const down = [\s\S]{0,220}playKeysBlocked\(ev\.target, ev\.code\)\) return;/);
+    expect(playStudio).toMatch(/const up = [\s\S]{0,80}if \(pressed\.current\.has\(ev\.code\)\) keyHandlers\.current\.noteOff/);
   });
 
   it("Master A/B detaches the old source's onended before stopping it", () => {

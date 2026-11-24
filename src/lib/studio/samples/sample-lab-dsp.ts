@@ -182,6 +182,12 @@ export function maxBarsFor(bpm: number, maxSeconds = 30): number {
   return [16, 8, 4, 2, 1].find((b) => b * barSeconds <= maxSeconds) ?? 1;
 }
 
+/** Whole bars (1, 2, 4, 8, 16, at most `wanted`) really present in `frames`; 0 = not even one. 50 ms of slack. */
+export function wholeBars(frames: number, bpm: number, sampleRate: number, wanted: number): number {
+  const slack = Math.round(sampleRate * 0.05);
+  return [16, 8, 4, 2, 1].find((b) => b <= wanted && loopLengthFrames(bpm, b, sampleRate) <= frames + slack) ?? 0;
+}
+
 /** 16-bit PCM WAV (interleaved) — the sample format the server accepts. */
 export function encodeWav16(channels: Float32Array[], sampleRate: number): Uint8Array {
   const numCh = channels.length;

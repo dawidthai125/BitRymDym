@@ -7,7 +7,8 @@
  *
  * Targets follow the roadmap "Auto-poprawki" section:
  *  - mix peak ≈ −6 dBTP headroom, no clipping tracks
- *  - lead vocal +1…+3 LU over the beat (target +1.5), adlibs ≈ −6 dB under
+ *  - lead vocal +1…+3 LU over the beat (target +1.5): the vocal moves first, up to its
+ *    peak ceiling; the beat gives way only for the rest and never below −6 dB; adlibs ≈ −6 dB under
  *    the lead, doubles/backing ≈ −8 dB
  *  - vocal HPF 80–120 Hz, vocal mud cut 250 Hz, presence 3.5 kHz,
  *    beat cut 1–4 kHz (2.5 kHz bell)
@@ -83,6 +84,12 @@ export const MIX_AUTOFIX_TARGETS = {
   adlibUnderLeadDb: 6,
   doubleUnderLeadDb: 8,
   maxGainStepDb: 9,
+  /** Most the balance raises a vocal in one pass (the fader itself stops at +12). */
+  maxVocalUpDb: 12,
+  /** Raised vocal peaks stay here: under the −1 dBFS that fixGain trims, so the two never fight. */
+  vocalPeakCeilDbfs: -2,
+  /** The balance never takes a beat fader below this; the vocal has to come up instead. */
+  beatFaderFloorDb: -6,
   defaultBpm: 90,
 } as const;
 
@@ -127,6 +134,8 @@ type TrackState = {
   name: string;
   role: StudioTrackRole;
   gainDb: number;
+  /** Fader when the mix was measured: gainDb − measuredGainDb = moved by earlier fixes of this pass. */
+  measuredGainDb: number;
   pan: number;
   chain: StudioFxChainV1;
   metrics: TrackMetrics | null;
@@ -268,34 +277,73 @@ function fixGain(ctx: Ctx): void {
   }
 }
 
+const moved = (t: TrackState) => t.gainDb - t.measuredGainDb;
+
+function loudest(tracks: readonly TrackState[]): TrackState | null {
+  let best: TrackState | null = null;
+  for (const t of tracks) if (!best || t.metrics!.integratedLufs > best.metrics!.integratedLufs) best = t;
+  return best;
+}
+
+/** How far these vocals can go up: step limit, fader end and the peak ceiling. */
+function vocalRoomDb(targets: readonly TrackState[]): number {
+  const T = MIX_AUTOFIX_TARGETS;
+  let room: number = T.maxVocalUpDb;
+  for (const t of targets) {
+    const peak = t.metrics!.samplePeakDbfs + moved(t);
+    room = Math.min(room, 12 - t.gainDb, T.vocalPeakCeilDbfs - peak);
+  }
+  return Math.max(0, room);
+}
+
+/** How far the beats can go down before one reaches the floor (tracks already under it do not count). */
+function beatRoomDb(beats: readonly TrackState[]): number {
+  const floor = MIX_AUTOFIX_TARGETS.beatFaderFloorDb;
+  const above = beats.filter((t) => t.gainDb > floor);
+  return above.length === 0 ? 0 : Math.min(...above.map((t) => t.gainDb - floor));
+}
+
 function fixBalance(ctx: Ctx): void {
   const T = MIX_AUTOFIX_TARGETS;
   const d = ctx.metrics.vocalVsBeatLu;
   const leads = ctx.state.tracks.filter((t) => t.role === "lead_vocal" && active(t));
   const beats = ctx.state.tracks.filter((t) => BEATS.includes(t.role) && active(t));
-  let leadShift = 0;
-  if (d !== null && Number.isFinite(d) && beats.length > 0) {
-    const delta = T.balanceLu - d;
-    if (Math.abs(delta) >= 0.5) {
-      const vocalUp = clamp(r1(delta / 2), -T.maxGainStepDb, T.maxGainStepDb);
-      const beatDown = clamp(r1(delta - vocalUp), -T.maxGainStepDb, T.maxGainStepDb);
-      const voxTargets = leads.length > 0 ? leads : vocals(ctx.state);
-      for (const t of voxTargets) t.gainDb = clamp(r1(t.gainDb + vocalUp), -24, 12);
-      for (const t of beats) t.gainDb = clamp(r1(t.gainDb - beatDown), -24, 12);
-      leadShift = vocalUp;
-      if (delta > 0) note(ctx, "balanceVocalUp", { up: fmtDb(vocalUp), down: fmtDb(beatDown) });
-      else note(ctx, "balanceVocalDown", { up: fmtDb(beatDown), down: fmtDb(vocalUp) });
+  const vox = leads.length > 0 ? leads : vocals(ctx.state);
+  const topVox = loudest(vox);
+  const topBeat = loudest(beats);
+  if (d !== null && Number.isFinite(d) && topVox && topBeat) {
+    // A peak trim made earlier in this pass already changed the balance (a hot beat is −6 dB by now).
+    const delta = r1(T.balanceLu - (d + moved(topVox) - moved(topBeat)));
+    if (delta >= 0.5) {
+      const up = r1(Math.min(delta, vocalRoomDb(vox)));
+      const down = r1(Math.min(delta - up, beatRoomDb(beats)));
+      for (const t of vox) t.gainDb = clamp(r1(t.gainDb + up), -24, 12);
+      if (down > 0) for (const t of beats) t.gainDb = clamp(r1(t.gainDb - down), -24, 12);
+      if (up > 0 && down > 0) note(ctx, "balanceVocalUp", { up: fmtDb(up), down: fmtDb(down) });
+      else if (up > 0) note(ctx, "balanceVocalOnlyUp", { up: fmtDb(up) });
+      else if (down > 0) note(ctx, "balanceBeatOnlyDown", { down: fmtDb(down) });
+      const left = r1(delta - up - down);
+      if (left >= 3 && (up > 0 || down > 0)) note(ctx, "balanceVocalTooQuiet", { db: fmtDb(left) });
+    } else if (delta <= -0.5) {
+      // Too loud: the beat comes up only as far as its own peaks allow, the vocal does the rest.
+      const beatRoom = Math.max(0, Math.min(...beats.map((t) => Math.min(12 - t.gainDb, T.trackPeakDbfs - (t.metrics!.samplePeakDbfs + moved(t))))));
+      const beatUp = r1(Math.min(-delta / 2, beatRoom, T.maxGainStepDb));
+      const down = r1(Math.min(-delta - beatUp, T.maxGainStepDb));
+      for (const t of vox) t.gainDb = clamp(r1(t.gainDb - down), -24, 12);
+      if (beatUp > 0) for (const t of beats) t.gainDb = clamp(r1(t.gainDb + beatUp), -24, 12);
+      if (beatUp > 0) note(ctx, "balanceVocalDown", { up: fmtDb(beatUp), down: fmtDb(down) });
+      else note(ctx, "balanceVocalOnlyDown", { down: fmtDb(down) });
     }
   }
   // Adlibs / doubles relative to the loudest lead.
   const leadLufs = Math.max(
-    ...leads.map((t) => (t.metrics?.integratedLufs ?? -Infinity) + leadShift),
+    ...leads.map((t) => (t.metrics?.integratedLufs ?? -Infinity) + moved(t)),
   );
   if (!Number.isFinite(leadLufs)) return;
   for (const t of ctx.state.tracks) {
     if (!active(t) || !["adlib", "double", "backing"].includes(t.role)) continue;
     const under = t.role === "adlib" ? T.adlibUnderLeadDb : T.doubleUnderLeadDb;
-    const cur = t.metrics!.integratedLufs;
+    const cur = t.metrics!.integratedLufs + moved(t);
     if (!Number.isFinite(cur)) continue;
     const step = clamp(r1(leadLufs - under - cur), -T.maxGainStepDb, T.maxGainStepDb);
     if (Math.abs(step) >= 1.5) {
@@ -627,6 +675,7 @@ export function planMixAutofix(params: {
       name: t.name,
       role: t.trackRole,
       gainDb: t.gainDb,
+      measuredGainDb: t.gainDb,
       pan: t.pan,
       chain: structuredClone(t.effectsChain),
       metrics: byId.get(t.id) ?? null,

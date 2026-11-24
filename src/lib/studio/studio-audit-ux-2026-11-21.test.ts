@@ -29,7 +29,9 @@ describe("Studio UX audit 2026-11-21", () => {
   it("BITEK auto mix-mastering switch lives in the Mix step, not over the tracks", () => {
     expect(dock).not.toMatch(/studio-bitek-auto/);
     expect(mixStep).toMatch(/data-testid="studio-bitek-auto"/);
-    expect(dock).toMatch(/lg:left-\[20rem\]/);
+    // Page gutter: at 20rem it covered clips of the lower tracks.
+    expect(dock).toMatch(/lg:left-1"/);
+    expect(dock).toMatch(/lg:size-9/);
     expect(bitekDockPlacement({ recording: false, recordContext: true, inspectorSheetOpen: false }).side).toBe("left");
   });
 

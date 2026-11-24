@@ -24,7 +24,8 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
       const res = await fetch(`/api/studio/projects/${projectId}/analysis-audio`);
       const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (!res.ok || !json.url) {
-        setNote(t("brakMastera"));
+        // Only 404 means "nothing to measure"; a server or login problem must not send the user to make a master.
+        setNote(t(res.status === 404 ? "brakMastera" : "nieUdaloSieSprawdzic"));
         return;
       }
       const audioRes = await fetch(json.url);
@@ -33,8 +34,12 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
         return;
       }
       const ctx = new AudioContext();
-      const decoded = await ctx.decodeAudioData(await audioRes.arrayBuffer());
-      await ctx.close().catch(() => undefined);
+      let decoded: AudioBuffer;
+      try {
+        decoded = await ctx.decodeAudioData(await audioRes.arrayBuffer());
+      } finally {
+        await ctx.close().catch(() => undefined);
+      }
       setMeasure(measureBeat(decoded.getChannelData(0), decoded.sampleRate));
     } catch {
       setNote(t("nieUdaloSieSprawdzic"));
@@ -74,7 +79,7 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
       >
         {busy ? t("sprawdzam") : t("sprawdzGlosnosc")}
       </button>
-      {note ? <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{note}</p> : null}
+      {note ? <p role="status" className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{note}</p> : null}
       {measure ? <Measurement measure={measure} /> : null}
     </form>
   );

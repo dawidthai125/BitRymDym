@@ -63,7 +63,8 @@ describe("record simple surface wiring", () => {
     expect(panel).toMatch(/lanesOpen \? \(\s*<>\s*<StudioTakeLanesCard/);
     expect(panel).toMatch(/scratchOpen[\s\S]*StudioMarkersPanel/);
     expect(panel).toMatch(/setupOpen \? \(\s*<div[\s\S]*?outputDevices\.pickerEnabled/);
-    expect(panel).toMatch(/samplesMode \? \(\s*<>\s*<StudioPlayKeys/);
+    expect(panel).toMatch(/samplesMode \? \(\s*<>[\s\S]*?<div hidden=\{samplesPane !== "keys"\}>\s*<StudioPlayKeys/);
+    expect(panel).toMatch(/<div hidden=\{samplesPane !== "samples"\}>\s*<StudioSampleDesk/);
     expect(editor).toMatch(/data-testid="studio-tab-samples"/);
     expect(editor).toMatch(/samplesMode=\{onSampleTab\}/);
     expect(panel).toMatch(/void prepareMicrophone\(\)/);

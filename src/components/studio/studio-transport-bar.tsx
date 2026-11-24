@@ -59,6 +59,22 @@ function MiniTransportClock() {
   );
 }
 
+/** The first Play of a new beat waits for this account's own copy (about 10 s): say so instead of a dead button. */
+function SlowBeatNote() {
+  const tr = useTranslations("studio.studioEditor");
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShown(true), 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
+  if (!shown) return null;
+  return (
+    <p className="mt-0.5 text-xs text-[var(--brd-mute)]" role="status" data-testid="studio-transport-slow-beat">
+      {tr("przygotowujeBit")}
+    </p>
+  );
+}
+
 export function StudioTransportBar({
   projectId,
   trackNames,
@@ -501,10 +517,10 @@ export function StudioTransportBar({
             data-testid="studio-transport-meta"
           >
             <TransportClock durationMs={durationMs} />
-            <span className="studio-counter-dim" aria-label={tr("tempo")}>
+            <span className={`studio-counter-dim ${extraKeys}`} aria-label={tr("tempo")}>
               {tempoBpm} {tr("bpm")}
             </span>
-            <span className="studio-counter-dim" aria-label={tr("metrum")}>
+            <span className={`studio-counter-dim ${extraKeys}`} aria-label={tr("metrum")}>
               {timeSignatureNum}/{timeSignatureDen}
             </span>
             {tuneBakePendingTrackIds.length > 0 ? (
@@ -607,7 +623,7 @@ export function StudioTransportBar({
         {toolsShown ? (
         <div className="flex min-w-0 flex-wrap items-center gap-1" data-testid="studio-transport-row-tools">
           {hasSelection ? (
-          <div className="flex shrink-0 flex-nowrap gap-0.5" data-testid="studio-selection-readout">
+          <div className="flex shrink-0 flex-nowrap gap-0.5 max-sm:grid max-sm:w-full max-sm:grid-cols-3" data-testid="studio-selection-readout">
             {(
               [
                 ["poczatek", selectionStartMs],
@@ -730,6 +746,7 @@ export function StudioTransportBar({
           {tl(statusLabel)}
         </p>
       )}
+      {busy && hasBeat ? <SlowBeatNote /> : null}
       {error ? (
         <p className="mt-0.5 text-xs text-[var(--brd-warn)]" role="alert">
           {tl(error)}

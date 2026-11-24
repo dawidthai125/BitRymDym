@@ -27,6 +27,8 @@ export type StudioEngineTrack = {
   midi?: StudioMidiV1;
   /** BEAT keys the sidechain. Optional on older fixtures. */
   trackType?: string;
+  /** Rap pocket in the WAV export: lead_vocal drives it, beat / instrument give way. */
+  role?: string;
 };
 
 export type StudioEngineClip = {
@@ -64,6 +66,8 @@ export type StudioEngineDocument = {
    * Omit (`undefined`) only for legacy unit fixtures that predate the guard.
    */
   projectBeatId?: string | null;
+  /** Verse / hook points for the rap pocket (WAV export). */
+  markers?: readonly { kind: "verse" | "hook"; positionMs: number }[];
   tracks: readonly StudioEngineTrack[];
   clips: readonly StudioEngineClip[];
   isTrackPlayable?: (trackId: string) => boolean;

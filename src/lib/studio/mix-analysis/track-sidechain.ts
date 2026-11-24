@@ -7,7 +7,14 @@
 
 import { sidechainParamsOf, type StudioFxSidechainParams } from "@/lib/studio/studio-fx-chain";
 
-const BLOCK_SEC = 256 / 48000;
+export const SIDECHAIN_BLOCK_SEC = 256 / 48000;
+
+/** One follower step over a block: new envelope and the duck gain at the block's end. Shared with the WAV export. */
+export function sidechainStep(env: number, key: number, blockMs: number, params: StudioFxSidechainParams): { env: number; gain: number } {
+  const follow = key > env ? params.attackMs : params.releaseMs;
+  const next = env + (key - env) * (1 - Math.exp(-blockMs / Math.max(1, follow)));
+  return { env: next, gain: 1 - params.depth * Math.min(1, next * 2) };
+}
 
 export type SidechainTrack = { trackType?: string; effectsChain?: unknown };
 
@@ -32,7 +39,7 @@ export class SidechainBus {
   private readonly peaks: Float32Array;
 
   constructor(sampleRate: number, length: number) {
-    this.block = Math.max(1, Math.round(sampleRate * BLOCK_SEC));
+    this.block = Math.max(1, Math.round(sampleRate * SIDECHAIN_BLOCK_SEC));
     this.blockMs = (this.block / sampleRate) * 1000;
     this.peaks = new Float32Array(Math.ceil(length / this.block));
   }
@@ -53,10 +60,9 @@ export class SidechainBus {
     let env = 0;
     let from = 1;
     for (let b = 0; b < this.peaks.length; b++) {
-      const key = this.peaks[b]!;
-      const follow = key > env ? params.attackMs : params.releaseMs;
-      env += (key - env) * (1 - Math.exp(-this.blockMs / Math.max(1, follow)));
-      const to = 1 - params.depth * Math.min(1, env * 2);
+      const step = sidechainStep(env, this.peaks[b]!, this.blockMs, params);
+      env = step.env;
+      const to = step.gain;
       const start = b * this.block;
       const end = Math.min(n, start + this.block);
       if (from !== 1 || to !== 1) {

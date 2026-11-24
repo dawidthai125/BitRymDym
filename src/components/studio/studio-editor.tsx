@@ -4345,14 +4345,12 @@ function StudioEditorInner({
       />
       )}
 
-      <div className={`flex min-h-0 flex-col gap-3 lg:items-start ${onSampleTab ? "" : recordSimple ? "lg:flex-row" : "xl:flex-row"}`}>
+      <div className={`flex min-h-0 flex-col gap-3 lg:items-start ${recordSimple ? "lg:flex-row" : "xl:flex-row"}`}>
         {recordSimple ? (
         <div
           data-testid="studio-record-simple"
-          className={`flex flex-col gap-2 ${
-            onSampleTab
-              ? "w-full xl:order-first xl:basis-full"
-              : "lg:order-2 lg:max-h-[max(30rem,calc(100dvh-17rem))] lg:w-[20rem] lg:shrink-0 lg:overflow-y-auto lg:rounded lg:border lg:border-[var(--brd-line)] lg:bg-[var(--brd-paper)] lg:p-3 xl:w-[24rem]"
+          className={`flex flex-col gap-2 lg:order-2 lg:max-h-[max(30rem,calc(100dvh-17rem))] lg:shrink-0 lg:overflow-y-auto lg:rounded lg:border lg:border-[var(--brd-line)] lg:bg-[var(--brd-paper)] lg:p-3 ${
+            onSampleTab ? "lg:w-[24rem] xl:w-[30rem]" : "lg:w-[20rem] xl:w-[24rem]"
           }`}
         >
           {inspectorContent}

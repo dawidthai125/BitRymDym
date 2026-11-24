@@ -275,6 +275,8 @@ export class PlayEngine {
   private held = new Set<string>();
   private sustain = false;
   private lastSynthNote = new Map<string, number>();
+  /** Everything the loop plays goes through this bus, so Stop silences it at once. */
+  private loopBus: GainNode | null = null;
 
   /** Must run inside a user gesture the first time (browser autoplay rules). */
   ensure(): AudioContext {
@@ -337,13 +339,44 @@ export class PlayEngine {
   /** Schedule a note at a context time (playback of recorded layers). */
   schedule(id: PlayInstrumentId, note: PlayNote, when: number, durSec: number, synth?: SynthParams, gain = 1): void {
     const assets = this.assets.get(id);
-    if (!assets || !this.ctx || !this.master) return;
-    const v = startVoice({ ctx: this.ctx, dest: this.master, assets, note: note.n, velocity: note.v, when, synth, gain });
+    const dest = this.loopDest();
+    if (!assets || !this.ctx || !dest) return;
+    const v = startVoice({ ctx: this.ctx, dest, assets, note: note.n, velocity: note.v, when, synth, gain });
     v.stop(when + Math.max(0.02, durSec));
   }
 
+  private loopDest(): AudioNode | null {
+    if (!this.ctx || !this.master) return null;
+    if (!this.loopBus) {
+      this.loopBus = this.ctx.createGain();
+      this.loopBus.connect(this.master);
+    }
+    return this.loopBus;
+  }
+
+  /** Stop of the loop: the notes and clicks already scheduled (a long pad, the count-in) must not go on. */
+  silenceLoop(): void {
+    const bus = this.loopBus;
+    this.loopBus = null;
+    if (!bus || !this.ctx) return;
+    bus.gain.setTargetAtTime(0, this.ctx.currentTime, 0.01);
+    globalThis.setTimeout(() => bus.disconnect(), 120);
+  }
+
+  /** The page goes away: browsers allow only a few open audio contexts. */
+  dispose(): void {
+    this.allOff();
+    const ctx = this.ctx;
+    this.ctx = null;
+    this.master = null;
+    this.loopBus = null;
+    this.assets.clear();
+    void ctx?.close().catch(() => undefined);
+  }
+
   click(when: number, accent: boolean): void {
-    if (this.ctx && this.master) scheduleClick(this.ctx, this.master, when, accent);
+    const dest = this.loopDest();
+    if (this.ctx && dest) scheduleClick(this.ctx, dest, when, accent);
   }
 
   now(): number {
@@ -409,6 +442,7 @@ export class LoopPlayer {
   stop(): void {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+    if (this.running) this.engine.silenceLoop();
     this.running = false;
   }
 

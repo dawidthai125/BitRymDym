@@ -404,7 +404,7 @@ export function StudioPlayKeys({
             {tBitek(`msg.${reviewKey}`, { count: review?.count ?? 0 })}
           </p>
           <p className="mt-1 text-xs leading-snug text-[var(--brd-mute)]">{tr("klawiszeOpis")}</p>
-          <p className="mt-1 text-xs leading-snug text-[var(--brd-mute)]" data-testid="studio-play-keys-input">
+          <p className="mt-1 hidden text-xs leading-snug text-[var(--brd-mute)] sm:block" data-testid="studio-play-keys-input">
             {tr(instrument === "drums" ? "klawiszeSterowanieBeben" : "klawiszeSterowanie")}
           </p>
         </div>
@@ -476,19 +476,6 @@ export function StudioPlayKeys({
           </Button>
         ))}
       </div>
-      <StudioMidiRoll
-        disabled={disabled}
-        instrument={locked ?? instrument}
-        midi={midi}
-        bpm={bpm}
-        getPlayheadMs={getPlayheadMs}
-        onCommit={(next) => {
-          midiRef.current = next;
-          setNotice(null);
-          onCommit(next);
-        }}
-        onRejected={(reason) => setNotice(reason === "other" ? tr("klawiszeInny") : tr("klawiszePelne"))}
-      />
       <Button
         type="button"
         size="sm"
@@ -501,50 +488,6 @@ export function StudioPlayKeys({
       >
         {armed ? tr("klawiszeStop") : tr("klawiszeNagrywaj")}
       </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="min-h-11 w-full"
-        disabled={disabled || locked !== null}
-        title={tr("klawiszeOpis")}
-        data-testid="studio-play-keys-scratch"
-        onClick={() => {
-          if (locked) {
-            setNotice(tr("klawiszeInny"));
-            return;
-          }
-          setNotice(null);
-          onCommit(scratchPatternAt(getPlayheadMs(), bpm, midiRef.current));
-        }}
-      >
-        {tr("klawiszeSkrecz")}
-      </Button>
-      <label className="flex min-h-11 items-start gap-2 text-xs text-[var(--brd-ink)]">
-        <input
-          type="checkbox"
-          className="mt-1"
-          checked={sampleRights}
-          onChange={(event) => setSampleRights(event.target.checked)}
-        />
-        <span>{tr("samplePrawa")}</span>
-      </label>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="min-h-11 w-full"
-        disabled={sampleBusy || !midi || midi.notes.length === 0}
-        data-testid="studio-play-keys-save-sample"
-        onClick={() => void saveSample()}
-      >
-        {sampleBusy ? tr("zapisywanie") : tr("sampleZapiszLinie")}
-      </Button>
-      {sampleSaved ? (
-        <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
-          {sampleSaved}
-        </p>
-      ) : null}
       {instrument === "drums" ? (
         <div className="relative mx-auto h-56 max-w-sm rounded-xl bg-[var(--brd-ink)]" data-testid="studio-play-drums">
           {PADS.map((pad) => {
@@ -648,6 +591,63 @@ export function StudioPlayKeys({
       {notice ? (
         <p className="text-xs text-[var(--brd-warn)]" role="status">
           {notice}
+        </p>
+      ) : null}
+      <StudioMidiRoll
+        disabled={disabled}
+        instrument={locked ?? instrument}
+        midi={midi}
+        bpm={bpm}
+        getPlayheadMs={getPlayheadMs}
+        onCommit={(next) => {
+          midiRef.current = next;
+          setNotice(null);
+          onCommit(next);
+        }}
+        onRejected={(reason) => setNotice(reason === "other" ? tr("klawiszeInny") : tr("klawiszePelne"))}
+      />
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="min-h-11 w-full"
+        disabled={disabled || locked !== null}
+        title={tr("klawiszeOpis")}
+        data-testid="studio-play-keys-scratch"
+        onClick={() => {
+          if (locked) {
+            setNotice(tr("klawiszeInny"));
+            return;
+          }
+          setNotice(null);
+          onCommit(scratchPatternAt(getPlayheadMs(), bpm, midiRef.current));
+        }}
+      >
+        {tr("klawiszeSkrecz")}
+      </Button>
+      <label className="flex min-h-11 items-start gap-2 text-xs text-[var(--brd-ink)]">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={sampleRights}
+          onChange={(event) => setSampleRights(event.target.checked)}
+        />
+        <span>{tr("samplePrawa")}</span>
+      </label>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="min-h-11 w-full"
+        disabled={sampleBusy || !midi || midi.notes.length === 0}
+        data-testid="studio-play-keys-save-sample"
+        onClick={() => void saveSample()}
+      >
+        {sampleBusy ? tr("zapisywanie") : tr("sampleZapiszLinie")}
+      </Button>
+      {sampleSaved ? (
+        <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
+          {sampleSaved}
         </p>
       ) : null}
     </div>

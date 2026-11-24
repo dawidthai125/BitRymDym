@@ -556,6 +556,19 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
   border-radius: 2px !important;
   flex-shrink: 0;
 }
+/* Phones: start / end / length fit in one row (caption above the value). */
+@media (max-width: 639.98px) {
+  .studio-desk [data-testid="studio-selection-readout"] .studio-sel-cell {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    min-width: 0;
+  }
+  .studio-desk [data-testid="studio-selection-readout"] .studio-sel-value {
+    font-size: 0.8rem;
+  }
+}
 /* Desktop densify — reclaim timeline height; mobile keeps Tailwind min-h-11 (44px). */
 @media (min-width: 640px) {
   .studio-desk .studio-transport > .flex > .flex {

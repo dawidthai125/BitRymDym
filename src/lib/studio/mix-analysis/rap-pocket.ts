@@ -52,83 +52,143 @@ export function pocketSpans(markers: readonly PocketMarker[], lengthMs: number):
   }));
 }
 
-function gainRegions(buf: StereoBuf, sr: number, lengthMs: number, spans: readonly PocketSpan[], verseDb: number, hookDb: number): void {
-  const len = Math.min(buf.left.length, buf.right.length);
-  const verse = Math.pow(10, verseDb / 20);
-  const hook = Math.pow(10, hookDb / 20);
-  if (spans.length === 0) {
-    for (let i = 0; i < len; i++) {
-      buf.left[i] *= verse;
-      buf.right[i] *= verse;
-    }
-    return;
-  }
-  const g = new Float32Array(len);
-  g.fill(1);
-  for (const span of spans) {
-    const a = Math.max(0, Math.floor((span.startMs / 1000) * sr));
-    const b = Math.min(len, Math.floor((span.endMs / 1000) * sr));
-    const k = span.kind === "hook" ? hook : verse;
-    for (let i = a; i < b; i++) g[i] = k;
-  }
-  for (let i = 0; i < len; i++) {
-    buf.left[i] *= g[i]!;
-    buf.right[i] *= g[i]!;
-  }
-  void lengthMs;
+type SampleSpan = { kind: "verse" | "hook"; a: number; b: number };
+
+function sampleSpans(spans: readonly PocketSpan[], sr: number): SampleSpan[] {
+  return spans.map((s) => ({
+    kind: s.kind,
+    a: Math.max(0, Math.floor((s.startMs / 1000) * sr)),
+    b: Math.floor((s.endMs / 1000) * sr),
+  }));
 }
 
-/** Mids of the beat give way while the vocal is up. Bass and air stay. */
+/** Section level per sample. Call with rising `i`. No markers = verse everywhere; outside the regions = 1. */
+export class PocketSectionGain {
+  private readonly spans: SampleSpan[];
+  private readonly verse: number;
+  private readonly hook: number;
+  private at = 0;
+
+  constructor(spans: readonly PocketSpan[], sr: number, params: { verseDb: number; hookDb: number }) {
+    this.spans = sampleSpans(spans, sr);
+    this.verse = Math.pow(10, params.verseDb / 20);
+    this.hook = Math.pow(10, params.hookDb / 20);
+  }
+
+  gainAt(i: number): number {
+    if (this.spans.length === 0) return this.verse;
+    while (this.at < this.spans.length && i >= this.spans[this.at]!.b) this.at++;
+    const span = this.spans[this.at];
+    if (!span || i < span.a) return 1;
+    return span.kind === "hook" ? this.hook : this.verse;
+  }
+}
+
+/** Mids of the beat give way while the vocal is up. Bass and air stay. Result in `left` / `right`. */
+export class PocketMidDucker {
+  left = 0;
+  right = 0;
+  private readonly depth: number;
+  private readonly bassA: number;
+  private readonly midA: number;
+  private readonly att: number;
+  private readonly rel: number;
+  private env = 0;
+  private bassL = 0;
+  private bassR = 0;
+  private midL = 0;
+  private midR = 0;
+
+  constructor(sr: number, depth: number) {
+    this.depth = Math.min(1, Math.max(0, depth));
+    this.bassA = 1 - Math.exp((-2 * Math.PI * 200) / sr);
+    this.midA = 1 - Math.exp((-2 * Math.PI * 4000) / sr);
+    this.att = Math.exp(-1 / (sr * 0.005));
+    this.rel = Math.exp(-1 / (sr * 0.08));
+  }
+
+  process(l: number, r: number, keyL: number, keyR: number): void {
+    const level = Math.max(Math.abs(keyL), Math.abs(keyR));
+    const c = level > this.env ? this.att : this.rel;
+    this.env = c * this.env + (1 - c) * level;
+    const duck = 1 - this.depth * Math.min(1, this.env * 3);
+    this.bassL += this.bassA * (l - this.bassL);
+    this.bassR += this.bassA * (r - this.bassR);
+    const restL = l - this.bassL;
+    const restR = r - this.bassR;
+    this.midL += this.midA * (restL - this.midL);
+    this.midR += this.midA * (restR - this.midR);
+    this.left = this.bassL + this.midL * duck + (restL - this.midL);
+    this.right = this.bassR + this.midR * duck + (restR - this.midR);
+  }
+}
+
+/** Quiet, late, slightly sharp copy on the hooks. Keeps only the history the copy can reach. Result in `left` / `right`. */
+export class PocketHookDouble {
+  left = 0;
+  right = 0;
+  private readonly spans: SampleSpan[];
+  private readonly delay: number;
+  private readonly stretch: number;
+  private readonly gain: number;
+  private readonly size: number;
+  private readonly histL: Float32Array;
+  private readonly histR: Float32Array;
+  private at = 0;
+
+  constructor(spans: readonly PocketSpan[], sr: number, len: number, delayMs: number, cents: number, gainDb: number) {
+    this.spans = sampleSpans(spans, sr)
+      .filter((s) => s.kind === "hook")
+      .map((s) => ({ ...s, b: Math.min(len, s.b) }));
+    this.delay = Math.round((sr * delayMs) / 1000);
+    this.stretch = Math.pow(2, cents / 1200) - 1;
+    this.gain = Math.pow(10, gainDb / 20);
+    const longest = this.spans.reduce((m, s) => Math.max(m, s.b - s.a), 0);
+    this.size = Math.ceil(this.delay + longest * this.stretch) + 4;
+    this.histL = new Float32Array(this.size);
+    this.histR = new Float32Array(this.size);
+  }
+
+  process(i: number, l: number, r: number): void {
+    const w = i % this.size;
+    this.histL[w] = l;
+    this.histR[w] = r;
+    this.left = l;
+    this.right = r;
+    while (this.at < this.spans.length && i >= this.spans[this.at]!.b) this.at++;
+    const span = this.spans[this.at];
+    if (!span || i < span.a) return;
+    const srcF = i - this.delay - (i - span.a) * this.stretch;
+    if (srcF < 1) return;
+    const s0 = Math.floor(srcF);
+    const frac = srcF - s0;
+    const p = s0 % this.size;
+    const q = (s0 + 1) % this.size;
+    this.left = l + this.gain * (this.histL[p]! * (1 - frac) + this.histL[q]! * frac);
+    this.right = r + this.gain * (this.histR[p]! * (1 - frac) + this.histR[q]! * frac);
+  }
+}
+
+/** Whole-buffer form of PocketMidDucker, in place. */
 export function duckBeatMids(beat: StereoBuf, key: StereoBuf, sr: number, depth: number): void {
   const len = Math.min(beat.left.length, beat.right.length, key.left.length, key.right.length);
-  const d = Math.min(1, Math.max(0, depth));
-  const bassA = 1 - Math.exp((-2 * Math.PI * 200) / sr);
-  const midA = 1 - Math.exp((-2 * Math.PI * 4000) / sr);
-  const att = Math.exp(-1 / (sr * 0.005));
-  const rel = Math.exp(-1 / (sr * 0.08));
-  let env = 0;
-  let bassL = 0;
-  let bassR = 0;
-  let midL = 0;
-  let midR = 0;
+  const ducker = new PocketMidDucker(sr, depth);
   for (let i = 0; i < len; i++) {
-    const level = Math.max(Math.abs(key.left[i]!), Math.abs(key.right[i]!));
-    const c = level > env ? att : rel;
-    env = c * env + (1 - c) * level;
-    const duck = 1 - d * Math.min(1, env * 3);
-    bassL += bassA * (beat.left[i]! - bassL);
-    bassR += bassA * (beat.right[i]! - bassR);
-    const restL = beat.left[i]! - bassL;
-    const restR = beat.right[i]! - bassR;
-    midL += midA * (restL - midL);
-    midR += midA * (restR - midR);
-    beat.left[i] = bassL + midL * duck + (restL - midL);
-    beat.right[i] = bassR + midR * duck + (restR - midR);
+    ducker.process(beat.left[i]!, beat.right[i]!, key.left[i]!, key.right[i]!);
+    beat.left[i] = ducker.left;
+    beat.right[i] = ducker.right;
   }
 }
 
-/** Quiet, late, slightly sharp copy. Reads a snapshot so it does not chase itself. */
+/** Whole-buffer form of PocketHookDouble, in place. */
 export function addHookDouble(buf: StereoBuf, sr: number, spans: readonly PocketSpan[], delayMs: number, cents: number, gainDb: number): void {
-  const hooks = spans.filter((s) => s.kind === "hook");
-  if (hooks.length === 0) return;
+  if (!spans.some((s) => s.kind === "hook")) return;
   const len = Math.min(buf.left.length, buf.right.length);
-  const srcL = buf.left.slice(0, len);
-  const srcR = buf.right.slice(0, len);
-  const delay = Math.round((sr * delayMs) / 1000);
-  const stretch = Math.pow(2, cents / 1200) - 1;
-  const g = Math.pow(10, gainDb / 20);
-  for (const span of hooks) {
-    const a = Math.max(0, Math.floor((span.startMs / 1000) * sr));
-    const b = Math.min(len, Math.floor((span.endMs / 1000) * sr));
-    for (let i = a; i < b; i++) {
-      const srcF = i - delay - (i - a) * stretch;
-      if (srcF < 1) continue;
-      const s0 = Math.floor(srcF);
-      const frac = srcF - s0;
-      if (s0 + 1 >= len) continue;
-      buf.left[i] += g * (srcL[s0]! * (1 - frac) + srcL[s0 + 1]! * frac);
-      buf.right[i] += g * (srcR[s0]! * (1 - frac) + srcR[s0 + 1]! * frac);
-    }
+  const double = new PocketHookDouble(spans, sr, len, delayMs, cents, gainDb);
+  for (let i = 0; i < len; i++) {
+    double.process(i, buf.left[i]!, buf.right[i]!);
+    buf.left[i] = double.left;
+    buf.right[i] = double.right;
   }
 }
 
@@ -160,8 +220,11 @@ export function pocketLeadStage(leads: readonly PocketTrack[], sampleRate: numbe
   const len = leads[0]!.left.length;
   const key = { left: new Float32Array(len), right: new Float32Array(len) };
   for (const lead of leads) {
-    gainRegions(lead, sampleRate, lengthMs, spans, params.verseDb, params.hookDb);
+    const section = new PocketSectionGain(spans, sampleRate, params);
     for (let i = 0; i < len; i++) {
+      const g = section.gainAt(i);
+      lead.left[i]! *= g;
+      lead.right[i]! *= g;
       key.left[i] += lead.left[i]!;
       key.right[i] += lead.right[i]!;
     }

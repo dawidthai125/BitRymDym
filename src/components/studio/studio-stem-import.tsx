@@ -119,14 +119,14 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
           {rows.map((r) => (
             <li key={r.id} data-state={r.state} className="flex flex-wrap gap-x-2">
               <span className="font-medium">{r.name}</span>
-              <span className={r.state === "failed" ? "text-red-600" : "text-[var(--brd-mute)]"}>{r.state === "failed" ? r.message : t(`stan.${r.state}`)}</span>
+              <span className={r.state === "failed" ? "text-destructive" : "text-[var(--brd-mute)]"}>{r.state === "failed" ? r.message : t(`stan.${r.state}`)}</span>
             </li>
           ))}
         </ul>
       ) : null}
       {!busy && rows.length ? <p className="text-xs">{t("podsumowanie", { done, total: rows.length })}</p> : null}
       {skipped.length ? (
-        <ul className="space-y-0.5 text-xs text-red-600" role="alert">
+        <ul className="space-y-0.5 text-xs text-destructive" role="alert">
           {skipped.map((m) => (
             <li key={m}>{m}</li>
           ))}

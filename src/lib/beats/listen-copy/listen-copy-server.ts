@@ -1,6 +1,7 @@
 import "server-only";
 
 import { AuthError } from "@/lib/auth/session";
+import { PLAYBACK_MAX_DISTINCT_BEATS_PER_HOUR } from "@/lib/beats/playback-guard";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -88,8 +89,9 @@ export async function resolveListenCopyKey(params: {
 }
 
 /**
- * Background warm-up (beat page or Studio project of a signed-in listener): queue this account's copy at low priority so the Studio
- * opens without waiting. Never throws.
+ * Background warm-up (beat page, Studio project or beat change of a signed-in listener): queue this account's copy at
+ * low priority so the Studio opens without waiting. Capped per hour like playback, so swapping beats cannot queue
+ * endless renders; past the cap the copy is made at Play. Never throws.
  */
 export async function prewarmListenCopy(params: { beatId: string; userId: string }): Promise<void> {
   try {
@@ -112,6 +114,12 @@ export async function prewarmListenCopy(params: { beatId: string; userId: string
       .eq("status", "READY")
       .maybeSingle();
     if (!master?.id) return;
+    const { count, error: countError } = await admin
+      .from("beat_listen_copies")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", params.userId)
+      .gte("created_at", new Date(Date.now() - 3_600_000).toISOString());
+    if (countError || (count ?? 0) >= PLAYBACK_MAX_DISTINCT_BEATS_PER_HOUR) return;
     await admin
       .from("beat_listen_copies")
       .upsert(

@@ -87,6 +87,8 @@ export function StudioFragmentTools({
   const [stretchLocal, setStretchLocal] = useState(stretch);
   const [pitchLocal, setPitchLocal] = useState(pitchCents);
   const [gainLocal, setGainLocal] = useState(gainDb);
+  /** Phones: the three sliders stay folded, so the bar does not push the timeline off the screen. */
+  const [slidersOpen, setSlidersOpen] = useState(false);
   const [seenStretch, setSeenStretch] = useState(stretch);
   const [seenPitch, setSeenPitch] = useState(pitchCents);
   const [seenGain, setSeenGain] = useState(gainDb);
@@ -117,7 +119,7 @@ export function StudioFragmentTools({
 
   return (
     <div
-      className="contents"
+      className="contents max-sm:flex max-sm:w-full max-sm:min-w-0 max-sm:flex-col max-sm:gap-1"
       role="group"
       aria-label={t("fragmentyAria")}
       data-testid="studio-fragment-tools"
@@ -143,6 +145,20 @@ export function StudioFragmentTools({
         </>
       ) : (
         <>
+          <div className="contents max-sm:flex max-sm:flex-nowrap max-sm:gap-1 max-sm:overflow-x-auto max-sm:overscroll-x-contain max-sm:pb-1" data-testid="studio-fragment-strip">
+          {onPlayback || onGain ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 shrink-0 px-2 sm:hidden"
+              aria-expanded={slidersOpen}
+              data-testid="studio-fragment-sliders-toggle"
+              onClick={() => setSlidersOpen((open) => !open)}
+            >
+              {t("fragmentSuwaki")}
+            </Button>
+          ) : null}
           <Button
             type="button"
             size="sm"
@@ -267,6 +283,8 @@ export function StudioFragmentTools({
           >
             {t("odwrocFragment")}
           </Button>
+          </div>
+          <div className={`contents ${slidersOpen ? "max-sm:flex max-sm:flex-col" : "max-sm:hidden"}`} data-testid="studio-fragment-sliders">
           {onPlayback ? (
             <>
               <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
@@ -343,6 +361,7 @@ export function StudioFragmentTools({
               </span>
             </label>
           ) : null}
+          </div>
           <p className="sr-only" data-testid="studio-fragment-hint">
             {enabled ? t("fragmentEdycja") : t("zaznaczFragment")}
           </p>

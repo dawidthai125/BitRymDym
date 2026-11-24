@@ -62,6 +62,7 @@ export function resampleStereoInterleaved(
     channels: 2,
     interleaved: out,
     frames: outFrames,
+    ...(input.mono ? { mono: true } : {}),
   };
 }
 

@@ -185,14 +185,55 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     expect(master && master.op === "set_master_mix" ? master.masterGainDb : null).toBe(-6.5);
   });
 
-  it("balance: buried vocal (−6.5 LU) → +4 dB vocal / −4 dB beat to hit +1.5 LU; side vocals under the lead", () => {
-    const p = plan(["balance"]);
-    expect(controls(p, LEAD)?.gainDb).toBe(4);
-    expect(controls(p, BEAT)?.gainDb).toBe(-4);
-    // lead after = −16 LUFS → adlib target −22 (AD1 −18 → −4 dB; AD2 −30 → +8), double −24 (−22 → −2)
-    expect(controls(p, AD1)?.gainDb).toBe(-4);
-    expect(controls(p, AD2)?.gainDb).toBe(8);
-    expect(controls(p, DBL)?.gainDb).toBe(-2);
+  it("balance: a buried vocal comes up first, the beat stays; side vocals under the lead", () => {
+    const m = badMetrics();
+    m.tracks[0] = tm(LEAD, "lead_vocal", -20, { samplePeakDbfs: -11 });
+    const p = plan(["balance"], doc(), m);
+    expect(controls(p, LEAD)?.gainDb).toBe(8);
+    expect(controls(p, BEAT)).toBeUndefined();
+    expect(p.notes[0]).toMatchObject({ key: "balanceVocalOnlyUp", params: { up: "8" } });
+    // lead after = −12 LUFS → adlib target −18 (AD1 −18 stays; AD2 −30 → +9 step limit), double −20 (−22 → +2)
+    expect(controls(p, AD1)?.gainDb).toBeUndefined();
+    expect(controls(p, AD2)?.gainDb).toBe(9);
+    expect(controls(p, DBL)?.gainDb).toBe(2);
+  });
+
+  it("balance: the beat gives way only for what the vocal's peaks do not allow", () => {
+    const m = badMetrics();
+    m.tracks = [tm(LEAD, "lead_vocal", -20, { samplePeakDbfs: -7 }), tm(BEAT, "beat", -14)];
+    const p = plan(["balance"], doc(120, [track(LEAD, "Wokal", "lead_vocal"), track(BEAT, "Bit", "beat")]), m);
+    expect(controls(p, LEAD)?.gainDb).toBe(5);
+    expect(controls(p, BEAT)?.gainDb).toBe(-3);
+    expect(p.notes[0]).toMatchObject({ key: "balanceVocalUp", params: { up: "5", down: "3" } });
+  });
+
+  it("„Zrób utwór”: quiet vocal + beat peaking at 0 dBFS never costs the beat more than 6 dB", () => {
+    const quiet = (gains: { vox: number; beat: number }, d: number, peak: number) => {
+      const m = badMetrics();
+      m.vocalVsBeatLu = d;
+      m.tracks = [tm(LEAD, "lead_vocal", -24, { samplePeakDbfs: peak }), tm(BEAT, "beat", -11, { samplePeakDbfs: -6 + gains.beat + 6, clipEvents: gains.beat === 0 ? 3 : 0 })];
+      const tracks = [track(LEAD, "Wokal", "lead_vocal", { gainDb: gains.vox }), track(BEAT, "Bit", "beat", { gainDb: gains.beat })];
+      return plan(MIX_AUTOFIX_ALL, doc(120, tracks), m);
+    };
+    const first = quiet({ vox: 0, beat: 0 }, -13, -14);
+    // The −6 dB peak trim already helps the balance: 13 + 1.5 − 6 = 8.5 left, all from the vocal.
+    expect(controls(first, BEAT)?.gainDb).toBe(-6);
+    expect(controls(first, LEAD)?.gainDb).toBe(8.5);
+    // Next round with the vocal still buried: the beat stays at the floor.
+    const second = quiet({ vox: 8.5, beat: -6 }, -8, -3);
+    expect(controls(second, BEAT)).toBeUndefined();
+    expect(controls(second, LEAD)?.gainDb).toBe(9.5);
+    expect(second.notes.map((n) => n.key)).toContain("balanceVocalTooQuiet");
+  });
+
+  it("balance: too loud a vocal goes down; the beat rises only within its peaks", () => {
+    const m = badMetrics();
+    m.vocalVsBeatLu = 7.5;
+    m.tracks = [tm(LEAD, "lead_vocal", -10), tm(BEAT, "beat", -18, { samplePeakDbfs: -7 })];
+    const tracks = [track(LEAD, "Wokal", "lead_vocal"), track(BEAT, "Bit", "beat")];
+    const p = plan(["balance"], doc(120, tracks), m);
+    expect(controls(p, LEAD)?.gainDb).toBe(-5);
+    expect(controls(p, BEAT)?.gainDb).toBe(1);
   });
 
   it("balance in range → no change", () => {

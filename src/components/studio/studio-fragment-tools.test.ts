@@ -53,3 +53,13 @@ describe("timeline fragment tools", () => {
     expect(ed.gainKlipuEtykieta).toBe("Level");
   });
 });
+
+describe("phone clip bar", () => {
+  it("folds the sliders and scrolls the buttons in one row below sm", () => {
+    const tools = readFileSync(join(process.cwd(), "src/components/studio/studio-fragment-tools.tsx"), "utf8");
+    expect(tools).toMatch(/data-testid="studio-fragment-sliders-toggle"/);
+    expect(tools).toMatch(/aria-expanded=\{slidersOpen\}/);
+    expect(tools).toMatch(/slidersOpen \? "max-sm:flex max-sm:flex-col" : "max-sm:hidden"/);
+    expect(tools).toMatch(/max-sm:overflow-x-auto[^"]*" data-testid="studio-fragment-strip"/);
+  });
+});

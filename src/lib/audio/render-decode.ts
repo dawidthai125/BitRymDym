@@ -32,6 +32,8 @@ export type DecodedPcmStereo = {
   /** Interleaved LRLR… Float32 in [-1, 1] (approx). */
   interleaved: Float32Array;
   frames: number;
+  /** The source file has one channel (both channels here are the same samples). Sets the Studio pan law. */
+  mono?: boolean;
 };
 
 export function normalizeRenderContentType(
@@ -116,7 +118,7 @@ export async function decodeRenderSourceToStereoPcm(params: {
       );
     }
     const { interleaved, frames } = toStereoInterleaved(channelData);
-    return { sampleRate, channels: 2, interleaved, frames };
+    return { sampleRate, channels: 2, interleaved, frames, ...(channelData.length === 1 ? { mono: true } : {}) };
   } catch (error) {
     if (error instanceof RenderJobDomainError) throw error;
     throw new RenderJobDomainError(

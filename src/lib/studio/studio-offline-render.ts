@@ -29,7 +29,22 @@ import {
   clipPlaybackIdentity,
   renderClipPlaybackStereo,
 } from "@/lib/studio/studio-clip-playback";
-import { sidechainParamsOf } from "@/lib/studio/studio-fx-chain";
+import {
+  isPocketBeat,
+  isPocketLead,
+  PocketHookDouble,
+  PocketMidDucker,
+  PocketSectionGain,
+  pocketSpans,
+  readPocketParams,
+} from "@/lib/studio/mix-analysis/rap-pocket";
+import { stereoPan } from "@/lib/studio/mix-analysis/render";
+import {
+  isSidechainKey,
+  SIDECHAIN_BLOCK_SEC,
+  sidechainStep,
+  trackSidechain,
+} from "@/lib/studio/mix-analysis/track-sidechain";
 import { compensateStudioTuneLatency } from "@/lib/studio/tune/tune";
 import {
   buildStudioOfflineFxChain,
@@ -228,18 +243,25 @@ function assertValidPcm(
   }
 }
 
-/** Equal-power-linear pan law matching server-basic applyGainPan shape (linear gain). */
-export function applyLinearGainPanSample(
-  left: number,
-  right: number,
-  linearGain: number,
-  pan: number,
-): { left: number; right: number } {
-  const g = Number.isFinite(linearGain) && linearGain > 0 ? linearGain : 0;
-  const p = Math.max(-1, Math.min(1, Number.isFinite(pan) ? pan : 0));
-  const leftG = g * Math.min(1, 1 - p);
-  const rightG = g * Math.min(1, 1 + p);
-  return { left: left * leftG, right: right * rightG };
+/** stereoPan (the live StereoPanner law) as a matrix, recomputed only when the pan moves. */
+class PanMatrix {
+  private pan = Number.NaN;
+  private readonly mono = [0, 0];
+  private readonly m = [0, 0, 0, 0];
+  left = 0;
+  right = 0;
+
+  /** `mono` is the part that reaches the panner as one channel (−3 dB per side at centre); l / r the stereo part. */
+  apply(mono: number, l: number, r: number, gain: number, pan: number): void {
+    if (pan !== this.pan) {
+      this.pan = pan;
+      [this.mono[0], this.mono[1]] = stereoPan(1, 1, true, pan);
+      [this.m[0], this.m[1]] = stereoPan(1, 0, false, pan);
+      [this.m[2], this.m[3]] = stereoPan(0, 1, false, pan);
+    }
+    this.left = gain * (mono * this.mono[0]! + l * this.m[0]! + r * this.m[2]!);
+    this.right = gain * (mono * this.mono[1]! + l * this.m[1]! + r * this.m[3]!);
+  }
 }
 
 function readSourceSample(
@@ -626,14 +648,112 @@ export async function renderStudioDocumentOffline(
   const trackIndex = new Map(document.tracks.map((t, idx) => [t.id, idx]));
   const busL = new Float64Array(document.tracks.length);
   const busR = new Float64Array(document.tracks.length);
+  /** Part of a dry track that reaches its panner as one channel (mono files, notes). */
+  const busM = new Float64Array(document.tracks.length);
+  const stripL = new Float64Array(document.tracks.length);
+  const stripR = new Float64Array(document.tracks.length);
+  const pans = document.tracks.map(() => new PanMatrix());
+  const masterPanMatrix = new PanMatrix();
+  const isMonoClip = (clip: (typeof document.clips)[number]): boolean => {
+    const key = keyForVoice(clip);
+    return Boolean(key && pcmCache.get(sourceCacheKey(key))?.mono);
+  };
+  const monoClipIds = new Set(document.clips.filter(isMonoClip).map((c) => c.id));
+  // With inserts the whole strip is one or two channels, as in the master (renderTrackWithFx).
+  const monoStrip = document.tracks.map((track) => {
+    const fx = trackFx.get(track.id);
+    if (!fx || fx.processors.some((p) => p.type === "reverb" && p.status === "IMPLEMENTED")) return false;
+    return document.clips.every((c) => c.trackId !== track.id || c.muted || c.durationMs < 1 || monoClipIds.has(c.id));
+  });
+  // Rap pocket: same steps as applyRapPocket in the master, streamed.
+  const hasSound = (track: (typeof document.tracks)[number]) =>
+    trackGraphParams(track, anySolo).gain > 0 &&
+    ((track.midi?.notes.length ?? 0) > 0 ||
+      document.clips.some((c) => c.trackId === track.id && !c.muted && c.durationMs >= 1));
+  const pocketLeadIdx = document.tracks.flatMap((track, ti) =>
+    isPocketLead({ role: track.role ?? "", effectsChain: track.effectsChain }) && hasSound(track) ? [ti] : [],
+  );
+  const pocketParams =
+    pocketLeadIdx.length > 0 ? readPocketParams(document.tracks[pocketLeadIdx[0]!]!.effectsChain) : null;
+  const spans = pocketSpans(document.markers ?? [], durationMs);
+  const pocketSection = pocketParams
+    ? new PocketSectionGain(spans, STUDIO_OFFLINE_RENDER_SAMPLE_RATE, pocketParams)
+    : null;
+  const pocketDoubles = pocketParams
+    ? pocketLeadIdx.map(
+        () =>
+          new PocketHookDouble(
+            spans,
+            STUDIO_OFFLINE_RENDER_SAMPLE_RATE,
+            frames,
+            pocketParams.doubleMs,
+            pocketParams.doubleCents,
+            pocketParams.doubleDb,
+          ),
+      )
+    : [];
+  const pocketBeats = pocketParams
+    ? document.tracks.flatMap((track, ti) =>
+        isPocketBeat({ role: track.role ?? "" }) && !pocketLeadIdx.includes(ti)
+          ? [{ ti, ducker: new PocketMidDucker(STUDIO_OFFLINE_RENDER_SAMPLE_RATE, pocketParams.depth) }]
+          : [],
+      )
+    : [];
   // Track buses are scratch (not retained PCM); counted only as FX state above.
 
   let cachedMs = -1;
   let cachedInterp = interpretStudioSessionAtPlayhead(document, 0);
-  const sidechain = document.tracks.map((track) =>
-    sidechainParamsOf(track.effectsChain as { effects?: { type: string; enabled: boolean; params?: unknown }[] } | null),
-  );
-  const sideEnv = new Float64Array(document.tracks.length);
+  // „Ścisz pod bit” as in the live engine and the master (track-sidechain.ts): the key is the 256-sample peak of
+  // the BEAT tracks after their strip, the duck glides over the same block. Only one block is held back.
+  const sidechain = document.tracks.map((track) => trackSidechain(track));
+  const ducked = sidechain.some((p) => p !== null);
+  const keyTrack = document.tracks.map((track) => ducked && isSidechainKey(track));
+  const scBlock = ducked
+    ? Math.max(1, Math.round(STUDIO_OFFLINE_RENDER_SAMPLE_RATE * SIDECHAIN_BLOCK_SEC))
+    : 1;
+  const scBlockMs = (scBlock / STUDIO_OFFLINE_RENDER_SAMPLE_RATE) * 1000;
+  const scEnv = new Float64Array(document.tracks.length);
+  const scGain = new Float64Array(document.tracks.length).fill(1);
+  const scHeld = sidechain.map((p) => (p ? new Float64Array(scBlock * 2) : null));
+  const scSum = new Float64Array(scBlock * 2);
+  const scMasterGain = new Float64Array(scBlock);
+  const scMasterPan = new Float64Array(scBlock);
+  let scPeak = 0;
+
+  const writeMaster = (i: number, sumL: number, sumR: number, gain: number, pan: number) => {
+    let left = sumL;
+    let right = sumR;
+    if (masterFx) {
+      const wet = masterFx.process({ left, right });
+      left = wet.left;
+      right = wet.right;
+    }
+    masterPanMatrix.apply(0, left, right, gain, pan);
+    interleaved[i * 2] = masterPanMatrix.left;
+    interleaved[i * 2 + 1] = masterPanMatrix.right;
+  };
+
+  /** Duck the held tracks with this block's key, add them to the rest and write the block out. */
+  const flushSidechainBlock = (start: number, count: number) => {
+    for (let ti = 0; ti < sidechain.length; ti++) {
+      const params = sidechain[ti];
+      const held = scHeld[ti];
+      if (!params || !held) continue;
+      const from = scGain[ti]!;
+      const step = sidechainStep(scEnv[ti]!, scPeak, scBlockMs, params);
+      scEnv[ti] = step.env;
+      scGain[ti] = step.gain;
+      for (let k = 0; k < count; k++) {
+        const g = from + ((step.gain - from) * k) / scBlock;
+        scSum[k * 2]! += held[k * 2]! * g;
+        scSum[k * 2 + 1]! += held[k * 2 + 1]! * g;
+      }
+    }
+    for (let k = 0; k < count; k++) {
+      writeMaster(start + k, scSum[k * 2]!, scSum[k * 2 + 1]!, scMasterGain[k]!, scMasterPan[k]!);
+    }
+    scPeak = 0;
+  };
 
   for (let i = 0; i < frames; i++) {
     const tMs = (i / STUDIO_OFFLINE_RENDER_SAMPLE_RATE) * 1000;
@@ -645,6 +765,7 @@ export async function renderStudioDocumentOffline(
 
     busL.fill(0);
     busR.fill(0);
+    busM.fill(0);
 
     for (const voice of cachedInterp.voices) {
       if (voice.sourceKind === "ARTIFACT") {
@@ -692,48 +813,35 @@ export async function renderStudioDocumentOffline(
       const clipGain = clip
         ? effectiveClipGain(clip, tMs)
         : voice.effectiveClipGain;
-      const withClip = applyLinearGainPanSample(
-        sample.left,
-        sample.right,
-        clipGain,
-        0,
-      );
       const ti = trackIndex.get(voice.trackId);
       if (ti === undefined) continue;
-      busL[ti] += withClip.left;
-      busR[ti] += withClip.right;
+      if (!trackFx.get(voice.trackId) && monoClipIds.has(voice.clipId)) {
+        busM[ti]! += sample.left * clipGain;
+      } else {
+        busL[ti]! += sample.left * clipGain;
+        busR[ti]! += sample.right * clipGain;
+      }
     }
 
-    let sideKey = 0;
-    for (let ti = 0; ti < document.tracks.length; ti++) {
-      if (sidechain[ti]) continue;
-      if (document.tracks[ti]?.trackType !== "BEAT") continue;
-      sideKey = Math.max(sideKey, Math.abs(busL[ti] ?? 0), Math.abs(busR[ti] ?? 0));
-    }
-
-    let left = 0;
-    let right = 0;
     for (let ti = 0; ti < document.tracks.length; ti++) {
       const track = document.tracks[ti]!;
-      let tl = busL[ti] ?? 0;
-      let tr = busR[ti] ?? 0;
+      let mono = busM[ti]!;
+      let tl = busL[ti]!;
+      let tr = busR[ti]!;
       const midiSample = midiByTrack[ti]?.[i] ?? 0;
-      tl += midiSample;
-      tr += midiSample;
       const fx = trackFx.get(track.id);
       if (fx) {
-        const wet = fx.process({ left: tl, right: tr });
-        tl = wet.left;
-        tr = wet.right;
-      }
-      const sc = sidechain[ti];
-      if (sc) {
-        const followMs = sideKey > (sideEnv[ti] ?? 0) ? sc.attackMs : sc.releaseMs;
-        const coeff = 1 - Math.exp(-1 / ((STUDIO_OFFLINE_RENDER_SAMPLE_RATE * Math.max(1, followMs)) / 1000));
-        sideEnv[ti] = (sideEnv[ti] ?? 0) + (sideKey - (sideEnv[ti] ?? 0)) * coeff;
-        const duck = 1 - sc.depth * Math.min(1, (sideEnv[ti] ?? 0) * 2);
-        tl *= duck;
-        tr *= duck;
+        const wet = fx.process({ left: tl + midiSample, right: tr + midiSample });
+        if (monoStrip[ti]) {
+          mono = wet.left;
+          tl = 0;
+          tr = 0;
+        } else {
+          tl = wet.left;
+          tr = wet.right;
+        }
+      } else {
+        mono += midiSample;
       }
       const tp = trackGraphParams(
         track.automation
@@ -745,25 +853,65 @@ export async function renderStudioDocumentOffline(
           : track,
         cachedInterp.anySolo,
       );
-      const withTrack = applyLinearGainPanSample(tl, tr, tp.gain, tp.pan);
-      left += withTrack.left;
-      right += withTrack.right;
+      const panner = pans[ti]!;
+      panner.apply(mono, tl, tr, tp.gain, tp.pan);
+      stripL[ti] = panner.left;
+      stripR[ti] = panner.right;
     }
 
-    if (masterFx) {
-      const wet = masterFx.process({ left, right });
-      left = wet.left;
-      right = wet.right;
+    if (pocketSection) {
+      const g = pocketSection.gainAt(i);
+      let keyL = 0;
+      let keyR = 0;
+      for (const ti of pocketLeadIdx) {
+        stripL[ti]! *= g;
+        stripR[ti]! *= g;
+        keyL += stripL[ti]!;
+        keyR += stripR[ti]!;
+      }
+      for (const { ti, ducker } of pocketBeats) {
+        ducker.process(stripL[ti]!, stripR[ti]!, keyL, keyR);
+        stripL[ti] = ducker.left;
+        stripR[ti] = ducker.right;
+      }
+      for (let n = 0; n < pocketLeadIdx.length; n++) {
+        const ti = pocketLeadIdx[n]!;
+        const double = pocketDoubles[n]!;
+        double.process(i, stripL[ti]!, stripR[ti]!);
+        stripL[ti] = double.left;
+        stripR[ti] = double.right;
+      }
     }
 
-    const mastered = applyLinearGainPanSample(
-      left,
-      right,
-      cachedInterp.master.gain,
-      cachedInterp.master.pan,
-    );
-    interleaved[i * 2] = mastered.left;
-    interleaved[i * 2 + 1] = mastered.right;
+    let left = 0;
+    let right = 0;
+    for (let ti = 0; ti < document.tracks.length; ti++) {
+      const outL = stripL[ti]!;
+      const outR = stripR[ti]!;
+      const held = scHeld[ti];
+      if (held) {
+        const k = i % scBlock;
+        held[k * 2] = outL;
+        held[k * 2 + 1] = outR;
+        continue;
+      }
+      if (keyTrack[ti]) {
+        scPeak = Math.max(scPeak, Math.abs(0.5 * (outL + outR)));
+      }
+      left += outL;
+      right += outR;
+    }
+
+    if (!ducked) {
+      writeMaster(i, left, right, cachedInterp.master.gain, cachedInterp.master.pan);
+      continue;
+    }
+    const k = i % scBlock;
+    scSum[k * 2] = left;
+    scSum[k * 2 + 1] = right;
+    scMasterGain[k] = cachedInterp.master.gain;
+    scMasterPan[k] = cachedInterp.master.pan;
+    if (k === scBlock - 1 || i === frames - 1) flushSidechainBlock(i - k, k + 1);
   }
 
   const { peakAbs, rms } = peakAndRms(interleaved);

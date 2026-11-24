@@ -132,10 +132,10 @@ export function StudioMidiRoll({
         </div>
       </div>
       <div className="overflow-x-auto">
-        <div className="min-w-[36rem] space-y-1" role="group" aria-label={tr("klawiszeRolka")}>
+        <div className="min-w-[28rem] space-y-1 lg:min-w-0" role="group" aria-label={tr("klawiszeRolka")}>
           {pitches.map((pitch) => (
-            <div key={pitch} className="grid grid-cols-[4.5rem_repeat(16,minmax(0,1fr))] gap-1">
-              <span className="flex min-h-11 items-center text-xs text-[var(--brd-mute)]">{pitchLabel(instrument, pitch, tr)}</span>
+            <div key={pitch} className="grid grid-cols-[3.25rem_repeat(16,minmax(0,1fr))] gap-1 lg:gap-0.5">
+              <span className="flex min-h-11 items-center text-xs lg:min-h-7 text-[var(--brd-mute)]">{pitchLabel(instrument, pitch, tr)}</span>
               {Array.from({ length: ROLL_STEPS }, (_, step) => {
                 const active = on(pitch, step);
                 return (
@@ -145,7 +145,7 @@ export function StudioMidiRoll({
                     disabled={disabled}
                     aria-pressed={active}
                     aria-label={tr("klawiszeNuta", { name: pitchLabel(instrument, pitch, tr), n: step + 1 })}
-                    className={`min-h-11 rounded-sm border ${active ? "border-[var(--brd-ink)] bg-[var(--brd-ink)]" : "border-[var(--brd-line)] bg-transparent"}`}
+                    className={`min-h-11 rounded-sm border lg:min-h-7 ${active ? "border-[var(--brd-ink)] bg-[var(--brd-ink)]" : "border-[var(--brd-line)] bg-transparent"}`}
                     onClick={() => toggle(pitch, step)}
                   />
                 );

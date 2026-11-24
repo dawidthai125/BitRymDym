@@ -11,9 +11,9 @@ import type {
   StudioEngineDocument,
   StudioEngineTrack,
 } from "@/lib/studio/studio-audio-schedule";
+import { stereoPan } from "@/lib/studio/mix-analysis/render";
 import { encodeWavFromBake } from "@/lib/audio/wav-encode";
 import {
-  applyLinearGainPanSample,
   renderStudioDocumentOffline,
   studioOfflineRenderOutputBytesForDurationMs,
   STUDIO_OFFLINE_RENDER_ENGINE,
@@ -845,10 +845,10 @@ describe("SFM-2.1 numerical geometry / mix", () => {
     expect(meanChannel(centered.interleaved, 0)).toBeCloseTo(0.6, 2);
     expect(meanChannel(centered.interleaved, 1)).toBeCloseTo(0.2, 2);
 
-    // Pan law: leftG = g*min(1,1-p), rightG = g*min(1,1+p); pan=-1 → right silent.
-    const hardLeft = applyLinearGainPanSample(0.6, 0.2, 1, -1);
-    expect(hardLeft.right).toBeCloseTo(0, 5);
-    expect(hardLeft.left).toBeCloseTo(0.6, 5);
+    // Pan law = live StereoPanner (stereoPan): pan −1 folds a stereo strip to the left, right silent.
+    const [hardL, hardR] = stereoPan(0.6, 0.2, false, -1);
+    expect(hardR).toBeCloseTo(0, 5);
+    expect(hardL).toBeCloseTo(0.8, 5);
   });
 
   it("SFM-2.2: default MAX_OUTPUT_BYTES equals max-duration stereo float32 size", () => {

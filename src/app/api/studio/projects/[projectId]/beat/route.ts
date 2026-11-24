@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth/session";
+import { prewarmListenCopy } from "@/lib/beats/listen-copy/listen-copy-server";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import { attachBeatToStudioProject } from "@/lib/studio/studio-service";
 import { getProjectBeatKey } from "@/lib/studio/tune/beat-key-server";
@@ -43,11 +44,14 @@ export async function POST(request: Request, context: RouteContext) {
     if (!beatId) {
       return NextResponse.json({ error: "beatId is required." }, { status: 400 });
     }
+    const { userId } = await requireUser();
     const document = await attachBeatToStudioProject({
       projectId,
       beatId,
       expectedDocumentVersion: body.expectedDocumentVersion,
     });
+    // The page warm-up only covers the beat the project opened with: start this account's copy now, not at Play.
+    after(() => prewarmListenCopy({ beatId, userId }));
     return NextResponse.json({
       success: true,
       document,

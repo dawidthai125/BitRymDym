@@ -112,3 +112,15 @@ export function noteName(n: number): string {
 export function isBlackKey(n: number): boolean {
   return [1, 3, 6, 8, 10].includes(((n % 12) + 12) % 12);
 }
+
+/**
+ * Keys that stay with the focused control. Text fields keep everything; a list or a checkbox (focus is still
+ * there after picking the instrument) gives the letters to the instrument and keeps Space, Enter and arrows.
+ */
+export function playKeysBlocked(target: EventTarget | null, code: string): boolean {
+  const el = target as { tagName?: string; type?: string; isContentEditable?: boolean } | null;
+  if (!el?.tagName) return false;
+  if (el.isContentEditable || el.tagName === "TEXTAREA") return true;
+  if (el.tagName === "INPUT" && el.type !== "checkbox" && el.type !== "radio") return true;
+  return (el.tagName === "SELECT" || el.tagName === "INPUT") && (code === "Space" || code === "Enter" || code.startsWith("Arrow"));
+}

@@ -547,6 +547,7 @@ export function StudioRecordingPanel({
   const unsentRef = useRef<UnsentTake | null>(null);
   const [replaceCandidates, setReplaceCandidates] = useState<ReplaceableTakeSummary[] | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [samplesPane, setSamplesPane] = useState<"samples" | "keys">("samples");
   const [stemsBusy, setStemsBusy] = useState(false);
   const [lyricsOpen, setLyricsOpen] = useState(false);
   /** The user asked for a microphone test; nothing opens the mic on its own. */
@@ -3081,7 +3082,7 @@ export function StudioRecordingPanel({
           ? "space-y-2 border-0 bg-transparent p-0"
           : simple && !samplesMode
             ? "flex flex-col gap-3 [&>.studio-gear-fold]:order-last"
-            : "space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
+            : `space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3 ${samplesMode ? "lg:border-0 lg:bg-transparent lg:p-0" : ""}`
       }
       aria-label={tr("nagrywanieWStudio")}
       data-record-density={simple ? "simple" : "full"}
@@ -3136,9 +3137,27 @@ export function StudioRecordingPanel({
       </div>
 
       {samplesMode ? (
-        <p className="text-sm text-[var(--brd-ink)]" data-testid="studio-samples-lead">
+        <>
+        <p className="text-xs text-[var(--brd-mute)]" data-testid="studio-samples-lead">
           {tr("sampleZakladkaOpis")}
         </p>
+        <div className="grid grid-cols-2 gap-1" role="group" aria-label={tr("sampleNaglowek")}>
+          {(["samples", "keys"] as const).map((pane) => (
+            <Button
+              key={pane}
+              type="button"
+              size="sm"
+              className="min-h-11 w-full"
+              variant={samplesPane === pane ? "default" : "secondary"}
+              aria-pressed={samplesPane === pane}
+              data-testid={`studio-samples-pane-${pane}`}
+              onClick={() => setSamplesPane(pane)}
+            >
+              {tr(pane === "samples" ? "sampleZakladkaSample" : "klawisze")}
+            </Button>
+          ))}
+        </div>
+        </>
       ) : null}
       {!simple && !samplesMode ? (
         <div className="grid grid-cols-2 gap-1" role="tablist" aria-label={tr("nagrywanie")} data-testid="studio-record-panes">
@@ -3455,6 +3474,8 @@ export function StudioRecordingPanel({
 
       {samplesMode ? (
       <>
+      {/* Both stay mounted: switching never loses a form, a preview or an armed key take. */}
+      <div hidden={samplesPane !== "keys"}>
       <StudioPlayKeys
         disabled={!trackId || Boolean(workflowBusy)}
         midi={tracks.find((track) => track.id === trackId)?.midi ?? null}
@@ -3464,6 +3485,8 @@ export function StudioRecordingPanel({
           if (trackId) onSaveTrackMidi?.(trackId, next);
         }}
       />
+      </div>
+      <div hidden={samplesPane !== "samples"}>
       <StudioSampleDesk
         trackId={trackId}
         disabled={Boolean(workflowBusy)}
@@ -3521,6 +3544,7 @@ export function StudioRecordingPanel({
           return { ok: true as const };
         }}
       />
+      </div>
       </>
       ) : null}
       {samplesMode || scratchOpen ? (

@@ -1,7 +1,7 @@
 "use client";
 
 import { StoreAppHidden } from "@/components/site/store-app-context";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "@/components/ui/app-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -22,6 +22,7 @@ import {
   peakDb,
   processTake,
   rmsDb,
+  wholeBars,
   type LabSampleType,
 } from "@/lib/studio/samples/sample-lab-dsp";
 import { LIVE_SAMPLE_INSTRUMENTS, SAMPLE_BARS, SAMPLE_MAX_MS, instrumentKind } from "@/lib/studio/samples/sample-policy";
@@ -49,6 +50,14 @@ type Take = {
   beatKey: string | null;
 };
 
+/** Settings of one recording, taken at its start: switching them while it runs must not cut it as something else. */
+type TakeSpec = { type: LabSampleType; bpm: number; bars: number; usesClock: boolean; beatId: string | null; beatKey: string | null };
+
+/** Signed beat links are short-lived. */
+const BEAT_URL_MS = 4 * 60_000;
+const BEAT_WAIT_MS = 5000;
+const nowMs = () => Date.now();
+
 type Status = "off" | "starting" | "ready" | "countin" | "recording";
 
 const panel = "rounded-lg border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4 sm:p-5";
@@ -58,6 +67,8 @@ const control =
 
 export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /** Silver+: the server saves recordings and imports only for them. */ canRecord: boolean; /** Bronze+. */ canUseAi: boolean }) {
   const t = useTranslations("studio.sampleLab");
+  const locale = useLocale();
+  const oneDecimal = (n: number) => n.toLocaleString(locale === "en" ? "en-US" : "pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
   // Settings
   const [mode, setMode] = useState<"beat" | "free">(beats.length ? "beat" : "free");
@@ -87,7 +98,7 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
   const countTimers = useRef<number[]>([]);
   const mounted = useRef(true);
   const beatAudio = useRef<HTMLAudioElement | null>(null);
-  const plan = useRef<{ loopStartSec: number; firstFrameSec: number } | null>(null);
+  const plan = useRef<{ loopStartSec: number; firstFrameSec: number; spec: TakeSpec } | null>(null);
 
   // Takes + save
   const [takes, setTakes] = useState<Take[]>([]);
@@ -106,6 +117,14 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
   const barsMax = maxBarsFor(bpm, SAMPLE_MAX_MS / 1000);
   const effectiveBars = Math.min(bars, barsMax);
   const usesClock = type === "loop" || (type === "phrase" && metronome);
+  const currentSpec = (): TakeSpec => ({
+    type,
+    bpm,
+    bars: effectiveBars,
+    usesClock,
+    beatId: mode === "beat" ? (beat?.id ?? null) : null,
+    beatKey: mode === "beat" ? (beat?.key ?? null) : null,
+  });
 
   // Meter + tuner loop while the input is open.
   useEffect(() => {
@@ -182,15 +201,38 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
   }, [deviceId, stereo, monitor, t]);
 
   async function prepareBeat(): Promise<HTMLAudioElement | null> {
-    if (mode !== "beat" || !beatInEars || !beat || type === "oneshot") return null;
-    if (beatAudio.current?.dataset.beat === beat.id) return beatAudio.current;
+    if (mode !== "beat" || !beatInEars || !beat || !usesClock) return null;
+    const old = beatAudio.current;
+    if (old?.dataset.beat === beat.id && !old.error && nowMs() - Number(old.dataset.at) < BEAT_URL_MS) return old;
+    old?.pause();
+    beatAudio.current = null;
     const res = await requestBeatAudioAccessAction({ beatId: beat.id, purpose: "PLAYBACK" });
     if (!res.success || !res.url) return null;
     const audio = new Audio(res.url);
     audio.dataset.beat = beat.id;
+    audio.dataset.at = String(nowMs());
     audio.preload = "auto";
     beatAudio.current = audio;
-    return audio;
+    // The beat has to start exactly on bar 1, so give it a moment to arrive before the count-in.
+    const loaded = await new Promise<boolean>((resolve) => {
+      const timer = window.setTimeout(() => resolve(true), BEAT_WAIT_MS);
+      const done = (ok: boolean) => {
+        window.clearTimeout(timer);
+        resolve(ok);
+      };
+      audio.addEventListener("canplaythrough", () => done(true), { once: true });
+      audio.addEventListener("error", () => done(false), { once: true });
+      audio.load();
+    });
+    if (loaded) return audio;
+    if (beatAudio.current === audio) beatAudio.current = null;
+    return null;
+  }
+
+  function stopPlayback() {
+    stopPlay.current?.();
+    stopPlay.current = null;
+    setPlaying(null);
   }
 
   async function record() {
@@ -208,13 +250,19 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
 
   async function startRecording(e: LabEngine) {
     setSaved(null);
+    setError(null);
+    // A take that is still playing would be recorded again through the microphone.
+    stopPlayback();
+    const spec = currentSpec();
+    const wantsBeat = mode === "beat" && beatInEars && beat !== null && usesClock;
     if (e.ctx.state === "suspended") await e.ctx.resume();
     const audio = await prepareBeat().catch(() => null);
     if (!mounted.current) return;
+    if (wantsBeat && !audio) setError(t("bitNieWczytany"));
     const firstFrameSec = await e.startCapture();
     if (!mounted.current) return;
     if (!usesClock) {
-      plan.current = { loopStartSec: firstFrameSec, firstFrameSec };
+      plan.current = { loopStartSec: firstFrameSec, firstFrameSec, spec };
       setStatus("recording");
       stopTimer.current = window.setTimeout(() => void stop(), SAMPLE_MAX_MS + 500);
       return;
@@ -226,7 +274,7 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
     const barOne = t0 + countIn * spb;
     stopClicks.current = metronome || type === "loop" ? scheduleClicks(e.ctx, t0, bpm, countIn + recordBeats) : null;
     // What the player hears arrives late at the mic: shift the cut by the output latency.
-    plan.current = { loopStartSec: barOne + e.latency(), firstFrameSec };
+    plan.current = { loopStartSec: barOne + e.latency(), firstFrameSec, spec };
     setStatus("countin");
     countTimers.current.forEach((id) => window.clearTimeout(id));
     countTimers.current.length = 0;
@@ -261,14 +309,23 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
     setStatus("ready");
     if (!p || !raw[0]?.length) return;
     const loopStart = Math.max(0, Math.round((p.loopStartSec - p.firstFrameSec) * e.ctx.sampleRate));
+    // Stopped during the count-in: cancelled, there is nothing to keep.
+    if (p.spec.usesClock && raw[0].length <= loopStart) return;
     // Loops and clocked phrases start at bar 1 (the count-in is dropped); free takes keep everything.
-    addTake(raw, e.ctx.sampleRate, "live", usesClock ? loopStart : 0);
+    addTake(raw, e.ctx.sampleRate, "live", p.spec.usesClock ? loopStart : 0, p.spec);
   }
 
-  function addTake(raw: Float32Array[], sampleRate: number, source: Take["source"], loopStart: number) {
+  function addTake(raw: Float32Array[], sampleRate: number, source: Take["source"], loopStart: number, spec: TakeSpec) {
+    const { type, bpm } = spec;
+    // A loop stopped early (or a short file) keeps only whole bars: the label must match the length.
+    const bars = type === "loop" ? wholeBars((raw[0]?.length ?? 0) - loopStart, bpm, sampleRate, spec.bars) : null;
+    if (bars === 0) {
+      setError(t("krotszeNizTakt"));
+      return;
+    }
     const clipped = peakDb(raw) >= -0.3;
     const usable = type === "loop" ? raw : raw.map((ch) => ch.subarray(loopStart));
-    const res = processTake({ channels: usable, sampleRate, type, bpm: type === "loop" ? bpm : null, bars: type === "loop" ? effectiveBars : null, loopStart: type === "loop" ? loopStart : 0 });
+    const res = processTake({ channels: usable, sampleRate, type, bpm: type === "loop" ? bpm : null, bars, loopStart: type === "loop" ? loopStart : 0 });
     const seconds = (res.channels[0]?.length ?? 0) / sampleRate;
     if (seconds < 1) {
       setError(t("zaKrotkie"));
@@ -277,10 +334,10 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
     const take: Take = { id: crypto.randomUUID(), channels: res.channels, sampleRate, note: res.note, key: res.key, clipped, seconds: Math.min(seconds, SAMPLE_MAX_MS / 1000),
       source,
       type,
-      bpm: type === "loop" || (usesClock && type === "phrase") ? Math.round(bpm * 10) / 10 : null,
-      bars: type === "loop" ? effectiveBars : null,
-      beatId: mode === "beat" ? (beat?.id ?? null) : null,
-      beatKey: mode === "beat" ? (beat?.key ?? null) : null,
+      bpm: type === "loop" || (spec.usesClock && type === "phrase") ? Math.round(bpm * 10) / 10 : null,
+      bars,
+      beatId: spec.beatId,
+      beatKey: spec.beatKey,
     };
     if (seconds > SAMPLE_MAX_MS / 1000) take.channels = take.channels.map((ch) => ch.slice(0, Math.floor((SAMPLE_MAX_MS / 1000) * sampleRate)));
     setError(null);
@@ -295,7 +352,7 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
       playCtx.current = ctx;
       const decoded = await ctx.decodeAudioData(await file.arrayBuffer());
       const channels = Array.from({ length: Math.min(2, decoded.numberOfChannels) }, (_, i) => decoded.getChannelData(i).slice(0));
-      addTake(channels, decoded.sampleRate, "import", 0);
+      addTake(channels, decoded.sampleRate, "import", 0, currentSpec());
     } catch {
       setError(t("bladImportu"));
     }
@@ -344,8 +401,10 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
       } else {
         setSaved(t("zapisano"));
         setTitle("");
+        // The saved take leaves the list, so its sound (a loop never ends by itself) leaves too.
+        if (playing === take.id) stopPlayback();
         setTakes((list) => list.filter((x) => x.id !== take.id));
-        setChosen(null);
+        setChosen((cur) => (cur === take.id ? null : cur));
         setRefreshKey((k) => k + 1);
       }
     } catch {
@@ -461,7 +520,7 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
           ) : null}
           <p className="text-[var(--brd-ink-soft)]">
             {t("podsumowanie", { bpm: Math.round(bpm), klucz: mode === "beat" && beat?.key ? beat.key : "—" })}
-            {type === "loop" ? ` · ${t("dlugoscPetli", { s: ((effectiveBars * 4 * 60) / bpm).toFixed(1) })}` : ""}
+            {type === "loop" ? ` · ${t("dlugoscPetli", { s: oneDecimal((effectiveBars * 4 * 60) / bpm) })}` : ""}
           </p>
         </div>
       </section>
@@ -595,15 +654,11 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
                   </button>
                   <Wave channels={x.channels} />
                   <span className="font-mono text-xs text-[var(--brd-ink-soft)]">
-                    #{takes.length - i} · {x.seconds.toFixed(1)} s{x.note ? ` · ${x.note}` : ""}{x.key ? ` · ${t("tonacja")} ${x.key}` : ""}
+                    #{takes.length - i} · {oneDecimal(x.seconds)} s{x.note ? ` · ${x.note}` : ""}{x.key ? ` · ${t("tonacja")} ${x.key}` : ""}
                   </span>
                   {x.clipped ? <span className="text-xs font-semibold text-[var(--brd-rec)]">{t("przester")}</span> : null}
                   <button type="button" onClick={() => {
-                    if (playing === x.id) {
-                      stopPlay.current?.();
-                      stopPlay.current = null;
-                      setPlaying(null);
-                    }
+                    if (playing === x.id) stopPlayback();
                     setTakes((l) => l.filter((y) => y.id !== x.id));
                   }} className="ml-auto text-xs text-[var(--brd-ink-soft)] hover:text-[var(--brd-rec)]">
                     {t("usun")}

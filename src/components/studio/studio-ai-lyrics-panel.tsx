@@ -169,7 +169,7 @@ export function StudioAiLyricsPanel({ projectId, currentText, onInsert }: Props)
         <span className="text-[11px] text-[var(--brd-mute)]">{t("znaki", { n: input.length, max })}</span>
       </div>
       {error ? (
-        <p role="alert" className="text-xs text-red-600">
+        <p role="alert" className="text-xs text-destructive">
           {error}
         </p>
       ) : null}

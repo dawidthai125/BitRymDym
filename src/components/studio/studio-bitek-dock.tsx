@@ -288,7 +288,7 @@ export function StudioBitekDock({
       className={`pointer-events-none fixed z-40 flex flex-col gap-2 ${
         fitted
           ? "items-start"
-          : `bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-5 ${placement.side === "left" ? "left-3 items-start lg:left-[20rem]" : "right-3 items-end lg:right-5"}`
+          : `bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-5 ${placement.side === "left" ? "left-3 items-start lg:left-1" : "right-3 items-end lg:right-5"}`
       }`}
     >
       <span id={dragHintId} className="sr-only">{t("przesun")}</span>
@@ -468,7 +468,7 @@ export function StudioBitekDock({
           aria-expanded={recordContext ? Boolean(visible) : chatOpen}
           aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
           className={`bitek-avatar relative grid cursor-grab place-items-center rounded-full border-2 border-[var(--brd-amber)] bg-[#0d0b08] shadow-xl active:cursor-grabbing ${
-            placement.compact ? "size-11 lg:size-12" : "size-14 lg:size-20"
+            placement.compact ? `size-11 ${placement.side === "left" && !fitted ? "lg:size-9" : "lg:size-12"}` : "size-14 lg:size-20"
           }`}
           onPointerDown={(event) => beginPointer(event, "move")}
           onPointerMove={movePointer}

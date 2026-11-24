@@ -316,7 +316,7 @@ export function StudioLyricsCard({
             rows={10}
             className="w-full resize-y rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 font-mono text-sm text-[var(--brd-ink)]"
           />
-          <p className={`text-right text-[11px] ${chars > LYRICS_LIMITS.maxTotalChars ? "text-red-600" : "text-[var(--brd-mute)]"}`}>
+          <p className={`text-right text-[11px] ${chars > LYRICS_LIMITS.maxTotalChars ? "text-destructive" : "text-[var(--brd-mute)]"}`}>
             {t("licznik", { n: chars, max: LYRICS_LIMITS.maxTotalChars })}
           </p>
           <StudioAiLyricsPanel projectId={projectId} currentText={text} onInsert={(generated, how) => {
