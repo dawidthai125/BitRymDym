@@ -624,6 +624,12 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
   font-size: 1.1rem;
   color: #f2a93b;
 }
+/* Phones: undo, "more" and the clock share one row. */
+@media (max-width: 639.98px) {
+  .studio-desk .studio-counter-time {
+    font-size: 0.85rem;
+  }
+}
 .studio-desk .studio-sel-cell {
   display: inline-flex;
   align-items: center;

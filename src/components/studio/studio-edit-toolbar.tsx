@@ -90,7 +90,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1 max-sm:gap-0.5 max-sm:[&_button]:px-1.5 max-sm:[&_button]:text-[11px]"
+      className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1 max-sm:gap-0.5 max-sm:[&_button]:px-1.5 max-sm:[&_button]:text-[11px] max-[389px]:[&_button]:px-1 max-[389px]:[&_button]:text-[10px]"
       role="toolbar"
       aria-label={t("edycjaOsiCzasu")}
       data-testid="studio-edit-toolbar"
