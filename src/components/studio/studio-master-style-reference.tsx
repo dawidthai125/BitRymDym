@@ -224,7 +224,7 @@ export function StudioMasterStyleReference({
         ) : (
           <div className="flex flex-col gap-1">
             <input ref={fileRef} type="file" accept=".mp3,.wav,audio/mpeg,audio/wav,audio/x-wav" className="sr-only" id={`${ids}-rf`} onChange={(e) => { const f = e.target.files?.[0]; if (f) void pick(f); }} data-testid="studio-master-reference-input" disabled={!!upload || disabled} />
-            <Button type="button" size="sm" variant="outline" className="min-h-11 self-start" disabled={!!upload || disabled} onClick={() => fileRef.current?.click()} data-testid="studio-master-reference-upload">
+            <Button type="button" size="sm" variant="outline" className="h-auto min-h-11 max-w-full self-start whitespace-normal py-2 text-left" disabled={!!upload || disabled} onClick={() => fileRef.current?.click()} data-testid="studio-master-reference-upload">
               {upload ? t("referencja.wgrywa", { pct: upload.pct }) : t("referencja.wgraj", { min: Math.round(REFERENCE_MAX_SECONDS / 60) })}
             </Button>
           </div>

@@ -165,6 +165,9 @@ function localizeParams(params: Record<string, string | number>, locale: string)
 
 type Result = { metrics: MixMetrics; verdict: MixVerdict; signature: string; cleanupSig: string | null; elapsedMs: number };
 
+/** Last analysis per project (this tab): the step unmounts on every change of step. Used only while the mix is the same (signature). */
+const lastAnalysis = new Map<string, Result>();
+
 export function StudioMixStep({
   doc,
   resolveClipSourceUrl,
@@ -179,6 +182,7 @@ export function StudioMixStep({
   chatContextRef,
   onGoMaster,
   onListen,
+  onMasterReady,
   autoEnabled = false,
   autoToggle = null,
   maxEffects,
@@ -186,6 +190,8 @@ export function StudioMixStep({
 }: {
   /** Stage 3 — enter Mastering with the current (approved) mix. */
   onGoMaster?: () => void;
+  /** Document version of a mix that is ready for Mastering, null while it is not. */
+  onMasterReady?: (documentVersion: number | null) => void;
   /** Transport play — the mixed song, after the auto mix. */
   onListen?: () => void;
   /** Plan limits for Bitek's fixes: effects per chain and sidechain (the server enforces the same). */
@@ -228,7 +234,11 @@ export function StudioMixStep({
   const [failedTrack, setFailedTrack] = useState<string | null>(null);
   /** Applied vocal cleanups (they change the sound without changing the document). Null = not loaded yet. */
   const [cleanupSig, setCleanupSig] = useState<string | null>(null);
-  const [result, setResult] = useState<Result | null>(null);
+  // Back from Mastering (or Nagranie): an analysis of this very mix is still good.
+  const [result, setResult] = useState<Result | null>(() => lastAnalysis.get(doc.project.id) ?? null);
+  useEffect(() => {
+    if (result) lastAnalysis.set(doc.project.id, result);
+  }, [doc.project.id, result]);
   const [masterInfoOpen, setMasterInfoOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const signature = useMemo(() => studioMixSignature(doc), [doc]);
@@ -588,6 +598,14 @@ export function StudioMixStep({
     return planForPlan({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0;
   }, [result, stale, running, canAutofix, rounds, doc, planForPlan]);
   const canMaster = (Boolean(verdict?.canMaster) || autofixExhausted) && !stale && !running;
+  const masterReadyVersion = canMaster ? doc.project.documentVersion : null;
+  const masterReadyRef = useRef(onMasterReady);
+  useEffect(() => {
+    masterReadyRef.current = onMasterReady;
+  });
+  useEffect(() => {
+    masterReadyRef.current?.(masterReadyVersion);
+  }, [masterReadyVersion]);
 
   // Stage 2b — BITEK bubble (short) instead of long notes on the page.
   const tBitek = useTranslations("studio.bitek");

@@ -128,7 +128,7 @@ const TimelineRuler = memo(function TimelineRuler({
           type="button"
           data-testid="studio-timeline-marker"
           data-marker-kind={marker.kind}
-          className="absolute bottom-0 max-w-28 truncate border-l-2 border-[var(--brd-amber)] bg-[var(--brd-paper)] px-1 text-[10px] leading-[13px] font-semibold text-[var(--brd-amber)]"
+          className="absolute bottom-0 max-w-28 truncate border-l-2 border-[var(--brd-amber)] bg-[var(--brd-paper)] px-1 text-[10px] leading-[13px] font-semibold text-[var(--brd-amber)] max-sm:max-w-36 max-sm:px-2 max-sm:text-xs max-sm:leading-6"
           style={{ left: msToPx(marker.positionMs, density) }}
           title={`${tl(studioMarkerKindLabelPl(marker.kind))} · ${formatStudioTimeMs(marker.positionMs)}`}
           onClick={(event) => {

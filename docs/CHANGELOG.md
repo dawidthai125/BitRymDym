@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (36) — Studio: telefon, pasek, kłódka Masteringu, rysowana głośność
+
+- Telefon: ścieżki zaczynają się wyżej (723 → ok. 430 px): jeden wiersz tytułu i bitu, kroki w jednym rzędzie, „Historia mixu”, eksport i „Bit” pod „Więcej”, krótkie „+ Ścieżka”, Inspektor pod „Więcej”. W Mixie i Masteringu Bitek po lewej (z prawej są − / + i przełączniki), mały odtwarzacz obok. Większy dotyk: znaczniki na osi, „Pokaż szczegóły”. Przycisk utworu wzorcowego zawija tekst.
+- Komputer do 1439 px: pasek transportu w jednym rzędzie (bez powtórzonego „Bit”, tempa i metrum).
+- Krok „3. Mastering” otwiera się z paska, gdy ten mix przeszedł analizę; analiza zostaje po powrocie z Masteringu i Nagrania (ten sam mix, ta sama karta przeglądarki).
+- Krótkie komunikaty („Cofnięto zmianę”, „Nagranie dodane…”) znikają po 6 s.
+- „Zrób utwór” nie rusza suwaka ani panoramy ścieżki z rysowaną krzywą (nic to nie dawało) i mówi, o ile ją podnieść.
+
 ## 2026-11-24 (35) — Regulamin 2026-11-24.2, polityka prywatności 2026-11-24.3
 
 - Regulamin: kto zaakceptuje przy rejestracji, tego obowiązuje od razu; konta wcześniejsze od 9 grudnia 2026 (14 dni z § 12). Okres przejściowy obejmuje też zmiany z 12, 15 i 22.11. Dopisane: profil publiczny, katalog sampli, rankingi, oceny i komentarze, kopia bitu ze znakiem konta, limity po usunięciu projektu, punkt kontaktowy DSA.

@@ -522,4 +522,23 @@ describe("level moves that the effects do not see (effects run before the fader)
     expect(controls(p, BEAT)!.gainDb).toBe(-6);
     expect(controls(p, INST)).toBeUndefined();
   });
+
+  it("a drawn volume curve: the fader is left alone and the user hears about it", () => {
+    const drawn = { v: 1 as const, lanes: [{ param: "gainDb" as const, points: [{ t: 0, v: -6 }, { t: 4000, v: 0 }] }] };
+    const d = doc(120, [track(LEAD, "Wokal", "lead_vocal", { automation: drawn }), track(BEAT, "Bit", "beat")]);
+    const p = plan(["gain", "balance"], d, quiet({ samplePeakDbfs: 0, clipEvents: 4 }));
+    expect(controls(p, LEAD)).toBeUndefined();
+    expect(controls(p, BEAT)!.gainDb).toBe(-6);
+    expect(p.notes.map((n) => n.key)).toContain("balanceVocalDrawn");
+    const beatDrawn = doc(120, [track(LEAD, "Wokal", "lead_vocal"), track(BEAT, "Bit", "beat", { automation: drawn })]);
+    const q = plan(["balance"], beatDrawn, quiet());
+    expect(controls(q, BEAT)).toBeUndefined();
+    expect(controls(q, LEAD)!.gainDb).toBe(12);
+  });
+
+  it("a drawn pan curve is not overwritten by the panorama fix", () => {
+    const drawn = { v: 1 as const, lanes: [{ param: "pan" as const, points: [{ t: 0, v: -0.2 }, { t: 6000, v: 0.2 }] }] };
+    const d = doc(120, [track(LEAD, "Wokal", "lead_vocal", { pan: 0.4, automation: drawn }), track(BEAT, "Bit", "beat")]);
+    expect(controls(plan(["panorama"], d, quiet()), LEAD)).toBeUndefined();
+  });
 });

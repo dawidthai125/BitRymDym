@@ -90,7 +90,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1"
+      className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1 max-sm:gap-0.5 max-sm:[&_button]:px-1.5 max-sm:[&_button]:text-[11px]"
       role="toolbar"
       aria-label={t("edycjaOsiCzasu")}
       data-testid="studio-edit-toolbar"
@@ -153,7 +153,8 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           buttonClassName="px-3"
           dataAttrs={{ "data-capacity": "full" }}
         >
-          {t("dodajSciezke")}
+          <span className="max-sm:hidden">{t("dodajSciezke")}</span>
+          <span className="sm:hidden">{t("dodajSciezkeKrotko")}</span>
         </LockedAction>
       ) : (
       <Button
@@ -172,14 +173,16 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         }
         onClick={props.onAddTrack}
       >
-        {t("dodajSciezke")}
+        <span className="max-sm:hidden">{t("dodajSciezke")}</span>
+        <span className="sm:hidden">{t("dodajSciezkeKrotko")}</span>
       </Button>
       )}
       <Button
         type="button"
         size="sm"
         variant="outline"
-        className="min-h-11 min-w-11 xl:hidden"
+        className="min-h-11 min-w-11 xl:hidden max-sm:data-[more=false]:hidden"
+        data-more={toolbarMoreOpen}
         aria-expanded={props.inspectorOverlayOpen}
         aria-controls={props.inspectorPanelId}
         onClick={props.onToggleInspector}

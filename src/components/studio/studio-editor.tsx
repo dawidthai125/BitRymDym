@@ -218,6 +218,9 @@ export type StudioTrackCapacityProps = {
   premiumTier: PremiumTier;
 };
 
+/** How long a short note replaces the save state in the transport. */
+const STATUS_NOTE_MS = 6000;
+
 /** Phase 7.1.1 — primary track chips ≥44px hit area (visual stays compact). */
 
 export function StudioEditor({
@@ -344,6 +347,12 @@ function StudioEditorInner({
   const tInspector = useTranslations("studio.inspectorTitle");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  // A short note ("Cofnięto zmianę"): after a moment the save state is back.
+  useEffect(() => {
+    if (!status) return;
+    const id = window.setTimeout(() => setStatus(null), STATUS_NOTE_MS);
+    return () => window.clearTimeout(id);
+  }, [status]);
   const [persistSnap, setPersistSnap] = useState<StudioPersistSnapshot>({
     status: "CLEAN",
     generation: 0,
@@ -401,6 +410,8 @@ function StudioEditorInner({
   const restoreProjectId = doc.project.id;
   /** Document version that already has a master: Mastering opens again without a new mix analysis. */
   const [masterOpenVersion, setMasterOpenVersion] = useState<number | null>(null);
+  /** Document version whose mix passed the analysis (Mix step): step 3 is open for it. */
+  const [mixReadyVersion, setMixReadyVersion] = useState<number | null>(null);
   useEffect(() => {
     let live = true;
     // A slow answer must not pull the user away from what they already started.
@@ -3780,15 +3791,16 @@ function StudioEditorInner({
         data-testid="studio-header"
         className="studio-brand-bar flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 pb-1"
       >
-        <span className="studio-brand">BitRymDym</span>
-        <span className="studio-kicker">{tr("studioOnline")}</span>
+        {/* Phones: the site header already shows the logo. */}
+        <span className="studio-brand max-sm:hidden">BitRymDym</span>
+        <span className="studio-kicker max-sm:hidden">{tr("studioOnline")}</span>
         <StudioProjectTitle
           projectId={doc.project.id}
           title={doc.project.title}
           onRenamed={(title) => applyPersistedDoc((prev) => ({ ...prev, project: { ...prev.project, title } }))}
         />
-      <div className="flex min-w-0 items-center gap-2 max-sm:w-full sm:max-w-[50%] sm:shrink-0">
-        <span className="studio-gear-label">BIT</span>
+      <div className="flex min-w-0 items-center gap-2 max-sm:ml-auto max-sm:max-w-[60%] sm:max-w-[50%] sm:shrink-0">
+        <span className="studio-gear-label max-sm:hidden">BIT</span>
         <button
           type="button"
           className="studio-bit-picker min-h-11 max-w-full truncate px-2 text-sm"
@@ -3825,7 +3837,7 @@ function StudioEditorInner({
           setStudioStep("mix");
         }}
         onMaster={
-          masterOpenVersion !== null && masterOpenVersion === doc.project.documentVersion
+          masterOpenVersion === doc.project.documentVersion || mixReadyVersion === doc.project.documentVersion
             ? () => {
                 setSampleTab(false);
                 setStudioStep("master");
@@ -4272,6 +4284,7 @@ function StudioEditorInner({
             setStudioStep("master");
           }}
           onListen={() => transport.play()}
+          onMasterReady={setMixReadyVersion}
           autoEnabled={autoOn}
           autoToggle={autoMixMasterAllowed ? { enabled: autoOn, onChange: writeBitekAutoMixMaster } : null}
           maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}

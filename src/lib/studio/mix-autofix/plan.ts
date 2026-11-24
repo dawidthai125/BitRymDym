@@ -38,6 +38,7 @@ import {
   type StudioFxParamsByType,
   type StudioFxType,
 } from "@/lib/studio/studio-fx-chain";
+import { automationLane } from "@/lib/studio/studio-automation";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import type { StudioProjectDocument } from "@/lib/studio/studio-types";
 import { TUNE_STYLES, type TuneKey } from "@/lib/studio/tune/tune";
@@ -137,6 +138,9 @@ type TrackState = {
   /** Fader when the mix was measured: gainDb − measuredGainDb = moved by earlier fixes of this pass. */
   measuredGainDb: number;
   pan: number;
+  /** A drawn volume / pan curve replaces the fader / knob: moving them would change nothing. */
+  gainDrawn: boolean;
+  panDrawn: boolean;
   chain: StudioFxChainV1;
   metrics: TrackMetrics | null;
 };
@@ -250,7 +254,7 @@ function fixGain(ctx: Ctx): void {
   const T = MIX_AUTOFIX_TARGETS;
   for (const t of ctx.state.tracks) {
     const m = t.metrics;
-    if (!m || !active(t)) continue;
+    if (!m || !active(t) || t.gainDrawn) continue;
     if (m.clipEvents > 0 || m.samplePeakDbfs > -1) {
       const trim = clamp(r1(T.trackPeakDbfs - m.samplePeakDbfs), -12, 0);
       if (trim <= -0.5) {
@@ -321,25 +325,26 @@ function fixBalance(ctx: Ctx): void {
     // A peak trim made earlier in this pass already changed the balance (a hot beat is −6 dB by now).
     const delta = r1(T.balanceLu - (d + moved(topVox) - moved(topBeat)));
     if (delta >= 0.5) {
-      const up = r1(Math.min(delta, vocalRoomDb(vox)));
-      const down = r1(Math.min(delta - up, beatRoomDb(beats)));
-      for (const t of vox) t.gainDb = clamp(r1(t.gainDb + up), -24, 12);
+      const up = topVox.gainDrawn ? 0 : r1(Math.min(delta, vocalRoomDb(vox.filter((t) => !t.gainDrawn))));
+      const down = topBeat.gainDrawn ? 0 : r1(Math.min(delta - up, beatRoomDb(beats.filter((t) => !t.gainDrawn))));
+      for (const t of vox) if (!t.gainDrawn) t.gainDb = clamp(r1(t.gainDb + up), -24, 12);
       // A beat or instrument already under the floor stays where it is.
-      if (down > 0) for (const t of beats) if (t.gainDb > T.beatFaderFloorDb) t.gainDb = clamp(r1(t.gainDb - down), -24, 12);
+      if (down > 0) for (const t of beats) if (!t.gainDrawn && t.gainDb > T.beatFaderFloorDb) t.gainDb = clamp(r1(t.gainDb - down), -24, 12);
       if (up > 0 && down > 0) note(ctx, "balanceVocalUp", { up: fmtDb(up), down: fmtDb(down) });
       else if (up > 0) note(ctx, "balanceVocalOnlyUp", { up: fmtDb(up) });
       else if (down > 0) note(ctx, "balanceBeatOnlyDown", { down: fmtDb(down) });
       const left = r1(delta - up - down);
-      if (left >= 3 && (up > 0 || down > 0)) note(ctx, "balanceVocalTooQuiet", { db: fmtDb(left) });
+      if (left >= 3 && topVox.gainDrawn) note(ctx, "balanceVocalDrawn", { track: topVox.name, db: fmtDb(left) });
+      else if (left >= 3 && (up > 0 || down > 0)) note(ctx, "balanceVocalTooQuiet", { db: fmtDb(left) });
     } else if (delta <= -0.5) {
       // Too loud: the beat comes up only as far as its own peaks allow, the vocal does the rest.
       const beatRoom = Math.max(0, Math.min(...beats.map((t) => Math.min(12 - t.gainDb, T.trackPeakDbfs - (t.metrics!.samplePeakDbfs + moved(t))))));
-      const beatUp = r1(Math.min(-delta / 2, beatRoom, T.maxGainStepDb));
-      const down = r1(Math.min(-delta - beatUp, T.maxGainStepDb));
-      for (const t of vox) t.gainDb = clamp(r1(t.gainDb - down), -24, 12);
-      if (beatUp > 0) for (const t of beats) t.gainDb = clamp(r1(t.gainDb + beatUp), -24, 12);
-      if (beatUp > 0) note(ctx, "balanceVocalDown", { up: fmtDb(beatUp), down: fmtDb(down) });
-      else note(ctx, "balanceVocalOnlyDown", { down: fmtDb(down) });
+      const beatUp = topBeat.gainDrawn ? 0 : r1(Math.min(-delta / 2, beatRoom, T.maxGainStepDb));
+      const down = topVox.gainDrawn ? 0 : r1(Math.min(-delta - beatUp, T.maxGainStepDb));
+      for (const t of vox) if (!t.gainDrawn) t.gainDb = clamp(r1(t.gainDb - down), -24, 12);
+      if (beatUp > 0) for (const t of beats) if (!t.gainDrawn) t.gainDb = clamp(r1(t.gainDb + beatUp), -24, 12);
+      if (beatUp > 0 && down > 0) note(ctx, "balanceVocalDown", { up: fmtDb(beatUp), down: fmtDb(down) });
+      else if (down > 0) note(ctx, "balanceVocalOnlyDown", { down: fmtDb(down) });
     }
   }
   // Adlibs / doubles relative to the loudest lead.
@@ -348,7 +353,7 @@ function fixBalance(ctx: Ctx): void {
   );
   if (!Number.isFinite(leadLufs)) return;
   for (const t of ctx.state.tracks) {
-    if (!active(t) || !["adlib", "double", "backing"].includes(t.role)) continue;
+    if (!active(t) || t.gainDrawn || !["adlib", "double", "backing"].includes(t.role)) continue;
     const under = t.role === "adlib" ? T.adlibUnderLeadDb : T.doubleUnderLeadDb;
     const cur = t.metrics!.integratedLufs + moved(t);
     if (!Number.isFinite(cur)) continue;
@@ -458,7 +463,7 @@ function fixPanorama(ctx: Ctx): void {
   let a = 0;
   let d = 0;
   for (const t of ctx.state.tracks) {
-    if (!active(t)) continue;
+    if (!active(t) || t.panDrawn) continue;
     let target: number | null = null;
     if (t.role === "lead_vocal") target = 0;
     else if (t.role === "adlib") target = adlibPans[a++ % adlibPans.length]!;
@@ -684,6 +689,8 @@ export function planMixAutofix(params: {
       gainDb: t.gainDb,
       measuredGainDb: t.gainDb,
       pan: t.pan,
+      gainDrawn: automationLane(t.automation, "gainDb") !== null,
+      panDrawn: automationLane(t.automation, "pan") !== null,
       chain: structuredClone(t.effectsChain),
       metrics: byId.get(t.id) ?? null,
     })),

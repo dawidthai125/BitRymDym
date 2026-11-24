@@ -8,7 +8,7 @@
  *   compact avatar moved to the bottom-LEFT, speech bubble folded into the pill;
  * - same on narrow screens → stays bottom-RIGHT (left would sit on the track M/S/R
  *   headers) but compact and folded (sheet opens over it anyway and hides it);
- * - otherwise → default bottom-right with bubbles.
+ * - otherwise → default bottom-right with bubbles; narrow screens bottom-LEFT and compact.
  */
 export type BitekDockPlacement = {
   hidden: boolean;
@@ -36,5 +36,6 @@ export function bitekDockPlacement(input: {
       compact: true,
     };
   }
-  return { hidden: false, side: "right", bubble: true, compact: false };
+  // Phones, Mix and Mastering: the − / + buttons and switches sit at the right edge.
+  return { hidden: false, side: input.narrow ? "left" : "right", bubble: true, compact: Boolean(input.narrow) };
 }

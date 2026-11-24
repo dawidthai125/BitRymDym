@@ -389,7 +389,7 @@ export function StudioBitekDock({
               <>
                 <button
                   type="button"
-                  className="self-start text-xs underline underline-offset-2"
+                  className="min-h-8 self-start text-xs underline underline-offset-2 max-sm:min-h-11"
                   aria-expanded={showDetails}
                   aria-controls={`${bubbleId}-details`}
                   data-testid="studio-bitek-bubble-details-toggle"

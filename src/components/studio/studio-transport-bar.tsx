@@ -280,9 +280,9 @@ export function StudioTransportBar({
       {/* Audit 2026-11-21: row 1 = transport, clock, master, save, history, export (wraps, never scrolls —
           a scrolled strip hid Play). Row 2 = selection + clip tools, only while something is selected. */}
       <div className="flex flex-col gap-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-1" data-testid="studio-transport-row-main">
+        <div className="flex min-w-0 flex-wrap items-center gap-1 max-sm:gap-0.5" data-testid="studio-transport-row-main">
           <div
-            className="flex min-w-0 max-w-full flex-wrap items-center gap-0.5 sm:shrink-0 sm:flex-nowrap"
+            className="flex min-w-0 max-w-full flex-wrap items-center gap-0.5 max-sm:contents sm:shrink-0 sm:flex-nowrap"
             data-testid="studio-transport-ops"
           >
             <Button
@@ -486,7 +486,7 @@ export function StudioTransportBar({
               className={
                 noBeat
                   ? `border-[var(--brd-green)] bg-[var(--brd-green)] text-[var(--brd-paper)] hover:opacity-90 ${STUDIO_TRANSPORT_KEY_WIDE}`
-                  : `studio-key ${STUDIO_TRANSPORT_KEY_WIDE}`
+                  : `studio-key sm:max-[1439px]:hidden ${STUDIO_TRANSPORT_KEY_WIDE} ${extraKeys}`
               }
               variant={noBeat ? "default" : "outline"}
               onClick={onChooseBeat}
@@ -514,14 +514,14 @@ export function StudioTransportBar({
           </div>
 
           <div
-            className="studio-counter flex min-h-11 min-w-0 max-w-full flex-wrap items-center gap-1.5 px-2 sm:shrink-0 sm:flex-nowrap font-mono text-xs tabular-nums sm:min-h-8 sm:gap-1 sm:px-1.5"
+            className="studio-counter flex min-h-11 max-sm:px-1.5 max-sm:text-[11px] min-w-0 max-w-full flex-wrap items-center gap-1.5 px-2 sm:shrink-0 sm:flex-nowrap font-mono text-xs tabular-nums sm:min-h-8 sm:gap-1 sm:px-1.5"
             data-testid="studio-transport-meta"
           >
             <TransportClock durationMs={durationMs} />
-            <span className={`studio-counter-dim ${extraKeys}`} aria-label={tr("tempo")}>
+            <span className={`studio-counter-dim sm:max-[1439px]:hidden ${extraKeys}`} aria-label={tr("tempo")}>
               {tempoBpm} {tr("bpm")}
             </span>
-            <span className={`studio-counter-dim ${extraKeys}`} aria-label={tr("metrum")}>
+            <span className={`studio-counter-dim sm:max-[1439px]:hidden ${extraKeys}`} aria-label={tr("metrum")}>
               {timeSignatureNum}/{timeSignatureDen}
             </span>
             {tuneBakePendingTrackIds.length > 0 ? (
@@ -539,7 +539,7 @@ export function StudioTransportBar({
 
           {simple ? null : (
           <div
-            className={`flex w-[8.5rem] shrink-0 items-center gap-2 sm:ml-auto ${extraKeys} [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]`}
+            className={`flex w-[8.5rem] shrink-0 items-center gap-2 py-0.5 sm:ml-auto sm:max-[1439px]:w-[5.5rem] ${extraKeys} [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]`}
             data-testid="studio-transport-master"
           >
             <StudioMixControl
@@ -561,7 +561,7 @@ export function StudioTransportBar({
           {/* A problem gets its own full row: the whole text and the way out must be visible. */}
           <div
             className={`flex min-w-0 items-center gap-2 ${
-              saveProblem ? "order-last basis-full flex-wrap" : "max-w-[16rem]"
+              saveProblem ? "order-last basis-full flex-wrap" : "max-w-[16rem] sm:max-[1439px]:max-w-[8rem]"
             } ${simple && !saveProblem ? "ml-auto" : ""}`}
             data-testid="studio-transport-save-row"
           >
@@ -570,7 +570,7 @@ export function StudioTransportBar({
               className={`min-w-0 text-xs ${
                 saveProblem
                   ? "py-1 leading-snug text-[var(--brd-warn)]"
-                  : "truncate leading-8 text-[var(--brd-mute)]"
+                  : "truncate text-[var(--brd-mute)] max-sm:text-[11px] max-sm:leading-5 sm:leading-8"
               }`}
               role={saveProblem ? "alert" : "status"}
               data-testid="studio-transport-save"
@@ -603,7 +603,7 @@ export function StudioTransportBar({
           </div>
 
           {simple ? null : (
-          <div className="flex shrink-0 items-center gap-1 max-sm:w-full sm:ml-auto">
+          <div className={`flex shrink-0 items-center gap-1 max-sm:w-full sm:ml-auto ${extraKeys}`}>
           <StudioMixRevisionHistoryControl
             projectId={projectId}
             tipDocumentVersion={tipDocumentVersion}
@@ -675,7 +675,7 @@ export function StudioTransportBar({
           ) : null}
         </div>
         ) : showFragmentTools && !simple ? (
-          <p className="px-1 text-[11px] text-[var(--brd-mute)]" data-testid="studio-transport-select-hint">
+          <p className="px-1 text-[11px] text-[var(--brd-mute)] max-sm:hidden" data-testid="studio-transport-select-hint">
             {tr("zaznaczFragment")}
           </p>
         ) : null}
@@ -685,7 +685,7 @@ export function StudioTransportBar({
           role="group"
           aria-label={tr("transportStudio")}
           data-testid="studio-mobile-mini-transport"
-          className="studio-transport fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-2 right-[4.75rem] z-30 flex items-center gap-1 rounded-[2px] border border-[var(--brd-line)] p-1 shadow-lg sm:hidden"
+          className="studio-transport fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-2 right-[4.75rem] z-30 [[data-studio-tab=mix]_&]:left-[4.75rem] [[data-studio-tab=mix]_&]:right-2 [[data-studio-tab=master]_&]:left-[4.75rem] [[data-studio-tab=master]_&]:right-2 flex items-center gap-1 rounded-[2px] border border-[var(--brd-line)] p-1 shadow-lg sm:hidden"
         >
           <Button
             type="button"

@@ -38,7 +38,7 @@ export function StudioStepNav({
   onRecord: () => void;
   onSamples: () => void;
   onMix: () => void;
-  /** Set when this very mix already has a master: step 3 opens without a new analysis. */
+  /** Set when this very mix passed the analysis or already has a master: step 3 opens from here. */
   onMaster?: () => void;
   onToggleFullView: () => void;
   /** Hover / focus / touch on the nav: warm the lazily loaded step panels before the click. */
@@ -52,9 +52,9 @@ export function StudioStepNav({
         onPointerEnter={onStepIntent}
         onPointerDownCapture={onStepIntent}
         onFocusCapture={onStepIntent}
-        className="flex flex-wrap items-center gap-2 border-b border-[var(--brd-line)] py-1"
+        className="flex flex-wrap items-center gap-2 border-b border-[var(--brd-line)] py-1 max-sm:gap-1"
       >
-        <ol className="flex flex-wrap items-center gap-1 text-xs font-semibold tracking-[0.06em]">
+        <ol className="flex flex-wrap items-center gap-1 text-xs font-semibold tracking-[0.06em] max-sm:gap-0 max-sm:tracking-normal">
           <li>
             <button
               type="button"
@@ -62,8 +62,8 @@ export function StudioStepNav({
               aria-current={studioStep === "record" && !onSampleTab ? "step" : undefined}
               className={
                 studioStep === "record" && !onSampleTab
-                  ? "min-h-11 rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
-                  : "min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)]"
+                  ? "min-h-11 rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)] max-sm:px-1.5"
+                  : "min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] max-sm:px-1.5"
               }
               onClick={onRecord}
             >
@@ -79,8 +79,8 @@ export function StudioStepNav({
               disabled={recordingLocked}
               className={
                 onSampleTab
-                  ? "min-h-11 rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)] disabled:opacity-50"
-                  : "min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] disabled:opacity-50"
+                  ? "min-h-11 rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)] disabled:opacity-50 max-sm:px-1.5"
+                  : "min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] disabled:opacity-50 max-sm:px-1.5"
               }
               onClick={onSamples}
             >
@@ -90,7 +90,7 @@ export function StudioStepNav({
           {(["mix", "master"] as const).map((s, i) => {
             const label = `${i + 2}. ${s === "mix" ? tMix("krokMix") : tMix("krokMastering")}`;
             const active = studioStep === s;
-            // Mix opens from the record step (once there is a vocal) and from Mastering. Mastering opens only from the Mix step.
+            // Mix opens from the record step (once there is a vocal) and from Mastering. Mastering opens once this mix passed the analysis or has a master.
             const goMix = s === "mix" && !active && (studioStep === "master" || canGoMix);
             const goMaster = s === "master" && !active && !recordingLocked ? onMaster : undefined;
             if (goMix || goMaster) {
@@ -100,7 +100,7 @@ export function StudioStepNav({
                     type="button"
                     data-testid={goMaster ? "studio-tab-master" : "studio-tab-mix"}
                     title={goMaster ? undefined : tMix("krokMixTytul")}
-                    className="min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] underline-offset-4 hover:underline"
+                    className="min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] underline-offset-4 hover:underline max-sm:px-1.5"
                     onClick={goMaster ?? onMix}
                   >
                     {label}
@@ -116,15 +116,15 @@ export function StudioStepNav({
                 data-testid={!active && s === "master" ? "studio-tab-master-locked" : !active ? "studio-tab-mix-locked" : undefined}
                 className={
                   active
-                    ? "rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
-                    : "flex items-center gap-1 px-2 py-1 text-[var(--brd-mute)]"
+                    ? "rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)] max-sm:px-1.5"
+                    : "flex items-center gap-1 px-2 py-1 text-[var(--brd-mute)] max-sm:px-1.5"
                 }
               >
                 {label}
                 {!active ? (
                   <>
                     <span aria-hidden>🔒</span>
-                    <span className="text-[10px] font-normal tracking-normal">{s === "master" ? tMix("krokMasteringZamek") : tMix("krokMixZamek")}</span>
+                    <span className="text-[10px] font-normal tracking-normal max-sm:sr-only">{s === "master" ? tMix("krokMasteringZamek") : tMix("krokMixZamek")}</span>
                   </>
                 ) : null}
               </li>
@@ -152,7 +152,7 @@ export function StudioStepNav({
                 {tMix("widokUproszczonyPlan")}
               </span>
             )}
-            <span id="studio-go-mix-hint" className={canGoMix ? "text-xs text-[var(--brd-mute)] max-sm:order-last max-sm:basis-full sm:max-w-[22rem]" : "sr-only"}>
+            <span id="studio-go-mix-hint" className={canGoMix ? "text-xs text-[var(--brd-mute)] max-sm:sr-only sm:max-w-[22rem]" : "sr-only"}>
               {songReady
                 ? tMix("przejdzDoMixuUtwor")
                 : canGoMix
