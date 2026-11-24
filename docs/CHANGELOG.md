@@ -14,8 +14,9 @@ Format: data, zakres, skrót.
 - Projekt: Zaktualizuj, zamknięcie i wylogowanie pytają o zapis (też o projekt w drugim studiu); cofanie nie miesza Studia Online z Offline i nie odcina przycisków ścieżek; ponowne otwarcie .brd1 nie gra starego dźwięku; zapis .brd1, ustawień i stanu przez plik tymczasowy; usunięcie ścieżki nie przezbraja innej; Spacja w okienku nie włącza nagrywania; brak internetu nie zmienia Gold na Free.
 - Wysyłka: nowe ułożenie po przesunięciu klipu (wcześniej szło stare), koniec głosu nie jest ucinany do pełnej sekundy, urwana sieć nie zjada dziennej wysyłki, „Dokończ poprzednią wysyłkę” działa też po ponownym uruchomieniu, odnowienie logowania w trakcie, polskie komunikaty limitów. Wylogowanie kończy tylko sesję programu.
 - Aktualizacje: podpisany `feed/signed.json` (Ed25519) zamiast niepodpisanego feedu; hasło nie leży jawnie, gdy DPAPI zawiedzie; sumy SHA-256 pobieranych plików w workflow.
-- Strona: `/api/desktop/bootstrap` oddaje cały katalog (wcześniej 40 najnowszych z 61) i pomija bity bez zgody na Studio; nieudane pierwsze `record/place` oddaje dzienną wysyłkę; `/nagrywarka` opisuje obecny program.
-- Sprawdzone: testy modułów, scenariusze w oknie programu na Linuksie z udawanym mikrofonem. Nie sprawdzono na Windowsie użytkownika.
+- Strona: `/api/desktop/bootstrap` nie ma już limitu 40 bitów (darmowych jest 35, więc jeszcze nic nie ginęło) i pomija bity bez zgody na Studio; nieudane pierwsze `record/place` oddaje dzienną wysyłkę; `/nagrywarka` opisuje obecny program.
+- Wydane 2026-11-24: tag `recorder-v2026.11.37`, Actions run `45433090345`, Setup SHA-256 `c510a1d5…` (127 931 922 B), paczka `09867059…` (120 375 826 B), `feed/signed.json`, `latest.json`. Wersja .36 i .37 widzą aktualizację (sprawdzone tą samą funkcją co w programie).
+- Sprawdzone: testy modułów (także na Windowsie w Actions: DPAPI, odsłuch ffmpeg, cicha instalacja, start programu), scenariusze w oknie programu na Linuksie z udawanym mikrofonem. Nie sprawdzono na Windowsie użytkownika.
 
 ## 2026-11-24 (41) — Rejestracja na telefonie: przycisk motywu nie zasłania pól
 

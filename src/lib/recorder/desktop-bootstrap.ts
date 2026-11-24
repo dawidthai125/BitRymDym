@@ -8,7 +8,7 @@ export type DesktopBeatChoice = {
   durationSeconds?: number;
 };
 
-/** Far above the catalogue (61 on 2026-11-24). The old 40 hid the older beats from the program. */
+/** Far above the free catalogue (35 on 2026-11-24). At the old 40 the oldest beats would soon drop out of the program. */
 export const DESKTOP_BEAT_LIMIT = 1000;
 
 export function desktopBootstrapBody(input: {
