@@ -4,7 +4,7 @@
  * LEGAL_PLACEHOLDERS (legal.test.ts enforces that none remain).
  * Bump a version whenever the text changes materially (stored with each consent).
  */
-export const TERMS_VERSION = "2026-11-24.1"; // 2026-11-24.1: § 3 lista usług, § 5 profil publiczny, § 7 kopia Bitu ze znakiem Konta, § 9 limity po usunięciu, § 12 zasady zmian i okres przejściowy; 2026-11-22.4: 2026-11-22.4: § 9 ust. 8 program poleceń „Zaproś znajomego” (pakiet 10 nagrań dla obu kont, limit 10/mies., zakaz kont-słupów); 2026-11-22.3: § 9 ust. 5 bit z katalogu płatnego na wyłączność (jeden kupujący, znika z katalogu);  2026-11-22.2: § 7 ust. 8 publiczny fragment 45 s utworu z katalogu (Free ze znakiem), § 6 zgłaszanie komentarzy (DSA art. 16); .1: § 9 oferta startowa
+export const TERMS_VERSION = "2026-11-24.2"; // 2026-11-24.2: okres przejściowy obejmuje też zmianę z 7.11; 2026-11-24.1: § 3 lista usług, § 5 profil publiczny, § 7 kopia Bitu ze znakiem Konta, § 9 limity po usunięciu, § 12 zasady zmian i okres przejściowy; 2026-11-22.4: 2026-11-22.4: § 9 ust. 8 program poleceń „Zaproś znajomego” (pakiet 10 nagrań dla obu kont, limit 10/mies., zakaz kont-słupów); 2026-11-22.3: § 9 ust. 5 bit z katalogu płatnego na wyłączność (jeden kupujący, znika z katalogu);  2026-11-22.2: § 7 ust. 8 publiczny fragment 45 s utworu z katalogu (Free ze znakiem), § 6 zgłaszanie komentarzy (DSA art. 16); .1: § 9 oferta startowa
 export const PRIVACY_VERSION = "2026-11-24.3"; // 2026-11-24.3: znak Konta w kopii Bitu i dziennik odsłuchów, Turnstile, YouTube, xAI w BITEK-u, oceny/komentarze, polecenia, czasy przechowywania; 2026-11-24.2: doprecyzowanie pkt 5; 2026-11-24.1: pkt 5 publiczny profil twórcy (zgoda); 2026-11-23.1: Google Analytics 4 tylko po zgodzie (baner cookies), cookie brd_consent
 
 /**

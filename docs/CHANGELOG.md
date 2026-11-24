@@ -6,7 +6,7 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-11-24 (35) — Regulamin 2026-11-24.1, polityka prywatności 2026-11-24.3
+## 2026-11-24 (35) — Regulamin 2026-11-24.2, polityka prywatności 2026-11-24.3
 
 - Regulamin: kto zaakceptuje przy rejestracji, tego obowiązuje od razu; konta wcześniejsze od 9 grudnia 2026 (14 dni z § 12). Okres przejściowy obejmuje też zmiany z 12, 15 i 22.11. Dopisane: profil publiczny, katalog sampli, rankingi, oceny i komentarze, kopia bitu ze znakiem konta, limity po usunięciu projektu, punkt kontaktowy DSA.
 - `/regulamin/archiwum`: wcześniejsze wersje w brzmieniu z repozytorium (`src/content/legal/archive/*.json`, nie edytować). Komunikat `TermsNotice` dla zalogowanych kont sprzed zmiany, do 9 grudnia, zamykany (localStorage `brd.termsNotice`).

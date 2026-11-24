@@ -1,18 +1,28 @@
 import { Fragment, type ReactNode } from "react";
 
 import type { LegalBlock, LegalDoc } from "@/content/legal/types";
-import { PLACEHOLDER_RE } from "@/lib/legal/legal-config";
+import Link from "@/components/ui/app-link";
+import { LEGAL_PATHS, PLACEHOLDER_RE } from "@/lib/legal/legal-config";
+
+const PATH_RE = new RegExp(`(${[LEGAL_PATHS.archive, LEGAL_PATHS.terms, LEGAL_PATHS.privacy, LEGAL_PATHS.cookies].join("|")})(?![\\w/-])`);
+
+/** Addresses of our own documents become links. */
+function withLinks(text: string): ReactNode[] {
+  return text.split(PATH_RE).map((part, i) =>
+    i % 2 === 1 ? <Link key={i} href={part} className="underline underline-offset-4">{part}</Link> : part,
+  );
+}
 
 /** Placeholders like [NIP] are highlighted so missing operator data is impossible to miss. */
 function withMarks(text: string): ReactNode {
   const parts: ReactNode[] = [];
   let last = 0;
   for (const m of text.matchAll(PLACEHOLDER_RE)) {
-    if (m.index! > last) parts.push(text.slice(last, m.index));
+    if (m.index! > last) parts.push(...withLinks(text.slice(last, m.index)));
     parts.push(<mark key={m.index} className="rounded-[2px] bg-[var(--brd-gold,#d39b3a)]/25 px-1 text-[var(--brd-ink)]" data-placeholder>{m[0]}</mark>);
     last = m.index! + m[0].length;
   }
-  parts.push(text.slice(last));
+  parts.push(...withLinks(text.slice(last)));
   return parts.map((p, i) => <Fragment key={i}>{p}</Fragment>);
 }
 

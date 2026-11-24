@@ -20,7 +20,7 @@ describe("legal documents", () => {
   it("final documents: no placeholders left, operator data + 16+ age filled", () => {
     for (const d of [TERMS, PRIVACY, COOKIES]) expect(text(d).match(PLACEHOLDER_RE) ?? []).toEqual([]);
     expect(LEGAL_PLACEHOLDERS).toEqual([]);
-    expect(TERMS_VERSION).toBe("2026-11-24.1");
+    expect(TERMS_VERSION).toBe("2026-11-24.2");
     const all = text(TERMS) + text(PRIVACY);
     for (const s of ["8952035524", "dawid.thai@int.pl", "24 listopada 2026", "9 grudnia 2026", "PayU S.A.", "Poznaniu", "12 miesięcy", "AcoustID", "Bit Rym Dym", "Plik ze znakiem wodnym", "24 godziny", "84 godziny"]) expect(all).toContain(s);
     expect(all).not.toContain("PayPro");
