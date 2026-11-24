@@ -1920,8 +1920,6 @@
       "dlugosc": "mieć co najmniej {min} znaków",
       "dlugoscMasz": "mieć co najmniej {min} znaków (masz {n})",
       "zaDlugie": "być krótsze: najwyżej 72 znaki, polska litera liczy się jak dwa",
-      "nieZListy": "nie być popularne ani znane z wycieków, np. haslo123 (sprawdzamy przy wysłaniu)",
-      "odrzucone": "być inne: to jest za proste albo wyciekło z innego serwisu",
       "takieSame": "być wpisane dwa razy tak samo",
       "rozne": "być wpisane dwa razy tak samo (teraz się różnią)",
       "spelnione": "(spełnione)",

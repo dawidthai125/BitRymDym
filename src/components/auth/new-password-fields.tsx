@@ -4,12 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { PasswordFieldWithToggle } from "@/components/auth/password-field-with-toggle";
-import {
-  PASSWORD_LEAKED_ERROR,
-  PASSWORD_MIN_LENGTH,
-  PASSWORD_TOO_SIMPLE_ERROR,
-  passwordChecks,
-} from "@/lib/auth/password-policy";
+import { PASSWORD_MIN_LENGTH, passwordChecks } from "@/lib/auth/password-policy";
 
 type RuleState = "ok" | "bad" | "todo";
 
@@ -21,13 +16,10 @@ export function NewPasswordFields({
   name,
   label,
   confirmLabel,
-  error,
 }: {
   name: "password" | "newPassword";
   label: string;
   confirmLabel: string;
-  /** Last server error: marks the rule the server refused. */
-  error: string | null;
 }) {
   const t = useTranslations("auth.newPasswordFields");
   const tf = useTranslations("auth.authForms");
@@ -35,33 +27,19 @@ export function NewPasswordFields({
   const ref = useRef<HTMLDivElement>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [submitted, setSubmitted] = useState<string | null>(null);
 
   useEffect(() => {
     const form = ref.current?.closest("form");
     if (!form) return;
-    const onSubmit = () => {
-      const value = new FormData(form).get(name);
-      setSubmitted(typeof value === "string" ? value : null);
-    };
     const onReset = () => {
       setPassword("");
       setConfirm("");
-      setSubmitted(null);
     };
-    form.addEventListener("submit", onSubmit);
     form.addEventListener("reset", onReset);
-    return () => {
-      form.removeEventListener("submit", onSubmit);
-      form.removeEventListener("reset", onReset);
-    };
-  }, [name]);
+    return () => form.removeEventListener("reset", onReset);
+  }, []);
 
   const checks = passwordChecks(password, confirm);
-  const refused =
-    submitted !== null &&
-    submitted === password &&
-    (error === PASSWORD_LEAKED_ERROR || error === PASSWORD_TOO_SIMPLE_ERROR);
   const rule = (ok: boolean, started: boolean): RuleState =>
     ok ? "ok" : started ? "bad" : "todo";
   const rules: { id: string; state: RuleState; text: string }[] = [
@@ -76,11 +54,6 @@ export function NewPasswordFields({
     ...(checks.notTooLong
       ? []
       : [{ id: "max", state: "bad" as const, text: t("zaDlugie") }]),
-    {
-      id: "leaked",
-      state: refused ? "bad" : "todo",
-      text: refused ? t("odrzucone") : t("nieZListy"),
-    },
     {
       id: "match",
       state: rule(checks.match, confirm.length > 0),
@@ -99,7 +72,6 @@ export function NewPasswordFields({
         value={password}
         onValueChange={setPassword}
         describedBy={rulesId}
-        invalid={refused}
       />
       <PasswordFieldWithToggle
         label={confirmLabel}

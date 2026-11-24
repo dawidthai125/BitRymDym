@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (38) — Rejestracja: bez sprawdzania haseł z wycieków
+
+- Decyzja Dawida 2026-11-24: sprawdzanie haseł z wycieków (HaveIBeenPwned) blokowało rejestracje. W Supabase Auth wyłączone „Prevent use of leaked passwords”; ostrzeżenie `auth_leaked_password_protection` w Advisorze jest świadome, nie włączać ponownie bez zgody Dawida.
+- Formularze hasła (rejestracja, zmiana, reset): znika punkt o hasłach z wycieków. Zostaje: co najmniej 8 znaków, najwyżej 72 bajty, dwa razy to samo.
+
 ## 2026-11-24 (37) — SEO: narzędzia, strony pod frazy, poprawki indeksowania
 
 - Frazy z podpowiedzi Google (pl). Narzędzia w `/narzedzia` (wszystko w przeglądarce, nic nie jest wysyłane): `tematy-do-freestyle`, `test-mikrofonu`, `slowed-reverb`; `licznik-bpm` pokazuje też tonację (`detectKeyFromAudio` ze Studia, doładowywany po wybraniu pliku).

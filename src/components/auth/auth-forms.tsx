@@ -117,7 +117,6 @@ export function SignUpForm({ next = null }: { next?: string | null } = {}) {
         name="password"
         label={t("haslo")}
         confirmLabel={t("powtorzHaslo")}
-        error={state.error}
       />
       <SignupConsentCheckbox />
       <TurnstileWidget />
@@ -168,7 +167,6 @@ export function ChangePasswordForm() {
         name="newPassword"
         label={t("noweHaslo")}
         confirmLabel={t("potwierdzNoweHaslo")}
-        error={state.error}
       />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
@@ -255,7 +253,6 @@ export function ResetPasswordForm() {
         name="newPassword"
         label={t("noweHaslo")}
         confirmLabel={t("potwierdzHaslo")}
-        error={state.error}
       />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
