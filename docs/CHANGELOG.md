@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (45) — Samo wyrównanie głosu do bitu (Studio i Nagrywarka 2026.11.39)
+
+- Po każdym nagraniu Studio (`src/lib/studio/recording/auto-align.ts`, `auto-align-client.ts`) i program (`desktop/recorder/auto_align.py`) szukają w mikrofonie śladu bitu ze słuchawek i z niego liczą prawdziwe opóźnienie tego nagrania (korelacja z wagami, przerwy w głosie liczą się najbardziej). Wynik trafia w położenie nagrania i jest zapamiętany dla sprzętu. Bez pewnego śladu nic się nie zmienia.
+- Progi: szczyt co najmniej 9 sigma, drugi szczyt najwyżej 0,8, zgodność obu połówek do 3 ms. Na 320 próbach (8 bitów × 4 głosy × długości i poziomy) zero złych odpowiedzi; 16 s nagrania wystarcza do śladu 44 dB pod głosem.
+- Studio: pole „Nagrywam w słuchawkach” (samo włącza się przy słuchawkach i interfejsach z nazwy urządzenia, wybór pamiętany). Włączone: mikrofon bez tłumienia echa, odszumiania i automatycznej głośności przeglądarki, czyli tak, jak mierzyła kalibracja. Wyłączone: jak dotąd.
+- Bit do pomiaru tylko z pamięci strony (blob), bez pobierania. Nagrania MP4/AAC (starsze Safari) bez automatu, zostaje kalibracja. Ostrzeżenie „skalibruj” nie pojawia się, gdy opóźnienie jest zmierzone.
+- Sprawdzone w Chromium z mikrofonem udawanym przez opóźniony bit (60, 120, 300 ms): po ułożeniu błąd poniżej 1 ms w niezależnym pomiarze. Nie sprawdzono na prawdziwych słuchawkach i mikrofonie.
+
 ## 2026-11-24 (44) — Studio na Androidzie i iOS: telefon w poziomie i dotyk
 
 - Sprawdzone w Chromium (Pixel 7, Galaxy S24, S9+ 320 px, Tab S9) i w silniku Safari WebKit (iPhone 15, SE, iPad Mini, iPad Pro 11), pion i poziom, atrapa API. Bez przewijania w bok, bez błędów strony.

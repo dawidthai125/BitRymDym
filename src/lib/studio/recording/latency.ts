@@ -274,7 +274,8 @@ export function latencyWarning(params: {
   calibrated: boolean;
 }): LatencyWarning {
   if (looksLikeBluetooth(params.labels)) return "bluetooth";
-  if (params.compensationMs > LATENCY_HIGH_WARN_MS) return "high";
+  // Measured (by the test or by the take itself): the correction is exact, however long it is.
+  if (!params.calibrated && params.compensationMs > LATENCY_HIGH_WARN_MS) return "high";
   return null;
 }
 

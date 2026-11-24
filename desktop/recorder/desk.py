@@ -23,7 +23,7 @@ TAKE_SECONDS = {"FREE": 30, "BRONZE": 60, "SILVER": 120, "GOLD": 180}
 # plan-policy studio.maxRecordingTracks. The Bit lane is not a recording track.
 RECORDING_TRACKS = {"FREE": 1, "BRONZE": 2, "SILVER": 8, "GOLD": 16}
 RATE = 48_000
-PREF_KEYS = ("device", "output", "title", "effects", "beat", "countIn")
+PREF_KEYS = ("device", "output", "title", "effects", "beat", "countIn", "sync")
 
 
 def max_take_seconds(tier: str) -> int:
@@ -192,6 +192,12 @@ def read_prefs(path: Path) -> dict[str, Any]:
             out[key] = value
     if isinstance(beat, str) and beat:
         out["beat"] = beat
+    sync = raw.get("sync")
+    if isinstance(sync, dict):
+        out["sync"] = {
+            str(key): float(value) for key, value in list(sync.items())[-12:]
+            if isinstance(value, (int, float)) and not isinstance(value, bool) and 0 <= value <= 0.7
+        }
     if isinstance(effects, list):
         out["effects"] = [item for item in effects if isinstance(item, str)]
     return out

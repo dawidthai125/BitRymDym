@@ -42,6 +42,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+import auto_align
 import countin
 import offline_session
 import win_output
@@ -1627,6 +1628,12 @@ class RecorderWindow:
         self._armed_mix: tuple[object, ...] = ()
         # Microphone sound that came before the mix started. It is cut off the take with the count-in.
         self._pre = 0.0
+        # Delay of this microphone and output learned from earlier takes, seconds. Cut off like the rest.
+        self._sync = 0.0
+        self._sync_known: dict[str, float] = {}
+        self._take_beat: tuple[str, str] = ("", "")
+        self._aligning = 0
+        self.mix_was_on = False
         self._pre_seen: list[float] = []
         self._beat_until = 0.0
         self._warm_remix: MixFeed | None = None
@@ -3554,6 +3561,7 @@ class RecorderWindow:
                     "title": self.title_var.get().strip(),
                     "beat": (self.beat_var.get() if self.studio_mode == "online" else "") or self._pref_beat,
                     "countIn": self.count_var.get(),
+                    "sync": self._sync_known,
                 },
             )
         except OSError:
@@ -3577,6 +3585,9 @@ class RecorderWindow:
             self._pref_output = output
             if any(label == output for label, _index in self.outputs):
                 self.output_var.set(output)
+        sync = prefs.get("sync")
+        if isinstance(sync, dict):
+            self._sync_known = dict(sync)
         count = prefs.get("countIn")
         if isinstance(count, str) and count in dict(countin.CHOICES):
             self.count_var.set(count)
@@ -3882,6 +3893,11 @@ class RecorderWindow:
             *((track.muted, track.solo, track.gain_db, track.pan) for track in self.tracks),
         )
 
+    def _waits_for_align(self) -> bool:
+        if self._aligning:
+            self.status.set("Wyrównuję nagranie do bitu. Spróbuj za sekundę.")
+        return self._aligning > 0
+
     def _arm_failed(self, text: str) -> None:
         self._arming = False
         self.recording = False
@@ -3916,12 +3932,15 @@ class RecorderWindow:
         self._live_wave_at = 0.0
         self._drop_live_items()
         self._lead = 0.0
+        self.mix_was_on = False
         self._pre = 0.0
+        self._sync = self._sync_known.get(self._sync_key(), 0.0) if feed is not None else 0.0
         self._pre_seen = []
         try:
             if feed is not None:
                 self.mix_feed, self.monitor = start_mix(feed, ffplay_exe() or "", self.selected_output_index())
                 self._lead = lead
+                self.mix_was_on = True
                 self._pre = captured_seconds(proc, self.wav_path)
         except Exception as problem:
             if feed is not None:
@@ -3999,6 +4018,7 @@ class RecorderWindow:
         count = (countin.bars_of(self.count_var.get()), self._tempo())
         self._take_seconds = self._take_cap()
         self._armed_mix = self._mix_settings()
+        self._take_beat = (beat_id, local)
         TAKES.mkdir(parents=True, exist_ok=True)
         path = TAKES / f"ujecie-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}.wav"
         self._cancel_remix()
@@ -4058,7 +4078,7 @@ class RecorderWindow:
     def _cut_lead(self, path: Path) -> float:
         """Cut what came before the beat (mic opening, count-in). Returns what is left to skip when the file
         could not be rewritten."""
-        lead = self._lead + self._pre
+        lead = self._lead + self._pre + self._sync
         if lead <= 0:
             return 0.0
         try:
@@ -4105,6 +4125,71 @@ class RecorderWindow:
             + (f"{self._take_note} " if self._take_note else "")
             + "Przeciągnij pasek klipu, żeby go przesunąć."
         )
+        if any(self._take_beat) and self.mix_was_on and not died:
+            self._aligning += 1
+            threading.Thread(
+                target=self._measure_take, args=(clip, self._take_beat, self._sync, self._sync_key()), daemon=True
+            ).start()
+
+    def _sync_key(self) -> str:
+        return f"{self.device_var.get()}|{self.output_var.get()}"[:160]
+
+    def _measure_take(self, clip: Clip, beat: tuple[str, str], known: float, key: str) -> None:
+        """The real delay of this take from the beat that leaked into the microphone. Off the Tk thread."""
+        lag: float | None = None
+        try:
+            beat_id, local = beat
+            target = local or self._beat_listen(beat_id)[0]
+            if target:
+                done = subprocess.run(
+                    [
+                        ffmpeg_exe(), "-hide_banner", "-loglevel", "error", "-nostdin", "-ss", f"{clip.start:.3f}", "-i", target,
+                        "-t", str(auto_align.MAX_SECONDS + 1), "-ac", "1", "-ar", str(auto_align.RATE), "-f", "f32le", "pipe:1",
+                    ],
+                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=20, check=False,
+                    **quiet_kwargs(),
+                )
+                song = array.array("f")
+                song.frombytes(done.stdout[: len(done.stdout) // 4 * 4])
+                rate, samples = read_mono16(Path(clip.path))
+                if rate == RATE:
+                    lag = auto_align.bleed_lag(auto_align.mic_at_rate(samples, clip.src_in), song)
+        except Exception:
+            lag = None
+        try:
+            self.root.after(0, lambda: self._align_take(clip, lag, known, key))
+        except (RuntimeError, tk.TclError):
+            pass
+
+    def _align_take(self, clip: Clip, lag: float | None, known: float, key: str) -> None:
+        self._aligning = max(0, self._aligning - 1)
+        if lag is None:
+            return
+        learned = max(0.0, min(0.7, known + lag / 1000))
+        if abs(self._sync_known.get(key, 0.0) - learned) > 0.003:
+            self._sync_known.pop(key, None)
+            self._sync_known[key] = round(learned, 4)
+            self._save_prefs()
+        if abs(lag) < 3:
+            return
+        for track in self.tracks:
+            for index, item in enumerate(track.clips):
+                # Moved is fine, cut or split is not: then only the next takes profit.
+                if (item.path, item.src_in, item.src_out) != (clip.path, clip.src_in, clip.src_out):
+                    continue
+                move = lag / 1000
+                if move > 0 and item.length - move < 0.05:
+                    return
+                self._push_undo()
+                fixed = (
+                    replace(item, src_in=round(item.src_in + move, 4)) if move > 0
+                    else replace(item, start=round(item.start - move, 4))
+                )
+                track.clips = ordered([*track.clips[:index], fixed, *track.clips[index + 1 :]])
+                self._save_desk()
+                self._paint_all()
+                self.status.set(f"Wyrównane do bitu: {abs(lag):.0f} ms. Cofnij wraca do poprzedniego miejsca.")
+                return
 
     def _read_live(self) -> None:
         path = self.wav_path
@@ -4115,7 +4200,7 @@ class RecorderWindow:
         offset = wav_data_offset_of(path)
         if offset is None:
             return
-        start = max(self._live_off, offset + int(round((self._lead + self._pre) * 100)) * 960)
+        start = max(self._live_off, offset + int(round((self._lead + self._pre + self._sync) * 100)) * 960)
         usable = (size - start) // 960 * 960
         if usable <= 0:
             return
@@ -4133,7 +4218,7 @@ class RecorderWindow:
         live = getattr(proc, "live_peaks", None) if proc is not None else None
         if isinstance(live, list) and live:
             count = len(live)
-            self._live_peaks = live[int(round((self._lead + self._pre) * 100)) : count]
+            self._live_peaks = live[int(round((self._lead + self._pre + self._sync) * 100)) : count]
             return
         try:
             self._read_live()
@@ -4488,6 +4573,8 @@ class RecorderWindow:
         if self._exporting:
             self.status.set("Zapis już trwa.")
             return False
+        if self._waits_for_align():
+            return False
         if self.playing or self.recording:
             self.stop()
         bundled = self._offline_bundle()
@@ -4723,6 +4810,8 @@ class RecorderWindow:
         if self._uploading:
             self.status.set("Wysyłka już trwa.")
             return
+        if self._waits_for_align():
+            return
         try:
             self.token()
             beat_id = self.selected_beat_id()
@@ -4893,7 +4982,7 @@ class RecorderWindow:
         if self.tier != "GOLD":
             self.status.set("Stemy z programu są w planie Gold.")
             return
-        if self._exporting:
+        if self._exporting or self._waits_for_align():
             return
         folder = filedialog.askdirectory(title="Folder na stemy")
         if not folder:
@@ -6631,6 +6720,7 @@ if __name__ == "__main__":
         timeline_self_test()
         offline_self_test()
         countin.self_test()
+        auto_align.self_test()
         argv = monitor_argv("ffplay", Path("bit.wav"))
         if "-nodisp" not in argv or argv[-1] != "bit.wav" or "-t" in argv or "nobuffer" not in argv:
             raise SystemExit("odsłuch")
@@ -6757,6 +6847,11 @@ if __name__ == "__main__":
 
         note = Path(os.environ.get("TEMP", ".")) / "bitrymdym-exe-smoke.txt"
         words = labels(window.gate)
+        try:
+            auto_align.self_test()
+            align = "ok"
+        except BaseException as problem:
+            align = f"blad {problem}"
         cap = window._track_cap()
         for _extra in range(cap + 2):
             window.add_track()
@@ -6765,6 +6860,7 @@ if __name__ == "__main__":
         note.write_text(
             "\n".join(
                 (
+                    f"align={align}",
                     f"beats={len(window.beats)}",
                     f"ffmpeg={ffmpeg_exe()}",
                     f"ffplay={ffplay_exe()}",

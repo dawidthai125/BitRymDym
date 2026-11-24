@@ -168,8 +168,9 @@ describe("device profile + warnings", () => {
     expect(looksLikeBluetooth(["Słuchawki (WH-1000XM4) Hands-Free"])).toBe(true);
     expect(looksLikeBluetooth(["Głośniki (Realtek)", "Focusrite USB"])).toBe(false);
     expect(
-      latencyWarning({ labels: ["Focusrite"], compensationMs: 55, calibrated: true }),
+      latencyWarning({ labels: ["Focusrite"], compensationMs: 55, calibrated: false }),
     ).toBe("high");
+    expect(latencyWarning({ labels: ["Focusrite"], compensationMs: 55, calibrated: true })).toBeNull();
     expect(
       latencyWarning({ labels: ["Galaxy Buds2"], compensationMs: 10, calibrated: false }),
     ).toBe("bluetooth");

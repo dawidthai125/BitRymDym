@@ -43,7 +43,7 @@ Mac nagrywa tylko w przeglądarce.
 - Nie puszcza dwóch mixów naraz (na przykład sam bit w słuchawkach, a mikrofon z bitem w głośnikach).
 - W trakcie nagrania nie podaje własnego głosu do słuchawek. Głośniki przy mikrofonie wchodzą w ujęcie.
 - Nie rysuje nut. Nie robi miksu BITEK, masteringu, zatwierdzenia mastera, tekstu, okładki, wideo ani linku odsłuchu. Stemy (same wokale) zapisuje tylko w Gold.
-- Mikrofon rusza dopiero, gdy bit jest wczytany i gotowy do grania (od 2026.11.37), więc wolny internet nie przesuwa nagrania. Od 2026.11.38 program gra przez waveOut i z jego pozycji liczy przesunięcie mikrofonu względem bitu, a potem je obcina. Gdy działa tylko ffplay, opóźnienie odsłuchu zostaje. Gdy ujęcie jest przesunięte względem bitu, przesuń klip paskiem.
+- Mikrofon rusza dopiero, gdy bit jest wczytany i gotowy do grania (od 2026.11.37), więc wolny internet nie przesuwa nagrania. Od 2026.11.38 program gra przez waveOut i z jego pozycji liczy przesunięcie mikrofonu względem bitu, a potem je obcina. Gdy działa tylko ffplay, opóźnienie odsłuchu zostaje. Od 2026.11.39 program po nagraniu szuka śladu bitu w mikrofonie (`auto_align.py`, numpy), poprawia położenie klipu i zapamiętuje opóźnienie dla pary mikrofon–odsłuch (`sync` w ustawieniach). Gdy ujęcie jest przesunięte względem bitu, przesuń klip paskiem.
 - Nie ma skrzynki do człowieka. Miks i master robi Bitek na stronie.
 - Nie ma efektów. Efekty, strojenie i sidechain są w Studio na stronie.
 

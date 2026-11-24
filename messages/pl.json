@@ -120,6 +120,7 @@
         "Wyciszyć ścieżkę przyciskiem M i zostawić solo przyciskiem S. Wyciszona ścieżka nie jedzie na konto.",
         "Ustawić głośność od −24 dB do +12 dB oraz stronę: −100 lewo, 0 środek, +100 prawo. Słychać to od razu.",
         "Osobno wybrać mikrofon i odsłuch, na przykład głośniki albo słuchawki Bluetooth. Program pamięta ten wybór.",
+        "Samo wyrównać głos do bitu: po nagraniu program słucha cichego śladu bitu w mikrofonie, wylicza opóźnienie i przesuwa wokal. Zapamiętuje je dla tego sprzętu.",
         "Sprawdzić mikrofon przyciskiem Test mikrofonu: pasek poziomu i podpowiedź, czy jest za cicho, dobrze albo za głośno. Nic się przy tym nie zapisuje.",
         "Po Stop dostać ocenę nagrania (przester, prawie cisza, cicho albo dobry poziom) i ostrzeżenie, gdy mikrofon zgubił próbki albo zniknął w trakcie nagrywania.",
         "Sam sprawdzać, czy jest nowa wersja. Na Twoje kliknięcie Zaktualizuj pobiera ją, sprawdza i instaluje. Nic nie dzieje się w trakcie nagrania ani wysyłki.",
@@ -132,7 +133,7 @@
         "Nie wkłada bitu do pliku wokalu. Na konto jedzie sam wokal.",
         "Nie puszcza naraz dwóch mixów, na przykład samego bitu w słuchawkach i mikrofonu z bitem w głośnikach.",
         "W trakcie nagrywania nie podaje własnego głosu z powrotem do słuchawek.",
-        "Nie zna opóźnienia słuchawek Bluetooth. Gdy nagranie jest przesunięte względem bitu, przesuń je na osi albo użyj słuchawek na kablu.",
+        "Gdy bitu w ogóle nie słychać w mikrofonie, program nie zmierzy opóźnienia. Wtedy przesuń nagranie na osi albo nagraj raz z luźniej założoną słuchawką: program zapamięta wynik.",
         "Nie ma efektów ani strojenia. Głośność i lewo albo prawo słychać w programie, ale na konto jedzie sam suchy wokal. Na stronie ustawiasz je w Studio, razem z cięciem, głośnością w czasie i nutami.",
         "Nie ma sampli. Wstawiasz je w Studio na stronie, razem z pianinem i nutami.",
         "Nie robi mixu, masteringu, zatwierdzenia mastera, tekstu, okładki, wideo ani linku odsłuchu. Mix i master robi BITEK na stronie.",
@@ -3456,7 +3457,10 @@
       "limitNagranDzis": "Nagrania dziś: {used}/{limit}",
       "limitMasterow": "Mastery w tym miesiącu: {used}/{limit}",
       "limitNagranPelny": "Limit nagrań na dziś wykorzystany. Od {when} nagrasz znowu. Każde nagranie się liczy, także odrzucone.",
-      "limitNagranPelnyBezCzasu": "Limit nagrań na dziś wykorzystany. Każde nagranie się liczy, także odrzucone."
+      "limitNagranPelnyBezCzasu": "Limit nagrań na dziś wykorzystany. Każde nagranie się liczy, także odrzucone.",
+      "wyrownaneAutomatycznie": "Wyrównane automatycznie do bitu: {ms} ms.",
+      "nagrywamWSluchawkach": "Nagrywam w słuchawkach",
+      "nagrywamWSluchawkachOpis": "Czysty mikrofon, mniejsze opóźnienie i samo wyrównanie do bitu. Przez głośnik zostaw wyłączone."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch",

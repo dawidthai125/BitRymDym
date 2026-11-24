@@ -120,6 +120,7 @@
         "Mute a track with M and solo it with S. A muted track is not uploaded.",
         "Set volume from −24 dB to +12 dB and pan: −100 left, 0 centre, +100 right. You hear it at once.",
         "Choose the microphone and the listening output separately, such as speakers or Bluetooth headphones. The app remembers the choice.",
+        "Line the voice up with the beat by itself: after a recording the app listens for the faint trace of the beat in the microphone, works out the delay and moves the vocal. It remembers it for this gear.",
         "Check the microphone with the mic test: a level bar and a hint (too quiet, good, too loud). Nothing is saved.",
         "After Stop, get a rating of the recording (clipping, near silence, quiet, or good level) and a warning when the mic dropped samples or vanished mid-recording.",
         "Check by itself whether a new version exists. When you click Update it downloads, verifies and installs it. Nothing happens during recording or an upload.",
@@ -132,7 +133,7 @@
         "The beat is not mixed into the vocal file. Only the vocal is uploaded.",
         "It does not play two mixes at once, such as beat-only in headphones and mic plus beat on speakers.",
         "While recording, it does not feed your own voice back into the headphones.",
-        "It does not know the delay of Bluetooth headphones. If a recording sits off the beat, move it on the timeline or use wired headphones.",
+        "When the microphone does not hear the beat at all, the app cannot measure the delay. Then move the recording on the timeline, or record once with a looser headphone: the app remembers the result.",
         "It has no effects or tuning. Volume and left or right are heard in the app, but only the dry vocal goes to the account. On the site you set them in Studio, with the cut, volume over time and notes.",
         "It has no samples. You add them in Studio on the site, with the piano and the notes.",
         "It does not make the mix, the master, master approval, lyrics, cover, video or a listen link. BITEK does the mix and the master on the site.",
@@ -3456,7 +3457,10 @@
       "limitNagranDzis": "Recordings today: {used}/{limit}",
       "limitMasterow": "Masters this month: {used}/{limit}",
       "limitNagranPelny": "Today's recording limit is used up. You can record again from {when}. Every recording counts, discarded ones too.",
-      "limitNagranPelnyBezCzasu": "Today's recording limit is used up. Every recording counts, discarded ones too."
+      "limitNagranPelnyBezCzasu": "Today's recording limit is used up. Every recording counts, discarded ones too.",
+      "wyrownaneAutomatycznie": "Lined up with the beat automatically: {ms} ms.",
+      "nagrywamWSluchawkach": "I record in headphones",
+      "nagrywamWSluchawkachOpis": "Clean microphone, less delay and automatic alignment to the beat. Leave it off with speakers."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch DJ v1",

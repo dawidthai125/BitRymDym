@@ -58,6 +58,7 @@ import type { BitekBubble } from "@/components/studio/studio-bitek-dock";
 import { decideLiveTakeCoach, type LiveCoachCue, type LiveCoachSample } from "@/lib/studio/bitek/live-take-coach";
 import { setBitekLiveTakeLevel } from "@/lib/studio/bitek/live-take-level";
 import { requestStudioGoMix, saveBitekRecordHandoff, takeIssueFromPeak } from "@/lib/studio/bitek/record-handoff";
+import { beatClipAt, headphonesLikely, readHeadphones, writeHeadphones } from "@/lib/studio/recording/auto-align";
 import { runLatencyCalibration } from "@/lib/studio/recording/calibration-runner";
 import {
   CLAP_CALIBRATION,
@@ -208,6 +209,14 @@ function PlayheadTime() {
   const tl = useLibText();
   const { playheadMs } = useStudioTransportPlayhead();
   return <>{tl(formatStudioTimeMs(playheadMs))}</>;
+}
+
+function safeLocalStorage(): Storage | null {
+  try {
+    return typeof window === "undefined" ? null : window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
 export function StudioRecordingPanel({
@@ -633,6 +642,8 @@ export function StudioRecordingPanel({
     headMs: number;
     restore: (() => void) | null;
     placement: { takeId: string; timelineStartMs: number; sourceOffsetMs: number } | null;
+    /** Automatic latency of this take, running while it uploads. */
+    auto: Promise<void> | null;
   }>({
     samples: [],
     sampler: null,
@@ -646,6 +657,7 @@ export function StudioRecordingPanel({
     headMs: 0,
     restore: null,
     placement: null,
+    auto: null,
   });
   useEffect(() => {
     writeRecordSettings(projectId, {
@@ -744,6 +756,17 @@ export function StudioRecordingPanel({
     readContextEstimate: () => contextLatencyEstimate(getAuxContext()),
     signedIn: true,
   });
+  /** Headphones: the browser must not filter the voice (shorter delay, and the trace of the beat stays measurable). */
+  const [headphonesPick, setHeadphonesPick] = useState<{ key: string; value: boolean } | null>(null);
+  const [storageReady, setStorageReady] = useState(false);
+  useEffect(() => {
+    void Promise.resolve().then(() => setStorageReady(true));
+  }, []);
+  const headphonesOn =
+    (headphonesPick?.key === latency.deviceKey ? headphonesPick.value : null) ??
+    (storageReady ? readHeadphones(safeLocalStorage(), latency.deviceKey) : null) ??
+    headphonesLikely([inputLabel, outputLabel]);
+  const [autoAlignedMs, setAutoAlignedMs] = useState<number | null>(null);
   const laneStore = useTakeLanes(projectId, true);
   const barMs = barDurationMs(transport.tempoBpm, transport.timeSignatureNum);
   const beatMs = beatDurationMs(transport.tempoBpm);
@@ -1851,6 +1874,8 @@ export function StudioRecordingPanel({
     align.section = flow === "single" ? null : section;
     align.line = flowLine;
     align.compensationMs = latency.compensationMs;
+    align.auto = null;
+    setAutoAlignedMs(null);
     align.placement = null;
     align.recT0 = null;
     align.restore = null;
@@ -1906,6 +1931,7 @@ export function StudioRecordingPanel({
         await recorder.acquire({
           audioDeviceId:
             inputDevices.audioDeviceIdForRecorder || undefined,
+          rawAudio: headphonesOn,
         });
       } catch (firstStartError) {
         // Stale preference: one retry with system default (P5.8 AC-07).
@@ -1914,7 +1940,7 @@ export function StudioRecordingPanel({
           firstStartError instanceof TakeRecorderError &&
           firstStartError.code === "RECORDING_ERROR"
         ) {
-          await recorder.acquire();
+          await recorder.acquire({ rawAudio: headphonesOn });
         } else {
           throw firstStartError;
         }
@@ -1986,6 +2012,7 @@ export function StudioRecordingPanel({
       const started = await recorder.start({
         audioDeviceId:
           inputDevices.audioDeviceIdForRecorder || undefined,
+        rawAudio: headphonesOn,
         onChunk,
       });
       if (run !== startRunRef.current) {
@@ -2186,6 +2213,7 @@ export function StudioRecordingPanel({
         trackId: captureTrackIdRef.current || trackIdRef.current,
         writer,
       };
+      alignRef.current.auto = measureAutoLatency(result.blob, startMs);
       dispatch({ type: "UPLOAD_START" });
       recoveryWriterRef.current = null;
       locallySecured = writer ? await writer.finish("COMPLETE", 3_000) : false;
@@ -2200,6 +2228,7 @@ export function StudioRecordingPanel({
           .confirmSaved(uploaded.takeId)
           .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
       }
+      await settledAuto();
       acceptUploadedTake(uploaded, startMs);
     } catch (error) {
       // Another tab finalizes the copy after a lost lease; this one must not send it again.
@@ -2243,6 +2272,54 @@ export function StudioRecordingPanel({
       submittingRef.current = false;
       recorderRef.current = null;
       if (mountedRef.current) setLocalSafety(null);
+    }
+  }
+
+  /** The measurement usually ends before the upload does. It may hold a take back for a moment, never longer. */
+  async function settledAuto() {
+    const auto = alignRef.current.auto;
+    if (auto) await Promise.race([auto, new Promise<void>((r) => setTimeout(r, 5_000))]);
+  }
+
+  /** Real round trip of this take from the beat that leaked into the microphone. Silent when there is none. */
+  async function measureAutoLatency(take: Blob, startMs: number): Promise<void> {
+    const a = alignRef.current;
+    const recT0 = a.recT0;
+    if (recT0 == null) return;
+    const targetMs = a.mode === "loop" && a.section ? a.section.startMs : startMs;
+    const recPositionMs =
+      a.mode === "loop" && a.section
+        ? loopPassStarts({ samples: a.samples, section: a.section, recordStartPerfMs: recT0 })[0] ?? null
+        : recordingPositionOf({ samples: a.samples, targetMs, recordStartPerfMs: recT0 });
+    const clip = beatClipAt(clips, tracks, targetMs);
+    if (recPositionMs == null || !clip) return;
+    try {
+      const beatUrl = await transport.resolveClipSourceUrl(clip);
+      if (!beatUrl) return;
+      const { measureTakeLag } = await import("@/lib/studio/recording/auto-align-client");
+      const found = await measureTakeLag({
+        take,
+        recPositionMs,
+        beatPositionMs: targetMs - clip.timelineStartMs + clip.sourceOffsetMs,
+        maxMs: Math.min(
+          clip.timelineStartMs + clip.durationMs - targetMs,
+          a.mode === "loop" && a.section ? a.section.endMs - a.section.startMs : Number.POSITIVE_INFINITY,
+        ),
+        beatUrl,
+      });
+      // A newer take took over meanwhile, or this one is already placed.
+      if (!found || a.recT0 !== recT0 || a.placement) return;
+      const measured = Math.round(found.lagMs);
+      const known = latency.profile?.roundTripMs ?? null;
+      // A manual shift made up for a wrong guess. On top of a measured value it is the singer's taste: kept.
+      const manual = known == null ? 0 : latency.profile?.manualOffsetMs ?? 0;
+      a.compensationMs = measured + manual;
+      if (known == null || Math.abs(known - measured) > 4) {
+        latency.save({ roundTripMs: measured, method: "click", spreadMs: null, manualOffsetMs: manual });
+      }
+      if (mountedRef.current) setAutoAlignedMs(a.compensationMs);
+    } catch {
+      // No measurement: the calibrated or estimated value stays.
     }
   }
 
@@ -2326,6 +2403,7 @@ export function StudioRecordingPanel({
           .discard()
           .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
       }
+      await settledAuto();
       acceptUploadedTake(uploaded, take.startMs);
     } catch (error) {
       // A finalize that failed twice starts over with a fresh upload next time.
@@ -3366,6 +3444,11 @@ export function StudioRecordingPanel({
           className="space-y-2 rounded border border-[var(--brd-line)] p-2"
           aria-label={tr("studioTakeWorkflow")}
         >
+          {autoAlignedMs != null ? (
+            <p className="text-xs text-[var(--brd-mute)]" data-testid="studio-auto-aligned">
+              {tr("wyrownaneAutomatycznie", { ms: autoAlignedMs })}
+            </p>
+          ) : null}
           <p className="text-sm text-[var(--brd-ink)]" role="status">
             {tr("nagranieGotoweKliknijZachowaj")}
             {tl(state.takeDurationSeconds != null
@@ -3714,6 +3797,22 @@ export function StudioRecordingPanel({
           </p>
         ) : null}
 
+        <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--brd-ink)]">
+          <input
+            type="checkbox"
+            checked={headphonesOn}
+            disabled={captureActive || captureArming}
+            onChange={(e) => {
+              setHeadphonesPick({ key: latency.deviceKey, value: e.target.checked });
+              writeHeadphones(safeLocalStorage(), latency.deviceKey, e.target.checked);
+            }}
+            data-testid="studio-headphones"
+          />
+          <span>
+            {tr("nagrywamWSluchawkach")}
+            <span className="block text-[11px] text-[var(--brd-mute)]">{tr("nagrywamWSluchawkachOpis")}</span>
+          </span>
+        </label>
         <div className="w-full space-y-1 pt-1">
           <p className="studio-gear-label text-xs text-[var(--brd-mute)]">{tr("testMikrofonu")}</p>
           {testerError && !state.error ? (
