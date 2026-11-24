@@ -3,7 +3,7 @@
  * line them up and ask auto-align. Runs while the take uploads; never blocks or changes the recording.
  */
 
-import { ALIGN_MAX_SECONDS, ALIGN_RATE, bleedLag, toAlignRate, type BleedLag } from "@/lib/studio/recording/auto-align";
+import { ALIGN_MAX_SECONDS, ALIGN_RATE, bleedLag, recordsWithoutAutoAlign, toAlignRate, type BleedLag } from "@/lib/studio/recording/auto-align";
 
 async function decodeMono(bytes: ArrayBuffer): Promise<Float32Array> {
   let buffer: AudioBuffer | null = null;
@@ -51,8 +51,7 @@ export async function measureTakeLag(params: {
 }): Promise<BleedLag | null> {
   // Only a beat that is already on this device: the measurement must not cost a download.
   if (!params.beatUrl.startsWith("blob:")) return null;
-  // MP4/AAC recordings (older Safari) carry an encoder delay that decoding and playback treat differently.
-  if (/mp4|aac|m4a/i.test(params.take.type)) return null;
+  if (recordsWithoutAutoAlign(params.take.type)) return null;
   const [mic, beat] = await Promise.all([params.take.arrayBuffer().then(decodeMono), beatSamples(params.beatUrl)]);
   const length = Math.round((Math.min(params.maxMs / 1000, ALIGN_MAX_SECONDS) + 1) * ALIGN_RATE);
   const cut = (src: Float32Array, atMs: number) => {

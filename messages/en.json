@@ -3460,7 +3460,9 @@
       "limitNagranPelnyBezCzasu": "Today's recording limit is used up. Every recording counts, discarded ones too.",
       "wyrownaneAutomatycznie": "Lined up with the beat automatically: {ms} ms.",
       "nagrywamWSluchawkach": "I record in headphones",
-      "nagrywamWSluchawkachOpis": "Clean microphone, less delay and automatic alignment to the beat. Leave it off with speakers."
+      "nagrywamWSluchawkachOpis": "Clean microphone, less delay and automatic alignment to the beat. Leave it off with speakers.",
+      "kalibrujRecznieTytul": "On this iPhone or iPad, calibrate the microphone by hand.",
+      "kalibrujRecznieOpis": "An older system does not line the voice up with the beat by itself. Put on headphones, tick “I record in headphones” and run the test once: I will remember it. After an update to iOS 18.4 or newer it lines up by itself."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch DJ v1",

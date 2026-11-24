@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (46) — Starsze iPhone'y i iPady: informacja o ręcznej kalibracji
+
+- Gdy przeglądarka nagrywa tylko MP4/AAC (iOS i iPadOS starsze niż 18.4), panel nagrywania w widoku prostym i pełnym pokazuje ramkę „skalibruj mikrofon ręcznie” z przyciskiem Kalibruj. Znika po kalibracji albo ręcznej korekcie.
+
 ## 2026-11-24 (45) — Samo wyrównanie głosu do bitu (Studio i Nagrywarka 2026.11.39)
 
 - Po każdym nagraniu Studio (`src/lib/studio/recording/auto-align.ts`, `auto-align-client.ts`) i program (`desktop/recorder/auto_align.py`) szukają w mikrofonie śladu bitu ze słuchawek i z niego liczą prawdziwe opóźnienie tego nagrania (korelacja z wagami, przerwy w głosie liczą się najbardziej). Wynik trafia w położenie nagrania i jest zapamiętany dla sprzętu. Bez pewnego śladu nic się nie zmienia.

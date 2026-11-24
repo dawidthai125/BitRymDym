@@ -3460,7 +3460,9 @@
       "limitNagranPelnyBezCzasu": "Limit nagrań na dziś wykorzystany. Każde nagranie się liczy, także odrzucone.",
       "wyrownaneAutomatycznie": "Wyrównane automatycznie do bitu: {ms} ms.",
       "nagrywamWSluchawkach": "Nagrywam w słuchawkach",
-      "nagrywamWSluchawkachOpis": "Czysty mikrofon, mniejsze opóźnienie i samo wyrównanie do bitu. Przez głośnik zostaw wyłączone."
+      "nagrywamWSluchawkachOpis": "Czysty mikrofon, mniejsze opóźnienie i samo wyrównanie do bitu. Przez głośnik zostaw wyłączone.",
+      "kalibrujRecznieTytul": "Na tym iPhonie lub iPadzie skalibruj mikrofon ręcznie.",
+      "kalibrujRecznieOpis": "Starszy system nie wyrównuje głosu do bitu sam. Załóż słuchawki, zaznacz „Nagrywam w słuchawkach” i zrób test raz: zapamiętam wynik. Po aktualizacji do iOS 18.4 lub nowszego wyrówna się samo."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch",

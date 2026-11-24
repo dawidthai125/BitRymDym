@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALIGN_RATE, beatClipAt, bleedLag, headphonesLikely, readHeadphones, toAlignRate, writeHeadphones } from "./auto-align";
+import { ALIGN_RATE, beatClipAt, bleedLag, headphonesLikely, readHeadphones, recordsWithoutAutoAlign, toAlignRate, writeHeadphones } from "./auto-align";
 
 function rng(seed: number) {
   let s = seed >>> 0;
@@ -109,6 +109,11 @@ describe("bleedLag", { timeout: 30_000 }, () => {
     expect(await bleedLag(short.mic, short.beat)).toBeNull();
     expect(await bleedLag(quiet.mic, new Float32Array(quiet.beat.length))).toBeNull();
   });
+});
+
+it("only the MP4 recordings of older iPhones stay without automatic alignment", () => {
+  expect(["audio/mp4", "audio/mp4;codecs=mp4a.40.2", "audio/aac"].map(recordsWithoutAutoAlign)).toEqual([true, true, true]);
+  expect(["audio/webm;codecs=opus", "audio/ogg", "", null].map(recordsWithoutAutoAlign)).toEqual([false, false, false, false]);
 });
 
 it("toAlignRate keeps events in place", () => {

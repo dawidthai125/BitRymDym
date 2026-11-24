@@ -58,7 +58,7 @@ import type { BitekBubble } from "@/components/studio/studio-bitek-dock";
 import { decideLiveTakeCoach, type LiveCoachCue, type LiveCoachSample } from "@/lib/studio/bitek/live-take-coach";
 import { setBitekLiveTakeLevel } from "@/lib/studio/bitek/live-take-level";
 import { requestStudioGoMix, saveBitekRecordHandoff, takeIssueFromPeak } from "@/lib/studio/bitek/record-handoff";
-import { beatClipAt, headphonesLikely, readHeadphones, writeHeadphones } from "@/lib/studio/recording/auto-align";
+import { beatClipAt, headphonesLikely, readHeadphones, recordsWithoutAutoAlign, writeHeadphones } from "@/lib/studio/recording/auto-align";
 import { runLatencyCalibration } from "@/lib/studio/recording/calibration-runner";
 import {
   CLAP_CALIBRATION,
@@ -209,6 +209,11 @@ function PlayheadTime() {
   const tl = useLibText();
   const { playheadMs } = useStudioTransportPlayhead();
   return <>{tl(formatStudioTimeMs(playheadMs))}</>;
+}
+
+function recorderMime(): string | null {
+  const support = detectMediaRecorderSupport();
+  return support.supported ? support.mimeType : null;
 }
 
 function safeLocalStorage(): Storage | null {
@@ -766,6 +771,12 @@ export function StudioRecordingPanel({
     (headphonesPick?.key === latency.deviceKey ? headphonesPick.value : null) ??
     (storageReady ? readHeadphones(safeLocalStorage(), latency.deviceKey) : null) ??
     headphonesLikely({ inputLabel, outputLabel });
+  /** Older iPhone or iPad, not calibrated yet: the voice does not line up by itself there. */
+  const needsManualCalibration =
+    storageReady &&
+    latency.profile?.roundTripMs == null &&
+    !latency.profile?.manualOffsetMs &&
+    recordsWithoutAutoAlign(recorderMime());
   const [autoAlignedMs, setAutoAlignedMs] = useState<number | null>(null);
   const laneStore = useTakeLanes(projectId, true);
   const barMs = barDurationMs(transport.tempoBpm, transport.timeSignatureNum);
@@ -3307,6 +3318,27 @@ export function StudioRecordingPanel({
         openSignal={latencyOpenSignal}
         onOpenSignalHandled={() => setLatencyOpenSignal(0)}
       />
+      ) : null}
+
+      {needsManualCalibration && !samplesMode && !captureActive && !captureArming && state.phase !== "READY_TAKE" ? (
+        <div
+          className="space-y-2 rounded border border-[var(--brd-amber)] p-2"
+          role="note"
+          data-testid="studio-manual-calibration-note"
+        >
+          <p className="text-sm text-[var(--brd-ink)]">{tr("kalibrujRecznieTytul")}</p>
+          <p className="text-xs text-[var(--brd-mute)]">{tr("kalibrujRecznieOpis")}</p>
+          <Button
+            type="button"
+            size="sm"
+            className="w-full sm:w-auto"
+            disabled={calibration.status === "running"}
+            onClick={openLatencyCard}
+            data-testid="studio-manual-calibration-open"
+          >
+            {tRec("kalibruj")}
+          </Button>
+        </div>
       ) : null}
 
       {simple && !samplesMode && latencyShown ? (

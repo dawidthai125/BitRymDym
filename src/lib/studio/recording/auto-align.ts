@@ -222,6 +222,11 @@ export function beatClipAt<C extends AlignBeatClip>(
   );
 }
 
+/** MP4/AAC recordings (older iPhone and iPad) carry an encoder delay that decoding and playback treat differently. */
+export function recordsWithoutAutoAlign(mimeType: string | null | undefined): boolean {
+  return /mp4|aac|m4a/i.test(mimeType ?? "");
+}
+
 // ── Microphone mode ─────────────────────────────────────────────────────────
 
 const HEADPHONES_RE =
