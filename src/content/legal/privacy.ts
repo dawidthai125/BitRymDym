@@ -34,6 +34,7 @@ export const PRIVACY: LegalDoc = {
       ["Publiczny profil twórcy (dobrowolny)", "art. 6 ust. 1 lit. a — zgoda (możesz ją wycofać w każdej chwili)"],
       ["Rozliczenia i księgowość", "art. 6 ust. 1 lit. c — przepisy podatkowe i rachunkowe"],
       ["Reklamacje, dochodzenie i obrona roszczeń", "art. 6 ust. 1 lit. f"],
+      ["Anonimowy licznik wejść: dzień, strona i źródło wejścia (np. wyszukiwarka, media społecznościowe), ustalone z nagłówków zapytania; bez cookies, bez zapisu adresu IP i identyfikatorów", "art. 6 ust. 1 lit. f — prawnie uzasadniony interes (wiedza, ile osób korzysta z Serwisu i skąd); zapisany licznik nie zawiera danych osobowych"],
       ["Statystyki odwiedzin (Google Analytics) — tylko po zgodzie w banerze cookies", "art. 6 ust. 1 lit. a — zgoda (możesz ją wycofać w każdej chwili)"],
     ] } }, "Nie wysyłamy newslettera ani reklam innych firm i nie używamy narzędzi reklamowych."] },
     { id: "p4", h: "4. Automatyczna moderacja", blocks: [
@@ -52,7 +53,7 @@ export const PRIVACY: LegalDoc = {
         ["Cloudflare (Turnstile)", "ochrona logowania i rejestracji przed botami — adres IP i dane przeglądarki", "USA / globalnie"],
         ["Resend", "wysyłka e-maili", "USA"],
         ["Google Ireland Ltd. (YouTube)", "film na stronie Bitu — dopiero po kliknięciu odtwarzania; adres IP i dane przeglądarki (tryb youtube-nocookie)", "UE / USA"],
-        ["Google Ireland Ltd. (Google Analytics 4)", "statystyki odwiedzin — tylko po Twojej zgodzie; losowy identyfikator przeglądarki, odwiedzone strony, przybliżona lokalizacja (bez pełnego IP)", "UE / USA"],
+        ["Google Ireland Ltd. (Google Analytics 4)", "statystyki odwiedzin — tylko po Twojej zgodzie; losowy identyfikator przeglądarki, odwiedzone strony, założenie Konta, odtworzone Bity, rodzaj i cena zakupu, przybliżona lokalizacja (bez pełnego IP)", "UE / USA"],
         ["PayU S.A., Poznań", "płatności — odrębny administrator danych płatniczych", "UE (Polska)"],
         ["AcoustID (api.acoustid.org)", "odcisk dźwięku i czas trwania wgrywanego Bitu; plik audio zostaje u nas", "serwer usługi AcoustID"],
       ] } },

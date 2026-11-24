@@ -35,9 +35,14 @@ export function applySessionLifetime<T extends { maxAge?: number; expires?: Date
   return rest;
 }
 
-/** Full page load (not data, prefetch or API). */
+/**
+ * Full page load (not data, prefetch or API). A page fetched by our service worker keeps
+ * sec-fetch-mode "navigate" but loses the "document" destination.
+ */
 export function isDocumentRequest(method: string, headers: Headers): boolean {
-  return method === "GET" && headers.get("sec-fetch-dest") === "document" && !headers.get("purpose") && !headers.get("sec-purpose");
+  const dest = headers.get("sec-fetch-dest");
+  const page = dest === "document" || (dest === "empty" && headers.get("sec-fetch-mode") === "navigate");
+  return method === "GET" && page && !headers.get("purpose") && !headers.get("sec-purpose");
 }
 
 const SESSION_MAX_AGE_SECONDS = 400 * 24 * 60 * 60;

@@ -1794,7 +1794,7 @@
       "uwaga": "Wynik od 10 w górę to pewne trafienie, obce kopie mają wynik bliski 0. Plik nagrany mikrofonem z głośników może nie dać wyniku."
     },
     "adminFunnelPage": {
-      "navLabel": "Lejek zakupu",
+      "navLabel": "Lejek i wejścia",
       "metaTitle": "Lejek zakupu",
       "tytul": "Lejek zakupu",
       "opis": "Ile osób weszło na stronę Premium, kliknęło „Kup”, zaczęło płatność i ją dokończyło. Liczymy bez cookies i bez danych osobowych.",
@@ -1814,7 +1814,32 @@
       "ile": "Ile",
       "pustoOplacone": "Brak opłaconych zamówień w tym okresie.",
       "uwaga": "Opłacone liczą też zamówienia zwrócone. Boty i podgląd linków nie są liczone.",
-      "blad": "Nie udało się wczytać danych. Odśwież stronę."
+      "blad": "Nie udało się wczytać danych. Odśwież stronę.",
+      "wejscia": "Wejścia na stronę",
+      "wejsciaOpis": "Ile razy ktoś otworzył stronę z zewnątrz i skąd przyszedł. Liczymy bez cookies i bez danych osobowych, więc widać też osoby bez zgody na Google Analytics. To liczba wejść, nie osób. Boty i urządzenia ekipy są pominięte.",
+      "wejsciaPusto": "Jeszcze nic nie policzono.",
+      "wejsciaBlad": "Nie udało się wczytać wejść.",
+      "wejsc": "Wejścia",
+      "skad": "Skąd",
+      "gdzie": "Pierwsza strona",
+      "kiedy": "Dzień",
+      "stronaGlowna": "Strona główna",
+      "inneStrony": "Inne adresy",
+      "zrodla": {
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "bluesky": "Bluesky",
+        "x": "X (Twitter)",
+        "reddit": "Reddit",
+        "google": "Google",
+        "search": "Inne wyszukiwarki",
+        "ai": "Asystenci AI",
+        "mail": "Poczta",
+        "direct": "Bezpośrednio lub nieznane",
+        "other": "Inne strony"
+      }
     },
     "adminWorksPage": {
       "metaTitle": "Utwory · Administrator",

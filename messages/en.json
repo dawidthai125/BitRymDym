@@ -1794,7 +1794,7 @@
       "uwaga": "A score of 10 or more is a sure match; other copies score near 0. A file recorded with a microphone from speakers may give no result."
     },
     "adminFunnelPage": {
-      "navLabel": "Purchase funnel",
+      "navLabel": "Funnel and entries",
       "metaTitle": "Purchase funnel",
       "tytul": "Purchase funnel",
       "opis": "How many people opened the Premium page, clicked “Buy”, started a payment and finished it. Counted without cookies or personal data.",
@@ -1814,7 +1814,32 @@
       "ile": "Count",
       "pustoOplacone": "No paid orders in this period.",
       "uwaga": "Paid also counts refunded orders. Bots and link previews are not counted.",
-      "blad": "Could not load the data. Refresh the page."
+      "blad": "Could not load the data. Refresh the page.",
+      "wejscia": "Site entries",
+      "wejsciaOpis": "How many times someone opened the site from outside and where they came from. Counted without cookies or personal data, so it includes people who did not accept Google Analytics. These are entries, not people. Bots and staff devices are left out.",
+      "wejsciaPusto": "Nothing counted yet.",
+      "wejsciaBlad": "Could not load the entries.",
+      "wejsc": "Entries",
+      "skad": "From",
+      "gdzie": "First page",
+      "kiedy": "Day",
+      "stronaGlowna": "Home page",
+      "inneStrony": "Other addresses",
+      "zrodla": {
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "bluesky": "Bluesky",
+        "x": "X (Twitter)",
+        "reddit": "Reddit",
+        "google": "Google",
+        "search": "Other search engines",
+        "ai": "AI assistants",
+        "mail": "E-mail",
+        "direct": "Direct or unknown",
+        "other": "Other sites"
+      }
     },
     "adminWorksPage": {
       "metaTitle": "Tracks · Admin",

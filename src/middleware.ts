@@ -18,6 +18,7 @@ import { GUARD_RETRY_AFTER_SECONDS, isOverloadRequest } from "@/lib/security/req
 import { buildCsp, cspHeaderName, generateNonce, NONCE_HEADER } from "@/lib/security/csp";
 import { decideStoreAppEntry, STORE_APP_COOKIE, storeAppCookieOptions } from "@/lib/site/store-app";
 import { userAccessBearer } from "@/lib/supabase/access-bearer";
+import { VISIT_HEADER, visitHeaderValue } from "@/lib/visits/visit-policy";
 import { LOCALE_COOKIE } from "@/i18n/config";
 import { englishHostRedirect, LOCALE_OVERRIDE_HEADER, stripEnglishPrefix } from "@/lib/seo/locale-paths";
 import { isEnglishLandingPath } from "@/lib/seo/landing-pages-en";
@@ -326,6 +327,16 @@ export async function middleware(request: NextRequest) {
   const headers = new Headers(request.headers);
   headers.set(NONCE_HEADER, nonce);
   headers.set(headerName, csp);
+  // Cookieless entry counter: the layout counts it after the response (never trust the header from outside).
+  headers.delete(VISIT_HEADER);
+  const visit = visitHeaderValue({
+    method: request.method,
+    headers: request.headers,
+    pathname: request.nextUrl.pathname,
+    utmSource: request.nextUrl.searchParams.get("utm_source"),
+    cookieHeader: request.headers.get("cookie"),
+  });
+  if (visit) headers.set(VISIT_HEADER, visit);
   // English URLs: /en/<path> renders <path> with the locale forced to "en" (never trust the header from outside).
   headers.delete(LOCALE_OVERRIDE_HEADER);
   const englishPath = stripEnglishPrefix(request.nextUrl.pathname);

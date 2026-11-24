@@ -28,3 +28,19 @@ export function analyticsCookieNames(cookieHeader: string): string[] {
     .map((c) => c.trim().split("=")[0])
     .filter((name) => name === "_ga" || name.startsWith("_ga_") || name === "_gid");
 }
+
+/** Set on a device where staff opened the admin panel: our own visits are never counted there. */
+export const STAFF_DEVICE_COOKIE = "brd_staff";
+
+export function isStaffDevice(cookieHeader: string | null | undefined): boolean {
+  return new RegExp(`(?:^|;\\s*)${STAFF_DEVICE_COOKIE}=1(?:;|$)`).test(cookieHeader ?? "");
+}
+
+export function staffDeviceCookie(secure: boolean): string {
+  return `${STAFF_DEVICE_COOKIE}=1; Path=/; Max-Age=${CONSENT_MAX_AGE_S}; SameSite=Lax${secure ? "; Secure" : ""}`;
+}
+
+/** Google Analytics may run: consent given and not a staff device. */
+export function analyticsAllowed(cookieHeader: string | null | undefined): boolean {
+  return parseConsent(cookieHeader) === "all" && !isStaffDevice(cookieHeader);
+}

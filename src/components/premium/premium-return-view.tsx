@@ -1,5 +1,7 @@
 import { useTranslations } from "next-intl";
 
+import { TrackPurchase } from "@/components/premium/track-purchase";
+import type { PurchaseEvent } from "@/lib/analytics/ga";
 import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { ReturnRefresh } from "@/components/premium/return-refresh";
@@ -7,13 +9,13 @@ import { AppShell } from "@/components/site/app-shell";
 
 export type ReturnState =
   | { status: "pending" }
-  | { status: "paid"; product: string; until: string | null; scheduled?: boolean; kind?: "plan" | "addon" | "pack" }
+  | { status: "paid"; product: string; until: string | null; scheduled?: boolean; kind?: "plan" | "addon" | "pack"; purchase?: PurchaseEvent | null }
   | { status: "skipped"; reason: "perpetual" | "downgrade" | "pending_plan" | "addon_perpetual" }
   | { status: "failed" }
   | { status: "refunded" }
   | { status: "missing" }
   | { status: "beat_pending"; href: string }
-  | { status: "beat_paid"; href: string }
+  | { status: "beat_paid"; href: string; purchase?: PurchaseEvent | null }
   | { status: "beat_skipped"; href: string }
   | { status: "beat_failed"; href: string };
 
@@ -46,6 +48,7 @@ export function PremiumReturnView({ state }: { state: ReturnState }) {
             {body}
           </p>
           {pending ? <ReturnRefresh /> : null}
+          {state.status === "beat_paid" && state.purchase ? <TrackPurchase purchase={state.purchase} /> : null}
           <div className="mt-6 flex flex-wrap gap-3">
             {beatHref ? <BrdLink href={beatHref}>{state.status === "beat_paid" ? t("mojKatalog") : t("otworzBit")}</BrdLink> : null}
             <BrdLink href="/premium">{t("wroc")}</BrdLink>

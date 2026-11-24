@@ -7,6 +7,7 @@ import {
   type AdminNavGroup,
   type AdminNavItem,
 } from "@/components/admin/admin-section-nav";
+import { MarkStaffDevice } from "@/components/admin/mark-staff-device";
 import { SiteHeader } from "@/components/site/site-header";
 import { AdminClientMessages } from "@/i18n/client-messages";
 import {
@@ -120,6 +121,7 @@ export default async function AdminLayout({
 
   return (
     <AdminClientMessages>
+    <MarkStaffDevice />
     <div className="brd-ops min-h-dvh">
       <SiteHeader tone="admin" />
       <div className="mx-auto w-full max-w-[var(--brd-max-ops)] px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">

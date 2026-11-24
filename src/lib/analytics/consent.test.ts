@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { analyticsCookieNames, consentCookie, GA_MEASUREMENT_ID, parseConsent } from "@/lib/analytics/consent";
+import {
+  analyticsAllowed,
+  analyticsCookieNames,
+  consentCookie,
+  GA_MEASUREMENT_ID,
+  isStaffDevice,
+  parseConsent,
+  staffDeviceCookie,
+} from "@/lib/analytics/consent";
 
 describe("analytics consent", () => {
   it("reads only valid choices", () => {
@@ -18,5 +26,13 @@ describe("analytics consent", () => {
   });
   it("has a GA4 measurement id", () => {
     expect(GA_MEASUREMENT_ID).toMatch(/^G-[A-Z0-9]+$/);
+  });
+  it("leaves staff devices out even with consent", () => {
+    expect(analyticsAllowed("brd_consent=all")).toBe(true);
+    expect(analyticsAllowed("brd_consent=necessary")).toBe(false);
+    expect(analyticsAllowed("")).toBe(false);
+    expect(analyticsAllowed(`brd_consent=all; ${staffDeviceCookie(true).split(";")[0]}`)).toBe(false);
+    expect(isStaffDevice("brd_staff=10")).toBe(false);
+    expect(isStaffDevice("xbrd_staff=1")).toBe(false);
   });
 });

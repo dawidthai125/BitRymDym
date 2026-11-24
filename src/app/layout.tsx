@@ -16,6 +16,7 @@ import { ClientProviders } from "@/components/site/client-providers";
 import { MaintenanceAdminBanner } from "@/components/site/maintenance-admin-banner";
 import { PwaServiceWorker } from "@/components/site/pwa-install";
 import { getSiteMetadata } from "@/config/site";
+import { countVisit } from "@/lib/visits/visit-service";
 import { isStoreApp } from "@/lib/site/store-app-server";
 import { BRD_THEME_BOOT_SCRIPT } from "@/lib/ui/theme";
 import { cn } from "@/lib/utils";
@@ -80,7 +81,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  countVisit(requestHeaders);
   const locale = await getLocale();
   const messages = await publicClientMessages();
   const storeApp = await isStoreApp();

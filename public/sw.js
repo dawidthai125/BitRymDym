@@ -26,6 +26,8 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((key) => key.startsWith("brd-") && key !== CACHE).map((key) => caches.delete(key))))
+      // The browser asks for the page itself (real sec-fetch-* headers, no wait for this worker).
+      .then(() => (self.registration.navigationPreload ? self.registration.navigationPreload.enable().catch(() => undefined) : undefined))
       .then(() => self.clients.claim()),
   );
 });
@@ -39,9 +41,11 @@ self.addEventListener("fetch", (event) => {
   // Page navigations: always network; the offline page only when the network fails.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() =>
-        caches.match(OFFLINE_URL).then((cached) => cached || new Response("Brak internetu", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } })),
-      ),
+      Promise.resolve(event.preloadResponse)
+        .then((preloaded) => preloaded || fetch(request))
+        .catch(() =>
+          caches.match(OFFLINE_URL).then((cached) => cached || new Response("Brak internetu", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } })),
+        ),
     );
     return;
   }

@@ -15,6 +15,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { trackEvent } from "@/lib/analytics/ga";
 import { isAudioSessionDedupEnabled } from "@/config/audio-session-dedup";
 import {
   buildSessionAudioKey,
@@ -345,6 +346,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /** Statistics (after consent): a beat counts once per page load. */
+  const countedPlaysRef = useRef(new Set<string>());
+  const countPlay = useCallback((played: PlayerTrack) => {
+    if (played.master || countedPlaysRef.current.has(played.beatId)) return;
+    countedPlaysRef.current.add(played.beatId);
+    trackEvent({ name: "beat_play", params: { beat_id: played.beatId, beat_title: played.title } });
+  }, []);
+
   const activateTrack = useCallback(
     async (next: PlayerTrack, options?: ActivateTrackOptions) => {
       const autoplay = options?.autoplay ?? true;
@@ -373,6 +382,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           restartFromStartIfNeeded(audio);
           await audio.play();
           if (requestId !== requestIdRef.current) return;
+          countPlay(next);
           setPhase("playing");
           return;
         }
@@ -397,7 +407,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         );
       }
     },
-    [ensureUrl, restartFromStartIfNeeded],
+    [countPlay, ensureUrl, restartFromStartIfNeeded],
   );
 
   const playTrack = useCallback(
@@ -419,6 +429,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           await ensureUrl(track.beatId, requestId);
           restartFromStartIfNeeded(audio);
           await audio.play();
+          countPlay(track);
         } catch (e) {
           if (e instanceof StalePlaybackRequestError || requestId !== requestIdRef.current) return;
           if (e instanceof GuestPreviewUnavailableError) {
@@ -437,7 +448,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     } else {
       audio.pause();
     }
-  }, [ensureUrl, restartFromStartIfNeeded, track]);
+  }, [countPlay, ensureUrl, restartFromStartIfNeeded, track]);
 
   /** Seek only — never starts playback. */
   const seek = useCallback((time: number) => {

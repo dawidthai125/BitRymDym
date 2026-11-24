@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { DELETE_CONFIRM_WORD, resolveLocale } from "@/i18n/config";
 
+import { trackEvent } from "@/lib/analytics/ga";
 import Link from "@/components/ui/app-link";
 import { startTransition, useActionState, useEffect, useRef, type FormEvent } from "react";
 
@@ -94,6 +95,10 @@ export function SignUpForm({ next = null }: { next?: string | null } = {}) {
   const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(signUpAction, initialState);
+
+  useEffect(() => {
+    if (state.success) trackEvent({ name: "sign_up", params: { method: "email" } });
+  }, [state]);
 
   return (
     <form action={action} onSubmit={keepValues(action)} className="flex w-full max-w-sm flex-col gap-3">

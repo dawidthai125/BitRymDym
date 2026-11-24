@@ -40,6 +40,8 @@ async function getBundle(): Promise<string> {
     jsx: "automatic",
     sourcemap: false,
     logLevel: "silent",
+    // Next inlines this at build time.
+    define: { "process.env.NEXT_PUBLIC_GA_ID": "undefined" },
     alias: { "@": SRC_ROOT },
     plugins: [
       {

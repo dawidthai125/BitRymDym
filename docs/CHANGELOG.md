@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (40) — Statystyki: zdarzenia w Analytics, licznik wejść bez cookies
+
+- Google Analytics (tylko po zgodzie, `src/lib/analytics/ga.ts`): zdarzenia `sign_up`, `beat_play` (raz na bit i wczytanie strony), `purchase` (rodzaj produktu i cena, bez numeru konta i zamówienia).
+- Urządzenie, na którym otwarto panel admina, dostaje cookie `brd_staff` i jest pomijane w Analytics, liczniku wejść i wyświetleniach Premium.
+- Licznik wejść bez cookies: middleware rozpoznaje otwarcie strony z zewnątrz i źródło z nagłówków, layout dodaje 1 po odpowiedzi (`src/lib/visits`, tabela `site_visits`: dzień × strona × źródło, bez IP i identyfikatorów, limit 20/min na adres i 240/min na instancję). Widok: `/admin/lejek`.
+- Polityka prywatności 2026-11-24.4 i polityka cookies.
+- Naprawa do (39): po pierwszej wizycie strony pobiera service worker i przeglądarka gubiła `sec-fetch-dest: document`, więc ponowny zapis cookies sesji z serwera działał tylko przy pierwszym wejściu. `public/sw.js` używa navigation preload (prawdziwe nagłówki), a `isDocumentRequest` uznaje też `sec-fetch-mode: navigate`.
+
 ## 2026-11-24 (39) — „Nie wylogowuj mnie” i powrót z PayU na konto
 
 - Logowanie: pole „Nie wylogowuj mnie”, domyślnie zaznaczone (sesja 400 dni). Odznaczone: sesja do zamknięcia przeglądarki (`src/lib/auth/keep-signed-in.ts`, cookie `brd_session_only`; zapis w akcji, middleware i kliencie przeglądarki).

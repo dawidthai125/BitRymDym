@@ -20,9 +20,11 @@ export const COOKIES: LegalDoc = {
       ["brd_app", "tryb aplikacji ze sklepu (android albo ios)", "12 godzin"],
       ["NEXT_LOCALE", "wybrany język", "do zmiany"],
       ["brd_consent", "zapamiętana decyzja w sprawie cookies statystycznych", "12 miesięcy"],
+      ["brd_staff", "tylko na urządzeniach obsługi Serwisu: pomija je w statystykach", "12 miesięcy"],
     ] } }] },
     { id: "c1a", h: "1a. Cookies statystyczne (tylko za zgodą)", blocks: [
-      "Po kliknięciu „Akceptuję” w banerze włączamy Google Analytics 4 (Google Ireland Ltd.). Służy do zliczania odwiedzin i sprawdzania, które strony są oglądane. Nie łączymy tych danych z Kontem, nie włączamy funkcji reklamowych ani sygnałów Google. Po kliknięciu „Tylko niezbędne” Google Analytics się nie ładuje. Wycofanie zgody usuwa te pliki.",
+      "Po kliknięciu „Akceptuję” w banerze włączamy Google Analytics 4 (Google Ireland Ltd.). Służy do zliczania odwiedzin i sprawdzania, które strony są oglądane. Wysyłamy też trzy zdarzenia: założenie Konta, odtworzenie Bitu (jego tytuł i numer) oraz zakup (rodzaj produktu i cena), bez e-maila, numeru Konta i numeru zamówienia. Nie łączymy tych danych z Kontem, nie włączamy funkcji reklamowych ani sygnałów Google. Po kliknięciu „Tylko niezbędne” Google Analytics się nie ładuje. Wycofanie zgody usuwa te pliki.",
+      "Niezależnie od tego nasz serwer liczy wejścia bez cookies: dodaje 1 do licznika danego dnia, strony i źródła (np. wyszukiwarka, media społecznościowe). Nic nie zapisujemy na Twoim urządzeniu i nie zapisujemy adresu IP ani żadnego identyfikatora, więc licznika nie da się powiązać z osobą.",
       "Film YouTube na stronie Bitu ładuje się dopiero po kliknięciu odtwarzania, z adresu youtube-nocookie.com. Na logowaniu i rejestracji działa Cloudflare Turnstile (ochrona przed botami); to zabezpieczenie niezbędne.",
       { table: { head: ["Nazwa", "Cel", "Ważność"], rows: [
         ["_ga", "rozróżnianie odwiedzających (losowy identyfikator)", "do 2 lat"],

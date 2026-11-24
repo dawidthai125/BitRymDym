@@ -34,6 +34,9 @@ describe("Nie wylogowuj mnie", () => {
     expect(isDocumentRequest("GET", new Headers({ "sec-fetch-dest": "document" }))).toBe(true);
     expect(isDocumentRequest("POST", new Headers({ "sec-fetch-dest": "document" }))).toBe(false);
     expect(isDocumentRequest("GET", new Headers({ "sec-fetch-dest": "empty" }))).toBe(false);
+    // Fetched by the service worker (older installs without navigation preload).
+    expect(isDocumentRequest("GET", new Headers({ "sec-fetch-dest": "empty", "sec-fetch-mode": "navigate" }))).toBe(true);
+    expect(isDocumentRequest("GET", new Headers({ "sec-fetch-dest": "empty", "sec-fetch-mode": "cors" }))).toBe(false);
     expect(isDocumentRequest("GET", new Headers({ "sec-fetch-dest": "document", "sec-purpose": "prefetch" }))).toBe(false);
   });
 

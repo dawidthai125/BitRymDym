@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import type { ReturnState } from "@/components/premium/premium-return-view";
 import { PLAN_PACK_CATALOG, youtubeUnitsForGrosz } from "@/config/plan-policy";
+import { purchaseEvent, type PurchaseEvent } from "@/lib/analytics/ga";
 import { isUuid } from "@/lib/beats/audio-validation";
 import { labelPremiumTier } from "@/lib/ui/labels";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -22,6 +23,7 @@ type OrderRow = {
   grant_status: string;
   grant_note: string | null;
   granted_until: string | null;
+  amount_grosz?: number | null;
 };
 
 function formatWhen(iso: string, locale: string): string {
@@ -33,6 +35,14 @@ function formatWhen(iso: string, locale: string): string {
   }).format(date);
 }
 
+/** Statistics event for a settled order: product and price only, no order or account id. */
+function orderPurchase(row: Omit<OrderRow, "pack">, pack: string | null): PurchaseEvent | null {
+  const amount = row.amount_grosz;
+  if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return null;
+  const detail = row.product_kind === "plan" ? row.plan_tier : row.product_kind === "pack" ? pack : row.product_kind === "addon" ? row.addon : null;
+  return purchaseEvent([row.product_kind, detail].filter(Boolean).join("_").toLowerCase(), amount);
+}
+
 /** What the buyer sees for their own order (return page, popup on the account). Read only. */
 export async function loadReturnState(sessionId: string, userId: string): Promise<ReturnState> {
   const t = await getTranslations("account.premiumPage.returnPage");
@@ -42,7 +52,7 @@ export async function loadReturnState(sessionId: string, userId: string): Promis
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin
       .from("payment_orders")
-      .select("product_kind, plan_tier, addon, status, grant_status, grant_note, granted_until")
+      .select("product_kind, plan_tier, addon, status, grant_status, grant_note, granted_until, amount_grosz")
       .eq("session_id", sessionId)
       .eq("user_id", userId)
       .maybeSingle();
@@ -66,7 +76,7 @@ export async function loadReturnState(sessionId: string, userId: string): Promis
         const catalogHref = "/beats?katalog=moj";
         if (row.status === "failed") state = { status: "beat_failed", href };
         else if (row.status === "paid" && row.grant_status === "skipped") state = { status: "beat_skipped", href };
-        else if (row.status === "paid" && row.grant_status === "granted") state = { status: "beat_paid", href: catalogHref };
+        else if (row.status === "paid" && row.grant_status === "granted") state = { status: "beat_paid", href: catalogHref, purchase: orderPurchase(row, null) };
         else state = { status: "beat_pending", href };
       } else if (row.status === "failed") state = { status: "failed" };
       else if (row.status === "pending") state = { status: "pending" };
@@ -90,6 +100,7 @@ export async function loadReturnState(sessionId: string, userId: string): Promis
           until,
           scheduled: row.grant_note === "schedule",
           kind: row.product_kind === "addon" ? "addon" : row.product_kind === "pack" ? "pack" : "plan",
+          purchase: orderPurchase(row, pack),
         };
       }
     }
@@ -99,14 +110,18 @@ export async function loadReturnState(sessionId: string, userId: string): Promis
   return state;
 }
 
-/** Popup text for the buyer's own settled order; null for anything else (wrong id, someone else's, refunded). */
-export async function paymentSuccessMessage(sessionId: unknown, userId: string): Promise<string | null> {
+/** Popup text (and statistics event) for the buyer's own settled order; null for anything else (wrong id, someone else's, refunded). */
+export async function paymentSuccess(
+  sessionId: unknown,
+  userId: string,
+): Promise<{ message: string; purchase: PurchaseEvent | null } | null> {
   if (typeof sessionId !== "string" || !PAYMENT_SESSION_RE.test(sessionId)) return null;
   const state = await loadReturnState(sessionId, userId);
   if (state.status !== "paid") return null;
+  const done = (message: string) => ({ message, purchase: state.purchase ?? null });
   const t = await getTranslations("account.premiumPage.returnPage");
-  if (state.kind === "pack" || !state.until) return t("sukcesPakiet", { co: state.product });
+  if (state.kind === "pack" || !state.until) return done(t("sukcesPakiet", { co: state.product }));
   const values = { co: state.kind === "plan" ? labelPremiumTier(state.product) : state.product, data: state.until };
-  if (state.scheduled) return t("sukcesZaplanowane", values);
-  return t(state.kind === "addon" ? "sukcesDodatek" : "sukcesPlan", values);
+  if (state.scheduled) return done(t("sukcesZaplanowane", values));
+  return done(t(state.kind === "addon" ? "sukcesDodatek" : "sukcesPlan", values));
 }
