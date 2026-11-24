@@ -31,8 +31,6 @@ export type TrackMetrics = {
   clipEvents: number;
   /** 10th percentile of 50 ms RMS inside clip regions (dBFS); null if too short. */
   noiseFloorDbfs: number | null;
-  /** Only one-channel files on the track (pan law, see chainOutputsStereo). */
-  monoSource?: boolean;
 };
 
 export type MixMetrics = {
@@ -231,7 +229,6 @@ export function computeMixMetrics(input: MixAnalysisInput, onProgress?: MixProgr
       samplePeakDbfs: lo?.samplePeakDbfs ?? -120,
       clipEvents: hasAudio ? countClipEvents(r.left, r.right) : 0,
       noiseFloorDbfs: hasAudio && VOCAL_ROLES.includes(t.role) ? noiseFloor(dryForNoise(input, r, anySolo), sr) : null,
-      ...(r.monoSource ? { monoSource: true } : {}),
     };
     if (r.audible && hasAudio) {
       for (let i = 0; i < len; i++) {

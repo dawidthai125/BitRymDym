@@ -38,7 +38,7 @@ import {
   pocketSpans,
   readPocketParams,
 } from "@/lib/studio/mix-analysis/rap-pocket";
-import { chainOutputsStereo, stereoPan } from "@/lib/studio/mix-analysis/render";
+import { stereoPan } from "@/lib/studio/mix-analysis/render";
 import {
   isSidechainKey,
   SIDECHAIN_BLOCK_SEC,
@@ -246,21 +246,18 @@ function assertValidPcm(
 /** stereoPan (the live StereoPanner law) as a matrix, recomputed only when the pan moves. */
 class PanMatrix {
   private pan = Number.NaN;
-  private readonly mono = [0, 0];
   private readonly m = [0, 0, 0, 0];
   left = 0;
   right = 0;
 
-  /** `mono` is the part that reaches the panner as one channel (−3 dB per side at centre); l / r the stereo part. */
-  apply(mono: number, l: number, r: number, gain: number, pan: number): void {
+  apply(l: number, r: number, gain: number, pan: number): void {
     if (pan !== this.pan) {
       this.pan = pan;
-      [this.mono[0], this.mono[1]] = stereoPan(1, 1, true, pan);
       [this.m[0], this.m[1]] = stereoPan(1, 0, false, pan);
       [this.m[2], this.m[3]] = stereoPan(0, 1, false, pan);
     }
-    this.left = gain * (mono * this.mono[0]! + l * this.m[0]! + r * this.m[2]!);
-    this.right = gain * (mono * this.mono[1]! + l * this.m[1]! + r * this.m[3]!);
+    this.left = gain * (l * this.m[0]! + r * this.m[2]!);
+    this.right = gain * (l * this.m[1]! + r * this.m[3]!);
   }
 }
 
@@ -659,24 +656,10 @@ export async function renderStudioDocumentOffline(
   const trackIndex = new Map(document.tracks.map((t, idx) => [t.id, idx]));
   const busL = new Float64Array(document.tracks.length);
   const busR = new Float64Array(document.tracks.length);
-  /** Part of a dry track that reaches its panner as one channel (mono files, notes). */
-  const busM = new Float64Array(document.tracks.length);
   const stripL = new Float64Array(document.tracks.length);
   const stripR = new Float64Array(document.tracks.length);
   const pans = document.tracks.map(() => new PanMatrix());
   const masterPanMatrix = new PanMatrix();
-  const isMonoClip = (clip: (typeof document.clips)[number]): boolean => {
-    const key = keyForVoice(clip);
-    return Boolean(key && pcmCache.get(sourceCacheKey(key))?.mono);
-  };
-  const monoClipIds = new Set(document.clips.filter(isMonoClip).map((c) => c.id));
-  // With inserts the whole strip is one or two channels, as in the master (renderTrackWithFx).
-  const monoStrip = document.tracks.map((track) => {
-    if (!trackFx.get(track.id) || chainOutputsStereo(track.effectsChain)) return false;
-    return document.clips.every((c) => c.trackId !== track.id || c.muted || c.durationMs < 1 || monoClipIds.has(c.id));
-  });
-  // A chain that is only switched off still hands the panner two channels.
-  const stereoStrip = new Set(document.tracks.filter((track) => chainOutputsStereo(track.effectsChain)).map((track) => track.id));
   // Rap pocket: same steps as applyRapPocket in the master, streamed.
   const hasSound = (track: (typeof document.tracks)[number]) =>
     trackGraphParams(track, anySolo).gain > 0 &&
@@ -740,7 +723,7 @@ export async function renderStudioDocumentOffline(
       left = wet.left;
       right = wet.right;
     }
-    masterPanMatrix.apply(0, left, right, gain, pan);
+    masterPanMatrix.apply(left, right, gain, pan);
     interleaved[i * 2] = masterPanMatrix.left;
     interleaved[i * 2 + 1] = masterPanMatrix.right;
   };
@@ -777,7 +760,6 @@ export async function renderStudioDocumentOffline(
 
     busL.fill(0);
     busR.fill(0);
-    busM.fill(0);
 
     for (const voice of cachedInterp.voices) {
       if (voice.sourceKind === "ARTIFACT") {
@@ -827,36 +809,20 @@ export async function renderStudioDocumentOffline(
         : voice.effectiveClipGain;
       const ti = trackIndex.get(voice.trackId);
       if (ti === undefined) continue;
-      if (!trackFx.get(voice.trackId) && !stereoStrip.has(voice.trackId) && monoClipIds.has(voice.clipId)) {
-        busM[ti]! += sample.left * clipGain;
-      } else {
-        busL[ti]! += sample.left * clipGain;
-        busR[ti]! += sample.right * clipGain;
-      }
+      busL[ti]! += sample.left * clipGain;
+      busR[ti]! += sample.right * clipGain;
     }
 
     for (let ti = 0; ti < document.tracks.length; ti++) {
       const track = document.tracks[ti]!;
-      let mono = busM[ti]!;
-      let tl = busL[ti]!;
-      let tr = busR[ti]!;
       const midiSample = midiByTrack[ti]?.[i] ?? 0;
+      let tl = busL[ti]! + midiSample;
+      let tr = busR[ti]! + midiSample;
       const fx = trackFx.get(track.id);
       if (fx) {
-        const wet = fx.process({ left: tl + midiSample, right: tr + midiSample });
-        if (monoStrip[ti]) {
-          mono = wet.left;
-          tl = 0;
-          tr = 0;
-        } else {
-          tl = wet.left;
-          tr = wet.right;
-        }
-      } else if (stereoStrip.has(track.id)) {
-        tl += midiSample;
-        tr += midiSample;
-      } else {
-        mono += midiSample;
+        const wet = fx.process({ left: tl, right: tr });
+        tl = wet.left;
+        tr = wet.right;
       }
       const tp = trackGraphParams(
         track.automation
@@ -869,7 +835,7 @@ export async function renderStudioDocumentOffline(
         cachedInterp.anySolo,
       );
       const panner = pans[ti]!;
-      panner.apply(mono, tl, tr, tp.gain, tp.pan);
+      panner.apply(tl, tr, tp.gain, tp.pan);
       stripL[ti] = panner.left;
       stripR[ti] = panner.right;
     }

@@ -60,7 +60,7 @@ export async function listOwnFinishedTracks(admin: Admin, ownerId: string, limit
   if (jobs.length === 0) return [];
   const projectIds = [...new Set(jobs.map((j) => j.project_id))];
   const [projectsRes, worksRes] = await Promise.all([
-    admin.from("studio_projects").select("id, title").eq("owner_id", ownerId).in("id", projectIds),
+    admin.from("studio_projects").select("id, title").eq("owner_id", ownerId).neq("status", "ARCHIVED").in("id", projectIds),
     admin.from("catalog_works").select("master_job_id, withdrawn_at").eq("owner_id", ownerId).in("master_job_id", jobs.map((j) => j.id)),
   ]);
   if (projectsRes.error) throw new Error(`own_tracks_projects: ${projectsRes.error.message}`);

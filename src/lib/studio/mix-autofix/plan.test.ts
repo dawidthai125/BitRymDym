@@ -516,13 +516,6 @@ describe("level moves that the effects do not see (effects run before the fader)
     expect(at(-6)).toBe(at(0));
   });
 
-  it("a mono vocal that gets its first two-channel insert is raised 3 dB less", () => {
-    const d = () => doc(120, [track(LEAD, "Wokal", "lead_vocal"), track(BEAT, "Bit", "beat")]);
-    const near = (extra: Partial<TrackMetrics>) => ({ ...quiet(extra), vocalVsBeatLu: -5 });
-    const up = (m: MixMetrics) => controls(plan(["balance", "compression"], d(), m), LEAD)!.gainDb!;
-    expect(up(near({})) - up(near({ monoSource: true }))).toBeCloseTo(3, 5);
-  });
-
   it("an instrument already under the floor is not lowered with the beat", () => {
     const d = doc(120, [track(LEAD, "Wokal", "lead_vocal"), track(BEAT, "Bit", "beat"), track(INST, "Keys", "instrument", { gainDb: -8 })]);
     const p = plan(["balance"], d, quiet({ samplePeakDbfs: -4 }, true));

@@ -293,7 +293,8 @@ async function countFinishedSongs(admin: Admin, ownerId: string): Promise<number
   const loaded = must(
     await admin
       .from("studio_master_jobs")
-      .select("project_id")
+      .select("project_id, studio_projects!inner(status)")
+      .neq("studio_projects.status", "ARCHIVED")
       .eq("owner_id", ownerId)
       .eq("kind", "master")
       .eq("status", "succeeded")

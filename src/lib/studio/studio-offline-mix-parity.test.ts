@@ -1,9 +1,7 @@
 /** WAV export vs the mix-analysis / master render: pan law (mono and stereo files) and the rap pocket. */
 import { describe, expect, it } from "vitest";
 
-import { decodeRenderSourceToStereoPcm, type DecodedPcmStereo } from "@/lib/audio/render-decode";
-import { resampleStereoInterleaved } from "@/lib/audio/server-basic-bake";
-import { encodeWavFromBake } from "@/lib/audio/wav-encode";
+import type { DecodedPcmStereo } from "@/lib/audio/render-decode";
 import { renderMixStereo } from "@/lib/studio/master/render-mix";
 import type { MixAnalysisInput } from "@/lib/studio/mix-analysis/render";
 import { studioEngineDocumentFromProject } from "@/lib/studio/studio-engine-document-from-project";
@@ -30,7 +28,7 @@ function pcm(channels: Float32Array[]): DecodedPcmStereo {
     interleaved[i * 2] = channels[0]![i]!;
     interleaved[i * 2 + 1] = (channels[1] ?? channels[0]!)[i]!;
   }
-  return { sampleRate: SR, channels: 2, interleaved, frames: N, ...(channels.length === 1 ? { mono: true } : {}) };
+  return { sampleRate: SR, channels: 2, interleaved, frames: N };
 }
 
 type Case = { vocal: Float32Array[]; pan?: number; fx?: StudioFxType; beat?: boolean; masterPan?: number; gainDb?: number; off?: boolean; markers?: { kind: "verse" | "hook"; positionMs: number }[] };
@@ -83,19 +81,18 @@ async function expectSame(c: Case) {
 }
 
 describe("WAV export matches the mix render", () => {
-  it("mono file at centre: −3 dB per side, like the live panner", async () => {
-    const { out } = await expectSame({ vocal: MONO });
+  it("mono file at centre plays at unity on both sides, with and without inserts", async () => {
     const src = rmsDb((i) => MONO[0]![i]!, SR / 10, N / 2);
-    expect(rmsDb((i) => out[i * 2]!, SR / 10, N / 2) - src).toBeCloseTo(-3.01, 1);
+    for (const c of [{}, { fx: "compressor", off: true }, { fx: "reverb", off: true }, { fx: "gate", off: true }] as const) {
+      const { out } = await expectSame({ vocal: MONO, ...c });
+      expect(rmsDb((i) => out[i * 2]!, SR / 10, N / 2) - src).toBeCloseTo(0, 1);
+      expect(rmsDb((i) => out[i * 2 + 1]!, SR / 10, N / 2) - src).toBeCloseTo(0, 1);
+    }
   });
 
-  it("mono file panned, and through an insert", async () => {
+  it("mono file panned, and through inserts", async () => {
     await expectSame({ vocal: MONO, pan: 0.5 });
-    await expectSame({ vocal: MONO, pan: -0.7, fx: "highpass" });
-  });
-
-  it("mono file through a reverb becomes stereo before the panner", async () => {
-    await expectSame({ vocal: MONO, pan: 0.5, fx: "reverb" });
+    for (const fx of ["highpass", "reverb", "compressor", "gate", "deesser"] as const) await expectSame({ vocal: MONO, pan: -0.7, fx });
   });
 
   it("the fader sits after the inserts: a compressor hears the same signal at every fader", async () => {
@@ -107,15 +104,6 @@ describe("WAV export matches the mix render", () => {
     expect((await level(12)) - zero).toBeCloseTo(12, 1);
     expect((await level(-12)) - zero).toBeCloseTo(-12, 1);
     await expectSame({ vocal: STEREO, fx: "compressor", gainDb: 9, pan: 0.4 });
-  });
-
-  it("mono file after a two-channel insert: the stereo pan law, also when the insert is switched off", async () => {
-    for (const fx of ["compressor", "gate", "deesser"] as const) {
-      await expectSame({ vocal: MONO, fx });
-      await expectSame({ vocal: MONO, fx, pan: -0.7 });
-    }
-    const { out } = await expectSame({ vocal: MONO, fx: "compressor", off: true });
-    expect(rmsDb((i) => out[i * 2]!, SR / 10, N / 2) - rmsDb((i) => MONO[0]![i]!, SR / 10, N / 2)).toBeCloseTo(0, 1);
   });
 
   it("stereo file: unity at centre, equal power when panned, master pan too", async () => {
@@ -134,31 +122,4 @@ describe("WAV export matches the mix render", () => {
     const wet = await both({ vocal: MONO, beat: true, fx: "pocket" });
     expect(rmsDb((i) => wet.out[i * 2]!, SR / 10, N)).toBeLessThan(rmsDb((i) => dry.out[i * 2]!, SR / 10, N) - 0.5);
   });
-
-  it("the decoder marks one-channel files, and the resampler keeps the mark", async () => {
-    const wav = await encodeWavFromBake({ interleaved: pcm(STEREO).interleaved, sampleRate: SR, channels: 2, frames: N, durationMs: MS });
-    const stereo = await decodeRenderSourceToStereoPcm({ bytes: new Uint8Array(wav.bytes), contentType: "audio/wav", label: "take" });
-    expect(stereo.mono).toBeUndefined();
-    const mono = await decodeRenderSourceToStereoPcm({ bytes: monoWav(48000, 4800), contentType: "audio/wav", label: "take" });
-    expect(mono.mono).toBe(true);
-    expect(resampleStereoInterleaved(mono, SR).mono).toBe(true);
-  });
 });
-
-function monoWav(rate: number, frames: number): Uint8Array {
-  const b = Buffer.alloc(44 + frames * 2);
-  b.write("RIFF", 0);
-  b.writeUInt32LE(36 + frames * 2, 4);
-  b.write("WAVEfmt ", 8);
-  b.writeUInt32LE(16, 16);
-  b.writeUInt16LE(1, 20);
-  b.writeUInt16LE(1, 22);
-  b.writeUInt32LE(rate, 24);
-  b.writeUInt32LE(rate * 2, 28);
-  b.writeUInt16LE(2, 32);
-  b.writeUInt16LE(16, 34);
-  b.write("data", 36);
-  b.writeUInt32LE(frames * 2, 40);
-  for (let i = 0; i < frames; i++) b.writeInt16LE(Math.round(8000 * Math.sin(i / 20)), 44 + i * 2);
-  return new Uint8Array(b);
-}

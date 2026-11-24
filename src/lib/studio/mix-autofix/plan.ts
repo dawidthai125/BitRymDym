@@ -21,7 +21,6 @@
 
 import type { StudioTrackRole } from "@/config/studio";
 import type { MixMetrics, TrackMetrics } from "@/lib/studio/mix-analysis/metrics";
-import { chainOutputsStereo } from "@/lib/studio/mix-analysis/render";
 import type { MixCardId, MixCardStatus, MixVerdict } from "@/lib/studio/mix-analysis/verdict";
 import {
   P0_DENOISE_RANGE_DB,
@@ -139,8 +138,6 @@ type TrackState = {
   measuredGainDb: number;
   pan: number;
   chain: StudioFxChainV1;
-  /** The measured mono track already went through a two-channel insert (+3 dB, see chainOutputsStereo). */
-  measuredStereoLaw: boolean;
   metrics: TrackMetrics | null;
 };
 
@@ -223,7 +220,6 @@ type Ctx = {
   createId: () => string;
   notes: MixAutofixNote[];
   beatKey: TuneKey | null;
-  fixes: readonly MixPlanFixId[];
 };
 
 function note(ctx: Ctx, key: string, params: Record<string, string | number> = {}, fx?: MixAutofixNote["fx"]) {
@@ -285,21 +281,9 @@ function fixGain(ctx: Ctx): void {
  * Level at the effects' input: effects run before the fader, so the fader at measuring time comes off.
  * (Fader moves made in this pass do not reach the effects at all.)
  */
-const atFxInput = (t: TrackState, level: number) =>
-  level - t.measuredGainDb - (t.metrics?.monoSource && t.measuredStereoLaw ? MONO_TO_STEREO_DB : 0);
+const atFxInput = (t: TrackState, level: number) => level - t.measuredGainDb;
 
 const moved = (t: TrackState) => t.gainDb - t.measuredGainDb;
-
-/** A mono file gains this when the first two-channel insert lands on its track (the panner changes its law). */
-const MONO_TO_STEREO_DB = 3;
-const ADDS_STEREO_FX: readonly MixPlanFixId[] = ["compression", "deesser", "space"];
-
-/** Level change this pass brings to a track besides the metrics: the fader and a coming pan-law step. */
-const ahead = (ctx: Ctx, t: TrackState) =>
-  moved(t) +
-  (VOCALS.includes(t.role) && t.metrics?.monoSource && !t.measuredStereoLaw && ctx.fixes.some((id) => ADDS_STEREO_FX.includes(id))
-    ? MONO_TO_STEREO_DB
-    : 0);
 
 function loudest(tracks: readonly TrackState[]): TrackState | null {
   let best: TrackState | null = null;
@@ -308,11 +292,11 @@ function loudest(tracks: readonly TrackState[]): TrackState | null {
 }
 
 /** How far these vocals can go up: step limit, fader end and the peak ceiling. */
-function vocalRoomDb(ctx: Ctx, targets: readonly TrackState[]): number {
+function vocalRoomDb(targets: readonly TrackState[]): number {
   const T = MIX_AUTOFIX_TARGETS;
   let room: number = T.maxVocalUpDb;
   for (const t of targets) {
-    const peak = t.metrics!.samplePeakDbfs + ahead(ctx, t);
+    const peak = t.metrics!.samplePeakDbfs + moved(t);
     room = Math.min(room, 12 - t.gainDb, T.vocalPeakCeilDbfs - peak);
   }
   return Math.max(0, room);
@@ -335,9 +319,9 @@ function fixBalance(ctx: Ctx): void {
   const topBeat = loudest(beats);
   if (d !== null && Number.isFinite(d) && topVox && topBeat) {
     // A peak trim made earlier in this pass already changed the balance (a hot beat is −6 dB by now).
-    const delta = r1(T.balanceLu - (d + ahead(ctx, topVox) - moved(topBeat)));
+    const delta = r1(T.balanceLu - (d + moved(topVox) - moved(topBeat)));
     if (delta >= 0.5) {
-      const up = r1(Math.min(delta, vocalRoomDb(ctx, vox)));
+      const up = r1(Math.min(delta, vocalRoomDb(vox)));
       const down = r1(Math.min(delta - up, beatRoomDb(beats)));
       for (const t of vox) t.gainDb = clamp(r1(t.gainDb + up), -24, 12);
       // A beat or instrument already under the floor stays where it is.
@@ -360,13 +344,13 @@ function fixBalance(ctx: Ctx): void {
   }
   // Adlibs / doubles relative to the loudest lead.
   const leadLufs = Math.max(
-    ...leads.map((t) => (t.metrics?.integratedLufs ?? -Infinity) + ahead(ctx, t)),
+    ...leads.map((t) => (t.metrics?.integratedLufs ?? -Infinity) + moved(t)),
   );
   if (!Number.isFinite(leadLufs)) return;
   for (const t of ctx.state.tracks) {
     if (!active(t) || !["adlib", "double", "backing"].includes(t.role)) continue;
     const under = t.role === "adlib" ? T.adlibUnderLeadDb : T.doubleUnderLeadDb;
-    const cur = t.metrics!.integratedLufs + ahead(ctx, t);
+    const cur = t.metrics!.integratedLufs + moved(t);
     if (!Number.isFinite(cur)) continue;
     const step = clamp(r1(leadLufs - under - cur), -T.maxGainStepDb, T.maxGainStepDb);
     if (Math.abs(step) >= 1.5) {
@@ -701,7 +685,6 @@ export function planMixAutofix(params: {
       measuredGainDb: t.gainDb,
       pan: t.pan,
       chain: structuredClone(t.effectsChain),
-      measuredStereoLaw: chainOutputsStereo(t.effectsChain),
       metrics: byId.get(t.id) ?? null,
     })),
   };
@@ -713,7 +696,6 @@ export function planMixAutofix(params: {
     createId: params.createId ?? (() => crypto.randomUUID()),
     notes: [],
     beatKey: params.beatKey ?? null,
-    fixes: params.fixes,
   };
   const order = ([...MIX_AUTOFIX_IDS, "pocket", "rider", "harmony", "voice", "tune"] as const).filter((id) =>
     params.fixes.includes(id),

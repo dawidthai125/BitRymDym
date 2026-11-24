@@ -112,25 +112,15 @@ export type RenderedTrack = {
   /** Sample ranges [start, end) covered by unmuted clips. */
   activeRanges: Array<[number, number]>;
   audible: boolean;
-  /** Every file on the track has one channel: the first two-channel insert raises it by 3 dB (pan law). */
-  monoSource: boolean;
 };
 
 const dbToLin = (db: number) => (Number.isFinite(db) ? Math.pow(10, db / 20) : 1);
 
 /**
- * Inserts whose live nodes output two channels even for a mono file: worklets (outputChannelCount 2),
- * the DynamicsCompressor (always stereo in browsers) and the reverb. The slot stays wired when it is
- * switched off, so the switch does not matter. After one of them the panner uses its stereo law.
+ * Web Audio StereoPannerNode law (spec, equal power). Every track strip is stereo: a one-channel file
+ * plays the same on both sides (the live track input is fixed to two channels), so the level does not
+ * depend on the inserts. The mono law is kept for completeness of the spec function.
  */
-const TWO_CHANNEL_FX = new Set(["gate", "tune", "rider", "voice", "harmony", "pocket", "compressor", "limiter", "deesser", "reverb"]);
-
-export function chainOutputsStereo(raw: unknown): boolean {
-  const effects = (raw as { effects?: unknown } | null | undefined)?.effects;
-  return Array.isArray(effects) && effects.some((e) => TWO_CHANNEL_FX.has(String((e as { type?: unknown } | null)?.type)));
-}
-
-/** Web Audio StereoPannerNode law (spec, equal power). */
 export function stereoPan(
   l: number,
   r: number,
@@ -280,7 +270,6 @@ function addRenderedMidi(
     durationMs: input.lengthMs,
     bank: input.acousticBank,
   });
-  const mono = !chainOutputsStereo(track.effectsChain);
   const nMax = Math.min(left.length, right.length, pcm.length);
   let start = -1;
   let end = 0;
@@ -291,7 +280,7 @@ function addRenderedMidi(
     end = n + 1;
     if (panNow) {
       const g = s * strip.gainAt(n);
-      const [pl, pr] = stereoPan(g, g, mono, strip.panAt(n));
+      const [pl, pr] = stereoPan(g, g, false, strip.panAt(n));
       left[n] += pl;
       right[n] += pr;
     } else {
@@ -312,14 +301,11 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
   const strip = trackStrip(track, sr);
   const fx = analysisFxChain(track.effectsChain, "track", sr);
   if (fx) return renderTrackWithFx(input, track, audible, strip, fx);
-  const stereoStrip = chainOutputsStereo(track.effectsChain);
-  let allMono = true;
   for (const clip of input.clips) {
     if (clip.trackId !== track.id || clip.muted || clip.durationMs < 1) continue;
     const pcm = clipPcm(input, clip);
     if (!pcm) continue;
-    const { c0, c1, mono, indexAt } = pcm;
-    if (!mono) allMono = false;
+    const { c0, c1, indexAt } = pcm;
     const start = Math.round((clip.timelineStartMs / 1000) * sr);
     const dur = Math.round((clip.durationMs / 1000) * sr);
     const fi = Math.round((Math.max(0, clip.fadeInMs) / 1000) * sr);
@@ -338,14 +324,14 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
       let g = cg * strip.gainAt(n);
       if (fi > 0 && k < fi) g *= k / fi;
       if (fo > 0 && dur - k <= fo) g *= Math.max(0, (dur - k) / fo);
-      const [pl, pr] = stereoPan(c0[si] * g, c1[si] * g, mono && !stereoStrip, strip.panAt(n));
+      const [pl, pr] = stereoPan(c0[si] * g, c1[si] * g, false, strip.panAt(n));
       left[n] += pl;
       right[n] += pr;
     }
     if (first >= 0) activeRanges.push([first, last + 1]);
   }
   addRenderedMidi(input, track, left, right, activeRanges, strip, true);
-  return { track, left, right, activeRanges, audible, monoSource: allMono };
+  return { track, left, right, activeRanges, audible };
 }
 
 /** FX (unpanned stereo) → gain → pan, matching the live track strip and the WAV export. */
@@ -361,13 +347,11 @@ function renderTrackWithFx(
   const left = new Float32Array(len);
   const right = new Float32Array(len);
   const activeRanges: Array<[number, number]> = [];
-  let allMono = true;
   for (const clip of input.clips) {
     if (clip.trackId !== track.id || clip.muted || clip.durationMs < 1) continue;
     const pcm = clipPcm(input, clip);
     if (!pcm) continue;
-    const { c0, c1, mono, indexAt } = pcm;
-    if (!mono) allMono = false;
+    const { c0, c1, indexAt } = pcm;
     const start = Math.round((clip.timelineStartMs / 1000) * sr);
     const dur = Math.round((clip.durationMs / 1000) * sr);
     const fi = Math.round((Math.max(0, clip.fadeInMs) / 1000) * sr);
@@ -393,20 +377,19 @@ function renderTrackWithFx(
   }
   addRenderedMidi(input, track, left, right, activeRanges, strip, false);
   if (activeRanges.length > 0) applyFxInPlace(fx, left, right);
-  const mono = allMono && !chainOutputsStereo(track.effectsChain);
   if (strip.automated) {
     // Gain and pan automation after the FX: per sample, same law as stereoPan.
     const len2 = Math.min(left.length, right.length);
     for (let n = 0; n < len2; n++) {
       const g = strip.gainAt(n);
-      const [pl, pr] = stereoPan(left[n] * g, right[n] * g, mono, strip.panAt(n));
+      const [pl, pr] = stereoPan(left[n] * g, right[n] * g, false, strip.panAt(n));
       left[n] = pl;
       right[n] = pr;
     }
   } else {
-    stereoPanBuffer(left, right, mono, track.pan, dbToLin(track.gainDb));
+    stereoPanBuffer(left, right, false, track.pan, dbToLin(track.gainDb));
   }
-  return { track, left, right, activeRanges, audible, monoSource: allMono };
+  return { track, left, right, activeRanges, audible };
 }
 
 export function renderAllTracks(input: MixAnalysisInput): RenderedTrack[] {

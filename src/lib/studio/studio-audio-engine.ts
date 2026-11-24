@@ -1824,6 +1824,9 @@ export class StudioAudioEngine {
       throw new Error("AUDIO_OUTPUT_ERROR");
     }
     const input = this.ctx.createGain();
+    // Always two channels: a mono file would otherwise use the mono pan law (−3 dB) until the first
+    // worklet, compressor or reverb, and jump 3 dB when one is added. Master and WAV do the same.
+    Object.assign(input, { channelCount: 2, channelCountMode: "explicit", channelInterpretation: "speakers" });
     const gain = this.ctx.createGain();
     const pan = this.ctx.createStereoPanner();
     input.connect(gain);

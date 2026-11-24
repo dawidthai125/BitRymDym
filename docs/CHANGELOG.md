@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (34) — Jedno prawo panoramy, usuwanie projektu
+
+- Tor ścieżki jest zawsze stereo: na żywo wejście ścieżki ma 2 kanały (`channelCount`), master, analiza i WAV liczą tak samo (`MIX_CACHE_TAG` r4). Plik mono na środku gra z pełnym poziomem po obu stronach; dodanie pierwszego efektu nie podnosi go już o 3 dB. Zastępuje `chainOutputsStereo` i znacznik `mono` z (33)/(31).
+- Usuwanie projektu (`studio-project-remove-server.ts`): projekt z eksportem, masterem, ukończonym utworem, czyszczeniem lub separacją da się usunąć. Treść, pliki, linki i publikacja znikają, wiersze limitów i historii zostają przy ukrytym projekcie `ARCHIVED`. Wcześniej usunięcie projektu zwracało miesięczne mastery i dzienny limit utworów.
+
 ## 2026-11-24 (33) — Przegląd po wdrożeniach: master jak odtwarzanie, „Zrób utwór”, profile, separator
 
 - Master i analiza: tor ścieżki jak na żywo i w WAV (efekty → tłumik → panorama, `render.ts`, `MIX_CACHE_TAG` r3). Wcześniej tłumik był przed efektami i kompresor zjadał podbicie wokalu.

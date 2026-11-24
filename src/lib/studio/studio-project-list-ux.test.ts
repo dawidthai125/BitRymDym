@@ -51,9 +51,9 @@ describe("Studio project delete — service + route", () => {
     expect(service).toMatch(/\.eq\("owner_id", context\.userId\)/);
   });
 
-  it("DELETE route wires deleteStudioProject (not client DB)", () => {
+  it("DELETE route wires removeStudioProject (not client DB)", () => {
     expect(route).toMatch(/export async function DELETE/);
-    expect(route).toMatch(/deleteStudioProject/);
+    expect(route).toMatch(/removeStudioProject/);
     expect(route).not.toMatch(/createSupabaseBrowser/);
   });
 

@@ -141,9 +141,7 @@ describe("ducking in the mix render", () => {
     const dry = computeMixMetrics(base(undefined));
     const wet = computeMixMetrics(base(fx("pocket", { verseDb: -3, hookDb: 0, depth: 0.5, doubleMs: 20, doubleCents: 0, doubleDb: -24 })));
     const lufs = (m: typeof dry, id: string) => m.tracks.find((t) => t.trackId === id)!.integratedLufs;
-    // −3 dB section level; a mono vocal gets the same 3 dB back from the pan law (the live pocket node is stereo).
-    const mono = wet.tracks.find((t) => t.trackId === "v")!.monoSource === true;
-    expect(lufs(dry, "v") - lufs(wet, "v")).toBeCloseTo(mono ? 0 : 3, 1);
+    expect(lufs(dry, "v") - lufs(wet, "v")).toBeCloseTo(3, 1);
     expect(lufs(dry, "b") - lufs(wet, "b")).toBeGreaterThan(1.5);
     expect(wet.tracks.map((t) => t.trackId)).toEqual(["v", "b"]);
   });
