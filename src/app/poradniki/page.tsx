@@ -12,7 +12,7 @@ export function generateMetadata() {
   return pageMetadata({
     title: "Poradniki rapowe — teksty, refreny, nagrywanie, mix i wydanie",
     description:
-      "Poradniki dla raperów: jak napisać tekst i refren, co to BPM i tonacja, jak zmiksować wokal, jak zacząć freestyle i jak wydać utwór na Spotify.",
+      "Poradniki dla raperów: jak rapować pod bit, napisać tekst i refren, dobrać rymy, nagrać i zmiksować wokal, zacząć freestyle i wydać utwór na Spotify.",
     path: GUIDE_BASE,
   });
 }

@@ -289,8 +289,8 @@ export const GUIDES: readonly Guide[] = [
     ],
     beats: "free",
     cta: [
-      { href: "/darmowe-bity-do-rapu", label: "Bity do freestyle'u" },
-      { href: "/poradniki/co-to-jest-bpm-i-tonacja", label: "BPM i tonacja" },
+      { href: "/bity-do-freestyle", label: "Bity do freestyle'u" },
+      { href: "/narzedzia/tematy-do-freestyle", label: "Losuj tematy do freestyle" },
     ],
   },
   {
@@ -752,6 +752,270 @@ export const GUIDES: readonly Guide[] = [
     cta: [
       { href: "/narzedzia/licznik-sylab", label: "Licznik sylab online" },
       { href: "/narzedzia/licznik-bpm", label: "Sprawdź BPM bitu" },
+    ],
+  },
+  {
+    slug: "rodzaje-rymow",
+    datePublished: "2026-11-24",
+    navLabel: "Rodzaje rymów",
+    metaTitle: "Rodzaje rymów — męskie, żeńskie, dokładne, niedokładne",
+    metaDescription:
+      "Rodzaje rymów z przykładami: męskie i żeńskie, dokładne i niedokładne, gramatyczne, częstochowskie, wewnętrzne i wielokrotne. Proste wyjaśnienie dla tekściarzy.",
+    h1: "Rodzaje rymów",
+    lead: "Rymy dzieli się według akcentu, dokładności brzmienia, gramatyki i miejsca w wersie. Oto najważniejsze rodzaje z przykładami i tym, jak używać ich w rapie.",
+    sections: [
+      {
+        h2: "Rymy męskie i żeńskie",
+        paragraphs: [
+          "Rym męski obejmuje ostatnią, akcentowaną sylabę, zwykle w słowach jednosylabowych: „dach — strach”, „sen — tlen”. Brzmi mocno i krótko, dobrze zamyka wers.",
+          "Rym żeński zaczyna się od przedostatniej, akcentowanej sylaby: „ulica — stolica”, „rakieta — gazeta”. W polszczyźnie akcent pada najczęściej właśnie na przedostatnią sylabę, dlatego rymów żeńskich jest najwięcej.",
+        ],
+      },
+      {
+        h2: "Rymy dokładne i niedokładne",
+        paragraphs: [
+          "W rymie dokładnym zgadzają się wszystkie głoski w rymującej się części: „kodzie — wodzie”. W niedokładnym tylko część z nich, najczęściej samogłoski: „woda — droga”. Rym oparty na samych samogłoskach nazywa się asonansem.",
+          "W rapie rymy niedokładne nie są gorsze. Dają dużo więcej możliwości, a przy dobrym akcencie słuchacz i tak słyszy rym.",
+        ],
+      },
+      {
+        h2: "Gramatyczne i częstochowskie",
+        paragraphs: [
+          "Rym gramatyczny łączy słowa w tej samej formie: „robiłem — chodziłem”, „promienie — cienie”. Łatwo go znaleźć, więc szybko się nudzi. Rym niegramatyczny łączy różne formy: „ginę — malinę”.",
+          "Rymami częstochowskimi nazywa się rymy banalne i oklepane. Jeśli słuchacz zgadnie końcówkę, zanim ją usłyszy, poszukaj mniej oczywistego słowa.",
+        ],
+      },
+      {
+        h2: "Rymy wewnętrzne i wielokrotne",
+        paragraphs: [
+          "Rym wewnętrzny pojawia się w środku wersu, a nie na końcu. Rym wielokrotny obejmuje kilka sylab albo kilka słów naraz. Oba zagęszczają tekst i są podstawą technicznego rapu.",
+          "Ważne jest też ułożenie rymów: parzyste (aabb), krzyżowe (abab) i okalające (abba). Zmiana układu w połowie zwrotki odświeża flow bez zmiany bitu.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Czym różni się rym męski od żeńskiego?", a: "Rym męski obejmuje ostatnią, akcentowaną sylabę („dach — strach”), a żeński zaczyna się od akcentowanej przedostatniej („ulica — stolica”)." },
+      { q: "Co to są rymy niedokładne?", a: "Takie, w których zgadza się tylko część głosek, np. „woda — droga”. W rapie są bardzo częste." },
+      { q: "Co to są rymy częstochowskie?", a: "Potoczna nazwa rymów banalnych i oklepanych, często gramatycznych." },
+      { q: "Jakie rymy są najlepsze do rapu?", a: "Wielokrotne i wewnętrzne, mieszane z niedokładnymi. Rym ma wspierać sens wersu, a nie go zastępować." },
+    ],
+    beats: null,
+    cta: [
+      { href: "/rymy", label: "Słownik rymów" },
+      { href: "/poradniki/rymy-wielokrotne", label: "Rymy wielokrotne" },
+    ],
+  },
+  {
+    slug: "jak-rapowac-pod-bit",
+    datePublished: "2026-11-24",
+    navLabel: "Jak rapować pod bit",
+    metaTitle: "Jak rapować pod bit — liczenie taktów i wejście w rytm",
+    metaDescription:
+      "Jak rapować pod bit: gdzie jest raz, jak liczyć takty, kiedy wejść ze zwrotką i co robić, gdy gubisz rytm. Ćwiczenia krok po kroku dla początkujących.",
+    h1: "Jak rapować pod bit",
+    lead: "Jeśli wersy uciekają przed bit albo zostają w tyle, problemem zwykle nie jest tekst, tylko liczenie. Naucz się słyszeć takt, a reszta przyjdzie szybciej.",
+    sections: [
+      {
+        h2: "Znajdź „raz”",
+        paragraphs: [
+          "Większość bitów rapowych ma metrum 4/4: liczysz do czterech i zaczynasz od nowa. Na „raz” pada zwykle mocna stopa, a na „dwa” i „cztery” werbel. Klaszcz na werbel i licz na głos, aż przestaniesz się mylić.",
+          "W trapie werbel często pada tylko na „trzy”, bo bębny grają w połowie tempa. Licz wtedy wolniej i nie ścigaj hi-hatów.",
+        ],
+      },
+      {
+        h2: "Jeden wers, jeden takt",
+        paragraphs: [
+          "Na początek mieść jeden wers w jednym takcie, a rym stawiaj w okolicy „cztery”. Cztery takty tworzą zdanie muzyczne, szesnaście to typowa zwrotka. Bit zwykle coś zmienia co cztery albo osiem taktów — to wskazówka, gdzie jesteś.",
+          "Policz takty intra, zanim wejdziesz. Najczęściej zwrotka zaczyna się po czterech albo ośmiu taktach.",
+        ],
+      },
+      {
+        h2: "Trzy ćwiczenia",
+        paragraphs: [
+          "Po pierwsze: rapuj sylabami bez sensu („ta-ta-ta”), trzymając rytm przez szesnaście taktów. Po drugie: wypowiadaj tylko ostatnie słowo każdego wersu na „cztery”. Po trzecie: powiedz cały tekst wolniej z metronomem i podnoś tempo o kilka BPM.",
+          "Nagrywaj próby. Na nagraniu od razu słychać, czy wchodzisz przed bitem, czy za nim.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Co robić, gdy gubię rytm?", a: "Zatrzymaj tekst, klaszcz na werbel i licz do czterech. Wejdź ponownie na najbliższym „raz”, nie w środku taktu." },
+      { q: "Kiedy zacząć rapować w bicie?", a: "Zwykle po czterech albo ośmiu taktach intra. Posłuchaj, kiedy wchodzą pełne bębny." },
+      { q: "Ile wersów mieści się w takcie?", a: "Najprościej jeden wers na takt. Przy szybkim flow można zmieścić dwa krótkie." },
+    ],
+    beats: "free",
+    cta: [
+      { href: "/narzedzia/metronom-online", label: "Metronom online" },
+      { href: "/poradniki/jak-zrobic-flow", label: "Jak wyćwiczyć flow" },
+    ],
+  },
+  {
+    slug: "jak-szybko-rapowac",
+    datePublished: "2026-11-24",
+    navLabel: "Jak szybko rapować",
+    metaTitle: "Jak szybko rapować — dykcja, oddech i ćwiczenia na tempo",
+    metaDescription:
+      "Jak szybko rapować i dalej być zrozumiałym: ćwiczenia na dykcję, oddech, sylaby pod szybkie tempo i plan treningu z metronomem. Poradnik krok po kroku.",
+    h1: "Jak szybko rapować",
+    lead: "Szybki rap to nie wyścig, tylko czysta dykcja w równym rytmie. Najpierw dokładność, potem tempo.",
+    sections: [
+      {
+        h2: "Zacznij wolno",
+        paragraphs: [
+          "Weź cztery wersy i powiedz je w tempie o jedną trzecią wolniejszym od docelowego. Każda sylaba ma być słyszalna, a każdy akcent w tym samym miejscu. Dopiero gdy trzy razy z rzędu wyjdzie bez błędu, podnieś metronom o 2–3 BPM.",
+          "Gdy zaczynasz połykać końcówki, cofnij się o kilka BPM. Ćwiczenie w tempie, w którym się mylisz, utrwala pomyłki.",
+        ],
+      },
+      {
+        h2: "Pisz tekst, który da się powiedzieć szybko",
+        paragraphs: [
+          "Zbitki spółgłosek („z przestrzeni”, „wstrząs”) hamują. Wybieraj słowa z otwartymi sylabami i powtarzającymi się głoskami. Policz sylaby w wersach: przy szybkim flow różnica jednej czy dwóch sylab wystarczy, żeby się wysypać.",
+          "Triole i szesnastki ćwicz osobno: najpierw sylabami bez sensu, potem tekstem.",
+        ],
+      },
+      {
+        h2: "Oddech i aparat mowy",
+        paragraphs: [
+          "Zaplanuj wdechy i zaznacz je w tekście. Krótki wdech przeponą przed długą frazą jest lepszy niż kilka urwanych w środku. Przed nagraniem rozgrzej usta: łamańce językowe, przesadna artykulacja, potem to samo szybciej.",
+          "Długie, szybkie fragmenty możesz nagrać na dwa podejścia i skleić w Studiu. Na koncert zostaw wersję z miejscem na oddech.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Ile trwa nauka szybkiego rapowania?", a: "To zależy od osoby i regularności. Lepiej ćwiczyć codziennie po kilkanaście minut niż raz w tygodniu długo." },
+      { q: "Jak nie tracić oddechu przy szybkim rapie?", a: "Zaplanuj wdechy w tekście, oddychaj przeponą i nie zaczynaj frazy na pustych płucach." },
+      { q: "Na jakim bicie ćwiczyć szybki rap?", a: "Na takim, który zostawia miejsce: prosta perkusja i stałe tempo. Zacznij wolniej i stopniowo zwiększaj BPM." },
+    ],
+    beats: "free",
+    cta: [
+      { href: "/narzedzia/metronom-online", label: "Ćwicz z metronomem" },
+      { href: "/poradniki/oddech-w-rapie", label: "Oddech w rapie" },
+    ],
+  },
+  {
+    slug: "skad-brac-bity-do-rapu",
+    datePublished: "2026-11-24",
+    navLabel: "Skąd brać bity do rapu",
+    metaTitle: "Skąd brać bity do rapu — darmowe, płatne i licencje",
+    metaDescription:
+      "Skąd brać bity do rapu: darmowe katalogi, bity na licencję i na wyłączność, własna produkcja. Co znaczy bit bez praw autorskich i na co uważać przed wydaniem.",
+    h1: "Skąd brać bity do rapu",
+    lead: "Bit możesz wziąć z darmowego katalogu, kupić na licencję, kupić na wyłączność albo zrobić. Najważniejsze, żeby przed wydaniem wiedzieć, co wolno Ci z nim zrobić.",
+    sections: [
+      {
+        h2: "Cztery źródła bitów",
+        paragraphs: [
+          "Darmowe katalogi i kanały producentów są dobre do nauki i pierwszych numerów. Bity na licencję są tańsze, ale ten sam podkład może mieć wiele osób. Bit na wyłączność masz tylko Ty. Własna produkcja daje pełną kontrolę, ale wymaga czasu.",
+          "Jeśli dopiero zaczynasz, nie kupuj od razu. Nagraj kilka prób na darmowych bitach i sprawdź, w jakim tempie i klimacie brzmisz najlepiej.",
+        ],
+      },
+      {
+        h2: "„Bity bez praw autorskich” — co to znaczy",
+        paragraphs: [
+          "Ktoś zrobił ten bit, więc ma do niego prawa. Hasło „bez praw autorskich” w praktyce oznacza zwykle, że autor pozwala korzystać z bitu na swoich warunkach. „Free” na YouTube bardzo często znaczy tylko: za darmo do celów niezarobkowych i z podpisem autora.",
+          "Przeczytaj warunki przy bicie. Szukaj odpowiedzi na cztery pytania: czy wolno wydać utwór w streamingu, czy wolno na nim zarabiać, jak podpisać autora i czy bit nie ma cudzych sampli.",
+        ],
+      },
+      {
+        h2: "Zanim wydasz numer",
+        paragraphs: [
+          "Zachowaj warunki licencji i potwierdzenie zakupu. Podpisz producenta tak, jak tego chce. Jeśli warunki są niejasne, napisz do autora przed wydaniem, a nie po.",
+          "W BitRymDym na darmowych bitach nagrywasz w przeglądarce, a zasady wydania są opisane w jednym miejscu, na stronie „Jak nagrać utwór”. Samego darmowego bitu się nie pobiera: pobierasz gotowy kawałek.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Czy mogę użyć bitu z YouTube?", a: "Tylko na warunkach autora. Sprawdź opis filmu, a gdy nie ma w nim zasad, zapytaj producenta." },
+      { q: "Czy istnieją bity bez praw autorskich?", a: "Zwykle to skrót myślowy. Bit ma autora, a Ty korzystasz na podstawie jego zgody lub licencji." },
+      { q: "Czym różni się licencja od wyłączności?", a: "Na zwykłej licencji ten sam bit mogą mieć inni. Przy wyłączności kupuje go jedna osoba i znika z oferty." },
+      { q: "Gdzie znajdę darmowe bity do rapu?", a: "Na przykład w katalogu BitRymDym: trap, boom bap, lo-fi i hip-hop z podanym tempem i tonacją." },
+    ],
+    beats: "free",
+    cta: [
+      { href: "/darmowe-bity-do-rapu", label: "Darmowe bity do rapu" },
+      { href: "/jak-nagrac", label: "Zasady i licencja" },
+    ],
+  },
+  {
+    slug: "wokal-mono-czy-stereo",
+    datePublished: "2026-11-24",
+    navLabel: "Wokal mono czy stereo",
+    metaTitle: "Nagrywanie wokalu: mono czy stereo? Prosta odpowiedź",
+    metaDescription:
+      "Wokal nagrywać mono czy stereo? Główny głos mono, szerokość z dubli i efektów. Wyjaśniamy dlaczego, kiedy stereo ma sens i czemu wokal gra w jednym uchu.",
+    h1: "Wokal: mono czy stereo",
+    lead: "Jeden mikrofon to jedno źródło, więc główny wokal nagrywaj w mono. Szerokość robi się później: dublami, panoramą i pogłosem.",
+    sections: [
+      {
+        h2: "Dlaczego mono",
+        paragraphs: [
+          "Pojedynczy mikrofon nie niesie informacji o lewej i prawej stronie. Nagranie go jako stereo daje dwa identyczne kanały: plik jest dwa razy większy, a brzmi tak samo. Mono łatwiej też ustawić na środku, gdzie główny wokal powinien siedzieć.",
+        ],
+      },
+      {
+        h2: "Skąd się bierze szerokość",
+        paragraphs: [
+          "Nagraj tę samą partię drugi raz i rozłóż duble na boki. Różnice w wykonaniu dają prawdziwą szerokość, której nie da samo skopiowanie ścieżki. Adliby ustaw lekko w lewo i w prawo, a główny głos zostaw na środku.",
+          "Pogłos i echo mogą być stereo, nawet gdy wokal jest mono. Na koniec sprawdź miks w mono, na przykład na głośniku telefonu: jeśli duble znikają, są za podobne do siebie albo mają odwróconą fazę.",
+        ],
+      },
+      {
+        h2: "Kiedy stereo ma sens",
+        paragraphs: [
+          "Stereo przydaje się przy dwóch mikrofonach: chór, gitara akustyczna, nagranie pomieszczenia. Przy samym rapie rzadko jest potrzebne.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Czemu wokal słychać tylko w jednym uchu?", a: "Mikrofon trafił do jednego kanału ścieżki stereo. Zmień ścieżkę na mono albo ustaw wejście interfejsu jako mono." },
+      { q: "Czy wokal mono brzmi gorzej?", a: "Nie. Pojedynczy mikrofon i tak daje sygnał mono, a miks z dublami i pogłosem będzie szeroki." },
+      { q: "Ile dubli nagrać?", a: "Do refrenu zwykle wystarczą dwa, po jednym na stronę. W zwrotce dubluj tylko mocne słowa." },
+    ],
+    beats: null,
+    cta: [
+      { href: "/narzedzia/test-mikrofonu", label: "Test mikrofonu" },
+      { href: "/poradniki/dublowanie-wokalu", label: "Dublowanie wokalu" },
+    ],
+  },
+  {
+    slug: "co-to-jest-mix-i-mastering",
+    datePublished: "2026-11-24",
+    navLabel: "Co to jest mix i mastering",
+    metaTitle: "Mix i mastering — co to jest i czym się różnią",
+    metaDescription:
+      "Co to jest mix i mastering, czym się różnią, w jakiej kolejności je robić i czego nie naprawi mastering. Krótkie wyjaśnienie dla początkujących raperów.",
+    h1: "Co to jest mix i mastering",
+    lead: "Mix łączy ścieżki w jeden utwór, a mastering przygotowuje ten utwór do wydania. To dwa osobne etapy i robi się je w tej kolejności.",
+    sections: [
+      {
+        h2: "Mix: praca na ścieżkach",
+        paragraphs: [
+          "W mixie ustawiasz głośność wokalu względem bitu, tniesz zbędne częstotliwości, wyrównujesz dynamikę kompresorem, łagodzisz syczące głoski, rozkładasz duble w panoramie i dodajesz pogłos. Celem jest to, żeby każde słowo było zrozumiałe, a bit dalej miał siłę.",
+        ],
+      },
+      {
+        h2: "Mastering: praca na całości",
+        paragraphs: [
+          "Mastering dostaje jeden plik stereo. Koryguje ogólne brzmienie, pilnuje szczytów i ustawia głośność pod miejsce publikacji. Serwisy streamingowe wyrównują głośność utworów, więc robienie mastera na siłę „najgłośniej” zwykle tylko odbiera dynamikę.",
+          "Master pod streaming najczęściej celuje w okolice −14 LUFS i zostawia mały zapas pod 0 dB. To punkt odniesienia, a nie sztywna reguła.",
+        ],
+      },
+      {
+        h2: "Czego mastering nie naprawi",
+        paragraphs: [
+          "Za cichego wokalu, przesteru z mikrofonu, pogłosu z pokoju ani fałszywych nut. To trzeba poprawić w nagraniu albo w mixie. Jeśli w masterze słychać problem z jednym elementem, wróć o krok.",
+          "W Studiu BitRymDym te etapy są osobnymi krokami: Nagranie, Mix, Mastering. BITEK proponuje ustawienia, a Ty decydujesz, czy je przyjąć.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Co jest pierwsze, mix czy mastering?", a: "Mix. Mastering robi się na gotowym, zmiksowanym pliku stereo." },
+      { q: "Czy każdy utwór potrzebuje masteringu?", a: "Do wydania warto: wyrównuje brzmienie i głośność względem innych utworów. Do szkicu dla znajomych nie jest konieczny." },
+      { q: "Czy mogę zrobić mix i mastering sam?", a: "Tak. Pracuj na umiarkowanej głośności, porównuj z utworem wzorcowym i sprawdzaj efekt na kilku głośnikach." },
+    ],
+    beats: null,
+    cta: [
+      { href: "/mix-i-mastering-online", label: "Mix i mastering online" },
+      { href: "/poradniki/jak-zmiksowac-wokal", label: "Jak zmiksować wokal" },
     ],
   },
 ];

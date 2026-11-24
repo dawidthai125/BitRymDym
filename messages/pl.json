@@ -21,7 +21,7 @@
       "regulamin": "regulamin"
     },
     "howToPage": {
-      "metaTitle": "Jak nagrać utwór na BitRymDym",
+      "metaTitle": "Jak nagrać rap w przeglądarce krok po kroku",
       "metaDescription": "Jak nagrać rap w przeglądarce krok po kroku: wybór bitu, nagranie zwrotki w Studiu online, mix, mastering, limity planów i licencja na utwór.",
       "etykieta": "Jak to działa",
       "tytul": "Jak nagrać utwór",
@@ -84,7 +84,7 @@
       }
     },
     "aboutPage": {
-      "metaTitle": "O BitRymDym",
+      "metaTitle": "O BitRymDym — polski serwis do nagrywania rapu",
       "metaDescription": "O BitRymDym — darmowe bity, nagrywanie online i Studio z mixem i masteringiem. Zobacz, jak działa serwis od bitu do gotowego kawałka.",
       "oBitrymdym": "O BitRymDym",
       "bitGlosStudio": "Bit. Głos. Studio.",
@@ -96,8 +96,8 @@
       "programWindows": "Nagrywarka (Windows)"
     },
     "recorderPage": {
-      "metaTitle": "Nagrywarka (Windows)",
-      "metaDescription": "Dwie drogi nagrania w BitRymDym: Nagrywarka (Windows) i Studio w przeglądarce. Co robi Nagrywarka, a co zostaje na stronie.",
+      "metaTitle": "Nagrywarka na Windows — pobierz za darmo",
+      "metaDescription": "Nagrywarka BitRymDym na Windows: darmowy program do nagrywania wokalu na bitach z katalogu. Zobacz, co robi program, a co Studio w przeglądarce.",
       "kicker": "Nagranie",
       "title": "Dwie drogi nagrania",
       "lead": "Konto, plan i limity są te same. Nagrywarka (Windows) nagrywa wokal przy komputerze. Strona układa numer, mix i master. Regulamin strony obejmuje też Nagrywarkę, bo korzysta ona z tego samego konta.",
@@ -2007,8 +2007,9 @@
       "platnyOpis": "Każdy bit w tym katalogu kosztuje 19,99 zł. Kupujesz na wyłączność: po płatności PayU bit znika z katalogu i trafia tylko do Twojego katalogu. Stamtąd pobierasz plik WAV i nagrywasz na nim w Studiu oraz w programie na Windows. Bez zakupu nagranie w Studiu zostaje wyłączone.",
       "platnyWkrotce": "19,99 zł · plik WAV",
       "platnyZakup": "Płatność idzie przez PayU. Po zakupie bit jest w katalogu kupującego, nie w katalogu darmowym.",
-      "metaTitle": "Darmowe bity do rapu",
-      "metaDescription": "Darmowe bity do rapu od BitRymDym i ludzi z ekipy. Odsłuchaj, wybierz bit i nagraj na nim zwrotkę w Studiu online.",
+      "metaTitle": "Katalog bitów do rapu — trap, boom bap, lo-fi",
+      "metaStrona": "strona {page}",
+      "metaDescription": "Katalog bitów do rapu z tempem (BPM) i tonacją: trap, boom bap, lo-fi i hip-hop. Filtruj, odsłuchaj bez konta i nagraj zwrotkę w Studiu online.",
       "znajdzSwojBit": "Znajdź swój bit.",
       "bitowSluchajPotemNagraj": "{v0, plural, one {# bit} few {# bity} many {# bitów} other {# bitu}} · słuchaj, potem nagraj",
       "cichoKatalogWDrodze": "Cicho · katalog w drodze",
@@ -5195,8 +5196,13 @@
       "homeTitle": "BitRymDym — darmowe bity i Studio online do rapu",
       "homeDescription": "Darmowe bity do rapu, nagrywanie w przeglądarce i Studio online z mixem i masteringiem. Odpalasz bit, nagrywasz zwrotkę i robisz gotowy kawałek — bez instalowania.",
       "worksDescription": "Gotowe kawałki nagrane na bitach BitRymDym, po mixie i masterze. Posłuchaj, oceń i zobacz, co ludzie robią w Studiu.",
-      "samplesTitle": "Katalog sampli",
-      "samplesDescription": "Sample od BitRymDym i użytkowników, po moderacji. Odsłuchaj i wrzuć sampel do swojego projektu w Studiu.",
+      "strona": "strona {page}",
+      "worksTitle": "Utwory rapowe nagrane w Studiu online",
+      "beatRankTitle": "Ranking bitów do rapu — tydzień i miesiąc",
+      "workRankTitle": "Ranking utworów — najlepsze kawałki tygodnia",
+      "sampleRankTitle": "Ranking sampli — najlepsze sample do bitów",
+      "samplesTitle": "Darmowe sample do bitów — melodie, bębny i bas",
+      "samplesDescription": "Darmowe sample do bitów: melodie, bębny, bas i klawisze. Załóż darmowe konto, odsłuchaj katalog i wrzuć sampel do projektu w Studiu online BitRymDym.",
       "beatRankDescription": "Najmocniejsze bity tygodnia i miesiąca na BitRymDym według ocen słuchaczy. Sprawdź, co rządzi, i nagraj na tym zwrotkę.",
       "workRankDescription": "Najlepiej oceniane kawałki tygodnia, miesiąca i wszech czasów na BitRymDym. Zobacz, kto teraz rozdaje karty.",
       "sampleRankDescription": "Najlepiej oceniane sample tygodnia i miesiąca na BitRymDym. Wybierz mocny sampel do swojego bitu.",

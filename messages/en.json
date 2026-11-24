@@ -21,7 +21,7 @@
       "regulamin": "terms"
     },
     "howToPage": {
-      "metaTitle": "How to record a track on BitRymDym",
+      "metaTitle": "How to record rap in your browser, step by step",
       "metaDescription": "How to record rap in your browser step by step: pick a beat, record a verse in the online Studio, mix, master, plan limits and track licence.",
       "etykieta": "How it works",
       "tytul": "How to record a track",
@@ -84,7 +84,7 @@
       }
     },
     "aboutPage": {
-      "metaTitle": "About BitRymDym",
+      "metaTitle": "About BitRymDym — record rap online",
       "metaDescription": "About BitRymDym — free beats, online recording and a Studio with mixing and mastering. See how it works, from beat to finished track.",
       "oBitrymdym": "About BitRymDym",
       "bitGlosStudio": "Beat. Voice. Studio.",
@@ -96,7 +96,7 @@
       "programWindows": "Recording app"
     },
     "recorderPage": {
-      "metaTitle": "Windows recorder",
+      "metaTitle": "Vocal recorder for Windows — free download",
       "metaDescription": "Two ways to record on BitRymDym: the Windows app and the browser studio. What the app does, and what stays on the site.",
       "kicker": "Recording",
       "title": "Two ways to record",
@@ -2007,8 +2007,9 @@
       "platnyOpis": "Each beat in this catalogue costs 19.99 PLN. You buy it exclusively: after the PayU payment the beat leaves the catalogue and goes to your catalogue only. Download the wav there and record on it in the Studio and in the Windows app. Without a purchase, Studio recording stays off.",
       "platnyWkrotce": "19.99 PLN · wav file",
       "platnyZakup": "Payment goes through PayU. After purchase the beat is in the buyer's catalogue, not in the free catalogue.",
-      "metaTitle": "Free rap beats",
-      "metaDescription": "Free rap beats from BitRymDym and the community. Listen, pick a beat and record your verse on it in the online Studio.",
+      "metaTitle": "Rap beat catalogue — trap, boom bap, lo-fi",
+      "metaStrona": "page {page}",
+      "metaDescription": "Rap beat catalogue with BPM and key: trap, boom bap, lo-fi and hip-hop. Filter, preview without an account and record your verse in the online Studio.",
       "znajdzSwojBit": "Find your beat.",
       "bitowSluchajPotemNagraj": "{v0, plural, one {# beat} other {# beats}} · listen, then record",
       "cichoKatalogWDrodze": "Quiet · catalogue on its way",
@@ -5195,8 +5196,13 @@
       "homeTitle": "BitRymDym — free rap beats and an online Studio",
       "homeDescription": "Free rap beats, recording in the browser and an online Studio with mixing and mastering. Pick a beat, record your verse and finish the track — nothing to install.",
       "worksDescription": "Finished tracks recorded on BitRymDym beats, mixed and mastered. Listen, rate and see what people make in the Studio.",
-      "samplesTitle": "Sample catalogue",
-      "samplesDescription": "Samples from BitRymDym and users, moderated. Listen and drop a sample into your Studio project.",
+      "strona": "page {page}",
+      "worksTitle": "Rap tracks recorded in the online Studio",
+      "beatRankTitle": "Rap beat ranking — week and month",
+      "workRankTitle": "Track ranking — best tracks of the week",
+      "sampleRankTitle": "Sample ranking — best samples for beats",
+      "samplesTitle": "Free samples for beats — melodies, drums and bass",
+      "samplesDescription": "Free samples for beats: melodies, drums, bass and keys. Create a free account, listen to the catalogue and drop a sample into your BitRymDym Studio project.",
       "beatRankDescription": "The strongest beats of the week and month on BitRymDym, by listener ratings. See what's on top and record your verse on it.",
       "workRankDescription": "The best-rated tracks of the week, month and all time on BitRymDym. See who runs the game right now.",
       "sampleRankDescription": "The best-rated samples of the week and month on BitRymDym. Pick a strong sample for your beat.",

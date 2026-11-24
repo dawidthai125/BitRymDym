@@ -7,9 +7,8 @@ import { AppShell } from "@/components/site/app-shell";
 import { pageMetadata } from "@/config/site";
 
 export async function generateMetadata() {
-  const t = await getTranslations("community.shelf");
   const m = await getTranslations("meta.pages");
-  return pageMetadata({ title: t("beatRank"), description: m("beatRankDescription"), path: "/ranking" });
+  return pageMetadata({ title: m("beatRankTitle"), description: m("beatRankDescription"), path: "/ranking" });
 }
 
 export default async function BeatRankingPage({

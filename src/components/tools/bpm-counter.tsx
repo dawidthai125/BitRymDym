@@ -5,10 +5,26 @@ import { useRef, useState } from "react";
 import { estimateBpm, monoExcerpt, tapTempo, type BpmEstimate } from "@/lib/tools/bpm";
 import { toolPanel, toolPrimary, toolSecondary } from "@/components/tools/tool-ui";
 
-/** Tap tempo + BPM from a local audio file (decoded in the browser, never uploaded). */
+type FileKey = { label: string; relative: string; sure: boolean };
+
+/** Musical key of the excerpt (same detector as Studio, loaded only when a file is analysed). */
+async function keyOf(mono: Float32Array, sampleRate: number): Promise<FileKey | null> {
+  const [{ detectKeyFromAudio }, { TUNE_KEY_NAMES }] = await Promise.all([import("@/lib/studio/tune/key-detect"), import("@/lib/studio/tune/tune")]);
+  const k = detectKeyFromAudio([mono], sampleRate);
+  if (!k) return null;
+  const minor = k.scale === 1;
+  const name = (root: number, min: boolean) => `${TUNE_KEY_NAMES[(root + 12) % 12]}${min ? "m" : ""}`;
+  return {
+    label: `${name(k.keyRoot, minor)} (${minor ? "moll" : "dur"})`,
+    relative: name(k.keyRoot + (minor ? 3 : -3), !minor),
+    sure: k.score >= 0.7 && k.margin >= 0.05,
+  };
+}
+
+/** Tap tempo + BPM and key from a local audio file (decoded in the browser, never uploaded). */
 export function BpmCounter() {
   const [taps, setTaps] = useState<number[]>([]);
-  const [file, setFile] = useState<{ name: string; result: BpmEstimate | null } | null>(null);
+  const [file, setFile] = useState<{ name: string; result: BpmEstimate | null; key: FileKey | null } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +48,7 @@ export function BpmCounter() {
       void ctx.close();
       const channels = Array.from({ length: audio.numberOfChannels }, (_, i) => audio.getChannelData(i));
       const mono = monoExcerpt(channels, audio.sampleRate, 60);
-      setFile({ name: f.name, result: estimateBpm(mono, audio.sampleRate) });
+      setFile({ name: f.name, result: estimateBpm(mono, audio.sampleRate), key: await keyOf(mono, audio.sampleRate).catch(() => null) });
     } catch {
       setError("Nie udało się odczytać pliku. Spróbuj MP3, WAV albo M4A.");
     } finally {
@@ -55,13 +71,19 @@ export function BpmCounter() {
         </div>
       </section>
       <section className={toolPanel} aria-labelledby="bpm-file">
-        <h2 id="bpm-file" className="brd-display text-2xl text-[var(--brd-ink)]">BPM z pliku</h2>
+        <h2 id="bpm-file" className="brd-display text-2xl text-[var(--brd-ink)]">BPM i tonacja z pliku</h2>
         <p className="mt-1 text-sm text-[var(--brd-mute)]">Wybierz bit albo piosenkę z dysku. Liczymy w Twojej przeglądarce — plik nigdzie nie jest wysyłany.</p>
         <input ref={inputRef} type="file" accept="audio/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) void analyse(f); e.target.value = ""; }} />
         <button type="button" className={`${toolPrimary} mt-4`} disabled={busy} onClick={() => inputRef.current?.click()}>
           {busy ? "Liczę…" : "Wybierz plik audio"}
         </button>
         {error ? <p className="mt-3 text-sm" role="alert">{error}</p> : null}
+        {file?.key ? (
+          <p className="mt-4 text-[var(--brd-ink)]" data-testid="file-key">
+            Tonacja: <strong>{file.key.label}</strong>
+            <span className="text-sm text-[var(--brd-mute)]"> · równoległa: {file.key.relative}{file.key.sure ? "" : " · wynik niepewny, sprawdź na słuch"}</span>
+          </p>
+        ) : null}
         {file ? (
           file.result ? (
             <div className="mt-4" aria-live="polite">

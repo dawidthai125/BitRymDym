@@ -10,9 +10,9 @@ import { getPublicSiteUrl } from "@/lib/site-url";
 
 export function generateMetadata() {
   return pageMetadata({
-    title: "Darmowe narzędzia dla raperów — metronom, licznik BPM, sylaby, rymy",
+    title: "Darmowe narzędzia dla raperów i producentów online",
     description:
-      "Darmowe narzędzia online dla raperów i producentów: metronom, licznik BPM z pliku i tap tempo, licznik sylab w wersach oraz słownik rymów. Bez konta.",
+      "Darmowe narzędzia online: licznik BPM i tonacji, test mikrofonu, metronom, tematy do freestyle, slowed + reverb, licznik sylab i słownik rymów. Bez konta.",
     path: TOOLS_BASE,
   });
 }
@@ -31,7 +31,7 @@ export default function ToolsIndexPage() {
         <PageFrame className="max-w-3xl space-y-8 py-8 sm:py-10">
           <header className="space-y-3 border-b-4 border-[var(--brd-ink)] pb-4">
             <h1 className="brd-display text-[length:var(--tape-text-xl)] leading-[0.9]">Narzędzia dla raperów</h1>
-            <p className="text-[var(--brd-ink-soft)]">Darmowe, w przeglądarce, bez konta. Policz tempo, poćwicz flow z metronomem, wyrównaj wersy i znajdź rymy.</p>
+            <p className="text-[var(--brd-ink-soft)]">Darmowe, w przeglądarce, bez konta. Sprawdź tempo, tonację i mikrofon, poćwicz flow i freestyle, wyrównaj wersy i znajdź rymy.</p>
           </header>
           <ul className="grid gap-4 sm:grid-cols-2" data-testid="tools-list">
             {ALL.map((t) => (

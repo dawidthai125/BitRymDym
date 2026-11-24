@@ -10,6 +10,9 @@ import { pageMetadata } from "@/config/site";
 import { listPublicWorks } from "@/lib/catalog/catalog-service";
 import { currentFeaturedWorkId } from "@/lib/catalog/featured-work-server";
 import { loadWorkClips } from "@/lib/catalog/work-clip-server";
+import { itemListJsonLd } from "@/lib/seo/json-ld";
+import { JsonLdScript } from "@/lib/seo/json-ld-script";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import { cn } from "@/lib/utils";
 
 import { WorkClipButton } from "./work-clip-button";
@@ -21,8 +24,8 @@ export async function generateMetadata({ searchParams }: Props) {
   const t = await getTranslations("community.works");
   const m = await getTranslations("meta.pages");
   const page = worksPageOf((await searchParams)?.strona);
-  const title = page > 1 ? `${t("title")} · ${t("pageLabel", { page })}` : t("title");
-  return pageMetadata({ title, description: m("worksDescription"), path: "/utwory" });
+  const title = page > 1 ? `${m("worksTitle")} · ${t("pageLabel", { page })}` : m("worksTitle");
+  return pageMetadata({ title, description: m("worksDescription"), path: "/utwory", page });
 }
 
 export default async function FinishedWorksPage({ searchParams }: Props) {
@@ -45,6 +48,15 @@ export default async function FinishedWorksPage({ searchParams }: Props) {
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
         <PageFrame width="wide" className="py-5 sm:py-6">
+          {works.length > 0 ? (
+            <JsonLdScript
+              data={itemListJsonLd(getPublicSiteUrl(), {
+                name: t("title"),
+                path: worksPageHref(page),
+                items: works.map((w) => ({ path: `/utwor/${w.id}`, name: w.title })),
+              })}
+            />
+          ) : null}
           <CommunityShelf current="works" />
           <h1 className="mb-2 font-poster text-2xl font-bold uppercase">{t("title")}</h1>
           <p className="mb-4 max-w-prose text-sm text-[var(--brd-ink-soft)]">{t("lead")}</p>

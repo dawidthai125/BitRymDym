@@ -65,6 +65,19 @@ export function localeAlternates(
   };
 }
 
+/** Adds ?strona=N (N ≥ 2) to the canonical and hreflang URLs of a paged catalogue. */
+export function withCatalogPage<T extends { canonical: string; languages?: Record<string, string> }>(alternates: T, page?: number): T {
+  if (!page || page < 2) return alternates;
+  const add = (url: string) => `${url}?strona=${page}`;
+  return {
+    ...alternates,
+    canonical: add(alternates.canonical),
+    ...(alternates.languages
+      ? { languages: Object.fromEntries(Object.entries(alternates.languages).map(([k, v]) => [k, add(v)])) }
+      : {}),
+  };
+}
+
 /** Extra domains that open the English site (DNS → Vercel project). */
 const ENGLISH_HOSTS = new Set(["bitrymdym.com", "www.bitrymdym.com", "bitrymdym.eu", "www.bitrymdym.eu"]);
 

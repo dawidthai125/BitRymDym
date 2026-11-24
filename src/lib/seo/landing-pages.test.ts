@@ -82,6 +82,37 @@ describe("English URLs", () => {
   });
 });
 
+describe("paged catalogues", () => {
+  it("keep ?strona=N in canonical and hreflang from page 2", async () => {
+    const { localeAlternates, withCatalogPage } = await import("@/lib/seo/locale-paths");
+    expect(withCatalogPage(localeAlternates("pl", "/beats"), 1)).toEqual(localeAlternates("pl", "/beats"));
+    expect(withCatalogPage(localeAlternates("en", "/beats"), 2)).toEqual({
+      canonical: "/en/beats?strona=2",
+      languages: { pl: "/beats?strona=2", en: "/en/beats?strona=2", "x-default": "/beats?strona=2" },
+    });
+  });
+});
+
+describe("free tools", () => {
+  it("have unique slugs, search-sized meta and a FAQ", async () => {
+    const { TOOL_PAGES } = await import("@/lib/seo/tool-pages");
+    expect(new Set(TOOL_PAGES.map((t) => t.slug)).size).toBe(TOOL_PAGES.length);
+    for (const t of TOOL_PAGES) {
+      expect(t.metaTitle.length).toBeLessThanOrEqual(70);
+      expect(t.metaDescription.length).toBeLessThanOrEqual(170);
+      expect(t.faq.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+  it("content pages link only to existing tools and guides", async () => {
+    const { TOOL_PAGES, toolPath } = await import("@/lib/seo/tool-pages");
+    const { GUIDES, guidePath } = await import("@/lib/seo/guides");
+    const known = new Set([...TOOL_PAGES.map((t) => toolPath(t.slug)), ...GUIDES.map((g) => guidePath(g.slug)), ...LANDING_PAGES.map((p) => landingPath(p.slug))]);
+    for (const p of [...LANDING_PAGES, ...GUIDES]) {
+      for (const c of p.cta) if (/^\/(narzedzia|poradniki)\//.test(c.href)) expect(known.has(c.href), c.href).toBe(true);
+    }
+  });
+});
+
 describe("English domains", () => {
   it("send bitrymdym.com and .eu to /en on the main domain", async () => {
     const { englishHostRedirect } = await import("@/lib/seo/locale-paths");

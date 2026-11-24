@@ -21,6 +21,12 @@ export function countWordSyllables(word: string): number {
   return count;
 }
 
+/** Accusative: "1 sylabę", "2 sylaby", "5 sylab". */
+export function syllableCountLabel(n: number): string {
+  if (n === 1) return "1 sylabę";
+  return `${n} ${n >= 2 && n <= 4 ? "sylaby" : "sylab"}`;
+}
+
 export type LineCount = { text: string; syllables: number; words: number };
 
 export function countLines(text: string): LineCount[] {

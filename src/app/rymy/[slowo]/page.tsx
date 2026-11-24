@@ -6,6 +6,7 @@ import { RhymeAttribution, RhymeCta, RhymeSearchForm, RhymeSections } from "@/co
 import { AppShell } from "@/components/site/app-shell";
 import { pageMetadata } from "@/config/site";
 import { findRhymes, hasRhymePage, RYMY_BASE, rhymeCountLabel, rhymePagePath } from "@/lib/rymy/dictionary";
+import { countWordSyllables, syllableCountLabel } from "@/lib/tools/syllables";
 import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
 import { getPublicSiteUrl } from "@/lib/site-url";
@@ -53,7 +54,8 @@ export default async function RhymeWordPage({ params }: Props) {
           <header className="space-y-3 border-b-4 border-[var(--brd-ink)] pb-4">
             <h1 className="brd-display text-[length:var(--tape-text-xl)] leading-[0.9]">Rymy do słowa „{word}”</h1>
             <p className="text-[var(--brd-ink-soft)]">
-              {rhymeCountLabel(result.total)} do słowa „{word}” ({result.syllables} {result.syllables === 1 ? "sylaba" : result.syllables < 5 ? "sylaby" : "sylab"}), od najczęściej używanych słów.
+              {rhymeCountLabel(result.total)} do słowa „{word}”, od najczęściej używanych słów. Słowo „{word}” ma {syllableCountLabel(countWordSyllables(word))} (
+              <Link href="/narzedzia/licznik-sylab" className="underline underline-offset-4">licznik sylab</Link>).
             </p>
             <RhymeSearchForm />
           </header>

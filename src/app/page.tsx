@@ -25,6 +25,7 @@ import { presentBeats } from "@/lib/ui/demo-beats";
 import { organizationJsonLd, promoVideoJsonLd, webApplicationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
 import { GUIDES, guidePath } from "@/lib/seo/guides";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
+import { TOOL_PAGES, toolPath } from "@/lib/seo/tool-pages";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import type { PremiumTier } from "@/types/premium";
@@ -604,7 +605,7 @@ export default async function HomePage() {
           <section aria-labelledby="home-poradniki" className="border-b border-tape-line" data-testid="home-guides">
             <div className={`${wrap} py-10`}>
               <h2 id="home-poradniki" className="font-poster text-2xl font-black uppercase text-tape-cream">
-                Poradniki dla raperów
+                Poradniki i narzędzia dla raperów
               </h2>
               <ul className="mt-4 grid gap-x-6 gap-y-1 text-tape-cream-soft sm:grid-cols-2 lg:grid-cols-3">
                 {GUIDES.map((g) => (
@@ -619,6 +620,13 @@ export default async function HomePage() {
                     Słownik rymów
                   </Link>
                 </li>
+                {TOOL_PAGES.map((tool) => (
+                  <li key={tool.slug}>
+                    <Link href={toolPath(tool.slug)} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+                      {tool.navLabel}
+                    </Link>
+                  </li>
+                ))}
                 {LANDING_PAGES.filter((p) => !(p.webOnly && storeApp)).map((p) => (
                   <li key={p.slug}>
                     <Link href={landingPath(p.slug)} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">

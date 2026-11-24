@@ -6,6 +6,13 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (37) — SEO: narzędzia, strony pod frazy, poprawki indeksowania
+
+- Frazy z podpowiedzi Google (pl). Narzędzia w `/narzedzia` (wszystko w przeglądarce, nic nie jest wysyłane): `tematy-do-freestyle`, `test-mikrofonu`, `slowed-reverb`; `licznik-bpm` pokazuje też tonację (`detectKeyFromAudio` ze Studia, doładowywany po wybraniu pliku).
+- Strony: `/bity-do-freestyle`, `/autotune-online` (tylko to, co daje BRD Tune w planach). Poradniki: `rodzaje-rymow`, `jak-rapowac-pod-bit`, `jak-szybko-rapowac`, `skad-brac-bity-do-rapu`, `wokal-mono-czy-stereo`, `co-to-jest-mix-i-mastering`.
+- Indeksowanie: `/mastering` poza mapą witryny (gość trafia na logowanie z noindex). Strony 2+ katalogów bitów, sampli i utworów mają własny canonical i hreflang (`withCatalogPage`). ItemList na `/sampel` i `/utwory`.
+- Tytuły: `/beats` i `/darmowe-bity-do-rapu` nie konkurują już tym samym tytułem; konkretne tytuły sampli, utworów, rankingów, Nagrywarki, „Jak nagrać” i „O nas” (PL i EN). Liczba sylab na stronach rymów z `countWordSyllables`.
+
 ## 2026-11-24 (36) — Studio: telefon, pasek, kłódka Masteringu, rysowana głośność
 
 - Telefon: ścieżki zaczynają się wyżej (723 → ok. 430 px): jeden wiersz tytułu i bitu, kroki w jednym rzędzie, „Historia mixu”, eksport i „Bit” pod „Więcej”, krótkie „+ Ścieżka”, Inspektor pod „Więcej”. W Mixie i Masteringu Bitek po lewej (z prawej są − / + i przełączniki), mały odtwarzacz obok. Większy dotyk: znaczniki na osi, „Pokaż szczegóły”. Przycisk utworu wzorcowego zawija tekst.

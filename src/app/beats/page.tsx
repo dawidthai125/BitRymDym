@@ -23,9 +23,14 @@ import { JsonLdScript } from "@/lib/seo/json-ld-script";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 
-export async function generateMetadata(): Promise<import("next").Metadata> {
+export async function generateMetadata({ searchParams }: BeatsPageProps): Promise<import("next").Metadata> {
   const t = await getTranslations("beats.beatsPage");
-  return pageMetadata({ title: t("metaTitle"), description: t("metaDescription"), path: "/beats" });
+  const params = (await searchParams) ?? {};
+  // Only the default list is paged for search engines; filtered variants stay canonical to /beats.
+  const filtered = Boolean(params.q || params.katalog || params.zrodlo === "user");
+  const page = filtered ? 1 : parseCatalogPage(params.strona);
+  const title = page > 1 ? `${t("metaTitle")} · ${t("metaStrona", { page })}` : t("metaTitle");
+  return pageMetadata({ title, description: t("metaDescription"), path: "/beats", page });
 }
 
 type BeatsPageProps = {

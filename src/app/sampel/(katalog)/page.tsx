@@ -10,22 +10,25 @@ import { AppShell } from "@/components/site/app-shell";
 import { pageMetadata } from "@/config/site";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { listPublicSamples, pickSampleOfTheWeek } from "@/lib/community/community-service";
+import { itemListJsonLd } from "@/lib/seo/json-ld";
+import { JsonLdScript } from "@/lib/seo/json-ld-script";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import { toCatalogSampleItems } from "@/lib/community/sample-items";
 import { parseCatalogSource } from "@/lib/community/share-policy";
 import { parseCatalogPage } from "@/lib/ui/paginate";
 import { LIVE_SAMPLE_INSTRUMENTS, SAMPLE_INSTRUMENTS, SAMPLE_TYPES } from "@/lib/studio/samples/sample-policy";
 
-export async function generateMetadata() {
-  const t = await getTranslations("community.shelf");
+type Props = { searchParams?: Promise<{ zrodlo?: string; strona?: string }> };
+
+export async function generateMetadata({ searchParams }: Props) {
   const m = await getTranslations("meta.pages");
-  return pageMetadata({ title: t("samples"), description: m("samplesDescription"), path: "/sampel" });
+  const params = (await searchParams) ?? {};
+  const page = parseCatalogSource(params.zrodlo) === "user" ? 1 : parseCatalogPage(params.strona);
+  const title = page > 1 ? `${m("samplesTitle")} · ${m("strona", { page })}` : m("samplesTitle");
+  return pageMetadata({ title, description: m("samplesDescription"), path: "/sampel", page });
 }
 
-export default async function SampleCatalogPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ zrodlo?: string; strona?: string }>;
-}) {
+export default async function SampleCatalogPage({ searchParams }: Props) {
   const t = await getTranslations("community.catalog");
   const tl = await getTranslations("studio.sampleLab");
   const ts = await getTranslations("community.sampleCatalog");
@@ -52,6 +55,9 @@ export default async function SampleCatalogPage({
   return (
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
+        {source === "brd" && items.length > 0 ? (
+          <JsonLdScript data={itemListJsonLd(getPublicSiteUrl(), { name: shelfT("samples"), path: "/sampel", items: items.map((i) => ({ path: `/sampel/${i.id}`, name: i.title })), max: 100 })} />
+        ) : null}
         <PageFrame width="wide" className="py-5 sm:py-6">
           <h1 className="sr-only">{shelfT("samples")}</h1>
           <CommunityShelf current="samples" />

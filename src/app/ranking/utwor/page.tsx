@@ -7,9 +7,8 @@ import { pageMetadata } from "@/config/site";
 import type { WorkBoardPeriod } from "@/lib/catalog/catalog-policy";
 
 export async function generateMetadata() {
-  const t = await getTranslations("community.shelf");
   const m = await getTranslations("meta.pages");
-  return pageMetadata({ title: t("workRank"), description: m("workRankDescription"), path: "/ranking/utwor" });
+  return pageMetadata({ title: m("workRankTitle"), description: m("workRankDescription"), path: "/ranking/utwor" });
 }
 
 export default async function WorkRankingPage({

@@ -187,18 +187,31 @@ export function beatListJsonLd(
   origin: string,
   input: { name: string; path: string; beats: readonly { id: string; title: string }[]; max?: number },
 ): JsonLdObject {
-  const beats = input.beats.slice(0, input.max ?? 50);
+  return itemListJsonLd(origin, {
+    name: input.name,
+    path: input.path,
+    items: input.beats.map((beat) => ({ path: `/beat/${beat.id}`, name: beat.title })),
+    max: input.max,
+  });
+}
+
+/** ItemList of any catalogue (samples, tracks): URLs only. */
+export function itemListJsonLd(
+  origin: string,
+  input: { name: string; path: string; items: readonly { path: string; name: string }[]; max?: number },
+): JsonLdObject {
+  const items = input.items.slice(0, input.max ?? 50);
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: input.name,
     url: absoluteUrl(origin, input.path),
-    numberOfItems: beats.length,
-    itemListElement: beats.map((beat, index) => ({
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: absoluteUrl(origin, `/beat/${beat.id}`),
-      name: beat.title,
+      url: absoluteUrl(origin, item.path),
+      name: item.name,
     })),
   };
 }

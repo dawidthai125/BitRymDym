@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { AppLocale } from "@/i18n/config";
-import { localeAlternates } from "@/lib/seo/locale-paths";
+import { localeAlternates, withCatalogPage } from "@/lib/seo/locale-paths";
 
 import { getPublicSiteUrl } from "@/lib/site-url";
 
@@ -70,6 +70,8 @@ export async function pageMetadata(p: {
   path: string;
   /** Use the title as is, without the " · BitRymDym" template (also automatic when it already names the brand). */
   absoluteTitle?: boolean;
+  /** Catalogue page (1-based): from 2 up the canonical URL keeps ?strona=N, so Google can index rows listed only there. */
+  page?: number;
   image?: OgImage;
 }): Promise<Metadata> {
   const [t, locale] = await Promise.all([getTranslations("meta"), getLocale() as Promise<AppLocale>]);
@@ -80,14 +82,14 @@ export async function pageMetadata(p: {
   return {
     title: asIs ? { absolute: p.title } : p.title,
     description: p.description,
-    alternates: localeAlternates(locale, path),
+    alternates: withCatalogPage(localeAlternates(locale, path), p.page),
     openGraph: {
       type: "website",
       locale: t("ogLocale"),
       siteName: siteConfig.name,
       title: fullTitle,
       description: p.description,
-      url: localeAlternates(locale, path).canonical,
+      url: withCatalogPage(localeAlternates(locale, path), p.page).canonical,
       images: [image],
     },
     twitter: {

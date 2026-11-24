@@ -362,6 +362,91 @@ export const LANDING_PAGES: readonly LandingPage[] = [
       { href: "/darmowe-bity-do-rapu", label: "Darmowe bity" },
     ],
   },
+  {
+    slug: "bity-do-freestyle",
+    navLabel: "Bity do freestyle",
+    metaTitle: "Bity do freestyle — darmowe podkłady do nawijania online",
+    metaDescription:
+      "Bity do freestyle za darmo: boom bap, trap i lo-fi z podanym BPM. Odpal bit w przeglądarce, wylosuj temat i trenuj nawijkę sam albo na bitwę ze znajomymi.",
+    h1: "Bity do freestyle",
+    lead: "Wybierz bit, wylosuj temat i nawijaj. Przy każdym podkładzie jest tempo i tonacja, więc szybko znajdziesz taki, na którym czujesz się pewnie.",
+    sections: [
+      {
+        h2: "Jaki bit wybrać do freestyle'u",
+        paragraphs: [
+          "Na start najlepiej sprawdza się boom bap 80–95 BPM: wyraźny werbel mówi, gdzie jesteś w takcie, a między wersami zostaje miejsce na oddech i wymyślenie rymu. Unikaj na początku bitów z gęstą melodią, bo zabierają uwagę.",
+          "Trap zapisywany jako 130–160 BPM też nadaje się do freestyle'u, tylko bębny grają w połowie tempa. Spróbuj najpierw wolnego, oszczędnego flow, a triole dorzuć, gdy już nie gubisz taktu.",
+        ],
+      },
+      {
+        h2: "Trening: bit plus losowy temat",
+        paragraphs: [
+          "Odpal bit w jednej karcie, a w drugiej otwórz losowanie tematów do freestyle'u. Ustaw automatyczną zmianę co 20–30 sekund i nie przerywaj nawijki, nawet gdy nowe hasło nie pasuje do poprzedniego wersu.",
+          "Gdy trafisz na wers, który warto zachować, nagraj go od razu. Po darmowej rejestracji słuchasz całych bitów i nagrywasz próbę w przeglądarce, bez instalowania programów.",
+        ],
+      },
+      {
+        h2: "Bitwa ze znajomymi",
+        paragraphs: [
+          "Wybierzcie jeden bit, ustalcie kolejność i liczbę wersów — na przykład po osiem na wejście. Ten sam podkład dla wszystkich jest uczciwszy niż zmiana bitu w trakcie, a tempo podane na stronie pomaga ustalić, ile potrwa runda: osiem taktów przy 90 BPM to około 21 sekund.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Jakie tempo bitu jest najlepsze do freestyle'u?", a: "Na początek 80–95 BPM. Werbel jest wtedy wyraźny, a między wersami zostaje czas na wymyślenie rymu." },
+      { q: "Czy bity do freestyle są darmowe?", a: "Tak, darmowy katalog. Bez konta usłyszysz 20-sekundowy podgląd, a po darmowej rejestracji cały bit." },
+      { q: "Skąd wziąć tematy do freestyle'u?", a: "Z darmowego losowania tematów i słów w dziale Narzędzia. Działa na telefonie i komputerze, bez konta." },
+      { q: "Czy mogę nagrać freestyle?", a: "Tak. Po zalogowaniu nagrasz próbę na stronie bitu albo w Studiu online." },
+    ],
+    beats: "free",
+    cta: [
+      { href: "/narzedzia/tematy-do-freestyle", label: "Losuj tematy do freestyle" },
+      { href: "/beats", label: "Cały katalog bitów" },
+    ],
+  },
+  {
+    slug: "autotune-online",
+    navLabel: "Autotune online",
+    metaTitle: "Autotune online za darmo — strojenie wokalu w przeglądarce",
+    metaDescription:
+      "Autotune online w przeglądarce: BRD Tune dociąga wokal do tonacji bitu. Łagodne strojenie za darmo w Studiu, twardy efekt trapowy i ręczne nuty w wyższych planach.",
+    h1: "Autotune online",
+    lead: "W Studiu BitRymDym nastroisz wokal bez wtyczek i instalowania. Efekt BRD Tune dociąga nagrany głos do tonacji bitu, a Ty od razu słyszysz wynik.",
+    sections: [
+      {
+        h2: "Jak działa strojenie wokalu",
+        paragraphs: [
+          "Strojenie sprawdza, jaką nutę śpiewasz, i przesuwa ją do najbliższej nuty z wybranej tonacji. Dlatego najważniejsza jest dobra tonacja: gdy jest zła, nawet dobre wykonanie zabrzmi fałszywie.",
+          "Bity w katalogu BitRymDym mają zapisaną tonację, więc BRD Tune może ją wziąć z bitu. Jeśli bit jej nie ma, Studio spróbuje wykryć ją z dźwięku albo wybierzesz ją ręcznie.",
+        ],
+      },
+      {
+        h2: "Naturalnie czy twardo",
+        paragraphs: [
+          "Styl „Naturalny” poprawia nuty łagodnie i zostawia ruch głosu. Pasuje do śpiewanych refrenów i melodyjnych zwrotek. Styl „Hook” dociąga szybciej, a „Trap” przeskakuje na nutę od razu — to ten charakterystyczny, robotyczny efekt.",
+          "Łagodne strojenie jest w każdym planie, także Free. Twardy styl i własne suwaki szybkości oraz siły są od planu Silver, a ręczna korekta pojedynczych nut w planie Gold.",
+        ],
+      },
+      {
+        h2: "Krok po kroku w Studiu online",
+        paragraphs: [
+          "Wybierz bit, nagraj albo wgraj wokal, dodaj na ścieżce efekt strojenia i ustaw tonację bitu. Odsłuchaj z bitem, zmień styl i dopiero potem przejdź do mixu. To, co słyszysz w podglądzie, idzie do gotowego pliku.",
+          "Strojenie nie zastąpi dobrego nagrania. Śpiewaj czysto, blisko mikrofonu i bez pogłosu z pokoju — im czyściej, tym mniej słychać samą korektę.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Czy autotune online jest darmowy?", a: "Łagodne strojenie wokalu w Studiu jest w każdym planie, także Free. Potrzebne jest konto. Twardy efekt trapowy i własne ustawienia są od planu Silver." },
+      { q: "Czy to ten sam program co Auto-Tune?", a: "Nie. BRD Tune to własny efekt strojenia w Studiu BitRymDym, niezwiązany z producentem wtyczki Auto-Tune." },
+      { q: "Czy autotune działa przy rapie?", a: "Tak, ale najlepiej przy melodyjnym rapie i refrenach. Przy mówionych, agresywnych wersach lepiej go wyłączyć albo użyć delikatnie." },
+      { q: "Skąd wiem, jaka jest tonacja bitu?", a: "W katalogu jest podana przy bicie. Dla własnego pliku sprawdzisz ją w darmowym liczniku BPM i tonacji." },
+    ],
+    beats: null,
+    cta: [
+      { href: "/studio-nagran-online", label: "Studio nagrań online" },
+      { href: "/narzedzia/licznik-bpm", label: "Sprawdź tonację" },
+    ],
+  },
 ];
 
 export function landingPage(slug: string): LandingPage {

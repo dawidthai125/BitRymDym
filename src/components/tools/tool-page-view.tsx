@@ -4,7 +4,10 @@ import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame } from "@/components/brand/chrome";
 import { AppShell } from "@/components/site/app-shell";
 import { BpmCounter } from "@/components/tools/bpm-counter";
+import { FreestyleTopics } from "@/components/tools/freestyle-topics";
 import { Metronome } from "@/components/tools/metronome";
+import { MicTest } from "@/components/tools/mic-test";
+import { SlowedReverb } from "@/components/tools/slowed-reverb";
 import { SyllableCounter } from "@/components/tools/syllable-counter";
 import { breadcrumbJsonLd, faqPageJsonLd, webToolJsonLd } from "@/lib/seo/json-ld";
 import { JsonLdScript } from "@/lib/seo/json-ld-script";
@@ -14,6 +17,9 @@ import { getPublicSiteUrl } from "@/lib/site-url";
 function Widget({ slug }: { slug: ToolPage["slug"] }) {
   if (slug === "metronom-online") return <Metronome />;
   if (slug === "licznik-bpm") return <BpmCounter />;
+  if (slug === "tematy-do-freestyle") return <FreestyleTopics />;
+  if (slug === "test-mikrofonu") return <MicTest />;
+  if (slug === "slowed-reverb") return <SlowedReverb />;
   return <SyllableCounter />;
 }
 
@@ -29,6 +35,18 @@ const CTA: Record<ToolPage["slug"], { href: string; label: string }[]> = {
   "licznik-sylab": [
     { href: "/rymy", label: "Słownik rymów" },
     { href: "/poradniki/jak-napisac-tekst-rapowy", label: "Jak napisać tekst rapowy" },
+  ],
+  "tematy-do-freestyle": [
+    { href: "/bity-do-freestyle", label: "Bity do freestyle" },
+    { href: "/poradniki/freestyle-jak-zaczac", label: "Freestyle — jak zacząć" },
+  ],
+  "test-mikrofonu": [
+    { href: "/studio-nagran-online", label: "Nagraj zwrotkę online" },
+    { href: "/poradniki/mikrofon-do-rapu", label: "Mikrofon do rapu" },
+  ],
+  "slowed-reverb": [
+    { href: "/mix-i-mastering-online", label: "Mix i mastering online" },
+    { href: "/narzedzia/licznik-bpm", label: "Sprawdź BPM i tonację" },
   ],
 };
 
