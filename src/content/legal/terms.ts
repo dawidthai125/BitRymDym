@@ -1,12 +1,12 @@
 /** Regulamin serwisu BitRymDym. */
-import { LEGAL_EFFECTIVE_DATE, LEGAL_PATHS, MINIMUM_AGE, OPERATOR as O, TERMS_VERSION } from "@/lib/legal/legal-config";
+import { LEGAL_PATHS, MINIMUM_AGE, OPERATOR as O, TERMS_DATE, TERMS_EFFECTIVE_EXISTING, TERMS_VERSION } from "@/lib/legal/legal-config";
 
 import type { LegalDoc } from "./types";
 
 export const TERMS: LegalDoc = {
   title: "Regulamin serwisu BitRymDym",
   version: TERMS_VERSION,
-  lead: `Regulamin określa zasady korzystania z serwisu BitRymDym — katalogu bitów i przeglądarkowego studia do nagrywania, mixu i masteringu. Obowiązuje od ${LEGAL_EFFECTIVE_DATE}`,
+  lead: `Regulamin określa zasady korzystania z serwisu BitRymDym — katalogu bitów i przeglądarkowego studia do nagrywania, mixu i masteringu. Wersja z ${TERMS_DATE} Kto zaakceptował ją przy zakładaniu Konta, tego obowiązuje od założenia Konta. Pozostałych Użytkowników obowiązuje od ${TERMS_EFFECTIVE_EXISTING} (§ 12 ust. 4). Wcześniejsze wersje: ${LEGAL_PATHS.archive}.`,
   sections: [
     { id: "s1", h: "§ 1. Usługodawca i kontakt", blocks: [
       `Serwis prowadzi ${O.name}, ${O.form}, ${O.address}, NIP ${O.nip}, REGON ${O.regon} („Usługodawca”).`,
@@ -23,10 +23,11 @@ export const TERMS: LegalDoc = {
       "Treści Użytkownika — Bity, Nagrania, okładki, teksty, tytuły i inne materiały dodane przez Użytkownika.",
     ] }] },
     { id: "s3", h: "§ 3. Rodzaje usług", blocks: [
-      "Usługodawca świadczy drogą elektroniczną usługi: przeglądanie i odsłuch katalogu Bitów; prowadzenie Konta; Studio (nagrywanie, edycja, mix, mastering, eksport); publikacja Bitów Użytkowników po moderacji; publikacja utworów Użytkowników w katalogu utworów; prywatne linki do odsłuchu; generowanie okładek i wideo (w tym z pomocą narzędzi AI); asystent BITEK; powiadomienia e-mail.",
+      "Usługodawca świadczy drogą elektroniczną usługi: przeglądanie i odsłuch katalogu Bitów i katalogu sampli; prowadzenie Konta; Studio (nagrywanie, edycja, mix, mastering, eksport); publikacja Bitów Użytkowników po moderacji; publikacja utworów Użytkowników w katalogu utworów; rankingi, oceny i komentarze; dobrowolny publiczny profil twórcy; prywatne linki do odsłuchu; program do nagrywania na Windows i aplikacje mobilne; generowanie okładek i wideo (w tym z pomocą narzędzi AI); asystent BITEK; powiadomienia e-mail.",
       "Umowa o prowadzenie Konta zostaje zawarta na czas nieoznaczony z chwilą potwierdzenia adresu e-mail. Korzystanie z katalogu bez Konta jest możliwe w zakresie udostępnionym publicznie.",
       "Zakres funkcji i limity opisuje strona Premium. Pliki robocze Studia (mixy, mastery, eksporty, wideo) trzymamy: Free 2 dni, Bronze 7 dni, Silver 30 dni, Gold 45 dni. Nagranie (głos lub instrument) znika wcześniej: Free 24 godziny, Bronze 36 godzin, Silver 60 godzin, Gold 84 godziny. Funkcje oznaczone jako testowe mogą się zmieniać.",
       "Podgląd mastera w Studiu ma głosowy znak wodny „Bit Rym Dym”, mieszany co kilkanaście sekund. Czystego mastera nie odtwarzamy w Studiu. Dostajesz go tylko przez zatwierdzone pobranie, w limicie Planu. Publiczny fragment utworu opublikowanego w katalogu opisuje § 7 ust. 8.",
+      "Użytkownik może usunąć projekt Studia. Znikają wtedy jego ścieżki, pliki, prywatne linki i publikacja w katalogu utworów. Usunięcie projektu nie przywraca wykorzystanych limitów (masterów, eksportów, pobrań, dziennego limitu utworów).",
     ] },
     { id: "s4", h: "§ 4. Wymagania techniczne", blocks: [
       "Aktualna przeglądarka (Chrome, Edge, Firefox, Safari) z włączoną obsługą JavaScript i plików cookie niezbędnych do logowania, dostęp do internetu, aktywny adres e-mail; do nagrywania — mikrofon i zgoda przeglądarki na jego użycie.",
@@ -35,6 +36,7 @@ export const TERMS: LegalDoc = {
     { id: "s5", h: "§ 5. Konto", blocks: [
       `Konto może założyć wyłącznie osoba, która ukończyła ${MINIMUM_AGE} lat. Osoba niepełnoletnia (od ${MINIMUM_AGE} do 18 lat) może zawrzeć umowę o Plan płatny lub Dodatek tylko za zgodą przedstawiciela ustawowego.`,
       "Użytkownik podaje prawdziwy adres e-mail, nie udostępnia Konta osobom trzecim i dba o poufność hasła. Ksywka nie może naruszać praw innych osób ani wprowadzać w błąd.",
+      "Publiczny profil twórcy jest dobrowolny i na początku wyłączony. Użytkownik sam wybiera, co pokazuje, i może go wyłączyć w każdej chwili. Odpowiada za linki, które doda. Profil naruszający Regulamin Usługodawca może ukryć na zasadach § 6 ust. 5.",
       "Użytkownik może w każdej chwili usunąć Konto w ustawieniach (Konto → Usuwanie konta) — jest to wypowiedzenie umowy ze skutkiem natychmiastowym. Treści Użytkownika są wtedy usuwane, z zastrzeżeniem § 9 ust. 7 i Polityki prywatności.",
     ] },
     { id: "s6", h: "§ 6. Treści Użytkownika i moderacja", blocks: [
@@ -43,7 +45,7 @@ export const TERMS: LegalDoc = {
       "Bity Użytkowników i okładki przechodzą moderację: automatyczną (m.in. analiza obrazu przez model AI, kontrola techniczna pliku) oraz ręczną przez moderatora. Automatyczna ocena może skutkować odrzuceniem; Użytkownik może się od niej odwołać — odwołanie rozpatruje człowiek.",
       "Wgrany Bit porównujemy z katalogiem Serwisu. Do usługi AcoustID wysyłamy tylko odcisk dźwięku (chromaprint) i czas trwania, bez pliku audio, żeby wychwycić cudze nagranie. Szczegóły odbiorcy są w Polityce prywatności.",
       "Usługodawca może odmówić publikacji, ukryć lub usunąć treść, a w razie poważnych lub powtarzających się naruszeń zablokować Konto. Decyzję wraz z uzasadnieniem przekazuje Użytkownikowi (np. w Serwisie lub e-mailem), chyba że prawo tego zabrania.",
-      "Zgłoszenia treści bezprawnych (także przez osoby bez Konta) można wysyłać na " + O.email + ", podając adres treści, uzasadnienie, dane zgłaszającego i oświadczenie o dobrej wierze. Usługodawca rozpatruje je bez zbędnej zwłoki (zgodnie z aktem o usługach cyfrowych — DSA).",
+      "Zgłoszenia treści bezprawnych (także przez osoby bez Konta) można wysyłać na " + O.email + ", podając adres treści, uzasadnienie, dane zgłaszającego i oświadczenie o dobrej wierze. Usługodawca rozpatruje je bez zbędnej zwłoki (zgodnie z aktem o usługach cyfrowych — DSA). Ten adres jest też punktem kontaktowym dla Użytkowników i organów (art. 11 i 12 DSA); piszemy po polsku i po angielsku.",
       "Komentarze: każdy zalogowany Użytkownik może zgłosić komentarz przyciskiem „Zgłoś” (art. 16 DSA). Zgłoszenia rozpatruje administrator Serwisu. Komentarz zgłoszony przez kilku Użytkowników może zostać ukryty do czasu decyzji administratora. Autor może usunąć swój komentarz, a właściciel utworu może ukryć komentarz pod swoim utworem.",
     ] },
     { id: "s7", h: "§ 7. Licencje", blocks: [
@@ -55,6 +57,7 @@ export const TERMS: LegalDoc = {
       `Utwór stworzony na Bicie (Bit wraz z Nagraniami) Użytkownik może publikować, rozpowszechniać i monetyzować — także w serwisach streamingowych i wideo (np. Spotify, Apple Music, YouTube, TikTok), w tym za pośrednictwem dystrybutorów cyfrowych — pod warunkiem oznaczenia autora Bitu w opisie, napisach lub metadanych utworu, np. „prod. [ksywka autora] / BitRymDym”. Odrębnej, uprzedniej zgody autora Bitu (dla Bitów Usługodawcy — Usługodawcy, ${O.email}) wymaga: sprzedaż, udostępnianie lub dalsze rozpowszechnianie samego Bitu (bez Nagrań Użytkownika); zgłoszenie Bitu albo zawierającego go utworu do systemów identyfikacji treści (np. YouTube Content ID, inne systemy fingerprintingu); wykorzystanie utworu w reklamie, filmie, serialu lub grze (synchronizacja); przypisywanie sobie autorstwa Bitu.`,
       "Użytkownik, który publikuje Bit z włączonym nagrywaniem lub pobieraniem, udziela innym Użytkownikom nieodpłatnej, niewyłącznej licencji w zakresie ust. 3–6, w tym na publikację i monetyzację utworów stworzonych na tym Bicie z oznaczeniem autora, a Usługodawcy — na publiczne udostępnianie fragmentów takich utworów w katalogu utworów (ust. 8). Licencja obejmuje utwory stworzone w czasie, gdy Bit był dostępny — usunięcie Bitu lub wyłączenie tych opcji nie odbiera prawa do utworów wcześniej opublikowanych zgodnie z Regulaminem.",
       "Katalog utworów: publikując w katalogu utwór stworzony w Studiu, Użytkownik zgadza się, by Serwis publicznie udostępniał, także osobom bez Konta, fragment tego utworu do 45 sekund, razem z użytym Bitem z katalogu, w celu prezentacji utworu w katalogu i przy udostępnianiu linku do niego. Jeżeli w chwili przygotowania fragmentu Użytkownik ma Plan Free, fragment zawiera głosowy znak wodny „Bit Rym Dym”. Pełny utwór pozostaje u autora i nie jest publicznie odtwarzany. Fragment przestaje być udostępniany po wycofaniu utworu z katalogu. Taki fragment, także z Bitem Usługodawcy albo Bitem z katalogu płatnego, nie jest udostępnianiem samego Bitu w rozumieniu ust. 4 i 6 ani § 9 ust. 5.",
+      "Kopia Bitu ze znakiem Konta: Bit odtwarzany w całości w Studiu, przy nagrywaniu i w programie na Windows jest osobistą kopią z niesłyszalnym znakiem przypisanym do Konta. Służy on tylko do ustalenia, skąd wyciekł plik. Zakazane jest usuwanie lub zagłuszanie znaku, nagrywanie i wyciąganie plików Bitu poza funkcjami Serwisu oraz ich udostępnianie. Ukryty znak nie zmienia praw do utworu z ust. 6.",
       "Okładki i grafiki wygenerowane przez narzędzia AI w Serwisie Użytkownik może wykorzystywać wraz ze swoimi utworami; Usługodawca nie gwarantuje, że takie grafiki są objęte ochroną prawnoautorską ani że są unikalne.",
     ] },
     { id: "s8", h: "§ 8. Narzędzia AI", blocks: [
@@ -81,6 +84,10 @@ export const TERMS: LegalDoc = {
     ] },
     { id: "s12", h: "§ 12. Zmiany regulaminu i postanowienia końcowe", blocks: [
       "Usługodawca może zmienić Regulamin z ważnych przyczyn (zmiana prawa, funkcji, bezpieczeństwa), informując Użytkowników z co najmniej 14-dniowym wyprzedzeniem (e-mail lub komunikat w Serwisie). Użytkownik, który nie akceptuje zmian, może usunąć Konto.",
+      "Bez wyprzedzenia wchodzą tylko poprawki językowe, aktualizacja danych kontaktowych i nowe dobrowolne funkcje, które nie pogarszają sytuacji Użytkownika. Nową wersję Użytkownik akceptuje też przy zakładaniu Konta i przy zakupie.",
+      "Zmiana Regulaminu nie odbiera praw nabytych wcześniej, w szczególności z opłaconego zamówienia, ani uprawnień Konsumenta z rozdziału 5b ustawy o prawach konsumenta (m.in. wypowiedzenia umowy przy istotnej niekorzystnej zmianie usługi).",
+      `Okres przejściowy: zmiany wprowadzone wersjami z 12, 15, 22 i 24 listopada 2026 r. stosujemy do Kont, które nie zaakceptowały ich przy rejestracji albo zakupie, od ${TERMS_EFFECTIVE_EXISTING} Do tego dnia obowiązuje te Konta wersja zaakceptowana wcześniej, chyba że nowe zasady są dla Użytkownika korzystniejsze.`,
+      "Wszystkie wcześniejsze wersje są w archiwum: " + LEGAL_PATHS.archive + ".",
       "Dane osobowe są przetwarzane zgodnie z Polityką prywatności (" + LEGAL_PATHS.privacy + "), a pliki cookie — zgodnie z Polityką cookies (" + LEGAL_PATHS.cookies + ").",
       "Prawem właściwym jest prawo polskie; nie pozbawia to Konsumenta ochrony, jaką zapewniają mu bezwzględnie obowiązujące przepisy państwa jego zwykłego pobytu. Wersją wiążącą jest wersja polska.",
     ] },

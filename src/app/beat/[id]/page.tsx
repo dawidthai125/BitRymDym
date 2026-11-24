@@ -302,7 +302,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               related={related}
             />
           </div>
-          {video ? <BeatVideo videoId={video.videoId} title={presented.title} label={videoLabel} /> : null}
+          {video ? <BeatVideo videoId={video.videoId} title={presented.title} label={videoLabel} poster={detail.coverFullUrl ?? `/beat/${detail.id}/opengraph-image`} /> : null}
           <LicenseSummary className="mt-6 border-t border-[var(--brd-line)] pt-4" />
           <div className="mt-6 border-t border-[var(--brd-line)] pt-4">
             <ShareButtons url={absoluteUrl(getPublicSiteUrl(), `/beat/${detail.id}`)} text={`${presented.title} — BitRymDym`} testId="beat-share" />

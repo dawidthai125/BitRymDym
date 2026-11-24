@@ -6,7 +6,9 @@ import {
   MAIN_CONTENT_LANDMARK_CLASS,
 } from "@/components/site/skip-to-main";
 import { StickyMiniPlayer } from "@/components/player/sticky-mini-player";
+import { TermsNotice } from "@/components/legal/terms-notice";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { termsNoticeDue } from "@/lib/legal/legal-config";
 import { cn } from "@/lib/utils";
 
 /**
@@ -46,6 +48,8 @@ export async function AppShell({
             "pb-[calc(3.75rem+env(safe-area-inset-bottom)+1rem)] lg:pb-2 [[data-app-shell]:has([data-sticky-player])_&]:pb-[calc(3.75rem+env(safe-area-inset-bottom)+10rem)] lg:[[data-app-shell]:has([data-sticky-player])_&]:pb-28",
         )}
       >
+        {/* Not over a Studio project: that screen has no room to spare. */}
+        {session && !compactFooter && termsNoticeDue(session.profile.createdAt) ? <TermsNotice /> : null}
         {children}
         <SiteFooter compact={compactFooter} />
       </div>

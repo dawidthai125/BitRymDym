@@ -77,6 +77,6 @@ describe("Free watermark copy (flag-driven)", () => {
   });
   it("terms §7 carries the Free watermark clause and the version moved", () => {
     expect(read("src/content/legal/terms.ts")).toContain("Plik ze znakiem wodnym (Plan Free");
-    expect(read("src/lib/legal/legal-config.ts")).toContain('TERMS_VERSION = "2026-11-22.4"');
+    expect(read("src/lib/legal/legal-config.ts")).toContain('TERMS_VERSION = "2026-11-24.1"');
   });
 });

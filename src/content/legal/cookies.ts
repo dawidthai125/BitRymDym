@@ -15,11 +15,14 @@ export const COOKIES: LegalDoc = {
       ["brd_dl_aid", "limit pobrań bez konta (losowy identyfikator, bez danych osobowych)", "do 400 dni"],
       ["brd_tk_aid", "dawne nagrania bez konta (losowy identyfikator)", "do 2 godzin"],
       ["brd_ref", "kod polecający z linku „Zaproś znajomego” (tylko kod, bez danych osobowych), odczytywany przy zakładaniu Konta", "do 30 dni"],
+      ["brd_signup_browser", "dokończenie rejestracji w tej samej przeglądarce po kliknięciu linku z e-maila", "do 7 dni"],
+      ["brd_app", "tryb aplikacji ze sklepu (android albo ios)", "12 godzin"],
       ["NEXT_LOCALE", "wybrany język", "do zmiany"],
       ["brd_consent", "zapamiętana decyzja w sprawie cookies statystycznych", "12 miesięcy"],
     ] } }] },
     { id: "c1a", h: "1a. Cookies statystyczne (tylko za zgodą)", blocks: [
       "Po kliknięciu „Akceptuję” w banerze włączamy Google Analytics 4 (Google Ireland Ltd.). Służy do zliczania odwiedzin i sprawdzania, które strony są oglądane. Nie łączymy tych danych z Kontem, nie włączamy funkcji reklamowych ani sygnałów Google. Po kliknięciu „Tylko niezbędne” Google Analytics się nie ładuje. Wycofanie zgody usuwa te pliki.",
+      "Film YouTube na stronie Bitu ładuje się dopiero po kliknięciu odtwarzania, z adresu youtube-nocookie.com. Na logowaniu i rejestracji działa Cloudflare Turnstile (ochrona przed botami); to zabezpieczenie niezbędne.",
       { table: { head: ["Nazwa", "Cel", "Ważność"], rows: [
         ["_ga", "rozróżnianie odwiedzających (losowy identyfikator)", "do 2 lat"],
         ["_ga_<identyfikator>", "utrzymanie sesji statystyk", "do 2 lat"],
@@ -28,7 +31,7 @@ export const COOKIES: LegalDoc = {
     { id: "c2", h: "2. Pamięć przeglądarki", blocks: [
       "To nie są pliki cookie. Zostają na Twoim urządzeniu i nie wysyłamy ich do analityki.",
       { list: [
-        "localStorage: motyw jasny albo ciemny; szkic tekstu w Studiu; zapasowa historia czatu BITEK; położenie okna BITEK; wyłącznik automatycznego mixu i mastera.",
+        "localStorage: motyw jasny albo ciemny; szkic tekstu w Studiu; zapasowa historia czatu BITEK; położenie okna BITEK; wyłącznik automatycznego mixu i mastera; ukrycie pierwszych kroków; ustawienia strony „Sam mastering”; zamknięcie komunikatu o zmianie Regulaminu.",
         "sessionStorage (znika po zamknięciu karty): czat BITEK w tej karcie; skrót limitów Planu na około minutę; wskazówka głośności nagrania przekazywana do mixu; znacznik trwającego automatycznego mixu albo mastera.",
         "IndexedDB, baza brd-take-recovery: kawałki trwającego nagrania, żeby dało się je dokończyć po zerwaniu połączenia. To nie jest kopia na naszym serwerze. Po wysłaniu nagrania albo po wyczyszczeniu danych strony ta baza znika.",
       ] },

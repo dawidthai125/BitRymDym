@@ -70,7 +70,7 @@ export function buildCsp({ nonce, env = process.env }: BuildCspOptions): string 
       isDev && "'unsafe-eval'",
     ),
     "style-src 'self' 'unsafe-inline'",
-    list("img-src 'self' data: blob:", supabaseOrigin, "https://vercel.com", "https://i.ytimg.com", live, GOOGLE_ANALYTICS_IMG),
+    list("img-src 'self' data: blob:", supabaseOrigin, "https://vercel.com", live, GOOGLE_ANALYTICS_IMG),
     "font-src 'self' data:",
     list("media-src 'self' blob: mediastream: data:", supabaseOrigin, "https://edge.bitrymdym.pl"),
     list(
