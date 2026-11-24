@@ -22,7 +22,7 @@ const REFUND_WINDOW_MS = 6 * 60 * 60 * 1000;
 /** Shorter than the 24 h in which record/place still accepts a send. */
 const REUSE_WINDOW_MS = 20 * 60 * 60 * 1000;
 /** Younger than this it may belong to an upload that runs right now. */
-const REUSE_AFTER_MS = 20 * 1000;
+const REUSE_AFTER_MS = 2 * 60 * 1000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function handle(peek: boolean) {
   const context = await getCurrentProfile();

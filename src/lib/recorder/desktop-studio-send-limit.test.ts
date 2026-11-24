@@ -248,7 +248,7 @@ describe("desktop studio-send limit", () => {
     state.tier = "FREE";
     const sendId = (await (await POST()).json()).sendId as string;
     expect((await POST()).status).toBe(429);
-    state.sends[0].created_at -= 60_000;
+    state.sends[0].created_at -= 180_000;
     expect(await (await GET()).json()).toMatchObject({ allowed: true, sendId: null, used: 1, limit: 1 });
     const again = await POST();
     expect(again.status).toBe(200);

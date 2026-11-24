@@ -13,6 +13,8 @@ import json
 import math
 import os
 import sys
+import threading
+import time
 from pathlib import Path
 from typing import Any, Callable
 
@@ -210,9 +212,19 @@ def list_saved_takes(folder: Path, limit: int = 12) -> list[Path]:
 def write_atomic(path: Path, text: str) -> None:
     """A full file or the old one. Never a half of it."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".tmp")
+    temporary = path.with_name(f"{path.name}.{threading.get_ident()}.tmp")
     temporary.write_text(text, encoding="utf-8")
-    temporary.replace(path)
+    try:
+        for _attempt in range(6):
+            try:
+                temporary.replace(path)
+                return
+            except PermissionError:
+                # Windows: another thread or the antivirus has the file open for a moment.
+                time.sleep(0.03)
+        path.write_text(text, encoding="utf-8")
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def write_prefs(path: Path, prefs: dict[str, Any]) -> None:

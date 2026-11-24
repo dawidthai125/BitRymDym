@@ -261,6 +261,7 @@ def build_session(
     tracks: list[dict[str, object]],
     saved_at: str,
     beat_pan: float = 0.0,
+    beat_bpm: float = 0.0,
 ) -> dict[str, object]:
     """Portable document. Beat audio is never copied in. Stem names are files beside this JSON."""
     beat_name = file_title(beat_file_name) if beat_file_name else ""
@@ -301,6 +302,7 @@ def build_session(
             "durationSeconds": round(max(0.0, float(beat_seconds or 0.0)), 3),
             "gainDb": round(clamp_gain(beat_gain_db), 2),
             "pan": round(clamp_pan(beat_pan), 3),
+            "bpm": round(beat_bpm, 2) if 20 <= beat_bpm <= 400 else 0,
             "muted": bool(beat_muted),
             "included": False,
         },
@@ -331,6 +333,7 @@ def parse_session(raw: object) -> dict[str, object] | None:
         beat_muted=bool(beat.get("muted")),
         tracks=[item for item in tracks if isinstance(item, dict)],
         beat_pan=clamp_pan(beat.get("pan")),
+        beat_bpm=float(beat.get("bpm") or 0.0) if _is_number(beat.get("bpm")) else 0.0,
         saved_at=str(raw.get("savedAt") or ""),
     )
     note = raw.get("rights")

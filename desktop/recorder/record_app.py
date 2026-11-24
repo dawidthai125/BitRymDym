@@ -1624,6 +1624,7 @@ class RecorderWindow:
         self._warm_feed: MixFeed | None = None
         self._mix_number = 0
         self._plan_token = 0
+        self._armed_mix: tuple[object, ...] = ()
         # Microphone sound that came before the mix started. It is cut off the take with the count-in.
         self._pre = 0.0
         self._pre_seen: list[float] = []
@@ -3300,6 +3301,7 @@ class RecorderWindow:
 
     def _restore_desk(self) -> None:
         self.tracks = []
+        self.tempo_var.set(str(countin.FALLBACK_BPM))
         # Undo and the clipboard belong to the other studio.
         self.undo_stack = []
         self.clipboard = []
@@ -3386,6 +3388,7 @@ class RecorderWindow:
 
     def _blank_project(self, announce: bool = False) -> None:
         """Empty studio. A new launch does not open the project from the previous run."""
+        self.tempo_var.set(str(countin.FALLBACK_BPM))
         self.tracks = [self._new_track()]
         self.undo_stack = []
         self.clipboard = []
@@ -3866,8 +3869,18 @@ class RecorderWindow:
         self.wav_path = record_to
         self._arming = True
         self.status.set("Otwieram mikrofon…")
-        self._beat_until = min(until, self._beat_meta()[2])
+        length = self._beat_meta()[2]
+        if self.studio_mode == "offline":
+            # A file header can promise more than there is. The decoded wave is the real length.
+            length = len(self._beat_peaks[0]) / 100.0 if self._beat_peaks and self._beat_peak_path == self.local_beat_path else 0.0
+        self._beat_until = min(until, length)
         self._await_mic(token, start, feed, lead, note, time.monotonic() + MIC_OPEN_SECONDS)
+
+    def _mix_settings(self) -> tuple[object, ...]:
+        return (
+            self.beat_muted, self.beat_gain_db, self.beat_pan,
+            *((track.muted, track.solo, track.gain_db, track.pan) for track in self.tracks),
+        )
 
     def _arm_failed(self, text: str) -> None:
         self._arming = False
@@ -3929,6 +3942,9 @@ class RecorderWindow:
         self.status.set(f"Odliczanie, potem nagrywam {name} od {clock_text(start)}." if self._lead > 0 else line)
         self.rec_button.configure(text="● NAGRYWA")
         self._running()
+        if self._mix_settings() != self._armed_mix:
+            # M, level or panorama moved while the mic was opening.
+            self._schedule_remix(40)
 
     def _running(self) -> None:
         self._paint_lamp()
@@ -3982,6 +3998,7 @@ class RecorderWindow:
         beat_id, local = self._play_beat()
         count = (countin.bars_of(self.count_var.get()), self._tempo())
         self._take_seconds = self._take_cap()
+        self._armed_mix = self._mix_settings()
         TAKES.mkdir(parents=True, exist_ok=True)
         path = TAKES / f"ujecie-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}.wav"
         self._cancel_remix()
@@ -4147,9 +4164,9 @@ class RecorderWindow:
                 self._after_count = ""
             elapsed = self._rec_elapsed()
             monitor = self.monitor
-            if monitor is not None and monitor.poll() is not None and self.rec_start + elapsed < self._beat_until - 1.5:
-                # Singing on without the beat gives a take that fits nothing.
-                note = str(getattr(monitor, "note", "") or "")
+            note = str(getattr(monitor, "note", "") or "")
+            if monitor is not None and monitor.poll() is not None and (note or self.rec_start + elapsed < self._beat_until - 1.5):
+                # Singing on without the beat gives a take that fits nothing. A note is a dead output.
                 self._stop_monitor()
                 if self.capture is not None:
                     stop_capture(self.capture)
@@ -4442,6 +4459,7 @@ class RecorderWindow:
             beat_muted=self.beat_muted,
             tracks=rows,
             beat_pan=self.beat_pan,
+            beat_bpm=offline_tempo(self.tempo_var.get()),
             saved_at=datetime.now().astimezone().isoformat(timespec="seconds"),
         )
         built = document.get("tracks")
@@ -4675,6 +4693,8 @@ class RecorderWindow:
         beat_name = ""
         if isinstance(beat, dict):
             beat_name = str(beat.get("fileName") or "")
+            bpm = beat.get("bpm")
+            self.tempo_var.set(f"{bpm:g}" if isinstance(bpm, (int, float)) and bpm > 0 else str(countin.FALLBACK_BPM))
             self.beat_gain_db = offline_session.clamp_gain(beat.get("gainDb"))
             self.beat_pan = offline_session.clamp_pan(beat.get("pan"))
             self.beat_muted = bool(beat.get("muted"))
@@ -4779,6 +4799,14 @@ class RecorderWindow:
             if foreign:
                 # Another account's send stays in its own file. This one starts its own.
                 self._pending = None
+            if state is not None and finish is None and state.beat_id != beat_id:
+                # The same recordings on another beat are another song.
+                state = None
+            elif state is not None and finish is None and state.title != title:
+                if state.project_id:
+                    client.rename_project(state.project_id, title)
+                state.title = title
+                save_pending(state)
             if state is None and self._pending is not None:
                 old, state = self._pending, None
                 if old.beat_id == beat_id:

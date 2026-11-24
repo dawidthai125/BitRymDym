@@ -218,6 +218,11 @@ class WavePlayer:
                 self._code = 0
                 break
             time.sleep(0.01)
+        # Before the buffers go: the device must have let go of all of them.
+        try:
+            winmm.waveOutReset(handle)
+        except Exception:
+            pass
         self._reap(winmm, handle, force=True)
 
     def _queue(self, winmm: object, handle: object, data: bytes) -> None:
