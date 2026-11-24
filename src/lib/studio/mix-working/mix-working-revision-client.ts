@@ -152,7 +152,7 @@ export function formatMixRevisionWhen(iso: string | null | undefined): string {
     const en = typeof document !== "undefined" && document.documentElement.lang.toLowerCase().startsWith("en");
     return new Intl.DateTimeFormat(en ? "en-GB" : "pl-PL", {
       dateStyle: "medium",
-      timeStyle: "short",
+      timeStyle: "short", timeZone: "Europe/Warsaw",
     }).format(new Date(ms));
   } catch {
     return "";

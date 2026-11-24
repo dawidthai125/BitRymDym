@@ -3872,7 +3872,7 @@ export function StudioRecordingPanel({
                     <span className="min-w-0 flex-1 truncate">
                       {tl(take.beatTitle ?? "—")}
                       {take.durationSeconds != null ? ` · ${clock(take.durationSeconds)}` : ""}
-                      {` · ${new Date(take.createdAt).toLocaleString(locale, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}`}
+                      {` · ${new Date(take.createdAt).toLocaleString(locale, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Warsaw" })}`}
                     </span>
                     <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void retryUnsent(take.id)}>
                       {tr("zastapTo")}
@@ -4063,7 +4063,7 @@ export function StudioRecordingPanel({
                     {tl(take.durationSeconds != null
                       ? `${take.durationSeconds.toFixed(1)}s`
                       : "—")}
-                    {` · ${new Date(take.createdAt).toLocaleString(locale, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}`}
+                    {` · ${new Date(take.createdAt).toLocaleString(locale, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Warsaw" })}`}
                     {" · "}
                     {placementLabel(take.id)}
                   </p>

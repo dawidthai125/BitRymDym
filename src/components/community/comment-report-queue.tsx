@@ -69,7 +69,7 @@ export function CommentReportQueue({ enabled, items }: { enabled: boolean; items
                 {" · "}
                 {REPORT_REASONS.filter((reason) => item.reasons[reason]).map((reason) => `${t(`reason.${reason}`)} ×${item.reasons[reason]}`).join(", ")}
                 {" · "}
-                {new Date(item.lastReportedAt).toLocaleString(tag)}
+                {new Date(item.lastReportedAt).toLocaleString(tag, { timeZone: "Europe/Warsaw" })}
               </p>
               {item.details.length > 0 ? (
                 <ul className="list-disc space-y-1 pl-5 text-xs text-[var(--brd-ink-soft)]">

@@ -130,7 +130,7 @@ function QueueSection({
                   )}
                 </td>
                 <td data-label={t("zaktualizowano")} className="brd-data text-xs text-muted-foreground">
-                  {tl(new Date(beat.updatedAt).toLocaleString(tag))}
+                  {tl(new Date(beat.updatedAt).toLocaleString(tag, { timeZone: "Europe/Warsaw" }))}
                 </td>
                 <td className="text-right">
                   <Link

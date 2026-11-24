@@ -37,7 +37,7 @@ function formatExpiresAt(
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return noExpiry;
   return new Intl.DateTimeFormat(tag, {
-    dateStyle: "medium",
+    dateStyle: "medium", timeZone: "Europe/Warsaw",
   }).format(date);
 }
 

@@ -45,8 +45,8 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
         <AutoCheckBadge check={check} />
         <span className="brd-data text-xs text-muted-foreground">
           {tl(check.finished_at
-            ? t("zakonczono", { v0: new Date(check.finished_at).toLocaleString(tag) })
-            : t("zlecono", { v0: new Date(check.created_at).toLocaleString(tag) }))}
+            ? t("zakonczono", { v0: new Date(check.finished_at).toLocaleString(tag, { timeZone: "Europe/Warsaw" }) })
+            : t("zlecono", { v0: new Date(check.created_at).toLocaleString(tag, { timeZone: "Europe/Warsaw" }) }))}
           {tl(check.error_code ? t("kod", { v0: check.error_code }) : "")}
         </span>
       </div>
@@ -114,7 +114,7 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
       {check.appeal_requested_at ? (
         <div className="space-y-1 border border-[var(--brd-line)] bg-[var(--brd-recess)] p-3">
           <p className="font-medium">
-            {t("odwolanieWlasciciela")}{tl(new Date(check.appeal_requested_at).toLocaleString(tag))})
+            {t("odwolanieWlasciciela")}{tl(new Date(check.appeal_requested_at).toLocaleString(tag, { timeZone: "Europe/Warsaw" }))})
           </p>
           {check.appeal_note ? <p className="whitespace-pre-wrap">{tl(check.appeal_note)}</p> : null}
         </div>

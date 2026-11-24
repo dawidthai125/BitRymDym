@@ -173,7 +173,7 @@ export function BeatGrantsPanel({
                 <p className="text-xs text-muted-foreground">
                   {t("nagrywanie")}
                   {tl(g.expiresAt
-                    ? t("wygasa", { v0: new Date(g.expiresAt).toLocaleString(tag) })
+                    ? t("wygasa", { v0: new Date(g.expiresAt).toLocaleString(tag, { timeZone: "Europe/Warsaw" }) })
                     : t("bezterminowy"))}
                 </p>
               </div>

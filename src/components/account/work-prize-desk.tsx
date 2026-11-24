@@ -7,7 +7,7 @@ import { labelPremiumTier } from "@/lib/ui/labels";
 function formatUntil(iso: string, locale: string): string {
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return iso;
-  return new Date(ms).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
+  return new Date(ms).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric", timeZone: "Europe/Warsaw" });
 }
 
 export async function WorkPrizeDesk({ userId }: { userId: string }) {

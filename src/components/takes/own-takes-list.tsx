@@ -23,7 +23,7 @@ function formatWhen(iso: string, tag = "pl-PL"): string {
   try {
     return new Intl.DateTimeFormat(tag, {
       dateStyle: "medium",
-      timeStyle: "short",
+      timeStyle: "short", timeZone: "Europe/Warsaw",
     }).format(new Date(iso));
   } catch {
     return iso;

@@ -47,7 +47,7 @@ export function StudioQuotaLine() {
   const reset = row.takes.resetAt ? new Date(row.takes.resetAt) : null;
   const when =
     reset && Number.isFinite(reset.getTime())
-      ? reset.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+      ? reset.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Warsaw" })
       : null;
   return (
     <>
