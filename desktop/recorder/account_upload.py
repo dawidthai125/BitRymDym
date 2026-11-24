@@ -256,20 +256,20 @@ class SiteClient:
         except Exception:
             return False
 
-    def delete_take(self, take_id: str) -> None:
-        """Drops a half-sent take so it no longer holds the single recording session. Never raises."""
+    def delete_take(self, take_id: str) -> bool:
+        """Drops a half-sent take so it no longer holds the single recording session. True when it is gone. Never raises."""
         try:
             self._json("POST", "/api/takes/delete", {"takeId": take_id})
-        except Exception:
-            pass
-
-    def delete_project(self, project: str) -> bool:
-        """Drops an empty project left by a failed send. True when it is gone. Never raises."""
-        try:
-            self._json("DELETE", f"/api/studio/projects/{project}")
         except Exception as error:
             return error_body(str(error))[0] == 404
         return True
+
+    def rename_project(self, project: str, title: str) -> None:
+        """Never raises: the title is not worth a failed send."""
+        try:
+            self._json("PATCH", f"/api/studio/projects/{project}", {"title": title})
+        except Exception:
+            pass
 
     def plan_usage(self) -> dict[str, Any]:
         return self._json("GET", "/api/account/plan-usage")
@@ -324,6 +324,8 @@ class UploadState:
     take_ids: list[str] = field(default_factory=list)
     # Windows recorder daily send (POST /api/desktop/studio-send), spent once per send.
     send_id: str = ""
+    # A take whose upload broke off. It holds the only recording session of the account until it is deleted.
+    loose_take: str = ""
     # Account e-mail of the send. Another account must not continue it.
     account: str = ""
 
@@ -350,6 +352,7 @@ class UploadState:
                 take_ids=[str(item) for item in raw.get("take_ids", [])],
                 send_id=str(raw.get("send_id") or ""),
                 account=str(raw.get("account") or ""),
+                loose_take=str(raw.get("loose_take") or ""),
             )
         except (KeyError, TypeError, ValueError):
             return None
@@ -381,28 +384,63 @@ def give_back_send(client: Any, state: "UploadState | None", send_id: str) -> tu
     return True, state
 
 
-def send_one_take(client: Any, beat_id: str, wav: bytes) -> str:
-    """Opens a take, uploads and finalizes it. When that fails, the half-sent take is deleted,
+def send_one_take(client: Any, beat_id: str, wav: bytes, loose: Callable[[str], None] | None = None) -> str:
+    """loose(id) is called while the take is open on the site, and with "" when it is done or deleted.
+
+    Opens a take, uploads and finalizes it. When that fails, the half-sent take is deleted,
     otherwise it keeps the only recording session and the next try gets 409 CONCURRENT_SESSION."""
     session = client.open_take(beat_id, len(wav))
     take_id = str(session["takeId"])
+    note = loose or (lambda _take: None)
+    note(take_id)
     try:
         client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
         client.finalize(take_id)
     except BaseException:
-        client.delete_take(take_id)
+        if client.delete_take(take_id) is not False:
+            note("")
         raise
+    note("")
     return take_id
 
 
-def drop_empty_project(client: Any, state: "UploadState | None") -> "UploadState | None":
-    """A failed send that placed nothing leaves an empty project and a resume state with no value.
-    Delete the project and forget the state (the clips stay on the desk, the user presses Gotowe again).
-    When the delete did not go through (no network), the state stays: the next try continues that project
-    with the same daily send instead of paying for a second one."""
-    if state is None or state.placed > 0 or not state.project_id:
-        return state
-    return None if client.delete_project(state.project_id) else state
+def empty_project_state(client: Any, old: "UploadState", title: str, wav_paths: list[str], track_of: list[int], starts_ms: list[int]) -> "UploadState | None":
+    """The project of a send that placed nothing, taken over by a new arrangement of the same beat.
+
+    The program never deletes a project on the account: the user may have recorded in it in the browser.
+    Anything on its tracks, or any change made on the site, leaves it alone (None).
+    """
+    if not old.project_id or old.placed > 0:
+        return None
+    try:
+        document = client.project_document(old.project_id)
+    except Exception:
+        return None
+    clips = document.get("clips")
+    if not isinstance(clips, list) or any(isinstance(clip, dict) and clip.get("sourceKind") != "BEAT_REF" for clip in clips):
+        return None
+    if document_version(document) != old.version:
+        return None
+    tracks = vocal_track_ids(document)
+    if any(track not in tracks for track in old.track_ids):
+        return None
+    for take in old.take_ids:
+        client.delete_take(take)
+    if title != old.title:
+        client.rename_project(old.project_id, title)
+    return replace(
+        old, title=title, wav_paths=list(wav_paths), track_of=list(track_of), starts_ms=list(starts_ms),
+        take_ids=[], placed=0, fx_done=0,
+    )
+
+
+def restarted_state(state: "UploadState") -> "UploadState":
+    """The project is gone from the account: the same recordings, sent from the start next time."""
+    return replace(
+        state, project_id="", version=0, track_ids=[], take_ids=[], placed=0, fx_done=0,
+        # A send that placed something stays bound to that project. The next try claims another.
+        send_id="" if state.placed else state.send_id,
+    )
 
 
 def refreshed_state(client: Any, state: "UploadState") -> "UploadState":
@@ -413,12 +451,20 @@ def refreshed_state(client: Any, state: "UploadState") -> "UploadState":
         document = client.project_document(state.project_id)
     except RuntimeError as error:
         if error_body(str(error))[0] in (403, 404):
-            raise RuntimeError(f"{STALE_SEND}: projektu nie ma już na koncie. Naciśnij Gotowe jeszcze raz, żeby wysłać od nowa.") from None
+            raise RuntimeError(f"{STALE_SEND}: projektu nie ma już na koncie. Dokończ poprzednią wysyłkę jeszcze raz, a program wyśle całość od nowa.") from None
         raise
     known = vocal_track_ids(document)
     if any(track not in known for track in state.track_ids):
-        raise RuntimeError(f"{STALE_SEND}: w projekcie na stronie brakuje ścieżki. Naciśnij Gotowe jeszcze raz, żeby wysłać od nowa.")
+        raise RuntimeError(f"{STALE_SEND}: w projekcie na stronie brakuje ścieżki. Dokończ poprzednią wysyłkę jeszcze raz, a program wyśle całość do nowego projektu.")
     return replace(state, version=document_version(document))
+
+
+def _loose_note(state: "UploadState", saved: Callable[["UploadState"], None]) -> Callable[[str], None]:
+    def note(take_id: str) -> None:
+        state.loose_take = take_id
+        saved(state)
+
+    return note
 
 
 def _place_take(client: Any, state: "UploadState", index: int, wav: bytes, body: dict[str, Any], saved: Callable[["UploadState"], None]) -> dict[str, Any]:
@@ -430,7 +476,7 @@ def _place_take(client: Any, state: "UploadState", index: int, wav: bytes, body:
         if status not in (403, 404) or code:
             raise
         state.take_ids = state.take_ids[:index]
-        state.take_ids.append(send_one_take(client, state.beat_id, padded_wav(wav)))
+        state.take_ids.append(send_one_take(client, state.beat_id, padded_wav(wav), _loose_note(state, saved)))
         saved(state)
         return client.place(state.project_id, {**body, "takeId": state.take_ids[index]})
 
@@ -579,8 +625,12 @@ def _upload_timeline(
     track_count = max(lanes) + 1
     # Project first, then take by take: each take is placed at once, so loose READY takes
     # never pile up against the plan's active-take cap. The daily limit is the send itself.
+    if state.loose_take and client.delete_take(state.loose_take) is not False:
+        state.loose_take = ""
     if not state.project_id:
         say("Tworzę projekt na koncie.")
+        # On disk before the first request: a dead network must not lose the daily send.
+        saved(state)
         document = client.create_project(state.title, state.beat_id)
         state.project_id = project_id(document)
         state.version = document_version(document)
@@ -597,7 +647,7 @@ def _upload_timeline(
             wav = blobs[index]
             if len(state.take_ids) <= index:
                 say(f"Wysyłam nagranie {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
-                take_id = send_one_take(client, state.beat_id, padded_wav(wav))
+                take_id = send_one_take(client, state.beat_id, padded_wav(wav), _loose_note(state, saved))
                 state.take_ids.append(take_id)
                 saved(state)
             placed = _place_take(
@@ -626,7 +676,7 @@ def _upload_timeline(
                 state.fx_done = index + 1
                 saved(state)
     except RuntimeError as error:
-        raise RuntimeError(f"Projekt {pid} jest na koncie ({state.placed} z {len(blobs)} nagrań ułożonych). {error}") from None
+        raise RuntimeError(f"W Studiu jest {state.placed} z {len(blobs)} nagrań. {error}") from None
     return pid
 
 
@@ -655,7 +705,7 @@ def friendly_upload_error(text: str) -> str:
     if "DESKTOP_SEND_REQUIRED" in text:
         return (
             "Ta wysyłka do Studia wygasła albo poszła już do innego projektu. "
-            "Kliknij jeszcze raz Gotowe i Wrzuć do Studia: program weźmie nową wysyłkę z dziennego limitu "
+            "Kliknij jeszcze raz Gotowe i Dokończ poprzednią wysyłkę: program weźmie nową z dziennego limitu "
             "i dokończy ten projekt."
         )
     if "desktop_send_limit" in text:
@@ -763,8 +813,8 @@ class _FakeSite:
     def delete_take(self, take_id: str) -> None:
         pass
 
-    def delete_project(self, project: str) -> bool:
-        return True
+    def rename_project(self, project: str, title: str) -> None:
+        self.calls.append(("rename", project, title))
 
     def __init__(self) -> None:
         self.calls: list[object] = []
@@ -1048,9 +1098,8 @@ class _Refunder:
 
 
 def _self_test_failed_send_cleanup() -> None:
-    """A failed upload deletes its half-sent take and the empty project."""
+    """A failed upload deletes its half-sent take. A project on the account is never deleted."""
     deleted_takes: list[str] = []
-    deleted_projects: list[str] = []
 
     class _Broken:
         def open_take(self, beat_id: str, byte_size: int) -> dict[str, Any]:
@@ -1065,25 +1114,77 @@ def _self_test_failed_send_cleanup() -> None:
         def delete_take(self, take_id: str) -> None:
             deleted_takes.append(take_id)
 
-        def delete_project(self, project: str) -> bool:
-            deleted_projects.append(project)
-            return True
-
     try:
         send_one_take(_Broken(), "b", b"x" * 50)
     except RuntimeError:
         pass
     assert deleted_takes == ["t1"], deleted_takes
-    empty = UploadState(project_id="p1", beat_id="b", title="t", version=1, wav_paths=["a.wav"], track_of=[0], starts_ms=[0])
-    assert drop_empty_project(_Broken(), empty) is None and deleted_projects == ["p1"]
-    kept = replace(empty, placed=1)
-    assert drop_empty_project(_Broken(), kept) is kept and deleted_projects == ["p1"]
+    if any(hasattr(SiteClient, name) for name in ("delete_project",)):
+        raise SystemExit("program nie kasuje projektów na koncie")
 
-    class _Offline(_Broken):
-        def delete_project(self, project: str) -> bool:
+    class _Site(_FakeSite):
+        clips: list[dict[str, Any]] = [{"sourceKind": "BEAT_REF"}]
+
+        def project_document(self, project: str) -> dict[str, Any]:
+            return {**super().project_document(project), "clips": self.clips}
+
+    old = UploadState(
+        project_id="p1", beat_id="b", title="t", version=40, wav_paths=["a.wav"], track_ids=["v0"], track_of=[0], starts_ms=[0],
+        take_ids=["t7"], send_id="s1", account="a@b.pl",
+    )
+    moved = empty_project_state(_Site(), old, "nowy", ["b.wav", "c.wav"], [0, 1], [5, 6])
+    if moved is None or moved.project_id != "p1" or moved.send_id != "s1" or moved.take_ids or moved.wav_paths != ["b.wav", "c.wav"]:
+        raise SystemExit(f"pusty projekt dla nowego ułożenia {moved}")
+    used = _Site()
+    used.clips = [{"sourceKind": "BEAT_REF"}, {"sourceKind": "TAKE"}]
+
+    class _NoDoc(_Site):
+        def project_document(self, project: str) -> dict[str, Any]:
+            raise RuntimeError("siec")
+
+    for why, site, state in (
+        ("nagranie ze strony", used, old),
+        ("zmiana na stronie", _Site(), replace(old, version=39)),
+        ("coś już ułożone", _Site(), replace(old, placed=1)),
+        ("inna ścieżka", _Site(), replace(old, track_ids=["x"])),
+        ("brak sieci", _NoDoc(), old),
+        ("bez projektu", _Site(), replace(old, project_id="")),
+    ):
+        if empty_project_state(site, state, "nowy", ["b.wav"], [0], [0]) is not None:
+            raise SystemExit(f"pusty projekt: {why}")
+    if restarted_state(old).send_id != "s1" or restarted_state(replace(old, placed=1)).send_id != "" or restarted_state(old).project_id:
+        raise SystemExit("wysyłka od nowa")
+
+    class _NoNet(_FakeSite):
+        def create_project(self, title: str, beat_id: str) -> dict[str, Any]:
+            raise RuntimeError("siec")
+
+    clip = Path(__import__("os").environ.get("TEMP", ".")) / "bitrymdym-upload-nonet.wav"
+    clip.write_bytes(b"R" * 48)
+    kept_states: list[UploadState] = []
+    try:
+        upload_vocals(_NoNet(), title="t", beat_id="b", wav_paths=[clip], track_of=[0], starts_ms=[0], send_id="s1", account="a@b.pl", on_state=kept_states.append)  # type: ignore[arg-type]
+    except RuntimeError:
+        pass
+    again = UploadState.from_json(json.loads(json.dumps(kept_states[-1].to_json()))) if kept_states else None
+    if again is None or again.send_id != "s1" or again.account != "a@b.pl" or again.project_id:
+        raise SystemExit(f"wysyłka ma przeżyć błąd przy tworzeniu projektu {again}")
+
+    class _Cut(_FakeSite):
+        def put_wav(self, signed_url: str, wav: bytes, upload_token: str) -> None:
+            raise RuntimeError("siec")
+
+        def delete_take(self, take_id: str) -> bool:
             return False
 
-    assert drop_empty_project(_Offline(), empty) is empty
+    cut_states: list[str] = []
+    try:
+        upload_vocals(_Cut(), title="t", beat_id="b", wav_paths=[clip], track_of=[0], starts_ms=[0], on_state=lambda item: cut_states.append(item.loose_take))  # type: ignore[arg-type]
+    except RuntimeError:
+        pass
+    if not cut_states or not cut_states[-1]:
+        raise SystemExit("przerwane nagranie ma zostać do usunięcia")
+    clip.unlink(missing_ok=True)
     _self_test_stale_resume()
 
 

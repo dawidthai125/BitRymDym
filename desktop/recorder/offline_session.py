@@ -16,6 +16,8 @@ import zipfile
 import zlib
 from pathlib import Path
 
+from desk import write_atomic
+
 FORMAT = "bitrymdym.sesja"
 VERSION = 1
 FILE_NAME = "sesja.brd.json"
@@ -441,9 +443,8 @@ def _read_project(path: Path) -> tuple[dict[str, object], dict[str, bytes]] | No
 
 
 def write_session(folder: Path, document: dict[str, object]) -> Path:
-    folder.mkdir(parents=True, exist_ok=True)
     target = folder / FILE_NAME
-    target.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_atomic(target, json.dumps(document, ensure_ascii=False, indent=2))
     return target
 
 

@@ -132,7 +132,7 @@
         "Nie wkłada bitu do pliku wokalu. Na konto jedzie sam wokal.",
         "Nie puszcza naraz dwóch mixów, na przykład samego bitu w słuchawkach i mikrofonu z bitem w głośnikach.",
         "W trakcie nagrywania nie podaje własnego głosu z powrotem do słuchawek.",
-        "Nie wyrównuje opóźnienia karty dźwiękowej. Gdy nagranie jest przesunięte względem bitu, przesuń je na osi.",
+        "Nie zna opóźnienia słuchawek Bluetooth. Gdy nagranie jest przesunięte względem bitu, przesuń je na osi albo użyj słuchawek na kablu.",
         "Nie ma efektów ani strojenia. Głośność i lewo albo prawo słychać w programie, ale na konto jedzie sam suchy wokal. Na stronie ustawiasz je w Studio, razem z cięciem, głośnością w czasie i nutami.",
         "Nie ma sampli. Wstawiasz je w Studio na stronie, razem z pianinem i nutami.",
         "Nie robi mixu, masteringu, zatwierdzenia mastera, tekstu, okładki, wideo ani linku odsłuchu. Mix i master robi BITEK na stronie.",

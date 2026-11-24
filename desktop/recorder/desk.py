@@ -207,10 +207,17 @@ def list_saved_takes(folder: Path, limit: int = 12) -> list[Path]:
     return found[-limit:]
 
 
+def write_atomic(path: Path, text: str) -> None:
+    """A full file or the old one. Never a half of it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(text, encoding="utf-8")
+    temporary.replace(path)
+
+
 def write_prefs(path: Path, prefs: dict[str, Any]) -> None:
     clean = {key: prefs[key] for key in PREF_KEYS if key in prefs}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(clean), encoding="utf-8")
+    write_atomic(path, json.dumps(clean))
 
 
 def scan_capture_log(text: str) -> tuple[int, str]:

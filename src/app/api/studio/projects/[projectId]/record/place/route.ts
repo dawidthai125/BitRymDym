@@ -70,8 +70,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (body.sendId != null && (typeof body.sendId !== "string" || !UUID.test(body.sendId))) {
       return NextResponse.json({ error: "Nieprawidłowy identyfikator wysyłki." }, { status: 400 });
     }
-    const desktop = Boolean(await requestUserAccessBearer());
-    if (desktop) {
+    if (await requestUserAccessBearer()) {
       const denied = await desktopSendDenied(projectId, (body.sendId as string | undefined) ?? null);
       if (denied) return denied;
     }
@@ -85,9 +84,6 @@ export async function POST(request: Request, context: RouteContext) {
       replaceOverlapping: body.replaceOverlapping === true,
       sourceOffsetMs,
       durationMs,
-    }).catch(async (error: unknown) => {
-      if (desktop && typeof body.sendId === "string") await releaseDesktopSend(projectId, body.sendId);
-      throw error;
     });
 
     return NextResponse.json(
@@ -132,36 +128,4 @@ async function desktopSendDenied(projectId: string, sendId: string | null): Prom
     return NextResponse.json({ error: "desktop_send_limit", code: "DESKTOP_SEND_REQUIRED" }, { status: 429 });
   }
   return null;
-}
-
-/**
- * The first place failed: the daily send goes back, as long as nothing landed in the project.
- * Never throws; the place error is what the recorder has to see.
- */
-async function releaseDesktopSend(projectId: string, sendId: string): Promise<void> {
-  try {
-    const profile = await getCurrentProfile();
-    if (!profile || !UUID.test(projectId)) return;
-    const admin = createSupabaseAdminClient();
-    const { data: tracks, error: tracksError } = await admin.from("studio_tracks").select("id").eq("project_id", projectId);
-    if (tracksError) return;
-    const trackIds = (tracks ?? []).map((track) => track.id as string);
-    if (trackIds.length > 0) {
-      const { data: clips, error } = await admin
-        .from("studio_clips")
-        .select("id")
-        .in("track_id", trackIds)
-        .eq("source_kind", "TAKE")
-        .limit(1);
-      if (error || (clips ?? []).length > 0) return;
-    }
-    await admin
-      .from("desktop_studio_sends")
-      .update({ project_id: null, used_at: null })
-      .eq("id", sendId)
-      .eq("owner_id", profile.userId)
-      .eq("project_id", projectId);
-  } catch (error) {
-    console.error("[record-place] desktop send not released", error);
-  }
 }

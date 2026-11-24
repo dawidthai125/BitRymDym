@@ -55,10 +55,11 @@ from account_upload import (
     forget_spent_send,
     friendly_upload_error,
     give_back_send,
-    drop_empty_project,
+    empty_project_state,
     is_unauthorized,
     network_message,
     playback_target,
+    restarted_state,
     upload_vocals,
 )
 from desk import (
@@ -77,6 +78,7 @@ from desk import (
     tail_peak_db,
     wav_data_offset,
     wav_data_offset_of,
+    write_atomic,
     write_prefs,
 )
 from own_fx import display_tier, limits_from_usage
@@ -684,14 +686,6 @@ def fit_takes(clips: list[Clip], cap: float) -> list[Clip]:
     return out
 
 
-def write_atomic(path: Path, text: str) -> None:
-    """A full file or the old one. Never a half of it."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(text, encoding="utf-8")
-    temporary.replace(path)
-
-
 def sweep_copies(now: float | None = None, keep: set[str] | None = None) -> None:
     """Copies the program made itself: unpacked projects after 2 days, files rendered for a send after 14.
 
@@ -711,6 +705,19 @@ def sweep_copies(now: float | None = None, keep: set[str] | None = None) -> None
                 path.unlink()
         except OSError:
             pass
+
+
+def offline_tempo(text: str) -> float:
+    """Typed BPM, 0 when it is not one."""
+    try:
+        value = float(text.strip().replace(",", "."))
+    except ValueError:
+        return 0.0
+    return value if 20 <= value <= 400 else 0.0
+
+
+def same_account(a: str, b: str) -> bool:
+    return a.strip().lower() == b.strip().lower()
 
 
 def desk_clip_count(path: Path) -> int:
@@ -842,6 +849,10 @@ def quiet_kwargs() -> dict[str, object]:
     return flags
 
 
+# Sound already in the microphone that has not reached the program yet: the 20 ms device buffer and half a block.
+MIC_DELIVERY_SECONDS = 0.03
+# A Bluetooth microphone can need this long. After it the take starts anyway, as it always did.
+MIC_OPEN_SECONDS = 4.0
 # About 170 ms of the mix. When these bytes are here the beat has really connected and decoded.
 MIX_FIRST_BYTES = 32_768
 
@@ -930,8 +941,16 @@ def _pump(feed: MixFeed, play: subprocess.Popen[bytes]) -> None:
     feed.close()
 
 
+def can_hear(output_index: int | None) -> bool:
+    return output_index is not None or ffplay_exe() is not None or win_output.can_play(-1)
+
+
 def start_mix(feed: MixFeed, ffplay: str, output_index: int | None = None) -> tuple[subprocess.Popen[bytes], object]:
-    """Play a warmed mix. The beat URL is not written to disk. A chosen output uses waveOut; default stays on ffplay."""
+    """Play a warmed mix. The beat URL is not written to disk. waveOut on Windows (it says how much was really
+    played, so the take can be lined up), ffplay when the default output does not take it.
+    """
+    if output_index is None and win_output.can_play(-1):
+        output_index = -1
     if output_index is not None:
         player = win_output.WavePlayer(feed, output_index)  # type: ignore[arg-type]
         player.start()
@@ -1155,6 +1174,7 @@ def _capture_peak_reader(proc: subprocess.Popen[bytes]) -> None:
             chunk = stream.read(frame * 4)
             if not chunk:
                 break
+            setattr(proc, "live_bytes", getattr(proc, "live_bytes", 0) + len(chunk))
             pending += chunk
             usable = len(pending) - (len(pending) % frame)
             if usable <= 0:
@@ -1191,8 +1211,23 @@ def start_capture(path: Path, device: str) -> subprocess.Popen[bytes]:
         )
     # The reader starts before return so the stdout pipe cannot fill and stall the take.
     setattr(proc, "live_peaks", [])
+    setattr(proc, "live_bytes", 0)
     threading.Thread(target=_capture_peak_reader, args=(proc,), daemon=True, name="brd-live-peaks").start()
     return proc
+
+
+def captured_seconds(proc: subprocess.Popen[bytes] | None, path: Path) -> float:
+    """Seconds of microphone sound that have arrived so far: from the live pipe, else from the file."""
+    live = int(getattr(proc, "live_bytes", 0) or 0)
+    if live > 0:
+        return live / 2 / RATE
+    offset = wav_data_offset_of(path)
+    if offset is None:
+        return 0.0
+    try:
+        return max(0, path.stat().st_size - offset) / 2 / RATE
+    except OSError:
+        return 0.0
 
 
 def read_capture_log(path: Path, remove: bool = True) -> tuple[int, str]:
@@ -1312,7 +1347,7 @@ def save_session(
         if previous and saved_password_state(previous, time.time(), email) == "ready":
             session["password"] = str(previous["password"])
             session["passwordUntil"] = str(previous.get("passwordUntil") or "")
-    SESSION.write_text(json.dumps(seal_session(session)), encoding="utf-8")
+    write_atomic(SESSION, json.dumps(seal_session(session)))
 
 
 def load_session() -> dict[str, str] | None:
@@ -1330,7 +1365,7 @@ def load_session() -> dict[str, str] | None:
     if reseal and os.name == "nt":
         # An older plain file: seal it now so the tokens stop sitting in the clear.
         try:
-            SESSION.write_text(json.dumps(seal_session(session)), encoding="utf-8")
+            write_atomic(SESSION, json.dumps(seal_session(session)))
         except OSError:
             pass
     return session
@@ -1366,7 +1401,7 @@ def forget_tokens(saved: dict[str, str] | None = None, remember: str | None = No
         kept["passwordUntil"] = str(current.get("passwordUntil") or "")
     try:
         SESSION.parent.mkdir(parents=True, exist_ok=True)
-        SESSION.write_text(json.dumps(seal_session(kept)), encoding="utf-8")
+        write_atomic(SESSION, json.dumps(seal_session(kept)))
     except OSError:
         pass
 
@@ -1381,38 +1416,69 @@ def drop_saved_password(saved: dict[str, str] | None = None) -> None:
     kept = {key: str(value) for key, value in current.items() if key not in ("password", "passwordUntil", "sealed", "format")}
     try:
         SESSION.parent.mkdir(parents=True, exist_ok=True)
-        SESSION.write_text(json.dumps(seal_session(kept)), encoding="utf-8")
+        write_atomic(SESSION, json.dumps(seal_session(kept)))
     except OSError:
         pass
 
 
-def load_pending() -> UploadState | None:
-    """A send that stopped half way. Only usable while its WAV files are still on disk."""
-    try:
-        state = UploadState.from_json(json.loads(PENDING.read_text(encoding="utf-8")))
-    except (OSError, json.JSONDecodeError):
-        return None
-    if state is None or not all(Path(item).is_file() for item in state.wav_paths):
-        return None
-    if state.placed == 0 and not state.send_id:
-        # Nothing was placed and no daily send is held: there is no work to finish.
-        clear_pending()
-        return None
-    return state
+def pending_path(account: str) -> Path:
+    """One interrupted send per account. The program may serve several people on one PC."""
+    key = hashlib.sha1(account.strip().lower().encode("utf-8")).hexdigest()[:12]
+    return PENDING.with_name(f"desktop-upload-{key}.json")
+
+
+def load_pending(account: str) -> UploadState | None:
+    """A send that stopped half way. Only usable while its WAV files are still on disk, and for 14 days."""
+    for path in (pending_path(account), PENDING):
+        try:
+            if time.time() - path.stat().st_mtime > 14 * 86_400:
+                path.unlink()
+                continue
+            state = UploadState.from_json(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            continue
+        if state is None or not state.track_of or not all(Path(item).is_file() for item in state.wav_paths):
+            continue
+        # The old common file (up to 2026.11.37) may belong to somebody else.
+        if state.account and not same_account(state.account, account):
+            continue
+        return state
+    return None
 
 
 def save_pending(state: UploadState) -> None:
     try:
-        write_atomic(PENDING, json.dumps(state.to_json()))
+        write_atomic(pending_path(state.account), json.dumps(state.to_json()))
     except OSError:
         pass
 
 
-def clear_pending() -> None:
+def clear_pending(account: str) -> None:
+    paths = [pending_path(account)]
     try:
-        PENDING.unlink()
-    except OSError:
+        old = UploadState.from_json(json.loads(PENDING.read_text(encoding="utf-8")))
+        if old is None or not old.account or same_account(old.account, account):
+            paths.append(PENDING)
+    except (OSError, ValueError):
         pass
+    for path in paths:
+        try:
+            path.unlink()
+        except OSError:
+            pass
+
+
+def pending_files() -> set[str]:
+    """Rendered WAVs that any interrupted send still needs."""
+    out: set[str] = set()
+    for path in [PENDING, *PENDING.parent.glob("desktop-upload-*.json")]:
+        try:
+            state = UploadState.from_json(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            continue
+        if state is not None:
+            out.update(state.wav_paths)
+    return out
 
 
 def supabase_refresh_grant(url: str, anon_key: str, refresh_token: str) -> dict[str, str]:
@@ -1496,7 +1562,7 @@ class RecorderWindow:
         self._arming = False
         self._uploading = False
         self._exporting = False
-        self._pending: UploadState | None = load_pending()
+        self._pending: UploadState | None = None
         self._update: updater.Update | None = None
         self._update_ready: Path | None = None
         self._update_busy = False
@@ -1558,6 +1624,15 @@ class RecorderWindow:
         self._warm_feed: MixFeed | None = None
         self._mix_number = 0
         self._plan_token = 0
+        # Microphone sound that came before the mix started. It is cut off the take with the count-in.
+        self._pre = 0.0
+        self._pre_seen: list[float] = []
+        self._beat_until = 0.0
+        self._warm_remix: MixFeed | None = None
+        self._drop_files = False
+        self._session_epoch = 0
+        self._plan_pending = False
+        self._signing = False
         self._offline_ok = False
         self._swept = False
         self._owner_email = ""
@@ -1597,6 +1672,7 @@ class RecorderWindow:
         self.sel_len = tk.StringVar(value="—")
         self.device_var = tk.StringVar(value="Szukam mikrofonów…")
         self.output_var = tk.StringVar(value="Domyślne")
+        self.tempo_var = tk.StringVar(value=str(countin.FALLBACK_BPM))
         self.count_var = tk.StringVar(value=countin.DEFAULT_LABEL)
         self.beat_var = tk.StringVar()
         self.title_var = tk.StringVar(value="Nagranie z komputera")
@@ -1777,8 +1853,8 @@ class RecorderWindow:
         self._play_token += 1
         self._cancel_tick()
         self._stop_probe()
-        if self._warm_feed is not None:
-            self._warm_feed.kill()
+        self._cancel_warm()
+        self._cancel_remix()
         self._stop_monitor()
         if self.capture:
             stop_capture(self.capture)
@@ -1797,7 +1873,7 @@ class RecorderWindow:
                 raw = json.loads(SESSION.read_text(encoding="utf-8"))
                 if isinstance(raw, dict) and "email" in raw:
                     raw.pop("email", None)
-                    SESSION.write_text(json.dumps(raw), encoding="utf-8")
+                    write_atomic(SESSION, json.dumps(raw))
             except (OSError, json.JSONDecodeError):
                 pass
         self.root.destroy()
@@ -1854,6 +1930,12 @@ class RecorderWindow:
         )
         self._style_option(self.count_menu, 8)
         self.count_menu.pack(side="left", padx=(6, 0))
+        self.tempo_row = tk.Frame(setup, bg=PAPER)
+        tk.Label(self.tempo_row, text="BPM", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left", padx=(12, 6))
+        tempo = self._entry_small(self.tempo_row, self.tempo_var)
+        tempo.pack(side="left")
+        tempo.bind("<FocusOut>", lambda _event: self._save_desk() if self.studio_mode == "offline" else None)
+        tempo.bind("<Return>", lambda _event: self.root.focus_set())
 
         gear = tk.Frame(self.studio, bg=PAPER)
         gear.pack(fill="x", padx=12, pady=(6, 0))
@@ -3210,6 +3292,7 @@ class RecorderWindow:
         if self.studio_mode == "offline":
             data["localBeat"] = self.local_beat_path
             data["localBeatSeconds"] = self.local_beat_seconds
+            data["localBpm"] = offline_tempo(self.tempo_var.get())
         try:
             write_atomic(self._desk_path(), json.dumps(data))
         except OSError:
@@ -3269,6 +3352,9 @@ class RecorderWindow:
                 if isinstance(local, str):
                     self.local_beat_path = local
                     self.beat_var.set(offline_session.file_title(local) if local else "")
+                tempo = raw.get("localBpm")
+                if isinstance(tempo, (int, float)) and tempo > 0:
+                    self.tempo_var.set(f"{tempo:g}")
                 seconds = raw.get("localBeatSeconds")
                 if isinstance(seconds, (int, float)) and not isinstance(seconds, bool):
                     self.local_beat_seconds = max(0.0, float(seconds))
@@ -3369,8 +3455,12 @@ class RecorderWindow:
             f"W {name} masz jeszcze projekt z nagraniami. Po zamknięciu nie wróci. Zamknąć mimo to?",
         )
 
-    def _confirm_close_save(self) -> bool:
-        """False leaves the window open. No throws the project away. Yes saves when Offline can."""
+    def _confirm_close_save(self, defer: bool = False) -> bool:
+        """False leaves the window open. No throws the project away. Yes saves when Offline can.
+
+        defer: the files of a thrown-away project go only with _drop_confirmed, when the next step is sure.
+        """
+        self._drop_files = False
         if self.recording or self._arming or self.playing or self._probing:
             self._halt_audio()
         if not self._other_studio_ok():
@@ -3396,11 +3486,19 @@ class RecorderWindow:
         if choice is None:
             return False
         if not choice:
-            self._wipe_project_files()
+            if defer:
+                self._drop_files = True
+            else:
+                self._wipe_project_files()
             return True
         if self.studio_mode == "offline":
             return self.save_project()
         return True
+
+    def _drop_confirmed(self) -> None:
+        if self._drop_files:
+            self._drop_files = False
+            self._wipe_project_files()
 
     def new_project(self) -> None:
         if self._busy() or self._uploading or self._exporting:
@@ -3443,15 +3541,15 @@ class RecorderWindow:
 
     def _save_prefs(self) -> None:
         try:
-            device, output = self.device_var.get(), self.output_var.get()
             write_prefs(
                 PREFS,
                 {
-                    # A list that is still loading must not overwrite the earlier choice.
-                    "device": device if device in self.devices else self._pref_device,
-                    "output": output if output != "Domyślne" or len(self.outputs) > 1 else self._pref_output or output,
+                    # Only what the user picked. A list still loading, unplugged headphones or the offline
+                    # file name must not overwrite it.
+                    "device": self._pref_device,
+                    "output": self._pref_output,
                     "title": self.title_var.get().strip(),
-                    "beat": self.beat_var.get() or self._pref_beat,
+                    "beat": (self.beat_var.get() if self.studio_mode == "online" else "") or self._pref_beat,
                     "countIn": self.count_var.get(),
                 },
             )
@@ -3486,11 +3584,12 @@ class RecorderWindow:
                 self.beat_var.set(beat)
         self._sync_beat_button()
 
-    def _read_plan(self, wait: bool = False) -> None:
-        """The plan of the account. Off the Tk thread, except right after signing in (wait)."""
+    def _read_plan(self) -> None:
+        """The plan of the account, off the Tk thread."""
         saved = load_session()
         self._plan_token += 1
         if not saved or not saved.get("accessToken"):
+            self._plan_pending = False
             self.tier = "FREE"
             self.plan_text.set("Plan: zaloguj się.")
             self._sync_add_button()
@@ -3504,9 +3603,7 @@ class RecorderWindow:
             except Exception as error:
                 return "", error
 
-        if wait:
-            self._apply_plan(token, *ask())
-            return
+        self._plan_pending = True
 
         def run() -> None:
             tier, error = ask()
@@ -3520,6 +3617,7 @@ class RecorderWindow:
     def _apply_plan(self, token: int, tier: str, error: Exception | None) -> None:
         if token != self._plan_token:
             return
+        self._plan_pending = False
         if error is not None:
             # No connection says nothing about the plan: the last known one stays.
             if is_unauthorized(error):
@@ -3568,15 +3666,15 @@ class RecorderWindow:
                 pass
         return folder
 
-    def _warm_mix(self, argv: list[str], alive: Callable[[], bool]) -> MixFeed | None:
+    def _warm_mix(self, argv: list[str], alive: Callable[[], bool], slot: str = "_warm_feed") -> MixFeed | None:
         """Start the mix and wait for its first sound. None when it gave none. Off the Tk thread."""
         feed = MixFeed(argv)
-        self._warm_feed = feed
+        setattr(self, slot, feed)
         if not alive():
             feed.kill()
         good = feed.warm()
-        if self._warm_feed is feed:
-            self._warm_feed = None
+        if getattr(self, slot) is feed:
+            setattr(self, slot, None)
         if not good:
             feed.kill()
             return None
@@ -3699,11 +3797,12 @@ class RecorderWindow:
                 elif not error:
                     error = "Nie dało się złożyć odsłuchu."
         lead = clicks[1] if clicks is not None else 0.0
-        self.root.after(0, lambda: self._start_play(token, start, feed, lead, bpm, record_to, note, error, no_beat))
+        until = (float(limit) if limit else float("inf")) if beat is not None and feed is not None else 0.0
+        self.root.after(0, lambda: self._start_play(token, start, feed, lead, bpm, record_to, note, error, no_beat, until))
 
     def _start_play(
         self, token: int, start: float, feed: MixFeed | None, lead: float, bpm: float,
-        record_to: Path | None, note: str, error: str, no_beat: str,
+        record_to: Path | None, note: str, error: str, no_beat: str, until: float = 0.0,
     ) -> None:
         if token != self._play_token:
             if feed is not None:
@@ -3728,59 +3827,110 @@ class RecorderWindow:
             return
         if error:
             note = f"Pozostałych ścieżek nie słychać ({error[:60]})."
-        try:
-            self._stop_monitor()
-            play = ffplay_exe()
-            output_index = self.selected_output_index()
-            if feed is not None and play is None and output_index is None:
+        if feed is not None and not can_hear(self.selected_output_index()):
+            feed.kill()
+            feed = None
+            note = NO_FFPLAY
+            if record_to is not None and not self.beat_muted:
+                self._arm_failed(NO_FFPLAY)
+                return
+        self._stop_monitor()
+        if record_to is None:
+            if feed is None:
+                self.status.set(note or "Nie ma czego grać.")
+                return
+            try:
+                self.mix_feed, self.monitor = start_mix(feed, ffplay_exe() or "", self.selected_output_index())
+            except Exception as problem:
                 feed.kill()
-                feed = None
-                note = NO_FFPLAY
-            if record_to is None and feed is None:
-                raise RuntimeError(note or "Nie ma czego grać.")
-            if record_to is not None:
-                # The mix is ready to sound, so the mic opens now and not before the beat has loaded.
-                self.capture = start_capture(record_to, self.selected_device())
-                self.wav_path = record_to
-                self.recording = True
-                self._live_peaks = []
-                self._live_off = 0
-                self._live_wave_at = 0.0
-                self._drop_live_items()
+                self._stop_monitor()
+                self.status.set(self._safe_listen_error(problem))
+                return
+            self._play_from = start
+            self._play_t0 = time.monotonic()
+            self.playing = True
+            self.play_button.configure(text="▶ GRA…")
+            if self.beat_muted:
+                note = "Bit wyciszony (M)."
+            self.status.set(f"Gra od {clock_text(start)}. {note}".strip())
+            self._running()
+            return
+        try:
+            # The mix is ready to sound, so the mic opens now and not before the beat has loaded.
+            self.capture = start_capture(record_to, self.selected_device())
+        except Exception as problem:
             if feed is not None:
-                self.mix_feed, self.monitor = start_mix(feed, play or "", output_index)
+                feed.kill()
+            self._arm_failed(self._safe_listen_error(problem))
+            return
+        self.wav_path = record_to
+        self._arming = True
+        self.status.set("Otwieram mikrofon…")
+        self._beat_until = min(until, self._beat_meta()[2])
+        self._await_mic(token, start, feed, lead, note, time.monotonic() + MIC_OPEN_SECONDS)
+
+    def _arm_failed(self, text: str) -> None:
+        self._arming = False
+        self.recording = False
+        self._clear_record_mark()
+        self.rec_button.configure(text="● NAGRAJ")
+        self._paint_lamp()
+        self._paint_all()
+        self.status.set(text)
+
+    def _await_mic(self, token: int, start: float, feed: MixFeed | None, lead: float, note: str, until: float) -> None:
+        """A microphone takes a moment to open, Bluetooth up to seconds. The beat waits for its first sound."""
+        if token != self._play_token or self.capture is None:
+            if feed is not None:
+                feed.kill()
+            return
+        proc = self.capture
+        if proc.poll() is not None:
+            self.capture = None
+            if feed is not None:
+                feed.kill()
+            _drops, fatal = read_capture_log(self.wav_path)
+            self._forget_take_file()
+            self._arm_failed("Mikrofon się nie otworzył (zajęty albo odłączony)." + (f" Windows: {fatal[:100]}" if fatal else ""))
+            return
+        if captured_seconds(proc, self.wav_path) <= 0 and time.monotonic() < until:
+            self.root.after(15, lambda: self._await_mic(token, start, feed, lead, note, until))
+            return
+        self._arming = False
+        self.recording = True
+        self._live_peaks = []
+        self._live_off = 0
+        self._live_wave_at = 0.0
+        self._drop_live_items()
+        self._lead = 0.0
+        self._pre = 0.0
+        self._pre_seen = []
+        try:
+            if feed is not None:
+                self.mix_feed, self.monitor = start_mix(feed, ffplay_exe() or "", self.selected_output_index())
                 self._lead = lead
+                self._pre = captured_seconds(proc, self.wav_path)
         except Exception as problem:
             if feed is not None:
                 feed.kill()
             self._stop_monitor()
-            if self.capture is not None:
-                stop_capture(self.capture)
-                self.capture = None
-            self.recording = False
-            self._clear_record_mark()
-            self.rec_button.configure(text="● NAGRAJ")
-            self._paint_lamp()
-            self.status.set(self._safe_listen_error(problem))
+            stop_capture(proc)
+            self.capture = None
+            self._forget_take_file()
+            self._arm_failed(self._safe_listen_error(problem))
             return
-        if self.beat_muted:
-            note = "Bit wyciszony (M)."
         self._play_from = start
         self._play_t0 = time.monotonic() + self._lead
-        if record_to is None and self.monitor is None:
-            self.status.set(note or NO_FFPLAY)
-            return
-        if record_to is None:
-            self.playing = True
-            self.play_button.configure(text="▶ GRA…")
-            self.status.set(f"Gra od {clock_text(start)}. {note}".strip())
-        else:
-            name = self.tracks[self.rec_track].name
-            extra = f" {note}" if note else ""
-            line = f"Nagrywam {name} od {clock_text(start)}.{extra}"
-            self._after_count = line if self._lead > 0 else ""
-            self.status.set(f"Odliczanie, potem nagrywam {name} od {clock_text(start)}." if self._lead > 0 else line)
-            self.rec_button.configure(text="● NAGRYWA")
+        if self.beat_muted:
+            note = "Bit wyciszony (M)."
+        name = self.tracks[self.rec_track].name
+        line = f"Nagrywam {name} od {clock_text(start)}." + (f" {note}" if note else "")
+        self._after_count = line if self._lead > 0 else ""
+        self.status.set(f"Odliczanie, potem nagrywam {name} od {clock_text(start)}." if self._lead > 0 else line)
+        self.rec_button.configure(text="● NAGRYWA")
+        self._running()
+
+    def _running(self) -> None:
         self._paint_lamp()
         self._paint_all()
         self._tick()
@@ -3789,6 +3939,30 @@ class RecorderWindow:
             self.root.focus_force()
         except tk.TclError:
             pass
+
+    def _forget_take_file(self) -> None:
+        for path in (self.wav_path, capture_log_path(self.wav_path)):
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+    def _watch_sync(self) -> None:
+        """How far the recording runs ahead of what the listener really hears, from the sound device itself.
+
+        The first second and a half of the take. The middle value: one late tick must not move the take.
+        """
+        position = getattr(self.monitor, "position", None)
+        if position is None or len(self._pre_seen) >= 40 or self.capture is None:
+            return
+        frames = position()
+        if not frames or frames < RATE // 10:
+            return
+        ahead = captured_seconds(self.capture, self.wav_path) - frames / RATE
+        if 0.0 <= ahead <= MIC_OPEN_SECONDS:
+            self._pre_seen.append(ahead)
+            if len(self._pre_seen) >= 5:
+                self._pre = sorted(self._pre_seen)[len(self._pre_seen) // 2] + MIC_DELIVERY_SECONDS
 
     def record(self) -> None:
         if self.recording or self._arming:
@@ -3806,10 +3980,11 @@ class RecorderWindow:
         self.sel = None
         plan = self._mix_plan(self.rec_start, self.rec_track)
         beat_id, local = self._play_beat()
-        count = (countin.bars_of(self.count_var.get()), float(self._beat_meta()[1]))
+        count = (countin.bars_of(self.count_var.get()), self._tempo())
         self._take_seconds = self._take_cap()
         TAKES.mkdir(parents=True, exist_ok=True)
         path = TAKES / f"ujecie-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}.wav"
+        self._cancel_remix()
         self._play_token += 1
         token = self._play_token
         self._arming = True
@@ -3819,11 +3994,16 @@ class RecorderWindow:
         threading.Thread(target=self._prepare_play, args=(token, self.rec_start, plan, beat_id, local, path, count), daemon=True).start()
 
     def stop(self) -> None:
+        self._cancel_remix()
         if self._arming:
             self._play_token += 1
             self._arming = False
-            if self._warm_feed is not None:
-                self._warm_feed.kill()
+            self._cancel_warm()
+            if self.capture is not None:
+                # The mic was already opening for this take. Nothing of it stays.
+                stop_capture(self.capture)
+                self.capture = None
+                self._forget_take_file()
             self._clear_record_mark()
             self.rec_button.configure(text="● NAGRAJ")
             self.status.set("Przerwane.")
@@ -3853,18 +4033,15 @@ class RecorderWindow:
         self._clear_record_mark()
         self.rec_button.configure(text="● NAGRAJ")
         self._paint_lamp()
-        read_capture_log(self.wav_path)
-        try:
-            self.wav_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+        self._forget_take_file()
         self._paint_all()
         self._move_head(self.cursor)
         self.status.set("Przerwane w trakcie odliczania. Nic się nie nagrało.")
 
     def _cut_lead(self, path: Path) -> float:
-        """Cut the count-in from the take. Returns what is left to skip when the file could not be rewritten."""
-        lead = self._lead
+        """Cut what came before the beat (mic opening, count-in). Returns what is left to skip when the file
+        could not be rewritten."""
+        lead = self._lead + self._pre
         if lead <= 0:
             return 0.0
         try:
@@ -3921,7 +4098,7 @@ class RecorderWindow:
         offset = wav_data_offset_of(path)
         if offset is None:
             return
-        start = max(self._live_off, offset + int(round(self._lead * 100)) * 960)
+        start = max(self._live_off, offset + int(round((self._lead + self._pre) * 100)) * 960)
         usable = (size - start) // 960 * 960
         if usable <= 0:
             return
@@ -3939,7 +4116,7 @@ class RecorderWindow:
         live = getattr(proc, "live_peaks", None) if proc is not None else None
         if isinstance(live, list) and live:
             count = len(live)
-            self._live_peaks = live[int(round(self._lead * 100)) : count]
+            self._live_peaks = live[int(round((self._lead + self._pre) * 100)) : count]
             return
         try:
             self._read_live()
@@ -3958,6 +4135,7 @@ class RecorderWindow:
                     reason += f" Windows: {fatal[:100]}"
                 self._keep_take(reason)
                 return
+            self._watch_sync()
             left = self._count_left()
             if left > 0:
                 self._move_head(self.rec_start)
@@ -3968,6 +4146,16 @@ class RecorderWindow:
                 self.status.set(self._after_count)
                 self._after_count = ""
             elapsed = self._rec_elapsed()
+            monitor = self.monitor
+            if monitor is not None and monitor.poll() is not None and self.rec_start + elapsed < self._beat_until - 1.5:
+                # Singing on without the beat gives a take that fits nothing.
+                note = str(getattr(monitor, "note", "") or "")
+                self._stop_monitor()
+                if self.capture is not None:
+                    stop_capture(self.capture)
+                    self.capture = None
+                self._keep_take(f"Bit przestał grać, więc nagranie się zatrzymało. {note}".strip())
+                return
             cap = self._take_seconds or self._take_cap()
             head = self.rec_start + elapsed
             self._pull_live_peaks()
@@ -4555,7 +4743,7 @@ class RecorderWindow:
     def _my_pending(self) -> UploadState | None:
         """The interrupted send, when this account started it."""
         state = self._pending
-        if state is not None and state.account and state.account != self.email.get().strip():
+        if state is not None and state.account and not same_account(state.account, self.email.get()):
             return None
         return state
 
@@ -4578,18 +4766,35 @@ class RecorderWindow:
             else:
                 paths, slots, starts = self._render_clip_files(clips, cap)
             resume = self._pending if self._pending is not None and self._pending.wav_paths == [str(path) for path in paths] else None
-            if resume is not None and resume.account and resume.account != account:
+            if resume is not None and not resume.account:
+                resume.account = account
+            if resume is not None and resume.account and not same_account(resume.account, account):
                 # Another account's project. This one starts its own.
                 resume = None
                 if finish is not None:
                     raise RuntimeError("Tę wysyłkę zaczęło inne konto. Zaloguj się na nie, żeby ją dokończyć.")
-            if self._pending is not None and resume is None:
-                self._pending = None
-                clear_pending()
-            if resume is not None:
-                title, beat_id = resume.title, resume.beat_id
             client = self._client()
-            send_id = resume.send_id if resume is not None and resume.send_id else ""
+            state = resume
+            foreign = self._pending is not None and self._pending.account and not same_account(self._pending.account, account)
+            if foreign:
+                # Another account's send stays in its own file. This one starts its own.
+                self._pending = None
+            if state is None and self._pending is not None:
+                old, state = self._pending, None
+                if old.beat_id == beat_id:
+                    # The earlier try put nothing into Studio: its project and its daily send serve this arrangement.
+                    state = empty_project_state(client, old, title, [str(path) for path in paths], slots, starts)
+                if state is None and old.placed == 0:
+                    active_send_id = old.send_id
+                self._pending = state
+                if state is None:
+                    clear_pending(account)
+                else:
+                    save_pending(state)
+            if state is not None:
+                title, beat_id = state.title, state.beat_id
+            resume = state
+            send_id = state.send_id if state is not None and state.send_id else active_send_id
             if not send_id:
                 # One daily "Wrzuć do Studia" of the Windows recorder, spent before anything is sent.
                 self._upload_say("Sprawdzam dzienny limit wysyłek do Studia.")
@@ -4612,29 +4817,27 @@ class RecorderWindow:
             )
         except Exception as error:
             message = str(error)
-            if STALE_SEND in message:
-                self._pending = None
-                clear_pending()
-            # The upload failed: the daily send it held goes back to the user. A saved resume state keeps
-            # its clips but loses the send id, so the next "Gotowe i Wrzuć do Studia" claims a fresh one.
-            if client is not None:
-                # Nothing placed yet: the empty project goes away and there is nothing worth resuming.
-                if self._pending is not None and drop_empty_project(client, self._pending) is None:
-                    self._pending = None
-                    clear_pending()
-                gave_back, kept = give_back_send(client, self._pending, active_send_id)
+            state = self._pending
+            refund = ""
+            if state is not None and STALE_SEND in message:
+                state = restarted_state(state)
+            elif state is not None and not state.project_id and client is not None:
+                # Not even a project came of it: the daily send goes back.
+                gave_back, state = give_back_send(client, state, active_send_id)
                 if gave_back:
-                    message = f"{message} Dzisiejsza wysyłka wróciła na konto."
-                    if kept is not self._pending and kept is not None:
-                        self._pending = kept
-                        save_pending(kept)
-                # The held send expired or is bound elsewhere: the next try claims a fresh one.
-                cleared = forget_spent_send(self._pending, message)
-                if cleared is not self._pending and cleared is not None:
-                    self._pending = cleared
-                    save_pending(cleared)
-            self.root.after(0, lambda: self._upload_done(None, message))
+                    refund = " Dzisiejsza wysyłka wróciła na konto."
+            # Everything else stays as it is: the next try goes on in the same project with the same daily
+            # send. Nothing on the account is deleted, whatever the failure was.
+            state = forget_spent_send(state, message)
+            if state is not None and not state.project_id and not state.send_id and finish is None and STALE_SEND not in message:
+                self._pending = None
+                clear_pending(account)
+            elif state is not None:
+                self._pending = state
+                save_pending(state)
+            self.root.after(0, lambda: self._upload_done(None, message, refund))
             return
+        clear_pending(account)
         for path in paths:
             # Sent: the rendered copies for the upload are not needed any more.
             try:
@@ -4643,15 +4846,14 @@ class RecorderWindow:
                 pass
         self.root.after(0, lambda: self._upload_done(project, ""))
 
-    def _upload_done(self, project: str | None, error: str) -> None:
+    def _upload_done(self, project: str | None, error: str, refund: str = "") -> None:
         self._uploading = False
         self.done_button.configure(state="normal")
         if project is None:
-            hint = " Gotowe i Dokończ poprzednią wysyłkę wyśle resztę." if self._pending is not None else ""
-            self.status.set(friendly_upload_error(error or "Wysyłka się nie udała.") + hint)
+            hint = " Gotowe i Dokończ poprzednią wysyłkę wyśle resztę." if self._pending is not None and STALE_SEND not in error else ""
+            self.status.set(friendly_upload_error(error or "Wysyłka się nie udała.") + refund + hint)
             return
         self._pending = None
-        clear_pending()
         self.project_id = project
         self.status.set("Nagranie jest w Studio na koncie. Otwieram projekt w przeglądarce: tam mix i mastering.")
         webbrowser.open(studio_url(SITE, project))
@@ -4729,6 +4931,21 @@ class RecorderWindow:
                 button.configure(text=label)
             except tk.TclError:
                 pass
+
+    def _cancel_warm(self) -> None:
+        feed, self._warm_feed = self._warm_feed, None
+        if feed is not None:
+            feed.kill()
+
+    def _cancel_remix(self) -> None:
+        """A change of level or mute waiting for the sound that has just ended must not land in the next one."""
+        self._remix_token += 1
+        if self._remix_after:
+            self.root.after_cancel(self._remix_after)
+            self._remix_after = None
+        feed, self._warm_remix = self._warm_remix, None
+        if feed is not None:
+            feed.kill()
 
     def _cancel_tick(self) -> None:
         if self._tick_id:
@@ -5253,6 +5470,9 @@ class RecorderWindow:
 
     def choose_mode(self, mode: str) -> None:
         if mode == "offline" and self.tier != "GOLD":
+            if self._plan_pending:
+                self.mode_account.set("Sprawdzam plan konta. Kliknij jeszcze raz za chwilę.")
+                return
             self._open_upgrade()
             return
         if mode not in ("online", "offline"):
@@ -5291,6 +5511,8 @@ class RecorderWindow:
     def _apply_mode_chrome(self) -> None:
         if self.studio_mode == "offline":
             self.studio_kicker.set("STUDIO OFFLINE")
+            if not self.tempo_row.winfo_manager():
+                self.tempo_row.pack(side="left")
             self.plan_text.set(self._offline_plan_line())
             if not self.load_session_button.winfo_manager():
                 self.load_session_button.pack(side="right", padx=(0, 6))
@@ -5298,6 +5520,7 @@ class RecorderWindow:
                 self.save_project_button.pack(side="right", padx=(0, 6))
         else:
             self.studio_kicker.set("STUDIO ONLINE")
+            self.tempo_row.pack_forget()
             self.save_project_button.pack_forget()
             self.load_session_button.pack_forget()
             self._read_plan()
@@ -5315,8 +5538,24 @@ class RecorderWindow:
         )
         menu["menu"].configure(bg=RACK, fg=INK, activebackground=AMBER, activeforeground=ON_AMBER, font=(FONT_UI, 10))
 
+    def _entry_small(self, parent: tk.Widget, variable: tk.StringVar) -> tk.Entry:
+        return tk.Entry(
+            parent, textvariable=variable, bg=RACK, fg=INK, insertbackground=AMBER, relief="flat",
+            font=(FONT_UI, 10), width=5, highlightthickness=1, highlightbackground=LINE,
+        )
+
+    def _tempo(self) -> float:
+        """Tempo of the count-in: the catalog beat's, offline the one typed next to it. 0 means unknown."""
+        if self.studio_mode != "offline":
+            return float(self._beat_meta()[1])
+        return offline_tempo(self.tempo_var.get())
+
     def _option_chosen(self, variable: tk.StringVar, value: str) -> None:
         variable.set(value)
+        if variable is self.device_var:
+            self._pref_device = value
+        elif variable is self.output_var:
+            self._pref_output = value
         self._save_prefs()
 
     def _fill_option(self, menu: tk.OptionMenu, variable: tk.StringVar, labels: list[str], preferred: str) -> None:
@@ -5335,7 +5574,7 @@ class RecorderWindow:
     def _boot_worker(self) -> None:
         if not self._swept:
             self._swept = True
-            sweep_copies(keep=set(self._pending.wav_paths) if self._pending is not None else None)
+            sweep_copies(keep=pending_files())
         devices: list[str] = []
         device_error = ""
         try:
@@ -5365,9 +5604,9 @@ class RecorderWindow:
     ) -> None:
         self.devices = devices
         self.outputs = outputs or [("Domyślne", -1)]
-        self._fill_option(self.device_menu, self.device_var, self.devices or ["Brak mikrofonu"], self._pref_device)
+        self._fill_option(self.device_menu, self.device_var, self.devices or ["Brak mikrofonu"], self._pref_device or self.device_var.get())
         self._fill_option(
-            self.output_menu, self.output_var, [name for name, _index in self.outputs], self._pref_output or "Domyślne"
+            self.output_menu, self.output_var, [name for name, _index in self.outputs], self._pref_output or self.output_var.get() or "Domyślne"
         )
         if payload is not None:
             self._apply_public(payload)
@@ -5430,8 +5669,6 @@ class RecorderWindow:
         if self._gear_scanning or self._busy():
             return
         self._gear_scanning = True
-        self._pref_device = self.device_var.get()
-        self._pref_output = self.output_var.get()
         self.probe_var.set("Szukam mikrofonów i wyjść…")
         threading.Thread(target=self._boot_worker, daemon=True).start()
 
@@ -5487,6 +5724,10 @@ class RecorderWindow:
         self._remix_after = None
         if token != self._remix_token or self._arming or not (self.playing or self.recording):
             return
+        left = self._count_left()
+        if left > 0:
+            self._remix_after = self.root.after(int(left * 1000) + 60, lambda: self._kick_remix(token))
+            return
         head = max(self._play_from, self._play_from + (time.monotonic() - self._play_t0))
         skip = self.rec_track if self.recording else None
         plan = self._mix_plan(head, skip)
@@ -5517,7 +5758,7 @@ class RecorderWindow:
                     ffmpeg_exe(), beat, vocals, limit, beat_start=head,
                     beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan,
                 )
-                feed = self._warm_mix(argv, lambda: token == self._remix_token)
+                feed = self._warm_mix(argv, lambda: token == self._remix_token, "_warm_remix")
                 if feed is None:
                     self._listen_cache = None
                     raise RuntimeError("Odsłuch się nie odświeżył. Zmiana zadziała przy następnym Graj.")
@@ -5539,10 +5780,14 @@ class RecorderWindow:
         try:
             play = ffplay_exe()
             output_index = self.selected_output_index()
-            if feed is not None and play is None and output_index is None:
+            if feed is not None and not can_hear(output_index):
                 feed.kill()
                 raise RuntimeError(NO_FFPLAY)
             self._stop_monitor()
+            # From here the measurement would look at another player.
+            self._pre_seen = [self._pre] * 40
+            if self.beat_muted:
+                self._beat_until = 0.0
             if feed is not None:
                 # Loading took a moment and the song went on: join where it is now, not where it was.
                 late = max(0.0, self._play_from + (time.monotonic() - self._play_t0) - head)
@@ -5684,6 +5929,7 @@ class RecorderWindow:
 
     def _refresh(self) -> str:
         saved = load_session()
+        epoch = self._session_epoch
         refresh = saved.get("refreshToken") if saved else ""
         if not saved or not refresh or not saved.get("supabaseUrl") or not saved.get("anonKey"):
             self._reject_session("Hasło albo sesja na stronie się zmieniły. Zaloguj się jeszcze raz.")
@@ -5694,6 +5940,9 @@ class RecorderWindow:
             if "wygasła" in str(error):
                 self._reject_session("Hasło albo sesja na stronie się zmieniły. Zaloguj się jeszcze raz.")
             raise
+        if epoch != self._session_epoch:
+            # Signed out while the answer was on its way: the old login must not come back.
+            raise RuntimeError("Najpierw się zaloguj.")
         save_session(
             saved["supabaseUrl"], saved["anonKey"], saved.get("email", ""), grant,
             remember=wants_remember(saved.get("remember")),
@@ -5737,6 +5986,8 @@ class RecorderWindow:
         self._desk_live.clear()
         self._blank_project()
         self._offline_ok = False
+        self._pending = None
+        self._session_epoch += 1
         self._client_cache = None
         self._listen_cache = None
         self._signed_in = False
@@ -5749,15 +6000,8 @@ class RecorderWindow:
                 daemon=True,
             ).start()
         SESSION.parent.mkdir(parents=True, exist_ok=True)
-        SESSION.write_text(
-            json.dumps(
-                {
-                    "supabaseUrl": self.public_url,
-                    "anonKey": self.public_key,
-                    "email": email,
-                }
-            ),
-            encoding="utf-8",
+        write_atomic(
+            SESSION, json.dumps({"supabaseUrl": self.public_url, "anonKey": self.public_key, "email": email})
         )
         self.tier = "FREE"
         self.project_id = ""
@@ -5788,38 +6032,83 @@ class RecorderWindow:
                     raise RuntimeError(LOGIN_HINT_EXPIRED)
                 else:
                     raise RuntimeError("Wpisz e-mail i hasło.")
-            if self._owner_email and self._owner_email != email and not self._confirm_close_save():
+            if self._signing:
                 return
-            if not self.public_url or not self.public_key:
-                self._load_public()
-            grant = supabase_password_grant(self.public_url, self.public_key, email, password)
+        except Exception as error:
+            self._sign_in_failed(error, used_saved)
+            return
+        self._signing = True
+        self.gate_status.set("Loguję…")
+        url, key = self.public_url, self.public_key
+
+        def run() -> None:
+            payload: dict[str, object] | None = None
+            grant: dict[str, str] = {}
+            failed: Exception | None = None
+            try:
+                if not url or not key:
+                    payload = load_bootstrap()
+                grant = supabase_password_grant(
+                    url or str((payload or {}).get("supabaseUrl") or ""), key or str((payload or {}).get("anonKey") or ""), email, password
+                )
+            except Exception as error:
+                failed = error
+            try:
+                self.root.after(0, lambda: self._signed_in_with(email, password, remember, now, payload, grant, failed, used_saved))
+            except (RuntimeError, tk.TclError):
+                pass
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _sign_in_failed(self, error: Exception, used_saved: bool) -> None:
+        if used_saved and "Logowanie nie weszło" in str(error):
+            drop_saved_password()
+            error = RuntimeError("Zapisane hasło nie weszło. Wpisz je jeszcze raz.")
+        self.status.set(str(error))
+        self.gate_status.set(str(error))
+
+    def _signed_in_with(
+        self, email: str, password: str, remember: bool, now: float, payload: dict[str, object] | None,
+        grant: dict[str, str], failed: Exception | None, used_saved: bool,
+    ) -> None:
+        self._signing = False
+        if payload is not None:
+            self._apply_public(payload)
+        if failed is not None:
+            self._sign_in_failed(failed, used_saved)
+            return
+        other = bool(self._owner_email) and not same_account(self._owner_email, email)
+        # A session that ran out, then another account: its project must not move over.
+        if other and not self._confirm_close_save(defer=True):
+            self.gate_status.set(f"W programie jest projekt konta {self._owner_email}. Zaloguj się na nie, żeby go zapisać.")
+            return
+        try:
             save_session(
                 self.public_url, self.public_key, email, grant,
                 remember=remember,
                 password=password if remember else "",
                 password_until=password_deadline(now) if remember else None,
             )
-            if self._owner_email and self._owner_email != email:
-                # A session that ran out, then another account: its project must not move over.
-                self._discard_desks()
-                self._desk_live.clear()
-                self._blank_project()
-                self._offline_ok = False
-                self.tier = "FREE"
-            self._owner_email = email
-            self._listen_cache = None
-            self._signed_in = True
-            self.password.delete(0, "end")
-            self._read_plan(wait=True)
-            self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
-            self.gate_status.set("")
-            self.show_modes()
-        except Exception as error:
-            if used_saved and "Logowanie nie weszło" in str(error):
-                drop_saved_password()
-                error = RuntimeError("Zapisane hasło nie weszło. Wpisz je jeszcze raz.")
-            self.status.set(str(error))
-            self.gate_status.set(str(error))
+        except OSError:
+            self._sign_in_failed(RuntimeError("Nie dało się zapisać logowania na dysku."), False)
+            return
+        if other:
+            self._drop_confirmed()
+            self._discard_desks()
+            self._desk_live.clear()
+            self._blank_project()
+            self._offline_ok = False
+            self.tier = "FREE"
+        self._owner_email = email
+        self._pending = load_pending(email)
+        self._listen_cache = None
+        self._client_cache = None
+        self._signed_in = True
+        self.password.delete(0, "end")
+        self._read_plan()
+        self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
+        self.gate_status.set("")
+        self.show_modes()
 
     def selected_device(self) -> str:
         name = self.device_var.get()
@@ -6021,7 +6310,7 @@ class RecorderWindow:
             self.update_gate_text.set("Pobrane. Dokończ nagranie, potem Zaktualizuj.")
             return
         # The same question as on close. Anuluj keeps the download ready.
-        if not self._confirm_close_save():
+        if not self._confirm_close_save(defer=True):
             self._update_ready = path
             self._update_busy = False
             self.update_now.configure(state="normal")
@@ -6050,6 +6339,7 @@ class RecorderWindow:
         except OSError:
             self._update_failed("Nie udało się uruchomić aktualizacji.")
             return
+        self._drop_confirmed()
         self._exit_for_update()
 
     def _exit_for_update(self) -> None:

@@ -20,6 +20,9 @@ from typing import BinaryIO
 WAVE_MAPPER = 0xFFFFFFFF
 WHDR_DONE = 0x00000001
 MMSYSERR_NOERROR = 0
+WAVE_FORMAT_QUERY = 0x0001
+TIME_SAMPLES = 0x0002
+TIME_BYTES = 0x0004
 
 
 def output_devices() -> list[tuple[str, int]]:
@@ -100,6 +103,19 @@ def play_tone(device_index: int, seconds: float = 0.45) -> str:
     return player.note
 
 
+def can_play(device_index: int, rate: int = 48000, channels: int = 2, bits: int = 16) -> bool:
+    """True when this endpoint takes the format. Nothing is opened. -1 is the Windows default."""
+    if os.name != "nt":
+        return False
+    try:
+        fmt = _wave_format(rate, channels, bits)
+        device = WAVE_MAPPER if device_index < 0 else int(device_index)
+        code = _winmm().waveOutOpen(None, ctypes.c_uint(device), ctypes.byref(fmt), None, None, WAVE_FORMAT_QUERY)
+        return code == MMSYSERR_NOERROR
+    except Exception:
+        return False
+
+
 class WavePlayer:
     """Reads a WAV stream and plays it on one waveOut device. poll/terminate match what the monitor stopper expects."""
 
@@ -113,9 +129,29 @@ class WavePlayer:
         self._winmm: object | None = None
         self._handle: object | None = None
         self._alive: list[tuple[object, WAVEHDR]] = []
+        self._align = 0
 
     def start(self) -> None:
         self._thread.start()
+
+    def position(self) -> int | None:
+        """Sample frames the device has played since the start. None while it does not know."""
+        winmm, handle = self._winmm, self._handle
+        if winmm is None or handle is None or self._code is not None:
+            return None
+        moment = MMTIME()
+        moment.wType = TIME_SAMPLES
+        try:
+            code = winmm.waveOutGetPosition(handle, ctypes.byref(moment), ctypes.sizeof(moment))  # type: ignore[attr-defined]
+        except Exception:
+            return None
+        if code != MMSYSERR_NOERROR:
+            return None
+        if moment.wType == TIME_SAMPLES:
+            return int(moment.value)
+        if moment.wType == TIME_BYTES and self._align:
+            return int(moment.value) // self._align
+        return None
 
     def poll(self) -> int | None:
         return self._code
@@ -155,18 +191,19 @@ class WavePlayer:
             self._close()
 
     def _play(self, rate: int, channels: int, bits: int) -> None:
-        """Keep four buffers queued so the device does not click between reads."""
+        """Keep six buffers (about half a second) queued so the device does not click while the window is busy."""
         winmm = _winmm()
         handle = _open_out(winmm, self._device, rate, channels, bits)
         self._winmm = winmm
         self._handle = handle
         align = channels * (bits // 8)
+        self._align = align
         block = max(align, (rate * align * 80) // 1000)
         block -= block % align
         eof = False
         while not self._stop.is_set():
             self._reap(winmm, handle)
-            while not eof and len(self._alive) < 4 and not self._stop.is_set():
+            while not eof and len(self._alive) < 6 and not self._stop.is_set():
                 data = self._stream.read(block)
                 if not data:
                     eof = True
@@ -252,9 +289,16 @@ def self_test() -> None:
     if os.name != "nt":
         if output_devices() != []:
             raise SystemExit("wyjścia")
+        if can_play(-1) or WavePlayer(io.BytesIO(b""), -1).position() is not None:
+            raise SystemExit("wyjście poza Windows")
         if "Windows" not in play_tone(-1, 0.2):
             raise SystemExit("ton poza Windows")
     else:
+        if ctypes.sizeof(MMTIME) != 12:
+            raise SystemExit("MMTIME")
+        ready = can_play(-1)
+        if ready and not output_devices():
+            raise SystemExit("wyjście bez urządzeń")
         listed = output_devices()
         if any(index < 0 or not name for name, index in listed):
             raise SystemExit("wyjścia Windows")
@@ -293,6 +337,10 @@ class WAVEHDR(ctypes.Structure):
     )
 
 
+class MMTIME(ctypes.Structure):
+    _fields_ = (("wType", wintypes.UINT), ("value", wintypes.DWORD), ("pad", wintypes.DWORD))
+
+
 class WAVEOUTCAPS(ctypes.Structure):
     _fields_ = (
         ("wMid", wintypes.WORD),
@@ -320,6 +368,8 @@ def _winmm() -> ctypes.WinDLL:
         ctypes.c_uint,
     ]
     winmm.waveOutOpen.restype = ctypes.c_uint
+    winmm.waveOutGetPosition.argtypes = [ctypes.c_void_p, ctypes.POINTER(MMTIME), ctypes.c_uint]
+    winmm.waveOutGetPosition.restype = ctypes.c_uint
     for name in ("waveOutPrepareHeader", "waveOutUnprepareHeader", "waveOutWrite"):
         fn = getattr(winmm, name)
         fn.argtypes = [ctypes.c_void_p, ctypes.POINTER(WAVEHDR), ctypes.c_uint]
@@ -331,7 +381,7 @@ def _winmm() -> ctypes.WinDLL:
     return winmm
 
 
-def _open_out(winmm: ctypes.WinDLL, device: int, rate: int, channels: int, bits: int) -> ctypes.c_void_p:
+def _wave_format(rate: int, channels: int, bits: int) -> WAVEFORMATEX:
     fmt = WAVEFORMATEX()
     fmt.wFormatTag = 1
     fmt.nChannels = channels
@@ -339,6 +389,11 @@ def _open_out(winmm: ctypes.WinDLL, device: int, rate: int, channels: int, bits:
     fmt.wBitsPerSample = bits
     fmt.nBlockAlign = channels * (bits // 8)
     fmt.nAvgBytesPerSec = rate * fmt.nBlockAlign
+    return fmt
+
+
+def _open_out(winmm: ctypes.WinDLL, device: int, rate: int, channels: int, bits: int) -> ctypes.c_void_p:
+    fmt = _wave_format(rate, channels, bits)
     handle = ctypes.c_void_p()
     code = winmm.waveOutOpen(ctypes.byref(handle), ctypes.c_uint(device), ctypes.byref(fmt), None, None, 0)
     if code != MMSYSERR_NOERROR or not handle.value:

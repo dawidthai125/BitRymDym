@@ -19,6 +19,10 @@ type SendRow = { allowed: boolean; send_id: string | null; used: number; day_lim
  * (Owner 2026-11-19). Only the owner's own send, and only within REFUND_WINDOW_MS.
  */
 const REFUND_WINDOW_MS = 6 * 60 * 60 * 1000;
+/** Shorter than the 24 h in which record/place still accepts a send. */
+const REUSE_WINDOW_MS = 20 * 60 * 60 * 1000;
+/** Younger than this it may belong to an upload that runs right now. */
+const REUSE_AFTER_MS = 20 * 1000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function handle(peek: boolean) {
   const context = await getCurrentProfile();
@@ -28,7 +32,8 @@ async function handle(peek: boolean) {
   try {
     const product = await resolveProductEntitlementForAuthContext(context);
     const limit = PLAN_POLICY[product.premiumTier].recording.sessionsPerDay;
-    const { data, error } = await createSupabaseAdminClient().rpc("claim_desktop_studio_send", {
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin.rpc("claim_desktop_studio_send", {
       p_owner_id: context.userId,
       p_max_per_utc_day: limit,
       p_peek: peek,
@@ -36,6 +41,25 @@ async function handle(peek: boolean) {
     if (error) throw new Error(error.message);
     const row = (Array.isArray(data) ? data[0] : data) as SendRow | null;
     if (!row) throw new Error("no_row");
+    if (!row.allowed) {
+      // Limit reached, but a claimed send was never used (lost answer, dead network, closed program):
+      // that one is the send to use. It binds to a single project, so this gives nothing extra.
+      const { data: held, error: heldError } = await admin
+        .from("desktop_studio_sends")
+        .select("id")
+        .eq("owner_id", context.userId)
+        .is("project_id", null)
+        .gte("created_at", new Date(Date.now() - REUSE_WINDOW_MS).toISOString())
+        .lte("created_at", new Date(Date.now() - REUSE_AFTER_MS).toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (heldError) throw new Error(heldError.message);
+      const id = (held?.[0]?.id as string | undefined) ?? null;
+      if (id) {
+        row.allowed = true;
+        row.send_id = peek ? null : id;
+      }
+    }
     const body = { allowed: row.allowed, sendId: row.send_id, used: row.used, limit: row.day_limit, tier: product.premiumTier };
     if (!peek && !row.allowed) {
       return NextResponse.json({ ...body, error: "desktop_send_limit" }, { status: 429, headers: NO_STORE });

@@ -132,7 +132,7 @@
         "The beat is not mixed into the vocal file. Only the vocal is uploaded.",
         "It does not play two mixes at once, such as beat-only in headphones and mic plus beat on speakers.",
         "While recording, it does not feed your own voice back into the headphones.",
-        "It does not correct sound card delay. If a recording sits off the beat, move it on the timeline.",
+        "It does not know the delay of Bluetooth headphones. If a recording sits off the beat, move it on the timeline or use wired headphones.",
         "It has no effects or tuning. Volume and left or right are heard in the app, but only the dry vocal goes to the account. On the site you set them in Studio, with the cut, volume over time and notes.",
         "It has no samples. You add them in Studio on the site, with the piano and the notes.",
         "It does not make the mix, the master, master approval, lyrics, cover, video or a listen link. BITEK does the mix and the master on the site.",

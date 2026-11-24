@@ -12,9 +12,6 @@ const state = vi.hoisted(() => ({
   placed: 0,
   projectError: false,
   // Model of use_desktop_studio_send: null = return sendOk; else unbound sends + bindings.
-  placeFails: false,
-  clipsInProject: 0,
-  released: [] as unknown[],
   model: null as null | { unbound: number; bound: string[] },
   lock: Promise.resolve() as Promise<void>,
 }));
@@ -24,38 +21,15 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/lib/auth/session", () => ({
-  AuthError: class AuthError extends Error {},
   getCurrentProfile: vi.fn(async () => ({ userId: "11111111-1111-4111-8111-111111111111", profile: { role: "USER" } })),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => {
-    let table = "";
-    let update: unknown = null;
-    const filters: Record<string, unknown> = {};
     const chain = {
-      from: (name: string) => {
-        table = name;
-        return chain;
-      },
+      from: () => chain,
       select: () => chain,
-      eq: (key: string, value: unknown) => {
-        filters[key] = value;
-        return chain;
-      },
-      in: () => chain,
-      limit: () => chain,
-      update: (values: unknown) => {
-        update = values;
-        return chain;
-      },
-      then: (done: (value: unknown) => void) => {
-        if (table === "desktop_studio_sends") state.released.push({ update, id: filters.id, project: filters.project_id, owner: filters.owner_id });
-        done({
-          data: table === "studio_tracks" ? [{ id: "tr" }] : Array.from({ length: state.clipsInProject }, () => ({ id: "c" })),
-          error: null,
-        });
-      },
+      eq: () => chain,
       maybeSingle: async () =>
         state.projectError
           ? { data: null, error: { message: "timeout" } }
@@ -87,7 +61,6 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 vi.mock("@/lib/studio/studio-record-service", () => ({
   placeReadyTakeAsStudioClip: vi.fn(async () => {
-    if (state.placeFails) throw new Error("boom");
     state.placed += 1;
     return { clip: {}, takeId: "t", durationMs: 1000, reusedExisting: false, documentVersion: 2 };
   }),
@@ -115,9 +88,6 @@ beforeEach(() => {
   state.placed = 0;
   state.projectError = false;
   state.model = null;
-  state.placeFails = false;
-  state.clipsInProject = 0;
-  state.released = [];
 });
 
 describe("record/place desktop send gate", () => {
@@ -208,30 +178,6 @@ describe("record/place desktop send gate", () => {
     expect(await res.json()).toEqual({ error: "Nieprawidłowy identyfikator wysyłki." });
     expect(state.rpcCalls).toEqual([]);
     expect(state.placed).toBe(0);
-  });
-
-  describe("a place that fails", () => {
-    const sendId = "44444444-4444-4444-8444-444444444444";
-
-    it("gives the send back while the project is empty", async () => {
-      state.bearer = "jwt";
-      state.placeFails = true;
-      vi.spyOn(console, "error").mockImplementation(() => undefined);
-      expect((await call(PROJECT, { sendId })).status).toBe(500);
-      expect(state.released).toEqual([
-        { update: { project_id: null, used_at: null }, id: sendId, project: PROJECT, owner: "11111111-1111-4111-8111-111111111111" },
-      ]);
-    });
-
-    it("keeps it when recordings already landed, and for the site", async () => {
-      state.placeFails = true;
-      vi.spyOn(console, "error").mockImplementation(() => undefined);
-      await call(PROJECT, { sendId });
-      state.bearer = "jwt";
-      state.clipsInProject = 1;
-      await call(PROJECT, { sendId });
-      expect(state.released).toEqual([]);
-    });
   });
 
   it("sendId: null is treated like no sendId", async () => {

@@ -74,7 +74,27 @@ vi.mock("@/lib/supabase/admin", () => {
           eq: (col: string, v: unknown) => ((filters[col] = v), state.deleteFilters.push(`eq:${col}`), chain),
           gte: (col: string, v: unknown) => ((filters[`gte:${col}`] = v), state.deleteFilters.push(`gte:${col}`), chain),
           is: (col: string, v: unknown) => ((filters[`is:${col}`] = v), state.deleteFilters.push(`is:${col}`), chain),
-          select: async () => {
+          lte: (col: string, v: unknown) => ((filters[`lte:${col}`] = v), chain),
+          order: () => chain,
+          limit: async () => ({
+            data: state.sends
+              .filter(
+                (s) =>
+                  s.owner_id === filters.owner_id &&
+                  s.used_at === null &&
+                  s.created_at >= Date.parse(String(filters["gte:created_at"])) &&
+                  s.created_at <= Date.parse(String(filters["lte:created_at"])),
+              )
+              .map((s) => ({ id: s.id })),
+            error: null,
+          }),
+          select: () => {
+            if (!("id" in filters)) return chain;
+            return remove();
+          },
+        };
+        const remove = async () => {
+          {
             const since = Date.parse(String(filters["gte:created_at"]));
             const hit = state.sends.filter(
               (s) =>
@@ -85,7 +105,7 @@ vi.mock("@/lib/supabase/admin", () => {
             );
             state.sends = state.sends.filter((s) => !hit.includes(s));
             return { data: hit.map((s) => ({ id: s.id })), error: null };
-          },
+          }
         };
         return chain;
       },
@@ -222,6 +242,20 @@ describe("desktop studio-send limit", () => {
     const res = await DELETE(new Request("http://x", { method: "DELETE", body: JSON.stringify({ sendId: first }) }));
     expect(await res.json()).toMatchObject({ refunded: true });
     expect(state.sends.map((s) => s.id)).toEqual([second]);
+  });
+
+  it("a claimed send that was never used is handed out again at the limit, once bound it is not", async () => {
+    state.tier = "FREE";
+    const sendId = (await (await POST()).json()).sendId as string;
+    expect((await POST()).status).toBe(429);
+    state.sends[0].created_at -= 60_000;
+    expect(await (await GET()).json()).toMatchObject({ allowed: true, sendId: null, used: 1, limit: 1 });
+    const again = await POST();
+    expect(again.status).toBe(200);
+    expect(await again.json()).toMatchObject({ sendId, used: 1, limit: 1 });
+    expect(state.sends).toHaveLength(1);
+    state.sends[0].used_at = Date.now();
+    expect((await POST()).status).toBe(429);
   });
 
   it("refund with a bad id is 400", async () => {

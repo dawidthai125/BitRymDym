@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (43) — Nagrywarka 2026.11.38: drugi, niezależny przegląd i poprawki
+
+- Równo z bitem: program czeka na pierwszy dźwięk z mikrofonu, a na Windowsie gra przez waveOut (ffplay zostaje zapasem) i z pozycji karty dźwiękowej liczy, ile nagrania jest sprzed bitu. Ten początek jest obcinany. W symulacji opóźnień mikrofonu 0,1–0,9 s i odsłuchu 0,05–0,3 s błąd to 2–5 ms.
+- Wysyłka: program nigdy nie kasuje projektu na koncie (2026.11.37 mogła skasować projekt, w którym ktoś nagrał coś w przeglądarce). Po błędzie wysyłka idzie dalej w tym samym projekcie, stan jest na dysku przed pierwszym żądaniem, osobno dla każdego konta. Nowe ułożenie przejmuje pusty projekt i wysyłkę. Serwer oddaje zajętą, a nieużytą wysyłkę przy wyczerpanym limicie (`/api/desktop/studio-send`). Oddawanie wysyłki w `record/place` z 2026.11.37 wycofane (dało się je nadużyć).
+- Nagranie: zaległa zmiana głośności nie wchodzi w następne nagranie, przerwany bit zatrzymuje nagranie z komunikatem, brak odsłuchu nie zaczyna nagrania bez bitu.
+- Konto: logowanie nie blokuje okna, „Nie” kasuje pliki dopiero po udanym kroku, wylogowanie nie cofa się przez spóźnione odnowienie, ustawienia zapisują tylko świadomy wybór, wszystkie pliki ustawień przez plik tymczasowy.
+- Studio Offline: pole BPM dla odliczania. Komunikaty limitów razem ze zwrotem wysyłki.
+- Sprawdzone: 24 przerwania wysyłki na modelu serwera (wszystkie kończą się jednym utworem), symulacja synchronizacji, waveOut pod Wine, testy w Actions. Nie sprawdzono na Windowsie użytkownika.
+
 ## 2026-11-24 (42) — Nagrywarka 2026.11.37: odliczanie i przegląd całego kodu programu
 
 - Odliczanie przed nagraniem: Bez, 1, 2 albo 4 takty w tempie bitu (`desktop/recorder/countin.py`). Stuki idą w tym samym strumieniu co bit i nie wchodzą do nagrania. Stop w odliczaniu nie zostawia śladu.
