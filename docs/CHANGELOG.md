@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (33) — Przegląd po wdrożeniach: master jak odtwarzanie, „Zrób utwór”, profile, separator
+
+- Master i analiza: tor ścieżki jak na żywo i w WAV (efekty → tłumik → panorama, `render.ts`, `MIX_CACHE_TAG` r3). Wcześniej tłumik był przed efektami i kompresor zjadał podbicie wokalu.
+- Panorama: plik mono po wstawce dwukanałowej (kompresor, limiter, de-esser, bramka, Tune, rider, voice, harmony, pocket, pogłos) ma prawo stereo także w masterze i WAV (`chainOutputsStereo`); na żywo tak było zawsze, stąd 3 dB różnicy.
+- „Zrób utwór”: progi kompresora, de-essera i bramki liczone na wejściu efektów, przewidziany skok +3 dB mono→stereo, beat/instrument poniżej −6 dB nie jest dalej ściszany; brakujące wpisy w dzienniku technicznym.
+- Eksport WAV: limit pamięci 1,5 GiB (6-minutowy utwór mieścił ok. 40 s wokalu), jedno przeliczenie tempa/tonu na źródło. Poller eksportu przeżywa chwilowy brak sieci (5 błędów z rzędu = restart).
+- Pocket: punkty zwrotki/hooka działają w każdym kroku (`usePocketMarkers`). Pracownia sampli: przycisk nagrywania nie blokuje się przy wczytywaniu bitu. „Graj”: cofnięcie na pełnej warstwie i po zmianie tempa, spacja nie ucisza trzymanego akordu. Separator: odpytywanie zwalnia po błędach, staje w ukrytej karcie i po wylogowaniu. „Przygotowuję Twój bit…” tylko, gdy czeka bit.
+- Profile: pamięć podręczna nie oddaje starych wpisów (czas w kluczu), błąd bazy to 5xx, nie 404 ani „brak”, liczba sampli bez limitu 200, blokada admina w komunikacie, ostrzejsze adresy linków, nieudane usuwanie konta nie kasuje ustawień profilu. Obrys fokusu na linkach kafelków. `/utwor` pokazuje długość przed Play.
+- Polityka prywatności 2026-11-24.2 (doprecyzowanie pkt 5, własna data obowiązywania).
+
 ## 2026-11-24 (32) — Publiczne profile twórców; polityka prywatności 2026-11-24.1
 
 - `/account/profil`: włącznik (domyślnie wyłączony), 6 linków (YouTube, Spotify, Instagram, Facebook, TikTok, SoundCloud), osobny przełącznik na każdą pokazywaną rzecz. Publiczna strona `/tworca/<public_id>-<ksywka>`; ksywka w rankingach, listach i komentarzach jest linkiem tylko przy włączonym profilu.

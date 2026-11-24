@@ -857,7 +857,7 @@ describe("SFM-2.1 numerical geometry / mix", () => {
         STUDIO_OFFLINE_RENDER_MAX_DURATION_MS,
       ),
     );
-    expect(STUDIO_OFFLINE_RENDER_MAX_TOTAL_PCM_BYTES).toBe(256 * 1024 * 1024);
+    expect(STUDIO_OFFLINE_RENDER_MAX_TOTAL_PCM_BYTES).toBe(1536 * 1024 * 1024);
   });
 
   it("SFM-2.2: render succeeds below public memory budgets", async () => {

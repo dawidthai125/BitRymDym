@@ -1,12 +1,12 @@
 /** Polityka prywatności (RODO) BitRymDym. */
-import { LEGAL_EFFECTIVE_DATE, LEGAL_PATHS, MINIMUM_AGE, OPERATOR as O, PRIVACY_VERSION } from "@/lib/legal/legal-config";
+import { PRIVACY_EFFECTIVE_DATE, LEGAL_PATHS, MINIMUM_AGE, OPERATOR as O, PRIVACY_VERSION } from "@/lib/legal/legal-config";
 
 import type { LegalDoc } from "./types";
 
 export const PRIVACY: LegalDoc = {
   title: "Polityka prywatności BitRymDym",
   version: PRIVACY_VERSION,
-  lead: `Wyjaśniamy, jakie dane przetwarzamy, po co, jak długo i komu je powierzamy. Obowiązuje od ${LEGAL_EFFECTIVE_DATE}`,
+  lead: `Wyjaśniamy, jakie dane przetwarzamy, po co, jak długo i komu je powierzamy. Obowiązuje od ${PRIVACY_EFFECTIVE_DATE}`,
   sections: [
     { id: "p1", h: "1. Administrator", blocks: [
       `Administratorem danych jest ${O.name}, ${O.address}, NIP ${O.nip} („my”). Kontakt w sprawach danych: ${O.privacyEmail}. Nie wyznaczyliśmy inspektora ochrony danych.`,
@@ -49,7 +49,7 @@ export const PRIVACY: LegalDoc = {
       ] } },
       "Do dostawców AI nie wysyłamy Twojego e-maila ani hasła. Opisy okładek przed wysłaniem są filtrowane; nie wpisuj w nich danych osobowych. Przekazanie danych poza EOG odbywa się na podstawie decyzji Komisji Europejskiej (EU-US Data Privacy Framework) lub standardowych klauzul umownych (art. 46 RODO). Kopię zabezpieczeń możesz uzyskać, pisząc do nas.",
       "Opublikowane Bity, ksywka i okładki są widoczne publicznie. Link do odsłuchu działa dla każdego, kto go otrzyma — do wygaśnięcia lub wyłączenia.",
-      "Profil publiczny. Możesz włączyć publiczny profil twórcy. Domyślnie jest wyłączony. Po włączeniu każdy, także bez konta i przez wyszukiwarkę, zobaczy Twoją ksywkę oraz tylko te dane, które sam zaznaczysz: linki do serwisów społecznościowych, liczbę utworów, opublikowane bity, sample i utwory, miejsca w rankingach, poziom i punkty oraz miesiąc założenia konta. Twoja ksywka w serwisie staje się wtedy linkiem do profilu. Nie pokazujemy e-maila, pakietu, płatności ani prywatnych nagrań. Podstawą jest Twoja zgoda (art. 6 ust. 1 lit. a RODO). Możesz ją wycofać w ustawieniach: strona znika od razu, a w wynikach wyszukiwarek może zostać do ich odświeżenia. Dane profilu usuwamy razem z kontem. Linki prowadzą do zewnętrznych serwisów, które mają własne zasady.",
+      "Profil publiczny. Możesz włączyć publiczny profil twórcy. Domyślnie jest wyłączony. Po włączeniu każdy, także bez konta i przez wyszukiwarkę, zobaczy Twoją ksywkę oraz tylko te dane, które sam zaznaczysz: linki do serwisów społecznościowych, liczbę utworów (w tym samą liczbę nagranych, także nieopublikowanych), opublikowane bity, sample i utwory, miejsca w rankingach, poziom i punkty oraz miesiąc założenia konta. Twoja ksywka w serwisie staje się wtedy linkiem do profilu. Nie pokazujemy e-maila, pakietu, płatności ani prywatnych nagrań. Podstawą jest Twoja zgoda (art. 6 ust. 1 lit. a RODO). Możesz ją wycofać w ustawieniach: strona znika od razu, a jej adres w mapie strony i wynikach wyszukiwarek może zostać do ich odświeżenia. Dane profilu usuwamy razem z kontem. Linki prowadzą do zewnętrznych serwisów, które mają własne zasady.",
     ] },
     { id: "p6", h: "6. Jak długo przechowujemy dane", blocks: [{ list: [
       "Konto i opublikowane treści — do usunięcia Konta; po usunięciu kasujemy je bez zbędnej zwłoki (kopie zapasowe wygasają w cyklu dostawcy).",

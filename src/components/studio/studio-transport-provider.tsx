@@ -71,6 +71,8 @@ export type StudioTransportControlsApi = {
   phase: StudioTransportPhase;
   timelineLengthMs: number;
   audioState: StudioAudioLoadState;
+  /** The address of the beat (this account's own copy) is being prepared. */
+  beatPending: boolean;
   error: string | null;
   hasBeat: boolean;
   /** Anything to hear: beat, recordings or notes. */
@@ -275,6 +277,7 @@ export function StudioTransportProvider({
 
   const [phase, setPhase] = useState<StudioTransportPhase>("stopped");
   const [playheadMs, setPlayheadMs] = useState(0);
+  const [beatPending, setBeatPending] = useState(false);
   const [audioState, setAudioState] = useState<StudioAudioLoadState>(
     beatId || engineDocument.clips.some((c) => c.sourceKind === "TAKE")
       ? "idle"
@@ -321,10 +324,11 @@ export function StudioTransportProvider({
       request: async () => {
         // WAVE 1.1: access is resolved again so the active assetId is known.
         // URL/blob cache is keyed by beat|assetId — never bare beatId.
+        setBeatPending(true);
         const result = await requestBeatAudioAccessAction({
           beatId: id,
           purpose: PUBLIC_PLAYBACK_PURPOSE,
-        });
+        }).finally(() => setBeatPending(false));
         return resolveStudioBeatSessionSource({
           beatId: id,
           access: result,
@@ -763,6 +767,7 @@ export function StudioTransportProvider({
       timelineLengthMs,
       // A beat or a recording may arrive after the project opened empty.
       audioState: audioState === "no_beat" && hasTimelineAudio ? "idle" : audioState,
+      beatPending,
       error,
       hasBeat: Boolean(beatId),
       hasTimelineAudio,
@@ -798,6 +803,7 @@ export function StudioTransportProvider({
       phase,
       timelineLengthMs,
       audioState,
+      beatPending,
       error,
       beatId,
       hasTimelineAudio,

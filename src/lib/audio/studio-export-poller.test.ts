@@ -436,3 +436,36 @@ describe("Log hygiene — no secrets / URLs", () => {
     expect(read(PKG)).toMatch(/"e3:worker:poll"/);
   });
 });
+
+describe("claim errors", () => {
+  function pollerWithClaims(claim: () => Promise<null>) {
+    const log = vi.fn();
+    const poller = new StudioExportPollerCore({
+      workerRef: "w",
+      claimNext: claim,
+      bake: async () => ({ status: "SUCCEEDED" }),
+      sleep: async () => undefined,
+      log,
+    });
+    return { poller, log };
+  }
+
+  it("survives short network failures and counts only failures in a row", async () => {
+    let n = 0;
+    const { poller, log } = pollerWithClaims(async () => {
+      n += 1;
+      if (n === 12) poller.requestStop();
+      if (n % 5 !== 0 && n < 12) throw new TypeError("fetch failed");
+      return null;
+    });
+    expect(await poller.runUntilStopped()).toBe(0);
+    expect(log.mock.calls.filter(([f]) => f.event === "claim_error")).toHaveLength(9);
+  });
+
+  it("gives up when the failure lasts", async () => {
+    const { poller } = pollerWithClaims(async () => {
+      throw new TypeError("fetch failed");
+    });
+    await expect(poller.runUntilStopped()).rejects.toThrow("fetch failed");
+  });
+});

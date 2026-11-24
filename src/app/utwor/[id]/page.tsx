@@ -77,7 +77,7 @@ export default async function FinishedWorkPage({ params }: Props) {
           </p>
           {clip.state === "ready" ? (
             <div className="mt-4 flex max-w-2xl flex-col gap-2">
-              <BrdAudioDeck src={workClipSrc(work.id)} title={work.title} seed={work.id} testId="work-clip-player" preload="none" />
+              <BrdAudioDeck src={workClipSrc(work.id)} title={work.title} seed={work.id} testId="work-clip-player" preload="none" seconds={clip.seconds} />
               <p className="text-sm text-[var(--brd-ink-soft)]">{t("clipNote", { seconds: clip.seconds })}</p>
             </div>
           ) : (

@@ -905,6 +905,7 @@
       "saving": "Zapisuję…",
       "savedOn": "Zapisane. Profil jest publiczny.",
       "savedOff": "Zapisane. Profil jest wyłączony.",
+      "savedBlocked": "Zapisane. Profil jest wyłączony przez administratora.",
       "failed": "Nie udało się zapisać. Nic się nie zmieniło, spróbuj ponownie.",
       "signedOut": "Sesja wygasła. Zaloguj się ponownie.",
       "limit": "Za dużo zapisów naraz. Odczekaj minutę.",

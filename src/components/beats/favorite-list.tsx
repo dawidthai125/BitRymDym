@@ -35,7 +35,7 @@ export function FavoriteList({ items }: { items: FavoriteBeatCard[] }) {
         <li key={beat.id} className="flex min-h-14 items-center justify-between gap-3 py-3">
           <div className="relative min-w-0 hover:text-[var(--brd-green)]">
             <p className="truncate font-medium">
-              <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0">{beat.title}</Link>
+              <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-current">{beat.title}</Link>
             </p>
             <p className="truncate text-sm text-[var(--brd-mute)]">
               <AuthorName name={beat.producer} href={beat.authorHref} /> · {beat.bpm} BPM

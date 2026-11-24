@@ -4,8 +4,12 @@ vi.mock("server-only", () => ({}));
 vi.mock("react", async (original) => ({ ...(await original<typeof import("react")>()), cache: (fn: unknown) => fn }));
 
 const tags: string[] = [];
+const cacheKeys: string[][] = [];
 vi.mock("next/cache", () => ({
-  unstable_cache: (fn: unknown) => fn,
+  unstable_cache: (fn: unknown, key: string[]) => {
+    cacheKeys.push(key);
+    return fn;
+  },
   revalidateTag: (tag: string) => tags.push(tag),
   revalidatePath: vi.fn(),
 }));
@@ -101,6 +105,10 @@ describe("findCreator", () => {
     expect(await findCreator("42-zolty")).toBeNull();
     expect(queries).toEqual([]);
   });
+  it("a database error is not a missing page", async () => {
+    answers.public_profiles = [{ data: null, error: { code: "57014", message: "timeout" } }];
+    await expect(findCreator(`${ID}-zolty`)).rejects.toThrow("timeout");
+  });
   it("table missing, no key or no row → nothing", async () => {
     answers.public_profiles = [{ data: null, error: MISSING }, { data: null, error: null }];
     expect(await findCreator(`${ID}-zolty`)).toBeNull();
@@ -146,6 +154,22 @@ describe("loadCreatorFacts", () => {
     expect(facts.works).toEqual({ total: 1, items: [{ id: "w1", title: "Mój", clipSeconds: 45 }] });
     expect(facts.places).toEqual([{ kind: "work", period: "week", place: 2, targetId: "w1", title: "Mój" }]);
     expect(JSON.stringify(facts)).not.toContain("owner-");
+  });
+  it("the cache key carries the time, so an old entry is never served", async () => {
+    vi.useFakeTimers();
+    try {
+      cacheKeys.length = 0;
+      for (const at of ["2026-11-24T10:00:05Z", "2026-11-24T10:00:55Z", "2026-11-24T10:01:05Z"]) {
+        vi.setSystemTime(new Date(at));
+        answers.catalog_works = [{ data: null, error: null, count: 3 }];
+        await loadCreatorFacts(view({ trackCount: true }));
+      }
+      const keys = cacheKeys.map((key) => key.join("|"));
+      expect(keys[0]).toBe(keys[1]);
+      expect(keys[2]).not.toBe(keys[0]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it("one broken part does not take the page down", async () => {
     answers.catalog_works = [{ data: null, error: { message: "boom" } }];
@@ -193,7 +217,7 @@ describe("saveOwnProfile", () => {
         expect(payload.public_id).not.toBe("hackedhack");
       } else expect(payload).not.toHaveProperty("owner_id");
     }
-    expect(tags).toEqual(["creator-facts-owner-1"]);
+    expect(tags).toEqual(["creator-facts-owner-1", "creator-ranking-places"]);
   });
   it("settings say off when the table is missing", async () => {
     answers.public_profiles = [{ data: null, error: MISSING }];

@@ -905,6 +905,7 @@
       "saving": "Saving…",
       "savedOn": "Saved. Your profile is public.",
       "savedOff": "Saved. Your profile is off.",
+      "savedBlocked": "Saved. The profile is turned off by an administrator.",
       "failed": "Could not save. Nothing changed, try again.",
       "signedOut": "Your session expired. Sign in again.",
       "limit": "Too many saves at once. Wait a minute.",

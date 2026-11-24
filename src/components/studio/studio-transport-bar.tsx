@@ -199,6 +199,7 @@ export function StudioTransportBar({
     stop,
     seek,
     audioState,
+    beatPending,
     error,
     hasBeat,
     hasTimelineAudio,
@@ -746,7 +747,7 @@ export function StudioTransportBar({
           {tl(statusLabel)}
         </p>
       )}
-      {busy && hasBeat ? <SlowBeatNote /> : null}
+      {busy && beatPending ? <SlowBeatNote /> : null}
       {error ? (
         <p className="mt-0.5 text-xs text-[var(--brd-warn)]" role="alert">
           {tl(error)}

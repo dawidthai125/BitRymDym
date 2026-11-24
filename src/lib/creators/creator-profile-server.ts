@@ -4,7 +4,8 @@ import "server-only";
  * Public creator profile, server side (service_role). public.public_profiles has no policy for
  * anon / authenticated: every read and write goes through here, after the caller checked the session.
  * The profile row is read on every view (one indexed row), so a switch works at once; the lists behind
- * it are cached for a minute. Table missing (migration 20261123220000 not applied) → state "off".
+ * it are cached for a minute. The time is a part of the cache key: unstable_cache alone serves an entry
+ * of any age once and refreshes it afterwards, so a removed item could show days later.
  */
 import { randomBytes } from "node:crypto";
 
@@ -28,7 +29,7 @@ import {
   PROFILE_COLUMNS,
   settingsColumns,
   settingsFromRow,
-  SHARE_KEYS,
+  type ShareKey,
   type CreatorFacts,
   type CreatorPlace,
   type CreatorWorkCard,
@@ -49,6 +50,12 @@ const SITEMAP_MAX = 300;
 
 type Admin = ReturnType<typeof createSupabaseAdminClient>;
 
+const PLACES_TAG = "creator-ranking-places";
+/** Changes every `seconds`; a part of a cache key, so nothing older is served. */
+const timeBucket = (seconds: number) => Math.floor(Date.now() / (seconds * 1000));
+/** PostgREST: the table is not there (a database without the migration). */
+const TABLE_MISSING = new Set(["PGRST205", "42P01"]);
+
 const factsTag = (ownerId: string) => `creator-facts-${ownerId}`;
 
 function adminOrNull(): Admin | null {
@@ -64,6 +71,7 @@ export function revalidateCreatorFacts(ownerId: string): void {
   forgetCreatorHref(ownerId);
   try {
     revalidateTag(factsTag(ownerId), { expire: 0 });
+    revalidateTag(PLACES_TAG, { expire: 0 });
   } catch {
     // Outside a request: the minute-long cache runs out by itself.
   }
@@ -190,24 +198,27 @@ export function creatorView(row: ProfileRow, owner: OwnerRow): CreatorView | nul
   };
 }
 
-/** One profile per request (metadata + page). Also returns a profile that is off: the page decides. */
+/**
+ * One profile per request (metadata + page). Also returns a profile that is off: the page decides.
+ * Null only when there is no such profile: a database error throws, so it is never served as a 404.
+ */
 export const findCreator = cache(async function findCreator(slug: string): Promise<CreatorView | null> {
   const publicId = publicIdFromSlug(slug);
   const admin = publicId ? adminOrNull() : null;
   if (!publicId || !admin) return null;
-  try {
-    const loaded = await admin
-      .from(TABLE)
-      .select(`${PROFILE_COLUMNS}, profiles!inner(display_name, experience_total, created_at, role)`)
-      .eq("public_id", publicId)
-      .maybeSingle();
-    if (loaded.error || !loaded.data) return null;
-    const row = loaded.data as unknown as ProfileRow & { profiles: OwnerRow | OwnerRow[] };
-    const owner = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-    return owner ? creatorView(row, owner) : null;
-  } catch {
-    return null;
+  const loaded = await admin
+    .from(TABLE)
+    .select(`${PROFILE_COLUMNS}, profiles!inner(display_name, experience_total, created_at, role)`)
+    .eq("public_id", publicId)
+    .maybeSingle();
+  if (loaded.error) {
+    if (TABLE_MISSING.has(loaded.error.code)) return null;
+    throw new Error(`[creator-profile] ${loaded.error.message}`);
   }
+  if (!loaded.data) return null;
+  const row = loaded.data as unknown as ProfileRow & { profiles: OwnerRow | OwnerRow[] };
+  const owner = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+  return owner ? creatorView(row, owner) : null;
 });
 
 export type PublicCreatorFacts = CreatorFacts<PresentedBeat, PublicSampleCard>;
@@ -292,9 +303,10 @@ async function countFinishedSongs(admin: Admin, ownerId: string): Promise<number
   return new Set(((loaded.data ?? []) as { project_id: string }[]).map((row) => row.project_id)).size;
 }
 
-/** Places on every board, computed once for the whole site (not per profile). */
+/** Places on every board, computed once for the whole site (not per profile). The argument is the time bucket. */
 const loadAllPlaces = unstable_cache(
-  async (): Promise<Array<CreatorPlace & { ownerId: string }>> => {
+  async (bucket: number): Promise<Array<CreatorPlace & { ownerId: string }>> => {
+    void bucket;
     const boards = await Promise.all([
       readWorkPlaces("week").then((rows) => rows.map((row) => ({ ...row, kind: "work" as const, period: "week" as const }))),
       readWorkPlaces("month").then((rows) => rows.map((row) => ({ ...row, kind: "work" as const, period: "month" as const }))),
@@ -306,12 +318,12 @@ const loadAllPlaces = unstable_cache(
     ]);
     return boards.flat();
   },
-  ["creator-ranking-places"],
-  { revalidate: PLACES_SECONDS, tags: ["creator-ranking-places"] },
+  [PLACES_TAG],
+  { revalidate: PLACES_SECONDS, tags: [PLACES_TAG] },
 );
 
 async function loadPlaces(ownerId: string): Promise<CreatorPlace[]> {
-  return (await loadAllPlaces())
+  return (await loadAllPlaces(timeBucket(PLACES_SECONDS)))
     .filter((row) => row.ownerId === ownerId)
     .sort((a, b) => a.place - b.place)
     .slice(0, LIST_MAX)
@@ -321,28 +333,27 @@ async function loadPlaces(ownerId: string): Promise<CreatorPlace[]> {
 /** Once per request. Only what is switched on is read, and `filterFacts` drops anything else before it is returned. */
 export const loadCreatorFacts = cache(async function loadCreatorFacts(view: CreatorView): Promise<PublicCreatorFacts> {
   const { ownerId, share } = view;
-  const on = SHARE_KEYS.filter((key) => share[key]);
+  const bucket = String(timeBucket(FACTS_SECONDS));
+  // Each part is cached on its own and throws inside the cache, so a failed read is never stored as "nothing".
+  const part = <T>(key: ShareKey, read: () => Promise<T>): Promise<T | null> | null =>
+    share[key]
+      ? soft(unstable_cache(read, ["creator-facts", ownerId, key, bucket], { revalidate: FACTS_SECONDS, tags: [factsTag(ownerId)] })())
+      : null;
   try {
-    const load = unstable_cache(
-      async (): Promise<PublicCreatorFacts> => {
-        const admin = createSupabaseAdminClient();
-        const [trackCount, recordingCount, beats, samples, works] = await Promise.all([
-          share.trackCount ? soft(countWorks(admin, ownerId)) : null,
-          share.recordingCount ? soft(countFinishedSongs(admin, ownerId)) : null,
-          share.beats ? soft(loadBeats(admin, ownerId)) : null,
-          share.samples ? soft(loadSamples(ownerId)) : null,
-          share.works ? soft(loadWorks(admin, ownerId)) : null,
-        ]);
-        return { trackCount, recordingCount, beats, samples, works, places: null };
-      },
-      ["creator-facts", ownerId, on.join(",")],
-      { revalidate: FACTS_SECONDS, tags: [factsTag(ownerId)] },
-    );
-    const [facts, places] = await Promise.all([load(), share.rankings ? soft(loadPlaces(ownerId)) : null]);
+    const [trackCount, recordingCount, beats, samples, works, places] = await Promise.all([
+      part("trackCount", () => countWorks(createSupabaseAdminClient(), ownerId)),
+      part("recordingCount", () => countFinishedSongs(createSupabaseAdminClient(), ownerId)),
+      part("beats", () => loadBeats(createSupabaseAdminClient(), ownerId)),
+      part("samples", () => loadSamples(ownerId)),
+      part("works", () => loadWorks(createSupabaseAdminClient(), ownerId)),
+      share.rankings ? soft(loadPlaces(ownerId)) : null,
+    ]);
     const named: PublicCreatorFacts = {
-      ...facts,
-      beats: facts.beats && { ...facts.beats, items: facts.beats.items.map((beat) => ({ ...beat, producer: view.name })) },
-      samples: facts.samples && { ...facts.samples, items: facts.samples.items.map((sample) => ({ ...sample, author: view.name })) },
+      trackCount,
+      recordingCount,
+      beats: beats && { ...beats, items: beats.items.map((beat) => ({ ...beat, producer: view.name })) },
+      samples: samples && { ...samples, items: samples.items.map((sample) => ({ ...sample, author: view.name })) },
+      works,
       places,
     };
     return filterFacts(named, share);

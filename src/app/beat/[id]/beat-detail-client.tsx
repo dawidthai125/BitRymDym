@@ -421,7 +421,7 @@ export function BeatDetailClient({
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">
-                      <Link href={`/beat/${r.id}`} className="after:absolute after:inset-0">{tl(r.title)}</Link>
+                      <Link href={`/beat/${r.id}`} className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-current">{tl(r.title)}</Link>
                     </p>
                     <p className="truncate text-sm text-[var(--brd-mute)]">
                       <AuthorName name={tl(r.producer)} href={r.authorHref} /> {t("tempo2")}{" "}{r.bpm}

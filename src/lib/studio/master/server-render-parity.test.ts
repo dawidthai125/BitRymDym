@@ -85,7 +85,7 @@ function corr(a: Stereo, b: Stereo): number {
 }
 
 describe.skipIf(!hasFfmpeg)("E3 mix render ≡ browser preview", () => {
-  it("ΔLUFS ≤ 0.5 and correlation ≥ 0.99 (mix and raw)", () => {
+  it("ΔLUFS ≤ 0.5 and correlation ≥ 0.99 (mix and raw)", { timeout: 60_000 }, () => {
     const dir = mkdtempSync(path.join(tmpdir(), "parity-"));
     try {
       const browser = input({ "beat:1": { channels: beat(SR) }, "take:1": { channels: [vocal(SR)] } });

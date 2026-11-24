@@ -256,8 +256,13 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
     const spec = currentSpec();
     const wantsBeat = mode === "beat" && beatInEars && beat !== null && usesClock;
     if (e.ctx.state === "suspended") await e.ctx.resume();
+    // Loading the beat can take a while: the input must not be reopened meanwhile (it closes this engine).
+    if (wantsBeat) setStatus("starting");
     const audio = await prepareBeat().catch(() => null);
     if (!mounted.current) return;
+    if (wantsBeat) setStatus("ready");
+    if (engine.current !== e) return;
+    stopPlayback();
     if (wantsBeat && !audio) setError(t("bitNieWczytany"));
     const firstFrameSec = await e.startCapture();
     if (!mounted.current) return;

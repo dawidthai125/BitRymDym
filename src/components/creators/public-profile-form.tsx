@@ -65,7 +65,7 @@ export function PublicProfileForm({
       setPath(result.path);
       setEnabled(result.enabled);
       setBlocked(result.blocked);
-      setNote({ ok: true, text: t(result.enabled ? "savedOn" : "savedOff") });
+      setNote({ ok: true, text: t(result.blocked ? "savedBlocked" : result.enabled ? "savedOn" : "savedOff") });
       return;
     }
     if (result?.code === "LINKS") {

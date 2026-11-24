@@ -59,7 +59,7 @@ import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
 import { StudioVocalSetsCard } from "@/components/studio/studio-vocal-presets";
 import { StudioChangeReport } from "@/components/studio/studio-change-report";
 import { StudioVocalCleanup } from "@/components/studio/studio-vocal-cleanup";
-import { publishPocketMarkers } from "@/lib/studio/mix-analysis/pocket-worklet";
+import { usePocketMarkers } from "@/components/studio/use-pocket-markers";
 
 /** Bitek keeps fixing and re-auditing until nothing is left to fix; these are only safety caps. */
 const MAX_FIX_ROUNDS = 6;
@@ -239,25 +239,7 @@ export function StudioMixStep({
   if (result && result.cleanupSig === null && cleanupSig !== null) setResult({ ...result, cleanupSig });
 
   useEffect(() => () => abortRef.current?.abort(), []);
-
-  useEffect(() => {
-    try {
-      const markers = (doc.markers ?? []).filter((m) => m.kind === "verse" || m.kind === "hook");
-      publishPocketMarkers(markers);
-    } catch {
-      /* marker publish must not break the mix step */
-    }
-  }, [doc.markers]);
-
-  useEffect(() => {
-    return () => {
-      try {
-        publishPocketMarkers([]);
-      } catch {
-        /* unmount stays quiet */
-      }
-    };
-  }, []);
+  usePocketMarkers(doc.markers);
 
   // Stage 2 — auto-fix state
   const [fixing, setFixing] = useState<string | null>(null);

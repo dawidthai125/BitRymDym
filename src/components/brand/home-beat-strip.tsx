@@ -107,7 +107,7 @@ function HomeBeatRow({
               featured ? "text-lg sm:text-xl" : "text-base sm:text-lg",
             )}
           >
-            <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0">
+            <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-current">
               {tl(beat.title)}
             </Link>
           </p>

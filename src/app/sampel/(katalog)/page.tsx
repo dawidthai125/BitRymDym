@@ -62,7 +62,7 @@ export default async function SampleCatalogPage({
               <div className="relative flex min-w-0 flex-1 flex-col gap-1 rounded-xl border border-[var(--brd-amber)] bg-[var(--brd-amber)]/10 px-4 py-3"
               >
                 <span className="text-xs uppercase tracking-wide text-[var(--brd-amber)]">{ts("tygodnia")}</span>
-                <a href={`#${bestItem.id}`} className="truncate text-base text-[var(--brd-ink)] after:absolute after:inset-0">
+                <a href={`#${bestItem.id}`} className="truncate text-base text-[var(--brd-ink)] after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-current">
                   #{String(bestItem.no).padStart(2, "0")} {bestItem.title}
                 </a>
                 <span className="text-xs text-[var(--brd-mute)]">

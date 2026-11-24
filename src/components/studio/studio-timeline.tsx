@@ -20,6 +20,7 @@ import {
   useStudioTransportControls,
   useStudioTransportPlayhead,
 } from "@/components/studio/studio-transport-provider";
+import { usePocketMarkers } from "@/components/studio/use-pocket-markers";
 import { useLibText } from "@/i18n/use-lib-text";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { studioMarkerKindLabelPl, type StudioMarkerDto } from "@/lib/studio/studio-markers-state";
@@ -288,6 +289,7 @@ export function StudioTimeline({
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
+  usePocketMarkers(markers);
   const { loopEnabled, loopStartMs, loopEndMs } = useStudioTransportControls();
   const loop = useMemo(
     () => (loopEnabled ? { startMs: loopStartMs, endMs: loopEndMs } : null),

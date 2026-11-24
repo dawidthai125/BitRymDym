@@ -49,7 +49,8 @@ function listFiles(configFile: string): string[] {
   return parsed.map((entry) => relativeTestPath(entry.file));
 }
 
-describe("MP3 suite selection", () => {
+// Each case starts a separate Vitest process: 5 s is too little on a loaded machine.
+describe("MP3 suite selection", { timeout: 60_000 }, () => {
   it("default Vitest file list omits MP3 encode files and keeps QC rejects", () => {
     const exclude = (defaultConfig.test?.exclude ?? []).map((file) =>
       normalize(String(file)),

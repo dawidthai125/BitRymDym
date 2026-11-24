@@ -85,7 +85,7 @@ function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
       {/* The title link covers the block; the author's name is a link of its own. */}
       <div className="relative min-w-0">
         <span className="block truncate font-poster text-xl font-bold uppercase leading-none tracking-[0.02em] text-tape-cream sm:text-2xl">
-          <Link href={`/beat/${beat.id}`} className="tape-focus underline-offset-4 after:absolute after:inset-0 hover:underline">
+          <Link href={`/beat/${beat.id}`} className="tape-focus underline-offset-4 after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-current hover:underline">
             {tl(beat.title)}
           </Link>
         </span>

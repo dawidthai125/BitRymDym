@@ -28,13 +28,15 @@ type BrdAudioDeckProps = {
   preload?: "none" | "metadata";
   /** The address expired (signed link): give a fresh one and playback goes on from the same place. */
   onRefreshSrc?: () => Promise<string | null>;
+  /** Known length, shown until the file itself says it (preload "none"). Seeking still waits for the file. */
+  seconds?: number | null;
 };
 
 /**
  * BitRymDym listen deck for a URL we already hold (share link, finished master).
  * Hidden engine, no native controls, no download.
  */
-export function BrdAudioDeck({ src, title, testId, seed, className, preload = "metadata", onRefreshSrc }: BrdAudioDeckProps) {
+export function BrdAudioDeck({ src, title, testId, seed, className, preload = "metadata", onRefreshSrc, seconds }: BrdAudioDeckProps) {
   const tl = useLibText();
   const t = useTranslations("common.playbackShell");
   const labelId = useId();
@@ -213,7 +215,7 @@ export function BrdAudioDeck({ src, title, testId, seed, className, preload = "m
         <p id={labelId} className="brd-display min-w-0 truncate text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
           {tl(title)}
         </p>
-        <BrdAudioTime current={state.currentTime} total={duration} format={formatDurationSeconds} className="text-xs" />
+        <BrdAudioTime current={state.currentTime} total={duration || (seconds ?? 0)} format={formatDurationSeconds} className="text-xs" />
       </div>
       <audio ref={audioRef} preload={preload} className="hidden" />
       <Waveform

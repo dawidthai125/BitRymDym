@@ -1,7 +1,7 @@
 /**
  * Stage 1 — pure offline render of Studio tracks for analysis.
- * Mirrors the engine mix path (clip gain + linear fades → track gain →
- * track FX → StereoPanner law → master FX → master gain/pan).
+ * Mirrors the engine mix path (clip gain + linear fades → track FX → track gain →
+ * StereoPanner law → master FX → master gain/pan).
  * Stage 2: track/master FX chains are rendered with the SAME offline DSP as
  * the E3 render (studio-offline-fx), so re-analysis after BITEK fixes
  * reflects the processed sound. Unsupported chains fall back to dry.
@@ -112,9 +112,23 @@ export type RenderedTrack = {
   /** Sample ranges [start, end) covered by unmuted clips. */
   activeRanges: Array<[number, number]>;
   audible: boolean;
+  /** Every file on the track has one channel: the first two-channel insert raises it by 3 dB (pan law). */
+  monoSource: boolean;
 };
 
 const dbToLin = (db: number) => (Number.isFinite(db) ? Math.pow(10, db / 20) : 1);
+
+/**
+ * Inserts whose live nodes output two channels even for a mono file: worklets (outputChannelCount 2),
+ * the DynamicsCompressor (always stereo in browsers) and the reverb. The slot stays wired when it is
+ * switched off, so the switch does not matter. After one of them the panner uses its stereo law.
+ */
+const TWO_CHANNEL_FX = new Set(["gate", "tune", "rider", "voice", "harmony", "pocket", "compressor", "limiter", "deesser", "reverb"]);
+
+export function chainOutputsStereo(raw: unknown): boolean {
+  const effects = (raw as { effects?: unknown } | null | undefined)?.effects;
+  return Array.isArray(effects) && effects.some((e) => TWO_CHANNEL_FX.has(String((e as { type?: unknown } | null)?.type)));
+}
 
 /** Web Audio StereoPannerNode law (spec, equal power). */
 export function stereoPan(
@@ -247,7 +261,7 @@ function clipPcm(input: MixAnalysisInput, clip: MixAnalysisClip): ClipPcm | null
   return { c0, c1, mono, indexAt, available: Infinity };
 }
 
-/** Overlap-add is inside renderMidiNotes. Gain here; pan now or later (FX path pans the whole bus). */
+/** Overlap-add is inside renderMidiNotes. Gain and pan now, or both later (the FX path does them on the whole bus). */
 function addRenderedMidi(
   input: MixAnalysisInput,
   track: MixAnalysisTrack,
@@ -266,6 +280,7 @@ function addRenderedMidi(
     durationMs: input.lengthMs,
     bank: input.acousticBank,
   });
+  const mono = !chainOutputsStereo(track.effectsChain);
   const nMax = Math.min(left.length, right.length, pcm.length);
   let start = -1;
   let end = 0;
@@ -274,14 +289,14 @@ function addRenderedMidi(
     if (s === 0) continue;
     if (start < 0) start = n;
     end = n + 1;
-    const g = s * strip.gainAt(n);
     if (panNow) {
-      const [pl, pr] = stereoPan(g, g, true, strip.panAt(n));
+      const g = s * strip.gainAt(n);
+      const [pl, pr] = stereoPan(g, g, mono, strip.panAt(n));
       left[n] += pl;
       right[n] += pr;
     } else {
-      left[n] += g;
-      right[n] += g;
+      left[n] += s;
+      right[n] += s;
     }
   }
   if (start >= 0) activeRanges.push([start, end]);
@@ -297,11 +312,14 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
   const strip = trackStrip(track, sr);
   const fx = analysisFxChain(track.effectsChain, "track", sr);
   if (fx) return renderTrackWithFx(input, track, audible, strip, fx);
+  const stereoStrip = chainOutputsStereo(track.effectsChain);
+  let allMono = true;
   for (const clip of input.clips) {
     if (clip.trackId !== track.id || clip.muted || clip.durationMs < 1) continue;
     const pcm = clipPcm(input, clip);
     if (!pcm) continue;
     const { c0, c1, mono, indexAt } = pcm;
+    if (!mono) allMono = false;
     const start = Math.round((clip.timelineStartMs / 1000) * sr);
     const dur = Math.round((clip.durationMs / 1000) * sr);
     const fi = Math.round((Math.max(0, clip.fadeInMs) / 1000) * sr);
@@ -320,17 +338,17 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
       let g = cg * strip.gainAt(n);
       if (fi > 0 && k < fi) g *= k / fi;
       if (fo > 0 && dur - k <= fo) g *= Math.max(0, (dur - k) / fo);
-      const [pl, pr] = stereoPan(c0[si] * g, c1[si] * g, mono, strip.panAt(n));
+      const [pl, pr] = stereoPan(c0[si] * g, c1[si] * g, mono && !stereoStrip, strip.panAt(n));
       left[n] += pl;
       right[n] += pr;
     }
     if (first >= 0) activeRanges.push([first, last + 1]);
   }
   addRenderedMidi(input, track, left, right, activeRanges, strip, true);
-  return { track, left, right, activeRanges, audible };
+  return { track, left, right, activeRanges, audible, monoSource: allMono };
 }
 
-/** gain → FX (unpanned stereo) → pan, matching the live track strip. */
+/** FX (unpanned stereo) → gain → pan, matching the live track strip and the WAV export. */
 function renderTrackWithFx(
   input: MixAnalysisInput,
   track: MixAnalysisTrack,
@@ -365,7 +383,7 @@ function renderTrackWithFx(
       if (si < 0 || si >= c0.length) continue;
       if (first < 0) first = n;
       last = n;
-      let g = cg * strip.gainAt(n);
+      let g = cg;
       if (fi > 0 && k < fi) g *= k / fi;
       if (fo > 0 && dur - k <= fo) g *= Math.max(0, (dur - k) / fo);
       left[n] += c0[si] * g;
@@ -375,21 +393,20 @@ function renderTrackWithFx(
   }
   addRenderedMidi(input, track, left, right, activeRanges, strip, false);
   if (activeRanges.length > 0) applyFxInPlace(fx, left, right);
-  // Reverb (stereo IR) turns a mono strip stereo before the panner.
-  const stereoFx = fx.processors.some((p) => p.type === "reverb" && p.status === "IMPLEMENTED");
-  const mono = allMono && !stereoFx;
+  const mono = allMono && !chainOutputsStereo(track.effectsChain);
   if (strip.automated) {
-    // Pan automation after the FX: per-sample pan, same law as stereoPan.
+    // Gain and pan automation after the FX: per sample, same law as stereoPan.
     const len2 = Math.min(left.length, right.length);
     for (let n = 0; n < len2; n++) {
-      const [pl, pr] = stereoPan(left[n], right[n], mono, strip.panAt(n));
+      const g = strip.gainAt(n);
+      const [pl, pr] = stereoPan(left[n] * g, right[n] * g, mono, strip.panAt(n));
       left[n] = pl;
       right[n] = pr;
     }
   } else {
-    stereoPanBuffer(left, right, mono, track.pan);
+    stereoPanBuffer(left, right, mono, track.pan, dbToLin(track.gainDb));
   }
-  return { track, left, right, activeRanges, audible };
+  return { track, left, right, activeRanges, audible, monoSource: allMono };
 }
 
 export function renderAllTracks(input: MixAnalysisInput): RenderedTrack[] {

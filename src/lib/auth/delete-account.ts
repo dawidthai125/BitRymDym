@@ -43,9 +43,9 @@ export async function executeAccountProfile01Deletion(
   const admin = createSupabaseAdminClient();
 
   try {
-    // The public profile disappears first, whatever happens later. The row would also go with the
-    // account (on delete cascade), so an error here (table not there yet) does not stop the deletion.
-    await admin.from("public_profiles").delete().eq("owner_id", userId);
+    // The public profile goes dark first, whatever happens later. The row goes with the account (on delete
+    // cascade). Not deleted here: a deletion that stops half-way must not lose the settings or the admin block.
+    await admin.from("public_profiles").update({ enabled: false }).eq("owner_id", userId);
 
     const { data: ownedBeats, error: beatsErr } = await admin
       .from("beats")

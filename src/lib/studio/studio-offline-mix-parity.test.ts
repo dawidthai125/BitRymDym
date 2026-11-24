@@ -33,13 +33,15 @@ function pcm(channels: Float32Array[]): DecodedPcmStereo {
   return { sampleRate: SR, channels: 2, interleaved, frames: N, ...(channels.length === 1 ? { mono: true } : {}) };
 }
 
-type Case = { vocal: Float32Array[]; pan?: number; fx?: StudioFxType; beat?: boolean; masterPan?: number; markers?: { kind: "verse" | "hook"; positionMs: number }[] };
+type Case = { vocal: Float32Array[]; pan?: number; fx?: StudioFxType; beat?: boolean; masterPan?: number; gainDb?: number; off?: boolean; markers?: { kind: "verse" | "hook"; positionMs: number }[] };
 
 async function both(c: Case) {
-  const effectsChain = c.fx ? chain(c.fx) : { schemaVersion: 1 as const, effects: [] };
+  const inserted = c.fx ? chain(c.fx) : null;
+  if (inserted && c.off) inserted.effects[0]!.enabled = false;
+  const effectsChain = inserted ?? { schemaVersion: 1 as const, effects: [] };
   const clipBase = { sourceOffsetMs: 0, timelineStartMs: 0, durationMs: MS, gainDb: 0, muted: false, fadeInMs: 0, fadeOutMs: 0 };
   const strip = { gainDb: 0, muted: false, solo: false };
-  const vocal = { id: "v", name: "V", trackRole: "lead_vocal", trackType: "VOCAL", pan: c.pan ?? 0, effectsChain, ...strip };
+  const vocal = { id: "v", name: "V", trackRole: "lead_vocal", trackType: "VOCAL", pan: c.pan ?? 0, effectsChain, ...strip, gainDb: c.gainDb ?? 0 };
   const beat = { id: "b", name: "B", trackRole: "beat", trackType: "BEAT", pan: 0, effectsChain: { schemaVersion: 1, effects: [] }, ...strip };
   const tracks = c.beat ? [vocal, beat] : [vocal];
   const doc = {
@@ -57,7 +59,7 @@ async function both(c: Case) {
   });
   const mix = renderMixStereo({
     sampleRate: SR, lengthMs: MS, masterGainDb: 0, masterPan: c.masterPan ?? 0, markers: c.markers ?? [],
-    tracks: tracks.map((t) => ({ id: t.id, name: t.name, role: t.trackRole, trackType: t.trackType, gainDb: 0, pan: t.pan, muted: false, solo: false, effectsChain: t.effectsChain })),
+    tracks: tracks.map((t) => ({ id: t.id, name: t.name, role: t.trackRole, trackType: t.trackType, gainDb: t.gainDb, pan: t.pan, muted: false, solo: false, effectsChain: t.effectsChain })),
     clips: [{ ...clipBase, trackId: "v", sourceKey: "take" }, ...(c.beat ? [{ ...clipBase, trackId: "b", sourceKey: "beat" }] : [])],
     sources: { take: { channels: c.vocal }, beat: { channels: BEAT } },
   } as unknown as MixAnalysisInput);
@@ -94,6 +96,26 @@ describe("WAV export matches the mix render", () => {
 
   it("mono file through a reverb becomes stereo before the panner", async () => {
     await expectSame({ vocal: MONO, pan: 0.5, fx: "reverb" });
+  });
+
+  it("the fader sits after the inserts: a compressor hears the same signal at every fader", async () => {
+    const level = async (gainDb: number) => {
+      const { out } = await expectSame({ vocal: MONO, fx: "compressor", gainDb });
+      return rmsDb((i) => out[i * 2]!, SR / 10, N);
+    };
+    const zero = await level(0);
+    expect((await level(12)) - zero).toBeCloseTo(12, 1);
+    expect((await level(-12)) - zero).toBeCloseTo(-12, 1);
+    await expectSame({ vocal: STEREO, fx: "compressor", gainDb: 9, pan: 0.4 });
+  });
+
+  it("mono file after a two-channel insert: the stereo pan law, also when the insert is switched off", async () => {
+    for (const fx of ["compressor", "gate", "deesser"] as const) {
+      await expectSame({ vocal: MONO, fx });
+      await expectSame({ vocal: MONO, fx, pan: -0.7 });
+    }
+    const { out } = await expectSame({ vocal: MONO, fx: "compressor", off: true });
+    expect(rmsDb((i) => out[i * 2]!, SR / 10, N / 2) - rmsDb((i) => MONO[0]![i]!, SR / 10, N / 2)).toBeCloseTo(0, 1);
   });
 
   it("stereo file: unity at centre, equal power when panned, master pan too", async () => {

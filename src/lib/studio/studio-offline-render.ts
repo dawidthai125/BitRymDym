@@ -38,7 +38,7 @@ import {
   pocketSpans,
   readPocketParams,
 } from "@/lib/studio/mix-analysis/rap-pocket";
-import { stereoPan } from "@/lib/studio/mix-analysis/render";
+import { chainOutputsStereo, stereoPan } from "@/lib/studio/mix-analysis/render";
 import {
   isSidechainKey,
   SIDECHAIN_BLOCK_SEC,
@@ -130,11 +130,11 @@ export const STUDIO_OFFLINE_RENDER_MAX_OUTPUT_BYTES =
 
 /**
  * Default max **total** PCM bytes = output + cached source buffers.
- * Justification (SFM-2.1 bench): full 180s × 2 sources + output ≈ 190 MiB PCM;
- * RSS peaked ~260 MiB on win32/node — budget 256 MiB for PCM plane only.
+ * A 6-minute song is 127 MB of output and 127 MB for the beat alone; 256 MiB left room for 40 s of
+ * vocals. The export worker is allowed 6 GiB and renders one job at a time.
  * Callers may lower via `maxTotalPcmBytes`.
  */
-export const STUDIO_OFFLINE_RENDER_MAX_TOTAL_PCM_BYTES = 256 * 1024 * 1024;
+export const STUDIO_OFFLINE_RENDER_MAX_TOTAL_PCM_BYTES = 1536 * 1024 * 1024;
 
 /** Injectable PCM — caller owns AuthZ / decode; renderer never fetches Storage. */
 export type StudioOfflinePcmSourceKey =
@@ -620,6 +620,8 @@ export async function renderStudioDocumentOffline(
   }
 
   const playbackPcm = new Map<string, DecodedPcmStereo>();
+  /** One bake per source and setting: a looped or cut beat reuses it. Counted like the sources. */
+  const bakes = new Map<string, DecodedPcmStereo>();
   for (const clip of document.clips) {
     const playback = clampClipPlayback({
       stretch: clip.stretchRatio ?? 1,
@@ -630,16 +632,25 @@ export async function renderStudioDocumentOffline(
     if (!key) continue;
     const pcm = pcmCache.get(sourceCacheKey(key));
     if (!pcm) continue;
-    const baked = renderClipPlaybackStereo(
-      { frames: pcm.frames, interleaved: pcm.interleaved },
-      playback,
-    );
-    playbackPcm.set(clip.id, {
-      sampleRate: pcm.sampleRate,
-      channels: 2,
-      frames: baked.frames,
-      interleaved: baked.interleaved,
-    });
+    const bakeKey = `${sourceCacheKey(key)}|${playback.stretch}|${playback.pitchCents}`;
+    let baked = bakes.get(bakeKey);
+    if (!baked) {
+      const shaped = renderClipPlaybackStereo(
+        { frames: pcm.frames, interleaved: pcm.interleaved },
+        playback,
+      );
+      baked = { sampleRate: pcm.sampleRate, channels: 2, frames: shaped.frames, interleaved: shaped.interleaved };
+      const bakeBytes = checkedPcmBytes(baked.frames, baked.channels);
+      if (outputBytes + fxStateBytes + midiBytes + cachedSourcesBytes + bakeBytes > maxTotalPcmBytes) {
+        throw new StudioOfflineRenderError(
+          "STUDIO_RENDER_MEMORY_CAP",
+          `Total PCM ${outputBytes + fxStateBytes + midiBytes + cachedSourcesBytes + bakeBytes} bytes exceeds maxTotalPcmBytes ${maxTotalPcmBytes}.`,
+        );
+      }
+      cachedSourcesBytes += bakeBytes;
+      bakes.set(bakeKey, baked);
+    }
+    playbackPcm.set(clip.id, baked);
   }
 
   // Allocate output only after duration + memory + FX gates.
@@ -661,10 +672,11 @@ export async function renderStudioDocumentOffline(
   const monoClipIds = new Set(document.clips.filter(isMonoClip).map((c) => c.id));
   // With inserts the whole strip is one or two channels, as in the master (renderTrackWithFx).
   const monoStrip = document.tracks.map((track) => {
-    const fx = trackFx.get(track.id);
-    if (!fx || fx.processors.some((p) => p.type === "reverb" && p.status === "IMPLEMENTED")) return false;
+    if (!trackFx.get(track.id) || chainOutputsStereo(track.effectsChain)) return false;
     return document.clips.every((c) => c.trackId !== track.id || c.muted || c.durationMs < 1 || monoClipIds.has(c.id));
   });
+  // A chain that is only switched off still hands the panner two channels.
+  const stereoStrip = new Set(document.tracks.filter((track) => chainOutputsStereo(track.effectsChain)).map((track) => track.id));
   // Rap pocket: same steps as applyRapPocket in the master, streamed.
   const hasSound = (track: (typeof document.tracks)[number]) =>
     trackGraphParams(track, anySolo).gain > 0 &&
@@ -815,7 +827,7 @@ export async function renderStudioDocumentOffline(
         : voice.effectiveClipGain;
       const ti = trackIndex.get(voice.trackId);
       if (ti === undefined) continue;
-      if (!trackFx.get(voice.trackId) && monoClipIds.has(voice.clipId)) {
+      if (!trackFx.get(voice.trackId) && !stereoStrip.has(voice.trackId) && monoClipIds.has(voice.clipId)) {
         busM[ti]! += sample.left * clipGain;
       } else {
         busL[ti]! += sample.left * clipGain;
@@ -840,6 +852,9 @@ export async function renderStudioDocumentOffline(
           tl = wet.left;
           tr = wet.right;
         }
+      } else if (stereoStrip.has(track.id)) {
+        tl += midiSample;
+        tr += midiSample;
       } else {
         mono += midiSample;
       }

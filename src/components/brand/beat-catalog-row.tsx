@@ -161,7 +161,7 @@ export function BeatCatalogRow({
                 : "text-xl leading-none",
             )}
           >
-            <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0">
+            <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-current">
               {tl(beat.title)}
             </Link>
           </h2>
@@ -231,7 +231,7 @@ export function BeatCatalogRow({
               </p>
             ) : null}
             <h2 className="brd-display truncate text-lg font-semibold leading-none">
-              <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0">
+              <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-current">
                 {tl(beat.title)}
               </Link>
             </h2>

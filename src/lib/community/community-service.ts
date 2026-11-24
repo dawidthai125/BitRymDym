@@ -231,15 +231,14 @@ type SampleRow = {
   in_rankings?: boolean;
 };
 
-async function loadPublishedSampleRows(ownerId?: string): Promise<SampleRow[]> {
+const SAMPLE_COLUMNS =
+  "id, owner_id, title, kind, instrument, duration_ms, public_listing, allow_ratings, allow_comments, in_rankings";
+
+async function loadPublishedSampleRows(id?: string): Promise<SampleRow[]> {
   const admin = adminOrNull();
   if (!admin) return [];
-  let query = admin
-    .from("studio_samples")
-    .select("id, owner_id, title, kind, instrument, duration_ms, public_listing, allow_ratings, allow_comments, in_rankings")
-    .eq("status", "PUBLISHED")
-    .eq("public_listing", true);
-  if (ownerId) query = query.eq("owner_id", ownerId);
+  let query = admin.from("studio_samples").select(SAMPLE_COLUMNS).eq("status", "PUBLISHED").eq("public_listing", true);
+  if (id) query = query.eq("id", id);
   const loaded = await query
     .order("created_at", { ascending: false })
     .limit(200);
@@ -247,8 +246,8 @@ async function loadPublishedSampleRows(ownerId?: string): Promise<SampleRow[]> {
   return (loaded.data ?? []) as SampleRow[];
 }
 
-async function publishedSamples(): Promise<Work[]> {
-  const rows = await loadPublishedSampleRows();
+async function publishedSamples(id?: string): Promise<Work[]> {
+  const rows = await loadPublishedSampleRows(id);
   const owners = rows.map((row) => row.owner_id);
   const [names, platform, creators] = await Promise.all([authorNames(owners), platformSampleOwners(owners), loadCreatorIds(owners)]);
   return rows.map((row) => {
@@ -282,13 +281,25 @@ export async function listPublicSamples(source: CatalogSource): Promise<PublicSa
 /**
  * One creator's samples in the public catalogue, newest first (public profile). Not for admin
  * accounts: their samples are the BitRymDym pack. No request data is read, so it can be cached.
+ * Throws when the read fails: "none" must not be cached by mistake.
  */
 export async function listOwnerPublicSamples(
   ownerId: string,
   limit: number,
 ): Promise<{ total: number; samples: PublicSampleCard[] }> {
-  const rows = await loadPublishedSampleRows(ownerId);
-  const works: Work[] = rows.slice(0, limit).map((row) => ({
+  const admin = adminOrNull();
+  if (!admin) throw new Error("samples: no database access");
+  const loaded = await admin
+    .from("studio_samples")
+    .select(SAMPLE_COLUMNS, { count: "exact" })
+    .eq("status", "PUBLISHED")
+    .eq("public_listing", true)
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (loaded.error) throw new Error(loaded.error.message);
+  const rows = (loaded.data ?? []) as SampleRow[];
+  const works: Work[] = rows.map((row) => ({
     id: row.id,
     title: row.title,
     ownerId: row.owner_id,
@@ -301,7 +312,7 @@ export async function listOwnerPublicSamples(
     instrument: row.instrument,
     durationMs: Number(row.duration_ms),
   }));
-  return { total: rows.length, samples: await sampleCards(works) };
+  return { total: loaded.count ?? rows.length, samples: await sampleCards(works) };
 }
 
 async function sampleCards(works: readonly Work[]): Promise<PublicSampleCard[]> {
@@ -343,7 +354,9 @@ export async function findPublicSample(
     const sample = siblings.find((s) => s.id === id);
     if (sample) return { sample, siblings };
   }
-  return null;
+  // Older than the newest 200 of the list: still a public sample with its own page.
+  const [older] = await sampleCards(await publishedSamples(id));
+  return older ? { sample: older, siblings: [older] } : null;
 }
 
 export type SampleRatingStats = { avg: number | null; count: number; weekAvg: number | null; weekCount: number };

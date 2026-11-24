@@ -13,6 +13,9 @@ export const STUDIO_EXPORT_POLLER_SHUTDOWN_GRACE_MS = 200_000;
 
 export const STUDIO_EXPORT_POLLER_DEFAULT_POLL_MS = 2_000;
 
+/** A short network blip must not kill the process; a lasting failure still does (systemd restarts it). */
+export const STUDIO_EXPORT_POLLER_MAX_CLAIM_ERRORS = 5;
+
 export type StudioExportPollerJob = {
   id: string;
   kind: string;
@@ -243,9 +246,22 @@ export class StudioExportPollerCore {
   }
 
   async runUntilStopped(): Promise<number> {
+    let claimErrors = 0;
     while (!this.stopping) {
       if (!this.busy) {
-        await this.runTick({ awaitBake: false });
+        try {
+          await this.runTick({ awaitBake: false });
+          claimErrors = 0;
+        } catch (err) {
+          claimErrors += 1;
+          if (claimErrors >= STUDIO_EXPORT_POLLER_MAX_CLAIM_ERRORS) throw err;
+          this.log({
+            event: "claim_error",
+            workerRef: this.workerRef,
+            errorCode: "CLAIM",
+            busy: false,
+          });
+        }
       }
       if (this.stopping) break;
       await this.sleep(this.pollMs);

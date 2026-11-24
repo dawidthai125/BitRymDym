@@ -361,9 +361,15 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     for (const op of p.ops) {
       if (op.op === "set_track_fx") parseStudioFxChainForWrite(op.effectsChain, { role: "track" });
     }
-    // Same metrics on the fixed doc → FX params identical, no FX ops.
+    // The fixed doc measured again (levels moved with the faders) → FX params identical, no FX ops.
     const after = applyMixOpsToDocument(d, p.ops);
-    const again = plan(["eq", "deesser", "denoise", "space"], after);
+    const m = badMetrics();
+    for (const t of m.tracks) {
+      const by = after.tracks.find((x) => x.id === t.trackId)!.gainDb - d.tracks.find((x) => x.id === t.trackId)!.gainDb;
+      t.integratedLufs += by;
+      if (t.noiseFloorDbfs !== null) t.noiseFloorDbfs += by;
+    }
+    const again = plan(["eq", "deesser", "denoise", "space"], after, m);
     expect(again.ops.filter((o) => o.op === "set_track_fx")).toEqual([]);
   });
 
@@ -483,5 +489,44 @@ describe("upsertFx canonical order", () => {
     const again = upsertFx(both, "highpass", (p) => ({ ...p, frequencyHz: 120 }), id)!;
     expect(again.effects).toHaveLength(2);
     expect((again.effects[0]!.params as { frequencyHz: number }).frequencyHz).toBe(120);
+  });
+});
+
+describe("level moves that the effects do not see (effects run before the fader)", () => {
+  const INST = "00000000-0000-4000-8000-00000000000f";
+  const quiet = (extra: Partial<TrackMetrics> = {}, inst = false): MixMetrics => {
+    const m = badMetrics();
+    m.tracks = [
+      tm(LEAD, "lead_vocal", -30, { samplePeakDbfs: -14, ...extra }),
+      tm(BEAT, "beat", -14, { samplePeakDbfs: -6 }),
+      ...(inst ? [tm(INST, "instrument", -20, { samplePeakDbfs: -12 })] : []),
+    ];
+    m.master = { ...m.master, truePeakDbtp: -6, integratedLufs: -16 };
+    m.vocalVsBeatLu = -16;
+    return m;
+  };
+
+  it("the compressor threshold follows the signal at the effects, not the fader", () => {
+    const at = (gainDb: number) => {
+      const d = doc(120, [track(LEAD, "Wokal", "lead_vocal", { gainDb }), track(BEAT, "Bit", "beat")]);
+      const comp = chainOf(plan(["compression"], d, quiet({ integratedLufs: -30 + gainDb })), LEAD)!.effects.find((e) => e.type === "compressor")!;
+      return (comp.params as { thresholdDb: number }).thresholdDb;
+    };
+    expect(at(10)).toBe(at(0));
+    expect(at(-6)).toBe(at(0));
+  });
+
+  it("a mono vocal that gets its first two-channel insert is raised 3 dB less", () => {
+    const d = () => doc(120, [track(LEAD, "Wokal", "lead_vocal"), track(BEAT, "Bit", "beat")]);
+    const near = (extra: Partial<TrackMetrics>) => ({ ...quiet(extra), vocalVsBeatLu: -5 });
+    const up = (m: MixMetrics) => controls(plan(["balance", "compression"], d(), m), LEAD)!.gainDb!;
+    expect(up(near({})) - up(near({ monoSource: true }))).toBeCloseTo(3, 5);
+  });
+
+  it("an instrument already under the floor is not lowered with the beat", () => {
+    const d = doc(120, [track(LEAD, "Wokal", "lead_vocal"), track(BEAT, "Bit", "beat"), track(INST, "Keys", "instrument", { gainDb: -8 })]);
+    const p = plan(["balance"], d, quiet({ samplePeakDbfs: -4 }, true));
+    expect(controls(p, BEAT)!.gainDb).toBe(-6);
+    expect(controls(p, INST)).toBeUndefined();
   });
 });

@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "@/components/ui/app-link";
 import { useEffect, useRef, useState } from "react";
 
-import { fetchSeparateJob, saveSeparateStem, type SeparateJob, type StemName } from "@/lib/studio/separate/separate-client";
+import { fetchSeparateJob, nextSeparatePollMs, saveSeparateStem, type SeparateJob, type StemName } from "@/lib/studio/separate/separate-client";
 
 type ProjectOpt = { id: string; title: string };
 
@@ -33,23 +33,34 @@ export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: Proje
   useEffect(() => {
     if (!projectId) return;
     let live = true;
+    let failures = 0;
+    let timer: number | undefined;
     const load = () => {
+      // A hidden tab asks nothing; it looks again as soon as it is shown.
+      if (document.hidden) return;
+      window.clearTimeout(timer);
       void fetchSeparateJob(projectId).then((result) => {
         if (!live) return;
         // One failed check must not hide a job that is still being cut (and stop the waiting).
         setLoadFailed(!result.ok);
-        if (result.ok) setJob(result.job);
-        else if (result.reason === "off") setNote(t("wylaczone"));
+        failures = result.ok ? 0 : failures + 1;
+        if (result.ok) {
+          setJob(result.job);
+          setNote((old) => (old === t("wylaczone") ? null : old));
+        } else if (result.reason === "off") setNote(t("wylaczone"));
+        const wait = waiting ? nextSeparatePollMs(result, failures) : null;
+        if (wait !== null) timer = window.setTimeout(load, wait);
       });
     };
-    load();
-    if (!waiting) return () => {
-      live = false;
+    const onShow = () => {
+      if (waiting && !document.hidden) load();
     };
-    const timer = window.setInterval(load, 4000);
+    load();
+    document.addEventListener("visibilitychange", onShow);
     return () => {
       live = false;
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onShow);
     };
   }, [projectId, waiting, version, t]);
 

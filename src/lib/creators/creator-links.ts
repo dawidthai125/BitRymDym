@@ -40,10 +40,10 @@ const YT_HANDLE = /^[\p{L}\p{N}][\p{L}\p{N}._·-]{1,59}$/u;
 const YT_NAME = /^[A-Za-z0-9._-]{1,60}$/;
 
 const SPOTIFY_ARTIST = /^[A-Za-z0-9]{22}$/;
-const SPOTIFY_USER = /^[A-Za-z0-9._-]{2,64}$/;
+const SPOTIFY_USER = /^[A-Za-z0-9_][A-Za-z0-9._-]{1,63}$/;
 
 const IG_NAME = /^(?!.*\.\.)[A-Za-z0-9_](?:[A-Za-z0-9._]{0,28}[A-Za-z0-9_])?$/;
-const IG_RESERVED = new Set(["p", "reel", "reels", "tv", "stories", "explore", "accounts", "direct", "about", "developer", "legal", "web", "share", "l", "api", "oauth", "challenge", "emails"]);
+const IG_RESERVED = new Set(["p", "reel", "reels", "tv", "stories", "explore", "accounts", "direct", "about", "developer", "legal", "web", "share", "l", "api", "oauth", "challenge", "emails", "invites", "session", "data", "graphql", "nametag", "qr", "threads", "topics"]);
 
 const FB_NAME = /^[A-Za-z0-9][A-Za-z0-9.]{2,49}$/;
 const FB_ID = /^\d{5,20}$/;
@@ -52,6 +52,8 @@ const FB_RESERVED = new Set([
   "sharer", "share", "dialog", "login", "recover", "reg", "signup", "groups", "events", "watch", "photo", "photos", "story", "stories",
   "plugins", "hashtag", "help", "policies", "policy", "marketplace", "messages", "gaming", "reel", "reels", "flx", "ads", "business",
   "permalink", "media", "posts", "videos", "people", "pages", "public", "search", "settings", "home", "oauth", "tr", "checkpoint", "notes",
+  "logout", "logout.php", "privacy", "terms", "legal", "about", "careers", "developers", "friends", "memories", "saved", "bookmarks",
+  "directory", "fundraisers", "games", "live", "login.php", "lite", "mobile", "welcome", "ajax", "composer",
 ]);
 
 const TT_NAME = /^[A-Za-z0-9_](?:[A-Za-z0-9._]{0,22}[A-Za-z0-9_])$/;
@@ -61,6 +63,7 @@ const SC_TABS = new Set(["tracks", "popular-tracks", "albums", "sets", "reposts"
 const SC_RESERVED = new Set([
   "discover", "stream", "search", "you", "upload", "settings", "pages", "messages", "charts", "tags", "signin", "login", "logout",
   "connect", "oauth", "notifications", "people", "imprint", "terms-of-use", "mobile", "pro", "jobs", "popular", "feed", "library",
+  "signup", "register", "download", "pages-terms", "go", "community-guidelines", "cookies", "privacy", "help", "activate", "checkout", "for-artists",
 ]);
 
 function facebookName(name: string): string | null {

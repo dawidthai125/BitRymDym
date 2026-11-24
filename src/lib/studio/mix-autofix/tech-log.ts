@@ -42,6 +42,15 @@ export function techChipsFromAutofixNotes(notes: readonly MixAutofixNote[]): Mix
         out.push({ id: `${n.key}-${i}-v`, track: null, label: `wokal −${s(p.down)} dB` });
         out.push({ id: `${n.key}-${i}-b`, track: null, label: `bit +${s(p.up)} dB` });
         break;
+      case "balanceVocalOnlyUp":
+        out.push({ id: `${n.key}-${i}-v`, track: null, label: `wokal +${s(p.up)} dB` });
+        break;
+      case "balanceVocalOnlyDown":
+        out.push({ id: `${n.key}-${i}-v`, track: null, label: `wokal −${s(p.down)} dB` });
+        break;
+      case "balanceBeatOnlyDown":
+        out.push({ id: `${n.key}-${i}-b`, track: null, label: `bit −${s(p.down)} dB` });
+        break;
       case "balanceSideDown":
       case "balanceSideUp":
         chip(`poziom ${n.key === "balanceSideUp" ? "+" : "−"}${s(p.db)} dB`);

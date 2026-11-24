@@ -52,6 +52,8 @@ export function PlayStudio({ bpm, beatId, canUseAi, onSaved }: { bpm: number; be
   const savingRef = useRef(false);
   const lastChord = useRef<string | null>(null);
   const ringing = useRef<string | null>(null);
+  /** Chord keys physically held down. */
+  const heldCodes = useRef(new Set<string>());
   const rootRef = useRef<HTMLDivElement | null>(null);
   /** The panel owns the computer keyboard only after it was used (not on the whole page). */
   const activeRef = useRef(false);
@@ -167,7 +169,10 @@ export function PlayStudio({ bpm, beatId, canUseAi, onSaved }: { bpm: number; be
   });
   useEffect(() => {
     held.current.clear();
+    const before = beforeTake.current;
     beforeTake.current = null;
+    // A take cut short by a tempo change can still be taken back.
+    if (before && noteCount(before) !== noteCount(sessionRef.current)) setUndo({ session: before, kind: "take" });
     keyHandlers.current.releaseAll();
     loop.current?.stop();
   }, [bpm]);
@@ -178,7 +183,7 @@ export function PlayStudio({ bpm, beatId, canUseAi, onSaved }: { bpm: number; be
       const code = ev.code;
       if (instrument === "guitar") {
         if (code === "Space" && lastChord.current) { ev.preventDefault(); keyHandlers.current.guitarAction(lastChord.current, "down"); return; }
-        if ((CHORD_CODES as readonly string[]).includes(code)) { ev.preventDefault(); keyHandlers.current.guitarAction(code, "down"); return; }
+        if ((CHORD_CODES as readonly string[]).includes(code)) { ev.preventDefault(); heldCodes.current.add(code); keyHandlers.current.guitarAction(code, "down"); return; }
         return;
       }
       if (isKit(instrument)) {
@@ -194,10 +199,13 @@ export function PlayStudio({ bpm, beatId, canUseAi, onSaved }: { bpm: number; be
     // A key released in a text field or another window still ends its note.
     const up = (ev: KeyboardEvent) => {
       if (pressed.current.has(ev.code)) keyHandlers.current.noteOff(ev.code);
-      if (ev.code === "Space" && ringing.current) keyHandlers.current.guitarRelease(ringing.current);
-      else if (chordIndexForCode(ev.code) != null) keyHandlers.current.guitarRelease(ev.code);
+      heldCodes.current.delete(ev.code);
+      // Space strums the last chord: it stops with Space only when its own key is up.
+      if (ev.code === "Space" && ringing.current) {
+        if (!heldCodes.current.has(ringing.current)) keyHandlers.current.guitarRelease(ringing.current);
+      } else if (chordIndexForCode(ev.code) != null) keyHandlers.current.guitarRelease(ev.code);
     };
-    const blur = () => keyHandlers.current.releaseAll();
+    const blur = () => { heldCodes.current.clear(); keyHandlers.current.releaseAll(); };
     const owner = (ev: Event) => { activeRef.current = Boolean(rootRef.current?.contains(ev.target as Node)); };
     window.addEventListener("keydown", down); window.addEventListener("keyup", up); window.addEventListener("blur", blur);
     window.addEventListener("pointerdown", owner, true); window.addEventListener("focusin", owner);
@@ -215,7 +223,9 @@ export function PlayStudio({ bpm, beatId, canUseAi, onSaved }: { bpm: number; be
     const before = beforeTake.current;
     beforeTake.current = null;
     const played = before ? noteCount(sessionRef.current) - noteCount(before) : 0;
-    if (before && played > 0) setUndo({ session: before, kind: "take" });
+    // A full layer keeps 512 notes, so the count can stay the same although the take changed it.
+    const changed = before !== null && sessionRef.current !== before && JSON.stringify(sessionRef.current.layers) !== JSON.stringify(before.layers);
+    if (before && changed) setUndo({ session: before, kind: "take" });
     setStatus(played > 0 ? t("nagrane", { n: played }) : t("nicNieNagrane"));
   }
   function clearNotes() {

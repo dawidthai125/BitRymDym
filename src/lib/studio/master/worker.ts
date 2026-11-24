@@ -53,7 +53,7 @@ const BUCKET = "audio-artifacts";
  * of re-rendering. Bump MIX_CACHE_TAG whenever the render DSP changes. Entries expire
  * after MIX_CACHE_TTL_MS; total size is capped.
  */
-const MIX_CACHE_TAG = "r2";
+const MIX_CACHE_TAG = "r3";
 const MIX_CACHE_TTL_MS = 12 * 3600_000;
 const MIX_CACHE_MAX_BYTES = 3 * 1024 ** 3;
 

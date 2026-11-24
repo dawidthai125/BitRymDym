@@ -110,7 +110,7 @@ export function postPocketPlayhead(ms: number): void {
   }
 }
 
-/** Mix step publishes verse/hook markers. Empty list → verse gain, no double. */
+/** The Studio steps publish the project's verse/hook markers (usePocketMarkers). Empty list → verse gain, no double. */
 export function publishPocketMarkers(
   markers: readonly { kind: string; positionMs: number }[] | null | undefined,
 ): void {
@@ -134,7 +134,7 @@ export function publishPocketMarkers(
   }
 }
 
-/** Slot param edits keep the markers the mix step last published. */
+/** Slot param edits keep the markers last published. */
 export function postPocketSlot(port: { postMessage(message: unknown): void }, params: unknown): void {
   noteDepth(params);
   try {
