@@ -1063,3 +1063,85 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
 /* Simple record view (2026-11-23): one narrow column, labels above full-width controls. */
 .studio-desk [data-record-density="simple"] .studio-gear { display: flex; flex-direction: column; align-items: stretch; gap: 0.5rem; }
 .studio-desk [data-record-density="simple"] .studio-gear select { width: 100%; max-width: 100%; }
+
+/* Studio on touch screens (look checked on Android and iOS 2026-11-24). */
+main[data-brd-surface="control-room"] input[type="range"],
+[data-testid="studio-inspector-mobile"] input[type="range"],
+[data-testid="studio-mixer-sheet"] input[type="range"] {
+  accent-color: var(--brd-amber);
+}
+@media (pointer: coarse) {
+  section[data-record-density] [data-slot="button"] {
+    min-height: 2.75rem;
+  }
+}
+@media (max-width: 345px) {
+  [data-testid="studio-mobile-mini-transport"] .studio-counter-time {
+    padding-inline: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0;
+  }
+}
+/* The floating Stop must not lie on the recording sheet it belongs to. */
+@media (max-width: 767px) and (orientation: portrait) {
+  html:has([data-testid="studio-inspector-overlay"][data-capturing="true"]) [data-testid="studio-rec-floating-stop"] {
+    bottom: calc(34vh + 0.75rem);
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  html:has([data-testid="studio-inspector-overlay"][data-capturing="true"]) [data-testid="studio-rec-floating-stop"] {
+    left: calc((100vw - min(22rem, 92vw)) / 2);
+  }
+}
+/* A phone on its side is about 340 px high. Header, sticky transport and bottom nav left 60 px for the tracks. */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 1023px) {
+  html:has(main[data-brd-surface="control-room"] [data-testid="studio-transport"]) {
+    scroll-padding-top: 1rem;
+  }
+  html:has(main[data-brd-surface="control-room"] [data-testid="studio-transport"]) [data-app-shell] > header {
+    position: static;
+  }
+  html:has(main[data-brd-surface="control-room"] [data-testid="studio-transport"]) [data-mobile-bottom-nav] {
+    display: none;
+  }
+  main[data-brd-surface="control-room"] [data-testid="studio-transport"] {
+    position: static;
+  }
+  main[data-brd-surface="control-room"] [data-testid="studio-mobile-mini-transport"] {
+    display: flex;
+    right: auto;
+    bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+  main[data-brd-surface="control-room"] [data-testid="studio-mobile-mini-transport"] {
+    left: max(0.5rem, env(safe-area-inset-left));
+  }
+  main[data-brd-surface="control-room"] [data-studio-tab="mix"] [data-testid="studio-mobile-mini-transport"],
+  main[data-brd-surface="control-room"] [data-studio-tab="master"] [data-testid="studio-mobile-mini-transport"] {
+    left: 4.75rem;
+  }
+  [data-testid="studio-bitek-dock"]:not([style*="top"]) {
+    bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+  [data-testid="studio-rec-floating-stop"] {
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+  html:has([data-testid="studio-inspector-overlay"][data-capturing="true"]) [data-testid="studio-rec-floating-stop"] {
+    left: calc((100vw - min(22rem, 60vw)) / 2);
+  }
+  [data-testid="studio-inspector-mobile"] {
+    width: min(22rem, 60vw);
+    height: 100%;
+    max-height: none;
+    margin-top: 0;
+    margin-left: auto;
+    border-radius: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-right: env(safe-area-inset-right);
+  }
+  [data-testid="studio-mixer-sheet"] {
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

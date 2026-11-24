@@ -363,7 +363,7 @@ export function StudioBitekDock({
           >
             {visible.hero ? (
               // eslint-disable-next-line @next/next/no-img-element -- static tiny asset, no optimizer needed
-              <img src="/bitek/bitek-hero.webp" alt="" width={240} height={240} className="mx-auto hidden size-40 sm:block sm:size-48" />
+              <img src="/bitek/bitek-hero.webp" alt="" width={240} height={240} className="mx-auto hidden size-40 sm:block sm:size-48 [@media(max-height:500px)]:hidden" />
             ) : null}
             <div className="flex items-start gap-2">
               <p className="min-w-0 flex-1" data-testid="studio-bitek-bubble-text">{visible.text}</p>

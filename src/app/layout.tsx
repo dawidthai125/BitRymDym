@@ -14,6 +14,7 @@ import { getLocale } from "next-intl/server";
 import { publicClientMessages } from "@/i18n/client-messages";
 import { ClientProviders } from "@/components/site/client-providers";
 import { MaintenanceAdminBanner } from "@/components/site/maintenance-admin-banner";
+import { IosFocusZoom } from "@/components/site/ios-focus-zoom";
 import { PwaServiceWorker } from "@/components/site/pwa-install";
 import { getSiteMetadata } from "@/config/site";
 import { countVisit } from "@/lib/visits/visit-service";
@@ -109,7 +110,8 @@ export default async function RootLayout({
         />
         <NextIntlClientProvider messages={messages}>
           <ClientProviders storeApp={storeApp}>
-            <PwaServiceWorker />
+            <IosFocusZoom />
+        <PwaServiceWorker />
             <MaintenanceAdminBanner />
             {children}
             <CookieConsent nonce={nonce} disabled={storeApp} />

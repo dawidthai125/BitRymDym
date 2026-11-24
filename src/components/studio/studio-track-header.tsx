@@ -93,7 +93,7 @@ export function StudioTrackHeader({
         <div className="flex min-h-11 items-center gap-0.5">
           <button
             type="button"
-            className="min-h-11 min-w-[4.5rem] flex-1 truncate rounded-sm px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+            className="min-h-11 min-w-[4.5rem] flex-1 overflow-hidden rounded-sm px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
             aria-pressed={isSelected}
             aria-label={
               tl(isSelected
@@ -105,7 +105,7 @@ export function StudioTrackHeader({
             onClick={() => onSelect(isSelected ? null : track.id)}
           >
             <span
-              className="studio-track-name block truncate text-[13px] font-medium leading-tight text-[var(--brd-ink)]"
+              className="studio-track-name line-clamp-2 break-words text-[13px] font-medium leading-tight text-[var(--brd-ink)]"
               data-testid="studio-track-name"
             >
               {isBeat ? "BIT" : tl(track.name)}

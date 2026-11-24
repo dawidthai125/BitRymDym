@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (44) — Studio na Androidzie i iOS: telefon w poziomie i dotyk
+
+- Sprawdzone w Chromium (Pixel 7, Galaxy S24, S9+ 320 px, Tab S9) i w silniku Safari WebKit (iPhone 15, SE, iPad Mini, iPad Pro 11), pion i poziom, atrapa API. Bez przewijania w bok, bez błędów strony.
+- Telefon w poziomie: nagłówek i pasek odtwarzania przewijają się ze stroną, dolny pasek znika, dokuje się mały pasek Graj; Inspektor jest panelem po prawej, Mikser na pełną wysokość (wcześniej na ścieżki zostawało ok. 60 px).
+- Nagrywanie: pływający „Zatrzymaj nagrywanie” nie leży na panelu; przyciski Nagraj, Zachowaj, Odrzuć mają 44 px na dotyku (było 28).
+- iPhone i iPad: Safari nie powiększa strony po dotknięciu pola (`ios-focus-zoom.tsx`, `maximum-scale=1` tylko na iOS, szczypanie dalej działa).
+- Nazwa ścieżki w dwóch liniach zamiast „Główny …”, suwaki w bursztynowym kolorze, czas małego paska na 320 px, dymek Bitka bez dużego obrazka w poziomie.
+
 ## 2026-11-24 (43) — Nagrywarka 2026.11.38: drugi, niezależny przegląd i poprawki
 
 - Równo z bitem: program czeka na pierwszy dźwięk z mikrofonu, a na Windowsie gra przez waveOut (ffplay zostaje zapasem) i z pozycji karty dźwiękowej liczy, ile nagrania jest sprzed bitu. Ten początek jest obcinany. W symulacji opóźnień mikrofonu 0,1–0,9 s i odsłuchu 0,05–0,3 s błąd to 2–5 ms.
