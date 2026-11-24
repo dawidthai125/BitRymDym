@@ -1145,3 +1145,8 @@ main[data-brd-surface="control-room"] input[type="range"],
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Light theme: the dark desk reaches past its text, which otherwise stood on the very edge. */
+html:not([data-theme="dark"]) main [data-testid="studio-daw-shell"] {
+  box-shadow: 0 0 0 0.5rem #0e0c0a;
+}

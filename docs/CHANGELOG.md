@@ -12,6 +12,7 @@ Format: data, zakres, skrót.
 - Telefon w poziomie: nagłówek i pasek odtwarzania przewijają się ze stroną, dolny pasek znika, dokuje się mały pasek Graj; Inspektor jest panelem po prawej, Mikser na pełną wysokość (wcześniej na ścieżki zostawało ok. 60 px).
 - Nagrywanie: pływający „Zatrzymaj nagrywanie” nie leży na panelu; przyciski Nagraj, Zachowaj, Odrzuć mają 44 px na dotyku (było 28).
 - iPhone i iPad: Safari nie powiększa strony po dotknięciu pola (`ios-focus-zoom.tsx`, `maximum-scale=1` tylko na iOS, szczypanie dalej działa).
+- Jasny motyw: ciemny stół Studia ma margines, tekst nie stoi na krawędzi.
 - Nazwa ścieżki w dwóch liniach zamiast „Główny …”, suwaki w bursztynowym kolorze, czas małego paska na 320 px, dymek Bitka bez dużego obrazka w poziomie.
 
 ## 2026-11-24 (43) — Nagrywarka 2026.11.38: drugi, niezależny przegląd i poprawki
