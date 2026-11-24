@@ -321,6 +321,13 @@ export default async function AccountPage({
                   initialDisplayName={context.profile.displayName ?? ""}
                 />
 
+                <Link
+                  href="/account/profil"
+                  className="inline-flex min-h-11 items-center text-sm text-[var(--brd-green)] underline-offset-4 hover:underline"
+                >
+                  {tr("profilPubliczny")}
+                </Link>
+
                 <RewardDesk userId={context.userId} />
 
                 <div>

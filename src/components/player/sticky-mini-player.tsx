@@ -11,6 +11,7 @@ import { BeatArtwork } from "@/components/brand/beat-artwork";
 import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
 import { BrdAudioTime } from "@/components/brand/brd-audio-meta";
 import { Waveform } from "@/components/brand/waveform";
+import { AuthorName } from "@/components/creators/author-name";
 import { BrdPlaybackTools } from "@/components/player/brd-playback-tools";
 import { usePlayer } from "@/components/player/player-provider";
 import { formatDurationSeconds } from "@/lib/beats/public";
@@ -89,7 +90,7 @@ export function StickyMiniPlayer() {
               {tl(track.title)}
             </Link>
             <p className="hidden truncate text-xs text-[var(--brd-mute)] sm:block">
-              {tl(track.producer)}
+              <AuthorName name={tl(track.producer)} href={track.authorHref} />
             </p>
           </div>
           <Waveform
@@ -103,7 +104,7 @@ export function StickyMiniPlayer() {
           />
           <div className="flex items-center justify-between gap-2 sm:hidden">
             <p className="truncate text-[11px] text-[var(--brd-mute)]">
-              {tl(track.producer)}
+              <AuthorName name={tl(track.producer)} href={track.authorHref} />
             </p>
             <BrdAudioTime
               current={currentTime}

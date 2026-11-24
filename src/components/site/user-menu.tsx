@@ -116,6 +116,9 @@ export function UserMenu({
             <AccountNavLink href="/profile" onNavigate={() => setOpen(false)}>
               {t("profil")}
             </AccountNavLink>
+            <AccountNavLink href="/account/profil" onNavigate={() => setOpen(false)}>
+              {t("profilPubliczny")}
+            </AccountNavLink>
             <AccountNavLink href="/settings" onNavigate={() => setOpen(false)}>
               {t("ustawienia")}
             </AccountNavLink>

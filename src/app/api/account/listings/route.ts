@@ -5,6 +5,7 @@ import { AuthError, requireUser } from "@/lib/auth/session";
 import { engageKind } from "@/lib/catalog/catalog-policy";
 import { parseConsentPatch } from "@/lib/community/consents";
 import { updateMyListing } from "@/lib/community/listing-service";
+import { revalidateCreatorFacts } from "@/lib/creators/creator-profile-server";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,7 @@ export async function PATCH(request: Request) {
     }
     const saved = await updateMyListing(auth, kind, body.id, patch);
     if (saved.result === "ok") {
+      revalidateCreatorFacts(auth.userId);
       for (const path of PAGES[kind]) revalidatePath(path);
       revalidatePath(`${DETAIL[kind]}/${body.id}`);
     }

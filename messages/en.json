@@ -501,7 +501,8 @@
       "twojePobrania": "Your downloads",
       "wgraneIWModeracji": "Uploaded and in moderation",
       "kupioneBitySklep": "Your exclusive beats",
-      "katalogIRankingi": "Catalogue and rankings"
+      "katalogIRankingi": "Catalogue and rankings",
+      "profilPubliczny": "Public profile"
     },
     "accountSharedPage": {
       "metaTitle": "Shared beats",
@@ -822,7 +823,9 @@
         "powiadomieniaEMail": "E-mail notifications",
         "moderacjaMasterMp4": "Moderation, master and MP4 ready, unsubscribe",
         "katalogIRankingi": "Catalogue and rankings",
-        "katalogIRankingiOpis": "What is in the catalogue and what enters the ranking"
+        "katalogIRankingiOpis": "What is in the catalogue and what enters the ranking",
+        "profilPubliczny": "Public profile",
+        "profilPublicznyOpis": "Links, stats and what others see"
       }
     },
     "accountBeatEditPage": {
@@ -860,6 +863,63 @@
       "zaproszeni": "Invited",
       "nagrodzeni": "Rewarded",
       "zasady": "Only new accounts from your link count. We reward up to {cap} referrals a month; the rest wait for the next month. Fake accounts and referring yourself don't count. Details in the Terms, § 9."
+    },
+    "publicProfile": {
+      "metaTitle": "Public profile",
+      "title": "Public profile",
+      "lead": "Your page for others: links, stats and your things from the catalogue. Everything starts off. You show only what you tick.",
+      "unavailable": "The public profile is not available right now. Try again in a moment.",
+      "blocked": "An administrator turned your profile off. You can change the settings, but nobody sees it. Questions: kontakt@bitrymdym.pl",
+      "noName": "Set a nickname first. The profile needs one.",
+      "setName": "Set a nickname",
+      "mainTitle": "On or off",
+      "enabled": "My profile is public",
+      "enabledNote": "Turn it on and anyone can open your profile. Your nickname in rankings, next to tracks and in comments becomes a link. Turn it off any time.",
+      "linksTitle": "Your links",
+      "linksLead": "Paste your profile address or just the name. An empty field means no link.",
+      "shareTitle": "What the profile shows",
+      "shareLead": "Each thing has its own switch. We never show your e-mail, plan, payments or private recordings.",
+      "share": {
+        "links": "Social links",
+        "linksNote": "Icons for the fields above.",
+        "trackCount": "Number of tracks in the catalogue",
+        "trackCountNote": "Just the number.",
+        "recordingCount": "Number of tracks you recorded",
+        "recordingCountNote": "Projects with an approved master. No titles.",
+        "beats": "Beats",
+        "beatsNote": "Only published, public ones.",
+        "samples": "Samples",
+        "samplesNote": "Only the ones in the public catalogue.",
+        "works": "Tracks",
+        "worksNote": "Only the ones in the track catalogue.",
+        "rankings": "Places in rankings",
+        "rankingsNote": "Only things you entered in a ranking.",
+        "experience": "Level and points",
+        "experienceNote": "Creator rank and total points.",
+        "joined": "Member since",
+        "joinedNote": "Month and year."
+      },
+      "catalogHint": "What goes into the catalogue and rankings is set here:",
+      "catalogLink": "Catalogue and rankings",
+      "save": "Save",
+      "saving": "Saving…",
+      "savedOn": "Saved. Your profile is public.",
+      "savedOff": "Saved. Your profile is off.",
+      "failed": "Could not save. Nothing changed, try again.",
+      "signedOut": "Your session expired. Sign in again.",
+      "limit": "Too many saves at once. Wait a minute.",
+      "fixLinks": "Fix the marked links and save again.",
+      "view": "View profile",
+      "copy": "Copy link",
+      "copied": "Copied",
+      "firstSave": "Save the settings to get your profile link.",
+      "addressTitle": "Profile address",
+      "error": {
+        "too_long": "The link is too long (200 characters at most).",
+        "bad_input": "This does not look like a link or a profile name.",
+        "wrong_site": "This link goes to another site. Only {service} fits here.",
+        "not_profile": "This is not a profile link. Open your profile on {service} and copy its address."
+      }
     }
   },
   "admin": {
@@ -925,7 +985,17 @@
       "doKiedy": "until {kiedy}",
       "bezterminowo": "no end date",
       "historiaZmian": "Change history",
-      "limitWierszy": "Each tab shows up to 200 latest items."
+      "limitWierszy": "Each tab shows up to 200 latest items.",
+      "profilTytul": "Public profile",
+      "profilWlaczony": "Turned on by the user",
+      "profilNiewlaczony": "Turned off by the user",
+      "profilZablokowany": "Blocked by an administrator",
+      "profilOtworz": "Open profile",
+      "profilZablokuj": "Turn profile off",
+      "profilOdblokuj": "Restore profile",
+      "profilPotwierdz": "Are you sure?",
+      "profilZapisano": "Saved.",
+      "profilBlad": "Could not save. Try again."
     },
     "adminBeatsPage": {
       "brakDostepu": "No access",
@@ -5091,7 +5161,8 @@
       "ustawienia": "Settings",
       "wrzucBit": "Upload a beat",
       "panelAdministratora": "Admin panel",
-      "wyloguj": "Sign out"
+      "wyloguj": "Sign out",
+      "profilPubliczny": "Public profile"
     },
     "items": {
       "beats": "Beats",
@@ -5486,6 +5557,54 @@
       "failed": "Could not save. Try again.",
       "relistConfirm": "Put the track back in the catalogue? A public 45 s clip (with the beat) will be playable again, also for logged-out visitors.",
       "recordingsNote": "Raw recordings have no catalogue. Only you can see them."
+    },
+    "creator": {
+      "metaTitle": "{name} – creator profile",
+      "metaDescription": "{name} on BitRymDym: beats, samples, tracks and places in rankings. Listen and find the creator’s links.",
+      "kicker": "Creator profile",
+      "edit": "Edit profile",
+      "preview": "This is a preview. The profile is off and only you can see it.",
+      "previewBlocked": "This is a preview. An administrator turned this profile off and only you can see it.",
+      "level": "{rank} · {points} pts",
+      "joined": "On BitRymDym since {month}",
+      "linksAria": "Creator links",
+      "openLink": "{name} on {service} (opens in a new tab)",
+      "statsTitle": "Numbers",
+      "stat": {
+        "trackCount": "Tracks in the catalogue",
+        "recordingCount": "Recorded tracks",
+        "beats": "Beats",
+        "samples": "Samples",
+        "works": "Tracks"
+      },
+      "placesTitle": "Places in rankings",
+      "placesEmpty": "Not in any ranking right now.",
+      "place": "Place {place}",
+      "board": {
+        "beat": {
+          "week": "Beats, week",
+          "month": "Beats, month"
+        },
+        "sample": {
+          "week": "Samples, week",
+          "month": "Samples, month"
+        },
+        "work": {
+          "week": "Tracks, week",
+          "month": "Tracks, month",
+          "all": "Tracks, Top100"
+        }
+      },
+      "beatsTitle": "Beats",
+      "samplesTitle": "Samples",
+      "worksTitle": "Tracks",
+      "latest": "Newest {shown} of {total}",
+      "empty": "Nothing here yet. This creator does not show anything so far.",
+      "emptyOwn": "Nothing to see yet. Turn on what you want to show in the settings.",
+      "share": "Share the profile",
+      "shareText": "{name} on BitRymDym",
+      "report": "Report this profile",
+      "reportSubject": "Profile report {path}"
     }
   },
   "maintenance": {

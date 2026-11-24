@@ -64,6 +64,7 @@ export type FavoriteBeatCard = {
   id: string;
   title: string;
   producer: string;
+  authorHref?: string;
   bpm: number;
 };
 
@@ -85,6 +86,7 @@ export async function listFavoriteBeats(userId: string): Promise<FavoriteBeatCar
       id: beat.id,
       title: beat.title,
       producer: beat.producer ?? "",
+      ...(beat.authorHref ? { authorHref: beat.authorHref } : {}),
       bpm: beat.bpm,
     }));
 }

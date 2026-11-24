@@ -122,6 +122,10 @@ export function labelAdminAuditAction(action: string): string {
       return "Zerowanie limitów";
     case "PAYMENT_REVIEW_RESOLVE":
       return "Zamknięcie sprawy zwrotu";
+    case "PUBLIC_PROFILE_BLOCK":
+      return "Wyłączenie profilu publicznego";
+    case "PUBLIC_PROFILE_UNBLOCK":
+      return "Przywrócenie profilu publicznego";
     case "BEAT_COVER_REVIEW":
       return "Moderacja okładki bitu";
     case "BEAT_OWNER_UPDATE":

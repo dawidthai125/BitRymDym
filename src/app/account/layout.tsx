@@ -23,6 +23,7 @@ export default async function AccountLayout({
           label={tr("twojeStudio")}
           items={[
             { href: "/account", label: tr("pulpit") },
+            { href: "/account/profil", label: tr("profilPubliczny") },
             { href: "/account/takes", label: tr("mojeNagrania") },
             { href: "/account/beats", label: tr("mojeBity") },
             { href: "/account/catalog", label: tr("katalogIRankingi") },

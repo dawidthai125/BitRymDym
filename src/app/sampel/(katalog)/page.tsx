@@ -5,6 +5,7 @@ import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
 import { SampleCatalog } from "@/components/community/sample-catalog";
 import { SamplePromoFilm } from "@/components/community/sample-promo-film";
+import { AuthorName } from "@/components/creators/author-name";
 import { AppShell } from "@/components/site/app-shell";
 import { pageMetadata } from "@/config/site";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -58,22 +59,20 @@ export default async function SampleCatalogPage({
           <CommunitySource kind="samples" source={source} />
           <div className="mb-4 flex flex-wrap items-stretch gap-3">
             {bestItem && best ? (
-              <a
-                href={`#${bestItem.id}`}
-                className="flex min-w-0 flex-1 flex-col gap-1 rounded-xl border border-[var(--brd-amber)] bg-[var(--brd-amber)]/10 px-4 py-3"
+              <div className="relative flex min-w-0 flex-1 flex-col gap-1 rounded-xl border border-[var(--brd-amber)] bg-[var(--brd-amber)]/10 px-4 py-3"
               >
                 <span className="text-xs uppercase tracking-wide text-[var(--brd-amber)]">{ts("tygodnia")}</span>
-                <span className="truncate text-base text-[var(--brd-ink)]">
+                <a href={`#${bestItem.id}`} className="truncate text-base text-[var(--brd-ink)] after:absolute after:inset-0">
                   #{String(bestItem.no).padStart(2, "0")} {bestItem.title}
-                </span>
+                </a>
                 <span className="text-xs text-[var(--brd-mute)]">
-                  {bestItem.author}
+                  <AuthorName name={best.author} href={best.authorHref} label={bestItem.author} />
                   {" · "}
                   {best.weekCount >= 2
                     ? ts("tygodniaOcena", { avg: (best.weekAvg ?? 0).toFixed(1), count: best.weekCount })
                     : ts("tygodniaNajczesciej", { avg: (best.ratingAvg ?? 0).toFixed(1), count: best.ratingCount })}
                 </span>
-              </a>
+              </div>
             ) : null}
             <Link
               href="/ranking/sampel"

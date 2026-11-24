@@ -38,6 +38,7 @@ export function HomePlayButton({
             beatId: beat.id,
             title: beat.title,
             producer: beat.producer,
+            authorHref: beat.authorHref,
             durationSeconds: beat.durationSeconds,
             artworkVariant: beat.artworkVariant,
           });

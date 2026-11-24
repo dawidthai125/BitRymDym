@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { loadOwnerCatalogEntry, saveOwnerCatalog } from "@/lib/catalog/catalog-service";
+import { revalidateCreatorFacts } from "@/lib/creators/creator-profile-server";
 import { AuthError, requireUser } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
         inRankings: flag(body.inRankings),
       },
     });
+    if (result === "ok") revalidateCreatorFacts(auth.userId);
     const status = result === "ok" ? 200 : result === "missing" ? 404 : result === "off" ? 503 : 400;
     return NextResponse.json({ result }, { status });
   } catch (error) {

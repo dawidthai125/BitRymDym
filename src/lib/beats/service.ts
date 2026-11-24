@@ -1220,7 +1220,7 @@ export async function listPublishedBeats(options?: {
  * Published beats (free and paid) whose author entered the ranking: id, title, owner, producer.
  * A sold beat left the catalogue, so it left the board too. No cover columns and no author RPC.
  */
-export async function listPublishedBeatBoardKeys(): Promise<
+export async function listPublishedBeatBoardKeys(client?: ReturnType<typeof createSupabaseAdminClient>): Promise<
   Array<{
     id: string;
     title: string;
@@ -1229,7 +1229,8 @@ export async function listPublishedBeatBoardKeys(): Promise<
     producer: string | null;
   }>
 > {
-  const supabase = await createSupabaseServerClient();
+  // The service client gives the same rows (every filter is explicit) where no request exists (cached ranking places).
+  const supabase = client ?? (await createSupabaseServerClient());
   const { data, error } = await supabase
     .from("beats")
     .select("id, title, owner_id, ownership_type, producer")

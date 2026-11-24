@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "@/components/ui/app-link";
 
 import { CommunityShelf } from "@/components/community/community-shelf";
+import { AuthorName } from "@/components/creators/author-name";
 import { readHalfYearPlaces, readWorkBoard } from "@/lib/catalog/catalog-service";
 import type { WorkBoardPeriod } from "@/lib/catalog/catalog-policy";
 
@@ -32,7 +33,7 @@ export async function WorkRankingView({ period }: { period: WorkBoardPeriod }) {
         <p className="mb-4 font-poster text-xl uppercase">
           {period === "week" ? t("leadWeek") : t("leadMonth")}:{" "}
           <Link href={`/utwor/${board.lead.targetId}`} className="underline underline-offset-4">{board.lead.title}</Link>
-          <span className="ml-2 font-sans text-sm normal-case text-[var(--brd-mute)]">{board.lead.author}</span>
+          <AuthorName name={board.lead.author} href={board.lead.authorHref} className="ml-2 font-sans text-sm normal-case text-[var(--brd-mute)]" />
         </p>
       ) : null}
       {board?.enabled && !board.closed && period !== "all" ? <p className="mb-3 text-sm text-[var(--brd-mute)]">{t("open")}</p> : null}
@@ -44,7 +45,7 @@ export async function WorkRankingView({ period }: { period: WorkBoardPeriod }) {
               <p className="text-sm text-[var(--brd-mute)]">{rank("place", { place: row.place })}</p>
               <p className="text-base text-[var(--brd-ink)]">
                 <Link href={`/utwor/${row.targetId}`} className="underline underline-offset-4">{row.title}</Link>
-                <span className="ml-2 text-sm text-[var(--brd-mute)]">{row.author}</span>
+                <AuthorName name={row.author} href={row.authorHref} className="ml-2 text-sm text-[var(--brd-mute)]" />
               </p>
               <p className="text-sm text-[var(--brd-ink-soft)]">{rank("votes", { count: row.count, score: row.score.toFixed(1) })}</p>
             </li>
@@ -66,7 +67,7 @@ export async function WorkRankingView({ period }: { period: WorkBoardPeriod }) {
                   <p className="text-sm text-[var(--brd-mute)]">{rank("place", { place: row.place })}</p>
                   <p className="text-base">
                     <Link href={`/utwor/${row.targetId}`} className="underline underline-offset-4">{row.title}</Link>
-                    <span className="ml-2 text-sm text-[var(--brd-mute)]">{row.author}</span>
+                    <AuthorName name={row.author} href={row.authorHref} className="ml-2 text-sm text-[var(--brd-mute)]" />
                   </p>
                   <p className="text-sm text-[var(--brd-ink-soft)]">{rank("votes", { count: row.count, score: row.score.toFixed(1) })}</p>
                 </li>

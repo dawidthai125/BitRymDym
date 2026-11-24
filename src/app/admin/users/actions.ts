@@ -30,6 +30,7 @@ import {
   isUsageResetMetric,
   type UsageResetMetric,
 } from "@/lib/plans/usage-resets-model";
+import { setCreatorProfileBlocked } from "@/lib/creators/creator-profile-server";
 import { AuthError, requirePermission, requireRole } from "@/lib/auth/session";
 import { sendAdminAccountDeletionEmail } from "@/lib/email/send-admin-account-deletion-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -362,5 +363,43 @@ export async function resetAdminUserUsageAction(input: {
       error: error instanceof AuthError ? "Brak uprawnień do zmiany limitów." : "Nie udało się wyzerować limitu. Spróbuj ponownie.",
       resetAt: null,
     };
+  }
+}
+
+export type AdminPublicProfileState = { success: boolean; error: string | null };
+
+/** Turn one user's public profile off (or give it back). Logged as PUBLIC_PROFILE_BLOCK / _UNBLOCK. */
+export async function setAdminPublicProfileBlockedAction(input: {
+  targetUserId: unknown;
+  blocked: unknown;
+}): Promise<AdminPublicProfileState> {
+  const failed = "Nie udało się zapisać. Spróbuj ponownie.";
+  try {
+    const context = await requireAdminUsersMutateAccess();
+    const target = parseAdminDeleteTargetUserId(input.targetUserId);
+    if (!target.ok || typeof input.blocked !== "boolean") return { success: false, error: "Nieprawidłowy użytkownik." };
+    const saved = await setCreatorProfileBlocked(target.value, input.blocked);
+    if (!saved) return { success: false, error: failed };
+
+    const admin = createSupabaseAdminClient();
+    const { data: numbers } = await admin.from("profiles").select("id, user_number").in("id", [context.userId, target.value]);
+    const numberOf = (id: string) =>
+      toSnapshotNumber((numbers ?? []).find((row) => row.id === id)?.user_number as number | null | undefined);
+    const { error: auditError } = await admin.from("admin_audit_events").insert({
+      actor_user_id: context.userId,
+      target_user_id: target.value,
+      actor_user_number: numberOf(context.userId),
+      target_user_number: numberOf(target.value),
+      action: input.blocked ? "PUBLIC_PROFILE_BLOCK" : "PUBLIC_PROFILE_UNBLOCK",
+      old_value: { blocked: saved.before },
+      new_value: { blocked: input.blocked },
+      metadata: { panel: "admin_user_desk" },
+    });
+    if (auditError) console.error("[admin] public profile audit failed", auditError.message);
+
+    revalidatePath(`/admin/users/${target.value}`);
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: error instanceof AuthError ? "Brak uprawnień." : failed };
   }
 }

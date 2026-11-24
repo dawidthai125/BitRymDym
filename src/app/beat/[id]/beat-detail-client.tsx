@@ -14,6 +14,7 @@ import { Waveform } from "@/components/brand/waveform";
 import { BeatWavPurchase } from "@/components/beats/beat-wav-purchase";
 import { DownloadButton } from "@/components/beats/download-button";
 import { LockedAction, type LockReason } from "@/components/plans/locked-action";
+import { AuthorName } from "@/components/creators/author-name";
 import { usePlayer } from "@/components/player/player-provider";
 import { BeatRecordingSurface } from "@/components/takes/beat-recording-surface";
 import { formatDurationSeconds } from "@/lib/beats/public";
@@ -104,6 +105,7 @@ export function BeatDetailClient({
     beatId: beat.id,
     title: beat.title,
     producer: beat.producer,
+    authorHref: beat.authorHref,
     durationSeconds: beat.durationSeconds,
     artworkVariant: beat.artworkVariant,
     coverUrl: beat.coverUrl ?? null,
@@ -222,7 +224,7 @@ export function BeatDetailClient({
             </h1>
             <p className="text-lg text-[var(--brd-ink-soft)]">
               <span className="sr-only">{t("producent")}{" "}</span>
-              {tl(beat.producer)}
+              <AuthorName name={tl(beat.producer)} href={beat.authorHref} />
             </p>
           </div>
 
@@ -410,10 +412,7 @@ export function BeatDetailClient({
           <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
             {related.map((r) => (
               <li key={r.id}>
-                <Link
-                  href={`/beat/${r.id}`}
-                  className="flex min-h-11 items-center gap-3 py-3 hover:bg-[var(--brd-paper-deep)]/50"
-                >
+                <div className="relative flex min-h-11 items-center gap-3 py-3 hover:bg-[var(--brd-paper-deep)]/50">
                   <BeatArtwork
                     variant={r.artworkVariant}
                     title={tl(r.title)}
@@ -421,12 +420,14 @@ export function BeatDetailClient({
                     coverUrl={r.coverUrl}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{tl(r.title)}</p>
+                    <p className="truncate font-medium">
+                      <Link href={`/beat/${r.id}`} className="after:absolute after:inset-0">{tl(r.title)}</Link>
+                    </p>
                     <p className="truncate text-sm text-[var(--brd-mute)]">
-                      {tl(r.producer)} {t("tempo2")}{" "}{r.bpm}
+                      <AuthorName name={tl(r.producer)} href={r.authorHref} /> {t("tempo2")}{" "}{r.bpm}
                     </p>
                   </div>
-                </Link>
+                </div>
               </li>
             ))}
           </ul>

@@ -111,6 +111,8 @@ export function BrdAudioDeck({ src, title, testId, seed, className, preload = "m
       dispatch({ type: "ENGINE_ERROR", message: toSafePlaybackErrorMessage("playback failure") });
     };
     audio.addEventListener("timeupdate", onTime);
+    // The length is known before Play (otherwise the clock says 0:00 / 0:00).
+    audio.addEventListener("loadedmetadata", onTime);
     audio.addEventListener("playing", onPlaying);
     audio.addEventListener("pause", onPause);
     audio.addEventListener("ended", onEnded);
@@ -118,6 +120,7 @@ export function BrdAudioDeck({ src, title, testId, seed, className, preload = "m
     audio.addEventListener("error", onError);
     return () => {
       audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("loadedmetadata", onTime);
       audio.removeEventListener("playing", onPlaying);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("ended", onEnded);

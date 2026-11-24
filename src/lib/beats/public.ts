@@ -15,6 +15,8 @@ export type PublicBeatCatalogItem = {
   id: string;
   title: string;
   producer: string | null;
+  /** Public profile of the author, when it is on. */
+  authorHref?: string;
   genre: string | null;
   style: string | null;
   bpm: number;
@@ -37,6 +39,7 @@ export function toPublicCatalogItem(beat: Beat): PublicBeatCatalogItem {
     id: beat.id,
     title: beat.title,
     producer: beat.producer,
+    ...(beat.authorHref ? { authorHref: beat.authorHref } : {}),
     genre: beat.genre,
     style: beat.style,
     bpm: beat.bpm,

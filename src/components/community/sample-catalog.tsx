@@ -5,6 +5,7 @@ import Link from "@/components/ui/app-link";
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { removeCatalogSampleAction, updateCatalogSampleAction } from "@/app/sampel/actions";
+import { AuthorName } from "@/components/creators/author-name";
 import { CatalogPager } from "@/components/ui/catalog-pager";
 import { SampleTalk } from "@/components/community/sample-talk";
 import { catalogNumber } from "@/lib/community/share-policy";
@@ -16,6 +17,9 @@ export type CatalogSampleItem = {
   no: number;
   title: string;
   author: string;
+  /** Public profile of the author, when it is on (with the bare name inside `author`). */
+  authorHref?: string;
+  authorName?: string;
   durationMs: number;
   instrument: string | null;
   instrumentLabel: string | null;
@@ -329,7 +333,7 @@ export function SampleCatalog({
                     )}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--brd-mute)]">
-                    <span>{s.author}</span>
+                    <AuthorName name={s.authorName ?? s.author} href={s.authorHref} label={s.author} className="min-w-0" />
                     {s.ratingCount ? (
                       <span className="text-[var(--brd-amber)]" aria-label={t("ocenaAria", { avg: s.ratingAvg ?? 0, count: s.ratingCount })}>
                         ★ {(s.ratingAvg ?? 0).toFixed(1)} <span className="text-[var(--brd-mute)]">({s.ratingCount})</span>

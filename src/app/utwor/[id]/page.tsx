@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { CommunityThread } from "@/components/community/community-thread";
+import { AuthorName } from "@/components/creators/author-name";
 import { BrdAudioDeck } from "@/components/player/brd-audio-deck";
 import { ShareButtons } from "@/components/share/share-buttons";
 import { AppShell } from "@/components/site/app-shell";
@@ -71,7 +72,9 @@ export default async function FinishedWorkPage({ params }: Props) {
         <PageFrame width="wide" className="py-5 sm:py-6">
           <CommunityShelf current="works" />
           <h1 className="font-poster text-2xl font-bold uppercase">{work.title}</h1>
-          <p className="mt-2 text-sm text-[var(--brd-mute)]">{catalog("by", { name: work.author })}</p>
+          <p className="mt-2 text-sm text-[var(--brd-mute)]">
+            <AuthorName name={work.author} href={work.authorHref} label={catalog("by", { name: work.author })} />
+          </p>
           {clip.state === "ready" ? (
             <div className="mt-4 flex max-w-2xl flex-col gap-2">
               <BrdAudioDeck src={workClipSrc(work.id)} title={work.title} seed={work.id} testId="work-clip-player" preload="none" />

@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "@/components/ui/app-link";
 import { notFound, redirect } from "next/navigation";
 
+import { AdminPublicProfile } from "@/components/admin/admin-public-profile";
 import { AdminUserDeskTabs } from "@/components/admin/admin-user-desk-tabs";
 import { AdminUserLimits } from "@/components/admin/admin-user-limits";
 import { AdminUsersAddonDialog } from "@/components/admin/admin-users-addon-dialog";
@@ -10,6 +11,7 @@ import { AdminUsersManageDialog } from "@/components/admin/admin-users-manage-di
 import { PageFrame } from "@/components/brand/chrome";
 import { loadAdminUserDesk } from "@/lib/admin/user-desk";
 import { adminUsersListAccessDenial } from "@/lib/admin/users-list";
+import { loadAdminCreatorProfile } from "@/lib/creators/creator-profile-server";
 import { AuthError } from "@/lib/auth/session";
 import { labelCreatorRank, labelPremiumPlan, labelSystemRole } from "@/lib/ui/labels";
 
@@ -38,6 +40,7 @@ export default async function AdminUserDeskPage({
   }
   if (!desk) notFound();
   const { user } = desk;
+  const publicProfile = await loadAdminCreatorProfile(user.id);
   const name = user.displayName?.trim() || t("uzytkownik");
   const expires = user.premiumExpiresAt
     ? new Intl.DateTimeFormat("pl-PL", { dateStyle: "medium", timeZone: "Europe/Warsaw" }).format(new Date(user.premiumExpiresAt))
@@ -123,6 +126,8 @@ export default async function AdminUserDeskPage({
             </li>
           ))}
         </ul>
+
+        {publicProfile ? <AdminPublicProfile userId={user.id} profile={publicProfile} /> : null}
 
         <AdminUserLimits userId={user.id} limits={desk.limits} />
 

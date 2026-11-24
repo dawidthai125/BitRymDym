@@ -14,6 +14,7 @@ import { BeatArtwork } from "@/components/brand/beat-artwork";
 import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
 import { BrdAudioMeta } from "@/components/brand/brd-audio-meta";
 import { Waveform } from "@/components/brand/waveform";
+import { AuthorName } from "@/components/creators/author-name";
 import { usePlayer } from "@/components/player/player-provider";
 import { playbackProgressRatio } from "@/lib/player/playback-progress";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
@@ -69,6 +70,7 @@ export function BeatCatalogRow({
     beatId: beat.id,
     title: beat.title,
     producer: beat.producer,
+    authorHref: beat.authorHref,
     durationSeconds: beat.durationSeconds,
     artworkVariant: beat.artworkVariant,
     coverUrl: beat.coverUrl ?? null,
@@ -144,7 +146,8 @@ export function BeatCatalogRow({
           )}
         />
 
-        <Link href={`/beat/${beat.id}`} className="min-w-0 space-y-0.5">
+        {/* The title link covers the block; the author's name is a link of its own. */}
+        <div className="relative min-w-0 space-y-0.5">
           {featured ? (
             <p className="brd-meta text-xs uppercase tracking-[0.16em] text-[var(--brd-green)]">
               {t("wyrozniony")}
@@ -158,10 +161,12 @@ export function BeatCatalogRow({
                 : "text-xl leading-none",
             )}
           >
-            {tl(beat.title)}
+            <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0">
+              {tl(beat.title)}
+            </Link>
           </h2>
           <p className="truncate text-[13px] text-[var(--brd-ink-soft)]">
-            {tl(beat.producer)}
+            <AuthorName name={tl(beat.producer)} href={beat.authorHref} />
           </p>
           <BrdAudioMeta
             bpm={beat.bpm}
@@ -169,7 +174,7 @@ export function BeatCatalogRow({
             genre={beat.genre}
             mood={beat.mood}
           />
-        </Link>
+        </div>
 
         <div className="min-w-0 self-center">
           <Waveform
@@ -219,17 +224,19 @@ export function BeatCatalogRow({
               isCurrent && "ring-1 ring-[var(--brd-green)]",
             )}
           />
-          <Link href={`/beat/${beat.id}`} className="min-w-0 flex-1 space-y-0.5">
+          <div className="relative min-w-0 flex-1 space-y-0.5">
             {featured ? (
               <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-green)]">
                 {t("wyrozniony")}
               </p>
             ) : null}
             <h2 className="brd-display truncate text-lg font-semibold leading-none">
-              {tl(beat.title)}
+              <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0">
+                {tl(beat.title)}
+              </Link>
             </h2>
             <p className="truncate text-[13px] text-[var(--brd-ink-soft)]">
-              {tl(beat.producer)}
+              <AuthorName name={tl(beat.producer)} href={beat.authorHref} />
             </p>
             <BrdAudioMeta
               bpm={beat.bpm}
@@ -237,7 +244,7 @@ export function BeatCatalogRow({
               genre={beat.genre}
               mood={beat.mood}
             />
-          </Link>
+          </div>
           <BrdAudioPlayButton
             playing={playing}
             loading={loading}

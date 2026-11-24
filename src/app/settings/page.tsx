@@ -29,6 +29,11 @@ const SETTINGS_HUB_LINKS = [
         description: "nazwaWyswietlanaEMail",
       },
       {
+        href: "/account/profil",
+        title: "profilPubliczny",
+        description: "profilPublicznyOpis",
+      },
+      {
         href: "/account#security",
         title: "bezpieczenstwo",
         description: "zmianaEMailaHasla",

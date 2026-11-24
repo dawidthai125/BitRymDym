@@ -49,6 +49,7 @@ export const PRIVACY: LegalDoc = {
       ] } },
       "Do dostawców AI nie wysyłamy Twojego e-maila ani hasła. Opisy okładek przed wysłaniem są filtrowane; nie wpisuj w nich danych osobowych. Przekazanie danych poza EOG odbywa się na podstawie decyzji Komisji Europejskiej (EU-US Data Privacy Framework) lub standardowych klauzul umownych (art. 46 RODO). Kopię zabezpieczeń możesz uzyskać, pisząc do nas.",
       "Opublikowane Bity, ksywka i okładki są widoczne publicznie. Link do odsłuchu działa dla każdego, kto go otrzyma — do wygaśnięcia lub wyłączenia.",
+      "Profil publiczny. Możesz włączyć publiczny profil twórcy. Domyślnie jest wyłączony. Po włączeniu każdy, także bez konta i przez wyszukiwarkę, zobaczy Twoją ksywkę oraz tylko te dane, które sam zaznaczysz: linki do serwisów społecznościowych, liczbę utworów, opublikowane bity, sample i utwory, miejsca w rankingach, poziom i punkty oraz miesiąc założenia konta. Twoja ksywka w serwisie staje się wtedy linkiem do profilu. Nie pokazujemy e-maila, pakietu, płatności ani prywatnych nagrań. Podstawą jest Twoja zgoda (art. 6 ust. 1 lit. a RODO). Możesz ją wycofać w ustawieniach: strona znika od razu, a w wynikach wyszukiwarek może zostać do ich odświeżenia. Dane profilu usuwamy razem z kontem. Linki prowadzą do zewnętrznych serwisów, które mają własne zasady.",
     ] },
     { id: "p6", h: "6. Jak długo przechowujemy dane", blocks: [{ list: [
       "Konto i opublikowane treści — do usunięcia Konta; po usunięciu kasujemy je bez zbędnej zwłoki (kopie zapasowe wygasają w cyklu dostawcy).",

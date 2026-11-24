@@ -4,11 +4,13 @@ import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import Link from "@/components/ui/app-link";
 
+import { AuthorName } from "@/components/creators/author-name";
 import { REPORT_DETAILS_MAX, REPORT_REASONS, type ReportReason } from "@/lib/community/comment-moderation-policy";
 
 type ThreadComment = {
   id: string;
   author: string;
+  authorHref?: string | null;
   body: string;
   createdAt: string;
   /** Viewer wrote it: may delete. */
@@ -238,7 +240,9 @@ export function CommunityThread(props: Props) {
             const saved = !comment.id.startsWith("local-");
             return (
               <li key={comment.id} className="border-b border-[var(--brd-line)] pb-3">
-                <p className="text-xs text-[var(--brd-mute)]">{comment.author}</p>
+                <p className="text-xs text-[var(--brd-mute)]">
+                  <AuthorName name={comment.author} href={comment.authorHref} />
+                </p>
                 <p className="mt-1 whitespace-pre-wrap break-words text-sm text-[var(--brd-ink)]">{comment.body}</p>
                 {saved ? (
                   <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-[var(--brd-mute)]">

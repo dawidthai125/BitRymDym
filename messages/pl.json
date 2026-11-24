@@ -501,7 +501,8 @@
       "twojePobrania": "Twoje pobrania",
       "wgraneIWModeracji": "Wgrane i w moderacji",
       "kupioneBitySklep": "Twoje bity na wyłączność",
-      "katalogIRankingi": "Katalog i rankingi"
+      "katalogIRankingi": "Katalog i rankingi",
+      "profilPubliczny": "Profil publiczny"
     },
     "accountSharedPage": {
       "metaTitle": "Bity udostępnione",
@@ -822,7 +823,9 @@
         "powiadomieniaEMail": "Powiadomienia e-mail",
         "moderacjaMasterMp4": "Moderacja, gotowy master i MP4, wypisanie",
         "katalogIRankingi": "Katalog i rankingi",
-        "katalogIRankingiOpis": "Co jest w katalogu i co bierze udział w rankingu"
+        "katalogIRankingiOpis": "Co jest w katalogu i co bierze udział w rankingu",
+        "profilPubliczny": "Profil publiczny",
+        "profilPublicznyOpis": "Linki, statystyki i to, co widzą inni"
       }
     },
     "accountBeatEditPage": {
@@ -860,6 +863,63 @@
       "zaproszeni": "Zaproszeni",
       "nagrodzeni": "Nagrodzeni",
       "zasady": "Liczą się tylko nowe konta z Twojego linku. Nagradzamy do {cap} poleceń w miesiącu, kolejne czekają na następny miesiąc. Konta-słupy i polecanie samego siebie nie przechodzą. Szczegóły w Regulaminie, § 9."
+    },
+    "publicProfile": {
+      "metaTitle": "Profil publiczny",
+      "title": "Profil publiczny",
+      "lead": "Twoja strona dla innych: linki, staty i Twoje rzeczy z katalogu. Na start wszystko jest wyłączone. Pokazujesz tylko to, co sam zaznaczysz.",
+      "unavailable": "Profil publiczny jest chwilowo niedostępny. Wpadnij za chwilę.",
+      "blocked": "Administrator wyłączył Twój profil. Możesz zmieniać ustawienia, ale nikt go nie widzi. Pytania: kontakt@bitrymdym.pl",
+      "noName": "Najpierw ustaw ksywkę. Bez niej profil nie ruszy.",
+      "setName": "Ustaw ksywkę",
+      "mainTitle": "Włącznik",
+      "enabled": "Profil jest publiczny",
+      "enabledNote": "Włączasz i każdy może wejść na Twój profil. Twoja ksywka w rankingach, przy utworach i w komentarzach staje się linkiem. Wyłączysz, kiedy chcesz.",
+      "linksTitle": "Twoje linki",
+      "linksLead": "Wklej adres profilu albo samą nazwę. Puste pole znaczy: bez linku.",
+      "shareTitle": "Co widać na profilu",
+      "shareLead": "Każda rzecz ma własny przełącznik. Nie pokazujemy e-maila, pakietu, płatności ani prywatnych nagrań.",
+      "share": {
+        "links": "Linki do sociali",
+        "linksNote": "Ikony z polami powyżej.",
+        "trackCount": "Ile utworów masz w katalogu",
+        "trackCountNote": "Sama liczba.",
+        "recordingCount": "Ile utworów nagrałeś",
+        "recordingCountNote": "Liczba projektów z zatwierdzonym masterem. Bez tytułów.",
+        "beats": "Bity",
+        "beatsNote": "Tylko opublikowane i publiczne.",
+        "samples": "Sample",
+        "samplesNote": "Tylko te z publicznego katalogu.",
+        "works": "Utwory",
+        "worksNote": "Tylko te, które są w katalogu utworów.",
+        "rankings": "Miejsca w rankingach",
+        "rankingsNote": "Tylko rzeczy, które zgłosiłeś do rankingu.",
+        "experience": "Poziom i punkty",
+        "experienceNote": "Ranga twórcy i suma punktów.",
+        "joined": "Od kiedy tu jesteś",
+        "joinedNote": "Miesiąc i rok."
+      },
+      "catalogHint": "Co trafia do katalogu i rankingów, ustawiasz tutaj:",
+      "catalogLink": "Katalog i rankingi",
+      "save": "Zapisz",
+      "saving": "Zapisuję…",
+      "savedOn": "Zapisane. Profil jest publiczny.",
+      "savedOff": "Zapisane. Profil jest wyłączony.",
+      "failed": "Nie udało się zapisać. Nic się nie zmieniło, spróbuj ponownie.",
+      "signedOut": "Sesja wygasła. Zaloguj się ponownie.",
+      "limit": "Za dużo zapisów naraz. Odczekaj minutę.",
+      "fixLinks": "Popraw zaznaczone linki i zapisz jeszcze raz.",
+      "view": "Zobacz profil",
+      "copy": "Skopiuj link",
+      "copied": "Skopiowano",
+      "firstSave": "Zapisz ustawienia, a dostaniesz link do profilu.",
+      "addressTitle": "Adres profilu",
+      "error": {
+        "too_long": "Link jest za długi (najwyżej 200 znaków).",
+        "bad_input": "To nie wygląda na link ani na nazwę profilu.",
+        "wrong_site": "To link do innej strony. Tu pasuje tylko {service}.",
+        "not_profile": "To nie jest link do profilu. Wejdź na swój profil w {service} i skopiuj adres."
+      }
     }
   },
   "admin": {
@@ -925,7 +985,17 @@
       "doKiedy": "do {kiedy}",
       "bezterminowo": "bezterminowo",
       "historiaZmian": "Historia zmian",
-      "limitWierszy": "Każda zakładka pokazuje do 200 ostatnich pozycji."
+      "limitWierszy": "Każda zakładka pokazuje do 200 ostatnich pozycji.",
+      "profilTytul": "Profil publiczny",
+      "profilWlaczony": "Włączony przez użytkownika",
+      "profilNiewlaczony": "Wyłączony przez użytkownika",
+      "profilZablokowany": "Zablokowany przez administratora",
+      "profilOtworz": "Otwórz profil",
+      "profilZablokuj": "Wyłącz profil",
+      "profilOdblokuj": "Przywróć profil",
+      "profilPotwierdz": "Na pewno?",
+      "profilZapisano": "Zapisane.",
+      "profilBlad": "Nie udało się zapisać. Spróbuj ponownie."
     },
     "adminBeatsPage": {
       "brakDostepu": "Brak dostępu",
@@ -5091,7 +5161,8 @@
       "ustawienia": "Ustawienia",
       "wrzucBit": "Wrzuć bit",
       "panelAdministratora": "Panel administratora",
-      "wyloguj": "Wyloguj"
+      "wyloguj": "Wyloguj",
+      "profilPubliczny": "Profil publiczny"
     },
     "items": {
       "beats": "Bity",
@@ -5486,6 +5557,54 @@
       "failed": "Nie udało się zapisać. Spróbuj jeszcze raz.",
       "relistConfirm": "Wrzucić utwór z powrotem do katalogu? Publiczny fragment 45 s (z bitem) znów będzie słyszalny, też dla niezalogowanych.",
       "recordingsNote": "Surowe nagrania nie mają katalogu. Widzisz je tylko Ty."
+    },
+    "creator": {
+      "metaTitle": "{name} – profil twórcy",
+      "metaDescription": "{name} na BitRymDym: bity, sample, utwory i miejsca w rankingach. Posłuchaj i sprawdź linki twórcy.",
+      "kicker": "Profil twórcy",
+      "edit": "Edytuj profil",
+      "preview": "To podgląd. Profil jest wyłączony i widzisz go tylko Ty.",
+      "previewBlocked": "To podgląd. Administrator wyłączył ten profil i widzisz go tylko Ty.",
+      "level": "{rank} · {points} pkt",
+      "joined": "Na BitRymDym od: {month}",
+      "linksAria": "Linki twórcy",
+      "openLink": "{name} w {service} (otwiera się w nowej karcie)",
+      "statsTitle": "Liczby",
+      "stat": {
+        "trackCount": "Utwory w katalogu",
+        "recordingCount": "Nagrane utwory",
+        "beats": "Bity",
+        "samples": "Sample",
+        "works": "Utwory"
+      },
+      "placesTitle": "Miejsca w rankingach",
+      "placesEmpty": "Teraz nie ma go w żadnym rankingu.",
+      "place": "{place}. miejsce",
+      "board": {
+        "beat": {
+          "week": "Bity, tydzień",
+          "month": "Bity, miesiąc"
+        },
+        "sample": {
+          "week": "Sample, tydzień",
+          "month": "Sample, miesiąc"
+        },
+        "work": {
+          "week": "Utwory, tydzień",
+          "month": "Utwory, miesiąc",
+          "all": "Utwory, Top100"
+        }
+      },
+      "beatsTitle": "Bity",
+      "samplesTitle": "Sample",
+      "worksTitle": "Utwory",
+      "latest": "Najnowsze {shown} z {total}",
+      "empty": "Na razie nic tu nie ma. Ten twórca jeszcze nic nie pokazuje.",
+      "emptyOwn": "Nic tu jeszcze nie widać. Włącz w ustawieniach to, co chcesz pokazać.",
+      "share": "Udostępnij profil",
+      "shareText": "{name} na BitRymDym",
+      "report": "Zgłoś profil",
+      "reportSubject": "Zgłoszenie profilu {path}"
     }
   },
   "maintenance": {

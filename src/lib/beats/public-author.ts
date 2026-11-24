@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Beat } from "@/types/domain";
 import { resolvePublicAuthor } from "@/lib/beats/public-author-resolve";
+import { creatorHref, loadCreatorIds } from "@/lib/creators/creator-hrefs";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export { resolvePublicAuthor } from "@/lib/beats/public-author-resolve";
@@ -35,14 +36,14 @@ export async function loadPublicAuthorDisplayNames(
   return out;
 }
 
-/** Apply public author SSOT onto Beat.producer for public surfaces. */
+/** Apply public author SSOT onto Beat.producer (and the profile link) for public surfaces. */
 export async function withPublicAuthors(
   beats: readonly Beat[],
 ): Promise<Beat[]> {
   const ownerIds = beats
     .filter((b) => b.ownershipType === "USER" && b.ownerId)
     .map((b) => b.ownerId!);
-  const names = await loadPublicAuthorDisplayNames(ownerIds);
+  const [names, creators] = await Promise.all([loadPublicAuthorDisplayNames(ownerIds), loadCreatorIds(ownerIds)]);
 
   return beats.map((beat) => {
     const author = resolvePublicAuthor({
@@ -51,7 +52,9 @@ export async function withPublicAuthors(
       producer: beat.producer,
       ownerDisplayName: beat.ownerId ? names.get(beat.ownerId) : null,
     });
-    if (author === beat.producer) return beat;
-    return { ...beat, producer: author };
+    const href =
+      beat.ownershipType === "USER" && beat.ownerId ? creatorHref(creators, beat.ownerId, names.get(beat.ownerId)) : null;
+    if (author === beat.producer && !href) return beat;
+    return { ...beat, producer: author, ...(href ? { authorHref: href } : {}) };
   });
 }

@@ -5,6 +5,7 @@ import { listPublishedBeats } from "@/lib/beats/service";
 import { listPublicWorkSitemapEntries } from "@/lib/catalog/catalog-service";
 import { collectGenres, genrePagePath } from "@/lib/seo/genre-pages";
 import { GUIDE_BASE, GUIDES, guidePath } from "@/lib/seo/guides";
+import { listCreatorSitemapEntries } from "@/lib/creators/creator-profile-server";
 import { listPublicSamples } from "@/lib/community/community-service";
 import { LANDING_PAGES, landingPath } from "@/lib/seo/landing-pages";
 import { isLocalizedPath, localizedPath } from "@/lib/seo/locale-paths";
@@ -61,9 +62,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Same visibility as /beats and /utwory (PUBLISHED + public; live works). A DB hiccup
   // must not take the static part of the sitemap down.
-  const [beats, works] = await Promise.all([
+  const [beats, works, creators] = await Promise.all([
     listPublishedBeats({ catalogLane: "all" }).catch(() => []),
     listPublicWorkSitemapEntries().catch(() => []),
+    listCreatorSitemapEntries().catch(() => []),
   ]);
 
   const beatEntries: MetadataRoute.Sitemap = beats.map((beat) => ({
@@ -88,6 +90,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: date(work.publishedAt),
     changeFrequency: "monthly",
     priority: 0.5,
+  }));
+
+  // Public creator profiles: only those that are on and show a public item (capped).
+  const creatorEntries: MetadataRoute.Sitemap = creators.map((creator) => ({
+    url: `${base}${creator.path}`,
+    lastModified: date(creator.updatedAt),
+    changeFrequency: "weekly",
+    priority: 0.4,
   }));
 
   // English keyword landings + hreflang with their Polish twins.
@@ -123,7 +133,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...TOOL_PAGES.map((t) => ({ url: `${base}${toolPath(t.slug)}`, changeFrequency: "monthly" as const, priority: 0.8 })),
   ];
 
-  const all = [...staticEntries, ...toolEntries, ...rhymeEntries, ...enLandingEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...sampleEntries, ...workEntries];
+  const all = [...staticEntries, ...toolEntries, ...rhymeEntries, ...enLandingEntries, ...landingEntries, ...guideEntries, ...genreEntries, ...beatEntries, ...sampleEntries, ...workEntries, ...creatorEntries];
   return withEnglish(all, base);
 }
 

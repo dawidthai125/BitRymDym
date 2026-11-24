@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
+import { AuthorName } from "@/components/creators/author-name";
 import { usePlayer } from "@/components/player/player-provider";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import {
@@ -44,6 +45,7 @@ export function TapeDeck({ beats }: { beats: PresentedBeat[] }) {
       beatId: target.id,
       title: target.title,
       producer: target.producer,
+      authorHref: target.authorHref,
       durationSeconds: target.durationSeconds,
       artworkVariant: target.artworkVariant,
     });
@@ -133,7 +135,7 @@ export function TapeDeck({ beats }: { beats: PresentedBeat[] }) {
             {beat?.title ?? t("katalogCzekaNaPierwszy")}
           </p>
           <p className="truncate font-mono text-xs uppercase tracking-[0.1em] text-tape-mute">
-            {beat?.producer ?? "BitRymDym"}
+            <AuthorName name={beat?.producer ?? "BitRymDym"} href={beat?.authorHref} />
           </p>
 
           {/* Window: tape pack moves left → right with progress */}

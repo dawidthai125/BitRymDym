@@ -19,6 +19,7 @@ export function toCatalogSampleItems(samples: readonly PublicSampleCard[], label
       no: numberOf.get(s.id) ?? samples.length - i,
       title: s.title,
       author: labels.by(s.author),
+      ...(s.authorHref ? { authorHref: s.authorHref, authorName: s.author } : {}),
       durationMs: s.durationMs,
       instrument: s.instrument,
       instrumentLabel: labels.instrument(s.instrument),

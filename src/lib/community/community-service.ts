@@ -21,6 +21,7 @@ import {
   type TargetKind,
 } from "@/lib/community/ranking-policy";
 import { findLiveCatalogWork } from "@/lib/catalog/catalog-service";
+import { creatorHref, loadCreatorIds } from "@/lib/creators/creator-hrefs";
 import { claimCommunityReward } from "@/lib/community/reward-apply";
 import { canDeleteComment, hideRole } from "@/lib/community/comment-moderation-policy";
 import { canCommentPublic, publicAuthorName, type CatalogSource } from "@/lib/community/share-policy";
@@ -33,6 +34,9 @@ const RATINGS = "community_ratings";
 const COMMENTS = "community_comments";
 const REWARDS = "community_rewards";
 
+/** Rows on one board. */
+const BOARD_ROWS = 20;
+
 type Admin = ReturnType<typeof createSupabaseAdminClient>;
 type DbError = { message?: string; code?: string } | null;
 
@@ -42,6 +46,8 @@ export type PublicSampleCard = {
   id: string;
   title: string;
   author: string;
+  /** Public profile of the author, when it is on. */
+  authorHref?: string | null;
   kind: string;
   instrument: string | null;
   durationMs: number;
@@ -74,6 +80,7 @@ export type BoardRow = {
   targetId: string;
   title: string;
   author: string;
+  authorHref?: string | null;
   score: number;
   count: number;
   prize: { place: number; tier: string; days: number; mode: string } | null;
@@ -86,12 +93,13 @@ export type Board = {
   periodKey: string;
   closed: boolean;
   rows: BoardRow[];
-  champion: { targetId: string; title: string; author: string; userOwned: boolean } | null;
+  champion: { targetId: string; title: string; author: string; authorHref?: string | null; userOwned: boolean } | null;
 };
 
 export type ThreadComment = {
   id: string;
   author: string;
+  authorHref?: string | null;
   body: string;
   createdAt: string;
   /** The viewer wrote it, so they may delete it. */
@@ -132,6 +140,7 @@ type Work = {
   title: string;
   ownerId: string | null;
   author: string;
+  authorHref?: string | null;
   ownership: "PLATFORM" | "USER";
   allowComments: boolean;
   allowRatings?: boolean;
@@ -171,6 +180,11 @@ function adminOrNull(): Admin | null {
   } catch {
     return null;
   }
+}
+
+/** Adds the link only when there is one, so the payload of names without a profile stays as it was. */
+function hrefField(href: string | null | undefined): { authorHref?: string } {
+  return href ? { authorHref: href } : {};
 }
 
 /** Samples published by an admin are the official BitRymDym pack (catalog tab "BitRymDym"). */
@@ -217,14 +231,16 @@ type SampleRow = {
   in_rankings?: boolean;
 };
 
-async function loadPublishedSampleRows(): Promise<SampleRow[]> {
+async function loadPublishedSampleRows(ownerId?: string): Promise<SampleRow[]> {
   const admin = adminOrNull();
   if (!admin) return [];
-  const loaded = await admin
+  let query = admin
     .from("studio_samples")
     .select("id, owner_id, title, kind, instrument, duration_ms, public_listing, allow_ratings, allow_comments, in_rankings")
     .eq("status", "PUBLISHED")
-    .eq("public_listing", true)
+    .eq("public_listing", true);
+  if (ownerId) query = query.eq("owner_id", ownerId);
+  const loaded = await query
     .order("created_at", { ascending: false })
     .limit(200);
   if (loaded.error) return [];
@@ -233,37 +249,69 @@ async function loadPublishedSampleRows(): Promise<SampleRow[]> {
 
 async function publishedSamples(): Promise<Work[]> {
   const rows = await loadPublishedSampleRows();
-  const [names, platform] = await Promise.all([
-    authorNames(rows.map((row) => row.owner_id)),
-    platformSampleOwners(rows.map((row) => row.owner_id)),
-  ]);
-  return rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    ownerId: row.owner_id,
-    ownership: platform.has(row.owner_id) ? ("PLATFORM" as const) : ("USER" as const),
-    allowComments: row.allow_comments === true,
-    allowRatings: row.allow_ratings === true,
-    inRankings: row.in_rankings === true,
-    author: platform.has(row.owner_id)
-      ? publicAuthorName({ ownership: "PLATFORM" })
-      : publicAuthorName({ ownership: "USER", displayName: names.get(row.owner_id) }),
-    kind: row.kind,
-    instrument: row.instrument,
-    durationMs: Number(row.duration_ms),
-  }));
+  const owners = rows.map((row) => row.owner_id);
+  const [names, platform, creators] = await Promise.all([authorNames(owners), platformSampleOwners(owners), loadCreatorIds(owners)]);
+  return rows.map((row) => {
+    const house = platform.has(row.owner_id);
+    return {
+      id: row.id,
+      title: row.title,
+      ownerId: row.owner_id,
+      ownership: house ? ("PLATFORM" as const) : ("USER" as const),
+      allowComments: row.allow_comments === true,
+      allowRatings: row.allow_ratings === true,
+      inRankings: row.in_rankings === true,
+      author: house
+        ? publicAuthorName({ ownership: "PLATFORM" })
+        : publicAuthorName({ ownership: "USER", displayName: names.get(row.owner_id) }),
+      authorHref: house ? null : creatorHref(creators, row.owner_id, names.get(row.owner_id)),
+      kind: row.kind,
+      instrument: row.instrument,
+      durationMs: Number(row.duration_ms),
+    };
+  });
 }
 
 export async function listPublicSamples(source: CatalogSource): Promise<PublicSampleCard[]> {
   const works = (await publishedSamples()).filter((work) =>
     source === "brd" ? work.ownership === "PLATFORM" : work.ownership === "USER",
   );
+  return sampleCards(works);
+}
+
+/**
+ * One creator's samples in the public catalogue, newest first (public profile). Not for admin
+ * accounts: their samples are the BitRymDym pack. No request data is read, so it can be cached.
+ */
+export async function listOwnerPublicSamples(
+  ownerId: string,
+  limit: number,
+): Promise<{ total: number; samples: PublicSampleCard[] }> {
+  const rows = await loadPublishedSampleRows(ownerId);
+  const works: Work[] = rows.slice(0, limit).map((row) => ({
+    id: row.id,
+    title: row.title,
+    ownerId: row.owner_id,
+    ownership: "USER" as const,
+    allowComments: row.allow_comments === true,
+    allowRatings: row.allow_ratings === true,
+    inRankings: row.in_rankings === true,
+    author: "",
+    kind: row.kind,
+    instrument: row.instrument,
+    durationMs: Number(row.duration_ms),
+  }));
+  return { total: rows.length, samples: await sampleCards(works) };
+}
+
+async function sampleCards(works: readonly Work[]): Promise<PublicSampleCard[]> {
   const ids = works.map((work) => work.id);
   const [meta, stats] = await Promise.all([sampleLabMeta(ids), sampleRatingStats(ids)]);
   return works.map((work) => ({
     id: work.id,
     title: work.title,
     author: work.author,
+    ...hrefField(work.authorHref),
     kind: work.kind === "effect" ? "effect" : "instrument",
     instrument: work.instrument ?? null,
     durationMs: work.durationMs ?? 0,
@@ -481,9 +529,9 @@ async function settlePeriod(admin: Admin, kind: TargetKind, period: PeriodWindow
 }
 
 /** Public works whose author entered the ranking (the database keeps ratings and comments on for them). */
-async function loadBoardWorks(kind: TargetKind): Promise<BoardWork[]> {
+async function loadBoardWorks(kind: TargetKind, client?: Admin): Promise<BoardWork[]> {
   if (kind === "beat") {
-    const beats = await listPublishedBeatBoardKeys();
+    const beats = await listPublishedBeatBoardKeys(client);
     return beats.map((beat) => ({
       id: beat.id,
       title: beat.title,
@@ -512,6 +560,10 @@ async function loadBoardWorks(kind: TargetKind): Promise<BoardWork[]> {
     instrument: row.instrument,
     durationMs: Number(row.duration_ms),
   }));
+}
+
+function boardAuthorHref(work: BoardWork | undefined, names: Map<string, string | null>, creators: Map<string, string>): string | null {
+  return work?.ownership === "USER" && work.ownerId ? creatorHref(creators, work.ownerId, names.get(work.ownerId)) : null;
 }
 
 function boardAuthor(work: BoardWork, names: Map<string, string | null>): string {
@@ -547,7 +599,7 @@ async function readBoardAt(kind: TargetKind, periodKind: PeriodKind, now: Date):
   const previousRanked = scoreLoaded(previousLoad, works, previous) ?? [];
   const leader = previousRanked[0];
   const shownOwnerIds: string[] = [];
-  for (const row of ranked.slice(0, 20)) {
+  for (const row of ranked.slice(0, BOARD_ROWS)) {
     const work = works.get(row.targetId);
     if (work?.ownership === "USER" && work.ownerId) shownOwnerIds.push(work.ownerId);
   }
@@ -555,9 +607,10 @@ async function readBoardAt(kind: TargetKind, periodKind: PeriodKind, now: Date):
     const work = works.get(leader.targetId);
     if (work?.ownership === "USER" && work.ownerId) shownOwnerIds.push(work.ownerId);
   }
-  const [settled, names] = await Promise.all([
+  const [settled, names, creators] = await Promise.all([
     settleLoaded(admin, kind, period, works, currentLoad),
     authorNames(shownOwnerIds),
+    loadCreatorIds(shownOwnerIds),
     settleLoaded(admin, kind, previous, works, previousLoad),
   ]);
   if (!settled) return empty;
@@ -569,7 +622,7 @@ async function readBoardAt(kind: TargetKind, periodKind: PeriodKind, now: Date):
     enabled: true,
     periodKey: period.key,
     closed: period.closed,
-    rows: ranked.slice(0, 20).map((row) => {
+    rows: ranked.slice(0, BOARD_ROWS).map((row) => {
       const work = works.get(row.targetId);
       const prize = prizes.get(row.targetId);
       return {
@@ -577,6 +630,7 @@ async function readBoardAt(kind: TargetKind, periodKind: PeriodKind, now: Date):
         targetId: row.targetId,
         title: work?.title ?? "—",
         author: work ? boardAuthor(work, names) : ANONYMIZED_PUBLIC_AUTHOR,
+        ...hrefField(boardAuthorHref(work, names, creators)),
         score: row.score,
         count: row.count,
         prize: prizeLabel(prize ? { place: prize.place, tier: prize.tier, days: prize.days, mode: prize.mode } : undefined),
@@ -584,9 +638,28 @@ async function readBoardAt(kind: TargetKind, periodKind: PeriodKind, now: Date):
       };
     }),
     champion: leader && leaderWork
-      ? { targetId: leader.targetId, title: leaderWork.title, author: boardAuthor(leaderWork, names), userOwned: leaderWork.ownership === "USER" }
+      ? { targetId: leader.targetId, title: leaderWork.title, author: boardAuthor(leaderWork, names), ...hrefField(boardAuthorHref(leaderWork, names, creators)), userOwned: leaderWork.ownership === "USER" }
       : null,
   };
+}
+
+/** Places shown on an open board, with the owner (server only; public profiles). No prize settling, no request data. */
+export async function readBoardPlaces(
+  kind: TargetKind,
+  periodKind: PeriodKind,
+  now = new Date(),
+): Promise<Array<{ place: number; targetId: string; title: string; ownerId: string }>> {
+  const admin = adminOrNull();
+  if (!admin) return [];
+  const period = warsawPeriod(now, periodKind);
+  const [listed, load] = await Promise.all([loadBoardWorks(kind, admin), loadRatingWindow(admin, kind, period)]);
+  const works = new Map(listed.map((work) => [work.id, work]));
+  return (scoreLoaded(load, works, period) ?? []).slice(0, BOARD_ROWS).flatMap((row) => {
+    const work = works.get(row.targetId);
+    return work?.ownership === "USER" && work.ownerId
+      ? [{ place: row.place, targetId: row.targetId, title: work.title, ownerId: work.ownerId }]
+      : [];
+  });
 }
 
 /** One board per request. The page starts it before the shell waits on the profile. */
@@ -674,7 +747,8 @@ export async function loadThread(kind: TargetKind | "work", id: string, viewerId
   const average = count ? votes.reduce((sum, row) => sum + Number(row.stars), 0) / count : null;
   const mine = viewerId ? votes.find((row) => row.user_id === viewerId)?.stars ?? null : null;
   const commentRows = ((comments.data ?? []) as Array<{ id: string; user_id: string; body: string; created_at: string }>).reverse();
-  const names = await authorNames(commentRows.map((row) => row.user_id));
+  const commenters = commentRows.map((row) => row.user_id);
+  const [names, creators] = await Promise.all([authorNames(commenters), loadCreatorIds(commenters)]);
   return {
     enabled: true,
     found: true,
@@ -687,6 +761,7 @@ export async function loadThread(kind: TargetKind | "work", id: string, viewerId
     comments: commentRows.map((row) => ({
       id: row.id,
       author: publicAuthorName({ ownership: "USER", displayName: names.get(row.user_id) }),
+      ...hrefField(creatorHref(creators, row.user_id, names.get(row.user_id))),
       body: row.body,
       createdAt: row.created_at,
       mine: canDeleteComment(viewerId, row.user_id),

@@ -35,6 +35,8 @@ export type PlayerTrack = {
   beatId: string;
   title: string;
   producer: string;
+  /** Public profile of the author, when it is on. */
+  authorHref?: string | null;
   durationSeconds: number;
   artworkVariant: number;
   coverUrl?: string | null;

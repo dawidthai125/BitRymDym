@@ -5,6 +5,7 @@ import Link from "@/components/ui/app-link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { AuthorName } from "@/components/creators/author-name";
 import { toggleBeatFavoriteAction } from "@/lib/beats/favorite-actions";
 import type { FavoriteBeatCard } from "@/lib/beats/favorites";
 
@@ -32,12 +33,14 @@ export function FavoriteList({ items }: { items: FavoriteBeatCard[] }) {
     <ul className="mt-6 divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
       {rows.map((beat) => (
         <li key={beat.id} className="flex min-h-14 items-center justify-between gap-3 py-3">
-          <Link href={`/beat/${beat.id}`} className="min-w-0 hover:text-[var(--brd-green)]">
-            <p className="truncate font-medium">{beat.title}</p>
-            <p className="truncate text-sm text-[var(--brd-mute)]">
-              {beat.producer} · {beat.bpm} BPM
+          <div className="relative min-w-0 hover:text-[var(--brd-green)]">
+            <p className="truncate font-medium">
+              <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0">{beat.title}</Link>
             </p>
-          </Link>
+            <p className="truncate text-sm text-[var(--brd-mute)]">
+              <AuthorName name={beat.producer} href={beat.authorHref} /> · {beat.bpm} BPM
+            </p>
+          </div>
           <button
             type="button"
             className="shrink-0 text-sm text-[var(--brd-ink)] underline-offset-4 hover:underline disabled:opacity-60"

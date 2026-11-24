@@ -10,6 +10,7 @@ import Link from "@/components/ui/app-link";
 import { BeatArtwork } from "@/components/brand/beat-artwork";
 import { HomePlayButton } from "@/components/brand/home-play-button";
 import { Waveform } from "@/components/brand/waveform";
+import { AuthorName } from "@/components/creators/author-name";
 import { usePlayer } from "@/components/player/player-provider";
 import { playbackProgressRatio } from "@/lib/player/playback-progress";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
@@ -55,6 +56,7 @@ function HomeBeatRow({
     beatId: beat.id,
     title: beat.title,
     producer: beat.producer,
+    authorHref: beat.authorHref,
     durationSeconds: beat.durationSeconds,
     artworkVariant: beat.artworkVariant,
     coverUrl: beat.coverUrl ?? null,
@@ -93,7 +95,7 @@ function HomeBeatRow({
           )}
         />
 
-        <Link href={`/beat/${beat.id}`} className="min-w-0 space-y-0.5">
+        <div className="relative min-w-0 space-y-0.5">
           {featured ? (
             <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-green)]">
               {t("polecane")}
@@ -105,10 +107,12 @@ function HomeBeatRow({
               featured ? "text-lg sm:text-xl" : "text-base sm:text-lg",
             )}
           >
-            {tl(beat.title)}
+            <Link href={`/beat/${beat.id}`} className="after:absolute after:inset-0">
+              {tl(beat.title)}
+            </Link>
           </p>
           <p className="truncate text-sm text-[var(--brd-ink-soft)]">
-            {tl(beat.producer)}
+            <AuthorName name={tl(beat.producer)} href={beat.authorHref} />
           </p>
           <p className="brd-meta truncate text-[10px] text-[var(--brd-mute)]">
             {tl([
@@ -119,7 +123,7 @@ function HomeBeatRow({
               .filter(Boolean)
               .join(" · "))}
           </p>
-        </Link>
+        </div>
 
         <div className="hidden min-w-0 sm:block">
           <Waveform

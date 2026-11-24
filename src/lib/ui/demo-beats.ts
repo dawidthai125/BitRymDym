@@ -11,6 +11,8 @@ export type PresentedBeat = {
   title: string;
   /** Canonical public author (already resolved via withPublicAuthors). */
   producer: string;
+  /** Public profile of the author, when it is on. */
+  authorHref?: string;
   genre: string | null;
   /** No mood column in beats — always null until a real source exists. */
   mood: string | null;
@@ -27,6 +29,7 @@ type PresentableInput = {
   id: string;
   title: string;
   producer?: string | null;
+  authorHref?: string;
   genre?: string | null;
   style?: string | null;
   bpm: number;
@@ -66,6 +69,7 @@ function toPresented(raw: PresentableInput): PresentedBeat {
     id: raw.id,
     title,
     producer,
+    ...(raw.authorHref ? { authorHref: raw.authorHref } : {}),
     genre: raw.genre?.trim() || null,
     mood: null,
     key: presentKey(raw.key, raw.scale),

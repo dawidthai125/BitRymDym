@@ -9,6 +9,7 @@ import Link from "@/components/ui/app-link";
 
 import { HomePlayButton } from "@/components/brand/home-play-button";
 import { Waveform } from "@/components/brand/waveform";
+import { AuthorName } from "@/components/creators/author-name";
 import { usePlayer } from "@/components/player/player-provider";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import { playbackProgressRatio } from "@/lib/player/playback-progress";
@@ -52,6 +53,7 @@ function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
           beatId: beat.id,
           title: beat.title,
           producer: beat.producer,
+          authorHref: beat.authorHref,
           durationSeconds: beat.durationSeconds,
           artworkVariant: beat.artworkVariant,
         },
@@ -80,20 +82,20 @@ function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
       >
         A{index + 1}
       </span>
-      <Link
-        href={`/beat/${beat.id}`}
-        className="tape-focus min-w-0 underline-offset-4 hover:underline"
-      >
+      {/* The title link covers the block; the author's name is a link of its own. */}
+      <div className="relative min-w-0">
         <span className="block truncate font-poster text-xl font-bold uppercase leading-none tracking-[0.02em] text-tape-cream sm:text-2xl">
-          {tl(beat.title)}
+          <Link href={`/beat/${beat.id}`} className="tape-focus underline-offset-4 after:absolute after:inset-0 hover:underline">
+            {tl(beat.title)}
+          </Link>
         </span>
         <span className="mt-1 block truncate text-sm text-tape-cream-soft">
-          {tl(beat.producer)}
+          <AuthorName name={tl(beat.producer)} href={beat.authorHref} />
           {meta ? (
             <span className="text-sm text-tape-cream-soft"> · {tl(meta)}</span>
           ) : null}
         </span>
-      </Link>
+      </div>
       <div className="col-span-3 col-start-2 row-start-2 mt-2 min-w-0 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:mt-0">
         <Waveform
           seed={beat.id}

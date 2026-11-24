@@ -65,6 +65,8 @@ export type Beat = {
   ownershipType: BeatOwnershipType;
   title: string;
   producer: string | null;
+  /** Public profile of the author, when it is on (set together with the public name). */
+  authorHref?: string | null;
   description: string | null;
   genre: string | null;
   style: string | null;

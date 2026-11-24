@@ -19,6 +19,8 @@ export const ADMIN_AUDIT_ACTIONS = [
   "PLAN_ADDON_REVOKE",
   "USAGE_RESET",
   "PAYMENT_REVIEW_RESOLVE",
+  "PUBLIC_PROFILE_BLOCK",
+  "PUBLIC_PROFILE_UNBLOCK",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];

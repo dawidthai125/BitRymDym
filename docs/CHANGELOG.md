@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (32) — Publiczne profile twórców; polityka prywatności 2026-11-24.1
+
+- `/account/profil`: włącznik (domyślnie wyłączony), 6 linków (YouTube, Spotify, Instagram, Facebook, TikTok, SoundCloud), osobny przełącznik na każdą pokazywaną rzecz. Publiczna strona `/tworca/<public_id>-<ksywka>`; ksywka w rankingach, listach i komentarzach jest linkiem tylko przy włączonym profilu.
+- Administrator może ukryć profil (`PUBLIC_PROFILE_BLOCK/UNBLOCK` w dzienniku). Sitemap: tylko profile z publiczną treścią.
+- `brd-audio-deck.tsx`: długość utworu widać przed Play.
+- Polityka prywatności: punkt o profilu publicznym (pkt 5), wersja `2026-11-24.1`.
+- Migracja (zastosowana 24.11): `20261123220000_public_profiles.sql`.
+
 ## 2026-11-24 (31) — Studio: zakładka Sample, pasek klipu na telefonie, „Zrób utwór”, eksport WAV, Graj, pracownia, separator
 
 - Sample: panel w kolumnie obok osi czasu (`lg+`), dwa okna „Sample” / „Klawisze” (oba zamontowane), niższa rolka nut, klawiatura przed rolką.

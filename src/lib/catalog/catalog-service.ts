@@ -20,6 +20,7 @@ import {
 } from "@/lib/community/consents";
 import { WORK_ALL_PLACES } from "@/lib/catalog/catalog-prize";
 import { aggregateRatings, MIN_RATERS, previousPeriod, rankTargets, warsawPeriod } from "@/lib/community/ranking-policy";
+import { creatorHref, loadCreatorIds } from "@/lib/creators/creator-hrefs";
 import { publicAuthorName } from "@/lib/community/share-policy";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { queueWorkClip } from "@/lib/catalog/work-clip-server";
@@ -35,6 +36,8 @@ export type CatalogCard = {
   title: string;
   ownerId: string;
   author: string;
+  /** Public profile of the author, when it is on. */
+  authorHref?: string | null;
   allowRatings: boolean;
   allowComments: boolean;
   inRankings: boolean;
@@ -52,6 +55,7 @@ export type WorkBoardRow = {
   targetId: string;
   title: string;
   author: string;
+  authorHref?: string | null;
   score: number;
   count: number;
 };
@@ -61,7 +65,7 @@ export type WorkBoard = {
   periodKey: string;
   closed: boolean;
   rows: WorkBoardRow[];
-  lead: { targetId: string; title: string; author: string } | null;
+  lead: { targetId: string; title: string; author: string; authorHref?: string | null } | null;
 };
 
 type Row = {
@@ -106,12 +110,14 @@ async function authorNames(ownerIds: string[]): Promise<Map<string, string | nul
   }
 }
 
-function toCard(row: Row, names: Map<string, string | null>): CatalogCard {
+function toCard(row: Row, names: Map<string, string | null>, creators: Map<string, string> = new Map()): CatalogCard {
+  const href = creatorHref(creators, row.owner_id, names.get(row.owner_id));
   return {
     id: row.id,
     title: row.title,
     ownerId: row.owner_id,
     author: publicAuthorName({ ownership: "USER", displayName: names.get(row.owner_id) }),
+    ...(href ? { authorHref: href } : {}),
     allowRatings: row.allow_ratings,
     allowComments: row.allow_comments,
     inRankings: row.in_rankings,
@@ -120,8 +126,9 @@ function toCard(row: Row, names: Map<string, string | null>): CatalogCard {
 }
 
 async function cardsOf(rows: Row[]): Promise<CatalogCard[]> {
-  const names = await authorNames(rows.map((row) => row.owner_id));
-  return rows.map((row) => toCard(row, names));
+  const owners = rows.map((row) => row.owner_id);
+  const [names, creators] = await Promise.all([authorNames(owners), loadCreatorIds(owners)]);
+  return rows.map((row) => toCard(row, names, creators));
 }
 
 const PUBLIC_WORKS_PAGE = 100;
@@ -381,7 +388,8 @@ export async function updateOwnerCatalogEntry(
   return result === "ok" ? { result, consents } : { result };
 }
 
-async function rankingWorks(admin: Admin): Promise<Map<string, CatalogCard> | null> {
+/** `named: false` skips the author lookup (it reads the request; cached ranking places have none). */
+async function rankingWorks(admin: Admin, named = true): Promise<Map<string, CatalogCard> | null> {
   const loaded = await admin
     .from(TABLE)
     .select("id, owner_id, project_id, master_job_id, title, allow_ratings, allow_comments, in_rankings, published_at, withdrawn_at")
@@ -392,7 +400,8 @@ async function rankingWorks(admin: Admin): Promise<Map<string, CatalogCard> | nu
     .limit(500);
   if (missingRelation(loaded.error, TABLE)) return null;
   if (loaded.error) return new Map();
-  const cards = await cardsOf((loaded.data ?? []) as Row[]);
+  const rows = (loaded.data ?? []) as Row[];
+  const cards = named ? await cardsOf(rows) : rows.map((row) => toCard(row, new Map()));
   return new Map(cards.map((card) => [card.id, card]));
 }
 
@@ -432,6 +441,7 @@ async function scoreAll(
       targetId: row.targetId,
       title: work?.title ?? "—",
       author: work?.author ?? "—",
+      ...(work?.authorHref ? { authorHref: work.authorHref } : {}),
       score: row.score,
       count: row.count,
       ownerId: work?.ownerId ?? "",
@@ -484,9 +494,25 @@ export async function readWorkBoard(period: WorkBoardPeriod, now = new Date()): 
     const previous = previousPeriod(current, now);
     const earlier = await scoreWindow(admin, works, previous.start, previous.end, 1);
     const first = earlier?.[0];
-    if (first) lead = { targetId: first.targetId, title: first.title, author: first.author };
+    if (first) lead = { targetId: first.targetId, title: first.title, author: first.author, ...(first.authorHref ? { authorHref: first.authorHref } : {}) };
   }
   return { enabled: true, periodKey: window.key, closed: window.closed, rows, lead };
+}
+
+/** Places shown on a track board, with the owner (server only; public profiles). No request data. */
+export async function readWorkPlaces(
+  period: WorkBoardPeriod,
+  now = new Date(),
+): Promise<Array<{ place: number; targetId: string; title: string; ownerId: string }>> {
+  const admin = adminOrNull();
+  if (!admin) return [];
+  const works = await rankingWorks(admin, false);
+  if (!works || works.size === 0) return [];
+  const window = workWindow(now, period);
+  const scored = (await scoreAll(admin, works, window.start, window.end)) ?? [];
+  return scored
+    .slice(0, period === "all" ? WORK_ALL_PLACES : 20)
+    .flatMap((row) => (row.ownerId ? [{ place: row.place, targetId: row.targetId, title: row.title, ownerId: row.ownerId }] : []));
 }
 
 export async function readHalfYearPlaces(now = new Date()): Promise<{ enabled: boolean; year: number; half: 1 | 2; rows: WorkBoardRow[] }> {

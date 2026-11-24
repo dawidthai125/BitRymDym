@@ -13,7 +13,7 @@ type Loaded = {
   average: number | null;
   count: number;
   mine: number | null;
-  comments: { id: string; author: string; body: string; createdAt: string; mine?: boolean; canHide?: boolean }[];
+  comments: { id: string; author: string; authorHref?: string | null; body: string; createdAt: string; mine?: boolean; canHide?: boolean }[];
 };
 
 export function SampleTalk({ id, signedIn }: { id: string; signedIn: boolean }) {

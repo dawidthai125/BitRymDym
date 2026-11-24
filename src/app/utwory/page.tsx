@@ -3,6 +3,7 @@ import Link from "@/components/ui/app-link";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf } from "@/components/community/community-shelf";
+import { AuthorName } from "@/components/creators/author-name";
 import { AppShell } from "@/components/site/app-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { pageMetadata } from "@/config/site";
@@ -85,7 +86,9 @@ export default async function FinishedWorksPage({ searchParams }: Props) {
                           </span>
                         ) : null}
                       </p>
-                      <p className="text-sm text-[var(--brd-mute)]">{catalog("by", { name: work.author })}</p>
+                      <p className="text-sm text-[var(--brd-mute)]">
+                        <AuthorName name={work.author} href={work.authorHref} label={catalog("by", { name: work.author })} />
+                      </p>
                       <p className="text-sm text-[var(--brd-ink-soft)]">
                         {clip.state === "ready" ? t("clipBadge", { seconds: clip.seconds }) : t("clipPendingShort")}
                         {" · "}

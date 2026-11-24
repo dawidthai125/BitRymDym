@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "@/components/ui/app-link";
 
 import { WorkClipButton } from "@/app/utwory/work-clip-button";
+import { AuthorName } from "@/components/creators/author-name";
 import type { FeaturedWorkView } from "@/lib/catalog/featured-work-server";
 
 const wrap =
@@ -53,7 +54,9 @@ export async function HomeFeaturedWork({ featured }: { featured: FeaturedWorkVie
             <h3 className="break-words font-poster text-2xl font-bold uppercase leading-none text-tape-cream sm:text-3xl">
               <Link href={`/utwor/${work.id}`} className="underline-offset-4 hover:underline">{work.title}</Link>
             </h3>
-            <p className="text-sm text-tape-cream-soft">{catalog("by", { name: work.author })}</p>
+            <p className="text-sm text-tape-cream-soft">
+              <AuthorName name={work.author} href={work.authorHref} label={catalog("by", { name: work.author })} />
+            </p>
             {note ? (
               <p className="max-w-prose border-l-2 border-tape-amber pl-3 text-sm italic leading-relaxed text-tape-cream-soft">
                 <span className="sr-only">{t("featuredNote")}: </span>

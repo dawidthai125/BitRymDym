@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "@/components/ui/app-link";
 
 import { CommunityShelf } from "@/components/community/community-shelf";
+import { AuthorName } from "@/components/creators/author-name";
 import { readBoard } from "@/lib/community/community-service";
 import type { PeriodKind, TargetKind } from "@/lib/community/ranking-policy";
 
@@ -49,7 +50,7 @@ export async function RankingView({
           <Link href={kind === "beat" ? `/beat/${board.champion.targetId}` : sampleHref(board.champion.targetId, board.champion.userOwned)} className="underline underline-offset-4">
             {board.champion.title}
           </Link>
-          <span className="ml-2 font-sans text-sm normal-case text-[var(--brd-mute)]">{board.champion.author}</span>
+          <AuthorName name={board.champion.author} href={board.champion.authorHref} className="ml-2 font-sans text-sm normal-case text-[var(--brd-mute)]" />
         </p>
       ) : null}
       {board?.enabled && !board.closed ? <p className="mb-3 text-sm text-[var(--brd-mute)]">{rank("open")}</p> : null}
@@ -63,7 +64,7 @@ export async function RankingView({
                 <Link href={kind === "beat" ? `/beat/${row.targetId}` : sampleHref(row.targetId, row.userOwned)} className="underline underline-offset-4">
                   {row.title}
                 </Link>
-                <span className="ml-2 text-sm text-[var(--brd-mute)]">{row.author}</span>
+                <AuthorName name={row.author} href={row.authorHref} className="ml-2 text-sm text-[var(--brd-mute)]" />
               </p>
               <p className="text-sm text-[var(--brd-ink-soft)]">
                 {rank("votes", { count: row.count, score: row.score.toFixed(1) })}
