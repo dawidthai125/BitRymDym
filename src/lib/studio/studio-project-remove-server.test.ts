@@ -80,6 +80,8 @@ describe("removeStudioProjectFor", () => {
       expect(plainDelete).not.toHaveBeenCalled();
       expect(deletedTables()).toEqual(expect.arrayContaining(["catalog_works", "studio_tracks", "studio_listen_links", "studio_project_lyrics"]));
       expect(deletedTables()).not.toContain(table);
+      // Append-only: service_role may not delete from it, the whole removal would stop half-way.
+      expect(deletedTables()).not.toContain("studio_mix_working_revisions");
       expect(removedFiles).toContainEqual(["k.wav"]);
       const last = calls.filter((c) => c.op === "update").at(-1)!;
       expect(last.table).toBe("studio_projects");

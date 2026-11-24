@@ -29,7 +29,11 @@ const USAGE_TABLES = [
   "studio_separate_jobs",
 ] as const;
 
-/** The content of the project; everything here also goes with a plain delete (cascade). */
+/**
+ * The content of the project; everything here also goes with a plain delete (cascade).
+ * studio_mix_working_revisions is not here: append-only by grant (service_role has no DELETE). Its rows
+ * hold mix settings only and go with the account.
+ */
 const CONTENT_TABLES = [
   "catalog_works",
   "studio_listen_links",
@@ -38,7 +42,6 @@ const CONTENT_TABLES = [
   "studio_project_lyrics",
   "studio_bitek_messages",
   "studio_mix_working_idempotency",
-  "studio_mix_working_revisions",
   "studio_master_references",
 ] as const;
 

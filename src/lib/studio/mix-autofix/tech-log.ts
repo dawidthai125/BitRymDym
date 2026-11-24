@@ -28,11 +28,12 @@ export function techChipsFromAutofixNotes(notes: readonly MixAutofixNote[]): Mix
     switch (n.key) {
       case "gainClipTrack":
       case "gainTrimTrack":
-        chip(`głośność ${s(p.db)} dB`);
+        // The notes carry the size only; a trim always goes down.
+        chip(`głośność −${s(p.db)} dB`);
         break;
       case "gainMasterDown":
       case "gainMasterUp":
-        out.push({ id: `${n.key}-${i}`, track: null, label: `master ${s(p.db)} dB` });
+        out.push({ id: `${n.key}-${i}`, track: null, label: `master ${n.key === "gainMasterUp" ? "+" : "−"}${s(p.db)} dB` });
         break;
       case "balanceVocalUp":
         out.push({ id: `${n.key}-${i}-v`, track: null, label: `wokal +${s(p.up)} dB` });

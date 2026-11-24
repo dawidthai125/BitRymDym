@@ -2925,6 +2925,7 @@
       "odzyskiwanie": "Recovering…",
       "eksportujWav": "Export WAV",
       "eksportujPonownie": "Export again",
+      "eksportWToku": "Export in progress",
       "ponowEksport": "Retry export",
       "eksportujCalyDokumentStudio": "Export the whole Studio document as WAV",
       "zamknijEksport": "Close export",

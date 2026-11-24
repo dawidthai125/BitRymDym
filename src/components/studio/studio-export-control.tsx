@@ -784,7 +784,9 @@ export function StudioExportControl({
         ? t("eksportujWav")
         : phase === "SUCCEEDED"
           ? t("eksportujPonownie")
-          : t("ponowEksport");
+          : phase === "QUEUED" || phase === "RUNNING"
+            ? t("eksportWToku")
+            : t("ponowEksport");
 
   return (
     <div className="relative">
