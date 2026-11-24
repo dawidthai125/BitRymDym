@@ -1209,7 +1209,7 @@ export function StudioMasterStep({
               <section aria-labelledby="studio-master-final-title" data-testid="studio-master-final" className="flex flex-col gap-2 rounded-[2px] border border-[var(--brd-line)] border-l-4 border-l-[var(--brd-green)] bg-[var(--brd-paper)] p-3">
                 <h3 id="studio-master-final-title" className="brd-display text-lg">{t("finalTytul")}</h3>
                 <p className="text-sm">{t("finalOpis")}</p>
-                {sm.url ? <BrdAudioDeck src={sm.url} title={t("finalTytul")} testId="studio-master-final-audio" seed={`master:${projectId}`} onRefreshSrc={() => refreshFinalUrl(sm.jobId)} /> : sm.urlState === "loading" ? (
+                {sm.url ? <BrdAudioDeck src={sm.url} title="Master" testId="studio-master-final-audio" seed={`master:${projectId}`} onRefreshSrc={() => refreshFinalUrl(sm.jobId)} /> : sm.urlState === "loading" ? (
                   <p role="status" className="text-sm text-[var(--brd-mute)]">{t("odsluchWczytuje")}</p>
                 ) : (
                   <p role="status" data-testid="studio-master-no-audio" className="flex flex-wrap items-center gap-2 text-sm">

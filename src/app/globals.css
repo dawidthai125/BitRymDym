@@ -1067,7 +1067,9 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
 /* Studio on touch screens (look checked on Android and iOS 2026-11-24). */
 main[data-brd-surface="control-room"] input[type="range"],
 [data-testid="studio-inspector-mobile"] input[type="range"],
-[data-testid="studio-mixer-sheet"] input[type="range"] {
+[data-testid="studio-mixer-sheet"] input[type="range"],
+main[data-brd-surface="control-room"] input:is([type="radio"], [type="checkbox"]),
+[data-testid="studio-inspector-mobile"] input:is([type="radio"], [type="checkbox"]) {
   accent-color: var(--brd-amber);
 }
 @media (pointer: coarse) {

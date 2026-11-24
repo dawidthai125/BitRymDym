@@ -193,7 +193,7 @@ export function StudioTrackHeader({
             type="button"
             size="xs"
             variant="ghost"
-            className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7"
+            className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7 pointer-coarse:sm:w-10 pointer-coarse:sm:min-w-10"
             disabled={pending || index === 0}
             title={tr("przeniesWGore")}
             aria-label={tr("przeniesSciezkeWGore")}
@@ -207,7 +207,7 @@ export function StudioTrackHeader({
             type="button"
             size="xs"
             variant="ghost"
-            className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7"
+            className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7 pointer-coarse:sm:w-10 pointer-coarse:sm:min-w-10"
             disabled={pending || index === doc.tracks.length - 1}
             title={tr("przeniesWDol")}
             aria-label={tr("przeniesSciezkeWDol")}
@@ -222,7 +222,7 @@ export function StudioTrackHeader({
               type="button"
               size="xs"
               variant="ghost"
-              className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7"
+              className="h-11 min-h-11 min-w-11 shrink-0 px-0 sm:w-7 sm:min-w-7 pointer-coarse:sm:w-10 pointer-coarse:sm:min-w-10"
               data-testid="studio-track-menu"
               data-track-id={track.id}
               disabled={recordingLocked || pending}
