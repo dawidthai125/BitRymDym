@@ -12,6 +12,8 @@ Format: data, zakres, skrót.
 - Progi: szczyt co najmniej 9 sigma, drugi szczyt najwyżej 0,8, zgodność obu połówek do 3 ms. Na 320 próbach (8 bitów × 4 głosy × długości i poziomy) zero złych odpowiedzi; 16 s nagrania wystarcza do śladu 44 dB pod głosem.
 - Studio: pole „Nagrywam w słuchawkach” (samo włącza się przy słuchawkach i interfejsach z nazwy urządzenia, wybór pamiętany). Włączone: mikrofon bez tłumienia echa, odszumiania i automatycznej głośności przeglądarki, czyli tak, jak mierzyła kalibracja. Wyłączone: jak dotąd.
 - Bit do pomiaru tylko z pamięci strony (blob), bez pobierania. Nagrania MP4/AAC (starsze Safari) bez automatu, zostaje kalibracja. Ostrzeżenie „skalibruj” nie pojawia się, gdy opóźnienie jest zmierzone.
+- Po niezależnym przeglądzie: program mierzy zawsze całe opóźnienie od początku pliku (złe zapamiętane samo się poprawia, nic nie jest wycinane z pliku), słuchawki rozpoznawane z nazwy wyjścia z listą wykluczeń, test mikrofonu bez obróbki tak jak nagranie.
+- Wydane 2026-11-24: tag `recorder-v2026.11.39` (`0375be7`), Setup SHA-256 `db68155c…` (140103585 B), paczka `7536783d…`.
 - Sprawdzone w Chromium z mikrofonem udawanym przez opóźniony bit (60, 120, 300 ms): po ułożeniu błąd poniżej 1 ms w niezależnym pomiarze. Nie sprawdzono na prawdziwych słuchawkach i mikrofonie.
 
 ## 2026-11-24 (44) — Studio na Androidzie i iOS: telefon w poziomie i dotyk
