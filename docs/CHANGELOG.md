@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (41) — Rejestracja na telefonie: przycisk motywu nie zasłania pól
+
+- `AuthThemeBar` (rejestracja, logowanie, reset hasła): przewija się ze stroną zamiast wisieć nad polami.
+
 ## 2026-11-24 (40) — Statystyki: zdarzenia w Analytics, licznik wejść bez cookies
 
 - Google Analytics (tylko po zgodzie, `src/lib/analytics/ga.ts`): zdarzenia `sign_up`, `beat_play` (raz na bit i wczytanie strony), `purchase` (rodzaj produktu i cena, bez numeru konta i zamówienia).
