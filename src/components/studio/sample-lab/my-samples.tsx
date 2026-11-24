@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useLibText } from "@/i18n/use-lib-text";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ConsentSwitches } from "@/components/community/consent-switches";
@@ -25,6 +26,7 @@ async function fetchSamples(): Promise<{ ok: true; list: NonNullable<ListState> 
 export function MySamples({ refreshKey }: { refreshKey: number }) {
   const t = useTranslations("studio.sampleLab");
   const tc = useTranslations("community.consents");
+  const tl = useLibText();
   const locale = useLocale();
   const [list, setList] = useState<ListState>(null);
   const [listFailed, setListFailed] = useState(false);
@@ -130,7 +132,7 @@ export function MySamples({ refreshKey }: { refreshKey: number }) {
           <span className="font-mono text-sm text-[var(--brd-ink-soft)]">{t("limit", { n: list.owned, cap: list.cap })}</span>
         ) : null}
       </div>
-      {error ? <p role="alert" className="mb-2 text-sm text-[var(--brd-rec)]">{error}</p> : null}
+      {error ? <p role="alert" className="mb-2 text-sm text-[var(--brd-rec)]">{tl(error)}</p> : null}
       {!list ? (
         listFailed ? (
           <button type="button" onClick={() => { setError(null); setListFailed(false); load(); }} className="min-h-11 rounded-md border border-[var(--brd-line)] px-4 text-sm">

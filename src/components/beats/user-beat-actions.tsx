@@ -31,9 +31,9 @@ export function UserBeatActions({
     action: (id: string) => Promise<{ success: boolean; error: string | null }>,
   ) {
     startTransition(async () => {
-      const result = await action(beatId);
-      if (!result.success) {
-        window.alert(result.error ?? t("akcjaNiePowiodlaSie"));
+      const result = await action(beatId).catch(() => null);
+      if (!result?.success) {
+        window.alert(result?.error ?? t("akcjaNiePowiodlaSie"));
         return;
       }
       router.refresh();

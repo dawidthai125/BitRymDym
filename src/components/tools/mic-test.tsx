@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { levelOf, meterPercent, micVerdict, type MicVerdict } from "@/lib/tools/mic-level";
+import { isMissingDeviceError, levelOf, meterPercent, micVerdict, type MicVerdict } from "@/lib/tools/mic-level";
 import { toolInput, toolPanel, toolPrimary, toolSecondary } from "@/components/tools/tool-ui";
 
 const RECORD_MS = 5000;
@@ -97,6 +97,11 @@ export function MicTest() {
       };
       tick();
       const track = media.getAudioTracks()[0];
+      track?.addEventListener("ended", () => {
+        if (mine !== session.current) return;
+        stop();
+        setError("Mikrofon został odłączony. Podłącz go albo włącz test z innym mikrofonem.");
+      });
       const settings = track?.getSettings() ?? {};
       setInfo([track?.label, settings.sampleRate ? `${settings.sampleRate / 1000} kHz` : null, settings.channelCount ? (settings.channelCount > 1 ? "stereo" : "mono") : null].filter(Boolean).join(" · "));
       setDeviceId(settings.deviceId ?? id);
@@ -107,6 +112,10 @@ export function MicTest() {
     } catch (e) {
       if (mine !== session.current) return;
       stop();
+      if (id && isMissingDeviceError(e)) {
+        setDeviceId("");
+        return start("");
+      }
       setError(errorText(e));
     }
   };

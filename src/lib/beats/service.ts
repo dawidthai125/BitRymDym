@@ -1106,11 +1106,26 @@ export async function archiveBeat(beatId: string): Promise<Beat> {
 export const BEAT_DELETE_IN_USE =
   "Ten bit jest użyty w nagraniu, mixie albo projekcie. Zarchiwizuj go, zamiast kasować.";
 
+export const BEAT_DELETE_HAS_RECORDS =
+  "Ten bit był już zgłoszony, wydany albo kupiony, więc jego wpisy o prawach muszą zostać. Zarchiwizuj go, zamiast kasować.";
+
 export async function deleteBeat(beatId: string): Promise<void> {
   await requireAdminPlatformOps();
   await requirePermission("beats.delete");
   if (!isUuid(beatId)) throw new AuthError("NOT_FOUND", "No such beat.");
   const admin = createSupabaseAdminClient();
+
+  // Rights basis, decisions and reviews are permanent records (the database refuses to delete them) and a sold
+  // beat belongs to its buyer. Checked first: a refusal half-way used to wipe the beat's checks and fingerprints.
+  const permanent = await Promise.all(
+    (["beat_rights_basis", "beat_moderation_decisions", "beat_rights_reviews", "payment_orders"] as const).map((table) =>
+      admin.from(table).select("id", { head: true, count: "exact" }).eq("beat_id", beatId),
+    ),
+  );
+  for (const row of permanent) {
+    if (row.error) throw new Error(row.error.message);
+    if ((row.count ?? 0) > 0) throw new AuthError("CONFLICT", BEAT_DELETE_HAS_RECORDS);
+  }
 
   const blockers = await Promise.all([
     admin.from("takes").select("id", { head: true, count: "exact" }).eq("beat_id", beatId),
@@ -1131,23 +1146,9 @@ export async function deleteBeat(beatId: string): Promise<void> {
     .eq("beat_id", beatId);
   if (assets.error) throw new Error(assets.error.message);
 
-  const basis = await admin.from("beat_rights_basis").select("id").eq("beat_id", beatId);
-  if (basis.error) throw new Error(basis.error.message);
-  const basisIds = (basis.data ?? []).map((row) => String((row as { id: string }).id));
-  if (basisIds.length > 0) {
-    const unlinked = await admin
-      .from("beat_rights_basis")
-      .update({ revokes_basis_id: null })
-      .in("revokes_basis_id", basisIds);
-    if (unlinked.error) throw new Error(unlinked.error.message);
-  }
-
   for (const table of [
     "beat_auto_checks",
     "beat_audio_fingerprints",
-    "beat_moderation_decisions",
-    "beat_rights_reviews",
-    "beat_rights_basis",
     "beat_download_events",
     "beat_download_reservations",
   ] as const) {

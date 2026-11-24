@@ -774,6 +774,7 @@
         "nieudane": "Ta płatność nie doszła. Nic nie włączyłem.",
         "zwrocone": "Ta płatność została zwrócona. Zakup jest wycofany.",
         "brak": "Nie znajduję tego zamówienia na Twoim koncie.",
+        "sprawdz": "Sprawdź ponownie",
         "wroc": "Wróć do planów",
         "bitCzekam": "Czekam na potwierdzenie z PayU. Gdy wpłata dojdzie, plik WAV tego bitu będzie do pobrania. Możesz zostać na tej stronie.",
         "bitGotowy": "Wpłata doszła. Bit jest w Twoim katalogu. Stamtąd pobierasz WAV i nagrywasz na nim w Studiu.",
@@ -1873,7 +1874,7 @@
       "bitrymdym": "BitRymDym",
       "zalogujSie": "Zaloguj się",
       "przejdzDoStronyGlownej": "Przejdź do strony głównej",
-      "zalozKontoPonownie": "Załóż konto ponownie"
+      "wyslijNowyLink": "Wyślij nowy link"
     },
     "authEmailChangePage": {
       "bitrymdym": "BitRymDym",
@@ -1939,7 +1940,12 @@
       "usuwanie": "Usuwanie…",
       "usunKonto": "Usuń konto",
       "pokazPowtorzoneHaslo": "Pokaż powtórzone hasło",
-      "ukryjPowtorzoneHaslo": "Ukryj powtórzone hasło"
+      "ukryjPowtorzoneHaslo": "Ukryj powtórzone hasło",
+      "noweKontoPotwierdz": "Nowe konto? Najpierw kliknij link z maila aktywacyjnego, dopiero potem się zaloguj.",
+      "nieMaMailaAktywacyjnego": "Nie ma maila aktywacyjnego",
+      "zostalJedenKrok": "Został jeden krok",
+      "mailIdzieKilkaMinut": "Mail idzie czasem kilka minut. Zajrzyj też do spamu i ofert.",
+      "wyslijMailJeszczeRaz": "Wyślij mail jeszcze raz"
     },
     "displayNameForm": {
       "ksywka": "Ksywka",
@@ -1962,6 +1968,15 @@
       "pokaz": "Pokaż",
       "pokazHaslo": "Pokaż hasło",
       "ukryjHaslo": "Ukryj hasło"
+    },
+    "resendConfirmation": {
+      "metaTitle": "Mail aktywacyjny",
+      "tytul": "Nowy mail aktywacyjny",
+      "opis": "Podaj e-mail z rejestracji. Wyślemy nowy link, który włączy konto.",
+      "eMail": "E-mail",
+      "wysylanie": "Wysyłanie…",
+      "wyslijPonownie": "Wyślij nowy link",
+      "wrocDoLogowania": "Wróć do logowania"
     }
   },
   "beats": {
@@ -3491,6 +3506,7 @@
       "usunacToNagranieTej": "Usunąć to nagranie? Tej operacji nie cofniesz.",
       "pustyDziennik": "Pusty dziennik",
       "nieMaszJeszczeNagran": "Nie masz jeszcze nagrań. Nagraj na stronie bitu — wpis pojawi się tutaj.",
+      "wpisy": "{n, plural, one {# wpis} few {# wpisy} many {# wpisów} other {# wpisu}}",
       "dziennikSesji": "· dziennik sesji",
       "tytulNagrania": "Tytuł nagrania",
       "zapisz": "Zapisz",

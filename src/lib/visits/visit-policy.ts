@@ -112,7 +112,7 @@ const PAGES = new Set([
   "about", "account", "autotune-online", "beats", "bity-do-freestyle", "bity-na-wylacznosc", "cookies",
   "darmowe-bity-do-rapu", "forgot-password", "jak-nagrac", "library", "mastering", "mix-i-mastering-online",
   "nagrywanie-rapu-w-domu", "nagrywarka", "narzedzia", "podklady-do-rapu", "polityka-prywatnosci", "poradniki",
-  "premium", "program-do-nagrywania-rapu", "ranking", "regulamin", "rymy", "sampel", "settings", "sign-in",
+  "premium", "program-do-nagrywania-rapu", "ranking", "regulamin", "resend-confirmation", "rymy", "sampel", "settings", "sign-in",
   "sign-up", "studio", "studio-nagran-online", "utwory",
 ]);
 const GROUPS = new Set(["beat", "listen", "profile", "r", "tworca", "utwor"]);

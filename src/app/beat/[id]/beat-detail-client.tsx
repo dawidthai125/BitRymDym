@@ -206,7 +206,7 @@ export function BeatDetailClient({
   return (
     <div className="space-y-10">
       {/* Hide sticky visually while hero BRD player overlaps viewport (detail consumption). */}
-      <style>{`html[data-brd-beat-hero-active] [role="region"][aria-label="Odtwarzacz"]{display:none!important}`}</style>
+      <style>{`html[data-brd-beat-hero-active] [data-sticky-player]{display:none!important}`}</style>
       {/* Hero: Desktop B Cover+Rail · Mobile A Editorial Stack */}
       <div className="grid gap-6 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] md:items-start md:gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <BeatArtwork

@@ -177,8 +177,7 @@ export function OwnTakesList({
       ) : null}
       {variant === "archive" ? (
         <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-          {items.length}{" "}
-          {tl(items.length === 1 ? "wpis" : items.length < 5 ? "wpisy" : "wpisów")} {t("dziennikSesji")}
+          {t("wpisy", { n: items.length })} {t("dziennikSesji")}
         </p>
       ) : null}
       <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">

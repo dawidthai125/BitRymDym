@@ -13,6 +13,7 @@ export function RewardClaimButton({
   label: string;
 }) {
   const t = useTranslations("community.rewards");
+  const thread = useTranslations("community.thread");
   const [state, setState] = useState(claimed ? "already" : "idle");
   const [busy, setBusy] = useState(false);
 
@@ -22,17 +23,18 @@ export function RewardClaimButton({
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ id }),
-    });
-    const payload = (await response.json().catch(() => ({}))) as { result?: string };
+    }).catch(() => null);
+    const payload = (await response?.json().catch(() => ({})) ?? {}) as { result?: string };
     setBusy(false);
-    setState(payload.result ?? "conflict");
+    setState(payload.result ?? "failed");
   }
 
   const note =
     state === "ok" ? t("ok")
       : state === "perpetual" ? t("perpetual")
         : state === "pending_plan" ? t("pending_plan")
-          : state === "conflict" || state === "invalid" ? t("conflict")
+          : state === "conflict" ? t("conflict")
+          : state === "failed" || state === "invalid" || state === "missing" ? thread("actionFailed")
             : state === "wait" ? t("wait")
               : state === "already" ? t("already")
                 : state === "off" ? t("off")

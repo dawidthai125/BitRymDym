@@ -81,7 +81,7 @@ export const CONFIRMATION_COPY = {
   },
   invalid: {
     title: "Nie udało się potwierdzić konta",
-    body: "Link potwierdzający jest nieprawidłowy lub wygasł. Poproś o nową wiadomość z potwierdzeniem.",
+    body: "Link potwierdzający wygasł albo został już użyty. Jeśli konto jest już aktywne, po prostu się zaloguj. Jeśli nie, wyślij nowy link.",
   },
   error: {
     title: "Nie udało się potwierdzić konta",

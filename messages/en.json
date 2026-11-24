@@ -774,6 +774,7 @@
         "nieudane": "This payment didn't go through. I didn't turn anything on.",
         "zwrocone": "This payment was refunded. The purchase has been withdrawn.",
         "brak": "I can't find this order on your account.",
+        "sprawdz": "Check again",
         "wroc": "Back to plans",
         "bitCzekam": "I'm waiting for PayU to confirm. When the payment arrives, the wav of this beat will be ready to download. You can stay on this page.",
         "bitGotowy": "The payment arrived. The beat is in your catalogue. Download the wav there and record on it in the Studio.",
@@ -1873,7 +1874,7 @@
       "bitrymdym": "BitRymDym",
       "zalogujSie": "Sign in",
       "przejdzDoStronyGlownej": "Go to the home page",
-      "zalozKontoPonownie": "Create the account again"
+      "wyslijNowyLink": "Send a new link"
     },
     "authEmailChangePage": {
       "bitrymdym": "BitRymDym",
@@ -1939,7 +1940,12 @@
       "usuwanie": "Deleting…",
       "usunKonto": "Delete account",
       "pokazPowtorzoneHaslo": "Show repeated password",
-      "ukryjPowtorzoneHaslo": "Hide repeated password"
+      "ukryjPowtorzoneHaslo": "Hide repeated password",
+      "noweKontoPotwierdz": "New account? Click the link in the activation email first, then sign in.",
+      "nieMaMailaAktywacyjnego": "No activation email",
+      "zostalJedenKrok": "One step left",
+      "mailIdzieKilkaMinut": "The email can take a few minutes. Check spam and promotions too.",
+      "wyslijMailJeszczeRaz": "Send the email again"
     },
     "displayNameForm": {
       "ksywka": "Nickname",
@@ -1962,6 +1968,15 @@
       "pokaz": "Show",
       "pokazHaslo": "Show password",
       "ukryjHaslo": "Hide password"
+    },
+    "resendConfirmation": {
+      "metaTitle": "Activation email",
+      "tytul": "New activation email",
+      "opis": "Enter the email you signed up with. We will send a new link that activates the account.",
+      "eMail": "Email",
+      "wysylanie": "Sending…",
+      "wyslijPonownie": "Send a new link",
+      "wrocDoLogowania": "Back to sign-in"
     }
   },
   "beats": {
@@ -3491,6 +3506,7 @@
       "usunacToNagranieTej": "Delete this recording? This cannot be undone.",
       "pustyDziennik": "Empty log",
       "nieMaszJeszczeNagran": "You have no recordings yet. Record on a beat page — the entry will appear here.",
+      "wpisy": "{n, plural, one {# entry} other {# entries}}",
       "dziennikSesji": "· session log",
       "tytulNagrania": "Recording title",
       "zapisz": "Save",

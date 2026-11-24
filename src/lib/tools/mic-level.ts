@@ -25,3 +25,9 @@ export function micVerdict(peakDb: number): MicVerdict {
 export function meterPercent(db: number): number {
   return Math.round(Math.min(100, Math.max(0, ((db + 60) / 60) * 100)));
 }
+
+/** The chosen microphone is gone (unplugged): the default one may still work. */
+export function isMissingDeviceError(error: unknown): boolean {
+  const name = (error as { name?: unknown } | null)?.name;
+  return name === "OverconstrainedError" || name === "NotFoundError";
+}

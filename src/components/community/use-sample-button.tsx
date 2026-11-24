@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useLibText } from "@/i18n/use-lib-text";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -20,6 +21,7 @@ const field = "min-h-11 max-w-full rounded-[var(--brd-r-cta)] border-2 border-[v
 /** Pick a project, add the sample to it, open the project. */
 export function UseSampleButton({ sampleId, signedIn }: { sampleId: string; signedIn: boolean }) {
   const t = useTranslations("community.sampleCatalog");
+  const tl = useLibText();
   const router = useRouter();
   const [step, setStep] = useState<Step>({ name: "idle" });
   const [busy, setBusy] = useState(false);
@@ -108,7 +110,7 @@ export function UseSampleButton({ sampleId, signedIn }: { sampleId: string; sign
           </div>
         </div>
       ) : null}
-      {error ? <p className="text-sm text-[var(--brd-rec)]" role="alert">{error}</p> : null}
+      {error ? <p className="text-sm text-[var(--brd-rec)]" role="alert">{tl(error)}</p> : null}
     </div>
   );
 }

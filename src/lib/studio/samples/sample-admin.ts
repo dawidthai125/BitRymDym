@@ -2,6 +2,7 @@ import "server-only";
 
 import { requireRole } from "@/lib/auth/session";
 import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
+import { removeCatalogAsset } from "@/lib/studio/samples/catalog-asset";
 import {
   instrumentKind,
   isSampleInstrumentId,
@@ -74,7 +75,7 @@ export async function adminRemoveCatalogSample(sampleId: string): Promise<AdminS
   const admin = createSupabaseAdminClient();
   const { data: row } = await admin
     .from(STUDIO_SAMPLES_TABLE)
-    .select("id, owner_id, object_key")
+    .select("id, owner_id, object_key, catalog_asset_id")
     .eq("id", sampleId)
     .maybeSingle();
   if (!row) return { ok: false, error: "Nie ma takiego sampla." };
@@ -83,12 +84,15 @@ export async function adminRemoveCatalogSample(sampleId: string): Promise<AdminS
     const { error } = await admin.from(STUDIO_SAMPLES_TABLE).delete().eq("id", sampleId);
     if (error) return { ok: false, error: "Nie udało się usunąć sampla." };
     if (row.object_key) await admin.storage.from(BEAT_AUDIO_BUCKET).remove([String(row.object_key)]);
+    await removeCatalogAsset(admin, row.catalog_asset_id);
     return { ok: true, removed: "deleted" };
   }
   const { error } = await admin
     .from(STUDIO_SAMPLES_TABLE)
-    .update({ status: "PRIVATE", public_listing: false })
+    // Only a PUBLISHED sample may carry a catalog asset (studio_samples_published_catalog_chk).
+    .update({ status: "PRIVATE", public_listing: false, catalog_asset_id: null })
     .eq("id", sampleId);
   if (error) return { ok: false, error: "Nie udało się zdjąć sampla z katalogu." };
+  await removeCatalogAsset(admin, row.catalog_asset_id);
   return { ok: true, removed: "unlisted" };
 }

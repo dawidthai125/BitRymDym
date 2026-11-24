@@ -63,6 +63,15 @@ describe("interpretSignUpResult", () => {
     }
   });
 
+  it("second click within a minute: same neutral pending message, not a failure", () => {
+    const result = interpretSignUpResult({
+      error: { message: "For security purposes, you can only request this after 37 seconds." },
+      session: null,
+      identities: null,
+    });
+    expect(result).toEqual({ kind: "pending_confirmation", message: SIGNUP_PENDING_NEUTRAL_MESSAGE });
+  });
+
   it("hard already-registered error matches fresh pending (anti-enumeration shape)", () => {
     const fresh = interpretSignUpResult({
       error: null,

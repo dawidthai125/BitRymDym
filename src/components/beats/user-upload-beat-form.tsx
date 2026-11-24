@@ -458,9 +458,9 @@ export function UserUploadBeatForm({
     }
 
     startTransition(async () => {
-      const result = await submitUserBeatAction(beatId, { rightsAccepted: true, consents });
-      if (!result.success) {
-        setFormError(result.error ?? tr("nieUdaloSieWyslac"));
+      const result = await submitUserBeatAction(beatId, { rightsAccepted: true, consents }).catch(() => null);
+      if (!result?.success) {
+        setFormError(result?.error ?? tr("nieUdaloSieWyslac"));
         return;
       }
       setSubmitted(true);

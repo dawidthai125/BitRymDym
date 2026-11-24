@@ -12,6 +12,7 @@ export function WorkPrizeButton({
   label: string;
 }) {
   const t = useTranslations("community.works");
+  const thread = useTranslations("community.thread");
   const router = useRouter();
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -22,16 +23,16 @@ export function WorkPrizeButton({
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ action, accept: true }),
-    });
-    const payload = (await response.json().catch(() => ({}))) as { result?: string };
+    }).catch(() => null);
+    const payload = (await response?.json().catch(() => ({})) ?? {}) as { result?: string };
     setBusy(false);
-    const result = payload.result ?? "conflict";
+    const result = payload.result ?? "failed";
     if (result === "ok") {
       setNote(t("prizeSaved"));
       router.refresh();
       return;
     }
-    setNote(result === "wait" ? t("prizeWait") : result === "off" ? t("prizeOff") : t("prizeConflict"));
+    setNote(result === "wait" ? t("prizeWait") : result === "off" ? t("prizeOff") : result === "failed" ? thread("actionFailed") : t("prizeConflict"));
   }
 
   return (

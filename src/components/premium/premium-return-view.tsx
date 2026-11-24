@@ -47,11 +47,11 @@ export function PremiumReturnView({ state }: { state: ReturnState }) {
           <p data-testid="premium-return-status" role="status" className="mt-4 max-w-[52ch] text-[0.95rem] leading-relaxed text-[var(--brd-ink-soft)]">
             {body}
           </p>
-          {pending ? <ReturnRefresh /> : null}
           {state.status === "beat_paid" && state.purchase ? <TrackPurchase purchase={state.purchase} /> : null}
           <div className="mt-6 flex flex-wrap gap-3">
+            {pending ? <ReturnRefresh label={t("sprawdz")} /> : null}
             {beatHref ? <BrdLink href={beatHref}>{state.status === "beat_paid" ? t("mojKatalog") : t("otworzBit")}</BrdLink> : null}
-            <BrdLink href="/premium">{t("wroc")}</BrdLink>
+            <BrdLink href="/premium" variant={pending ? "secondary" : "primary"}>{t("wroc")}</BrdLink>
           </div>
         </PageFrame>
       </main>

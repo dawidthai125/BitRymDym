@@ -111,8 +111,8 @@ export function CommunityThread(props: Props) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ kind: props.kind, id: props.targetId, stars: value }),
-    });
-    const payload = (await response.json().catch(() => ({}))) as { result?: string };
+    }).catch(() => null);
+    const payload = (await response?.json().catch(() => ({})) ?? {}) as { result?: string };
     setBusy(false);
     if (payload.result === "ok") {
       setStars(value);
@@ -135,7 +135,7 @@ export function CommunityThread(props: Props) {
           ? t("ratingsOff")
           : payload.result === "off"
             ? off("off")
-            : t("invalid"),
+            : t("actionFailed"),
     );
   }
 
@@ -147,8 +147,8 @@ export function CommunityThread(props: Props) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ kind: props.kind, id: props.targetId, body }),
-    });
-    const payload = (await response.json().catch(() => ({}))) as { result?: string; id?: string };
+    }).catch(() => null);
+    const payload = (await response?.json().catch(() => ({})) ?? {}) as { result?: string; id?: string };
     setBusy(false);
     if (payload.result === "ok") {
       setComments((current) => [
@@ -172,7 +172,9 @@ export function CommunityThread(props: Props) {
           ? t("commentsOff")
           : payload.result === "off"
             ? off("off")
-            : t("invalid"),
+            : response?.status === 400
+              ? t("invalid")
+              : t("actionFailed"),
     );
   }
 
@@ -196,7 +198,7 @@ export function CommunityThread(props: Props) {
         <fieldset className="flex flex-wrap items-center gap-2" disabled={busy || props.own}>
           <legend className="sr-only">{t("rate")}</legend>
           {[1, 2, 3, 4, 5].map((value) => (
-            <label key={value} className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center border border-[var(--brd-line)] px-2 text-sm">
+            <label key={value} className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center border border-[var(--brd-line)] px-2 text-sm has-[:checked]:border-[var(--brd-green)] has-[:checked]:bg-[var(--brd-green-wash)] has-[:checked]:font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--brd-focus)]">
               <input
                 type="radio"
                 name={`stars-${props.targetId}`}

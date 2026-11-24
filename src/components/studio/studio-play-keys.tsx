@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useLibText } from "@/i18n/use-lib-text";
 
 import { Button } from "@/components/ui/button";
 import { BITEK_MOOD_SRC, type BitekMood } from "@/components/studio/studio-bitek-dock";
@@ -165,6 +166,7 @@ export function StudioPlayKeys({
 }) {
   const tr = useTranslations("studio.studioRecordingPanel");
   const tBitek = useTranslations("studio.bitek");
+  const tl = useLibText();
   const [instrument, setInstrument] = useState<PlayKeyInstrument>("piano");
   const [armed, setArmed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -590,7 +592,7 @@ export function StudioPlayKeys({
       ) : null}
       {notice ? (
         <p className="text-xs text-[var(--brd-warn)]" role="status">
-          {notice}
+          {tl(notice)}
         </p>
       ) : null}
       <StudioMidiRoll

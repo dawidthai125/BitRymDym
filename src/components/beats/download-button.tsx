@@ -42,12 +42,12 @@ export function DownloadButton({
       const result = await requestBeatAudioAccessAction({
         beatId,
         purpose: PUBLIC_DOWNLOAD_PURPOSE,
-      });
+      }).catch(() => null);
 
-      if (!result.success || !result.url) {
-        const message = toSafeDownloadErrorMessage(result.error);
+      if (!result?.success || !result.url) {
+        const message = toSafeDownloadErrorMessage(result?.error);
         if (
-          result.error?.toLowerCase().includes("limit") ||
+          result?.error?.toLowerCase().includes("limit") ||
           message.includes("limit")
         ) {
           setUi({ phase: "limit", message });

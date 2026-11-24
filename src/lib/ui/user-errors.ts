@@ -52,6 +52,11 @@ export function isSupabaseEmailAlreadyRegisteredError(
   );
 }
 
+/** "For security purposes, you can only request this after 37 seconds." (a mail went out just now) */
+export function isSupabaseResendCooldownError(message: string | null | undefined): boolean {
+  return /you can only request this after/i.test(message ?? "");
+}
+
 /** Neutral sign-in copy — same for unknown / wrong password / unconfirmed. */
 export const SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE =
   "Nieprawidłowy e-mail lub hasło.";
@@ -146,7 +151,8 @@ export function mapSupabaseAuthError(
   if (
     lower.includes("rate limit") ||
     lower.includes("too many requests") ||
-    lower.includes("over_request_rate")
+    lower.includes("over_request_rate") ||
+    isSupabaseResendCooldownError(message)
   ) {
     return "Zbyt wiele prób. Spróbuj ponownie za chwilę.";
   }

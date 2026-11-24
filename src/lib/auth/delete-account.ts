@@ -9,6 +9,7 @@ import { reauthenticateWithPassword } from "@/lib/auth/reauth";
 import { AUDIO_ARTIFACTS_BUCKET } from "@/config/audio-render";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
+import { removeCatalogAsset } from "@/lib/studio/samples/catalog-asset";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -43,6 +44,10 @@ export async function executeAccountProfile01Deletion(
   const admin = createSupabaseAdminClient();
 
   try {
+    // Nothing is touched before this passes: a deletion that must fail at the end may not cost the recordings.
+    const blocked = await permanentRecordsBlock(admin, userId);
+    if (blocked) return blocked;
+
     // The public profile goes dark first, whatever happens later. The row goes with the account (on delete
     // cascade). Not deleted here: a deletion that stops half-way must not lose the settings or the admin block.
     await admin.from("public_profiles").update({ enabled: false }).eq("owner_id", userId);
@@ -189,6 +194,13 @@ export async function executeAccountProfile01Deletion(
     }
 
     {
+      const step = await deleteOwnedSamples(admin, userId);
+      if (step) {
+        return { ok: false, error: "Nie udało się przygotować usunięcia.", step };
+      }
+    }
+
+    {
       const { error } = await admin
         .from("premium_entitlements")
         .delete()
@@ -308,6 +320,64 @@ export async function deleteOwnAccount(params: {
   return { ok: true };
 }
 
+/** Rows that point at the profile for good (RESTRICT + append-only): deleting this account needs a person. */
+const PERMANENT_ACTOR_COLUMNS = [
+  ["beat_rights_basis", "actor_id"],
+  ["beat_rights_basis", "verifier_id"],
+  ["beat_moderation_decisions", "actor_id"],
+  ["beat_rights_reviews", "created_by"],
+  ["beat_rights_reviews", "closed_by"],
+  ["beat_blocked_audio_hashes", "actor_id"],
+  ["beat_auto_checks", "overridden_by"],
+] as const;
+
+async function permanentRecordsBlock(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+): Promise<Extract<DeleteAccountResult, { ok: false }> | null> {
+  const counts = await Promise.all(
+    PERMANENT_ACTOR_COLUMNS.map(([table, column]) =>
+      admin.from(table).select(column, { head: true, count: "exact" }).eq(column, userId),
+    ),
+  );
+  if (counts.some((row) => row.error)) {
+    return { ok: false, error: "Nie udało się przygotować usunięcia.", step: "preflight" };
+  }
+  if (counts.some((row) => (row.count ?? 0) > 0)) {
+    return {
+      ok: false,
+      error: "To konto ma zapisane prawa do bitów, więc usuwamy je ręcznie. Napisz na kontakt@bitrymdym.pl. Nic nie zostało skasowane.",
+      step: "preflight_rights",
+    };
+  }
+  return null;
+}
+
+/** Samples hold the profile (RESTRICT). Rows first, then the private files and the public catalog copies. */
+async function deleteOwnedSamples(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+): Promise<string | null> {
+  const { data, error } = await admin
+    .from("studio_samples")
+    .select("id, object_key, catalog_asset_id")
+    .eq("owner_id", userId);
+  if (error) return "samples_list";
+  const rows = (data ?? []) as Array<{ id: string; object_key: string | null; catalog_asset_id: string | null }>;
+  if (rows.length === 0) return null;
+  const { error: dErr } = await admin.from("studio_samples").delete().eq("owner_id", userId);
+  if (dErr) return "samples_delete";
+  for (const row of rows) {
+    if (row.object_key?.startsWith(`user-samples/${row.id.toLowerCase()}/`)) {
+      await admin.storage.from(BEAT_AUDIO_BUCKET).remove([row.object_key]);
+    }
+    await removeCatalogAsset(admin, row.catalog_asset_id);
+  }
+  return null;
+}
+
+/** Cover images for MP4 videos (see studio/video/youtube-video.ts youtubeImageKey). */
+export const STUDIO_VIDEO_PREFIX = (userId: string) => `studio-video/${userId}/`;
 /** Studio master/deliver outputs live outside user/ (see studio/master/server.ts). */
 export const STUDIO_MASTER_PREFIX = (userId: string) => `studio-master/${userId}/`;
 /** Vocal cleanup results (see studio/cleanup/cleanup-worker-env.ts cleanupObjectKey). */
@@ -382,7 +452,7 @@ async function deleteOwnedStudioProjects(
     .eq("owner_id", userId);
   if (pErr) return "studio_projects_delete";
 
-  for (const prefix of [STUDIO_MASTER_PREFIX(userId), STUDIO_CLEANUP_PREFIX(userId), STUDIO_REFERENCE_PREFIX(userId)]) {
+  for (const prefix of [STUDIO_MASTER_PREFIX(userId), STUDIO_CLEANUP_PREFIX(userId), STUDIO_REFERENCE_PREFIX(userId), STUDIO_VIDEO_PREFIX(userId)]) {
     const keys = await listAllKeysUnderPrefix(admin, AUDIO_ARTIFACTS_BUCKET, prefix);
     for (let i = 0; i < keys.length; i += 100) {
       await admin.storage.from(AUDIO_ARTIFACTS_BUCKET).remove(keys.slice(i, i + 100));

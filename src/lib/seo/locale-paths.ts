@@ -46,6 +46,20 @@ export function stripEnglishPrefix(pathname: string): string | null {
   return isLocalizedPath(rest) ? rest : null;
 }
 
+/** English keyword landings → their Polish twins (kept small for the client; a test compares it with EN_LANDING_PAGES). */
+const POLISH_LANDING_TWINS: Readonly<Record<string, string>> = {
+  "/en/free-rap-beats": "/darmowe-bity-do-rapu",
+  "/en/online-recording-studio": "/studio-nagran-online",
+  "/en/mix-and-mastering-online": "/mix-i-mastering-online",
+  "/en/rap-recording-software": "/program-do-nagrywania-rapu",
+};
+
+/** Polish address of an English URL ("/en/beats" → "/beats"); null when the URL does not force English. */
+export function polishPathOf(pathname: string): string | null {
+  const p = clean(pathname);
+  return stripEnglishPrefix(p) ?? POLISH_LANDING_TWINS[p] ?? null;
+}
+
 export function localizedPath(locale: AppLocale, path: string): string {
   const p = clean(path);
   if (locale !== "en" || !isLocalizedPath(p)) return p;

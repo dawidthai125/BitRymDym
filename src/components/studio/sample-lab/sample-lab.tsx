@@ -2,6 +2,7 @@
 
 import { StoreAppHidden } from "@/components/site/store-app-context";
 import { useLocale, useTranslations } from "next-intl";
+import { useLibText } from "@/i18n/use-lib-text";
 import Link from "@/components/ui/app-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -67,6 +68,7 @@ const control =
 
 export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /** Silver+: the server saves recordings and imports only for them. */ canRecord: boolean; /** Bronze+. */ canUseAi: boolean }) {
   const t = useTranslations("studio.sampleLab");
+  const tl = useLibText();
   const locale = useLocale();
   const oneDecimal = (n: number) => n.toLocaleString(locale === "en" ? "en-US" : "pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
@@ -642,7 +644,7 @@ export function SampleLab({ beats, canRecord, canUseAi }: { beats: LabBeat[]; /*
           </p>
           {usesClock ? <p className="w-full text-xs text-[var(--brd-ink-soft)]">{t("sluchawki")}</p> : null}
         </div>
-        {error ? <p role="alert" className="mt-3 text-sm text-[var(--brd-rec)]">{error}</p> : null}
+        {error ? <p role="alert" className="mt-3 text-sm text-[var(--brd-rec)]">{tl(error)}</p> : null}
       </section>
 
       {/* 4. Takes */}

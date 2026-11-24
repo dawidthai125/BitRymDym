@@ -200,6 +200,19 @@ describe("PayU webhook pack and failed-order paths", () => {
     expect((await post(orderNote("COMPLETED", "1234"))).status).toBe(503);
   });
 
+  it("a bought plan extends live recordings; a pack or a skipped plan does not", async () => {
+    checkPayuOrder.mockResolvedValue("ok");
+    const plan = { product_kind: "plan", plan_tier: "SILVER", pack: null, period: "month", amount_grosz: 2999 };
+    for (const result of ["granted", "skipped"]) {
+      const fake = fakeAdmin({ payment_orders: { data: orderRow(plan) } }, { apply_p24_purchase: { data: { result } } });
+      createSupabaseAdminClient.mockReturnValue(fake.client);
+      expect(await (await post(orderNote("COMPLETED", "2999"))).json()).toEqual({ ok: true, result });
+      expect(fake.rpcCalls.map((c) => c.name)).toEqual(
+        result === "granted" ? ["apply_p24_purchase", "extend_take_retention_for_owner"] : ["apply_p24_purchase"],
+      );
+    }
+  });
+
   it("still requires PayU confirmation before any grant", async () => {
     const fake = fakeAdmin({ payment_orders: { data: orderRow() } }, {});
     createSupabaseAdminClient.mockReturnValue(fake.client);

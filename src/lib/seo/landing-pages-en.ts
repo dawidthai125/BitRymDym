@@ -129,7 +129,7 @@ export const EN_LANDING_PAGES: readonly EnglishLandingPage[] = [
         h2: "Mastering for streaming",
         paragraphs: [
           "The master is prepared for streaming platforms. Mastering-only targets −14 LUFS, the loudness Spotify and YouTube normalise to, so your track isn't turned down or made to sound quieter than others.",
-          "Already have a finished mix from another program? On the Mastering page (Silver plan and above) you upload a stereo WAV or MP3, preview the master, approve it and download a WAV.",
+          "Already have a finished mix from another program? On the Mastering page (Silver plan and above) you upload a stereo WAV or MP3, preview the master, approve it and download it: MP3 on Silver, WAV on Gold.",
         ],
       },
     ],
@@ -140,7 +140,7 @@ export const EN_LANDING_PAGES: readonly EnglishLandingPage[] = [
       },
       {
         q: "Can I master a track recorded elsewhere?",
-        a: "Yes, from the Silver plan. Upload a finished stereo WAV or MP3 mix on the Mastering page and download the master as WAV.",
+        a: "Yes, from the Silver plan. Upload a finished stereo WAV or MP3 mix on the Mastering page and download the master: MP3 on Silver, WAV on Gold.",
       },
       {
         q: "Is the mix automatic?",

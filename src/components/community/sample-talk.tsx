@@ -20,22 +20,33 @@ export function SampleTalk({ id, signedIn }: { id: string; signedIn: boolean }) 
   const t = useTranslations("community.thread");
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   async function toggle() {
+    if (busy) return;
+    setFailed(false);
     if (!loaded) {
-      const response = await fetch(`/api/community/thread?kind=sample&id=${encodeURIComponent(id)}`);
-      const payload = (await response.json().catch(() => null)) as Loaded | null;
+      setBusy(true);
+      const response = await fetch(`/api/community/thread?kind=sample&id=${encodeURIComponent(id)}`).catch(() => null);
+      const payload = (await response?.json().catch(() => null)) as Loaded | null | undefined;
+      setBusy(false);
       // An error answer is `{ result }`, not a thread.
-      if (payload && typeof payload.enabled === "boolean" && Array.isArray(payload.comments)) setLoaded(payload);
+      if (!payload || typeof payload.enabled !== "boolean" || !Array.isArray(payload.comments)) {
+        setFailed(true);
+        return;
+      }
+      setLoaded(payload);
     }
     setOpen((value) => !value);
   }
 
   return (
     <div>
-      <button type="button" onClick={() => void toggle()} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" aria-expanded={open}>
+      <button type="button" onClick={() => void toggle()} disabled={busy} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 disabled:opacity-50" aria-expanded={open}>
         {t("rate")}
       </button>
+      {failed ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t("actionFailed")}</p> : null}
       {open && loaded ? (
         <CommunityThread
           kind="sample"

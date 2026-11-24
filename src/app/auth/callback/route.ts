@@ -7,6 +7,7 @@ import {
   decideAuthCallbackRoute,
   isEmailChangeCallback,
   isRecoveryCallback,
+  isSignupConfirmationCallback,
   resolveSignupNextPath,
   SIGNUP_BROWSER_COOKIE,
   SIGNUP_CONFIRMED_DEFAULT_PATH,
@@ -37,6 +38,9 @@ import { readSiteMaintenanceForViewer } from "@/lib/site/maintenance-settings";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { tryClaimAnonTakeAfterAuth } from "@/lib/takes/anon-account-claim";
+
+/** A second opening of the same confirmation link this soon counts as the first one. */
+const REPEATED_CONFIRM_WINDOW_MS = 15 * 60 * 1000;
 
 function redirectAbsolute(request: NextRequest, path: string) {
   try {
@@ -166,6 +170,18 @@ export async function GET(request: NextRequest) {
             // Best-effort; the daily sweep retries.
           }
         });
+      }
+    }
+
+    // The same link opened twice (double tap, mail app preview): the first request already signed
+    // this browser in, so go on instead of showing "confirmation failed".
+    if (!exchangeOk && isSignupConfirmationCallback(classified) && decision.kind === "confirmed") {
+      const { data } = await supabase.auth.getUser();
+      const confirmedAt = Date.parse(data.user?.email_confirmed_at ?? "");
+      // Only right after a confirmation: somebody else's old link must not look like a success.
+      if (data.user && Date.now() - confirmedAt < REPEATED_CONFIRM_WINDOW_MS) {
+        const next = resolveSignupNextPath({ queryNext, userMetadata: data.user.user_metadata ?? null });
+        return redirectAbsolute(request, next ?? SIGNUP_CONFIRMED_DEFAULT_PATH);
       }
     }
 

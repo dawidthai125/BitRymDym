@@ -6,14 +6,20 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
-import { LOCALES, type AppLocale } from "@/i18n/config";
+import { LOCALE_COOKIE, LOCALES, type AppLocale } from "@/i18n/config";
 import { setLocaleAction } from "@/i18n/actions";
+import { polishPathOf } from "@/lib/seo/locale-paths";
 import { cn } from "@/lib/utils";
+
+function openPolish(path: string) {
+  document.cookie = `${LOCALE_COOKIE}=pl; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+  window.location.assign(`${path}${window.location.search}${window.location.hash}`);
+}
 
 /**
  * Language switch — same visual language as ThemeToggle (Nocna sesja):
  * hairline border, soft label, active segment in full ink.
- * Locale lives in the NEXT_LOCALE cookie; no URL prefix.
+ * Locale lives in the NEXT_LOCALE cookie; on /en/... Polish opens the Polish address.
  */
 export function LanguageSwitcher({
   className,
@@ -31,6 +37,12 @@ export function LanguageSwitcher({
 
   function choose(next: AppLocale) {
     if (next === locale || pending) return;
+    // /en/... always renders English (and stores "en"), so Polish needs the Polish address.
+    const polish = next === "pl" ? polishPathOf(window.location.pathname) : null;
+    if (polish) {
+      openPolish(polish);
+      return;
+    }
     startTransition(async () => {
       await setLocaleAction(next);
       document.documentElement.lang = next;

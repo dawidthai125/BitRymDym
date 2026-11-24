@@ -10,7 +10,6 @@ import {
 import {
   safeNextPath,
   signInPathWithNext,
-  signUpPathWithNext,
 } from "@/lib/auth/next-path";
 import { cn } from "@/lib/utils";
 
@@ -50,10 +49,10 @@ export default async function AuthConfirmedPage({
           </Link>
         ) : (
           <Link
-            href={signUpPathWithNext(next)}
+            href="/resend-confirmation"
             className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}
           >
-            {t("zalozKontoPonownie")}
+            {t("wyslijNowyLink")}
           </Link>
         )}
       </div>

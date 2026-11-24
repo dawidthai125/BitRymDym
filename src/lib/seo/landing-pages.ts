@@ -251,7 +251,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
         h2: "Mastering pod streaming",
         paragraphs: [
           "Master przygotowujemy pod platformy streamingowe. Sam mastering celuje w −14 LUFS, czyli głośność, na którą normalizują Spotify czy YouTube. Dzięki temu kawałek nie zostanie ściszony ani nie zabrzmi ciszej od innych.",
-          "Masz już gotowy mix z innego programu? Na stronie „Sam mastering” (od planu Silver) wrzucasz plik stereo WAV lub MP3, słuchasz podglądu mastera, zatwierdzasz go i pobierasz WAV.",
+          "Masz już gotowy mix z innego programu? Na stronie „Sam mastering” (od planu Silver) wrzucasz plik stereo WAV lub MP3, słuchasz podglądu mastera, zatwierdzasz go i pobierasz: MP3 w planie Silver, WAV w planie Gold.",
         ],
       },
     ],
@@ -262,7 +262,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
       },
       {
         q: "Czy mogę zmasterować utwór nagrany gdzie indziej?",
-        a: "Tak, od planu Silver. Wrzucasz gotowy mix stereo WAV lub MP3 na stronie „Sam mastering” i pobierasz master w WAV.",
+        a: "Tak, od planu Silver. Wrzucasz gotowy mix stereo WAV lub MP3 na stronie „Sam mastering” i pobierasz master: MP3 w planie Silver, WAV w planie Gold.",
       },
       {
         q: "Czy mix robi się automatycznie?",

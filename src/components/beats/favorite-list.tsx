@@ -11,16 +11,22 @@ import type { FavoriteBeatCard } from "@/lib/beats/favorites";
 
 export function FavoriteList({ items }: { items: FavoriteBeatCard[] }) {
   const t = useTranslations("beats.libraryFavoritesPage");
+  const thread = useTranslations("community.thread");
   const router = useRouter();
   const [rows, setRows] = useState(items);
   const [busy, setBusy] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   async function remove(id: string) {
     if (busy) return;
     setBusy(id);
-    const result = await toggleBeatFavoriteAction(id);
+    setFailed(false);
+    const result = await toggleBeatFavoriteAction(id).catch(() => ({ error: "failed" as const }));
     setBusy(null);
-    if ("error" in result) return;
+    if ("error" in result) {
+      setFailed(true);
+      return;
+    }
     if (!result.favorited) setRows((current) => current.filter((row) => row.id !== id));
     router.refresh();
   }
@@ -30,6 +36,8 @@ export function FavoriteList({ items }: { items: FavoriteBeatCard[] }) {
   }
 
   return (
+    <>
+    {failed ? <p role="alert" className="mt-3 text-sm text-[var(--brd-rec)]">{thread("actionFailed")}</p> : null}
     <ul className="mt-6 divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
       {rows.map((beat) => (
         <li key={beat.id} className="flex min-h-14 items-center justify-between gap-3 py-3">
@@ -52,5 +60,6 @@ export function FavoriteList({ items }: { items: FavoriteBeatCard[] }) {
         </li>
       ))}
     </ul>
+    </>
   );
 }

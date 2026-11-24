@@ -5,6 +5,7 @@
 
 import {
   isSupabaseEmailAlreadyRegisteredError,
+  isSupabaseResendCooldownError,
   mapSupabaseAuthError,
 } from "@/lib/ui/user-errors";
 
@@ -28,7 +29,11 @@ export function interpretSignUpResult(input: {
 }): SignUpInterpretation {
   if (input.error) {
     // Hard "already registered" → same success-shaped pending as obfuscated duplicate.
-    if (isSupabaseEmailAlreadyRegisteredError(input.error.message)) {
+    // A second click within a minute: the first mail is already on its way, so it is not a failure.
+    if (
+      isSupabaseEmailAlreadyRegisteredError(input.error.message) ||
+      isSupabaseResendCooldownError(input.error.message)
+    ) {
       return {
         kind: "pending_confirmation",
         message: SIGNUP_PENDING_NEUTRAL_MESSAGE,

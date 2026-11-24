@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { estimateBpm, tapTempo } from "@/lib/tools/bpm";
 import { draw, FREESTYLE_TOPICS, FREESTYLE_WORDS } from "@/lib/tools/freestyle";
-import { levelOf, meterPercent, micVerdict } from "@/lib/tools/mic-level";
+import { isMissingDeviceError, levelOf, meterPercent, micVerdict } from "@/lib/tools/mic-level";
+import { commitTempo, draftTempo } from "@/lib/tools/metronome";
 import { semitoneShift, slowedSeconds } from "@/lib/tools/slowed";
 import { countLines, countWordSyllables, summarize, syllableCountLabel } from "@/lib/tools/syllables";
 import { encodeWav16, limitPeak } from "@/lib/tools/wav";
@@ -98,5 +99,27 @@ describe("slowed + WAV", () => {
 describe("syllable label", () => {
   it("declines", () => {
     expect([1, 2, 5].map(syllableCountLabel)).toEqual(["1 sylabę", "2 sylaby", "5 sylab"]);
+  });
+});
+
+describe("metronome tempo field", () => {
+  it("typing 90 or 120 never jumps to a clamped value on the way", () => {
+    expect(["9", "90"].map(draftTempo)).toEqual([null, 90]);
+    expect(["1", "12", "120"].map(draftTempo)).toEqual([null, null, 120]);
+    expect(["", "abc", "999"].map(draftTempo)).toEqual([null, null, null]);
+  });
+  it("leaving the field clamps, unreadable text keeps the tempo", () => {
+    expect(commitTempo("9", 100)).toBe(30);
+    expect(commitTempo("999", 100)).toBe(300);
+    expect(commitTempo("", 100)).toBe(100);
+  });
+});
+
+describe("microphone errors", () => {
+  it("a missing device falls back to the default one, a refusal does not", () => {
+    expect(isMissingDeviceError({ name: "OverconstrainedError" })).toBe(true);
+    expect(isMissingDeviceError({ name: "NotFoundError" })).toBe(true);
+    expect(isMissingDeviceError({ name: "NotAllowedError" })).toBe(false);
+    expect(isMissingDeviceError(null)).toBe(false);
   });
 });

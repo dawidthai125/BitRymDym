@@ -19,6 +19,7 @@ import { readPayuConfig, type PayuConfig } from "@/lib/payments/payu-config";
 import { parsePayuNotification, parsePayuRefund, payuRefundAction, payuStatusAction, type PayuOrderNotice } from "@/lib/payments/payu-notification";
 import { payuSignatureValid } from "@/lib/payments/payu-sign";
 import { loadAddonSnapshot, loadPlanSnapshot } from "@/lib/payments/snapshots";
+import { extendTakeRetentionForTier } from "@/lib/takes/take-retention-upgrade";
 
 export type WebhookOutcome =
   | { status: 200; body: { ok: true; result: "granted" | "skipped" | "already" | "ignored" | "refunded" | "review" } }
@@ -54,6 +55,11 @@ function orderLedger(row: OrderRow): OrderLedger | null {
     currency: row.currency,
     product,
   };
+}
+
+/** A plan bought now: live recordings get its validity (the price list promises it). Never blocks the grant. */
+async function keepTakesForNewPlan(userId: string, write: GrantWrite): Promise<void> {
+  if (write.action === "plan") await extendTakeRetentionForTier(userId, write.tier);
 }
 
 function polishWhen(iso: string): string {
@@ -202,6 +208,7 @@ export async function handleP24Webhook(body: unknown, now = new Date()): Promise
     return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
   }
   if (result === "granted" || result === "skipped") {
+    if (result === "granted") await keepTakesForNewPlan(userId, settled.write);
     await sendNotification({
       userId,
       kind: "purchase_confirmed",
@@ -484,6 +491,7 @@ async function settlePayuNotice(note: PayuOrderNotice, config: PayuConfig, now: 
     return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
   }
   if (result === "granted" || result === "skipped") {
+    if (result === "granted") await keepTakesForNewPlan(loaded.userId, settled.write);
     await sendNotification({
       userId: loaded.userId,
       kind: "purchase_confirmed",

@@ -231,8 +231,28 @@ describe("sign-up → mail → callback → redirect keeps `next`", () => {
 
   it("failed confirmation keeps next for the confirmed page links", async () => {
     verifyOtp.mockResolvedValue({ data: { session: null, user: null }, error: { message: "otp_expired" } });
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
     const { path } = await callback("token_hash=h&type=signup&next=%2Fbeats");
     expect(path).toBe("/auth/confirmed?status=invalid&next=%2Fbeats");
+  });
+
+  it("the same link opened twice: a browser signed in a moment ago goes on, nothing is signed out", async () => {
+    verifyOtp.mockResolvedValue({ data: { session: null, user: null }, error: { message: "One-time token not found" } });
+    const user = { id: USER_ID, email_confirmed_at: new Date().toISOString(), user_metadata: {} };
+    getUser.mockResolvedValue({ data: { user }, error: null });
+    expect((await callback("token_hash=h&type=signup&next=%2Fbeats")).path).toBe("/beats");
+    expect((await callback("token_hash=h&type=signup")).path).toBe("/studio");
+    for (const bad of EVIL_NEXT) {
+      expect((await callback(`token_hash=h&type=signup&next=${encodeURIComponent(bad)}`)).path).toBe("/studio");
+    }
+    expect(signOut).not.toHaveBeenCalled();
+    expect(sendWelcomeOnce).not.toHaveBeenCalled();
+  });
+
+  it("an old account opening a dead link still sees that the link failed", async () => {
+    verifyOtp.mockResolvedValue({ data: { session: null, user: null }, error: { message: "One-time token not found" } });
+    const { path } = await callback("token_hash=h&type=signup");
+    expect(path).toBe("/auth/confirmed?status=invalid");
   });
 });
 

@@ -105,9 +105,9 @@ export function OwnerBeatEditForm({ initial }: { initial: OwnerBeatEditInitial }
           allowComments: consents.allowComments,
           inRankings: consents.inRankings,
         },
-      });
-      if (!result.success) {
-        setMessage({ tone: "error", text: result.error ?? t("bladZapisu") });
+      }).catch(() => null);
+      if (!result?.success) {
+        setMessage({ tone: "error", text: result?.error ?? t("bladZapisu") });
         return;
       }
       setMessage({ tone: "ok", text: t("zapisano") });

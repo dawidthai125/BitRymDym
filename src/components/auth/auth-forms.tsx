@@ -27,6 +27,7 @@ import { NewPasswordFields } from "@/components/auth/new-password-fields";
 import { BrdCheckbox } from "@/components/brand/brd-checkbox";
 import { KEEP_SIGNED_IN_FIELD, KEEP_SIGNED_IN_SHOWN_FIELD } from "@/lib/auth/keep-signed-in";
 import { PasswordFieldWithToggle } from "@/components/auth/password-field-with-toggle";
+import { SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE } from "@/lib/ui/user-errors";
 import { SignupConsentCheckbox } from "@/components/legal/consent-checkbox";
 import { Button } from "@/components/ui/button";
 
@@ -76,15 +77,26 @@ export function SignInForm({ next = null }: { next?: string | null } = {}) {
           {tl(state.error)}
         </p>
       ) : null}
+      {state.error === SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE ? (
+        <p className="text-sm text-muted-foreground" data-testid="sign-in-confirm-hint">
+          {t("noweKontoPotwierdz")}
+        </p>
+      ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
         {tl(pending ? t("logowanie") : t("zalogujSie"))}
       </Button>
-      <p className="text-sm text-muted-foreground">
+      <p className="flex flex-wrap gap-x-5 text-sm text-muted-foreground">
         <Link
           href="/forgot-password"
           className="inline-flex min-h-11 items-center underline underline-offset-4"
         >
           {t("niePamietamHasla")}
+        </Link>
+        <Link
+          href="/resend-confirmation"
+          className="inline-flex min-h-11 items-center underline underline-offset-4"
+        >
+          {t("nieMaMailaAktywacyjnego")}
         </Link>
       </p>
     </form>
@@ -99,6 +111,27 @@ export function SignUpForm({ next = null }: { next?: string | null } = {}) {
   useEffect(() => {
     if (state.success) trackEvent({ name: "sign_up", params: { method: "email" } });
   }, [state]);
+
+  // The form goes away: left in place, people kept pressing "Załóż konto" and then signing in too early.
+  if (state.success && state.message) {
+    return (
+      <div
+        role="status"
+        data-testid="sign-up-check-mail"
+        className="flex w-full max-w-sm flex-col gap-2 border-l-4 border-[var(--brd-green)] bg-[var(--tape-panel)] px-4 py-3 text-sm text-[var(--tape-cream)]"
+      >
+        <p className="text-base font-semibold">{t("zostalJedenKrok")}</p>
+        <p>{tl(state.message)}</p>
+        <p className="text-[var(--tape-cream-soft)]">{t("mailIdzieKilkaMinut")}</p>
+        <Link
+          href="/resend-confirmation"
+          className="inline-flex min-h-11 items-center underline underline-offset-4"
+        >
+          {t("wyslijMailJeszczeRaz")}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form action={action} onSubmit={keepValues(action)} className="flex w-full max-w-sm flex-col gap-3">
@@ -135,11 +168,6 @@ export function SignUpForm({ next = null }: { next?: string | null } = {}) {
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
           {tl(state.error)}
-        </p>
-      ) : null}
-      {state.message && !state.error ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          {tl(state.message)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">

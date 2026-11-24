@@ -3,6 +3,7 @@
 import type { PlaySession, SampekResult } from "@/lib/studio/play/play-types";
 import { quickFix } from "@/lib/studio/play/sampek-edit";
 import { useTranslations } from "next-intl";
+import { useLibText } from "@/i18n/use-lib-text";
 import { useState } from "react";
 
 /**
@@ -19,6 +20,7 @@ export function SampekPanel(props: {
   onApply: (result: SampekResult) => void;
 }) {
   const t = useTranslations("studio.sampekPanel");
+  const tl = useLibText();
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   /** What Sampek proposes: heard in the preview, saved only after "Zastosuj". */
@@ -98,7 +100,7 @@ export function SampekPanel(props: {
           <button type="button" onClick={() => { stopPreview(); setProposal(null); setMessage(t("odrzucono")); }} className="min-h-10 rounded-md border border-[var(--brd-line)] px-3 text-sm">{t("odrzuc")}</button>
         </div>
       ) : null}
-      {message ? <p role="status" className="mt-3 text-sm text-[var(--brd-ink-soft)]">{message}</p> : null}
+      {message ? <p role="status" className="mt-3 text-sm text-[var(--brd-ink-soft)]">{tl(message)}</p> : null}
     </section>
   );
 }

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, ty
 import { removeCatalogSampleAction, updateCatalogSampleAction } from "@/app/sampel/actions";
 import { AuthorName } from "@/components/creators/author-name";
 import { CatalogPager } from "@/components/ui/catalog-pager";
+import { usePlayerOptional } from "@/components/player/player-provider";
 import { SampleTalk } from "@/components/community/sample-talk";
 import { catalogNumber } from "@/lib/community/share-policy";
 import { pageOfRow, paginate } from "@/lib/ui/paginate";
@@ -91,6 +92,11 @@ export function SampleCatalog({
   const t = useTranslations("community.sampleCatalog");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const blobs = useRef(new Map<string, string>());
+  /** The last click wins; a download that ends after leaving the page stays silent. */
+  const playSeq = useRef(0);
+  const mounted = useRef(true);
+  const player = usePlayerOptional();
+  const playerPhase = player?.phase;
   const [current, setCurrent] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -105,11 +111,19 @@ export function SampleCatalog({
 
   useEffect(() => {
     const map = blobs.current;
+    mounted.current = true;
     return () => {
+      mounted.current = false;
       audioRef.current?.pause();
       for (const url of map.values()) URL.revokeObjectURL(url);
+      map.clear();
     };
   }, []);
+
+  // The catalog player and a sample never play together.
+  useEffect(() => {
+    if (playerPhase === "playing") audioRef.current?.pause();
+  }, [playerPhase]);
 
   const shown = useMemo(
     () =>
@@ -167,7 +181,9 @@ export function SampleCatalog({
     if (!payload.url) return null;
     const audio = await fetch(payload.url);
     if (!audio.ok) return null;
-    const url = URL.createObjectURL(await audio.blob());
+    const blob = await audio.blob();
+    if (!mounted.current) return null;
+    const url = URL.createObjectURL(blob);
     blobs.current.set(id, url);
     return url;
   }
@@ -190,16 +206,21 @@ export function SampleCatalog({
 
   async function toggle(id: string) {
     setError(null);
+    const seq = ++playSeq.current;
     const a = audio();
     if (current === id) {
-      if (a.paused) await a.play().catch(() => setError(t("bladOdtwarzania")));
-      else a.pause();
+      setLoadingId(null);
+      if (a.paused) {
+        if (player?.phase === "playing") player.toggle();
+        await a.play().catch(() => setError(t("bladOdtwarzania")));
+      } else a.pause();
       return;
     }
     a.pause();
     setLoadingId(id);
     try {
-      const src = await sourceFor(id);
+      const src = await sourceFor(id).catch(() => null);
+      if (!mounted.current || seq !== playSeq.current) return;
       if (!src) {
         setError(t("bladOdtwarzania"));
         return;
@@ -208,9 +229,10 @@ export function SampleCatalog({
       setCurrent(id);
       setTime(0);
       setDuration(0);
+      if (player?.phase === "playing") player.toggle();
       await a.play().catch(() => setError(t("bladOdtwarzania")));
     } finally {
-      setLoadingId(null);
+      if (seq === playSeq.current) setLoadingId(null);
     }
   }
 

@@ -468,6 +468,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const close = useCallback(() => {
+    // A load still running must not start sound after the player is gone.
+    requestIdRef.current += 1;
     const audio = audioRef.current;
     if (audio) {
       audio.pause();

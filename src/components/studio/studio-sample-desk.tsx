@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useLibText } from "@/i18n/use-lib-text";
 
 import { SampleBitekCard, type BitekApply, type BitekPreview } from "@/components/studio/sample-bitek-card";
 
@@ -51,6 +52,7 @@ export function StudioSampleDesk({
   bitekApply?: BitekApply;
 }) {
   const tr = useTranslations("studio.studioRecordingPanel");
+  const tl = useLibText();
   const [tab, setTab] = useState<"mine" | "catalog" | "create">("create");
   const [samples, setSamples] = useState<SampleDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -339,7 +341,7 @@ export function StudioSampleDesk({
       </div>
       {error ? (
         <p className="text-xs text-[var(--brd-danger,var(--brd-ink))]" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
       {status ? (

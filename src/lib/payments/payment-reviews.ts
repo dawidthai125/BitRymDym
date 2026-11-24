@@ -19,9 +19,13 @@ export async function recordPaymentReview(
   admin: Admin,
   input: { orderRef: string; reason: PaymentReviewReason; providerRef?: string; details?: Record<string, string | number | boolean | null> },
 ): Promise<boolean> {
+  // The admin list shows buyer, product and amount through order_id. Unknown order → the row is still stored.
+  const order = await admin.from("payment_orders").select("id").eq("session_id", input.orderRef).maybeSingle();
+  const orderId = (order.data as { id?: unknown } | null)?.id;
   const saved = await admin.from("payment_order_reviews").upsert(
     {
       order_ref: input.orderRef,
+      ...(typeof orderId === "string" ? { order_id: orderId } : {}),
       reason: input.reason,
       provider_ref: input.providerRef ?? "",
       details: input.details ?? {},

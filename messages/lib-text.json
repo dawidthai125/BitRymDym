@@ -722,8 +722,12 @@
   "en": "The link is invalid or expired. Go back to your account and check the current state of the address change."
  },
  {
-  "src": "Link potwierdzający jest nieprawidłowy lub wygasł. Poproś o nową wiadomość z potwierdzeniem.",
-  "en": "The confirmation link is invalid or expired. Request a new confirmation message."
+  "src": "Link potwierdzający wygasł albo został już użyty. Jeśli konto jest już aktywne, po prostu się zaloguj. Jeśli nie, wyślij nowy link.",
+  "en": "The confirmation link has expired or was already used. If the account is active, just sign in. If not, send a new link."
+ },
+ {
+  "src": "Jeśli konto z tym adresem czeka na aktywację, wysłaliśmy nowy link. Dojdzie w ciągu kilku minut. Sprawdź też spam i oferty. Działa tylko link z najnowszego maila.",
+  "en": "If an account with this address is waiting for activation, we sent a new link. It arrives within a few minutes. Check spam and promotions too. Only the link from the newest email works."
  },
  {
   "src": "Link wygasł. Poproś o nowy.",
@@ -3293,8 +3297,47 @@
  { "src": "Nie udało się odczytać historii mixu. Spróbuj ponownie.", "en": "Couldn't read the mix history. Try again." },
  { "src": "Poprzednia okładka jeszcze się generuje. Poczekaj na wynik i spróbuj ponownie.", "en": "The previous cover is still being generated. Wait for it and try again." },
  { "src": "Wideo MP4 będzie dostępne wkrótce.", "en": "The MP4 video will be available soon." },
+ { "src": "wyciszona", "en": "muted" },
+ { "src": "otwarta", "en": "open" },
+ { "src": "uzbrojona", "en": "armed" },
+ { "src": "Pobierz", "en": "Download" },
+ { "src": "Pauza", "en": "Pause" },
+ { "src": "Nagraj", "en": "Record" },
+ { "src": "Nie mogę odczytać tego pliku. Wgraj zwykły WAV albo MP3.", "en": "I can't read this file. Upload a regular WAV or MP3." },
+ { "src": "Wpisz nazwę sampla.", "en": "Enter a sample name." },
+ { "src": "Podaj tempo od 40 do 240 BPM i liczbę taktów.", "en": "Enter a tempo from 40 to 240 BPM and the number of bars." },
+ { "src": "Wybierz instrument z listy.", "en": "Pick an instrument from the list." },
+ { "src": "Ten format nie przejdzie. Wgraj WAV albo MP3.", "en": "This format won't work. Upload a WAV or MP3." },
+ { "src": "Plik jest za duży. Maksymalnie {0} MB.", "en": "The file is too large. The maximum is {0} MB.", "tpl": true },
+ { "src": "Sampel musi mieć od {0} do {1} sekund.", "en": "A sample must be {0} to {1} seconds long.", "tpl": true },
+ { "src": "Nie udało się zapisać sampla.", "en": "Couldn't save the sample." },
+ { "src": "Zapis własnych nagrań i importów jest od planu Silver.", "en": "Saving your own recordings and imports starts with the Silver plan." },
+ { "src": "Nie udało się zapisać pliku. Spróbuj jeszcze raz.", "en": "Couldn't save the file. Try again." },
+ { "src": "Katalog sampli nie jest jeszcze włączony.", "en": "The sample catalogue is not on yet." },
+ { "src": "Przełącznik katalogu włączy się po aktualizacji bazy.", "en": "The catalogue switch turns on after a database update." },
+ { "src": "Zaznacz, że masz prawo do tego dźwięku.", "en": "Confirm that you have the rights to this sound." },
+ { "src": "Limit sampli Twojego planu jest pełny. Usuń prywatny, żeby dodać kolejny.", "en": "Your plan's sample limit is full. Delete a private one to add another." },
+ { "src": "Najpierw wybierz bit w projekcie.", "en": "Pick a beat in the project first." },
+ { "src": "Nie możesz użyć tego sampla.", "en": "You can't use this sample." },
+ { "src": "Nie ma takiego sampla.", "en": "There is no such sample." },
+ { "src": "Publikacja sampli w katalogu jest od planu Bronze. Na planie Free sample zostają prywatne.", "en": "Publishing samples in the catalogue starts with the Bronze plan. On Free, samples stay private." },
+ { "src": "Sampek AI jest dostępny od planu Bronze.", "en": "Sampek AI starts with the Bronze plan." },
+ { "src": "Nieprawidłowa sesja lub operacja.", "en": "Invalid session or operation." },
+ { "src": "Sampek jeszcze pracuje nad poprzednią prośbą.", "en": "Sampek is still working on the previous request." },
+ { "src": "Limit użyć Sampeka na godzinę został wykorzystany. Spróbuj później.", "en": "You have used up the hourly Sampek limit. Try again later." },
+ { "src": "Sampek jest chwilowo niedostępny. Spróbuj za kilka minut.", "en": "Sampek is unavailable right now. Try again in a few minutes." },
+ { "src": "Zaloguj się, aby użyć Sampeka.", "en": "Sign in to use Sampek." },
+ { "src": "Sampek nie odpowiedział. Spróbuj ponownie.", "en": "Sampek did not respond. Try again." },
  {
   "src": "Efekty na ścieżce",
   "en": "Effects on the track"
+ },
+ {
+  "src": "To konto ma zapisane prawa do bitów, więc usuwamy je ręcznie. Napisz na kontakt@bitrymdym.pl. Nic nie zostało skasowane.",
+  "en": "This account has recorded rights to beats, so we delete it by hand. Write to kontakt@bitrymdym.pl. Nothing has been deleted."
+ },
+ {
+  "src": "Ten bit był już zgłoszony, wydany albo kupiony, więc jego wpisy o prawach muszą zostać. Zarchiwizuj go, zamiast kasować.",
+  "en": "This beat was already submitted, released or bought, so its rights records must stay. Archive it instead of deleting it."
  }
 ]

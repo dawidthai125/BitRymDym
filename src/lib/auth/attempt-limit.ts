@@ -8,7 +8,7 @@ import { clientIpFromHeaders } from "@/lib/security/client-ip";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServiceRoleKey } from "@/lib/supabase/env";
 
-export type AuthAttemptAction = "signin" | "reset" | "signup" | "reauth";
+export type AuthAttemptAction = "signin" | "reset" | "signup" | "resend" | "reauth";
 
 export type AttemptLimit = {
   scope: "email" | "ip" | "user";
@@ -25,6 +25,8 @@ export const AUTH_LIMITS = {
   resetEmail: { max: 3, windowSeconds: 60 * 60 },
   resetIp: { max: 10, windowSeconds: 60 * 60 },
   signupIp: { max: 5, windowSeconds: 60 * 60 },
+  resendEmail: { max: 3, windowSeconds: 60 * 60 },
+  resendIp: { max: 10, windowSeconds: 60 * 60 },
   reauthUser: { max: 5, windowSeconds: 15 * 60 },
 } as const;
 
@@ -152,6 +154,19 @@ export async function limitSignUp(): Promise<AttemptCheckResult> {
   return checkAuthAttempt(
     "signup",
     [{ scope: "ip", value: ip, ...AUTH_LIMITS.signupIp }],
+    "closed",
+  );
+}
+
+/** Confirmation mail sent again. Counted whether or not the account exists. */
+export async function limitResendConfirmation(email: string): Promise<AttemptCheckResult> {
+  const ip = await getClientIp();
+  return checkAuthAttempt(
+    "resend",
+    [
+      { scope: "email", value: normalizeEmailForLimit(email), ...AUTH_LIMITS.resendEmail },
+      { scope: "ip", value: ip, ...AUTH_LIMITS.resendIp },
+    ],
     "closed",
   );
 }

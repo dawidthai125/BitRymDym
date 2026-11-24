@@ -283,10 +283,9 @@ export function BeatsCatalogClient({
                 className="brd-meta text-xs tracking-[0.04em] text-[var(--brd-ink-soft)]"
                 aria-hidden
               >
-                {tCount("count", { count: filtered.length })}
-                {tl(filtered.length !== beats.length
-                  ? ` · z ${beats.length}`
-                  : null)}
+                {filtered.length !== beats.length
+                  ? tCount("ofTotal", { label: tCount("count", { count: filtered.length }), total: beats.length })
+                  : tCount("count", { count: filtered.length })}
               </p>
               <div className="hidden lg:block">
                 <SortSelect sort={sort} onChange={setSort} />

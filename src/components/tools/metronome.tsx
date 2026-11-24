@@ -3,23 +3,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { tapTempo } from "@/lib/tools/bpm";
+import { clampTempo, commitTempo, draftTempo, TEMPO_MAX, TEMPO_MIN } from "@/lib/tools/metronome";
 import { toolInput, toolPanel, toolPrimary, toolSecondary } from "@/components/tools/tool-ui";
 
-const MIN = 30;
-const MAX = 300;
 const LOOKAHEAD_MS = 25;
 const SCHEDULE_AHEAD_S = 0.1;
-const clamp = (n: number) => Math.min(MAX, Math.max(MIN, Math.round(n)));
 
 /** Web Audio metronome: lookahead scheduler, accent on beat 1, tap tempo. */
 export function Metronome({ initialBpm = 90 }: { initialBpm?: number }) {
   const [bpm, setBpm] = useState(initialBpm);
+  /** Text of the tempo field while it is being typed. */
+  const [draft, setDraft] = useState<string | null>(null);
   const [beats, setBeats] = useState(4);
   const [accent, setAccent] = useState(true);
   const [running, setRunning] = useState(false);
   const [current, setCurrent] = useState(-1);
   const ctxRef = useRef<AudioContext | null>(null);
   const timerRef = useRef<number | null>(null);
+  const startingRef = useRef(false);
   const nextTimeRef = useRef(0);
   const beatRef = useRef(0);
   const settings = useRef({ bpm, beats, accent });
@@ -48,9 +49,17 @@ export function Metronome({ initialBpm = 90 }: { initialBpm?: number }) {
   }, []);
 
   const start = useCallback(async () => {
+    // A second click while the sound engine wakes up must not start a second, unstoppable click.
+    if (startingRef.current || timerRef.current !== null) return;
+    startingRef.current = true;
     const ctx = ctxRef.current ?? new AudioContext();
     ctxRef.current = ctx;
-    await ctx.resume();
+    try {
+      await ctx.resume();
+    } finally {
+      startingRef.current = false;
+    }
+    if (ctx.state === "closed") return;
     beatRef.current = 0;
     nextTimeRef.current = ctx.currentTime + 0.05;
     timerRef.current = window.setInterval(() => {
@@ -77,7 +86,7 @@ export function Metronome({ initialBpm = 90 }: { initialBpm?: number }) {
     const last = taps.current[taps.current.length - 1];
     taps.current = last !== undefined && now - last > 2000 ? [now] : [...taps.current, now].slice(-9);
     const t = tapTempo(taps.current);
-    if (t) setBpm(clamp(t));
+    if (t) setBpm(clampTempo(t));
   };
 
   return (
@@ -100,20 +109,31 @@ export function Metronome({ initialBpm = 90 }: { initialBpm?: number }) {
       </div>
       <label className="mt-4 block">
         <span className="sr-only">Tempo w BPM</span>
-        <input type="range" min={MIN} max={MAX} value={bpm} onChange={(e) => setBpm(clamp(Number(e.target.value)))} className="w-full accent-[var(--brd-green)]" />
+        <input type="range" min={TEMPO_MIN} max={TEMPO_MAX} value={bpm} onChange={(e) => setBpm(clampTempo(Number(e.target.value)))} className="w-full accent-[var(--brd-green)]" />
       </label>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button type="button" className={toolSecondary} onClick={() => setBpm((b) => clamp(b - 1))} aria-label="Wolniej o 1 BPM">−1</button>
+        <button type="button" className={toolSecondary} onClick={() => setBpm((b) => clampTempo(b - 1))} aria-label="Wolniej o 1 BPM">−1</button>
         <input
           type="number"
-          min={MIN}
-          max={MAX}
-          value={bpm}
-          onChange={(e) => setBpm(clamp(Number(e.target.value) || MIN))}
+          min={TEMPO_MIN}
+          max={TEMPO_MAX}
+          value={draft ?? bpm}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            const typed = draftTempo(e.target.value);
+            if (typed !== null) setBpm(typed);
+          }}
+          onBlur={() => {
+            if (draft !== null) setBpm(commitTempo(draft, bpm));
+            setDraft(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
           className={`${toolInput} w-24`}
           aria-label="Tempo w BPM"
         />
-        <button type="button" className={toolSecondary} onClick={() => setBpm((b) => clamp(b + 1))} aria-label="Szybciej o 1 BPM">+1</button>
+        <button type="button" className={toolSecondary} onClick={() => setBpm((b) => clampTempo(b + 1))} aria-label="Szybciej o 1 BPM">+1</button>
         <button type="button" className={toolSecondary} onClick={tap}>Tap tempo</button>
         <label className="inline-flex min-h-11 items-center gap-2">
           <span className="text-sm">Metrum</span>

@@ -106,7 +106,7 @@ export function BeatCatalogRow({
     const next = !saved;
     setSaved(next);
     setSaving(true);
-    const result = await toggleBeatFavoriteAction(beat.id);
+    const result = await toggleBeatFavoriteAction(beat.id).catch(() => ({ error: "failed" as const }));
     setSaving(false);
     if ("error" in result) {
       if (result.error === "auth") router.push("/sign-in");
