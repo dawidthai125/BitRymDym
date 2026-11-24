@@ -1631,6 +1631,7 @@ class RecorderWindow:
         # Delay of this microphone and output learned from earlier takes, seconds. Cut off like the rest.
         self._sync = 0.0
         self._sync_known: dict[str, float] = {}
+        self._take_key = ""
         self._take_beat: tuple[str, str] = ("", "")
         self._aligning = 0
         self.mix_was_on = False
@@ -3934,7 +3935,8 @@ class RecorderWindow:
         self._lead = 0.0
         self.mix_was_on = False
         self._pre = 0.0
-        self._sync = self._sync_known.get(self._sync_key(), 0.0) if feed is not None else 0.0
+        self._take_key = self._sync_key()
+        self._sync = self._sync_known.get(self._take_key, 0.0) if feed is not None else 0.0
         self._pre_seen = []
         try:
             if feed is not None:
@@ -4078,7 +4080,7 @@ class RecorderWindow:
     def _cut_lead(self, path: Path) -> float:
         """Cut what came before the beat (mic opening, count-in). Returns what is left to skip when the file
         could not be rewritten."""
-        lead = self._lead + self._pre + self._sync
+        lead = self._lead + self._pre
         if lead <= 0:
             return 0.0
         try:
@@ -4088,8 +4090,11 @@ class RecorderWindow:
         except Exception:
             return lead
 
-    def _keep_take(self, died: str = "") -> None:
-        """The capture is closed: put the take on the armed track as one clip from the record start."""
+    def _keep_take(self, died: str = "", whole: bool = False) -> None:
+        """The capture is closed: put the take on the armed track as one clip from the record start.
+
+        whole: it ended by itself at the limit, nothing went wrong (died is only a message then).
+        """
         self.recording = False
         self._drop_live_items()
         self.rec_button.configure(text="● NAGRAJ")
@@ -4102,6 +4107,9 @@ class RecorderWindow:
             return
         skip = self._cut_lead(path)
         self._take_note = self._rate_take(path)
+        # The learned delay only moves the clip inside the file. The file keeps everything, so a wrong one
+        # can be measured and undone.
+        base, skip = skip, skip + self._sync
         seconds = max(0.0, file_seconds(path) - skip)
         cap = self._take_seconds or self._take_cap()
         length = min(seconds, cap)
@@ -4125,16 +4133,16 @@ class RecorderWindow:
             + (f"{self._take_note} " if self._take_note else "")
             + "Przeciągnij pasek klipu, żeby go przesunąć."
         )
-        if any(self._take_beat) and self.mix_was_on and not died:
+        if any(self._take_beat) and self.mix_was_on and (whole or not died):
             self._aligning += 1
             threading.Thread(
-                target=self._measure_take, args=(clip, self._take_beat, self._sync, self._sync_key()), daemon=True
+                target=self._measure_take, args=(clip, base, self._take_beat, self._take_key), daemon=True
             ).start()
 
     def _sync_key(self) -> str:
         return f"{self.device_var.get()}|{self.output_var.get()}"[:160]
 
-    def _measure_take(self, clip: Clip, beat: tuple[str, str], known: float, key: str) -> None:
+    def _measure_take(self, clip: Clip, base: float, beat: tuple[str, str], key: str) -> None:
         """The real delay of this take from the beat that leaked into the microphone. Off the Tk thread."""
         lag: float | None = None
         try:
@@ -4153,42 +4161,43 @@ class RecorderWindow:
                 song.frombytes(done.stdout[: len(done.stdout) // 4 * 4])
                 rate, samples = read_mono16(Path(clip.path))
                 if rate == RATE:
-                    lag = auto_align.bleed_lag(auto_align.mic_at_rate(samples, clip.src_in), song)
+                    lag = auto_align.bleed_lag(auto_align.mic_at_rate(samples, base), song)
         except Exception:
             lag = None
         try:
-            self.root.after(0, lambda: self._align_take(clip, lag, known, key))
+            self.root.after(0, lambda: self._align_take(clip, base, lag, key))
         except (RuntimeError, tk.TclError):
             pass
 
-    def _align_take(self, clip: Clip, lag: float | None, known: float, key: str) -> None:
+    def _align_take(self, clip: Clip, base: float, lag: float | None, key: str) -> None:
+        """lag is the whole delay, measured from `base` in the file: the same answer whatever was learned before."""
         self._aligning = max(0, self._aligning - 1)
         if lag is None:
             return
-        learned = max(0.0, min(0.7, known + lag / 1000))
-        if abs(self._sync_known.get(key, 0.0) - learned) > 0.003:
+        learned = round(max(0.0, min(0.7, lag / 1000)), 4)
+        if key and abs(self._sync_known.get(key, 0.0) - learned) > 0.003:
             self._sync_known.pop(key, None)
-            self._sync_known[key] = round(learned, 4)
+            self._sync_known[key] = learned
             self._save_prefs()
-        if abs(lag) < 3:
+        move = base + lag / 1000 - clip.src_in
+        if abs(move) < 0.003:
             return
         for track in self.tracks:
             for index, item in enumerate(track.clips):
                 # Moved is fine, cut or split is not: then only the next takes profit.
                 if (item.path, item.src_in, item.src_out) != (clip.path, clip.src_in, clip.src_out):
                     continue
-                move = lag / 1000
-                if move > 0 and item.length - move < 0.05:
+                src_in = base + max(0.0, lag / 1000)
+                start = item.start + max(0.0, -lag / 1000)
+                src_out = min(file_seconds(Path(item.path)), src_in + item.length)
+                if src_out - src_in < 0.05:
                     return
                 self._push_undo()
-                fixed = (
-                    replace(item, src_in=round(item.src_in + move, 4)) if move > 0
-                    else replace(item, start=round(item.start - move, 4))
-                )
-                track.clips = ordered([*track.clips[:index], fixed, *track.clips[index + 1 :]])
+                fixed = Clip(item.path, round(start, 4), round(src_in, 4), round(src_out, 4))
+                track.clips = place([*track.clips[:index], *track.clips[index + 1 :]], [fixed])
                 self._save_desk()
                 self._paint_all()
-                self.status.set(f"Wyrównane do bitu: {abs(lag):.0f} ms. Cofnij wraca do poprzedniego miejsca.")
+                self.status.set(f"Wyrównane do bitu: {abs(move) * 1000:.0f} ms. Cofnij wraca do poprzedniego miejsca.")
                 return
 
     def _read_live(self) -> None:
@@ -4267,14 +4276,15 @@ class RecorderWindow:
                 self._paint_live_wave(lane, max(lane.winfo_height(), 4))
             self._grow_live()
             self._move_head(head)
-            self.clock.set(f"{clock_text(head)}  ● {elapsed:.1f}/{cap:.0f} s")
-            if elapsed >= cap:
+            self.clock.set(f"{clock_text(head)}  ● {min(elapsed, cap):.1f}/{cap:.0f} s")
+            # A little longer than the limit: what the alignment takes off the front must not cost the last word.
+            if elapsed >= cap + max(0.4, self._sync):
                 self._stop_monitor()
                 if self.capture is not None:
                     stop_capture(self.capture)
                     self.capture = None
                 whole = cap >= max_take_seconds(self.tier)
-                self._keep_take(f"Plan {display_tier(self.tier)} kończy nagranie po {cap:.0f} s." if whole else f"Koniec bitu: nagranie ma {cap:.0f} s.")
+                self._keep_take(f"Plan {display_tier(self.tier)} kończy nagranie po {cap:.0f} s." if whole else f"Koniec bitu: nagranie ma {cap:.0f} s.", whole=True)
                 return
             self._tick_id = self.root.after(40, self._tick)
             return
@@ -4573,10 +4583,10 @@ class RecorderWindow:
         if self._exporting:
             self.status.set("Zapis już trwa.")
             return False
-        if self._waits_for_align():
-            return False
         if self.playing or self.recording:
             self.stop()
+        if self._waits_for_align():
+            return False
         bundled = self._offline_bundle()
         if bundled is None:
             return False
@@ -4628,6 +4638,8 @@ class RecorderWindow:
             return
         if self.playing or self.recording:
             self.stop()
+        if self._waits_for_align():
+            return
         bundled = self._offline_bundle()
         if bundled is None:
             return

@@ -225,13 +225,20 @@ export function beatClipAt<C extends AlignBeatClip>(
 // ── Microphone mode ─────────────────────────────────────────────────────────
 
 const HEADPHONES_RE =
-  /headphone|headset|earphone|earbud|earpod|airpods|\bbuds\b|s[łl]uchawk|hands[- ]?free|hyperx|arctis|steelseries|logitech g|razer (kraken|blackshark|barracuda)|jabra|plantronics|poly /i;
+  /headphone|headset|earphone|earbud|earpod|airpods|\bbuds\d?\b|s[łl]uchawk|\bw[fh]-\d|freebuds|quietcomfort|arctis|hyperx cloud|evolve|\belite \d/i;
+const HEADSET_MIC_RE = /headset|airpods|\bbuds\d?\b|zestaw słuchawkowy/i;
 const INTERFACE_RE =
-  /focusrite|scarlett|behringer|u-?phoria|umc\d|steinberg|ur22|audient|presonus|audiobox|m-audio|motu|arturia|minifuse|universal audio|apollo|volt \d|solid state logic|ssl ?2|zoom (u|h)|tascam|roland rubix|native instruments|komplete audio|rode|røde|shure mv|blue yeti|yeti|at2020usb|usb audio (codec|device|interface)|audio interface/i;
+  /focusrite|scarlett|u-?phoria|\bumc\d|steinberg|\bur22|audient|presonus|audiobox|m-audio|\bmotu\b|minifuse|universal audio|\bapollo\b|solid state logic|\bssl ?2|tascam|rubix|komplete audio/i;
+/** A name that says the sound may come out into the room. It wins over everything above. */
+const SPEAKERS_RE =
+  /speaker|g[łl]o[śs]nik|earpiece|\bspeak \d|\bflip\b|\bcharge\b|\bgo ?\d|\bxtreme\b|soundlink|soundbar|boombox|g560|monitor|display|hdmi|\btv\b|virtual|sonar/i;
 
 /** Headphones or a studio interface: the beat is not in the room, so the browser must not filter the voice. */
-export function headphonesLikely(labels: ReadonlyArray<string | null | undefined>): boolean {
-  return labels.some((l) => Boolean(l && (HEADPHONES_RE.test(l) || INTERFACE_RE.test(l))));
+export function headphonesLikely(devices: { inputLabel?: string | null; outputLabel?: string | null }): boolean {
+  const input = devices.inputLabel ?? "";
+  const output = devices.outputLabel ?? "";
+  if (SPEAKERS_RE.test(output) || SPEAKERS_RE.test(input)) return false;
+  return HEADPHONES_RE.test(output) || INTERFACE_RE.test(output) || HEADSET_MIC_RE.test(input);
 }
 
 export const HEADPHONES_STORAGE_KEY = "brd.studio.headphones.v1";

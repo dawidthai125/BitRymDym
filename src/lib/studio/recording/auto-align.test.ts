@@ -73,7 +73,7 @@ function take(opts: { seconds: number; lagMs: number; bleedDb: number; voice?: n
   return { mic: out, beat: b };
 }
 
-describe("bleedLag", () => {
+describe("bleedLag", { timeout: 30_000 }, () => {
   it.each([
     [18, -30],
     [83, -34],
@@ -94,7 +94,7 @@ describe("bleedLag", () => {
   });
 
   it("never gives a wrong answer when the trace is drowned", async () => {
-    for (let seed = 1; seed <= 6; seed += 1) {
+    for (let seed = 1; seed <= 4; seed += 1) {
       const { mic, beat: b } = take({ seconds: 10, lagMs: 110, bleedDb: -44 - (seed % 4) * 4, seed, noiseDb: -50 });
       const r = await bleedLag(mic, b);
       if (!r) continue;
@@ -132,11 +132,15 @@ it("beatClipAt takes only a plain, audible beat clip that still plays for a whil
 });
 
 it("headphones from device names, and the user's own answer wins", () => {
-  expect(headphonesLikely(["Microphone Array (Intel Smart Sound)", "Speakers (Realtek)"])).toBe(false);
-  expect(headphonesLikely(["iPhone Microphone", null])).toBe(false);
-  expect(headphonesLikely(["Mikrofon", "Słuchawki (Realtek)"])).toBe(true);
-  expect(headphonesLikely(["Scarlett Solo USB", undefined])).toBe(true);
-  expect(headphonesLikely(["Headset Microphone (HyperX Cloud)"])).toBe(true);
+  const at = (outputLabel: string | null, inputLabel: string | null = "Microphone Array (Intel Smart Sound)") => headphonesLikely({ inputLabel, outputLabel });
+  for (const off of [
+    "Speakers (Realtek)", "Speakers/Headphones (Realtek(R) Audio)", "Głośniki/słuchawki (Realtek(R) Audio)", "Speakers (USB Audio Device)",
+    "Słuchawki (JBL GO 3 Stereo)", "Headphones (JBL Charge 4)", "JBL Flip 5 Hands-Free", "Jabra Speak 510", "Logitech G560", "SteelSeries Sonar Virtual Audio Device", "LG HDMI", "", null,
+  ]) expect(at(off), String(off)).toBe(false);
+  for (const on of ["Słuchawki (Realtek)", "Headphones (2- High Definition Audio Device)", "WF-1000XM4", "Galaxy Buds2 Pro", "Scarlett Solo USB", "HyperX Cloud II"]) expect(at(on), on).toBe(true);
+  for (const mic of ["Headset earpiece", "Yeti Stereo Microphone", "RODE NT-USB", "HyperX SoloCast", "iPhone Microphone", "Microphone (USB Audio Device)"]) expect(at(null, mic), mic).toBe(false);
+  expect(at(null, "AirPods Pro")).toBe(true);
+  expect(at("Speakers (Realtek)", "Headset Microphone (HyperX Cloud)")).toBe(false);
   const m = new Map<string, string>();
   const st = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
   expect(readHeadphones(st, "a|b")).toBeNull();

@@ -765,7 +765,7 @@ export function StudioRecordingPanel({
   const headphonesOn =
     (headphonesPick?.key === latency.deviceKey ? headphonesPick.value : null) ??
     (storageReady ? readHeadphones(safeLocalStorage(), latency.deviceKey) : null) ??
-    headphonesLikely([inputLabel, outputLabel]);
+    headphonesLikely({ inputLabel, outputLabel });
   const [autoAlignedMs, setAutoAlignedMs] = useState<number | null>(null);
   const laneStore = useTakeLanes(projectId, true);
   const barMs = barDurationMs(transport.tempoBpm, transport.timeSignatureNum);
@@ -993,6 +993,7 @@ export function StudioRecordingPanel({
           navigator.mediaDevices,
         ),
         preferredDeviceId: selectedId,
+        rawAudio: headphonesOn,
       });
       if (cancelled || captureArmingRef.current) {
         if (result.ok) stopMediaStreamTracks(result.stream);
@@ -1039,6 +1040,7 @@ export function StudioRecordingPanel({
     captureArming,
     state.phase,
     inputDevices.selectedDeviceId,
+    headphonesOn,
     inputDevices.refreshInputs,
     tr,
   ]);
@@ -2307,17 +2309,18 @@ export function StudioRecordingPanel({
         ),
         beatUrl,
       });
-      // A newer take took over meanwhile, or this one is already placed.
-      if (!found || a.recT0 !== recT0 || a.placement) return;
+      if (!found) return;
       const measured = Math.round(found.lagMs);
       const known = latency.profile?.roundTripMs ?? null;
-      // A manual shift made up for a wrong guess. On top of a measured value it is the singer's taste: kept.
-      const manual = known == null ? 0 : latency.profile?.manualOffsetMs ?? 0;
-      a.compensationMs = measured + manual;
+      // A manual shift made up for a wrong value. On top of a right one it is the singer's taste: kept.
+      const manual = known == null || Math.abs(known - measured) > 4 ? 0 : latency.profile?.manualOffsetMs ?? 0;
+      // A newer take took over meanwhile, or this one is already placed: then only the next takes profit.
+      const late = a.recT0 !== recT0 || a.placement != null;
+      if (!late) a.compensationMs = measured + manual;
       if (known == null || Math.abs(known - measured) > 4) {
         latency.save({ roundTripMs: measured, method: "click", spreadMs: null, manualOffsetMs: manual });
       }
-      if (mountedRef.current) setAutoAlignedMs(a.compensationMs);
+      if (!late && mountedRef.current) setAutoAlignedMs(a.compensationMs);
     } catch {
       // No measurement: the calibrated or estimated value stays.
     }

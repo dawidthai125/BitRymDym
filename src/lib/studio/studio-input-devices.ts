@@ -227,6 +227,8 @@ type GetUserMediaFn = (
 export async function acquireMicStream(params: {
   getUserMedia: GetUserMediaFn;
   preferredDeviceId: string | null;
+  /** The same clean microphone a take in headphones uses, so the test sounds like the take. */
+  rawAudio?: boolean;
 }): Promise<AcquireMicStreamResult> {
   const preferred =
     params.preferredDeviceId && params.preferredDeviceId.trim()
@@ -236,7 +238,10 @@ export async function acquireMicStream(params: {
   const tryOnce = async (
     deviceId: string | null,
   ): Promise<MediaStream> => {
-    const audio = buildAudioTrackConstraints(deviceId);
+    const audio: MediaTrackConstraints = {
+      ...buildAudioTrackConstraints(deviceId),
+      ...(params.rawAudio ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false } : {}),
+    };
     return params.getUserMedia({ audio, video: false });
   };
 
