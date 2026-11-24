@@ -795,6 +795,7 @@
           "perpetual": "masz już dostęp bezterminowy i nie skracam go.",
           "downgrade": "wyższy plan jeszcze trwa, a niższego nie włączam w jego trakcie.",
           "pending_plan": "inny niższy plan jest już zaplanowany. Napisz, to oddam tę wpłatę przez PayU.",
+          "pack_amount": "kwota nie pasuje do żadnego pakietu. Sprawdzę wpłatę ręcznie. Napisz, jeśli chcesz ją z powrotem.",
           "addon_perpetual": "dodatek jest bezterminowy i nie skracam go."
         }
       },
@@ -4213,6 +4214,7 @@
       "format": {
         "MP3_128": "MP3 128",
         "MP3_192": "MP3 192",
+        "MP3_256": "MP3 256",
         "MP3_320": "MP3 320",
         "WAV_24": "WAV 24-bit",
         "FLAC_24": "FLAC 24-bit",

@@ -28,7 +28,7 @@ import {
 } from "@/lib/studio/studio-clip-fade";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { isTakeExpired } from "@/lib/takes/entitlement";
-import { removeStudioProjectFiles } from "@/lib/studio/studio-project-storage";
+import { removeStudioProjectFiles, studioProjectCleanupKeys } from "@/lib/studio/studio-project-storage";
 import { normalizeStudioProjectTitle } from "@/lib/studio/studio-project-title";
 import { parseClipPlaybackWrite } from "@/lib/studio/studio-clip-playback";
 import { clipPitchChangeAllowed } from "@/lib/studio/plan-feature-gates";
@@ -828,6 +828,7 @@ export async function deleteStudioProjectFor(
     );
   }
 
+  const cleanupKeys = await studioProjectCleanupKeys(admin, context.userId, projectId);
   const { data, error } = await admin
     .from("studio_projects")
     .delete()
@@ -847,7 +848,7 @@ export async function deleteStudioProjectFor(
   if (!data) {
     throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
   }
-  await removeStudioProjectFiles(admin, context.userId, projectId);
+  await removeStudioProjectFiles(admin, context.userId, projectId, cleanupKeys);
   return { id: (data as { id: string }).id };
 }
 

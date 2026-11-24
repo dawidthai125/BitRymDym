@@ -40,44 +40,53 @@ export function BeatGrantsPanel({
   const [expiresAt, setExpiresAt] = useState("");
 
   async function refreshGrants() {
-    const res = await fetch(`/api/beats/${beatId}/grants`);
-    const json = (await res.json()) as {
-      success?: boolean;
-      grants?: BeatGrantRow[];
-      error?: string;
-    };
-    if (!res.ok) {
-      setError(
-        toUserFacingGrantError(
-          json.error ?? t("nieUdaloSieWczytac"),
-        ),
-      );
-      return;
+    try {
+      const res = await fetch(`/api/beats/${beatId}/grants`);
+      const json = (await res.json()) as {
+        success?: boolean;
+        grants?: BeatGrantRow[];
+        error?: string;
+      };
+      if (!res.ok) {
+        setError(
+          toUserFacingGrantError(
+            json.error ?? t("nieUdaloSieWczytac"),
+          ),
+        );
+        return;
+      }
+      setGrants(json.grants ?? []);
+    } catch {
+      setError(t("nieUdaloSieWczytac"));
     }
-    setGrants(json.grants ?? []);
   }
 
   function createGrant() {
     startTransition(async () => {
       setError(null);
-      const body: { grantee: string; expiresAt?: string } = {
-        grantee: grantee.trim(),
-      };
-      if (expiresAt.trim()) {
-        body.expiresAt = new Date(expiresAt).toISOString();
-      }
-      const res = await fetch(`/api/beats/${beatId}/grants`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const json = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        setError(
-          toUserFacingGrantError(
-            json.error ?? t("nieUdaloSieUtworzyc"),
-          ),
-        );
+      try {
+        const body: { grantee: string; expiresAt?: string } = {
+          grantee: grantee.trim(),
+        };
+        if (expiresAt.trim()) {
+          body.expiresAt = new Date(expiresAt).toISOString();
+        }
+        const res = await fetch(`/api/beats/${beatId}/grants`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const json = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          setError(
+            toUserFacingGrantError(
+              json.error ?? t("nieUdaloSieUtworzyc"),
+            ),
+          );
+          return;
+        }
+      } catch {
+        setError(t("nieUdaloSieUtworzyc"));
         return;
       }
       setGrantee("");
@@ -90,17 +99,22 @@ export function BeatGrantsPanel({
   function revokeGrant(grantId: string) {
     startTransition(async () => {
       setError(null);
-      const res = await fetch(
-        `/api/beats/${beatId}/grants/${grantId}/revoke`,
-        { method: "POST" },
-      );
-      const json = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        setError(
-          toUserFacingGrantError(
-            json.error ?? t("nieUdaloSieOdwolac"),
-          ),
+      try {
+        const res = await fetch(
+          `/api/beats/${beatId}/grants/${grantId}/revoke`,
+          { method: "POST" },
         );
+        const json = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          setError(
+            toUserFacingGrantError(
+              json.error ?? t("nieUdaloSieOdwolac"),
+            ),
+          );
+          return;
+        }
+      } catch {
+        setError(t("nieUdaloSieOdwolac"));
         return;
       }
       await refreshGrants();

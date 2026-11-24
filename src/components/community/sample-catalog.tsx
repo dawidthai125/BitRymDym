@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Link from "@/components/ui/app-link";
+import { SignInLink } from "@/components/site/sign-in-link";
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { removeCatalogSampleAction, updateCatalogSampleAction } from "@/app/sampel/actions";
@@ -395,9 +396,9 @@ export function SampleCatalog({
                 </div>
               ) : (
                 <p className="mt-2 pl-12">
-                  <Link href="/sign-in" className="-my-3 inline-flex min-h-11 items-center text-sm underline underline-offset-4">
+                  <SignInLink className="-my-3 inline-flex min-h-11 items-center text-sm underline underline-offset-4">
                     {t("zalogujSie")}
-                  </Link>
+                  </SignInLink>
                 </p>
               )}
 
@@ -469,6 +470,7 @@ function AdminSampleEditor({
   onRemoved: () => void;
 }) {
   const t = useTranslations("community.sampleCatalog");
+  const thread = useTranslations("community.thread");
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
@@ -478,17 +480,17 @@ function AdminSampleEditor({
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     start(async () => {
-      const r = await updateCatalogSampleAction(data);
-      if (r.ok) onDone();
-      else setMessage(r.error);
+      const r = await updateCatalogSampleAction(data).catch(() => null);
+      if (r?.ok) onDone();
+      else setMessage(r?.error ?? thread("actionFailed"));
     });
   }
 
   function remove() {
     start(async () => {
-      const r = await removeCatalogSampleAction(item.id);
-      if (r.ok) onRemoved();
-      else setMessage(r.error);
+      const r = await removeCatalogSampleAction(item.id).catch(() => null);
+      if (r?.ok) onRemoved();
+      else setMessage(r?.error ?? thread("actionFailed"));
     });
   }
 

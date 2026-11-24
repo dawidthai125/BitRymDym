@@ -795,6 +795,7 @@
           "perpetual": "you already have access with no end date and I won't shorten it.",
           "downgrade": "a higher plan is still running, and I don't switch on a lower one during it.",
           "pending_plan": "another lower plan is already scheduled. Write to us and I'll return this payment through PayU.",
+          "pack_amount": "the amount does not match any pack. I will check the payment by hand. Write if you want it back.",
           "addon_perpetual": "the add-on has no end date and I won't shorten it."
         }
       },
@@ -4213,6 +4214,7 @@
       "format": {
         "MP3_128": "MP3 128",
         "MP3_192": "MP3 192",
+        "MP3_256": "MP3 256",
         "MP3_320": "MP3 320",
         "WAV_24": "WAV 24-bit",
         "FLAC_24": "FLAC 24-bit",
@@ -5373,7 +5375,7 @@
       "sampleWeek": "Last week''s sample",
       "sampleMonth": "Last month''s sample",
       "votes": "{count} ratings · {score}",
-      "prizeDays": "{days} premium days",
+      "prizeDays": "{days, plural, one {# premium day} other {# premium days}}",
       "prizeTier": "{tier} for a month",
       "needsVotes": "A prize needs 3 different ratings.",
       "place": "Place {place}"

@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "@/components/ui/app-link";
+import { SignInLink } from "@/components/site/sign-in-link";
 
 import { BrdLogoHomeLink } from "@/components/brand/brd-logo";
 import { PageFrame } from "@/components/brand/chrome";
@@ -85,9 +86,9 @@ export async function SiteHeader({
           ) : (
             <>
               {/* Below 360 px the logo, theme button and both links do not fit at full size. */}
-              <Link href="/sign-in" className={cn(siteNavLinkClass, "max-[359px]:px-1 max-[359px]:text-sm max-[359px]:tracking-normal")}>
+              <SignInLink className={cn(siteNavLinkClass, "max-[359px]:px-1 max-[359px]:text-sm max-[359px]:tracking-normal")}>
                 {t("zaloguj")}
-              </Link>
+              </SignInLink>
               <Link
                 href="/sign-up"
                 className="inline-flex min-h-11 items-center rounded-[var(--tape-r-panel)] border border-[var(--brd-green)] bg-[var(--brd-green)] px-3 font-poster text-base font-extrabold uppercase tracking-[0.1em] max-[359px]:px-2 max-[359px]:text-sm max-[359px]:tracking-normal text-[var(--primary-foreground)] shadow-[0_3px_0_0_var(--brd-green-muted)] transition-[transform,box-shadow] duration-[var(--tape-dur-fast)] active:translate-y-[3px] active:shadow-none sm:px-4"

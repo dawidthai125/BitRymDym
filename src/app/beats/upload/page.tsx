@@ -9,6 +9,7 @@ import {
   MAIN_CONTENT_ID,
   MAIN_CONTENT_LANDMARK_CLASS,
 } from "@/components/site/skip-to-main";
+import { pathWithKeptQuery, signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { getOwnUserBeat, loadOwnBeatConsents } from "@/lib/beats/service";
 import { canUserEditBeatStatus } from "@/lib/beats/status-labels";
@@ -41,7 +42,7 @@ export default async function BeatsUploadPage({ searchParams }: PageProps) {
     context = await requireUser();
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
-      redirect("/sign-in");
+      redirect(signInPathWithNext(pathWithKeptQuery("/beats/upload", await searchParams, ["beatId"])));
     }
     redirect("/account");
   }

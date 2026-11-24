@@ -24,6 +24,9 @@ describe("Studio deliver policy", () => {
     expect(d("BRONZE", "mix", "MP3_128")).toEqual({ allowed: true, weeklyLimit: null });
     expect(d("BRONZE", "mix", "MP3_192").allowed).toBe(false);
     expect(d("SILVER", "mix", "MP3_192").allowed).toBe(true);
+    expect(d("BRONZE", "mix", "MP3_256").allowed).toBe(false);
+    expect(d("SILVER", "mix", "MP3_256").allowed).toBe(true);
+    expect(d("SILVER", "master", "MP3_256").allowed).toBe(true);
     expect(d("SILVER", "mix", "MP3_320").allowed).toBe(false);
     expect(d("GOLD", "master", "MP3_320").allowed).toBe(true);
     expect(d("GOLD", "master", "WAV_24").allowed).toBe(true);

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { FavoriteList } from "@/components/beats/favorite-list";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { listFavoriteBeats } from "@/lib/beats/favorites";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 export default async function AccountFavoritesPage() {
   const t = await getTranslations("beats.libraryFavoritesPage");
   const session = await getCurrentProfile();
-  if (!session) redirect("/sign-in");
+  if (!session) redirect(signInPathWithNext("/account/favorites"));
   const items = await listFavoriteBeats(session.userId);
 
   return (

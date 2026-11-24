@@ -33,7 +33,7 @@ export function slugTitle(title: string | null | undefined): string {
   return s || "bitrymdym";
 }
 
-const FMT_TAG: Record<string, string> = { MP3_128: "128", MP3_192: "192", MP3_320: "320", WAV_24: "wav24", FLAC_24: "flac24", AIFF_24: "aiff24", WAV_32F: "wav32f", WAV_FLOAT: "wav", ZIP: "", MP4: "1080p" };
+const FMT_TAG: Record<string, string> = { MP3_128: "128", MP3_192: "192", MP3_256: "256", MP3_320: "320", WAV_24: "wav24", FLAC_24: "flac24", AIFF_24: "aiff24", WAV_32F: "wav32f", WAV_FLOAT: "wav", ZIP: "", MP4: "1080p" };
 
 /** moj-numer_master_320.mp3 / moj-numer_projekt.zip / moj-numer_youtube_1080p.mp4 */
 /** Session-export tag: `97bpm` and `Amin` (sharp → "sharp", major → "maj", minor → "min"); empty when unknown. */

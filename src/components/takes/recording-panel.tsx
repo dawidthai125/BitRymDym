@@ -6,6 +6,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import Link from "@/components/ui/app-link";
+import { SignInLink } from "@/components/site/sign-in-link";
 import { useEffect, useReducer, useRef, useState, type RefObject } from "react";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
@@ -824,12 +825,11 @@ export function RecordingPanel({
       {state.phase === "AUTH_REQUIRED" ? (
         <p className="text-sm text-muted-foreground" role="status">
           {tr("abyNagrywacDluzej")}{" "}
-          <Link
-            href="/sign-in"
+          <SignInLink
             className="underline underline-offset-4 hover:text-foreground"
           >
             {tr("zalogujSie")}
-          </Link>{" "}
+          </SignInLink>{" "}
           {tr("lub")}{" "}
           <Link
             href="/sign-up"
@@ -966,12 +966,11 @@ export function RecordingPanel({
                 {tr("zalozKonto")}
               </Link>{" "}
               {tr("lub")}{" "}
-              <Link
-                href="/sign-in"
+              <SignInLink
                 className="underline underline-offset-4 hover:text-foreground"
               >
                 {tr("zalogujSie")}
-              </Link>
+              </SignInLink>
               {tr("goscinneNagranieWygasaPo")}
             </p>
           ) : null}

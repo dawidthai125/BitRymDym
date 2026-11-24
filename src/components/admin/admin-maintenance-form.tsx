@@ -37,9 +37,9 @@ export function AdminMaintenanceForm({ initial }: Props) {
         enabled: !siteOn,
         message: message.trim() || null,
         until: warsawLocalInputToIso(until),
-      });
-      if (!result.success || !result.settings) {
-        setError(result.error ?? t("saveError"));
+      }).catch(() => null);
+      if (!result?.success || !result.settings) {
+        setError(result?.error ?? t("saveError"));
         return;
       }
       setSaved(result.settings.enabled);

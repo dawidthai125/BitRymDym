@@ -33,9 +33,9 @@ export function CommentReportQueue({ enabled, items }: { enabled: boolean; items
   function decide(commentId: string, decision: "hide" | "dismiss") {
     setError(null);
     startTransition(async () => {
-      const outcome = await adminResolveCommentReportsAction(commentId, decision);
-      if (!outcome.ok && outcome.code !== "ALREADY_CLOSED") {
-        setError(outcome.code === "FORBIDDEN" ? t("forbidden") : t("failed"));
+      const outcome = await adminResolveCommentReportsAction(commentId, decision).catch(() => null);
+      if (!outcome || (!outcome.ok && outcome.code !== "ALREADY_CLOSED")) {
+        setError(outcome?.code === "FORBIDDEN" ? t("forbidden") : t("failed"));
         return;
       }
       router.refresh();

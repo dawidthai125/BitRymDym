@@ -81,7 +81,7 @@ export async function loadReturnState(sessionId: string, userId: string): Promis
       } else if (row.status === "failed") state = { status: "failed" };
       else if (row.status === "pending") state = { status: "pending" };
       else if (row.status === "paid" && row.grant_status === "skipped") {
-        const reason = row.grant_note === "downgrade" || row.grant_note === "pending_plan" || row.grant_note === "addon_perpetual" || row.grant_note === "perpetual"
+        const reason = row.grant_note === "downgrade" || row.grant_note === "pending_plan" || row.grant_note === "addon_perpetual" || row.grant_note === "perpetual" || row.grant_note === "pack_amount"
           ? row.grant_note
           : "perpetual";
         state = { status: "skipped", reason };

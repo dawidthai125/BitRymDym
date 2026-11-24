@@ -37,7 +37,7 @@ describe("community upload nav contract", () => {
     );
     expect(src).toContain('role !== "USER"');
     expect(src).toContain('redirect("/admin/beats/new")');
-    expect(src).toContain('redirect("/sign-in")');
+    expect(src).toContain('redirect(signInPathWithNext(pathWithKeptQuery("/beats/upload"');
     expect(src).not.toContain('requireRole(["USER"])');
   });
 
@@ -53,7 +53,7 @@ describe("community upload nav contract", () => {
     expect(authBlock).toBeTruthy();
     expect(authBlock![1]).toContain("requireUser()");
     expect(authBlock![1]).not.toContain("redirect(");
-    expect(authBlock![2]).toContain('redirect("/sign-in")');
+    expect(authBlock![2]).toContain("redirect(signInPathWithNext(");
     expect(authBlock![2]).not.toContain('redirect("/admin/beats/new")');
 
     const afterAuth = src.slice(

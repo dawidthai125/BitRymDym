@@ -1,5 +1,6 @@
 import "server-only";
 
+import { AUDIO_ARTIFACTS_BUCKET } from "@/config/audio-render";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -41,7 +42,7 @@ export const PENDING_UPLOAD_WINDOW_ELAPSED = "PENDING_UPLOAD_WINDOW_ELAPSED";
  *   e.g. late upload after window release or rejected finalize) older than
  *   24h, that may still have objects — cursor-paged, several batches per run
  *
- * Does not touch beat-audio. Safe to re-run.
+ * Cleaned vocal copies of a dead take are removed with it. Does not touch beat-audio. Safe to re-run.
  */
 export async function runTakesRetentionJanitor(options?: {
   now?: Date;
@@ -77,29 +78,35 @@ export async function runTakesRetentionJanitor(options?: {
     result.pendingWindowReleased = result.pendingWindowReleasedIds.length;
   }
 
-  const { data: due, error: dueError } = await admin
-    .from("takes")
-    .select("id, status, object_key, storage_bucket, deleted_at, expires_at")
-    .in("status", ["READY", "PENDING_UPLOAD"])
-    .is("deleted_at", null)
-    .lte("expires_at", nowIso)
-    .order("expires_at", { ascending: true })
-    .limit(limit);
-
-  if (dueError) throw new Error(dueError.message);
-
-  const seen = new Set<string>();
-  await processCandidates(admin, due ?? [], seen, result);
-
-  // Storage sweep of terminal rows. There is no "object removed" marker
-  // column (object_key is NOT NULL), so rows stay eligible after removal;
-  // advance a (updated_at, id) cursor across several batches per run so the
-  // same first batch is not re-processed forever.
   const failedCutoffIso = new Date(
     (options?.now ?? new Date()).getTime() - FAILED_SWEEP_MIN_AGE_MS,
   ).toISOString();
   const deadline = Date.now() + (options?.timeBudgetMs ?? SWEEP_TIME_BUDGET_MS);
   const maxBatches = options?.maxSweepBatches ?? SWEEP_MAX_BATCHES;
+
+  const seen = new Set<string>();
+  // Every due take, not only the first batch of the day.
+  for (let batch = 0; batch < maxBatches; batch += 1) {
+    if (batch > 0 && Date.now() >= deadline) break;
+    const { data: due, error: dueError } = await admin
+      .from("takes")
+      .select("id, status, object_key, storage_bucket, deleted_at, expires_at, updated_at")
+      .in("status", ["READY", "PENDING_UPLOAD"])
+      .is("deleted_at", null)
+      .lte("expires_at", nowIso)
+      .order("expires_at", { ascending: true })
+      .limit(limit);
+    if (dueError) throw new Error(dueError.message);
+    const rows = (due ?? []) as JanitorRow[];
+    const fresh = rows.filter((row) => !seen.has(row.id as string)).length;
+    await processCandidates(admin, rows, seen, result, failedCutoffIso);
+    // Nothing new: the last rows could not be marked; do not spin on them.
+    if (rows.length < limit || fresh === 0) break;
+  }
+
+  // Storage sweep of terminal rows. A row whose object is gone gets object_removed_at and leaves
+  // the sweep (only after a safe age: a late upload can still land on a fresh row). The
+  // (updated_at, id) cursor keeps one run from re-processing rows it could not finish.
 
   // EXPIRED / DELETED rows that may still have objects.
   await sweepTerminalRows({ admin, sweep: "TERMINAL", failedCutoffIso, limit, maxBatches, deadline, seen, result });
@@ -131,7 +138,8 @@ async function sweepTerminalRows(params: {
       .from("takes")
       .select(SWEEP_COLUMNS)
       .eq("storage_bucket", TAKE_AUDIO_BUCKET)
-      .not("object_key", "is", null);
+      .not("object_key", "is", null)
+      .is("object_removed_at", null);
     query =
       params.sweep === "FAILED"
         ? query.eq("status", "FAILED").lte("updated_at", params.failedCutoffIso)
@@ -147,7 +155,7 @@ async function sweepTerminalRows(params: {
       .limit(params.limit);
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as JanitorRow[];
-    await processCandidates(admin, rows, params.seen, params.result);
+    await processCandidates(admin, rows, params.seen, params.result, params.failedCutoffIso);
     if (rows.length < params.limit) return;
     const last = rows[rows.length - 1];
     if (typeof last.updated_at !== "string" || typeof last.id !== "string") return;
@@ -155,11 +163,26 @@ async function sweepTerminalRows(params: {
   }
 }
 
+/** Cleaned copies of a dead take (studio-cleanup/{owner}/{take}/…) go with it. False = try again on the next run. */
+async function removeCleanupResults(admin: AdminClient, takeId: string, objectKey: string): Promise<boolean> {
+  const owner = /^user\/([0-9a-f-]{36})\//i.exec(objectKey)?.[1];
+  if (!owner) return true;
+  const dir = `studio-cleanup/${owner}/${takeId}`;
+  const bucket = admin.storage.from(AUDIO_ARTIFACTS_BUCKET);
+  const { data, error } = await bucket.list(dir, { limit: 100 });
+  if (error) return false;
+  const keys = (data ?? []).filter((entry) => entry.id !== null).map((entry) => `${dir}/${entry.name}`);
+  if (keys.length === 0) return true;
+  const removed = await bucket.remove(keys);
+  return !removed.error && keys.length < 100;
+}
+
 async function processCandidates(
   admin: AdminClient,
   candidates: JanitorRow[],
   seen: Set<string>,
   result: TakeJanitorResult,
+  settledBeforeIso: string,
 ): Promise<void> {
   for (const row of candidates) {
     const id = row.id as string;
@@ -212,6 +235,7 @@ async function processCandidates(
       .from(TAKE_AUDIO_BUCKET)
       .remove([objectKey]);
 
+    let gone = !removeError;
     if (removeError) {
       // Missing object is success for idempotency.
       const msg = removeError.message.toLowerCase();
@@ -220,12 +244,20 @@ async function processCandidates(
         msg.includes("does not exist") ||
         msg.includes("404")
       ) {
+        gone = true;
         result.storageRemoved += 1;
       } else {
         result.storageErrors += 1;
       }
     } else {
       result.storageRemoved += 1;
+    }
+
+    if (gone && !needsExpire && typeof row.updated_at === "string" && Date.parse(row.updated_at) <= Date.parse(settledBeforeIso)) {
+      // Best effort: without the mark the row is simply swept again tomorrow.
+      if (!(await removeCleanupResults(admin, id, objectKey))) continue;
+      const marked = await admin.from("takes").update({ object_removed_at: new Date().toISOString() }).eq("id", id).eq("status", status);
+      if (marked.error) console.error("[takes-janitor] mark failed", marked.error.message);
     }
   }
 }

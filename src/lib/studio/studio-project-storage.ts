@@ -26,14 +26,43 @@ async function keysUnder(admin: Admin, dir: string, depth = 0): Promise<string[]
 }
 
 /**
+ * Vocal cleanup results of the project (studio-cleanup/{owner}/{take}/{job}.flac). They are keyed by take, so the job
+ * rows must be read BEFORE the project is deleted. Never blocks the deletion.
+ */
+export async function studioProjectCleanupKeys(admin: Admin, ownerId: string, projectId: string): Promise<string[]> {
+  if (!UUID.test(ownerId) || !UUID.test(projectId)) return [];
+  try {
+    const { data, error } = await admin
+      .from("studio_cleanup_jobs")
+      .select("result_object_key")
+      .eq("project_id", projectId)
+      .eq("owner_id", ownerId)
+      .not("result_object_key", "is", null);
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as { result_object_key: string | null }[])
+      .map((row) => row.result_object_key ?? "")
+      .filter((key) => key.startsWith(`studio-cleanup/${ownerId}/`) && !key.includes(".."));
+  } catch (error) {
+    console.error("[studio-project] cleanup files not listed", projectId, error);
+    return [];
+  }
+}
+
+/**
  * Masters, downloads, videos and reference uploads of a project that was just deleted (its rows are gone, so nothing
  * else would ever remove the files). Best effort: the project is deleted either way.
  */
-export async function removeStudioProjectFiles(admin: Admin, ownerId: string, projectId: string): Promise<void> {
+export async function removeStudioProjectFiles(
+  admin: Admin,
+  ownerId: string,
+  projectId: string,
+  /** From studioProjectCleanupKeys, read before the rows went. */
+  cleanupKeys: readonly string[] = [],
+): Promise<void> {
   if (!UUID.test(ownerId) || !UUID.test(projectId)) return;
-  for (const root of ["studio-master", "studio-video", "studio-reference"]) {
+  for (const root of ["studio-master", "studio-video", "studio-reference", "studio-cleanup"]) {
     try {
-      const keys = await keysUnder(admin, `${root}/${ownerId}/${projectId}`);
+      const keys = root === "studio-cleanup" ? [...cleanupKeys] : await keysUnder(admin, `${root}/${ownerId}/${projectId}`);
       for (let i = 0; i < keys.length; i += 100) {
         const { error } = await admin.storage.from(AUDIO_ARTIFACTS_BUCKET).remove(keys.slice(i, i + 100));
         if (error) throw new Error(error.message);

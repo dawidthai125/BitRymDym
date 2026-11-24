@@ -5,7 +5,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import { useState, useTransition } from "react";
-import Link from "@/components/ui/app-link";
+import { SignInLink } from "@/components/site/sign-in-link";
 
 import { Button } from "@/components/ui/button";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
@@ -90,12 +90,11 @@ export function DownloadButton({
           {!isAuthenticated ? (
             <>
               {" "}
-              <Link
-                href="/sign-in"
+              <SignInLink
                 className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground"
               >
                 {t("zalogujSie")}
-              </Link>{" "}
+              </SignInLink>{" "}
               {t("abyKorzystacZLimitu")}
             </>
           ) : null}

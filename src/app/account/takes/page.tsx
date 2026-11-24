@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { OwnTakesList } from "@/components/takes/own-takes-list";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listPurchasedBeatIds } from "@/lib/beats/purchased-catalog";
 import { listOwnTakes } from "@/lib/takes/list-own-takes";
@@ -22,7 +23,7 @@ export default async function AccountTakesPage() {
     userId = (await requireUser()).userId;
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
-      redirect("/sign-in");
+      redirect(signInPathWithNext("/account/takes"));
     }
     redirect("/account");
   }

@@ -6,6 +6,7 @@ import Link from "@/components/ui/app-link";
 import { usePathname } from "next/navigation";
 
 import { isSiteNavHrefActive } from "@/components/site/site-nav-active";
+import { SignInLink } from "@/components/site/sign-in-link";
 import { cn } from "@/lib/utils";
 
 type MobileBottomNavProps = {
@@ -53,9 +54,11 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
             studioIncludesAccount: true,
           });
 
+          const NavLink = item.href === "/sign-in" ? SignInLink : Link;
+
           return (
             <li key={item.href}>
-              <Link
+              <NavLink
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
@@ -75,7 +78,7 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
                   aria-hidden
                 />
                 {tItem(item.label)}
-              </Link>
+              </NavLink>
             </li>
           );
         })}

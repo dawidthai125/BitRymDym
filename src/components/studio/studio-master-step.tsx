@@ -102,7 +102,7 @@ const STATUS_RAIL = { green: "border-l-[var(--brd-green)]", yellow: "border-l-[v
 /** The dark theme has one colour for "ok" and "watch out", so the state is never colour alone. */
 const STATUS_MARK = { green: "✓", yellow: "!", red: "✕", na: "" } as const;
 const MIN_PLAN = (format: DeliverFormat): Tier => minimumTierForDeliverFormat(format);
-const FORMATS: DeliverFormat[] = ["MP3_128", "MP3_192", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F"];
+const FORMATS: DeliverFormat[] = ["MP3_128", "MP3_192", "MP3_256", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F"];
 
 /** Stage 3 — Mastering step: approved mix → one stereo track → target + whole-song settings → E3 master → approve → downloads. */
 export function StudioMasterStep({

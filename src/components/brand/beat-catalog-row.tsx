@@ -18,6 +18,7 @@ import { AuthorName } from "@/components/creators/author-name";
 import { usePlayer } from "@/components/player/player-provider";
 import { playbackProgressRatio } from "@/lib/player/playback-progress";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
+import { currentSignInHref } from "@/lib/site/sign-in-href";
 import { cn } from "@/lib/utils";
 
 type BeatCatalogRowProps = {
@@ -99,7 +100,7 @@ export function BeatCatalogRow({
     e.preventDefault();
     e.stopPropagation();
     if (!signedIn) {
-      router.push("/sign-in");
+      router.push(currentSignInHref());
       return;
     }
     if (saving) return;
@@ -109,7 +110,7 @@ export function BeatCatalogRow({
     const result = await toggleBeatFavoriteAction(beat.id).catch(() => ({ error: "failed" as const }));
     setSaving(false);
     if ("error" in result) {
-      if (result.error === "auth") router.push("/sign-in");
+      if (result.error === "auth") router.push(currentSignInHref());
       setSaved(!next);
       return;
     }

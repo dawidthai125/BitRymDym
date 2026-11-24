@@ -10,7 +10,7 @@ import { AppShell } from "@/components/site/app-shell";
 export type ReturnState =
   | { status: "pending" }
   | { status: "paid"; product: string; until: string | null; scheduled?: boolean; kind?: "plan" | "addon" | "pack"; purchase?: PurchaseEvent | null }
-  | { status: "skipped"; reason: "perpetual" | "downgrade" | "pending_plan" | "addon_perpetual" }
+  | { status: "skipped"; reason: "perpetual" | "downgrade" | "pending_plan" | "addon_perpetual" | "pack_amount" }
   | { status: "failed" }
   | { status: "refunded" }
   | { status: "missing" }

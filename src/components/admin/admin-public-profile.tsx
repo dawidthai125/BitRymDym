@@ -19,9 +19,9 @@ export function AdminPublicProfile({ userId, profile }: { userId: string; profil
   function apply() {
     setAsking(false);
     start(async () => {
-      const result = await setAdminPublicProfileBlockedAction({ targetUserId: userId, blocked: !profile.blocked });
-      setNote(result.success ? { ok: true, text: t("profilZapisano") } : { ok: false, text: result.error ?? t("profilBlad") });
-      if (result.success) router.refresh();
+      const result = await setAdminPublicProfileBlockedAction({ targetUserId: userId, blocked: !profile.blocked }).catch(() => null);
+      setNote(result?.success ? { ok: true, text: t("profilZapisano") } : { ok: false, text: result?.error ?? t("profilBlad") });
+      if (result?.success) router.refresh();
     });
   }
 

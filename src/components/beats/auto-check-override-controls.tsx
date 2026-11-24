@@ -25,9 +25,10 @@ export function AutoCheckOverrideControls({ beatId, mode }: { beatId: string; mo
       return;
     }
     startTransition(async () => {
-      const result = mode === "override" ? await overrideAutoCheckAction(beatId, reason) : await retryAutoCheckAction(beatId);
-      if (!result.success) {
-        setError(result.error ?? t("operacjaNiePowiodlaSie"));
+      const action = mode === "override" ? overrideAutoCheckAction(beatId, reason) : retryAutoCheckAction(beatId);
+      const result = await action.catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("operacjaNiePowiodlaSie"));
         return;
       }
       router.refresh();

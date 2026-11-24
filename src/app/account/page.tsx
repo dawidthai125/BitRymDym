@@ -34,6 +34,7 @@ import { formatAccountPlanDisplay } from "@/lib/account/account-plan-display";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { ConsumeEmailChangeNotice } from "@/components/auth/consume-email-change-notice";
 import { EmailChangeNotice } from "@/components/auth/email-change-notice";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { signOutAction } from "@/lib/auth/actions";
 import { resolveEmailChangeNoticeDisplay } from "@/lib/auth/email-change";
 import { readEmailChangeNotice } from "@/lib/auth/email-change-notice";
@@ -82,7 +83,7 @@ export default async function AccountPage({
 
   const context = await getCurrentProfile();
   if (!context) {
-    redirect("/sign-in");
+    redirect(signInPathWithNext("/account"));
   }
   const tn = await getTranslations("account.notifications");
   const notificationPrefs = await readPreferences(createSupabaseAdminClient(), context.userId).catch(() => DEFAULT_PREFERENCES);

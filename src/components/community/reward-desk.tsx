@@ -2,9 +2,11 @@ import { getTranslations } from "next-intl/server";
 
 import { RewardClaimButton } from "@/components/community/reward-claim-button";
 import { listMyRewards } from "@/lib/community/community-service";
+import { labelPremiumTier } from "@/lib/ui/labels";
 
 export async function RewardDesk({ userId }: { userId: string }) {
   const t = await getTranslations("community.rewards");
+  const rank = await getTranslations("community.rank");
   const loaded = await listMyRewards(userId).catch(() => ({ enabled: false, rewards: [] }));
   return (
     <section id="nagrody" className="scroll-mt-24 space-y-3 border border-[var(--brd-line)] p-5">
@@ -25,7 +27,7 @@ export async function RewardDesk({ userId }: { userId: string }) {
               <RewardClaimButton
                 id={reward.id}
                 claimed={reward.status === "claimed"}
-                label={reward.mode === "package_month" ? reward.tier : String(reward.days)}
+                label={reward.mode === "package_month" ? rank("prizeTier", { tier: labelPremiumTier(reward.tier) }) : rank("prizeDays", { days: reward.days })}
               />
             </li>
           ))}

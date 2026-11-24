@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import Link from "@/components/ui/app-link";
 import { redirect } from "next/navigation";
 
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listActiveGranteeGrantsFor } from "@/lib/grants/beat-access-grants";
 import { intlTag, resolveLocale } from "@/i18n/config";
@@ -23,7 +24,7 @@ export default async function AccountSharedBeatsPage() {
     context = await requireUser();
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
-      redirect("/sign-in");
+      redirect(signInPathWithNext("/account/shared"));
     }
     redirect("/account");
   }

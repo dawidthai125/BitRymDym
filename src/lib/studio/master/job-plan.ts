@@ -14,7 +14,7 @@ import { applyMasterStyle, clampIntensity, clampMasterSettings, isMasterStyleId 
 
 export const STUDIO_MASTER_JOB_KINDS = ["master", "raw_sum", "project_zip", "transcode", "youtube_video"] as const;
 export type StudioMasterJobKind = (typeof STUDIO_MASTER_JOB_KINDS)[number];
-export const STUDIO_MASTER_OUTPUT_FORMATS = ["WAV_FLOAT", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F", "MP3_128", "MP3_192", "MP3_320", "ZIP", "MP4"] as const;
+export const STUDIO_MASTER_OUTPUT_FORMATS = ["WAV_FLOAT", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F", "MP3_128", "MP3_192", "MP3_256", "MP3_320", "ZIP", "MP4"] as const;
 export type StudioMasterOutputFormat = (typeof STUDIO_MASTER_OUTPUT_FORMATS)[number];
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

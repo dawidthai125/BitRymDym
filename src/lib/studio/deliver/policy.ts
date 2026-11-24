@@ -5,7 +5,7 @@
  * download quality and is allowed iff the plan's `downloads.qualities`
  * (`@/config/plan-policy`) contains it. Owner 2026-10-29: guest nothing; Free
  * nothing (the old 1 file / 7 days MP3 128 is gone — locked buttons + premium
- * nudge); Bronze MP3 128; Silver MP3 128/192; Gold MP3 128/192/320 + WAV 24-bit + FLAC 24-bit + AIFF 24-bit + WAV 32-bit float (2026-11-19);
+ * nudge); Bronze MP3 128; Silver MP3 128/192/256 (256 since 2026-11-25, as in the price list); Gold MP3 128/192/256/320 + WAV 24-bit + FLAC 24-bit + AIFF 24-bit + WAV 32-bit float (2026-11-19);
  * Project (zip of all tracks) shown to everyone, enabled where
  * `downloads.projectZip` (Silver+). Everything requires an approved master.
  */
@@ -15,7 +15,7 @@ import { PREMIUM_TIERS, type PremiumTier } from "@/types/premium";
 
 export const DELIVER_KINDS = ["mix", "master", "raw", "project"] as const;
 export type DeliverKind = (typeof DELIVER_KINDS)[number];
-export const DELIVER_FORMATS = ["MP3_128", "MP3_192", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F", "ZIP"] as const;
+export const DELIVER_FORMATS = ["MP3_128", "MP3_192", "MP3_256", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F", "ZIP"] as const;
 export type DeliverFormat = (typeof DELIVER_FORMATS)[number];
 
 export const isDeliverKind = (v: unknown): v is DeliverKind => typeof v === "string" && (DELIVER_KINDS as readonly string[]).includes(v);
@@ -27,6 +27,7 @@ export type DeliverAudioFormat = Exclude<DeliverFormat, "ZIP">;
 export const DELIVER_FORMAT_QUALITY: Record<DeliverAudioFormat, PlanDownloadQuality> = {
   MP3_128: "MP3_128",
   MP3_192: "MP3_192",
+  MP3_256: "MP3_256",
   MP3_320: "MP3_320",
   WAV_24: "WAV_PRO",
   FLAC_24: "WAV_PRO",
@@ -34,7 +35,7 @@ export const DELIVER_FORMAT_QUALITY: Record<DeliverAudioFormat, PlanDownloadQual
   WAV_32F: "WAV_MASTER",
 };
 
-const AUDIO_FORMATS = ["MP3_128", "MP3_192", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F"] as const satisfies readonly DeliverAudioFormat[];
+const AUDIO_FORMATS = ["MP3_128", "MP3_192", "MP3_256", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F"] as const satisfies readonly DeliverAudioFormat[];
 
 const audioFormatsFor = (tier: PremiumTier): readonly DeliverFormat[] =>
   AUDIO_FORMATS.filter((f) => PLAN_POLICY[tier].downloads.qualities.includes(DELIVER_FORMAT_QUALITY[f]));
@@ -112,7 +113,7 @@ export function decideDeliver(params: {
 export function deliverOptions(tier: PremiumTier | null): { kind: DeliverKind; format: DeliverFormat; enabled: boolean; watermark?: boolean }[] {
   const rows: { kind: DeliverKind; format: DeliverFormat; enabled: boolean; watermark?: boolean }[] = [];
   for (const kind of ["mix", "master", "raw"] as const) {
-    for (const format of ["MP3_128", "MP3_192", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F"] as const) {
+    for (const format of ["MP3_128", "MP3_192", "MP3_256", "MP3_320", "WAV_24", "FLAC_24", "AIFF_24", "WAV_32F"] as const) {
       const d = decideDeliver({ tier, kind, format, approved: true });
       rows.push({ kind, format, enabled: d.allowed, ...(d.allowed && d.watermark ? { watermark: true } : {}) });
     }
@@ -125,6 +126,7 @@ export function deliverOptions(tier: PremiumTier | null): { kind: DeliverKind; f
 export const DELIVER_FFMPEG_ARGS: Record<DeliverAudioFormat, string[]> = {
   MP3_128: ["-c:a", "libmp3lame", "-b:a", "128k"],
   MP3_192: ["-c:a", "libmp3lame", "-b:a", "192k"],
+  MP3_256: ["-c:a", "libmp3lame", "-b:a", "256k"],
   MP3_320: ["-c:a", "libmp3lame", "-b:a", "320k"],
   WAV_24: ["-c:a", "pcm_s24le"],
   FLAC_24: ["-c:a", "flac", "-sample_fmt", "s32", "-bits_per_raw_sample", "24"],

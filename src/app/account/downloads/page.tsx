@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import Link from "@/components/ui/app-link";
 import { redirect } from "next/navigation";
 
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { listMyDownloadHistory } from "@/lib/downloads/history";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
@@ -44,7 +45,7 @@ export default async function MyDownloadsPage() {
 
   const context = await getCurrentProfile();
   if (!context) {
-    redirect("/sign-in");
+    redirect(signInPathWithNext("/account/downloads"));
   }
 
   const items = await listMyDownloadHistory();

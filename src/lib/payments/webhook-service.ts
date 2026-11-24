@@ -440,7 +440,20 @@ async function settlePayuNotice(note: PayuOrderNotice, config: PayuConfig, now: 
       providerRef: note.orderId,
       details: { amount_grosz: loaded.order.amountGrosz },
     });
-    return stored ? { status: 200, body: { ok: true, result: "review" } } : { status: 503, body: { ok: false } };
+    if (!stored) return { status: 503, body: { ok: false } };
+    // Out of "pending": nothing may grant it later on its own, and a refund finds it by the PayU id.
+    const parked = await admin.rpc("park_paid_payment_order", {
+      p_session_id: note.extOrderId,
+      p_amount: loaded.order.amountGrosz,
+      p_provider_order_id: note.orderId,
+      p_note: settled.write.note,
+    });
+    const parkedResult = (parked.data as { result?: string } | null)?.result;
+    if (parked.error || (parkedResult !== "parked" && parkedResult !== "already")) {
+      console.error("[payu] review order not parked", { sessionId: note.extOrderId, result: parkedResult ?? "error" });
+      return { status: 503, body: { ok: false } };
+    }
+    return { status: 200, body: { ok: true, result: "review" } };
   }
 
   if (loaded.order.product.kind === "beat" && settled.write.action !== "beat") {
@@ -519,11 +532,12 @@ async function handlePayuRefund(body: unknown): Promise<WebhookOutcome> {
   if (payuRefundAction(refund.status) === "ignore") return { status: 200, body: { ok: true, result: "ignored" } };
 
   const admin = createSupabaseAdminClient();
-  const found = await admin
-    .from("payment_orders")
-    .select("session_id, product_kind, pack, amount_grosz")
-    .eq("p24_order_id", refund.orderId)
-    .maybeSingle();
+  const columns = "session_id, product_kind, pack, amount_grosz";
+  let found = await admin.from("payment_orders").select(columns).eq("p24_order_id", refund.orderId).maybeSingle();
+  if (!found.error && !found.data) {
+    // Never settled (review queue, cancelled): only provider_order_id carries the PayU id.
+    found = await admin.from("payment_orders").select(columns).is("p24_order_id", null).eq("provider_order_id", refund.orderId).maybeSingle();
+  }
   if (found.error) return { status: 503, body: { ok: false } };
   if (!found.data) {
     console.error("[payu] refund for an unknown order", { orderId: refund.orderId });

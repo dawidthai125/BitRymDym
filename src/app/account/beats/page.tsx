@@ -12,6 +12,7 @@ import {
   canAccessAdminNav,
   canAccessCommunityUpload,
 } from "@/lib/auth/permissions";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { beatCoverUrl } from "@/lib/beats/cover/cover-url";
 import { isOwnerEditableStatus } from "@/lib/beats/owner-edit-policy";
@@ -41,7 +42,7 @@ export default async function AccountBeatsPage() {
     context = await requireUser();
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
-      redirect("/sign-in");
+      redirect(signInPathWithNext("/account/beats"));
     }
     redirect("/account");
   }

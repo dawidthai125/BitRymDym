@@ -37,9 +37,9 @@ export function AdminPlatformOpsExportButton({
   function onExport() {
     setError(null);
     startTransition(async () => {
-      const result = await requestPlatformBeatOpsExportAction({ beatId });
-      if (!result.success || !result.url) {
-        setError(toSafeDownloadErrorMessage(result.error));
+      const result = await requestPlatformBeatOpsExportAction({ beatId }).catch(() => null);
+      if (!result?.success || !result.url) {
+        setError(toSafeDownloadErrorMessage(result?.error));
         return;
       }
       const anchor = document.createElement("a");

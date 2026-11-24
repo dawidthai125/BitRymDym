@@ -26,9 +26,9 @@ export function AdminUserLimits({ userId, limits: initial }: { userId: string; l
   function reset(metric: string) {
     setAsking(null);
     start(async () => {
-      const res = await resetAdminUserUsageAction({ targetUserId: userId, metric });
-      setNotice(res.success ? { ok: true, text: t("wyzerowano") } : { ok: false, text: res.error ?? t("bladZerowania") });
-      if (res.success) {
+      const res = await resetAdminUserUsageAction({ targetUserId: userId, metric }).catch(() => null);
+      setNotice(res?.success ? { ok: true, text: t("wyzerowano") } : { ok: false, text: res?.error ?? t("bladZerowania") });
+      if (res?.success) {
         setLimits((rows) =>
           rows.map((row) => (metric === "all" || row.metric === metric ? { ...row, used: 0, resetAt: res.resetAt } : row)),
         );

@@ -8,11 +8,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const rpc = vi.fn();
 const from = vi.fn();
 const remove = vi.fn();
+const list = vi.fn();
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => ({
     rpc,
     from,
-    storage: { from: () => ({ remove }) },
+    storage: { from: () => ({ remove, list }) },
   }),
 }));
 
@@ -35,7 +36,10 @@ afterEach(() => {
   rpc.mockReset();
   from.mockReset();
   remove.mockReset();
+  list.mockReset();
 });
+
+const OWNER = "11111111-1111-4111-8111-111111111111";
 
 describe("markPendingTakeFailed", () => {
   it("only transitions PENDING_UPLOAD and removes the object when the row changed", async () => {
@@ -73,10 +77,11 @@ describe("takes janitor terminal sweep", () => {
     rpc.mockResolvedValue({ data: [], error: null });
     remove.mockResolvedValue({ error: null });
     const queries: Call[][] = [];
+    const marks: Call[][] = [];
     const row = (id: string, status: string) => ({
       id,
       status,
-      object_key: `user/u/${id}.bin`,
+      object_key: `user/${OWNER}/${id}.bin`,
       storage_bucket: "take-audio",
       deleted_at: null,
       expires_at: "2026-11-01T00:00:00Z",
@@ -90,15 +95,31 @@ describe("takes janitor terminal sweep", () => {
     ];
     from.mockImplementation(() => {
       const calls: Call[] = [];
-      queries.push(calls);
-      return query({ data: pages[queries.length - 1] ?? [], error: null }, calls);
+      const chain = query({ data: [], error: null }, calls) as Record<string, unknown>;
+      return {
+        ...chain,
+        update: (patch: unknown) => {
+          marks.push(calls);
+          calls.push(["update", patch] as unknown as Call);
+          return chain;
+        },
+        select: () => {
+          queries.push(calls);
+          return query({ data: pages[queries.length - 1] ?? [], error: null }, calls);
+        },
+      };
     });
+    list.mockImplementation(async (dir: string) => ({ data: dir.endsWith("/e1") ? [{ id: "x", name: "job.flac" }] : [], error: null }));
     const { runTakesRetentionJanitor } = await import("@/lib/takes/takes-janitor");
     const now = new Date("2026-11-22T12:00:00Z");
     const result = await runTakesRetentionJanitor({ now, limit: 2 });
 
     expect(result.storageRemoved).toBe(4);
-    expect(remove).toHaveBeenCalledTimes(4);
+    expect(remove).toHaveBeenCalledTimes(5);
+    // A cleaned copy goes with the dead take, and every finished row leaves the sweep.
+    expect(remove).toHaveBeenCalledWith([`studio-cleanup/${OWNER}/e1/job.flac`]);
+    expect(marks).toHaveLength(4);
+    expect(queries[1]).toContainEqual(["is", "object_removed_at", null]);
     expect(queries[1].some((c) => c[0] === "or")).toBe(false);
     expect(queries[2]).toContainEqual([
       "or",

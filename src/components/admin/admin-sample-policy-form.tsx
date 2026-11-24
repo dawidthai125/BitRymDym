@@ -35,9 +35,9 @@ export function AdminSamplePolicyForm({ initial }: AdminSamplePolicyFormProps) {
         bronzeMaxRecordingSeconds: bronze,
         silverMaxRecordingSeconds: silver,
         goldMaxRecordingSeconds: gold,
-      });
-      if (!result.success) {
-        setError(result.error ?? t("nieUdaloSieZapisac"));
+      }).catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("nieUdaloSieZapisac"));
         return;
       }
       if (result.settings) {

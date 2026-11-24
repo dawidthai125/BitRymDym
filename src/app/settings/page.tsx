@@ -6,6 +6,7 @@ import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { AppShell } from "@/components/site/app-shell";
 import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { ThemeToggle } from "@/components/site/theme-toggle";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { isStoreApp } from "@/lib/site/store-app-server";
 import { cn } from "@/lib/utils";
@@ -97,7 +98,7 @@ export default async function SettingsPage() {
   const tc = await getTranslations("account.settingsPage.consts");
   const tl = await getTranslations("language");
   const session = await getCurrentProfile();
-  if (!session) redirect("/sign-in");
+  if (!session) redirect(signInPathWithNext("/settings"));
   const storeApp = await isStoreApp();
 
   return (

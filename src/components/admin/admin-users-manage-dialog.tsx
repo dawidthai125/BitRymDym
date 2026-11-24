@@ -97,9 +97,9 @@ export function AdminUsersManageDialog({
         role: isSelf ? role : nextRole,
         premiumTier: nextTier,
         expiresOn: nextTier === "FREE" ? "" : expiresOn,
-      });
-      if (!result.success) {
-        setError(result.error ?? t("nieUdaloSieZapisac"));
+      }).catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("nieUdaloSieZapisac"));
         return;
       }
       close();

@@ -107,9 +107,9 @@ export function AdminUsersAddonDialog({
         grant,
         endsOn: grant ? endsOn : "",
         note,
-      });
-      if (!result.success) {
-        setError(result.error ?? t("nieUdaloSie"));
+      }).catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("nieUdaloSie"));
         return;
       }
       setOpen(false);

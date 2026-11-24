@@ -47,9 +47,9 @@ export function AdminUsersDeleteDialog({
       const result = await adminDeleteUserAction({
         targetUserId: userId,
         reason,
-      });
-      if (!result.success) {
-        setError(result.error ?? t("nieUdaloSieUsunac"));
+      }).catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("nieUdaloSieUsunac"));
         return;
       }
       router.refresh();

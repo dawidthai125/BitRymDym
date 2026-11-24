@@ -14,7 +14,7 @@ describe("settings hub (navigation only)", () => {
 
   it("keeps auth gate and AppShell", () => {
     expect(src).toContain("getCurrentProfile()");
-    expect(src).toContain('redirect("/sign-in")');
+    expect(src).toContain('redirect(signInPathWithNext("/settings"))');
     expect(src).toContain('AppShell tone="studio"');
   });
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import Link from "@/components/ui/app-link";
+import { SignInLink } from "@/components/site/sign-in-link";
 
 export function SampleListen({ id }: { id: string }) {
   const t = useTranslations("community.catalog");
@@ -26,9 +26,9 @@ export function SampleListen({ id }: { id: string }) {
         {t("listen")}
       </button>
       {note ? (
-        <Link href="/sign-in" className="text-sm text-[var(--brd-mute)] underline underline-offset-4">
+        <SignInLink className="text-sm text-[var(--brd-mute)] underline underline-offset-4">
           {note}
-        </Link>
+        </SignInLink>
       ) : null}
     </div>
   );

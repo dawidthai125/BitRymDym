@@ -41,9 +41,9 @@ export function ModerationDecisionControls({
   function onApprove() {
     setError(null);
     startTransition(async () => {
-      const result = await approveUserBeatAction(beatId);
-      if (!result.success) {
-        setError(result.error ?? t("zatwierdzenieNiePowiodloSie"));
+      const result = await approveUserBeatAction(beatId).catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("zatwierdzenieNiePowiodloSie"));
         return;
       }
       router.push("/admin/moderation");
@@ -59,9 +59,9 @@ export function ModerationDecisionControls({
       return;
     }
     startTransition(async () => {
-      const result = await rejectUserBeatAction(beatId, trimmed);
-      if (!result.success) {
-        setError(result.error ?? t("odrzucenieNiePowiodloSie"));
+      const result = await rejectUserBeatAction(beatId, trimmed).catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("odrzucenieNiePowiodloSie"));
         return;
       }
       router.push("/admin/moderation");
@@ -76,9 +76,9 @@ export function ModerationDecisionControls({
         reviewId,
         "dismissed_no_publish",
         t("zamkniecieSprawyNieJest"),
-      );
-      if (!result.success) {
-        setError(result.error ?? t("nieUdaloSieZamknac"));
+      ).catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("nieUdaloSieZamknac"));
         return;
       }
       setError(null);
@@ -113,9 +113,9 @@ export function ModerationDecisionControls({
       return;
     }
     startTransition(async () => {
-      const result = await publishApprovedUserBeatAction(beatId);
-      if (!result.success) {
-        setError(result.error ?? t("publikacjaNiePowiodlaSie"));
+      const result = await publishApprovedUserBeatAction(beatId).catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("publikacjaNiePowiodlaSie"));
         return;
       }
       router.push("/admin/moderation");

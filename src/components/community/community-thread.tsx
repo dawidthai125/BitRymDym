@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import Link from "@/components/ui/app-link";
+import { SignInLink } from "@/components/site/sign-in-link";
 
 import { AuthorName } from "@/components/creators/author-name";
 import { REPORT_DETAILS_MAX, REPORT_REASONS, type ReportReason } from "@/lib/community/comment-moderation-policy";
@@ -214,7 +214,7 @@ export function CommunityThread(props: Props) {
         </fieldset>
       ) : !props.signedIn && (ratingsOpen || props.commentsOpen) ? (
         <p className="text-sm">
-          <Link href="/sign-in" className="-my-3 inline-flex min-h-11 items-center underline underline-offset-4">{t("signIn")}</Link>
+          <SignInLink className="-my-3 inline-flex min-h-11 items-center underline underline-offset-4">{t("signIn")}</SignInLink>
         </p>
       ) : null}
       {props.own && ratingsOpen ? <p className="text-sm text-[var(--brd-mute)]">{props.kind === "work" ? t("ownWork") : t("own")}</p> : null}
@@ -263,9 +263,9 @@ export function CommunityThread(props: Props) {
                         {t("report")}
                       </button>
                     ) : (
-                      <Link href="/sign-in" className="inline-flex min-h-11 items-center underline underline-offset-4">
+                      <SignInLink className="inline-flex min-h-11 items-center underline underline-offset-4">
                         {t("signInToReport")}
-                      </Link>
+                      </SignInLink>
                     )}
                   </div>
                 ) : null}

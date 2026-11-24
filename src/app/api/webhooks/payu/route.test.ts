@@ -183,14 +183,25 @@ describe("PayU webhook pack and failed-order paths", () => {
   });
 
   it("answers 200 and writes a review for an unknown pack amount instead of a 503 loop", async () => {
-    const fake = fakeAdmin({ payment_orders: { data: orderRow({ amount_grosz: 1234 }) } }, {});
+    const fake = fakeAdmin({ payment_orders: { data: orderRow({ amount_grosz: 1234 }) } }, { park_paid_payment_order: { data: { result: "parked" } } });
     createSupabaseAdminClient.mockReturnValue(fake.client);
     checkPayuOrder.mockResolvedValue("ok");
     const res = await post(orderNote("COMPLETED", "1234"));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, result: "review" });
-    expect(fake.rpcCalls).toHaveLength(0);
     expect(JSON.stringify(fake.upserts)).toContain("unknown_pack_amount");
+    // Nothing granted; the order leaves "pending" with the PayU id, so nothing grants it later.
+    expect(fake.rpcCalls).toEqual([
+      { name: "park_paid_payment_order", args: { p_session_id: SESSION, p_amount: 1234, p_provider_order_id: ORDER_ID, p_note: "pack_amount" } },
+    ]);
+  });
+
+  it("asks PayU to retry when a reviewed order could not be parked", async () => {
+    createSupabaseAdminClient.mockReturnValue(
+      fakeAdmin({ payment_orders: { data: orderRow({ amount_grosz: 1234 }) } }, { park_paid_payment_order: { data: { result: "order_state" } } }).client,
+    );
+    checkPayuOrder.mockResolvedValue("ok");
+    expect((await post(orderNote("COMPLETED", "1234"))).status).toBe(503);
   });
 
   it("answers 503 for an unknown pack amount when the review row cannot be stored", async () => {

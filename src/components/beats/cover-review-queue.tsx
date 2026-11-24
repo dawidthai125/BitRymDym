@@ -32,9 +32,9 @@ export function CoverReviewQueue({ items }: { items: CoverReviewItem[] }) {
       if (!reason) return;
     }
     startTransition(async () => {
-      const result = await reviewBeatCoverAction({ beatId, decision, reason });
-      if (!result.success) {
-        setError(result.error ?? t("akcjaNiePowiodla"));
+      const result = await reviewBeatCoverAction({ beatId, decision, reason }).catch(() => null);
+      if (!result?.success) {
+        setError(result?.error ?? t("akcjaNiePowiodla"));
         return;
       }
       router.refresh();

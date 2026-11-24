@@ -55,7 +55,7 @@ function remembered(): Project | null {
 /** Best file of the plan: WAV 24-bit for Gold, otherwise the highest MP3 (same policy as the server). */
 function bestFormat(tier: Tier): DeliverFormat {
   const on = new Set(deliverOptions(tier).filter((o) => o.kind === "master" && o.enabled).map((o) => o.format));
-  return (["WAV_24", "MP3_320", "MP3_192", "MP3_128"] as const).find((f) => on.has(f)) ?? "MP3_128";
+  return (["WAV_24", "MP3_320", "MP3_256", "MP3_192", "MP3_128"] as const).find((f) => on.has(f)) ?? "MP3_128";
 }
 
 /** Refusals that another try with the same file cannot change. */
