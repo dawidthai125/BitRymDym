@@ -13,6 +13,8 @@ Format: data, zakres, skrót.
 - Nagranie: zaległa zmiana głośności nie wchodzi w następne nagranie, przerwany bit zatrzymuje nagranie z komunikatem, brak odsłuchu nie zaczyna nagrania bez bitu.
 - Konto: logowanie nie blokuje okna, „Nie” kasuje pliki dopiero po udanym kroku, wylogowanie nie cofa się przez spóźnione odnowienie, ustawienia zapisują tylko świadomy wybór, wszystkie pliki ustawień przez plik tymczasowy.
 - Studio Offline: pole BPM dla odliczania. Komunikaty limitów razem ze zwrotem wysyłki.
+- Trzeci przegląd (siedem drobnych rzeczy) poprawiony przed wydaniem: zmiana bitu lub tytułu po nieudanej wysyłce, długość bitu offline z dekodowania, zmiany w trakcie otwierania mikrofonu, zwalnianie buforów odsłuchu, zapis przy zablokowanym pliku, BPM w `.brd1`, 2 min przed ponownym wydaniem wysyłki.
+- Wydane 2026-11-24: tag `recorder-v2026.11.38` (`1574845`), Setup SHA-256 `d2c511a2…` (127 954 492 B), paczka `efd42ac3…`. Wersje .36 i .37 widzą aktualizację.
 - Sprawdzone: 24 przerwania wysyłki na modelu serwera (wszystkie kończą się jednym utworem), symulacja synchronizacji, waveOut pod Wine, testy w Actions. Nie sprawdzono na Windowsie użytkownika.
 
 ## 2026-11-24 (42) — Nagrywarka 2026.11.37: odliczanie i przegląd całego kodu programu
