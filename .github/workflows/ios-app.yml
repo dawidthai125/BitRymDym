@@ -11,6 +11,8 @@ name: ios-app
 on:
   workflow_dispatch:
   push:
+    # Bez gałęzi filtr paths nie działa dla tagów: tag nagrywarki budował też tę aplikację (2026-11-24).
+    branches: ["**"]
     paths:
       - "ios-app/**"
       - ".github/workflows/ios-app.yml"
