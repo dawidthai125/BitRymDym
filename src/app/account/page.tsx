@@ -24,6 +24,8 @@ import { NotificationPreferencesForm } from "@/components/account/notification-p
 import { notifyEnv } from "@/lib/email/notify/config";
 import { DEFAULT_PREFERENCES, readPreferences } from "@/lib/email/notify/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { PaymentSuccessDialog } from "@/components/premium/payment-success-dialog";
+import { paymentSuccessMessage, PAYMENT_SUCCESS_PARAM } from "@/lib/payments/return-state";
 import { OwnTakesList } from "@/components/takes/own-takes-list";
 import { listFavoriteBeatIds } from "@/lib/beats/favorites";
 import { listPurchasedBeatIds } from "@/lib/beats/purchased-catalog";
@@ -57,7 +59,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ claim?: string }>;
+  searchParams: Promise<{ claim?: string; [PAYMENT_SUCCESS_PARAM]?: string | string[] }>;
 }) {
   const tl = await getLibText();
   const tr = await getTranslations("account.accountPage");
@@ -86,6 +88,7 @@ export default async function AccountPage({
 
   const params = await searchParams;
   const claimParam = params.claim;
+  const paymentMessage = await paymentSuccessMessage(params[PAYMENT_SUCCESS_PARAM], context.userId);
   const claimBanner =
     claimParam === "ok" || claimParam === "cap" || claimParam === "error"
       ? claimParam
@@ -157,6 +160,7 @@ export default async function AccountPage({
 
   return (
       <main className="pb-16">
+        {paymentMessage ? <PaymentSuccessDialog message={paymentMessage} param={PAYMENT_SUCCESS_PARAM} /> : null}
         <PageFrame className="py-10 sm:py-14">
           <header className="mb-10 grid gap-6 border-b border-[var(--brd-line)] pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="space-y-3">

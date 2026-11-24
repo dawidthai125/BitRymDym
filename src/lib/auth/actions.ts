@@ -25,6 +25,7 @@ import {
   clearPasswordRecoverySeal,
   passwordRecoverySealMatches,
 } from "@/lib/auth/password-recovery-seal-cookie";
+import { SESSION_ONLY_COOKIE, sessionOnlyCookieOptions, wantsSessionOnly } from "@/lib/auth/keep-signed-in";
 import { assertNoPrivilegeEscalationInPayload } from "@/lib/auth/permissions";
 import {
   SIGNUP_BROWSER_COOKIE,
@@ -83,6 +84,16 @@ function authConfigUnavailableError(): AuthActionState {
     success: false,
     message: null,
   };
+}
+
+/** "Nie wylogowuj mnie" unticked → marker for later session writes; otherwise no marker. */
+async function rememberSessionChoice(sessionOnly: boolean): Promise<void> {
+  const options = sessionOnlyCookieOptions(process.env.NODE_ENV === "production");
+  try {
+    (await cookies()).set(SESSION_ONLY_COOKIE, sessionOnly ? "1" : "", sessionOnly ? options : { ...options, maxAge: 0 });
+  } catch {
+    // Outside a request (tests): nothing to remember.
+  }
 }
 
 const SIGN_UP_TERMS_REQUIRED_ERROR = "Zaakceptuj Regulamin i Politykę prywatności, aby założyć konto.";
@@ -255,7 +266,8 @@ export async function signInAction(
     return { error: limited.error, success: false };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const sessionOnly = wantsSessionOnly(formData);
+  const supabase = await createSupabaseServerClient({ sessionOnly });
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -264,6 +276,7 @@ export async function signInAction(
   if (error) {
     return { error: mapSignInAuthError(error.message), success: false };
   }
+  await rememberSessionChoice(sessionOnly);
 
   // Maintenance mode: only ADMIN accounts may sign in; drop any other session.
   const maintenance = await readSiteMaintenanceForViewer(supabase);
@@ -283,6 +296,7 @@ export async function signInAction(
 export async function signOutAction(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
+  await rememberSessionChoice(false);
   revalidatePath("/");
   redirect("/");
 }

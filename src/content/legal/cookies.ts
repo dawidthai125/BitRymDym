@@ -9,7 +9,8 @@ export const COOKIES: LegalDoc = {
   lead: "Pliki cookie niezbędne do działania Serwisu zapisujemy bez pytania. Cookies statystyczne Google Analytics zapisujemy tylko za Twoją zgodą wyrażoną w banerze. Nie używamy cookies reklamowych. Zgodę możesz w każdej chwili zmienić przyciskiem „Ustawienia cookies” w stopce.",
   sections: [
     { id: "c1", h: "1. Pliki cookie", blocks: [{ table: { head: ["Nazwa", "Cel", "Ważność"], rows: [
-      ["sb-…-auth-token", "sesja logowania (Supabase)", "do wylogowania / wygaśnięcia sesji"],
+      ["sb-…-auth-token", "sesja logowania (Supabase)", "do wylogowania, najdłużej 400 dni; bez „Nie wylogowuj mnie” do zamknięcia przeglądarki"],
+      ["brd_session_only", "zapamiętuje, że przy logowaniu pole „Nie wylogowuj mnie” jest odznaczone", "do zamknięcia przeglądarki"],
       ["brd_password_recovery", "zabezpieczenie resetu hasła", "kilka minut"],
       ["brd_email_change", "komunikat po zmianie e-maila", "kilka minut"],
       ["brd_dl_aid", "limit pobrań bez konta (losowy identyfikator, bez danych osobowych)", "do 400 dni"],

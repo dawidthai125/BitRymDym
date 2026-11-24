@@ -757,6 +757,12 @@
         "zgodyWyzej": "Zgody zaznaczasz wyżej, przy pakietach."
       },
       "returnPage": {
+        "sukcesTytul": "Płatność się powiodła",
+        "sukcesOk": "OK",
+        "sukcesPlan": "Masz aktywne Premium: {co} do dnia {data}.",
+        "sukcesZaplanowane": "Premium {co} włączy się po obecnym planie i potrwa do dnia {data}.",
+        "sukcesDodatek": "Masz aktywny dodatek: {co}, do dnia {data}.",
+        "sukcesPakiet": "Masz dodane: {co}. Zostają, aż je wykorzystasz.",
         "metaTitle": "Płatność — BitRymDym",
         "kicker": "Płatność",
         "naglowek": "Wracasz z PayU",
@@ -1883,6 +1889,7 @@
       "haslo": "Hasło",
       "logowanie": "Logowanie…",
       "zalogujSie": "Zaloguj się",
+      "nieWylogowujMnie": "Nie wylogowuj mnie",
       "niePamietamHasla": "Nie pamiętam hasła",
       "ksywka": "Ksywka",
       "powtorzHaslo": "Powtórz hasło",

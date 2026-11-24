@@ -1,4 +1,6 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createBrowserClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
+
+import { applySessionLifetime, isSessionOnly, SESSION_ONLY_COOKIE } from "@/lib/auth/keep-signed-in";
 
 /**
  * Browser Supabase client (public anon key only).
@@ -18,6 +20,19 @@ export function createSupabaseBrowserClient() {
     cookieOptions: {
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
+    },
+    cookies: {
+      getAll() {
+        return parseCookieHeader(document.cookie).map(({ name, value }) => ({ name, value: value ?? "" }));
+      },
+      setAll(cookiesToSet) {
+        const sessionOnly = parseCookieHeader(document.cookie).some(
+          (c) => c.name === SESSION_ONLY_COOKIE && isSessionOnly(c.value),
+        );
+        cookiesToSet.forEach(({ name, value, options }) => {
+          document.cookie = serializeCookieHeader(name, value, applySessionLifetime(options, sessionOnly));
+        });
+      },
     },
   });
 }

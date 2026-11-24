@@ -2,6 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
+  applySessionLifetime,
+  isDocumentRequest,
+  isSessionOnly,
+  restampedSessionCookies,
+  SESSION_ONLY_COOKIE,
+} from "@/lib/auth/keep-signed-in";
+import {
   REFERRAL_COOKIE,
   REFERRAL_QUERY_PARAM,
   referralCodeToStore,
@@ -152,7 +159,11 @@ async function handleRequest(request: NextRequest) {
             },
           });
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
+            response.cookies.set(
+              name,
+              value,
+              applySessionLifetime(options, isSessionOnly(request.cookies.get(SESSION_ONLY_COOKIE)?.value)),
+            );
           });
         },
       },
@@ -345,6 +356,23 @@ export async function middleware(request: NextRequest) {
     response.cookies.set(LOCALE_COOKIE, "en", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
   }
   response.headers.set(headerName, csp);
+  // Safari caps cookies written by scripts (browser token refresh) at 7 days: rewrite them from the server.
+  const path = request.nextUrl.pathname;
+  if (
+    isDocumentRequest(request.method, request.headers) &&
+    !path.startsWith("/auth/") &&
+    !path.startsWith("/api/") &&
+    !response.cookies.getAll().some((c) => c.name.includes("-auth-token"))
+  ) {
+    for (const c of restampedSessionCookies(request.cookies.getAll())) {
+      response.cookies.set(c.name, c.value, {
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: c.maxAge,
+      });
+    }
+  }
   // "Zaproś znajomego": `?ref=KOD` on any page → 30-day cookie, read at sign-up.
   const referral = referralCodeToStore({
     method: request.method,

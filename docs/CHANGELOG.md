@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-24 (39) — „Nie wylogowuj mnie” i powrót z PayU na konto
+
+- Logowanie: pole „Nie wylogowuj mnie”, domyślnie zaznaczone (sesja 400 dni). Odznaczone: sesja do zamknięcia przeglądarki (`src/lib/auth/keep-signed-in.ts`, cookie `brd_session_only`; zapis w akcji, middleware i kliencie przeglądarki).
+- Safari skraca cookies zapisane skryptem do 7 dni: middleware przy wejściu na stronę zapisuje je od nowa z serwera (tylko token z zapasem 10 min).
+- Po opłaceniu planu, dodatku lub pakietu `/premium/return/<id>` przenosi na `/account` z zielonym okienkiem (plan i data). Gość najpierw loguje się. Wspólny odczyt zamówienia: `src/lib/payments/return-state.ts`. Zakup bitu zostaje na swojej stronie.
+
 ## 2026-11-24 (38) — Rejestracja: bez sprawdzania haseł z wycieków
 
 - Decyzja Dawida 2026-11-24: sprawdzanie haseł z wycieków (HaveIBeenPwned) blokowało rejestracje. W Supabase Auth wyłączone „Prevent use of leaked passwords”; ostrzeżenie `auth_leaked_password_protection` w Advisorze jest świadome, nie włączać ponownie bez zgody Dawida.

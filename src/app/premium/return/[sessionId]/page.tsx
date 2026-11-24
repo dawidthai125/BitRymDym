@@ -1,38 +1,14 @@
 import type { Metadata } from "next";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
-import { PLAN_PACK_CATALOG, youtubeUnitsForGrosz } from "@/config/plan-policy";
-import { isUuid } from "@/lib/beats/audio-validation";
-import { PremiumReturnView, type ReturnState } from "@/components/premium/premium-return-view";
+import { PremiumReturnView } from "@/components/premium/premium-return-view";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { loadReturnState, PAYMENT_SESSION_RE, PAYMENT_SUCCESS_PARAM } from "@/lib/payments/return-state";
 import { reconcilePayuOrder } from "@/lib/payments/webhook-service";
 
 export const dynamic = "force-dynamic";
-
-const SESSION = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-type OrderRow = {
-  product_kind: string;
-  plan_tier: string | null;
-  addon: string | null;
-  pack: string | null;
-  status: string;
-  grant_status: string;
-  grant_note: string | null;
-  granted_until: string | null;
-};
-
-function formatWhen(iso: string, locale: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "pl-PL", {
-    dateStyle: "long",
-    timeZone: "Europe/Warsaw",
-  }).format(date);
-}
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("account.premiumPage.returnPage");
@@ -41,71 +17,20 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PremiumReturnPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;
-  if (!SESSION.test(sessionId)) {
+  if (!PAYMENT_SESSION_RE.test(sessionId)) {
     return <PremiumReturnView state={{ status: "missing" }} />;
   }
   const context = await getCurrentProfile();
   if (!context) redirect(signInPathWithNext(`/premium/return/${sessionId}`));
 
-  const t = await getTranslations("account.premiumPage.returnPage");
-  const locale = await getLocale();
-  let state: ReturnState = { status: "missing" };
-
   try {
     // 2026-11-22: a pending PayU order is re-checked with PayU here (lost notification).
     await reconcilePayuOrder(sessionId, context.userId);
-    const admin = createSupabaseAdminClient();
-    const { data, error } = await admin
-      .from("payment_orders")
-      .select("product_kind, plan_tier, addon, status, grant_status, grant_note, granted_until")
-      .eq("session_id", sessionId)
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    if (error) {
-      state = { status: "pending" };
-    } else if (data) {
-      const row = data as Omit<OrderRow, "pack">;
-      let pack: string | null = null;
-      let amountGrosz: number | null = null;
-      if (row.product_kind === "pack") {
-        const extra = await admin.from("payment_orders").select("pack, amount_grosz").eq("session_id", sessionId).eq("user_id", context.userId).maybeSingle();
-        pack = extra.error || !extra.data ? null : ((extra.data as { pack?: string | null }).pack ?? null);
-        amountGrosz = extra.error || !extra.data ? null : ((extra.data as { amount_grosz?: number | null }).amount_grosz ?? null);
-      }
-      const full = { ...row, pack };
-      // 2026-11-22: refunded orders showed "not found" (plans) or "payment in progress" (beats).
-      if (row.status === "refunded") state = { status: "refunded" };
-      else if (row.product_kind === "beat") {
-        const extra = await admin.from("payment_orders").select("beat_id").eq("session_id", sessionId).eq("user_id", context.userId).maybeSingle();
-        const beatId = extra.error || !extra.data ? null : ((extra.data as { beat_id?: string | null }).beat_id ?? null);
-        const href = isUuid(beatId) ? `/beat/${beatId}` : "/beats?katalog=platny";
-        const catalogHref = "/beats?katalog=moj";
-        if (row.status === "failed") state = { status: "beat_failed", href };
-        else if (row.status === "paid" && row.grant_status === "skipped") state = { status: "beat_skipped", href };
-        else if (row.status === "paid" && row.grant_status === "granted") state = { status: "beat_paid", href: catalogHref };
-        else state = { status: "beat_pending", href };
-      } else if (row.status === "failed") state = { status: "failed" };
-      else if (row.status === "pending") state = { status: "pending" };
-      else if (row.status === "paid" && row.grant_status === "skipped") {
-        const reason = row.grant_note === "downgrade" || row.grant_note === "pending_plan" || row.grant_note === "addon_perpetual" || row.grant_note === "perpetual"
-          ? row.grant_note
-          : "perpetual";
-        state = { status: "skipped", reason };
-      } else if (row.status === "paid" && row.grant_status === "granted") {
-        const product = row.product_kind === "addon"
-          ? t("produkt.referencja")
-          : row.product_kind === "pack"
-            ? t(full.pack === "master" ? "produkt.master" : full.pack === "youtube" ? "produkt.youtube" : "produkt.take", {
-                n: full.pack === "master" ? PLAN_PACK_CATALOG.master.units : full.pack === "youtube" ? (youtubeUnitsForGrosz(amountGrosz ?? 0) ?? 1) : PLAN_PACK_CATALOG.take.units,
-              })
-            : (row.plan_tier ?? t("produkt.plan"));
-        const until = row.product_kind === "pack" ? null : row.granted_until ? formatWhen(row.granted_until, locale) : t("bezDaty");
-        state = { status: "paid", product, until, scheduled: row.grant_note === "schedule" };
-      }
-    }
   } catch {
-    state = { status: "pending" };
+    // The state below still tells the buyer what is known.
   }
-
+  const state = await loadReturnState(sessionId, context.userId);
+  // Owner 2026-11-24: a settled purchase goes to the account, with the green popup.
+  if (state.status === "paid") redirect(`/account?${PAYMENT_SUCCESS_PARAM}=${sessionId}`);
   return <PremiumReturnView state={state} />;
 }

@@ -23,6 +23,8 @@ import {
 import { TurnstileWidget } from "@/lib/auth/turnstile-widget";
 import { AUTH_FIELD_CLASS } from "@/components/auth/auth-field-class";
 import { NewPasswordFields } from "@/components/auth/new-password-fields";
+import { BrdCheckbox } from "@/components/brand/brd-checkbox";
+import { KEEP_SIGNED_IN_FIELD, KEEP_SIGNED_IN_SHOWN_FIELD } from "@/lib/auth/keep-signed-in";
 import { PasswordFieldWithToggle } from "@/components/auth/password-field-with-toggle";
 import { SignupConsentCheckbox } from "@/components/legal/consent-checkbox";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,11 @@ export function SignInForm({ next = null }: { next?: string | null } = {}) {
         required
         autoComplete="current-password"
       />
+      <input type="hidden" name={KEEP_SIGNED_IN_SHOWN_FIELD} value="1" />
+      <label className="-ml-3 flex min-h-11 cursor-pointer items-center text-sm" data-testid="keep-signed-in">
+        <BrdCheckbox name={KEEP_SIGNED_IN_FIELD} defaultChecked />
+        <span>{t("nieWylogowujMnie")}</span>
+      </label>
       <TurnstileWidget />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">

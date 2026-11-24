@@ -757,6 +757,12 @@
         "zgodyWyzej": "Tick the consents above, next to the packs."
       },
       "returnPage": {
+        "sukcesTytul": "Payment successful",
+        "sukcesOk": "OK",
+        "sukcesPlan": "Your Premium is active: {co} until {data}.",
+        "sukcesZaplanowane": "Premium {co} starts after your current plan and runs until {data}.",
+        "sukcesDodatek": "Your add-on is active: {co}, until {data}.",
+        "sukcesPakiet": "Added: {co}. They stay until you use them.",
         "metaTitle": "Payment — BitRymDym",
         "kicker": "Payment",
         "naglowek": "You're back from PayU",
@@ -1883,6 +1889,7 @@
       "haslo": "Password",
       "logowanie": "Signing in…",
       "zalogujSie": "Sign in",
+      "nieWylogowujMnie": "Keep me signed in",
       "niePamietamHasla": "I forgot my password",
       "ksywka": "Nickname",
       "powtorzHaslo": "Repeat password",
