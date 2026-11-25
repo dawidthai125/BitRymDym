@@ -21,6 +21,11 @@ updater.leave_install_dir()
 if updater.velopack_hook():
     raise SystemExit(0)
 
+import test_control
+
+# Off unless --test-control. It may move every path below to a folder of its own.
+test_control.use_test_data()
+
 import array
 import ctypes
 import hashlib
@@ -530,7 +535,7 @@ def gold_offer_status(tier: object) -> str:
 
 
 _INSTANCE_LOCK: object = None
-_INSTANCE_NAME = "Local\\BitRymDym.Nagrywarka"
+_INSTANCE_NAME = test_control.instance_name("Local\\BitRymDym.Nagrywarka")
 
 
 def _pids_named(exe: str) -> set[int] | None:
@@ -1682,6 +1687,7 @@ class RecorderWindow:
     # ---- window and screens -------------------------------------------------
 
     def __init__(self) -> None:
+        test_control.keep_front()
         load_user_fonts()
         windows_app_id()
         self.root = tk.Tk()
@@ -2876,11 +2882,9 @@ class RecorderWindow:
             picked = listing.curselection()
             if not picked:
                 return
-            self.beat_var.set(shown[int(picked[0])])
-            self._pref_beat = self.beat_var.get()
-            self._save_prefs()
+            label = shown[int(picked[0])]
             box.destroy()
-            self.status.set("Bit jest na ścieżce BIT. Program go nie zapisuje, tylko odtwarza ze strony.")
+            self._choose_beat(label)
 
         query.trace_add("write", fill)
         listing.bind("<Double-Button-1>", choose)
@@ -2893,6 +2897,12 @@ class RecorderWindow:
         self._center(box)
         search.focus_set()
 
+    def _choose_beat(self, label: str) -> None:
+        self.beat_var.set(label)
+        self._pref_beat = label
+        self._save_prefs()
+        self.status.set("Bit jest na ścieżce BIT. Program go nie zapisuje, tylko odtwarza ze strony.")
+
     def _pick_local_beat(self) -> None:
         path = filedialog.askopenfilename(
             title="Własny bit",
@@ -2901,8 +2911,10 @@ class RecorderWindow:
                 ("Wszystkie pliki", "*.*"),
             ],
         )
-        if not path:
-            return
+        if path:
+            self._use_local_beat(path)
+
+    def _use_local_beat(self, path: str) -> None:
         self.local_beat_path = path
         self.local_beat_seconds = 0.0
         self._beat_peaks = []
@@ -4442,10 +4454,12 @@ class RecorderWindow:
         self._paint_all()
         self._tick()
         # Keys / STOP must land even when the last click left focus on a Canvas child.
-        try:
-            self.root.focus_force()
-        except tk.TclError:
-            pass
+        # Under test control the user works in another window: it keeps the keyboard.
+        if not test_control.wanted():
+            try:
+                self.root.focus_force()
+            except tk.TclError:
+                pass
 
     def _forget_take_file(self) -> None:
         for path in (self.wav_path, capture_log_path(self.wav_path)):
@@ -5895,6 +5909,8 @@ class RecorderWindow:
         row = tk.Frame(bar, bg=PAPER)
         row.pack(fill="x", padx=(10, 18), pady=(3, 4))
         tk.Label(row, text=updater.APP_VERSION, bg=PAPER, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
+        if test_control.wanted():
+            tk.Label(row, text="TRYB TESTOWY", bg=PAPER, fg=REC, font=(FONT_META, 8, "bold")).pack(side="left", padx=(12, 0))
         tk.Label(row, text=FOOTER_CREDIT, bg=PAPER, fg=MUTE, font=(FONT_META, 8)).pack(side="left", padx=(12, 0))
         grip = getattr(self, "_resize_grip", None)
         if grip is not None:
@@ -5986,6 +6002,7 @@ class RecorderWindow:
         self.root.update_idletasks()
         x = max(0, (self.root.winfo_screenwidth() - width) // 2)
         y = max(0, (self.root.winfo_screenheight() - height) // 2 - 24)
+        x, y = test_control.place(x, y)
         self.root.geometry(f"{width}x{height}+{x}+{y}")
 
     def _open_site(self, path: str) -> None:
@@ -7458,7 +7475,10 @@ class RecorderWindow:
 
     def run(self) -> None:
         self.root.after(3000, self._start_update_check)
+        control = test_control.Control(self) if test_control.wanted() else None
         self.root.mainloop()
+        if control is not None:
+            control.finish()
 
 
 def password_keep_self_test() -> None:
