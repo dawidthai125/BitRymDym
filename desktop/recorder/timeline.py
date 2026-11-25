@@ -94,6 +94,20 @@ def place(clips: list[Clip], new: list[Clip]) -> list[Clip]:
     return ordered(out)
 
 
+def drop_sliver(clips: list[Clip], fresh: Clip, under: float = 0.35) -> list[Clip]:
+    """A new take that ends a moment before the old one leaves a crumb of it. The crumb is nobody's intention."""
+    return [
+        clip
+        for clip in clips
+        if not (clip.path != fresh.path and abs(clip.start - fresh.end) < 0.002 and clip.length < under)
+    ]
+
+
+def left_after(clips: list[Clip], fresh: Clip) -> float:
+    """Seconds of an older take that go on right behind the new one."""
+    return sum(clip.length for clip in clips if clip.path != fresh.path and abs(clip.start - fresh.end) < 0.002)
+
+
 def shift(pieces: list[Clip], to: float) -> list[Clip]:
     return [replace(piece, start=max(0.0, piece.start + to)) for piece in pieces]
 
@@ -209,6 +223,12 @@ def self_test() -> None:
     a_left = [c for c in moved if c.path == "a.wav"]
     if len(a_left) != 1 or abs(a_left[0].src_out - 5.0) > 1e-9:
         raise SystemExit(f"punch-in {moved}")
+    old, take = Clip("old.wav", 0.0, 0.0, 5.03), Clip("new.wav", 0.0, 0.0, 5.0)
+    if drop_sliver(place([old], [take]), take) != [take]:
+        raise SystemExit("okruch starego nagrania")
+    longer = place([Clip("old.wav", 0.0, 0.0, 8.0)], [take])
+    if len(drop_sliver(longer, take)) != 2 or abs(left_after(longer, take) - 3.0) > 1e-6:
+        raise SystemExit("ogon starego nagrania")
     split = split_at([a], 3.0)
     if len(split) != 2 or split[1].start != 3.0 or split[1].src_in != 3.0:
         raise SystemExit("podział")

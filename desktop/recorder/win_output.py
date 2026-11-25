@@ -23,6 +23,11 @@ MMSYSERR_NOERROR = 0
 WAVE_FORMAT_QUERY = 0x0001
 TIME_SAMPLES = 0x0002
 TIME_BYTES = 0x0004
+DRVM_MAPPER_PREFERRED_GET = 0x2015
+RENDER_KEY = r"SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render"
+PROP_KIND = "{a45c254e-df1c-4efd-8020-67d146a850e0},2"
+PROP_BUS = "{a45c254e-df1c-4efd-8020-67d146a850e0},24"
+PROP_MODEL = "{b3f8fa53-0004-438e-9003-51a46e139bfc},6"
 
 
 def output_devices() -> list[tuple[str, int]]:
@@ -47,6 +52,50 @@ def output_devices() -> list[tuple[str, int]]:
             name = f"{name} ({seen[name]})"
         found.append((name, index))
     return found
+
+
+def default_output_index() -> int | None:
+    """waveOut index of the Windows default output. None when Windows does not say."""
+    if os.name != "nt":
+        return None
+    try:
+        number, flags = wintypes.DWORD(0xFFFFFFFF), wintypes.DWORD(0)
+        call = _winmm().waveOutMessage
+        call.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_void_p]
+        call.restype = ctypes.c_uint
+        code = call(WAVE_MAPPER, DRVM_MAPPER_PREFERRED_GET, ctypes.byref(number), ctypes.byref(flags))
+        return int(number.value) if code == MMSYSERR_NOERROR and number.value != 0xFFFFFFFF else None
+    except Exception:
+        return None
+
+
+def bluetooth_outputs() -> set[str]:
+    """Names of Bluetooth playback endpoints, cut to 31 characters like waveOut shows them."""
+    if os.name != "nt":
+        return set()
+    found: set[str] = set()
+    try:
+        import winreg
+
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, RENDER_KEY) as root:
+            for number in range(winreg.QueryInfoKey(root)[0]):
+                try:
+                    with winreg.OpenKey(root, winreg.EnumKey(root, number) + r"\Properties") as props:
+                        bus = str(winreg.QueryValueEx(props, PROP_BUS)[0])
+                        if not bus.upper().startswith("BTH"):
+                            continue
+                        kind = str(winreg.QueryValueEx(props, PROP_KIND)[0])
+                        model = str(winreg.QueryValueEx(props, PROP_MODEL)[0])
+                except OSError:
+                    continue
+                found.add(f"{kind} ({model})"[:31])
+    except Exception:
+        return set()
+    return found
+
+
+def looks_bluetooth(name: str, known: set[str]) -> bool:
+    return name[:31] in known or any(word in name.lower() for word in ("bluetooth", "hands-free", "airpods"))
 
 
 def tone_wav(seconds: float = 0.45, rate: int = 48000) -> bytes:
@@ -291,7 +340,13 @@ def self_test() -> None:
         raise SystemExit("ton")
     if wav[0:4] != b"RIFF":
         raise SystemExit("wav")
+    if not looks_bluetooth("Słuchawki (RB-M600B)", {"Słuchawki (RB-M600B)"}) or looks_bluetooth("Speakers (Realtek)", set()):
+        raise SystemExit("bluetooth")
+    if not looks_bluetooth("Headset Hands-Free", set()) or len(bluetooth_outputs()) > 200:
+        raise SystemExit("bluetooth nazwa")
     if os.name != "nt":
+        if default_output_index() is not None or bluetooth_outputs():
+            raise SystemExit("wyjście domyślne poza Windows")
         if output_devices() != []:
             raise SystemExit("wyjścia")
         if can_play(-1) or WavePlayer(io.BytesIO(b""), -1).position() is not None:

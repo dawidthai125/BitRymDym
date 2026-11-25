@@ -6,9 +6,10 @@ name: Wdrożenie (budowanie na GitHubie)
 on:
   push:
     branches: [main]
-    # Same list as scripts/vercel-ignore-build.sh: nothing here changes the site.
+    # Nothing here changes the site (scripts/vercel-ignore-build.sh plus the Windows program).
     paths-ignore:
       - "docs/**"
+      - "desktop/**"
       - ".github/**"
       - ".cursor/**"
       - ".agents/**"

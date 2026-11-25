@@ -35,7 +35,7 @@ def test_key_skips_text_fields() -> None:
         "def ", 1
     )[0]
     assert "tk.Entry" in block and "tk.Listbox" in block
-    assert 'name in {"Entry", "Listbox", "Text", "TEntry"}' in block
+    assert 'name in {"Entry", "Listbox", "Text", "TEntry", "Spinbox"}' in block
 
 
 def test_focus_force_after_capture_starts() -> None:

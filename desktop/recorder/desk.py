@@ -263,12 +263,17 @@ def take_level_note(before_db: float, after_db: float, gain_db: float, clipped: 
     body = quality_note(after_db, clipped, drops)
     if gain_db < 0.5:
         return body
+    if before_db < -45:
+        # The lift brings the noise up too, so the level after it says nothing about the voice.
+        drops_note = quality_note(after_db, 0, drops).split(" Poziom OK")[0] if drops > 0 else ""
+        return (
+            f"Prawie cisza (szczyt {level_text(before_db)}). Podniosłem o {round(gain_db)} dB, więc słychać też szum. "
+            "Sprawdź mikrofon i nagraj jeszcze raz." + (f" {drops_note}" if drops_note else "")
+        )
     line = (
         f"Podniosłem ciche nagranie o {round(gain_db)} dB "
         f"(szczyt był {level_text(before_db)}, jest {level_text(after_db)})."
     )
-    if before_db < -45:
-        line += " Sprawdź mikrofon, jeśli to nie Twój głos."
     return f"{line} {body}"
 
 
@@ -459,10 +464,12 @@ def self_test() -> None:
     if "zgubił próbki (2 razy)" not in quality_note(-12, 0, drops=2):
         raise SystemExit("ocena: próbki")
     raised = take_level_note(-71.2, -12.0, 59.2, 0)
-    if "Podniosłem ciche nagranie o 59 dB" not in raised or "−71 dB" not in raised or "jeśli to nie Twój głos" not in raised:
+    if "Prawie cisza" not in raised or "o 59 dB" not in raised or "−71 dB" not in raised or "Poziom OK" in raised:
         raise SystemExit(f"ocena: podbicie {raised}")
-    if "jeśli to nie Twój głos" in take_level_note(-30.0, -12.0, 18.0, 0):
-        raise SystemExit("ocena: zwykłe cicho bez ostrzeżenia o głosie")
+    if not take_level_note(-30.0, -12.0, 18.0, 0).startswith("Podniosłem ciche nagranie o 18 dB"):
+        raise SystemExit("ocena: zwykłe cicho")
+    if "zgubił próbki" not in take_level_note(-71.2, -12.0, 59.2, 0, drops=2):
+        raise SystemExit("ocena: cisza i próbki")
     if take_level_note(-96.0, -96.0, 0.0, 0) != quality_note(-96.0, 0):
         raise SystemExit("ocena: cyfrowa cisza bez podbicia")
     xor = lambda data, entropy: bytes(b ^ 0x5A for b in data) + entropy[:1]  # noqa: E731

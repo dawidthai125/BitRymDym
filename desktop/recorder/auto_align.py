@@ -90,8 +90,61 @@ def mic_at_rate(samples: Any, skip: float, rate: int = 48_000) -> Any:
     return part.reshape(-1, step).mean(axis=1)
 
 
+def clap_lag(samples: Any, skip: float, period: float, count: int, rate: int = 48_000) -> float | None:
+    """How many ms late the claps (or the clicks heard by the microphone) are against `count` clicks, one every
+    `period` seconds. samples: 16-bit take, `skip` seconds of it lie before the first click.
+    None: too few sounds, or they do not agree.
+    """
+    import numpy as np
+
+    part = np.abs(np.asarray(samples, dtype=np.float64)[max(0, int(round(skip * rate))) :]) / 32768.0
+    frame = rate // 200
+    if len(part) < frame * 8:
+        return None
+    level = part[: len(part) // frame * frame].reshape(-1, frame).max(axis=1)
+    floor = float(np.median(level))
+    lags: list[float] = []
+    # The first two clicks only give the tempo.
+    for index in range(2, count):
+        begin = max(0, int((index * period + LAG_MIN_MS / 1000) * 200))
+        window = level[begin : int((index * period + LAG_MAX_MS / 1000 + 0.02) * 200)]
+        if len(window) < 20:
+            break
+        top = float(window.max())
+        if top < max(0.004, floor * 6):
+            continue
+        onset = int(np.argmax(window >= top * 0.4))
+        lags.append((begin + onset) * 5.0 - index * period * 1000)
+    if len(lags) < 5:
+        return None
+    middle = float(np.median(lags))
+    near = [lag for lag in lags if abs(lag - middle) <= 60]
+    if len(near) < max(5, round(len(lags) * 0.6)):
+        return None
+    return round(min(float(LAG_MAX_MS), max(0.0, float(np.mean(near)))), 1)
+
+
 def self_test() -> None:
     import numpy as np
+
+    noise = np.random.default_rng(11)
+    for true_lag in (0, 150, 440, 640):
+        take = noise.standard_normal(48_000 * 14) * 20
+        for index in range(12):
+            at = int((0.3 + index + true_lag / 1000 + float(noise.uniform(-0.02, 0.02))) * 48_000)
+            if index != 5 and at + 1500 < len(take):
+                take[at : at + 1500] += 9000 * np.exp(-np.arange(1500) / 300) * noise.standard_normal(1500)
+        measured = clap_lag(np.clip(take, -32768, 32767).astype(np.int16), 0.3, 1.0, 12)
+        if measured is None or abs(measured - true_lag) > 15:
+            raise SystemExit(f"klaskanie: {true_lag} -> {measured}")
+    if clap_lag((noise.standard_normal(48_000 * 14) * 20).astype(np.int16), 0.3, 1.0, 12) is not None:
+        raise SystemExit("klaskanie: sam szum")
+    loose = noise.standard_normal(48_000 * 14) * 20
+    for index in range(12):
+        at = int((0.3 + index + float(noise.uniform(0.0, 0.65))) * 48_000)
+        loose[at : at + 800] += 9000
+    if clap_lag(np.clip(loose, -32768, 32767).astype(np.int16), 0.3, 1.0, 12) is not None:
+        raise SystemExit("klaskanie: nierówno")
 
     rng = np.random.default_rng(5)
     seconds = 12

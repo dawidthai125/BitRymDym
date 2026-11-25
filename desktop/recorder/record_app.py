@@ -8,7 +8,9 @@ Offline writes a .brd1 project (session plus dry stems, never the beat) or a fol
 from __future__ import annotations
 
 import os
+import re
 import sys
+import unicodedata
 
 import updater
 
@@ -93,7 +95,9 @@ from timeline import (
     carve,
     clip_at,
     clip_key,
+    drop_sliver,
     extract,
+    left_after,
     ordered,
     place,
     render,
@@ -721,6 +725,41 @@ def same_account(a: str, b: str) -> bool:
     return a.strip().lower() == b.strip().lower()
 
 
+def plain_text(text: str) -> str:
+    """Lower case without Polish marks, so "poscig" finds "Pościg"."""
+    flat = unicodedata.normalize("NFD", text.strip().lower().replace("ł", "l"))
+    return "".join(char for char in flat if not unicodedata.combining(char))
+
+
+def account_key(account: str) -> str:
+    return hashlib.sha1(account.strip().lower().encode("utf-8")).hexdigest()[:12] if account.strip() else ""
+
+
+def recovery_path(desk: Path, owner: str) -> Path:
+    return desk.with_name(f"{desk.stem}-odzysk-{owner}-{time.time_ns() // 1_000_000}.json")
+
+
+def kept_projects(desk: Path, owner: str) -> list[Path]:
+    """Newest first. A second crash does not overwrite what the first one left."""
+    found = [path for path in desk.parent.glob(f"{desk.stem}-odzysk-{owner}-*.json") if desk_clip_count(path)]
+    return sorted(found, key=lambda path: path.name, reverse=True)
+
+
+def stash_desk(desk: Path, fallback_owner: str = "") -> None:
+    """A project file found at start was left by a crash, or by a close that kept it. It waits under its owner's
+    name until that account enters the studio and says whether it wants it back. Nothing opens by itself.
+    """
+    if not desk_clip_count(desk):
+        return
+    try:
+        raw = json.loads(desk.read_text(encoding="utf-8"))
+        owner = str(raw.get("owner") or fallback_owner)
+        if re.fullmatch(r"[0-9a-f]{12}", owner):
+            desk.replace(recovery_path(desk, owner))
+    except (OSError, ValueError, AttributeError):
+        pass
+
+
 def desk_clip_count(path: Path) -> int:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
@@ -854,6 +893,8 @@ def quiet_kwargs() -> dict[str, object]:
 MIC_DELIVERY_SECONDS = 0.03
 # A Bluetooth microphone can need this long. After it the take starts anyway, as it always did.
 MIC_OPEN_SECONDS = 4.0
+# Delay measurement: one click a second, whole bars.
+DELAY_CLICKS = 12
 # About 170 ms of the mix. When these bytes are here the beat has really connected and decoded.
 MIX_FIRST_BYTES = 32_768
 
@@ -1526,6 +1567,64 @@ def supabase_logout(url: str, anon_key: str, access_token: str) -> bool:
         return False
 
 
+def flow_places(width: int, sizes: list[tuple[int, int]], gap: int, push_right: bool) -> tuple[list[tuple[int, int]], int]:
+    """Left to right, a new row when the next one does not fit. push_right: the last one goes to the right edge.
+    Returns (x, y) of each and the height of all rows."""
+    rows: list[list[int]] = [[]]
+    used = 0
+    for index, (wide, _high) in enumerate(sizes):
+        if rows[-1] and used + gap + wide > width:
+            rows.append([])
+            used = 0
+        used += wide + (gap if rows[-1] else 0)
+        rows[-1].append(index)
+    places = [(0, 0)] * len(sizes)
+    top = 0
+    for number, row in enumerate(rows):
+        high = max((sizes[index][1] for index in row), default=0)
+        left = 0
+        for index in row:
+            wide, own = sizes[index]
+            at = width - wide if push_right and index == len(sizes) - 1 and number == 0 and len(row) > 1 else left
+            places[index] = (at, top + (high - own) // 2)
+            left += wide + gap
+        top += high + (4 if number < len(rows) - 1 else 0)
+    return places, top
+
+
+class Flow(tk.Frame):
+    """A toolbar whose groups wrap to the next row instead of leaving the window."""
+
+    def __init__(self, parent: tk.Widget, gap: int, push_right: bool = False, pad: int = 0, **options: object) -> None:
+        super().__init__(parent, **options)  # type: ignore[arg-type]
+        self._gap, self._right, self._pad = gap, push_right, pad
+        self.groups: list[tk.Frame] = []
+        self.bind("<Configure>", lambda _event: self._lay())
+
+    def group(self) -> tk.Frame:
+        frame = tk.Frame(self, bg=str(self.cget("bg")))
+        frame.bind("<Configure>", lambda _event: self.after_idle(self._lay))
+        self.groups.append(frame)
+        return frame
+
+    def widest(self) -> int:
+        return max((frame.winfo_reqwidth() for frame in self.groups), default=0) + 2 * self._pad
+
+    def _lay(self) -> None:
+        try:
+            width = self.winfo_width() - 2 * self._pad
+            if width < 20:
+                return
+            sizes = [(frame.winfo_reqwidth(), frame.winfo_reqheight()) for frame in self.groups]
+            places, height = flow_places(width, sizes, self._gap, self._right)
+            for frame, (x, y) in zip(self.groups, places):
+                frame.place(x=x + self._pad, y=y + self._pad)
+            if int(self.cget("height")) != height + 2 * self._pad:
+                self.configure(height=height + 2 * self._pad)
+        except tk.TclError:
+            pass
+
+
 class RecorderWindow:
     # ---- window and screens -------------------------------------------------
 
@@ -1639,6 +1738,13 @@ class RecorderWindow:
         self._beat_until = 0.0
         self._warm_remix: MixFeed | None = None
         self._drop_files = False
+        self._keep_desks: set[str] = set()
+        self._silent_until = 0.0
+        self._last_take: tuple[Clip, float, str] | None = None
+        self._bluetooth: set[str] = set()
+        self._measuring = False
+        self._delay_thread: threading.Thread | None = None
+        self._boxes: list[tk.Toplevel] = []
         self._session_epoch = 0
         self._plan_pending = False
         self._signing = False
@@ -1697,6 +1803,11 @@ class RecorderWindow:
         self._build_splash()
         self.beat_var.trace_add("write", lambda *_args: self._beat_changed())
         self._load_prefs()
+        if os.environ.get("BITRYMDYM_UI_SMOKE") != "1":
+            last = account_key(str((saved or {}).get("email") or ""))
+            for path in (DESK, DESK_OFFLINE):
+                stash_desk(path, last)
+            self._clear_play_folder()
         self._blank_project()
         if self.status_boot:
             self.status.set(self.status_boot)
@@ -1741,7 +1852,7 @@ class RecorderWindow:
             return None
         # Class name: some Tk builds wrap Entry; isinstance alone misses them under SendInput focus.
         name = widget.winfo_class() if hasattr(widget, "winfo_class") else ""
-        if isinstance(widget, (tk.Entry, tk.Listbox, tk.Text)) or name in {"Entry", "Listbox", "Text", "TEntry"}:
+        if isinstance(widget, (tk.Entry, tk.Listbox, tk.Text, tk.Spinbox)) or name in {"Entry", "Listbox", "Text", "TEntry", "Spinbox"}:
             return None
         run()
         return "break"
@@ -1768,9 +1879,17 @@ class RecorderWindow:
         if event.widget is not self.root:
             return
         width = max(240, int(event.width) - 40)
-        for label in (getattr(self, "status_label", None),):
+        for label in (getattr(self, "status_label", None), getattr(self, "foot_label", None)):
             if label is not None:
                 label.configure(wraplength=width)
+        hints = getattr(self, "foot_label", None)
+        if hints is not None:
+            # A low window keeps its room for the tracks.
+            low = int(event.height) < int(720 * self.ui)
+            if low and hints.winfo_manager():
+                hints.pack_forget()
+            elif not low and not hints.winfo_manager():
+                hints.pack(side="bottom", fill="x", padx=12, pady=(0, 8), before=self.status_label)
 
     def _update_blocks(self) -> bool:
         gate = getattr(self, "update_gate", None)
@@ -1789,9 +1908,18 @@ class RecorderWindow:
         self.modes.pack_forget()
         self.gate.pack(fill="both", expand=True)
         scale = dpi_scale()
+        self.root.update_idletasks()
+        # The card must fit whole: the message of a refused login is its last line.
+        need = self.shell.winfo_reqheight() + int(16 * scale)
+        room = self.root.winfo_screenheight() - 60
+        tape = getattr(self, "gate_tape", None)
+        if tape is not None and need > room and tape.winfo_manager():
+            tape.pack_forget()
+            self.root.update_idletasks()
+            need = self.shell.winfo_reqheight() + int(16 * scale)
         width = int(760 * scale)
-        height = int(720 * scale)
-        self.root.minsize(int(640 * scale), int(600 * scale))
+        height = min(room, max(int(720 * scale), need))
+        self.root.minsize(int(640 * scale), min(height, max(int(600 * scale), need)))
         if self._borderless:
             self._place_window(width, height)
         else:
@@ -1805,8 +1933,9 @@ class RecorderWindow:
         self.modes.pack_forget()
         self.studio.pack(fill="both", expand=True)
         scale = dpi_scale()
-        self.root.minsize(int(760 * scale), int(560 * scale))
         self.root.update_idletasks()
+        wide = max(int(760 * scale), max(flow.widest() for flow in self._flows) + 30)
+        self.root.minsize(min(wide, self.root.winfo_screenwidth() - 20), min(int(640 * scale), self.root.winfo_screenheight() - 60))
         width = min(self.root.winfo_screenwidth() - 20, int(1320 * scale))
         height = min(self.root.winfo_screenheight() - 60, int(860 * scale))
         if self._borderless:
@@ -1872,7 +2001,7 @@ class RecorderWindow:
                 self._keep_take()
         self.recording = False
         self.playing = False
-        self._discard_desks()
+        self._discard_desks(keep=self._keep_desks)
         self._touched = False
         box = getattr(self, "remember_login", None)
         keep_email = box is None or box.get() == 1
@@ -1913,10 +2042,12 @@ class RecorderWindow:
 
     def _build_studio(self) -> None:
         self.studio = tk.Frame(self.shell, bg=PAPER)
-        top = tk.Frame(self.studio, bg=PAPER)
-        top.pack(fill="x", padx=12, pady=(8, 0))
-        tk.Label(top, text="BitRymDym", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 20, "italic")).pack(side="left")
-        tk.Label(top, textvariable=self.studio_kicker, bg=PAPER, fg=AMBER, font=(FONT_META, 9)).pack(side="left", padx=(10, 0), pady=(8, 0))
+        top_flow = Flow(self.studio, int(12 * self.ui), push_right=True, bg=PAPER)
+        top_flow.pack(fill="x", padx=12, pady=(8, 0))
+        name = top_flow.group()
+        tk.Label(name, text="BitRymDym", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 20, "italic")).pack(side="left")
+        tk.Label(name, textvariable=self.studio_kicker, bg=PAPER, fg=AMBER, font=(FONT_META, 9)).pack(side="left", padx=(10, 0), pady=(8, 0))
+        top = top_flow.group()
         self._tool(top, "WYLOGUJ", self.sign_out, SOFT).pack(side="right")
         self._tool(top, "NOWY PROJEKT", self.new_project, SOFT).pack(side="right", padx=(0, 6))
         self._tool(top, "ZMIEŃ STUDIO", self.back_to_modes, SOFT).pack(side="right", padx=(0, 6))
@@ -1927,12 +2058,14 @@ class RecorderWindow:
         rule.pack_propagate(False)
         rule.pack(fill="x", padx=12, pady=(4, 6))
 
-        setup = tk.Frame(self.studio, bg=PAPER)
-        setup.pack(fill="x", padx=12)
+        setup_flow = Flow(self.studio, int(14 * self.ui), bg=PAPER)
+        setup_flow.pack(fill="x", padx=12)
+        setup = setup_flow.group()
         tk.Label(setup, text="BIT", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
         self.beat_button = self._tool(setup, "Wybierz bit z katalogu ▾", self.pick_beat, INK)
         self.beat_button.configure(font=(FONT_UI, 10), anchor="w", width=34)
-        self.beat_button.pack(side="left", padx=(6, 14))
+        self.beat_button.pack(side="left", padx=(6, 0))
+        setup = setup_flow.group()
         tk.Label(setup, text="ODLICZANIE", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
         self.count_menu = tk.OptionMenu(
             setup, self.count_var, *(label for label, _bars in countin.CHOICES), command=lambda _value: self._save_prefs()
@@ -1945,21 +2078,41 @@ class RecorderWindow:
         tempo.pack(side="left")
         tempo.bind("<FocusOut>", lambda _event: self._save_desk() if self.studio_mode == "offline" else None)
         tempo.bind("<Return>", lambda _event: self.root.focus_set())
+        late = setup_flow.group()
+        tk.Label(late, text="OPÓŹNIENIE", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
+        self.delay_var = tk.StringVar()
+        delay = tk.Spinbox(
+            late, from_=0, to=700, increment=5, width=5, textvariable=self.delay_var, command=self._delay_typed,
+            bg=RACK, fg=INK, insertbackground=AMBER, buttonbackground=RACK, relief="flat", font=(FONT_UI, 10),
+            highlightthickness=1, highlightbackground=LINE,
+        )
+        # Spinbox starts with from_. Empty means not measured yet.
+        self.delay_var.set("")
+        delay.pack(side="left", padx=(6, 4))
+        delay.bind("<Return>", lambda _event: (self._delay_typed(), self.root.focus_set()))
+        delay.bind("<FocusOut>", lambda _event: self._delay_typed())
+        tk.Label(late, text="ms", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
+        self.delay_button = self._tool(late, "ZMIERZ", self.measure_delay, INK, size=11)
+        self.delay_button.pack(side="left", padx=(8, 0))
 
-        gear = tk.Frame(self.studio, bg=PAPER)
-        gear.pack(fill="x", padx=12, pady=(6, 0))
+        gear_flow = Flow(self.studio, int(12 * self.ui), bg=PAPER)
+        gear_flow.pack(fill="x", padx=12, pady=(6, 0))
+        gear = gear_flow.group()
         tk.Label(gear, text="MIKROFON", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
         self.device_menu = tk.OptionMenu(gear, self.device_var, "Szukam mikrofonów…")
         self._style_option(self.device_menu, 24)
-        self.device_menu.pack(side="left", padx=(6, 8))
+        self.device_menu.pack(side="left", padx=(6, 0))
+        gear = gear_flow.group()
         self.probe_button = self._tool(gear, "TEST MIKROFONU", self.toggle_mic_test, INK)
         self.probe_button.pack(side="left")
         self.probe_meter = tk.Canvas(gear, width=90, height=12, bg=RACK, highlightthickness=0, bd=0)
-        self.probe_meter.pack(side="left", padx=(8, 8))
+        self.probe_meter.pack(side="left", padx=(8, 0))
+        gear = gear_flow.group()
         tk.Label(gear, text="ODSŁUCH", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
         self.output_menu = tk.OptionMenu(gear, self.output_var, "Domyślne")
         self._style_option(self.output_menu, 18)
-        self.output_menu.pack(side="left", padx=(6, 8))
+        self.output_menu.pack(side="left", padx=(6, 0))
+        gear = gear_flow.group()
         self.output_test_button = self._tool(gear, "TEST ODSŁUCHU", self.test_output, INK)
         self.output_test_button.pack(side="left")
         self._tool(gear, "ODŚWIEŻ", self.refresh_gear, SOFT, size=11).pack(side="left", padx=(8, 0))
@@ -1969,8 +2122,9 @@ class RecorderWindow:
         )
         self.probe_label.pack(fill="x", padx=12, pady=(4, 0))
 
-        bar = tk.Frame(self.studio, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
-        bar.pack(fill="x", padx=12, pady=(8, 0))
+        bar_flow = Flow(self.studio, int(6 * self.ui), push_right=True, pad=2, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
+        bar_flow.pack(fill="x", padx=12, pady=(8, 0))
+        bar = bar_flow.group()
         self._tool(bar, "|◀", lambda: self._set_cursor(0.0), INK, size=13).pack(side="left", padx=(6, 2), pady=5)
         self.play_button = self._tool(bar, "▶ GRAJ", self.play, ON_AMBER, AMBER, 13)
         self.play_button.pack(side="left", padx=2, pady=5)
@@ -1978,14 +2132,16 @@ class RecorderWindow:
         # toggle: second click / Space while NAGRYWA must stop (record() alone no-ops when already capturing).
         self.rec_button = self._tool(bar, "● NAGRAJ", self.toggle_record, INK, REC, 13)
         self.rec_button.pack(side="left", padx=2, pady=5)
-        clock = tk.Label(bar, textvariable=self.clock, bg="#0b0907", fg=AMBER, font=(FONT_META, 15), padx=10, width=21, anchor="w")
-        clock.pack(side="left", padx=(10, 4), pady=5)
+        bar = bar_flow.group()
+        clock = tk.Label(bar, textvariable=self.clock, bg="#0b0907", fg=AMBER, font=(FONT_META, 13), padx=8, width=23, anchor="w")
+        clock.pack(side="left", padx=(6, 4), pady=5)
         self.lamp = tk.Canvas(bar, width=12, height=12, bg=PANEL, highlightthickness=0)
-        self.lamp.pack(side="left", padx=(4, 10))
-        tk.Frame(bar, bg=LINE_STRONG, width=1).pack(side="left", fill="y", padx=4, pady=6)
+        self.lamp.pack(side="left", padx=4)
+        bar = bar_flow.group()
         for text, mode in (("COFNIJ", "undo"), ("PODZIEL", "split"), ("WYTNIJ", "cut"), ("KOPIUJ", "copy"), ("WKLEJ", "paste"), ("USUŃ", "delete")):
             command = self.undo if mode == "undo" else (lambda picked=mode: self.edit(picked))
             self._tool(bar, text, command, REC if mode == "delete" else INK, size=11).pack(side="left", padx=2, pady=5)
+        bar = bar_flow.group()
         self._tool(bar, "1 s", self.zoom_second, ON_AMBER, AMBER, 11).pack(side="right", padx=(2, 6), pady=5)
         self._tool(bar, "+", lambda: self.zoom(1.25), INK, size=13).pack(side="right", padx=2, pady=5)
         self._tool(bar, "−", lambda: self.zoom(0.8), INK, size=13).pack(side="right", padx=2, pady=5)
@@ -2001,6 +2157,34 @@ class RecorderWindow:
             tk.Label(
                 cell, textvariable=var, bg="#0b0907", fg=AMBER, font=(FONT_META, 12), width=9, anchor="w"
             ).pack(side="left", padx=(0, 8), pady=3)
+
+        self._flows = (top_flow, setup_flow, gear_flow, bar_flow)
+        # The bottom goes in first: in a low window the lanes give way, not GOTOWE and the messages.
+        self.foot_label = tk.Label(
+            self.studio,
+            text=(
+                "Klik: kursor. Przeciągnij: zaznaczenie, potem Wytnij, Usuń albo Podziel. Pasek klipu: przesuń. "
+                "● uzbrój ścieżkę, potem Spacja lub R: nagraj/stop. P: graj/stop. Esc: stop. "
+                "M: wycisz bit. Strzałki: kursor (±0,1 s, Shift ±1 s). Home: początek. "
+                "Delete, Ctrl+X/C/V, Ctrl+I, Ctrl+Z. Ctrl+kółko: zoom."
+            ),
+            bg=PAPER, fg=MUTE, font=(FONT_UI, 8), anchor="w", justify="left", wraplength=900,
+        )
+        self.foot_label.pack(side="bottom", fill="x", padx=12, pady=(0, 8))
+        self.status_label = tk.Label(
+            self.studio, textvariable=self.status, wraplength=900, justify="left", anchor="w", bg=PAPER, fg=INK, font=(FONT_UI, 10)
+        )
+        self.status_label.pack(side="bottom", fill="x", padx=12, pady=(8, 2))
+        foot = tk.Frame(self.studio, bg=PAPER)
+        foot.pack(side="bottom", fill="x", padx=12, pady=(8, 0))
+        self.done_button = self._tool(foot, "GOTOWE  ✓", self.open_done, ON_AMBER, AMBER, 15)
+        self.done_button.configure(padx=22, pady=6)
+        self.done_button.pack(side="right")
+        self.add_button = self._tool(foot, "+ DODAJ ŚCIEŻKĘ", self.add_track, INK, size=12)
+        self.add_button.pack(side="left")
+        self.plan_label = tk.Label(foot, textvariable=self.plan_text, bg=PAPER, fg=SOFT, font=(FONT_UI, 9), justify="left", anchor="w")
+        self.plan_label.pack(side="left", padx=12, fill="x", expand=True)
+        self.plan_label.bind("<Configure>", lambda event: self.plan_label.configure(wraplength=max(120, event.width - 4)))
 
         outer = tk.Frame(self.studio, bg=PAPER)
         outer.pack(fill="both", expand=True, padx=12, pady=(6, 0))
@@ -2035,29 +2219,6 @@ class RecorderWindow:
         self.vocal_host = tk.Frame(self.row_host, bg=PAPER)
         self.vocal_host.pack(fill="x")
 
-        foot = tk.Frame(self.studio, bg=PAPER)
-        foot.pack(fill="x", padx=12, pady=(8, 0))
-        self.add_button = self._tool(foot, "+ DODAJ ŚCIEŻKĘ", self.add_track, INK, size=12)
-        self.add_button.pack(side="left")
-        tk.Label(foot, textvariable=self.plan_text, bg=PAPER, fg=SOFT, font=(FONT_UI, 9)).pack(side="left", padx=12)
-        self.done_button = self._tool(foot, "GOTOWE  ✓", self.open_done, ON_AMBER, AMBER, 15)
-        self.done_button.configure(padx=22, pady=6)
-        self.done_button.pack(side="right")
-        self.status_label = tk.Label(
-            self.studio, textvariable=self.status, wraplength=900, justify="left", anchor="w", bg=PAPER, fg=INK, font=(FONT_UI, 10)
-        )
-        self.status_label.pack(fill="x", padx=12, pady=(8, 2))
-        self.foot_label = tk.Label(
-            self.studio,
-            text=(
-                "Klik: kursor. Przeciągnij: zaznaczenie, potem Wytnij, Usuń albo Podziel. Pasek klipu: przesuń. "
-                "● uzbrój ścieżkę, potem Spacja lub R: nagraj/stop. P: graj/stop. Esc: stop. "
-                "M: wycisz bit. Strzałki: kursor (±0,1 s, Shift ±1 s). Home: początek. "
-                "Delete, Ctrl+X/C/V, Ctrl+I, Ctrl+Z. Ctrl+kółko: zoom."
-            ),
-            bg=PAPER, fg=MUTE, font=(FONT_UI, 8), anchor="w", justify="left",
-        )
-        self.foot_label.pack(fill="x", padx=12, pady=(0, 8))
         self.root.bind("<Configure>", self._fit_copy)
         self._paint_lamp()
         self._sync_beat_button()
@@ -2260,6 +2421,9 @@ class RecorderWindow:
         return track.solo or not any_solo
 
     def _busy(self, what: str = "") -> bool:
+        if self._measuring:
+            self.status.set("Najpierw skończ pomiar opóźnienia.")
+            return True
         if self.recording or self._arming:
             self.status.set("Najpierw Stop." + (f" {what}" if what else ""))
             return True
@@ -2478,8 +2642,8 @@ class RecorderWindow:
         shown: list[str] = []
 
         def fill(*_args: object) -> None:
-            needle = query.get().strip().lower()
-            shown[:] = [label for _id, label in self.beats if needle in label.lower()]
+            needle = plain_text(query.get())
+            shown[:] = [label for _id, label in self.beats if needle in plain_text(label)]
             listing.delete(0, "end")
             for label in shown:
                 listing.insert("end", label)
@@ -2491,6 +2655,7 @@ class RecorderWindow:
             if not picked:
                 return
             self.beat_var.set(shown[int(picked[0])])
+            self._pref_beat = self.beat_var.get()
             self._save_prefs()
             box.destroy()
             self.status.set("Bit jest na ścieżce BIT. Program go nie zapisuje, tylko odtwarza ze strony.")
@@ -2503,6 +2668,7 @@ class RecorderWindow:
         self._tool(row, "WYBIERZ", choose, ON_AMBER, AMBER).pack(side="right")
         self._tool(row, "ODŚWIEŻ LISTĘ", lambda: (self.reload_beats(), fill()), INK).pack(side="left")
         fill()
+        self._center(box)
         search.focus_set()
 
     def _pick_local_beat(self) -> None:
@@ -3279,6 +3445,7 @@ class RecorderWindow:
     def _save_desk(self) -> None:
         self._touched = True
         data: dict[str, object] = {
+            "owner": account_key(self._owner_email),
             "beat": self.beat_var.get(),
             "title": self.title_var.get(),
             "armed": self.armed,
@@ -3388,15 +3555,17 @@ class RecorderWindow:
         clips = sum(len(track.clips) for track in self.tracks)
         if clips:
             self.status.set(
-                f"Projekt z tej sesji: {count_word(len(self.tracks), 'ścieżka', 'ścieżki', 'ścieżek')}, "
+                f"Projekt na ścieżkach: {count_word(len(self.tracks), 'ścieżka', 'ścieżki', 'ścieżek')}, "
                 f"{count_word(clips, 'klip', 'klipy', 'klipów')}."
             )
         if lost:
             self.status.set(self.status.get() + f" Brak {lost} plików nagrań na dysku, te klipy pominięte.")
 
     def _blank_project(self, announce: bool = False) -> None:
-        """Empty studio. A new launch does not open the project from the previous run."""
+        """Empty studio. A new launch does not open the project from the previous run by itself."""
         self.tempo_var.set(str(countin.FALLBACK_BPM))
+        self._last_take = None
+        self.tracks = []
         self.tracks = [self._new_track()]
         self.undo_stack = []
         self.clipboard = []
@@ -3433,8 +3602,10 @@ class RecorderWindow:
             else:
                 self.status.set("Pusty projekt. Wybierz bit i nagraj.")
 
-    def _discard_desks(self) -> None:
-        for path in (DESK, DESK_OFFLINE):
+    def _discard_desks(self, keep: set[str] | None = None) -> None:
+        for mode, path in (("online", DESK), ("offline", DESK_OFFLINE)):
+            if keep and mode in keep:
+                continue
             try:
                 path.unlink(missing_ok=True)
             except OSError:
@@ -3455,26 +3626,31 @@ class RecorderWindow:
             return True
         return any(track.clips for track in self.tracks)
 
-    def _other_studio_ok(self) -> bool:
+    def _other_studio_ok(self, leaving: bool = False) -> bool:
         """The studio that is not on screen may hold a project too. Closing deletes it."""
         other, path = ("online", DESK) if self.studio_mode == "offline" else ("offline", DESK_OFFLINE)
         if other not in self._desk_live or not desk_clip_count(path):
             return True
+        if not leaving:
+            # It waits: the next launch asks about it.
+            self._keep_desks.add(other)
+            return True
         name = "Studiu Offline" if other == "offline" else "Studiu Online"
         return messagebox.askyesno(
             "BitRymDym",
-            f"W {name} masz jeszcze projekt z nagraniami. Po zamknięciu nie wróci. Zamknąć mimo to?",
+            f"W {name} masz jeszcze projekt z nagraniami. Po wylogowaniu nie wróci. Wylogować mimo to?",
         )
 
-    def _confirm_close_save(self, defer: bool = False) -> bool:
+    def _confirm_close_save(self, defer: bool = False, leaving: bool = False) -> bool:
         """False leaves the window open. No throws the project away. Yes saves when Offline can.
 
         defer: the files of a thrown-away project go only with _drop_confirmed, when the next step is sure.
         """
         self._drop_files = False
+        self._keep_desks = set()
         if self.recording or self._arming or self.playing or self._probing:
             self._halt_audio()
-        if not self._other_studio_ok():
+        if not self._other_studio_ok(leaving):
             return False
         if not self._project_dirty():
             return True
@@ -3488,8 +3664,14 @@ class RecorderWindow:
         else:
             text = (
                 "Chcesz zapisać projekt?\n\n"
-                "Tak — nagrania zostają na tym komputerze. Na konto same nie wchodzą. "
-                "Następne włączenie i tak zaczyna pusty projekt.\n"
+                + (
+                    "Tak — nagrania zostają na tym komputerze, ale po wylogowaniu projekt nie wróci. "
+                    "Na konto same nie wchodzą.\n"
+                    if leaving
+                    else "Tak — projekt zostaje na tym komputerze. Przy następnym wejściu do Studia program zapyta, "
+                    "czy go przywrócić. Na konto sam nie wchodzi.\n"
+                )
+                +
                 "Nie — ten projekt przepada.\n"
                 "Anuluj — zostajesz w programie."
             )
@@ -3504,6 +3686,9 @@ class RecorderWindow:
             return True
         if self.studio_mode == "offline":
             return self.save_project()
+        if not leaving:
+            self._save_desk()
+            self._keep_desks.add("online")
         return True
 
     def _drop_confirmed(self) -> None:
@@ -3527,6 +3712,9 @@ class RecorderWindow:
                     Path(path).unlink()
                 except OSError:
                     pass
+        self._close_boxes()
+        self._last_take = None
+        self.tracks = []
         self.tracks = [self._new_track()]
         self.undo_stack = []
         self.clipboard = []
@@ -3669,6 +3857,14 @@ class RecorderWindow:
                 found.append((list(track.clips), track.gain_db, track.pan))
         return found
 
+    def _clear_play_folder(self) -> None:
+        """Only one copy of the program runs, so whatever is here was left by one that was killed."""
+        for old in (Path(os.environ.get("TEMP", ".")) / "bitrymdym-play").glob("*.wav"):
+            try:
+                old.unlink()
+            except OSError:
+                pass
+
     def _play_folder(self) -> Path:
         """Temp files of the mix. Old ones go, the ones still playing stay."""
         folder = Path(os.environ.get("TEMP", ".")) / "bitrymdym-play"
@@ -3733,7 +3929,7 @@ class RecorderWindow:
         self._set_cursor(max(0.0, self.cursor + delta_sec))
 
     def play(self) -> None:
-        if self.recording or self._arming:
+        if self.recording or self._arming or self._measuring:
             return
         self._stop_probe()
         self.stop()
@@ -3863,6 +4059,7 @@ class RecorderWindow:
                 return
             self._play_from = start
             self._play_t0 = time.monotonic()
+            self._silent_until = 0.0
             self.playing = True
             self.play_button.configure(text="▶ GRA…")
             if self.beat_muted:
@@ -4002,7 +4199,7 @@ class RecorderWindow:
                 self._pre = sorted(self._pre_seen)[len(self._pre_seen) // 2] + MIC_DELIVERY_SECONDS
 
     def record(self) -> None:
-        if self.recording or self._arming:
+        if self.recording or self._arming or self._measuring:
             return
         if self.playing:
             self.stop()
@@ -4033,6 +4230,7 @@ class RecorderWindow:
         threading.Thread(target=self._prepare_play, args=(token, self.rec_start, plan, beat_id, local, path, count), daemon=True).start()
 
     def stop(self) -> None:
+        self._measuring = False
         self._cancel_remix()
         if self._arming:
             self._play_token += 1
@@ -4120,7 +4318,9 @@ class RecorderWindow:
         self._push_undo()
         clip = Clip(str(path), round(self.rec_start, 4), round(skip, 4), round(skip + length, 4))
         track = self.tracks[self.rec_track]
-        track.clips = place(track.clips, [clip])
+        track.clips = drop_sliver(place(track.clips, [clip]), clip)
+        tail = left_after(track.clips, clip)
+        self._last_take = (clip, base, self._take_key) if self.mix_was_on else None
         self._peaks.pop(str(path), None)
         self._audio.pop(str(path), None)
         self.focus = self.rec_track
@@ -4131,7 +4331,11 @@ class RecorderWindow:
         self.status.set(
             f"{prefix}Nagranie {length:.1f} s jest na {track.name} od {clock_text(self.rec_start)}. "
             + (f"{self._take_note} " if self._take_note else "")
-            + "Przeciągnij pasek klipu, żeby go przesunąć."
+            + (
+                f"Za nim zostało {tail:.1f} s starego nagrania: kliknij je dwa razy i Delete, jeśli go nie chcesz."
+                if tail
+                else "Przeciągnij pasek klipu, żeby go przesunąć."
+            )
         )
         if any(self._take_beat) and self.mix_was_on and (whole or not died):
             self._aligning += 1
@@ -4139,8 +4343,165 @@ class RecorderWindow:
                 target=self._measure_take, args=(clip, base, self._take_beat, self._take_key), daemon=True
             ).start()
 
+    def _output_name(self) -> str:
+        """The real output behind "Domyślne": its delay is the one of the headphones, not of the word."""
+        index = self.selected_output_index()
+        if index is None:
+            index = win_output.default_output_index()
+            for name, number in self.outputs:
+                if index is not None and number == index:
+                    return name
+        return self.output_var.get()
+
     def _sync_key(self) -> str:
-        return f"{self.device_var.get()}|{self.output_var.get()}"[:160]
+        return f"{self.device_var.get()}|{self._output_name()}"[:160]
+
+    def _learn_delay(self, key: str, seconds: float) -> None:
+        self._sync_known.pop(key, None)
+        self._sync_known[key] = round(max(0.0, min(0.7, seconds)), 4)
+        self._save_prefs()
+        self._show_delay()
+
+    def _show_delay(self) -> None:
+        """The delay of the microphone and output chosen now. Empty: not measured yet."""
+        if not hasattr(self, "delay_var"):
+            return
+        known = self._sync_known.get(self._sync_key())
+        self.delay_var.set("" if known is None else f"{known * 1000:.0f}")
+        if known is None and win_output.looks_bluetooth(self._output_name(), self._bluetooth):
+            self.probe_var.set(
+                "Słuchawki Bluetooth opóźniają dźwięk nawet o pół sekundy. Kliknij ZMIERZ, zanim nagrasz."
+            )
+
+    def _delay_typed(self) -> None:
+        """Delay set by hand: for the next takes and, when it is still there, for the last one."""
+        text = self.delay_var.get().strip().replace(",", ".")
+        key = self._sync_key()
+        if not text:
+            if self._sync_known.pop(key, None) is not None:
+                self._save_prefs()
+            return
+        try:
+            value = max(0.0, min(700.0, float(text)))
+        except ValueError:
+            self._show_delay()
+            return
+        if abs(self._sync_known.get(key, -1.0) * 1000 - value) < 0.5:
+            return
+        self._learn_delay(key, value / 1000)
+        if self._busy():
+            return
+        last = self._last_take
+        if last is not None and last[2] == key and self._move_take(last[0], last[1], value):
+            self.status.set(f"Opóźnienie {value:.0f} ms. Ostatnie nagranie jest już przesunięte, Cofnij je przywraca.")
+        else:
+            self.status.set(f"Opóźnienie {value:.0f} ms zadziała od następnego nagrania.")
+
+    def measure_delay(self) -> None:
+        """Clap with the clicks: the delay of this microphone and output, also when no beat leaks into the mic."""
+        if self._measuring or (self._delay_thread is not None and self._delay_thread.is_alive()):
+            self._measuring = False
+            return
+        if self._busy() or self._uploading or self._exporting:
+            return
+        if self.playing:
+            self.stop()
+        self._stop_probe()
+        index = self.selected_output_index()
+        if not self.devices or not can_hear(index):
+            self.status.set("Do pomiaru potrzebny jest mikrofon i odsłuch.")
+            return
+        self._measuring = True
+        self.delay_button.configure(text="STOP POMIARU")
+        self.status.set(
+            f"Klaszcz równo z każdym stukiem, blisko mikrofonu, przez {DELAY_CLICKS} sekund. Pierwsze dwa stuki są na rozgrzewkę."
+        )
+        key = self._sync_key()
+        device = self.selected_device()
+        play = ffplay_exe() or ""
+
+        def run() -> None:
+            lag, error = self._run_delay(device, index, play)
+            try:
+                self.root.after(0, lambda: self._delay_measured(key, lag, error))
+            except (RuntimeError, tk.TclError):
+                pass
+
+        self._delay_thread = threading.Thread(target=run, daemon=True, name="brd-delay")
+        self._delay_thread.start()
+
+    def _run_delay(self, device: str, index: int | None, play: str) -> tuple[float | None, str]:
+        path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-opoznienie.wav"
+        capture: subprocess.Popen[bytes] | None = None
+        feed: MixFeed | None = None
+        source: subprocess.Popen[bytes] | None = None
+        player: object = None
+        try:
+            clicks = self._play_folder() / f"pomiar-{os.getpid()}.wav"
+            replace_mono16(clicks, countin.click_samples(DELAY_CLICKS // countin.BEATS_PER_BAR, 60))
+            feed = MixFeed(mix_argv(ffmpeg_exe(), None, [], None, clicks=(clicks, float(DELAY_CLICKS))))
+            if not feed.warm():
+                return None, "Nie dało się zagrać stuków."
+            capture = start_capture(path, device)
+            self.capture = capture
+            until = time.monotonic() + MIC_OPEN_SECONDS
+            while captured_seconds(capture, path) <= 0:
+                if capture.poll() is not None or time.monotonic() > until or not self._measuring:
+                    return None, "Mikrofon się nie otworzył." if self._measuring else "Pomiar przerwany."
+                time.sleep(0.015)
+            source, player = start_mix(feed, play, index)
+            feed = None
+            skip = captured_seconds(capture, path)
+            seen: list[float] = []
+            end = time.monotonic() + DELAY_CLICKS + 1.2
+            while time.monotonic() < end:
+                if not self._measuring:
+                    return None, "Pomiar przerwany."
+                if capture.poll() is not None:
+                    return None, "Mikrofon przestał oddawać dźwięk."
+                note = str(getattr(player, "note", "") or "")
+                if note:
+                    return None, note
+                position = getattr(player, "position", None)
+                frames = position() if position is not None and len(seen) < 40 else None
+                if frames and frames >= RATE // 10:
+                    ahead = captured_seconds(capture, path) - frames / RATE
+                    if 0.0 <= ahead <= MIC_OPEN_SECONDS:
+                        seen.append(ahead)
+                time.sleep(0.04)
+            if len(seen) >= 5:
+                skip = sorted(seen)[len(seen) // 2] + MIC_DELIVERY_SECONDS
+            stop_capture(capture)
+            _rate, samples = read_mono16(path)
+            return auto_align.clap_lag(samples, skip, 1.0, DELAY_CLICKS), ""
+        except Exception as problem:
+            return None, self._safe_listen_error(problem)
+        finally:
+            stop_monitor(source)
+            stop_monitor(player)  # type: ignore[arg-type]
+            if feed is not None:
+                feed.kill()
+            if capture is not None:
+                stop_capture(capture)
+                if self.capture is capture:
+                    self.capture = None
+            for item in (path, capture_log_path(path)):
+                try:
+                    item.unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+    def _delay_measured(self, key: str, lag: float | None, error: str) -> None:
+        self._measuring = False
+        self.delay_button.configure(text="ZMIERZ")
+        if error:
+            self.status.set(error)
+            return
+        if lag is None:
+            self.status.set("Nie udało się zmierzyć: za mało wyraźnych albo równych klaśnięć. Klaszcz głośniej, bliżej mikrofonu, i spróbuj jeszcze raz.")
+            return
+        self._learn_delay(key, lag / 1000)
+        self.status.set(f"Opóźnienie {lag:.0f} ms zapamiętane dla tego mikrofonu i odsłuchu. Następne nagrania będą równo z bitem.")
 
     def _measure_take(self, clip: Clip, base: float, beat: tuple[str, str], key: str) -> None:
         """The real delay of this take from the beat that leaked into the microphone. Off the Tk thread."""
@@ -4173,15 +4534,24 @@ class RecorderWindow:
         """lag is the whole delay, measured from `base` in the file: the same answer whatever was learned before."""
         self._aligning = max(0, self._aligning - 1)
         if lag is None:
+            if key and key not in self._sync_known and not (self.recording or self._arming):
+                self.status.set(
+                    self.status.get()
+                    + " Nie słychać bitu w mikrofonie, więc głosu nie wyrównałem. Kliknij ZMIERZ przy OPÓŹNIENIE albo przesuń nagranie."
+                )
             return
         learned = round(max(0.0, min(0.7, lag / 1000)), 4)
-        if key and abs(self._sync_known.get(key, 0.0) - learned) > 0.003:
-            self._sync_known.pop(key, None)
-            self._sync_known[key] = learned
-            self._save_prefs()
+        if key and (key not in self._sync_known or abs(self._sync_known[key] - learned) > 0.003):
+            self._learn_delay(key, learned)
+        move = base + lag / 1000 - clip.src_in
+        if self._move_take(clip, base, lag):
+            self.status.set(f"Wyrównane do bitu: {abs(move) * 1000:.0f} ms. Cofnij wraca do poprzedniego miejsca.")
+
+    def _move_take(self, clip: Clip, base: float, lag: float) -> bool:
+        """Put a take where a delay of `lag` ms says. False when it is there already, or was cut since."""
         move = base + lag / 1000 - clip.src_in
         if abs(move) < 0.003:
-            return
+            return False
         for track in self.tracks:
             for index, item in enumerate(track.clips):
                 # Moved is fine, cut or split is not: then only the next takes profit.
@@ -4191,14 +4561,16 @@ class RecorderWindow:
                 start = item.start + max(0.0, -lag / 1000)
                 src_out = min(file_seconds(Path(item.path)), src_in + item.length)
                 if src_out - src_in < 0.05:
-                    return
+                    return False
                 self._push_undo()
                 fixed = Clip(item.path, round(start, 4), round(src_in, 4), round(src_out, 4))
-                track.clips = place([*track.clips[:index], *track.clips[index + 1 :]], [fixed])
+                track.clips = drop_sliver(place([*track.clips[:index], *track.clips[index + 1 :]], [fixed]), fixed)
+                if self._last_take is not None and self._last_take[0].path == fixed.path:
+                    self._last_take = (fixed, base, self._last_take[2])
                 self._save_desk()
                 self._paint_all()
-                self.status.set(f"Wyrównane do bitu: {abs(move) * 1000:.0f} ms. Cofnij wraca do poprzedniego miejsca.")
-                return
+                return True
+        return False
 
     def _read_live(self) -> None:
         path = self.wav_path
@@ -4289,8 +4661,9 @@ class RecorderWindow:
             self._tick_id = self.root.after(40, self._tick)
             return
         if self.playing:
-            ended = self.monitor is None or self.monitor.poll() is not None
             head = self._play_from + (time.monotonic() - self._play_t0)
+            silent = self.monitor is None and head < self._silent_until
+            ended = not silent and (self.monitor is None or self.monitor.poll() is not None)
             if ended:
                 note = str(getattr(self.monitor, "note", "") or "")
                 self.stop()
@@ -4393,6 +4766,7 @@ class RecorderWindow:
         if not clips:
             studio.configure(state="disabled")
             stem_button.configure(state="disabled")
+        self._center(box)
         _ = bpm
 
     def _render_clip_files(self, clips: list[tuple[int, Clip]], cap: float) -> tuple[list[Path], list[int], list[int]]:
@@ -4482,6 +4856,7 @@ class RecorderWindow:
             box, text=offline_session.RIGHTS_NOTE, bg=PANEL, fg=MUTE, font=(FONT_UI, 9), wraplength=460, justify="left",
         ).pack(anchor="w", padx=16, pady=(8, 0))
         self._tool(box, "WRÓĆ DO EDYCJI", box.destroy, SOFT).pack(anchor="e", padx=16, pady=14)
+        self._center(box)
 
     def _project_worth_saving(self) -> bool:
         return self.recording or any(track.clips for track in self.tracks)
@@ -4522,6 +4897,7 @@ class RecorderWindow:
         self._tool(row, "ZAPISZ", go, ON_AMBER, AMBER, 13).pack(side="right")
         self._tool(row, "WRÓĆ", cancel, SOFT).pack(side="right", padx=(0, 8))
         box.protocol("WM_DELETE_WINDOW", cancel)
+        self._center(box)
         self.root.wait_window(box)
         return result["ok"]
 
@@ -4672,10 +5048,10 @@ class RecorderWindow:
         def done() -> None:
             self._exporting = False
             if error:
-                self.status.set(f"Sesja: zapisane {len(written)} stemów, potem błąd ({error[:80]}).")
+                self.status.set(f"Sesja: zapisane {count_word(len(written), 'stem', 'stemy', 'stemów')}, potem błąd ({error[:80]}).")
                 return
             self.status.set(
-                f"Zapisane: {len(written)} stemów i {offline_session.FILE_NAME} w {folder}. "
+                f"Zapisane: {count_word(len(written), 'stem', 'stemy', 'stemów')} i {offline_session.FILE_NAME} w {folder}. "
                 "Bit nie jest w tym folderze. Na www.bitrymdym.pl → Studio wczytaj sesję, utwórz projekt i w Gold wrzuć stemy."
             )
 
@@ -5024,7 +5400,7 @@ class RecorderWindow:
                 self.status.set(f"Stemy: zapisane {len(written)}, potem błąd ({error[:80]}).")
             else:
                 self.status.set(
-                    f"Stemy zapisane ({len(written)} plików WAV, 48 kHz mono, od 0:00) w {folder}. Bitu tu nie ma: jest w Studio w ZIP projektu."
+                    f"Stemy zapisane ({count_word(len(written), 'plik', 'pliki', 'plików')} WAV, 48 kHz mono, od 0:00) w {folder}. Bitu tu nie ma: jest w Studio w ZIP projektu."
                 )
 
         self.root.after(0, done)
@@ -5082,7 +5458,7 @@ class RecorderWindow:
             self._tick_id = None
 
     def _busy_for_update(self) -> bool:
-        return self.recording or self._arming or self._uploading or self._probing or self._exporting
+        return self.recording or self._arming or self._uploading or self._probing or self._exporting or self._measuring
 
     # ---- kept: frame, sign-in, updates, mic check ----
 
@@ -5395,7 +5771,8 @@ class RecorderWindow:
             tk.Label(card, image=logo, bg=PAPER).pack(pady=(0, 6))
         tape = self._fit_image("cassette-mark.png", 280, 120)
         if tape is not None:
-            tk.Label(card, image=tape, bg=PAPER).pack(pady=(0, 8))
+            self.gate_tape = tk.Label(card, image=tape, bg=PAPER)
+            self.gate_tape.pack(pady=(0, 8))
         tk.Label(card, text="Zaloguj się", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 22, "italic")).pack(anchor="w")
         tk.Label(
             card,
@@ -5458,6 +5835,8 @@ class RecorderWindow:
             font=(FONT_UI, 10),
             wraplength=380,
             justify="left",
+            height=2,
+            anchor="nw",
         ).pack(anchor="w", pady=(12, 0))
 
     def _build_modes(self) -> None:
@@ -5571,6 +5950,18 @@ class RecorderWindow:
 
     def _sync_gold_offer(self) -> None:
         offer = gold_offer(self.tier)
+        if self._plan_pending and self.tier != "GOLD":
+            # Nothing to buy until the site has said what this account already has.
+            link = getattr(self, "offline_upgrade", None)
+            if link is not None and link.winfo_manager():
+                link.pack_forget()
+            button = getattr(self, "offline_enter", None)
+            if button is not None:
+                button.configure(
+                    text="SPRAWDZAM PLAN…", command=lambda: self.choose_mode("offline"),
+                    bg=RACK, fg=SOFT, activebackground=PANEL, activeforeground=INK,
+                )
+            return
         link = getattr(self, "offline_upgrade", None)
         if link is not None:
             if offer:
@@ -5619,17 +6010,86 @@ class RecorderWindow:
                 self._restore_desk()
             else:
                 self._blank_project()
+        self._close_boxes()
+        self._restore_catalog_beat()
         self._apply_mode_chrome()
         self.show_studio()
+        if fresh and self._offer_recovery():
+            return
         if fresh and self._pending is None:
             if mode == "offline":
                 self.status.set("Pusty projekt. Wybierz własny bit z pliku i nagraj.")
             else:
                 self.status.set("Pusty projekt. Wybierz bit i nagraj.")
 
+    def _offer_recovery(self) -> bool:
+        """Ask once about a project left by a crash or kept on close. True when it is back on the timeline."""
+        desk = self._desk_path()
+        owner = account_key(self._owner_email)
+        if not owner or self._project_dirty():
+            return False
+        waiting = kept_projects(desk, owner)
+        if not waiting:
+            return False
+        kept = waiting[0]
+        count = desk_clip_count(kept)
+        try:
+            when = datetime.fromtimestamp(kept.stat().st_mtime).strftime("%d.%m o %H:%M")
+        except OSError:
+            return False
+        choice = messagebox.askyesnocancel(
+            "BitRymDym",
+            f"Jest projekt z {when} ({count_word(count, 'klip', 'klipy', 'klipów')}). Przywrócić go?\n\n"
+            "Tak — wraca na ścieżki.\n"
+            "Nie — zaczynasz od pustego, a ten projekt znika z listy. Pliki nagrań zostają na dysku.\n"
+            "Anuluj — zapytam następnym razem.",
+        )
+        if choice is None:
+            return False
+        try:
+            if not choice:
+                kept.unlink(missing_ok=True)
+                return False
+            kept.replace(desk)
+        except OSError:
+            self.status.set("Nie dało się przywrócić projektu. Plik jest zajęty, spróbuj za chwilę.")
+            return False
+        self._desk_live.add(self.studio_mode)
+        self._restore_desk()
+        self._restore_catalog_beat()
+        # It is an open project again: the next crash must not lose it.
+        self._save_desk()
+        self._paint_all()
+        return True
+
+    def _close_boxes(self) -> None:
+        """Gotowe and the catalog belong to the project that was on screen when they opened."""
+        for box in self._boxes:
+            try:
+                if box.winfo_exists():
+                    box.destroy()
+            except tk.TclError:
+                pass
+        self._boxes = []
+
+    def _center(self, box: tk.Toplevel) -> None:
+        """Over the program, not in the corner of the screen."""
+        self._boxes = [item for item in self._boxes if item.winfo_exists()]
+        self._boxes.append(box)
+        try:
+            box.update_idletasks()
+            width, height = box.winfo_reqwidth(), box.winfo_reqheight()
+            x = self.root.winfo_rootx() + (self.root.winfo_width() - width) // 2
+            y = self.root.winfo_rooty() + (self.root.winfo_height() - height) // 3
+            x = max(0, min(x, self.root.winfo_vrootwidth() + max(0, self.root.winfo_vrootx()) - 60))
+            box.geometry(f"+{x}+{max(0, y)}")
+        except tk.TclError:
+            pass
+
     def back_to_modes(self) -> None:
         if self._busy() or self._uploading or self._exporting:
             return
+        self._close_boxes()
         if self.playing or self.recording or self._arming:
             self._halt_audio()
         if self._touched:
@@ -5664,7 +6124,16 @@ class RecorderWindow:
         menu.configure(
             bg=RACK, fg=INK, activebackground=PANEL, activeforeground=INK, highlightthickness=1,
             highlightbackground=LINE, font=(FONT_UI, 10), relief="flat", bd=0, anchor="w", width=width,
+            # The stock arrow sits on top of a long device name.
+            indicatoron=False, padx=8,
         )
+        if not menu.winfo_children() or not any(isinstance(item, tk.Label) for item in menu.winfo_children()):
+            arrow = tk.Label(menu, text="▾", bg=RACK, fg=AMBER, font=(FONT_UI, 10), bd=0, padx=4)
+            arrow.place(relx=1.0, rely=0.5, anchor="e", x=-1)
+            arrow.bind(
+                "<Button-1>",
+                lambda _event: menu["menu"].tk_popup(menu.winfo_rootx(), menu.winfo_rooty() + menu.winfo_height()),
+            )
         menu["menu"].configure(bg=RACK, fg=INK, activebackground=AMBER, activeforeground=ON_AMBER, font=(FONT_UI, 10))
 
     def _entry_small(self, parent: tk.Widget, variable: tk.StringVar) -> tk.Entry:
@@ -5686,6 +6155,7 @@ class RecorderWindow:
         elif variable is self.output_var:
             self._pref_output = value
         self._save_prefs()
+        self._show_delay()
 
     def _fill_option(self, menu: tk.OptionMenu, variable: tk.StringVar, labels: list[str], preferred: str) -> None:
         choices = labels or ["Brak"]
@@ -5746,6 +6216,8 @@ class RecorderWindow:
             self.probe_var.set(device_error)
         elif not self.probe_var.get().startswith("Poziom"):
             self.probe_var.set("Mikrofon i słuchawki mogą być z różnych urządzeń, też Bluetooth.")
+        self._bluetooth = win_output.bluetooth_outputs()
+        self._show_delay()
         self._gear_scanning = False
         if resume == "dead":
             self.gate_status.set(resume_error)
@@ -5913,6 +6385,9 @@ class RecorderWindow:
                 feed.kill()
                 raise RuntimeError(NO_FFPLAY)
             self._stop_monitor()
+            # Beat muted and nothing else to hear: the play goes on silently, so M again brings the beat back.
+            ends = [self._beat_meta()[2], *(track_end(track.clips) for track in self.tracks)]
+            self._silent_until = max(ends) if feed is None and self.playing else 0.0
             # From here the measurement would look at another player.
             self._pre_seen = [self._pre] * 40
             if self.beat_muted:
@@ -6108,8 +6583,9 @@ class RecorderWindow:
             self.status.set("Zapis trwa. Wyloguj po jego końcu.")
             return
         # The next account must not see, or send, these recordings.
-        if not self._confirm_close_save():
+        if not self._confirm_close_save(leaving=True):
             return
+        self._close_boxes()
         self._halt_audio()
         self._discard_desks()
         self._desk_live.clear()
@@ -6163,10 +6639,15 @@ class RecorderWindow:
                     raise RuntimeError("Wpisz e-mail i hasło.")
             if self._signing:
                 return
+            if self._signed_in and not self.gate.winfo_manager():
+                # Enter once more in a field that is no longer on screen.
+                return
         except Exception as error:
             self._sign_in_failed(error, used_saved)
             return
         self._signing = True
+        # An old refusal must not stay on the bar of the studio.
+        self.status.set("")
         self.gate_status.set("Loguję…")
         url, key = self.public_url, self.public_key
 
@@ -6204,11 +6685,12 @@ class RecorderWindow:
         if payload is not None:
             self._apply_public(payload)
         if failed is not None:
-            self._sign_in_failed(failed, used_saved)
+            if not self._signed_in or self.gate.winfo_manager():
+                self._sign_in_failed(failed, used_saved)
             return
         other = bool(self._owner_email) and not same_account(self._owner_email, email)
         # A session that ran out, then another account: its project must not move over.
-        if other and not self._confirm_close_save(defer=True):
+        if other and not self._confirm_close_save(defer=True, leaving=True):
             self.gate_status.set(f"W programie jest projekt konta {self._owner_email}. Zaloguj się na nie, żeby go zapisać.")
             return
         try:
@@ -6502,6 +6984,8 @@ class RecorderWindow:
         try:
             if self.recording or self._arming:
                 raise RuntimeError("Najpierw Stop.")
+            if self._measuring:
+                raise RuntimeError("Najpierw skończ pomiar opóźnienia.")
             self._stop_monitor()
             device = self.selected_device()
             self._probe_proc = start_capture(self._probe_path, device)
