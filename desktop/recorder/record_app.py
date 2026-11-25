@@ -183,6 +183,31 @@ def dpi_scale() -> float:
     return dpi / 96
 
 
+def work_area(root: tk.Tk, main: bool = False) -> tuple[int, int, int, int]:
+    """Left, top, right, bottom of the screen without its taskbar, which is taller in a bigger scale.
+    The screen the window is on, or the main one."""
+    if os.name == "nt":
+        try:
+            class Info(ctypes.Structure):
+                _fields_ = [("size", ctypes.c_ulong), ("whole", ctypes.c_long * 4), ("work", ctypes.c_long * 4), ("flags", ctypes.c_ulong)]
+
+            # Own prototypes: user32 of ctypes.windll is shared and sets them for everyone.
+            user32 = ctypes.WinDLL("user32")
+            user32.MonitorFromWindow.restype = ctypes.c_void_p
+            user32.MonitorFromWindow.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+            user32.GetMonitorInfoW.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+            info = Info(size=ctypes.sizeof(Info))
+            # No window at all gives the main screen.
+            monitor = user32.MonitorFromWindow(None if main else root.winfo_id(), 1 if main else 2)
+            if monitor and user32.GetMonitorInfoW(monitor, ctypes.byref(info)):
+                left, top, right, bottom = info.work
+                if right - left > 300 and bottom - top > 300:
+                    return int(left), int(top), int(right), int(bottom)
+        except (OSError, AttributeError, tk.TclError):
+            pass
+    return 0, 0, root.winfo_screenwidth(), root.winfo_screenheight() - int(48 * max(1.25, dpi_scale()))
+
+
 def windows_app_id() -> None:
     if os.name != "nt":
         return
@@ -1978,6 +2003,10 @@ class RecorderWindow:
         if on == self._compact:
             return
         self._compact = on
+        # The rows change their height: the same row stays at the top.
+        place = self.track_canvas.yview()[0] if hasattr(self, "track_canvas") else 0.0
+        if place > 0:
+            self.root.after(60, lambda: self.track_canvas.yview_moveto(place))
         if on:
             self.brand_label.pack_forget()
             self.account_label.pack_forget()
@@ -2068,16 +2097,15 @@ class RecorderWindow:
         rows = rows if self._compact else min(rows, int(230 * self.ui))
         lanes = int((24 + 8) * self.ui) + rows + self.hscroll.winfo_reqheight()
         fixed = self.shell.winfo_reqheight() - self.lanes_outer.winfo_reqheight() - self.status_label.winfo_reqheight()
-        need = min(fixed + message + lanes, self.root.winfo_screenheight() - 60)
+        _left, top, _right, bottom = work_area(self.root)
+        need = min(fixed + message + lanes, bottom - top)
         wide = self.root.minsize()[0]
         if abs(self.root.minsize()[1] - need) > 1:
             self.root.minsize(wide, need)
         if not self._zoomed and 100 < self.root.winfo_height() < need:
             x, y = self.root.winfo_x(), self.root.winfo_y()
-            middle = x + self.root.winfo_width() // 2
-            if 0 <= middle < self.root.winfo_screenwidth() and -40 <= y < self.root.winfo_screenheight():
-                # It grows upwards when the bottom of the screen is near. The other screens are not known to Tk.
-                y = max(0, min(y, self.root.winfo_screenheight() - 60 - need))
+            # It grows upwards when the taskbar is near.
+            y = max(top, min(y, bottom - need))
             self.root.geometry(f"{self.root.winfo_width()}x{need}+{x}+{y}")
 
     def _update_blocks(self) -> bool:
@@ -2101,7 +2129,8 @@ class RecorderWindow:
         self.root.update_idletasks()
         # The card must fit whole: the message of a refused login is its last line.
         need = self.shell.winfo_reqheight() + int(16 * scale)
-        room = self.root.winfo_screenheight() - 60
+        _left, top, _right, bottom = work_area(self.root, main=True)
+        room = bottom - top
         tape = getattr(self, "gate_tape", None)
         if tape is not None and need > room and tape.winfo_manager():
             tape.pack_forget()
@@ -2125,9 +2154,10 @@ class RecorderWindow:
         scale = dpi_scale()
         self.root.update_idletasks()
         wide = max(int(760 * scale), max(flow.widest() for flow in self._flows) + 30)
-        self.root.minsize(min(wide, self.root.winfo_screenwidth() - 20), min(int(640 * scale), self.root.winfo_screenheight() - 60))
-        width = min(self.root.winfo_screenwidth() - 20, int(1320 * scale))
-        height = min(self.root.winfo_screenheight() - 60, int(860 * scale))
+        left, top, right, bottom = work_area(self.root, main=True)
+        self.root.minsize(min(wide, right - left - 20), min(int(640 * scale), bottom - top))
+        width = min(right - left - 20, int(1320 * scale))
+        height = min(bottom - top, int(860 * scale))
         if self._borderless:
             self._place_window(width, height)
         else:
@@ -2154,7 +2184,8 @@ class RecorderWindow:
         self.modes.pack(fill="both", expand=True)
         scale = dpi_scale()
         width = int(1080 * scale)
-        height = min(self.root.winfo_screenheight() - 40, int(760 * scale))
+        _left, top, _right, bottom = work_area(self.root, main=True)
+        height = min(bottom - top, int(760 * scale))
         self.root.minsize(int(920 * scale), int(620 * scale))
         if self._borderless:
             self._place_window(width, height)
@@ -6021,15 +6052,15 @@ class RecorderWindow:
             return
         self._restore_geo = self.root.geometry()
         self.root.update_idletasks()
-        width = self.root.winfo_screenwidth()
-        height = max(640, self.root.winfo_screenheight() - 48)
-        self.root.geometry(f"{width}x{height}+0+0")
+        left, top, right, bottom = work_area(self.root)
+        self.root.geometry(f"{right - left}x{bottom - top}+{left}+{top}")
         self._zoomed = True
 
     def _place_window(self, width: int, height: int) -> None:
         self.root.update_idletasks()
-        x = max(0, (self.root.winfo_screenwidth() - width) // 2)
-        y = max(0, (self.root.winfo_screenheight() - height) // 2 - 24)
+        left, top, right, bottom = work_area(self.root, main=True)
+        x = left + max(0, (right - left - width) // 2)
+        y = top + max(0, (bottom - top - height) // 2)
         x, y = test_control.place(x, y)
         self.root.geometry(f"{width}x{height}+{x}+{y}")
 

@@ -160,6 +160,7 @@ def clap_delay(samples: Any, skip: float, period: float, count: int, rate: int =
     # The floor in 5 ms steps: the peaks of single milliseconds make it too low.
     floor = float(np.median(level[: len(level) // 5 * 5].reshape(-1, 5).max(axis=1)))
     lags: list[float] = []
+    ends: list[float] = []
     # The first two clicks only give the tempo.
     for index in range(2, count):
         begin = max(0, int((index * period + LAG_MIN_MS / 1000) * 1000))
@@ -171,13 +172,19 @@ def clap_delay(samples: Any, skip: float, period: float, count: int, rate: int =
             continue
         onset = int(np.argmax(window >= top * 0.4))
         lags.append(float(begin + onset) - index * period * 1000)
+        if index >= count - 2:
+            ends.append(lags[-1])
     if len(lags) < 5:
         return None, 0.0
     middle = float(np.median(lags))
     near = [lag for lag in lags if abs(lag - middle) <= 60]
     if len(near) < max(5, round(len(lags) * 0.6)):
         return None, 0.0
-    return round(min(float(LAG_MAX_MS), max(0.0, float(np.mean(near)))), 1), lag_jump(steady(lags)) or late_step(lags)
+    jump = lag_jump(steady(lags)) or late_step(lags)
+    if not jump and ends and not any(abs(lag - middle) <= 60 for lag in ends):
+        # Something was heard at the end and none of it agrees: noise, or noise over a late jump. Better once more.
+        return None, 0.0
+    return round(min(float(LAG_MAX_MS), max(0.0, float(np.mean(near)))), 1), jump
 
 
 def self_test() -> None:
@@ -238,6 +245,23 @@ def self_test() -> None:
         strayed = sum((lag_jump(steady(lags)) or late_step(lags)) > 0 for lags in (with_strays(0, spread, 2) for _ in runs))
         if false > 18 or strayed > 24:
             raise SystemExit(f"klaskanie: {false} i {strayed}/300 równych uznane za przeskok na końcu (rozrzut {spread})")
+    # A slip of 100 ms after the 14th of 16, and noise over the last word or over the one before. And the same without
+    # a slip: one spoiled word at the end is not enough to throw the run away.
+    passed = kept = 0
+    for turn in range(40):
+        for step in (0.1, 0.0):
+            take = noise.standard_normal(48_000 * 18) * 20
+            for index in range(16):
+                late = 0.4 + (step if index > 13 else 0.0) + float(noise.uniform(-0.01, 0.01))
+                if index == 14 + turn % 2:
+                    late = 0.4 + float(noise.choice((-1, 1)) * noise.uniform(0.14, 0.24))
+                at = int((0.3 + index + late) * 48_000)
+                take[at : at + 1500] += 9000 * np.exp(-np.arange(1500) / 300) * noise.standard_normal(1500)
+            lag, jump = clap_delay(np.clip(take, -32768, 32767).astype(np.int16), 0.3, 1.0, 16)
+            passed += step > 0 and lag is not None and not jump
+            kept += step == 0 and lag is not None and not jump
+    if passed > 2 or kept < 38:
+        raise SystemExit(f"klaskanie: przeskok i hałas na końcu: przepuszczone {passed}/40, dobre przyjęte {kept}/40")
     slipped = noise.standard_normal(48_000 * 18) * 20
     for index in range(16):
         at = int((0.6 + index + (0.1 if index > 9 else 0.0)) * 48_000)

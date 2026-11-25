@@ -332,7 +332,10 @@ for mode in ("online", "offline"):
         w.root.winfo_screenheight(), "ui", w.ui, "zwarte", w._compact, "tory", w.track_canvas.winfo_height(), "potrzeba", w.row_host.winfo_reqheight(),
         "paski", [flow.winfo_height() for flow in w._flows], "stan", w.status_label.winfo_height(), "szer", w._flows[0].widest(),
     )
-    if w.root.minsize()[1] >= w.root.winfo_screenheight() - 60:
+    area = app.work_area(w.root)
+    check(0 <= area[1] < area[3] <= w.root.winfo_screenheight() and area == app.work_area(w.root, main=True), f"obszar ekranu {area}")
+    print("obszar ekranu", area)
+    if w.root.minsize()[1] >= area[3] - area[1]:
         # A screen too low for these fonts: the vocal is there in part and scrolls.
         check(w.track_canvas.winfo_height() > 150, f"miejsce na ścieżki na niskim ekranie {mode}")
         continue

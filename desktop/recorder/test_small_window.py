@@ -48,6 +48,8 @@ def screen(scale: float) -> None:
         return root
 
     app.tk.Tk = build
+    # The taskbar is 48 px in 100% and grows with the scale.
+    app.work_area = lambda _root, main=False: (0, 0, 3000, 2000 - int(48 * scale))
     app.dpi_scale = lambda: scale
 
 
@@ -149,6 +151,20 @@ for scale in (1.0, 1.25, 1.5):
             pump(w.root)
             SHOTS.mkdir(parents=True, exist_ok=True)
             ImageGrab.grab().save(SHOTS / f"{mode}-{int(scale * 100)}.png")
+        # At the bottom of the screen it grows upwards, also when it hangs over the left edge.
+        for x in (200, -40):
+            bottom = 2000 - int(48 * scale)
+            w.root.geometry(f"{w.root.minsize()[0]}x{w.root.minsize()[1]}+{x}+{bottom - w.root.minsize()[1]}")
+            pump(w.root)
+            before = w.root.winfo_height()
+            w.status.set("Nagranie jest na ścieżce. Sprawdź mikrofon i nagraj jeszcze raz. " * 6)
+            pump(w.root)
+            end = w.root.winfo_y() + w.root.winfo_height()
+            if w.root.winfo_height() > before and end > bottom:
+                bad.append(f"{place}: x {x}: dół okna {end - bottom} px pod paskiem zadań")
+            print(place, "x", x, "urosło", w.root.winfo_height() - before, "dół", end, "pasek od", bottom)
+            w.status.set("Cofnięte.")
+            pump(w.root)
         # Bigger again: the ordinary layout comes back whole.
         w.root.geometry(f"{int(1320 * scale)}x{int(940 * scale)}")
         pump(w.root)
