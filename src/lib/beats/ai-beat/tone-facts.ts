@@ -59,7 +59,7 @@ export function toneFactLines(tone: ToneFacts | null | undefined): string[] {
   ];
   lines.push(
     tone.key && tone.keyConfidence != null
-      ? `Tonacja z analizy: ${tone.key} (pewność ${tone.keyConfidence}; poniżej 0.5 to słaba pewność).`
+      ? `Tonacja z analizy: ${tone.key} (pewność ${tone.keyConfidence}; poniżej 0.6 to słaba pewność).`
       : "Tonacja z analizy: niepewna.",
   );
   return lines;

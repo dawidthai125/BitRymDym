@@ -1,6 +1,6 @@
 /**
  * User beats 2026-10-30 — server-side key detection in the analyze step
- * (Vercel; no E3 worker). Reuses the Studio Tune Krumhansl–Schmuckler
+ * (Vercel; no E3 worker). Reuses the Studio Tune pitched-peak
  * detector on the mono PCM that BPM analysis already decoded, and turns it
  * into an upload-form suggestion (prefill like BPM, the owner can change it).
  */
@@ -17,9 +17,10 @@ export type BeatKeySuggestion = {
 };
 
 /** Below this the form leaves key/scale empty (manual). */
-export const KEY_SUGGEST_MIN_CONFIDENCE = 0.3;
+export const KEY_SUGGEST_MIN_CONFIDENCE = 0.6;
 
-const MARGIN_FULL = 0.08;
+/** Catalogue check 2026-11-25: every beat with a margin of 0.06+ matched the reference key. */
+const MARGIN_FULL = 0.1;
 
 export function keyConfidence(score: number, margin: number): number {
   const s = Math.min(1, Math.max(0, score));

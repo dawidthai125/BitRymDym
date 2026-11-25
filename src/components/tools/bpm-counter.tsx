@@ -17,7 +17,7 @@ async function keyOf(mono: Float32Array, sampleRate: number): Promise<FileKey | 
   return {
     label: `${name(k.keyRoot, minor)} (${minor ? "moll" : "dur"})`,
     relative: name(k.keyRoot + (minor ? 3 : -3), !minor),
-    sure: k.score >= 0.7 && k.margin >= 0.05,
+    sure: k.score >= 0.7 && k.margin >= 0.08,
   };
 }
 

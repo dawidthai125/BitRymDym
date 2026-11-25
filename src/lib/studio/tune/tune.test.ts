@@ -277,6 +277,27 @@ describe("BRD Tune — chain, keys, plans, latency compensation", () => {
     expect({ keyRoot: key.keyRoot, scale: key.scale }).toEqual({ keyRoot: 9, scale: 1 });
   });
 
+  it("key detection skips drums and noise and follows a detuned beat (C minor)", () => {
+    const secs = 16;
+    const x = new Float32Array(SR * secs);
+    const hz = (midi: number) => 440 * Math.pow(2, (midi + 0.3 - 69) / 12); // 30 cents sharp
+    // i – VI – iv – V: Cm, Ab, Fm, G (+ 808 root)
+    const chords = [[60, 63, 67, 36], [60, 63, 68, 32 + 12], [60, 65, 68, 41], [59, 62, 67, 43]];
+    let seed = 7;
+    const noise = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 31) - 1;
+    for (let i = 0; i < x.length; i += 1) {
+      const t = i / SR;
+      const c = chords[Math.floor(t / 2) % 4]!;
+      for (const m of c) for (let h = 1; h <= 3; h += 1) x[i] += (0.08 / h) * Math.sin(2 * Math.PI * hz(m) * h * t);
+      const beat = t % 1;
+      x[i] += 2 * Math.exp(-beat * 12) * Math.sin(2 * Math.PI * (92.5 * beat + 6 * (1 - Math.exp(-beat * 20)))); // kick near F#2
+      x[i] += 3 * Math.exp(-((t + 0.5) % 1) * 25) * (noise() + Math.sin(2 * Math.PI * 185 * t)); // snare with an F# body
+      x[i] += 1 * Math.exp(-(t % 0.25) * 60) * noise(); // hats
+    }
+    const key = detectKeyFromAudio([x], SR)!;
+    expect({ keyRoot: key.keyRoot, scale: key.scale }).toEqual({ keyRoot: 0, scale: 1 });
+  });
+
   it("plan gate: Free/Bronze natural+hook, Silver/Gold any style", () => {
     const hard = tuneChain(TUNE_STYLES.hard);
     const natural = tuneChain(TUNE_STYLES.natural);

@@ -1,14 +1,28 @@
 /**
- * Beat key detection (Krumhansl–Schmuckler) for BRD Tune when the beat has no
- * key metadata. Chroma from Hann-windowed FFT frames (own radix-2 FFT, shared
- * with the offline reverb), correlated with the 24 rotated key profiles.
+ * Beat key detection for BRD Tune, the BPM & key tool and the upload analysis.
+ * Drums and noise are skipped: in each group of three overlapping Hann frames
+ * only what lasts (per-bin median) and stands out as a spectral peak counts.
+ * Peak frequencies are interpolated and corrected for the overall tuning, then
+ * the chroma is correlated with the 24 rotated key profiles (Albrecht & Shanahan
+ * 2013, measured on tonal music; the older Krumhansl profiles often flipped
+ * minor beats to the parallel major or to the fifth).
  */
 import { fftRadix2 } from "@/lib/studio/studio-offline-fx-fft";
 
 import type { TuneKey } from "./tune";
 
-const MAJOR = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
-const MINOR = [6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+const MAJOR = [0.238, 0.006, 0.111, 0.006, 0.137, 0.094, 0.016, 0.214, 0.009, 0.08, 0.008, 0.081];
+const MINOR = [0.22, 0.006, 0.104, 0.123, 0.019, 0.103, 0.012, 0.214, 0.062, 0.022, 0.061, 0.052];
+
+const GROUP = 3;
+const LO_HZ = 55;
+const HI_HZ = 2000;
+/** A peak must exceed this share of the group maximum and this multiple of its neighbourhood. */
+const PEAK_FLOOR = 0.005;
+const PEAK_OVER_NEIGHBOURS = 2;
+const NEIGHBOURS = 20;
+/** Tuning is read above this MIDI note only: bass bins are too wide to show cents. */
+const TUNING_MIN_MIDI = 52;
 
 export type DetectedKey = TuneKey & {
   /** Pearson r of the winning profile (−1..1). */
@@ -40,36 +54,82 @@ function pearson(a: readonly number[], b: readonly number[]): number {
   return da > 0 && db > 0 ? num / Math.sqrt(da * db) : 0;
 }
 
-/** 12-bin chroma (C..B) of a mono signal; at most `maxFrames` frames spread over the file. */
-export function chromaOf(mono: Float32Array, sampleRate: number, maxFrames = 96): number[] {
-  const N = 8192;
+const median3 = (a: number, b: number, c: number) => Math.max(Math.min(a, b), Math.min(Math.max(a, b), c));
+
+/** 12-bin chroma (C..B) of the sustained, pitched part of a mono signal; `maxGroups` excerpts spread over the file. */
+export function chromaOf(mono: Float32Array, sampleRate: number, maxGroups = 80): number[] {
   const chroma = new Array<number>(12).fill(0);
-  if (mono.length < N) return chroma;
-  const frames = Math.min(maxFrames, Math.floor(mono.length / N));
-  const stride = Math.floor((mono.length - N) / Math.max(1, frames - 1));
+  let N = 4096;
+  while (N / sampleRate < 0.3) N *= 2; // same time/frequency resolution at 22.05 and 48 kHz
+  if (!(sampleRate > 0) || mono.length < N) return chroma;
+  const hop = Math.max(1, Math.min(N / 2, Math.floor((mono.length - N) / (GROUP - 1)) || 1));
+  const span = N + hop * (GROUP - 1);
+  const groups = Math.max(1, Math.min(maxGroups, Math.floor((mono.length - N) / (hop * GROUP)) + 1));
+  const stride = groups > 1 ? Math.max(0, mono.length - span) / (groups - 1) : 0;
+  const kLo = Math.max(3, Math.ceil((LO_HZ * N) / sampleRate));
+  const kHi = Math.min(N / 2 - 3, Math.floor((HI_HZ * N) / sampleRate));
+  const hann = Float64Array.from({ length: N }, (_, i) => 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N));
   const re = new Float64Array(N);
   const im = new Float64Array(N);
-  const binPc: number[] = [];
-  const kLo = Math.ceil((55 * N) / sampleRate);
-  const kHi = Math.min(N / 2 - 1, Math.floor((2000 * N) / sampleRate));
-  for (let k = 0; k <= kHi; k += 1) {
-    const f = (k * sampleRate) / N;
-    const midi = k >= kLo ? 69 + 12 * Math.log2(f / 440) : 0;
-    binPc.push(k >= kLo ? ((Math.round(midi) % 12) + 12) % 12 : -1);
-  }
-  for (let fi = 0; fi < frames; fi += 1) {
-    const start = fi * stride;
-    for (let i = 0; i < N; i += 1) {
-      re[i] = mono[start + i]! * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N));
-      im[i] = 0;
+  const mags = Array.from({ length: GROUP }, () => new Float64Array(kHi + 2));
+  const held = new Float64Array(kHi + 2);
+  const peaks: { midi: number; w: number }[] = [];
+
+  for (let g = 0; g < groups; g += 1) {
+    const base = Math.floor(g * stride);
+    for (let j = 0; j < GROUP; j += 1) {
+      const start = base + j * hop;
+      for (let i = 0; i < N; i += 1) {
+        re[i] = (mono[start + i] ?? 0) * hann[i]!;
+        im[i] = 0;
+      }
+      fftRadix2(re, im, false);
+      for (let k = kLo - 1; k <= kHi + 1; k += 1) mags[j]![k] = Math.hypot(re[k]!, im[k]!);
     }
-    fftRadix2(re, im, false);
+    let max = 0;
+    for (let k = kLo - 1; k <= kHi + 1; k += 1) {
+      held[k] = median3(mags[0]![k]!, mags[1]![k]!, mags[2]![k]!);
+      if (held[k]! > max) max = held[k]!;
+    }
+    if (max <= 1e-9) continue;
+
+    const found: { midi: number; w: number }[] = [];
+    let total = 0;
     for (let k = kLo; k <= kHi; k += 1) {
-      const pc = binPc[k]!;
-      if (pc < 0) continue;
-      // sqrt-magnitude: tames dominant bass / kick partials.
-      chroma[pc] += Math.sqrt(Math.hypot(re[k]!, im[k]!));
+      const v = held[k]!;
+      if (v <= held[k - 1]! || v < held[k + 1]! || v <= max * PEAK_FLOOR) continue;
+      let around = 0;
+      let count = 0;
+      for (let q = Math.max(kLo, k - NEIGHBOURS); q <= Math.min(kHi, k + NEIGHBOURS); q += 1) {
+        if (Math.abs(q - k) < 3) continue;
+        around += held[q]!;
+        count += 1;
+      }
+      if (count > 0 && v < (PEAK_OVER_NEIGHBOURS * around) / count) continue;
+      // Log-parabolic interpolation: sub-bin frequency, needed for low notes.
+      const a = Math.log(held[k - 1]! + 1e-12);
+      const b = Math.log(v);
+      const c = Math.log(held[k + 1]! + 1e-12);
+      const shift = Math.max(-0.5, Math.min(0.5, (0.5 * (a - c)) / (a - 2 * b + c || 1)));
+      // sqrt-magnitude: tames a dominant bass.
+      const w = Math.sqrt(v / max);
+      found.push({ midi: 69 + 12 * Math.log2(((k + shift) * sampleRate) / N / 440), w });
+      total += w;
     }
+    for (const p of found) peaks.push({ midi: p.midi, w: p.w / total }); // every excerpt counts the same
+  }
+
+  let x = 0;
+  let y = 0;
+  for (const p of peaks) {
+    if (p.midi < TUNING_MIN_MIDI) continue;
+    x += p.w * Math.cos(2 * Math.PI * p.midi);
+    y += p.w * Math.sin(2 * Math.PI * p.midi);
+  }
+  const tuning = Math.atan2(y, x) / (2 * Math.PI);
+  for (const p of peaks) {
+    const note = Math.round(p.midi - tuning);
+    chroma[((note % 12) + 12) % 12]! += p.w * (1 - Math.abs(p.midi - tuning - note));
   }
   return chroma;
 }
