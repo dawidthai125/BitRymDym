@@ -105,15 +105,16 @@ def drop_sliver(clips: list[Clip], fresh: Clip, under: float = 0.35) -> list[Cli
 
 def left_after(clips: list[Clip], fresh: Clip) -> tuple[float, int]:
     """(seconds, pieces) of older takes that go on right behind the new one, piece after piece."""
-    end, seconds, pieces = fresh.end, 0.0, 0
+    end, seconds, pieces, last = fresh.end, 0.0, 0, ""
     for clip in ordered(clips):
-        if clip.path != fresh.path and clip.start >= fresh.end - 0.002 and abs(clip.start - end) < 0.25:
-            end, seconds, pieces = clip.end, seconds + clip.length, pieces + 1
+        if clip.path == fresh.path or clip.start < fresh.end - 0.002:
             continue
-        if clip.start > end + 0.25:
+        gap = clip.start - end
+        # A crumb right behind the new take may be gone already (drop_sliver). Later pieces must touch.
+        if gap >= (0.36 if not pieces else 0.25 if clip.path == last else 0.002):
             break
-    # A crumb that does not touch the new take belongs to the next recording.
-    return (seconds, pieces) if any(abs(clip.start - fresh.end) < 0.002 for clip in clips if clip.path != fresh.path) else (0.0, 0)
+        end, seconds, pieces, last = clip.end, seconds + clip.length, pieces + 1, clip.path
+    return seconds, pieces
 
 
 def shift(pieces: list[Clip], to: float) -> list[Clip]:
@@ -235,6 +236,10 @@ def self_test() -> None:
     if drop_sliver(place([old], [take]), take) != [take]:
         raise SystemExit("okruch starego nagrania")
     longer = place([Clip("old.wav", 0.0, 0.0, 8.0)], [take])
+    old = [Clip("old.wav", 5.0, 0.0, 2.0), Clip("older.wav", 7.0, 0.0, 3.0), Clip("later.wav", 10.1, 0.0, 4.0)]
+    fresh = Clip("new.wav", 0.0, 0.0, 5.0)
+    if left_after([fresh, *old], fresh) != (5.0, 2) or left_after([fresh, old[2]], fresh) != (0.0, 0):
+        raise SystemExit("ogon starego nagrania w kilku kawałkach")
     if len(drop_sliver(longer, take)) != 2 or abs(left_after(longer, take)[0] - 3.0) > 1e-6:
         raise SystemExit("ogon starego nagrania")
     split = split_at([a], 3.0)

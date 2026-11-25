@@ -2010,7 +2010,7 @@ class RecorderWindow:
         if not self._compact:
             return self.lane_h
         self.root.update_idletasks()
-        return self._stack_height(head) + int(10 * self.ui)
+        return self._stack_height(head) + int(7 * self.ui)
 
     def _size_lanes(self) -> None:
         for lane, head in ((self.beat_lane, self.beat_head), *((row.get("lane"), row.get("head")) for row in self.rows)):
@@ -4875,13 +4875,14 @@ class RecorderWindow:
             change = (key, self._sync_known.get(key), learned)
             self._learn_delay(key, learned)
         move = base + lag / 1000 - clip.src_in
+        # Before the move: it takes the end of the take away from the old piece behind it.
+        tail, pieces = next(
+            (left_after(track.clips, item) for track in self.tracks for item in track.clips if item.path == clip.path), (0.0, 0)
+        )
         if self._move_take(clip, base, lag, change):
             # What was said about this take a moment ago still counts.
             last = self._last_take
             mine = last is not None and last[0].path == clip.path
-            tail, pieces = next(
-                (left_after(track.clips, last[0]) for track in self.tracks if mine and last and last[0] in track.clips), (0.0, 0)
-            )
             self.status.set(
                 (f"{self._take_end} " if mine and self._take_end else "")
                 + f"Wyrównane do bitu: {abs(move) * 1000:.0f} ms. Cofnij wraca do poprzedniego miejsca."

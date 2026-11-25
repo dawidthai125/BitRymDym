@@ -21,6 +21,8 @@ from timeline import Clip  # noqa: E402
 
 SHOTS = Path(sys.argv[1]) if len(sys.argv) > 1 else None
 bad: list[str] = []
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 app.RecorderWindow._boot_background = lambda self: None
 app.messagebox.askyesno = lambda *_args: True
 app.messagebox.askyesnocancel = lambda *_args: False

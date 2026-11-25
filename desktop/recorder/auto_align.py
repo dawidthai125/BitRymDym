@@ -155,7 +155,7 @@ def clap_delay(samples: Any, skip: float, period: float, count: int, rate: int =
     near = [lag for lag in lags if abs(lag - middle) <= 60]
     if len(near) < max(5, round(len(lags) * 0.6)):
         return None, 0.0
-    return round(min(float(LAG_MAX_MS), max(0.0, float(np.mean(near)))), 1), lag_jump(near)
+    return round(min(float(LAG_MAX_MS), max(0.0, float(np.mean(near)))), 1), lag_jump(lags)
 
 
 def self_test() -> None:
@@ -189,6 +189,12 @@ def self_test() -> None:
         false = sum(lag_jump([float(round(noise.normal(300, spread))) for _ in range(14)]) > 0 for _ in runs)
         if false > 18:
             raise SystemExit(f"klaskanie: {false}/300 równych uznane za przeskok (rozrzut {spread})")
+    slipped = noise.standard_normal(48_000 * 18) * 20
+    for index in range(16):
+        at = int((0.6 + index + (0.1 if index > 9 else 0.0)) * 48_000)
+        slipped[at : at + 800] += 9000
+    if clap_delay(np.clip(slipped, -32768, 32767).astype(np.int16), 0.3, 1.0, 16)[1] < 60:
+        raise SystemExit("klaskanie: przeskok 100 ms")
     if stream_slip([0.5] * 100 + [0.54] * 100) < 0.03 or stream_slip([0.5, 0.51] * 100) > 0.011:
         raise SystemExit("klaskanie: strumień")
 
