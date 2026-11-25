@@ -2163,7 +2163,7 @@ class RecorderWindow:
         self.mode_account.set(email or "Konto")
         self._sync_gold_offer()
         self.modes_canvas.update_idletasks()
-        self.modes_canvas.configure(scrollregion=self.modes_canvas.bbox("all"))
+        self._scroll_area(self.modes_canvas)
 
     def _on_close(self, ask_save: bool = True) -> None:
         self._measuring = False
@@ -2422,7 +2422,7 @@ class RecorderWindow:
         self.track_canvas.pack(side="left", fill="both", expand=True)
         self.row_host = tk.Frame(self.track_canvas, bg=PAPER)
         self._row_window = self.track_canvas.create_window((0, 0), window=self.row_host, anchor="nw")
-        self.row_host.bind("<Configure>", lambda _e: self.track_canvas.configure(scrollregion=self.track_canvas.bbox("all")))
+        self.row_host.bind("<Configure>", lambda _e: self._scroll_area(self.track_canvas))
         self.track_canvas.bind("<Configure>", self._fit_rows)
         self.hscroll = ttk.Scrollbar(lanes, orient="horizontal", command=self._hscroll, style="Brd.Horizontal.TScrollbar")
         # Before the lanes: in a low window they give way, not the scrollbar.
@@ -2447,7 +2447,15 @@ class RecorderWindow:
 
     def _fit_rows(self, event: tk.Event) -> None:
         self.track_canvas.itemconfigure(self._row_window, width=event.width)
+        self._scroll_area(self.track_canvas)
         self.root.after_idle(self._paint_all)
+
+    @staticmethod
+    def _scroll_area(canvas: tk.Canvas) -> None:
+        """Not smaller than what is seen: Tk would scroll short contents down and leave an empty strip above them."""
+        box = canvas.bbox("all")
+        if box:
+            canvas.configure(scrollregion=(0, 0, box[2], max(box[3], canvas.winfo_height())))
 
     def _row_frame(self, parent: tk.Widget) -> tuple[tk.Frame, tk.Frame, tk.Canvas]:
         row = tk.Frame(parent, bg=LINE, highlightthickness=0)
@@ -6256,8 +6264,13 @@ class RecorderWindow:
         self.modes_canvas.pack(side="left", fill="both", expand=True)
         inner = tk.Frame(self.modes_canvas, bg=PAPER)
         window = self.modes_canvas.create_window((0, 0), window=inner, anchor="nw")
-        inner.bind("<Configure>", lambda _event: self.modes_canvas.configure(scrollregion=self.modes_canvas.bbox("all")))
-        self.modes_canvas.bind("<Configure>", lambda event: self.modes_canvas.itemconfigure(window, width=event.width))
+        inner.bind("<Configure>", lambda _event: self._scroll_area(self.modes_canvas))
+
+        def fit(event: tk.Event) -> None:
+            self.modes_canvas.itemconfigure(window, width=event.width)
+            self._scroll_area(self.modes_canvas)
+
+        self.modes_canvas.bind("<Configure>", fit)
         head = tk.Frame(inner, bg=PAPER)
         head.pack(fill="x", padx=28, pady=(16, 4))
         tk.Label(head, text="Gdzie nagrywasz?", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 22, "italic")).pack(anchor="w")

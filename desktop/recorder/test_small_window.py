@@ -51,6 +51,18 @@ def screen(scale: float) -> None:
     app.dpi_scale = lambda: scale
 
 
+runs = [0]
+real_fit = app.RecorderWindow._fit_height
+
+
+def counted(self: app.RecorderWindow) -> None:
+    runs[0] += 1
+    real_fit(self)
+
+
+app.RecorderWindow._fit_height = counted
+
+
 def whole(box: tk.Misc, name: str) -> None:
     """Every child of a row head ends inside it."""
     for child in box.winfo_children():
@@ -92,6 +104,11 @@ for scale in (1.0, 1.25, 1.5):
         spare = w.track_canvas.winfo_height() - w.row_host.winfo_reqheight()
         if w.root.winfo_height() >= w.root.minsize()[1] and spare > int(40 * scale):
             bad.append(f"{place}: {spare} px puste pod ścieżkami")
+        w.track_canvas.yview_scroll(-3, "units")
+        w.root.update_idletasks()
+        if w.track_canvas.canvasy(0) != 0:
+            bad.append(f"{place}: przewinięcie w górę odsunęło bit w małym oknie")
+            w.track_canvas.yview_moveto(0)
         short = w.root.minsize()[1]
         # After a recording the message is long. Nothing of the rows may go under it.
         w.status.set(
@@ -109,6 +126,10 @@ for scale in (1.0, 1.25, 1.5):
         print(place, "długi napis: min", w.root.minsize(), "okno", w.root.winfo_height(), "napis", w.status_label.winfo_height())
         if scale == 1.0 and w.root.minsize()[1] > 768 - 60 + 6:
             bad.append(f"{place}: z długim napisem {w.root.minsize()[1]} px nie wejdzie na ekran 768 px")
+        runs[0] = 0
+        pump(w.root)
+        if runs[0] > 1:
+            bad.append(f"{place}: układ liczy się w kółko ({runs[0]} razy)")
         w.status.set("Cofnięte.")
         pump(w.root)
         if abs(w.root.minsize()[1] - short) > 1:
@@ -135,6 +156,13 @@ for scale in (1.0, 1.25, 1.5):
             if w._compact or int(w.beat_head.cget("height")) != w.lane_h or not w.foot_label.winfo_manager():
                 bad.append(f"{place}: duże okno nie wróciło do zwykłego układu")
             whole(head, f"{place} wokal w dużym oknie")
+            # Everything fits: the wheel must not push the beat down and leave an empty strip above it.
+            for step in (-3, 3, -1):
+                w.track_canvas.yview_scroll(step, "units")
+                w.root.update_idletasks()
+                if w.track_canvas.canvasy(0) != 0:
+                    bad.append(f"{place}: kółko odsunęło bit o {-w.track_canvas.canvasy(0):.0f} px")
+                    w.track_canvas.yview_moveto(0)
         w.back_to_modes()
         pump(w.root, 3)
     w.root.destroy()
