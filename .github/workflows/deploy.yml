@@ -1,8 +1,28 @@
 name: Wdrożenie (budowanie na GitHubie)
 
-# Vercel charges for build minutes, so the site is built here and Vercel only publishes the result.
+# Vercel charges for build minutes, so the site is built here and Vercel only publishes the result
+# (1 billed minute on the Basic machine instead of 2 on Standard).
 # Fallback: set git.deploymentEnabled.main back to true in vercel.json and Vercel builds pushes to main again.
 on:
+  push:
+    branches: [main]
+    # Same list as scripts/vercel-ignore-build.sh: nothing here changes the site.
+    paths-ignore:
+      - "docs/**"
+      - ".github/**"
+      - ".cursor/**"
+      - ".agents/**"
+      - "**/*.md"
+      - "**/*.mdc"
+      - "**/*.markdown"
+      - "**/*.test.*"
+      - "**/*.spec.*"
+      - "**/*.snap"
+      - "**/test_*.py"
+      - "src/test/**"
+      - "supabase/tests/**"
+      - "scripts/e2e/**"
+      - "vitest*.config.ts"
   workflow_dispatch:
     inputs:
       staged:
@@ -70,3 +90,8 @@ jobs:
           [ "$STAGED" = "true" ] && args+=(--skip-domain)
           url=$(npx -y "$VERCEL_CLI" "${args[@]}")
           echo "Wdrożenie: $url" >> "$GITHUB_STEP_SUMMARY"
+
+  smoke:
+    needs: deploy
+    if: github.event_name == 'push' || !inputs.staged
+    uses: ./.github/workflows/smoke-production.yml

@@ -1,7 +1,8 @@
 name: Smoke test produkcji
 
-# Vercel reports each deploy to GitHub; run public checks once production is live.
+# Called by deploy.yml after each deployment; deployment_status covers deploys built by Vercel (fallback).
 on:
+  workflow_call:
   deployment_status:
   workflow_dispatch:
   # Hourly/daily checks run on the Contabo host (scripts/site-watch.mjs + systemd timer):
@@ -26,7 +27,7 @@ jobs:
         with:
           node-version: 22
       - name: Poczekaj na przepięcie domeny
-        if: github.event_name == 'deployment_status'
+        if: github.event_name != 'workflow_dispatch'
         run: sleep 20
       - name: Sprawdź www.bitrymdym.pl
         run: node scripts/smoke-production.mjs
