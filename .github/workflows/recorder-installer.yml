@@ -78,6 +78,25 @@ jobs:
             ForEach-Object { Copy-Item $_.FullName $extras -Recurse -Force }
           Get-ChildItem $extras | Select-Object Name | Format-Table -AutoSize | Out-String | Write-Host
 
+      - name: Najmniejsze okno z czcionkami programu
+        working-directory: desktop/recorder
+        run: |
+          Copy-Item (Join-Path $env:RUNNER_TEMP "base\fonts") fonts -Recurse -Force
+          python -m pip install -q pillow==12.0.0; if ($LASTEXITCODE) { throw "pillow" }
+          python test_small_window.py "$env:RUNNER_TEMP\okno"
+          $code = $LASTEXITCODE
+          Remove-Item fonts -Recurse -Force
+          python -m pip uninstall -q -y pillow
+          if ($code) { throw "small_window" }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: okno
+          path: ${{ runner.temp }}/okno
+          retention-days: 3
+          if-no-files-found: ignore
+
       - name: ffmpeg i ffplay (Gyan full, shared)
         env:
           FFMPEG_TAG: ${{ inputs.ffmpeg_tag || '9.0.2' }}

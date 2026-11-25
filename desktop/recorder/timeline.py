@@ -103,9 +103,17 @@ def drop_sliver(clips: list[Clip], fresh: Clip, under: float = 0.35) -> list[Cli
     ]
 
 
-def left_after(clips: list[Clip], fresh: Clip) -> float:
-    """Seconds of an older take that go on right behind the new one."""
-    return sum(clip.length for clip in clips if clip.path != fresh.path and abs(clip.start - fresh.end) < 0.002)
+def left_after(clips: list[Clip], fresh: Clip) -> tuple[float, int]:
+    """(seconds, pieces) of older takes that go on right behind the new one, piece after piece."""
+    end, seconds, pieces = fresh.end, 0.0, 0
+    for clip in ordered(clips):
+        if clip.path != fresh.path and clip.start >= fresh.end - 0.002 and abs(clip.start - end) < 0.25:
+            end, seconds, pieces = clip.end, seconds + clip.length, pieces + 1
+            continue
+        if clip.start > end + 0.25:
+            break
+    # A crumb that does not touch the new take belongs to the next recording.
+    return (seconds, pieces) if any(abs(clip.start - fresh.end) < 0.002 for clip in clips if clip.path != fresh.path) else (0.0, 0)
 
 
 def shift(pieces: list[Clip], to: float) -> list[Clip]:
@@ -227,7 +235,7 @@ def self_test() -> None:
     if drop_sliver(place([old], [take]), take) != [take]:
         raise SystemExit("okruch starego nagrania")
     longer = place([Clip("old.wav", 0.0, 0.0, 8.0)], [take])
-    if len(drop_sliver(longer, take)) != 2 or abs(left_after(longer, take) - 3.0) > 1e-6:
+    if len(drop_sliver(longer, take)) != 2 or abs(left_after(longer, take)[0] - 3.0) > 1e-6:
         raise SystemExit("ogon starego nagrania")
     split = split_at([a], 3.0)
     if len(split) != 2 or split[1].start != 3.0 or split[1].src_in != 3.0:

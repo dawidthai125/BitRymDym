@@ -320,7 +320,12 @@ def clock_text(seconds: float) -> str:
 GRAB_BAR_PX = 32
 
 
-def tail_text(tail: float) -> str:
+def tail_text(tail: float, pieces: int = 1) -> str:
+    if pieces > 1:
+        return (
+            f"Za nim zostało {tail:.1f} s starego nagrania ({count_word(pieces, 'kawałek', 'kawałki', 'kawałków')}): "
+            "zaznacz je przeciągnięciem i Delete, jeśli go nie chcesz."
+        )
     return f"Za nim zostało {tail:.1f} s starego nagrania: kliknij je dwa razy i Delete, jeśli go nie chcesz."
 
 
@@ -937,9 +942,8 @@ MIC_DELIVERY_SECONDS = 0.03
 # A Bluetooth microphone can need this long. After it the take starts anyway, as it always did.
 MIC_OPEN_SECONDS = 4.0
 # Delay measurement: one click a second, whole bars.
-DELAY_CLICKS = 12
-# Rows of a small window, at 100%. Every button and slider of the row still fits.
-BEAT_LOW, VOCAL_LOW = 104, 114
+DELAY_CLICKS = 16
+BLUETOOTH_HINT = "Słuchawki Bluetooth opóźniają dźwięk nawet o pół sekundy. Kliknij ZMIERZ, zanim nagrasz."
 GEAR_HINT = "Mikrofon i słuchawki mogą być z różnych urządzeń, też Bluetooth."
 # About 170 ms of the mix. When these bytes are here the beat has really connected and decoded.
 MIX_FIRST_BYTES = 32_768
@@ -1692,6 +1696,9 @@ class RecorderWindow:
         self._zoomed = False
         self._restore_geo = ""
         self._images: list[tk.PhotoImage] = []
+        self._dot = tk.PhotoImage(master=self.root, width=1, height=1)
+        self._tools: list[tuple[tk.Button, int]] = []
+        self._compact = False
         self.ui = dpi_scale()
         self.lane_h = int(188 * self.ui)
         self.head_w = int(250 * self.ui)
@@ -1800,7 +1807,6 @@ class RecorderWindow:
         self._boxes: list[tk.Toplevel] = []
         self._paint_after: str | None = None
         self._fit_after: str | None = None
-        self._compact = False
         self._lost_note = ""
         self._play_mix: tuple[object, ...] = ()
         self._take_end = ""
@@ -1913,6 +1919,10 @@ class RecorderWindow:
             return None
         # Class name: some Tk builds wrap Entry; isinstance alone misses them under SendInput focus.
         name = widget.winfo_class() if hasattr(widget, "winfo_class") else ""
+        # The password field keeps the focus after sign-in, though it is no longer on screen.
+        if not widget.winfo_viewable():
+            run()
+            return "break"
         if isinstance(widget, (tk.Entry, tk.Listbox, tk.Text, tk.Spinbox)) or name in {"Entry", "Listbox", "Text", "TEntry", "Spinbox"}:
             return None
         run()
@@ -1965,24 +1975,49 @@ class RecorderWindow:
             self.sel_row.pack(fill="x", padx=12, pady=(6, 0), after=self._flows[-1])
             self.foot_label.pack(side="bottom", fill="x", padx=12, pady=(0, 8), before=self.status_label)
         self._sync_hint()
-        self.beat_button.configure(width=20 if on else 34)
+        for button, size in self._studio_buttons():
+            self._size_button(button, size)
+        # With a picture on it the width of a button is in pixels.
+        wide = tkfont.Font(font=self.beat_button.cget("font")).measure("0") * 20
+        self.beat_button.configure(width=wide if on else 34)
         self.device_menu.configure(width=18 if on else 24)
         self.output_menu.configure(width=14 if on else 18)
         self.done_button.configure(pady=2 if on else 6)
-        for lane, head, high in self._lane_sizes():
-            lane.configure(height=high)
-            head.configure(height=high)
+        self._size_lanes()
         self._paint_soon()
 
-    def _lane_sizes(self) -> list[tuple[tk.Canvas, tk.Frame, int]]:
-        beat = int(BEAT_LOW * self.ui) if self._compact else self.lane_h
-        vocal = int(VOCAL_LOW * self.ui) if self._compact else self.lane_h
-        out = [(self.beat_lane, self.beat_head, beat)]
-        for row in self.rows:
-            lane, head = row.get("lane"), row.get("head")
+    def _studio_buttons(self) -> list[tuple[tk.Button, int]]:
+        self._tools = [(button, size) for button, size in self._tools if button.winfo_exists()]
+        return self._tools
+
+    def _size_button(self, button: tk.Button, size: int) -> None:
+        """Windows gives the poster font twice the height of its letters. A 1 px picture lets us say the height."""
+        if self._compact:
+            button.configure(image=self._dot, compound="center", height=int((size * 1.34 + 4) * self.ui))
+        else:
+            button.configure(image="", compound="none", height=0)
+
+    @staticmethod
+    def _stack_height(box: tk.Misc) -> int:
+        """Height of everything packed from the top of `box`."""
+        total = 0
+        for child in box.pack_slaves():
+            pad = child.pack_info().get("pady", 0)
+            total += child.winfo_reqheight() + (sum(pad) if isinstance(pad, tuple) else 2 * int(pad))
+        return total
+
+    def _row_height(self, head: tk.Frame) -> int:
+        if not self._compact:
+            return self.lane_h
+        self.root.update_idletasks()
+        return self._stack_height(head) + int(10 * self.ui)
+
+    def _size_lanes(self) -> None:
+        for lane, head in ((self.beat_lane, self.beat_head), *((row.get("lane"), row.get("head")) for row in self.rows)):
             if isinstance(lane, tk.Canvas) and isinstance(head, tk.Frame):
-                out.append((lane, head, vocal))
-        return out
+                high = self._row_height(head)
+                lane.configure(height=high)
+                head.configure(height=high)
 
     def _sync_hint(self) -> None:
         """In a small window the line under the devices is there only when it has something to say."""
@@ -2005,7 +2040,11 @@ class RecorderWindow:
             return
         self.root.update_idletasks()
         line = tkfont.Font(font=self.status_label.cget("font")).metrics("linespace")
-        lanes = int((24 + BEAT_LOW + VOCAL_LOW + 6) * self.ui) + self.hscroll.winfo_reqheight()
+        first = self.rows[0].get("head") if self.rows else None
+        rows = int(self.beat_head.cget("height")) + (int(first.cget("height")) if isinstance(first, tk.Frame) else 0)
+        # Outside the compact layout the second row may go under the edge: it scrolls.
+        rows = rows if self._compact else min(rows, int(230 * self.ui))
+        lanes = int((24 + 8) * self.ui) + rows + self.hscroll.winfo_reqheight()
         fixed = self.shell.winfo_reqheight() - self.lanes_outer.winfo_reqheight() - self.status_label.winfo_reqheight()
         need = min(fixed + 2 * line + 8 + lanes, self.root.winfo_screenheight() - 60)
         wide = self.root.minsize()[0]
@@ -2076,6 +2115,8 @@ class RecorderWindow:
                 f"Poprzednia wysyłka nie skończyła się ({pending.summary()}). "
                 "Naciśnij Gotowe i Dokończ poprzednią wysyłkę."
             )
+        # Keys belong to the timeline now, not to the password field behind it.
+        self.root.focus_set()
         self.root.after(50, self._paint_all)
         self.root.after(300, self._warm_listen)
 
@@ -2169,6 +2210,13 @@ class RecorderWindow:
             highlightbackground=LINE_STRONG,
             takefocus=0,
         )
+        return self._studio_button(button, size)
+
+    def _studio_button(self, button: tk.Button, size: int) -> tk.Button:
+        if str(button).startswith(str(getattr(self, "studio", "?"))):
+            self._tools.append((button, size))
+            if self._compact:
+                self._size_button(button, size)
         return button
 
     def _build_studio(self) -> None:
@@ -2377,15 +2425,14 @@ class RecorderWindow:
         self.root.after_idle(self._paint_all)
 
     def _row_frame(self, parent: tk.Widget) -> tuple[tk.Frame, tk.Frame, tk.Canvas]:
-        high = int(VOCAL_LOW * self.ui) if self._compact else self.lane_h
         row = tk.Frame(parent, bg=LINE, highlightthickness=0)
         row.pack(fill="x", pady=(0, 3))
         head = tk.Frame(
-            row, bg=PANEL, width=self.head_w, height=high, highlightthickness=2, highlightbackground=PANEL, highlightcolor=PANEL
+            row, bg=PANEL, width=self.head_w, height=self.lane_h, highlightthickness=2, highlightbackground=PANEL, highlightcolor=PANEL
         )
         head.pack(side="left", fill="y")
         head.pack_propagate(False)
-        lane = tk.Canvas(row, height=high, bg=LANE_BG, highlightthickness=0, bd=0, cursor="xterm")
+        lane = tk.Canvas(row, height=self.lane_h, bg=LANE_BG, highlightthickness=0, bd=0, cursor="xterm")
         lane.pack(side="left", fill="x", expand=True, padx=(1, 0))
         # A new lane is 1 px wide until Tk lays it out. Painted before that it stayed empty.
         lane.bind("<Configure>", lambda _event: self._paint_soon())
@@ -2462,7 +2509,7 @@ class RecorderWindow:
             activeforeground=REC, relief="flat", bd=0, padx=8, pady=0, font=(FONT_UI, 13), cursor="hand2",
             highlightthickness=1, highlightbackground=LINE_STRONG, takefocus=0,
         )
-        rec.pack(side="left", padx=(0, 4))
+        self._studio_button(rec, 11).pack(side="left", padx=(0, 4))
         mute = self._tool(buttons, "M", lambda slot=track: self.toggle_mute(slot), SOFT, size=11)
         mute.pack(side="left", padx=(0, 4))
         solo = self._tool(buttons, "S", lambda slot=track: self.toggle_solo(slot), SOFT, size=11)
@@ -2501,6 +2548,9 @@ class RecorderWindow:
         self.rows = []
         for index in range(len(self.tracks)):
             self._build_vocal_row(index)
+        if self._compact:
+            self._size_lanes()
+            self._fit_soon()
         self.armed = max(0, min(self.armed, len(self.tracks) - 1))
         self.focus = max(0, min(self.focus, len(self.tracks) - 1))
         self._sync_track_buttons()
@@ -4548,7 +4598,7 @@ class RecorderWindow:
         clip = Clip(str(path), round(self.rec_start, 4), round(skip, 4), round(skip + length, 4))
         track = self.tracks[self.rec_track]
         track.clips = drop_sliver(place(track.clips, [clip]), clip)
-        tail = left_after(track.clips, clip)
+        tail, pieces = left_after(track.clips, clip)
         self._last_take = (clip, base, self._take_key, cap) if self.mix_was_on else None
         self._peaks.pop(str(path), None)
         self._audio.pop(str(path), None)
@@ -4561,7 +4611,7 @@ class RecorderWindow:
             f"{prefix}Nagranie {length:.1f} s jest na {track.name} od {clock_text(self.rec_start)}. "
             + (f"{self._take_note} " if self._take_note else "")
             + (
-                tail_text(tail)
+                tail_text(tail, pieces)
                 if tail
                 else "Przeciągnij pasek klipu, żeby go przesunąć."
             )
@@ -4605,9 +4655,9 @@ class RecorderWindow:
         known = self._known_delay(self._delay_key)
         self.delay_var.set("" if known is None else f"{known * 1000:.0f}")
         if known is None and win_output.looks_bluetooth(self._output_name(), self._bluetooth):
-            self.probe_var.set(
-                "Słuchawki Bluetooth opóźniają dźwięk nawet o pół sekundy. Kliknij ZMIERZ, zanim nagrasz."
-            )
+            self.probe_var.set(BLUETOOTH_HINT)
+        elif self.probe_var.get() == BLUETOOTH_HINT:
+            self.probe_var.set(GEAR_HINT)
 
     def _delay_spun(self) -> None:
         """An arrow held down gives a value every few milliseconds. The last one counts."""
@@ -4670,7 +4720,8 @@ class RecorderWindow:
         self._measuring = True
         self.delay_button.configure(text="STOP POMIARU")
         self.status.set(
-            f"Klaszcz równo z każdym stukiem, blisko mikrofonu, przez {DELAY_CLICKS} sekund. Pierwsze dwa stuki są na rozgrzewkę."
+            f"Klaszcz albo mów krótkie „ta” równo z każdym stukiem, blisko mikrofonu, przez {DELAY_CLICKS} sekund. "
+            "Pierwsze dwa stuki są na rozgrzewkę."
         )
         key = self._sync_key()
         device = self.selected_device()
@@ -4733,11 +4784,23 @@ class RecorderWindow:
             stop_capture(capture)
             _rate, samples = read_mono16(path)
             lag, jump = auto_align.clap_delay(samples, skip, 1.0, DELAY_CLICKS)
-            if lag is not None and max(slid * 1000, jump) > 25:
+            if lag is not None and slid * 1000 > 25:
                 return None, (
-                    f"Dźwięk przeskoczył o {max(slid * 1000, jump):.0f} ms w trakcie pomiaru, tak bywa przy Bluetooth. "
+                    f"Dźwięk przeskoczył o {slid * 1000:.0f} ms w trakcie pomiaru. "
                     "Nic nie zapamiętałem. Kliknij ZMIERZ jeszcze raz."
                 )
+            if lag is not None and jump:
+                return None, (
+                    f"Początek i koniec pomiaru różnią się o {jump:.0f} ms: przeskoczył dźwięk (tak bywa przy Bluetooth) "
+                    "albo rytm się rozjechał. Nic nie zapamiętałem. Kliknij ZMIERZ jeszcze raz."
+                )
+            if lag is None:
+                peak = max((abs(value) for value in samples), default=0) / 32768.0
+                if peak < 0.02:
+                    return None, (
+                        f"Mikrofon prawie nic nie usłyszał (szczyt {peak * 100:.1f}%). Mikrofony laptopów wycinają klaskanie: "
+                        "mów krótkie „ta” równo ze stukiem i spróbuj jeszcze raz."
+                    )
             return lag, ""
         except Exception as problem:
             return None, self._safe_listen_error(problem)
@@ -4761,7 +4824,10 @@ class RecorderWindow:
             self.status.set(error)
             return
         if lag is None:
-            self.status.set("Nie udało się zmierzyć: za mało wyraźnych albo równych klaśnięć. Klaszcz głośniej, bliżej mikrofonu, i spróbuj jeszcze raz.")
+            self.status.set(
+                "Nie udało się zmierzyć: za mało wyraźnych albo równych dźwięków. "
+                "Klaszcz głośniej, bliżej mikrofonu, albo mów krótkie „ta” i spróbuj jeszcze raz."
+            )
             return
         self._learn_delay(key, lag / 1000)
         self.status.set(f"Opóźnienie {lag:.0f} ms zapamiętane dla tego mikrofonu i odsłuchu. Następne nagrania będą równo z bitem.")
@@ -4813,12 +4879,14 @@ class RecorderWindow:
             # What was said about this take a moment ago still counts.
             last = self._last_take
             mine = last is not None and last[0].path == clip.path
-            tail = next((left_after(track.clips, last[0]) for track in self.tracks if last[0] in track.clips), 0.0) if mine and last else 0.0
+            tail, pieces = next(
+                (left_after(track.clips, last[0]) for track in self.tracks if mine and last and last[0] in track.clips), (0.0, 0)
+            )
             self.status.set(
                 (f"{self._take_end} " if mine and self._take_end else "")
                 + f"Wyrównane do bitu: {abs(move) * 1000:.0f} ms. Cofnij wraca do poprzedniego miejsca."
                 + (f" {self._take_note}" if mine and self._take_note else "")
-                + (f" {tail_text(tail)}" if tail else "")
+                + (f" {tail_text(tail, pieces)}" if tail else "")
             )
 
     def _move_take(
