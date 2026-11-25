@@ -10,4 +10,9 @@ export const YOUTUBE_CHANNEL_ID = "UCW_rCfBRpEUgAHPpo1V36nA";
 export const BEAT_VIDEOS: Readonly<Record<string, BeatVideo>> = {
   "cf6d9a70-5a5e-443c-a117-263f678a72f1": { videoId: "yWY7JM4xf5k", uploadDate: "2026-11-23" },
   "fd1f8593-10e6-4a9d-b234-5726a9a5db2e": { videoId: "11JEPpFBN0w", uploadDate: "2026-11-23" },
+  "a05b6370-eb60-4dc6-a2b2-f29ea965048c": { videoId: "vFpk_gbUO4M", uploadDate: "2026-11-24" },
+  "a03f647c-3a6c-4494-ba89-14aea7925dd3": { videoId: "Fb1_IR-dICE", uploadDate: "2026-11-24" },
+  "7f96d736-5db8-4a1b-b717-f9aa34e9c4ab": { videoId: "iYsGIQ9cPEk", uploadDate: "2026-11-24" },
+  "6b64761a-c520-473f-b147-1ca923e7b145": { videoId: "9BNcaJwk5XE", uploadDate: "2026-11-24" },
+  "975eee35-aab0-4d47-8799-26ac9ee52463": { videoId: "cCfIfFUDY8E", uploadDate: "2026-11-24" },
 };
