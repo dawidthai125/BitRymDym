@@ -2074,7 +2074,8 @@ class RecorderWindow:
             self.root.minsize(wide, need)
         if not self._zoomed and 100 < self.root.winfo_height() < need:
             x, y = self.root.winfo_x(), self.root.winfo_y()
-            if 0 <= x < self.root.winfo_screenwidth() and 0 <= y < self.root.winfo_screenheight():
+            middle = x + self.root.winfo_width() // 2
+            if 0 <= middle < self.root.winfo_screenwidth() and -40 <= y < self.root.winfo_screenheight():
                 # It grows upwards when the bottom of the screen is near. The other screens are not known to Tk.
                 y = max(0, min(y, self.root.winfo_screenheight() - 60 - need))
             self.root.geometry(f"{self.root.winfo_width()}x{need}+{x}+{y}")

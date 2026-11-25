@@ -222,6 +222,8 @@ class Control:
                     with self._sending:
                         self._jobs.put((asked, reply, done))
                         if not done.wait(30):
+                            # It must not run later: the other end was told that it failed.
+                            asked["komenda"] = "stan"
                             reply = {"ok": False, "blad": "Program nie odpowiedział w 30 s."}
                         link.sendall(json.dumps(scrub(dict(reply)), ensure_ascii=False).encode("utf-8") + b"\n")
                 except (OSError, ValueError, RecursionError):
@@ -526,12 +528,13 @@ class Control:
     def _close(self, pytanie: Any = False) -> None:
         """Both projects wait for the next launch. pytanie=1: the question of the X button instead."""
         w = self.w
+        pytanie = str(pytanie).lower() in ("1", "true", "tak")
         if w.recording or w._arming or w._delay_running() and not pytanie:
             raise Refused("Najpierw stop.")
         if self.answer == "tak" and w.studio_mode == "offline":
             # It asks about rights and a file in boxes of their own, and nobody is there to answer them.
             raise Refused("Offline Tak pyta jeszcze o prawa i plik. Zamknij bez pytania, projekt poczeka.")
-        if str(pytanie).lower() in ("1", "true", "tak"):
+        if pytanie:
             w._on_close()
         else:
             if w._touched:
