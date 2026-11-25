@@ -94,8 +94,10 @@ class Foreground:
     """The user works in another window. When ours comes to the front by itself, that one gets its place back."""
 
     def __init__(self) -> None:
-        self.until = time.monotonic() + 10
+        # Long enough for the window to be made and shown.
+        self.until = time.monotonic() + 5
         self.other = 0
+        self.ours = False
         self.look()
 
     def look(self) -> None:
@@ -108,13 +110,16 @@ class Foreground:
         front = int(user32.GetForegroundWindow() or 0)
         owner = ctypes.c_ulong()
         user32.GetWindowThreadProcessId(front, ctypes.byref(owner))
-        if front and int(owner.value) != os.getpid():
+        self.ours = bool(front) and int(owner.value) == os.getpid()
+        if front and not self.ours:
             self.other = front
         elif front and self.other and time.monotonic() < self.until:
             user32.SetForegroundWindow(self.other)
 
-    def after_command(self) -> None:
-        self.until = max(self.until, time.monotonic() + 0.5)
+    def after_command(self, chosen: bool) -> None:
+        """chosen: the window was in front before the command, so the user put it there and it stays."""
+        if not chosen:
+            self.until = max(self.until, time.monotonic() + 0.5)
 
 
 FRONT: Foreground | None = None
@@ -238,12 +243,15 @@ class Control:
         try:
             while True:
                 asked, reply, done = self._jobs.get_nowait()
+                if FRONT is not None:
+                    FRONT.look()
+                chosen = FRONT is not None and FRONT.ours
                 try:
                     reply.update(self._run(asked))
                 finally:
                     done.set()
                 if FRONT is not None:
-                    FRONT.after_command()
+                    FRONT.after_command(chosen)
         except queue.Empty:
             pass
         if FRONT is not None:

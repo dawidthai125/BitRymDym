@@ -6184,7 +6184,8 @@ class RecorderWindow:
         self.password_dots = tk.Label(self.password, bg=RACK, fg=SOFT, font=(FONT_UI, 9), bd=0, padx=0, pady=0, cursor="xterm")
         self.password_dots.bind("<Button-1>", lambda _event: self.password.focus_set())
         self.saved_until = ""
-        self._password_expired = False
+        # The e-mail whose hidden password ran out.
+        self._password_expired = ""
         self._password_text = tk.StringVar(master=self.root)
         self.password.configure(textvariable=self._password_text)
         self._password_text.trace_add("write", lambda *_args: self._show_dots())
@@ -6197,7 +6198,7 @@ class RecorderWindow:
         login_state = saved_password_state(saved, time.time(), self.email.get().strip())
         if login_state == "expired":
             drop_saved_password(saved)
-            self._password_expired = True
+            self._password_expired = self.email.get().strip()
         tk.Checkbutton(
             card,
             text=REMEMBER_LABEL,
@@ -6862,7 +6863,8 @@ class RecorderWindow:
         saved = load_session() if email and self.remember_login.get() == 1 else None
         state = saved_password_state(saved, time.time(), email)
         self.saved_until = saved_until_text(saved) if state == "ready" else ""
-        self.login_note.configure(text=login_hint("expired" if state == "none" and self._password_expired else state))
+        gone = state == "none" and bool(email) and self.remember_login.get() == 1 and same_account(email, self._password_expired)
+        self.login_note.configure(text=login_hint("expired" if gone else state))
         self._show_dots()
 
     def _show_dots(self) -> None:
@@ -7084,7 +7086,7 @@ class RecorderWindow:
                     used_saved = True
                 elif state == "expired":
                     drop_saved_password(saved)
-                    self._password_expired = True
+                    self._password_expired = email
                     raise RuntimeError(LOGIN_HINT_EXPIRED)
                 else:
                     raise RuntimeError("Wpisz e-mail i hasło.")
@@ -7167,7 +7169,7 @@ class RecorderWindow:
         self._listen_cache = None
         self._client_cache = None
         self._signed_in = True
-        self._password_expired = False
+        self._password_expired = ""
         self.password.delete(0, "end")
         self._read_plan()
         self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
