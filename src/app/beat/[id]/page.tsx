@@ -70,7 +70,7 @@ export async function generateMetadata({ params }: BeatDetailPageProps) {
     title: presented.title,
     genre: beat.genre,
     bpm: beat.bpm,
-    key: beat.key,
+    key: presented.key,
     description: beat.description,
     lane: beat.ownershipType === "PLATFORM" ? catalogLaneOf(beat.catalogLane) : null,
     locale: locale === "en" ? ("en" as const) : ("pl" as const),
