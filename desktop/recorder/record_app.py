@@ -698,8 +698,11 @@ def sweep_copies(now: float | None = None, keep: set[str] | None = None) -> None
     """
     moment = time.time() if now is None else now
     kept = keep or set()
+    waiting = project_folders()
     for folder in (TAKES / "projekty").glob("????????????-????????-??????-??????"):
         try:
+            if folder.name in waiting:
+                continue
             if folder.is_dir() and moment - folder.stat().st_mtime > 2 * 86_400:
                 shutil.rmtree(folder, ignore_errors=True)
         except OSError:
@@ -725,6 +728,19 @@ def same_account(a: str, b: str) -> bool:
     return a.strip().lower() == b.strip().lower()
 
 
+def project_folders() -> set[str]:
+    """Names of unpacked folders that an open or a waiting project still points into. All accounts."""
+    out: set[str] = set()
+    for path in DESK.parent.glob("desktop-sesja*.json"):
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            for item in raw.get("tracks") or []:
+                out.update(Path(str(clip.get("path"))).parent.name for clip in item.get("clips") or [])
+        except (OSError, ValueError, AttributeError, TypeError):
+            continue
+    return out
+
+
 def plain_text(text: str) -> str:
     """Lower case without Polish marks, so "poscig" finds "Pościg"."""
     flat = unicodedata.normalize("NFD", text.strip().lower().replace("ł", "l"))
@@ -745,18 +761,31 @@ def kept_projects(desk: Path, owner: str) -> list[Path]:
     return sorted(found, key=lambda path: path.name, reverse=True)
 
 
-def stash_desk(desk: Path, fallback_owner: str = "") -> None:
+def stash_desk(desk: Path) -> None:
     """A project file found at start was left by a crash, or by a close that kept it. It waits under its owner's
     name until that account enters the studio and says whether it wants it back. Nothing opens by itself.
+    A file without an owner (before 2026.11.40) could be anybody's, so it is never offered.
     """
     if not desk_clip_count(desk):
         return
     try:
         raw = json.loads(desk.read_text(encoding="utf-8"))
-        owner = str(raw.get("owner") or fallback_owner)
-        if re.fullmatch(r"[0-9a-f]{12}", owner):
-            desk.replace(recovery_path(desk, owner))
+        owner = str(raw.get("owner") or "")
     except (OSError, ValueError, AttributeError):
+        return
+    if not re.fullmatch(r"[0-9a-f]{12}", owner):
+        return
+    target = recovery_path(desk, owner)
+    for _attempt in range(6):
+        try:
+            desk.replace(target)
+            return
+        except OSError:
+            # Windows: the antivirus has it open for a moment.
+            time.sleep(0.05)
+    try:
+        write_atomic(target, json.dumps(raw))
+    except OSError:
         pass
 
 
@@ -1293,7 +1322,7 @@ def stop_capture(proc: subprocess.Popen[bytes]) -> None:
         try:
             proc.stdin.write(b"q")
             proc.stdin.close()
-        except OSError:
+        except (OSError, ValueError):
             proc.terminate()
     try:
         proc.wait(timeout=8)
@@ -1740,7 +1769,11 @@ class RecorderWindow:
         self._drop_files = False
         self._keep_desks: set[str] = set()
         self._silent_until = 0.0
-        self._last_take: tuple[Clip, float, str] | None = None
+        self._last_take: tuple[Clip, float, str, float] | None = None
+        # One delay move = one step back, however many times the arrow was clicked.
+        self._delay_undo: tuple[str, int] | None = None
+        self._delay_after: str | None = None
+        self._delay_key = ""
         self._bluetooth: set[str] = set()
         self._measuring = False
         self._delay_thread: threading.Thread | None = None
@@ -1804,9 +1837,8 @@ class RecorderWindow:
         self.beat_var.trace_add("write", lambda *_args: self._beat_changed())
         self._load_prefs()
         if os.environ.get("BITRYMDYM_UI_SMOKE") != "1":
-            last = account_key(str((saved or {}).get("email") or ""))
             for path in (DESK, DESK_OFFLINE):
-                stash_desk(path, last)
+                stash_desk(path)
             self._clear_play_folder()
         self._blank_project()
         if self.status_boot:
@@ -1989,6 +2021,10 @@ class RecorderWindow:
             return
         self._arm_token += 1
         self._play_token += 1
+        self._measuring = False
+        if self._delay_thread is not None:
+            # It closes the microphone by itself.
+            self._delay_thread.join(2.0)
         self._cancel_tick()
         self._stop_probe()
         self._cancel_warm()
@@ -2082,7 +2118,7 @@ class RecorderWindow:
         tk.Label(late, text="OPÓŹNIENIE", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
         self.delay_var = tk.StringVar()
         delay = tk.Spinbox(
-            late, from_=0, to=700, increment=5, width=5, textvariable=self.delay_var, command=self._delay_typed,
+            late, from_=0, to=700, increment=5, width=5, textvariable=self.delay_var, command=self._delay_spun,
             bg=RACK, fg=INK, insertbackground=AMBER, buttonbackground=RACK, relief="flat", font=(FONT_UI, 10),
             highlightthickness=1, highlightbackground=LINE,
         )
@@ -2420,8 +2456,12 @@ class RecorderWindow:
             return False
         return track.solo or not any_solo
 
+    def _delay_running(self) -> bool:
+        """Also while the worker still holds the microphone after Stop."""
+        return self._measuring or (self._delay_thread is not None and self._delay_thread.is_alive())
+
     def _busy(self, what: str = "") -> bool:
-        if self._measuring:
+        if self._delay_running():
             self.status.set("Najpierw skończ pomiar opóźnienia.")
             return True
         if self.recording or self._arming:
@@ -3364,11 +3404,13 @@ class RecorderWindow:
     # ---- editing ----------------------------------------------------------------
 
     def _push_undo(self) -> None:
+        self._delay_undo = None
         snapshot = [replace(track, clips=list(track.clips)) for track in self.tracks]
         self.undo_stack.append((snapshot, self.armed))
         del self.undo_stack[:-60]
 
     def undo(self) -> None:
+        self._delay_undo = None
         if self._busy() or not self.undo_stack:
             if not self.undo_stack:
                 self.status.set("Nie ma czego cofnąć.")
@@ -3929,8 +3971,12 @@ class RecorderWindow:
         self._set_cursor(max(0.0, self.cursor + delta_sec))
 
     def play(self) -> None:
-        if self.recording or self._arming or self._measuring:
+        if self.recording or self._arming:
             return
+        if self._delay_running():
+            self.status.set("Kończę pomiar opóźnienia. Spróbuj za sekundę.")
+            return
+        self._delay_flush()
         self._stop_probe()
         self.stop()
         start = self.sel[1] if self.sel is not None else self.cursor
@@ -4133,7 +4179,7 @@ class RecorderWindow:
         self.mix_was_on = False
         self._pre = 0.0
         self._take_key = self._sync_key()
-        self._sync = self._sync_known.get(self._take_key, 0.0) if feed is not None else 0.0
+        self._sync = (self._known_delay(self._take_key) or 0.0) if feed is not None else 0.0
         self._pre_seen = []
         try:
             if feed is not None:
@@ -4199,8 +4245,13 @@ class RecorderWindow:
                 self._pre = sorted(self._pre_seen)[len(self._pre_seen) // 2] + MIC_DELIVERY_SECONDS
 
     def record(self) -> None:
-        if self.recording or self._arming or self._measuring:
+        if self.recording or self._arming:
             return
+        if self._delay_running():
+            self.status.set("Kończę pomiar opóźnienia. Spróbuj za sekundę.")
+            return
+        # A value typed next to OPÓŹNIENIE counts for this take, also without Enter.
+        self._delay_flush()
         if self.playing:
             self.stop()
         self._stop_probe()
@@ -4320,7 +4371,7 @@ class RecorderWindow:
         track = self.tracks[self.rec_track]
         track.clips = drop_sliver(place(track.clips, [clip]), clip)
         tail = left_after(track.clips, clip)
-        self._last_take = (clip, base, self._take_key) if self.mix_was_on else None
+        self._last_take = (clip, base, self._take_key, cap) if self.mix_was_on else None
         self._peaks.pop(str(path), None)
         self._audio.pop(str(path), None)
         self.focus = self.rec_track
@@ -4345,13 +4396,19 @@ class RecorderWindow:
 
     def _output_name(self) -> str:
         """The real output behind "Domyślne": its delay is the one of the headphones, not of the word."""
-        index = self.selected_output_index()
-        if index is None:
+        if self.selected_output_index() is None:
             index = win_output.default_output_index()
-            for name, number in self.outputs:
-                if index is not None and number == index:
-                    return name
+            name = win_output.output_name(index) if index is not None else ""
+            if name:
+                return name
         return self.output_var.get()
+
+    def _known_delay(self, key: str) -> float | None:
+        known = self._sync_known.get(key)
+        if known is None and self.selected_output_index() is None and not win_output.looks_bluetooth(self._output_name(), self._bluetooth):
+            # Learned before 2026.11.40 under the word "Domyślne".
+            known = self._sync_known.get(f"{self.device_var.get()}|{self.output_var.get()}"[:160])
+        return known
 
     def _sync_key(self) -> str:
         return f"{self.device_var.get()}|{self._output_name()}"[:160]
@@ -4366,17 +4423,34 @@ class RecorderWindow:
         """The delay of the microphone and output chosen now. Empty: not measured yet."""
         if not hasattr(self, "delay_var"):
             return
-        known = self._sync_known.get(self._sync_key())
+        self._delay_key = self._sync_key()
+        known = self._known_delay(self._delay_key)
         self.delay_var.set("" if known is None else f"{known * 1000:.0f}")
         if known is None and win_output.looks_bluetooth(self._output_name(), self._bluetooth):
             self.probe_var.set(
                 "Słuchawki Bluetooth opóźniają dźwięk nawet o pół sekundy. Kliknij ZMIERZ, zanim nagrasz."
             )
 
+    def _delay_spun(self) -> None:
+        """An arrow held down gives a value every few milliseconds. The last one counts."""
+        if self._delay_after:
+            self.root.after_cancel(self._delay_after)
+        self._delay_after = self.root.after(400, self._delay_typed)
+
+    def _delay_flush(self) -> None:
+        if self._delay_after:
+            self.root.after_cancel(self._delay_after)
+            self._delay_after = None
+        self._delay_typed()
+
     def _delay_typed(self) -> None:
         """Delay set by hand: for the next takes and, when it is still there, for the last one."""
         text = self.delay_var.get().strip().replace(",", ".")
         key = self._sync_key()
+        if key != self._delay_key:
+            # Other headphones since the field was filled: their delay is another one.
+            self._show_delay()
+            return
         if not text:
             if self._sync_known.pop(key, None) is not None:
                 self._save_prefs()
@@ -4386,22 +4460,24 @@ class RecorderWindow:
         except ValueError:
             self._show_delay()
             return
-        if abs(self._sync_known.get(key, -1.0) * 1000 - value) < 0.5:
+        known = self._known_delay(key)
+        if known is not None and abs(known * 1000 - value) < 0.5:
             return
         self._learn_delay(key, value / 1000)
         if self._busy():
             return
         last = self._last_take
-        if last is not None and last[2] == key and self._move_take(last[0], last[1], value):
+        if last is not None and last[2] == key and self._move_take(last[0], last[1], value, merge=True):
             self.status.set(f"Opóźnienie {value:.0f} ms. Ostatnie nagranie jest już przesunięte, Cofnij je przywraca.")
         else:
             self.status.set(f"Opóźnienie {value:.0f} ms zadziała od następnego nagrania.")
 
     def measure_delay(self) -> None:
         """Clap with the clicks: the delay of this microphone and output, also when no beat leaks into the mic."""
-        if self._measuring or (self._delay_thread is not None and self._delay_thread.is_alive()):
+        if self._delay_running():
             self._measuring = False
             return
+        self._delay_flush()
         if self._busy() or self._uploading or self._exporting:
             return
         if self.playing:
@@ -4442,8 +4518,9 @@ class RecorderWindow:
             feed = MixFeed(mix_argv(ffmpeg_exe(), None, [], None, clicks=(clicks, float(DELAY_CLICKS))))
             if not feed.warm():
                 return None, "Nie dało się zagrać stuków."
+            if not self._measuring:
+                return None, "Pomiar przerwany."
             capture = start_capture(path, device)
-            self.capture = capture
             until = time.monotonic() + MIC_OPEN_SECONDS
             while captured_seconds(capture, path) <= 0:
                 if capture.poll() is not None or time.monotonic() > until or not self._measuring:
@@ -4483,8 +4560,6 @@ class RecorderWindow:
                 feed.kill()
             if capture is not None:
                 stop_capture(capture)
-                if self.capture is capture:
-                    self.capture = None
             for item in (path, capture_log_path(path)):
                 try:
                     item.unlink(missing_ok=True)
@@ -4534,7 +4609,7 @@ class RecorderWindow:
         """lag is the whole delay, measured from `base` in the file: the same answer whatever was learned before."""
         self._aligning = max(0, self._aligning - 1)
         if lag is None:
-            if key and key not in self._sync_known and not (self.recording or self._arming):
+            if key and self._known_delay(key) is None and not (self.recording or self._arming):
                 self.status.set(
                     self.status.get()
                     + " Nie słychać bitu w mikrofonie, więc głosu nie wyrównałem. Kliknij ZMIERZ przy OPÓŹNIENIE albo przesuń nagranie."
@@ -4547,7 +4622,7 @@ class RecorderWindow:
         if self._move_take(clip, base, lag):
             self.status.set(f"Wyrównane do bitu: {abs(move) * 1000:.0f} ms. Cofnij wraca do poprzedniego miejsca.")
 
-    def _move_take(self, clip: Clip, base: float, lag: float) -> bool:
+    def _move_take(self, clip: Clip, base: float, lag: float, merge: bool = False) -> bool:
         """Put a take where a delay of `lag` ms says. False when it is there already, or was cut since."""
         move = base + lag / 1000 - clip.src_in
         if abs(move) < 0.003:
@@ -4559,14 +4634,19 @@ class RecorderWindow:
                     continue
                 src_in = base + max(0.0, lag / 1000)
                 start = item.start + max(0.0, -lag / 1000)
-                src_out = min(file_seconds(Path(item.path)), src_in + item.length)
+                # As long as the take may be, not as long as the last shift left it: a smaller delay gives the end back.
+                last = self._last_take
+                whole = last[3] if last is not None and last[0].path == item.path else item.length
+                src_out = min(file_seconds(Path(item.path)), src_in + max(item.length, whole))
                 if src_out - src_in < 0.05:
                     return False
-                self._push_undo()
+                if not (merge and self._delay_undo == (item.path, len(self.undo_stack))):
+                    self._push_undo()
+                self._delay_undo = (item.path, len(self.undo_stack))
                 fixed = Clip(item.path, round(start, 4), round(src_in, 4), round(src_out, 4))
                 track.clips = drop_sliver(place([*track.clips[:index], *track.clips[index + 1 :]], [fixed]), fixed)
                 if self._last_take is not None and self._last_take[0].path == fixed.path:
-                    self._last_take = (fixed, base, self._last_take[2])
+                    self._last_take = (fixed, base, self._last_take[2], self._last_take[3])
                 self._save_desk()
                 self._paint_all()
                 return True
@@ -5418,6 +5498,7 @@ class RecorderWindow:
         """Stop the mic, playback and the mic test. Logout and close must not leave them running."""
         self._play_token += 1
         self._arm_token += 1
+        self._measuring = False
         self._stop_probe()
         if self.recording or self._arming or self.playing:
             self.stop()
@@ -5458,7 +5539,7 @@ class RecorderWindow:
             self._tick_id = None
 
     def _busy_for_update(self) -> bool:
-        return self.recording or self._arming or self._uploading or self._probing or self._exporting or self._measuring
+        return self.recording or self._arming or self._uploading or self._probing or self._exporting or self._delay_running()
 
     # ---- kept: frame, sign-in, updates, mic check ----
 
@@ -6028,10 +6109,12 @@ class RecorderWindow:
         owner = account_key(self._owner_email)
         if not owner or self._project_dirty():
             return False
-        waiting = kept_projects(desk, owner)
-        if not waiting:
-            return False
-        kept = waiting[0]
+        for kept in kept_projects(desk, owner):
+            if self._offer_one(kept, desk):
+                return True
+        return False
+
+    def _offer_one(self, kept: Path, desk: Path) -> bool:
         count = desk_clip_count(kept)
         try:
             when = datetime.fromtimestamp(kept.stat().st_mtime).strftime("%d.%m o %H:%M")
@@ -6042,7 +6125,7 @@ class RecorderWindow:
             f"Jest projekt z {when} ({count_word(count, 'klip', 'klipy', 'klipów')}). Przywrócić go?\n\n"
             "Tak — wraca na ścieżki.\n"
             "Nie — zaczynasz od pustego, a ten projekt znika z listy. Pliki nagrań zostają na dysku.\n"
-            "Anuluj — zapytam następnym razem.",
+            "Anuluj — zostaje na później, zapytam następnym razem.",
         )
         if choice is None:
             return False
@@ -6050,15 +6133,30 @@ class RecorderWindow:
             if not choice:
                 kept.unlink(missing_ok=True)
                 return False
-            kept.replace(desk)
+            write_atomic(desk, kept.read_text(encoding="utf-8"))
         except OSError:
             self.status.set("Nie dało się przywrócić projektu. Plik jest zajęty, spróbuj za chwilę.")
             return False
-        self._desk_live.add(self.studio_mode)
         self._restore_desk()
+        back = sum(len(track.clips) for track in self.tracks)
+        if not back:
+            self._blank_project()
+            try:
+                desk.unlink(missing_ok=True)
+            except OSError:
+                pass
+            self.status.set("Nie ma na dysku nagrań tego projektu. Projekt czeka dalej.")
+            return False
+        self._desk_live.add(self.studio_mode)
         self._restore_catalog_beat()
         # It is an open project again: the next crash must not lose it.
         self._save_desk()
+        if back == count:
+            # Only when everything is back. A clip missing for a moment must not be lost for good.
+            try:
+                kept.unlink(missing_ok=True)
+            except OSError:
+                pass
         self._paint_all()
         return True
 
@@ -6984,7 +7082,7 @@ class RecorderWindow:
         try:
             if self.recording or self._arming:
                 raise RuntimeError("Najpierw Stop.")
-            if self._measuring:
+            if self._delay_running():
                 raise RuntimeError("Najpierw skończ pomiar opóźnienia.")
             self._stop_monitor()
             device = self.selected_device()

@@ -69,6 +69,19 @@ def default_output_index() -> int | None:
         return None
 
 
+def output_name(index: int) -> str:
+    """The name of this waveOut index right now. Plugging in headphones renumbers them."""
+    if os.name != "nt" or index < 0:
+        return ""
+    try:
+        caps = WAVEOUTCAPS()
+        if _winmm().waveOutGetDevCapsW(index, ctypes.byref(caps), ctypes.sizeof(caps)) != MMSYSERR_NOERROR:
+            return ""
+        return (caps.szPname or "").strip()
+    except Exception:
+        return ""
+
+
 def bluetooth_outputs() -> set[str]:
     """Names of Bluetooth playback endpoints, cut to 31 characters like waveOut shows them."""
     if os.name != "nt":

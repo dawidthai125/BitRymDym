@@ -46,7 +46,7 @@ def take(name: str, seconds: float) -> str:
 def window(email: str = "a@b.pl") -> app.RecorderWindow:
     """A fresh launch: what the real program does with leftovers, then sign-in as `email`."""
     for desk in (app.DESK, app.DESK_OFFLINE):
-        app.stash_desk(desk, app.account_key(email))
+        app.stash_desk(desk)
     made = app.RecorderWindow()
     made._read_plan = lambda: None
     made._signed_in, made._owner_email, made.tier = True, email, "GOLD"
@@ -102,6 +102,40 @@ w = window()
 w.choose_mode("online")
 check(not asked, "po Nie nic nie wraca")
 
+# 2b. Missing files and unpacked folders: the waiting project is not lost.
+folder = app.TAKES / "projekty" / "aaaaaaaaaaaa-20200101-000000-000000"
+folder.mkdir(parents=True)
+(folder / "a.wav").write_bytes(Path(second).read_bytes())
+os.utime(folder, (1, 1))
+w.tracks[0].clips = [Clip(second, 0.0, 0.0, 5.0), Clip(str(folder / "a.wav"), 6.0, 0.0, 5.0)]
+w._save_desk()
+kill(w)
+app.sweep_copies()
+check(folder.is_dir(), "sprzątanie omija czekający projekt")
+Path(second).rename(second + ".x")
+answers[:] = [True]
+asked.clear()
+w = window()
+w.choose_mode("online")
+check(sum(len(t.clips) for t in w.tracks) == 1 and len(app.kept_projects(app.DESK, app.account_key("a@b.pl"))) == 1, "brak pliku nie kasuje projektu")
+Path(second + ".x").rename(second)
+answers[:] = [True]
+w._confirm_close_save()
+w._on_close(ask_save=False)
+answers[:] = [None, True]
+w = window()
+w.choose_mode("online")
+check(len(asked) == 4 and sum(len(t.clips) for t in w.tracks) == 2, "starszy projekt po Anuluj")
+app.DESK.write_text(json.dumps({"tracks": [{"clips": [{}]}]}), encoding="utf-8")
+app.stash_desk(app.DESK)
+check(app.DESK.exists(), "plik bez właściciela nie jest niczyj")
+w.tracks[0].clips = []
+w._on_close(ask_save=False)
+for left in app.kept_projects(app.DESK, app.account_key("a@b.pl")):
+    left.unlink()
+w = window()
+w.choose_mode("online")
+
 # 3. Offline and back: names and the remembered beat.
 w._pref_beat = "Pościg (90 BPM)"
 w.choose_mode("offline")
@@ -129,7 +163,8 @@ w._bluetooth = {"Słuchawki (RB-M600B)"}
 w._show_delay()
 check(w.delay_var.get() == "" and "ZMIERZ" in w.probe_var.get(), "ostrzeżenie Bluetooth")
 key = w._sync_key()
-w._last_take = (clip, 0.5, key)
+w._last_take = (clip, 0.5, key, 7.0)
+w._show_delay()
 w._align_take(clip, 0.5, None, key)
 check("nie wyrównałem" in w.status.get(), "komunikat bez wyrównania")
 w.delay_var.set("440")
@@ -139,6 +174,27 @@ check(abs(moved.src_in - 0.94) < 1e-6 and moved.start == 2.0 and abs(w._sync_kno
 w.delay_var.set("400")
 w._delay_typed()
 check(abs(w.tracks[0].clips[0].src_in - 0.90) < 1e-6, "druga poprawka liczy od tego samego miejsca")
+steps = len(w.undo_stack)
+for value in range(395, 95, -5):
+    w.delay_var.set(str(value))
+    w._delay_typed()
+check(len(w.undo_stack) == steps, "strzałka nie zjada cofania")
+check(abs(w.tracks[0].clips[0].src_in - 0.60) < 1e-6 and abs(w.tracks[0].clips[0].src_out - 7.6) < 1e-6, "koniec nagrania wraca")
+w.undo()
+check(w.tracks[0].clips[0] == clip, "jedno cofnięcie przywraca miejsce")
+w.output_var.set("Domyślne")
+w.delay_var.set("700")
+w._delay_typed()
+check(w.delay_var.get() == "" and "Mik|Domyślne" not in w._sync_known, "inne słuchawki nie dostają cudzej wartości")
+w._sync_known["Mik|Domyślne"] = 0.15
+w._show_delay()
+check(w.delay_var.get() == "150", "stara wartość Domyślne")
+w.output_var.set("Słuchawki (RB-M600B)")
+w._show_delay()
+check(w._delay_key == key, "klucz pary")
+w._measuring = True
+w._halt_audio()
+check(not w._delay_running(), "wylogowanie kończy pomiar")
 w._delay_measured(key, 120.0, "")
 check(w.delay_var.get() == "120" and "120 ms" in w.status.get(), "pomiar zapamiętany")
 w._delay_measured(key, None, "")
