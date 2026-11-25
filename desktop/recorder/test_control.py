@@ -317,6 +317,7 @@ class Control:
             "ekran": self._screen(),
             "studio": w.studio_mode,
             "zalogowany": w._signed_in,
+            "haslo_zapamietane_do": w.saved_until,
             "plan": "" if w._plan_pending else w.tier,
             "nagrywa": w.recording, "przygotowuje": w._arming, "gra": w.playing, "mierzy": w._delay_running(),
             "wysyla": w._uploading, "zapisuje": w._exporting, "wyrownuje": w._aligning,
@@ -508,8 +509,8 @@ class Control:
     def _shows_mail(box: Any) -> bool:
         try:
             if box.winfo_class() in ("Entry", "Spinbox"):
-                # The password is not even looked at.
-                return bool(box.cget("show")) or "@" in box.get()
+                # The password is not even looked at: only whether something is typed.
+                return box.index("end") > 0 if box.cget("show") else "@" in box.get()
             return "@" in str(box.cget("text"))
         except Exception:
             return False
