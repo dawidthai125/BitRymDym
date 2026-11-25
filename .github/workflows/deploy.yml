@@ -1,0 +1,72 @@
+name: Wdrożenie (budowanie na GitHubie)
+
+# Vercel charges for build minutes, so the site is built here and Vercel only publishes the result.
+# Fallback: set git.deploymentEnabled.main back to true in vercel.json and Vercel builds pushes to main again.
+on:
+  workflow_dispatch:
+    inputs:
+      staged:
+        description: "Próba: opublikuj bez przepinania domen"
+        type: boolean
+        default: true
+
+# A newer push replaces a build in progress, so a series of pushes becomes one deployment.
+concurrency:
+  group: vercel-production
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only main can read this environment. The token works for this one Vercel project.
+    environment:
+      name: vercel-production
+      url: https://www.bitrymdym.pl
+    env:
+      VERCEL_CLI: vercel@66.6.0
+      VERCEL_TELEMETRY_DISABLED: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Same project settings as in Vercel, but no "vercel pull": server secrets stay in Vercel.
+      - name: Ustawienia projektu
+        run: |
+          mkdir -p .vercel
+          cat > .vercel/project.json <<'JSON'
+          {"projectId":"prj_efwdGM4YfRC146ft85443tu3xBWB","orgId":"team_Shg0MetflUcRu6VP37tXEKYK","projectName":"bitrymdym","settings":{"framework":"nextjs","devCommand":null,"installCommand":null,"buildCommand":null,"outputDirectory":null,"rootDirectory":null,"directoryListing":false,"nodeVersion":"24.x"}}
+          JSON
+      - name: Budowanie
+        env:
+          VERCEL_ENV: production
+          BRD_DEPLOYMENT_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+        run: |
+          for n in NEXT_PUBLIC_SITE_URL NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_TURNSTILE_SITE_KEY; do
+            [ -n "${!n}" ] || { echo "::error::Brak zmiennej $n"; exit 1; }
+          done
+          npx -y "$VERCEL_CLI" build --prod --yes
+      - name: Publikacja na Vercelu
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_DEPLOY_TOKEN }}
+          STAGED: ${{ github.event_name == 'workflow_dispatch' && inputs.staged }}
+        run: |
+          args=(deploy --prebuilt --prod --yes)
+          [ "$STAGED" = "true" ] && args+=(--skip-domain)
+          url=$(npx -y "$VERCEL_CLI" "${args[@]}")
+          echo "Wdrożenie: $url" >> "$GITHUB_STEP_SUMMARY"

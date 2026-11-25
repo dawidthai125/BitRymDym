@@ -32,6 +32,8 @@ const studioWorkers = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // Set only by .github/workflows/deploy.yml: a prebuilt deploy has no Vercel build, so Skew Protection needs our own id.
+  deploymentId: process.env.BRD_DEPLOYMENT_ID || undefined,
   env: {
     NEXT_PUBLIC_STUDIO_MASTER_WORKER_URL: studioWorkers.master ?? "",
     NEXT_PUBLIC_STUDIO_MIX_ANALYSIS_WORKER_URL: studioWorkers.mixAnalysis ?? "",
