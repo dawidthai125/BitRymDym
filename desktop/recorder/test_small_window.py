@@ -156,11 +156,12 @@ for scale in (1.0, 1.25, 1.5):
             if w._compact or int(w.beat_head.cget("height")) != w.lane_h or not w.foot_label.winfo_manager():
                 bad.append(f"{place}: duże okno nie wróciło do zwykłego układu")
             whole(head, f"{place} wokal w dużym oknie")
-            # Everything fits: the wheel must not push the beat down and leave an empty strip above it.
+            # The wheel must not push the beat down and leave an empty strip above it. On a low screen it may go up.
+            fits = w.row_host.winfo_reqheight() <= w.track_canvas.winfo_height()
             for step in (-3, 3, -1):
                 w.track_canvas.yview_scroll(step, "units")
                 w.root.update_idletasks()
-                if w.track_canvas.canvasy(0) != 0:
+                if w.track_canvas.canvasy(0) < 0 or fits and w.track_canvas.canvasy(0) != 0:
                     bad.append(f"{place}: kółko odsunęło bit o {-w.track_canvas.canvasy(0):.0f} px")
                     w.track_canvas.yview_moveto(0)
         w.back_to_modes()
