@@ -92,6 +92,27 @@ for scale in (1.0, 1.25, 1.5):
         spare = w.track_canvas.winfo_height() - w.row_host.winfo_reqheight()
         if w.root.winfo_height() >= w.root.minsize()[1] and spare > int(40 * scale):
             bad.append(f"{place}: {spare} px puste pod ścieżkami")
+        short = w.root.minsize()[1]
+        # After a recording the message is long. Nothing of the rows may go under it.
+        w.status.set(
+            "Nagranie 3.8 s jest na Wokal 1 od 0:20.00. Prawie cisza (szczyt −55 dB). Podniosłem o 43 dB, więc słychać też szum. "
+            "Sprawdź mikrofon i nagraj jeszcze raz. " + app.tail_text(10.3, 3) + " Nie słychać bitu w mikrofonie, więc głosu nie "
+            "wyrównałem. Kliknij ZMIERZ przy OPÓŹNIENIE albo przesuń nagranie."
+        )
+        pump(w.root)
+        if lane.winfo_rooty() + lane.winfo_height() > w.track_canvas.winfo_rooty() + w.track_canvas.winfo_height() + 1:
+            bad.append(f"{place}: po długim napisie ścieżka wokalu pod krawędzią")
+        if w.status_label.winfo_height() < w.status_label.winfo_reqheight():
+            bad.append(f"{place}: długi napis ucięty")
+        if w.done_button.winfo_height() < w.done_button.winfo_reqheight():
+            bad.append(f"{place}: GOTOWE ucięte po długim napisie")
+        print(place, "długi napis: min", w.root.minsize(), "okno", w.root.winfo_height(), "napis", w.status_label.winfo_height())
+        if scale == 1.0 and w.root.minsize()[1] > 768 - 60 + 6:
+            bad.append(f"{place}: z długim napisem {w.root.minsize()[1]} px nie wejdzie na ekran 768 px")
+        w.status.set("Cofnięte.")
+        pump(w.root)
+        if abs(w.root.minsize()[1] - short) > 1:
+            bad.append(f"{place}: po krótkim napisie najmniejsze okno {w.root.minsize()[1]} zamiast {short}")
         print(
             place, "min", w.root.minsize(), "okno", w.root.winfo_width(), w.root.winfo_height(), "GOTOWE", w.done_button.winfo_height(),
             "bit", w.beat_head.winfo_height(), "wokal", head.winfo_height(), "zapas", spare, "paski", [flow.winfo_height() for flow in w._flows],

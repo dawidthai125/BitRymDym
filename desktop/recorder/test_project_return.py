@@ -25,6 +25,8 @@ def answer(_title: str, text: str) -> object:
 
 app.messagebox.askyesnocancel = answer
 app.messagebox.askyesno = answer
+# The headphones of this computer must not be the ones of the test.
+app.win_output.default_output_index = lambda: None
 
 
 def check(ok: object, what: str) -> None:

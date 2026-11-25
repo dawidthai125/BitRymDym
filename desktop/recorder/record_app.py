@@ -2047,27 +2047,36 @@ class RecorderWindow:
         if self._fit_after is None:
             self._fit_after = self.root.after(30, self._fit_height)
 
+    def _fit_message(self) -> int:
+        """Pixels the message needs, at least two lines. In a small window a longer one gets smaller letters."""
+        self.status_label.configure(font=(FONT_UI, 10))
+        two = 2 * tkfont.Font(font=self.status_label.cget("font")).metrics("linespace") + 8
+        if self._compact and self.status_label.winfo_reqheight() > two:
+            self.status_label.configure(font=(FONT_UI, 8))
+        return max(two, self.status_label.winfo_reqheight())
+
     def _fit_height(self) -> None:
-        """The smallest height keeps GOTOWE, two lines of messages, the beat and one vocal on screen."""
+        """The smallest height keeps GOTOWE, the whole message, the beat and one vocal on screen."""
         self._fit_after = None
         if not self.studio.winfo_manager() or self._update_blocks():
             return
+        message = self._fit_message()
         self.root.update_idletasks()
-        line = tkfont.Font(font=self.status_label.cget("font")).metrics("linespace")
         first = self.rows[0].get("head") if self.rows else None
         rows = int(self.beat_head.cget("height")) + (int(first.cget("height")) if isinstance(first, tk.Frame) else 0)
         # Outside the compact layout the second row may go under the edge: it scrolls.
         rows = rows if self._compact else min(rows, int(230 * self.ui))
         lanes = int((24 + 8) * self.ui) + rows + self.hscroll.winfo_reqheight()
         fixed = self.shell.winfo_reqheight() - self.lanes_outer.winfo_reqheight() - self.status_label.winfo_reqheight()
-        need = min(fixed + 2 * line + 8 + lanes, self.root.winfo_screenheight() - 60)
+        need = min(fixed + message + lanes, self.root.winfo_screenheight() - 60)
         wide = self.root.minsize()[0]
         if abs(self.root.minsize()[1] - need) > 1:
             self.root.minsize(wide, need)
         if not self._zoomed and 100 < self.root.winfo_height() < need:
             x, y = self.root.winfo_x(), self.root.winfo_y()
-            # It grows upwards when the bottom of the screen is near.
-            y = max(0, min(y, self.root.winfo_screenheight() - 60 - need))
+            if 0 <= x < self.root.winfo_screenwidth() and 0 <= y < self.root.winfo_screenheight():
+                # It grows upwards when the bottom of the screen is near. The other screens are not known to Tk.
+                y = max(0, min(y, self.root.winfo_screenheight() - 60 - need))
             self.root.geometry(f"{self.root.winfo_width()}x{need}+{x}+{y}")
 
     def _update_blocks(self) -> bool:
@@ -2376,6 +2385,7 @@ class RecorderWindow:
             self.studio, textvariable=self.status, wraplength=900, justify="left", anchor="w", bg=PAPER, fg=INK, font=(FONT_UI, 10)
         )
         self.status_label.pack(side="bottom", fill="x", padx=12, pady=(8, 2))
+        self.status.trace_add("write", lambda *_args: self._fit_soon())
         foot = tk.Frame(self.studio, bg=PAPER)
         foot.pack(side="bottom", fill="x", padx=12, pady=(8, 0))
         self.done_button = self._tool(foot, "GOTOWE  ✓", self.open_done, ON_AMBER, AMBER, 15)

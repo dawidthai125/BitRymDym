@@ -100,6 +100,18 @@ def stream_slip(ahead: list[float]) -> float:
     return abs(last[third // 2] - first[third // 2])
 
 
+def steady(lags: list[float]) -> list[float]:
+    """Without the sounds that stand alone, such as a cough: far from the five around them. A step of any size stays,
+    because the sounds on each side of it agree with their neighbours."""
+    kept: list[float] = []
+    for index, lag in enumerate(lags):
+        first = max(0, min(index - 2, len(lags) - 5))
+        around = sorted(lags[first : first + 5])
+        if abs(lag - around[len(around) // 2]) <= 60:
+            kept.append(lag)
+    return kept
+
+
 def lag_jump(lags: list[float]) -> float:
     """ms between the two parts of a run that do not agree: a Bluetooth stream that slipped, or a hand that
     drifted away. Either way their mean is nobody's delay. 0 when they agree."""
@@ -126,7 +138,7 @@ def clap_lag(samples: Any, skip: float, period: float, count: int, rate: int = 4
 def clap_delay(samples: Any, skip: float, period: float, count: int, rate: int = 48_000) -> tuple[float | None, float]:
     """How many ms late the claps (or the clicks heard by the microphone) are against `count` clicks, one every
     `period` seconds. samples: 16-bit take, `skip` seconds of it lie before the first click.
-    None: too few sounds, or they do not agree. Second: lag_jump of the claps that agree.
+    None: too few sounds, or they do not agree. Second: lag_jump, without the sounds that stand alone.
     """
     import numpy as np
 
@@ -155,7 +167,7 @@ def clap_delay(samples: Any, skip: float, period: float, count: int, rate: int =
     near = [lag for lag in lags if abs(lag - middle) <= 60]
     if len(near) < max(5, round(len(lags) * 0.6)):
         return None, 0.0
-    return round(min(float(LAG_MAX_MS), max(0.0, float(np.mean(near)))), 1), lag_jump(lags)
+    return round(min(float(LAG_MAX_MS), max(0.0, float(np.mean(near)))), 1), lag_jump(steady(lags))
 
 
 def self_test() -> None:
@@ -189,6 +201,23 @@ def self_test() -> None:
         false = sum(lag_jump([float(round(noise.normal(300, spread))) for _ in range(14)]) > 0 for _ in runs)
         if false > 18:
             raise SystemExit(f"klaskanie: {false}/300 równych uznane za przeskok (rozrzut {spread})")
+    def with_strays(step: float, spread: float, strays: int) -> list[float]:
+        made = [float(round(noise.normal(437 + step * (i > 6), spread))) for i in range(14)]
+        for spot in noise.choice(14, strays, replace=False):
+            made[int(spot)] += float(noise.choice((-1, 1)) * noise.uniform(90, 260))
+        return made
+
+    for strays in (1, 2):
+        for spread, least in ((5, 270), (10, 255), (15, 215)):
+            caught = sum(lag_jump(steady(with_strays(45, spread, strays))) > 0 for _ in runs)
+            if caught < least:
+                raise SystemExit(f"klaskanie: przeskok 45 ms i {strays} obcy dźwięk, rozrzut {spread}: zauważony {caught}/300")
+            caught = sum(lag_jump(steady(with_strays(100, spread, strays))) > 0 for _ in runs)
+            if caught < 270:
+                raise SystemExit(f"klaskanie: przeskok 100 ms i {strays} obcy dźwięk, rozrzut {spread}: zauważony {caught}/300")
+            false = sum(lag_jump(steady(with_strays(0, spread, strays))) > 0 for _ in runs)
+            if false > 24:
+                raise SystemExit(f"klaskanie: {false}/300 równych z {strays} obcym dźwiękiem uznane za przeskok (rozrzut {spread})")
     slipped = noise.standard_normal(48_000 * 18) * 20
     for index in range(16):
         at = int((0.6 + index + (0.1 if index > 9 else 0.0)) * 48_000)
