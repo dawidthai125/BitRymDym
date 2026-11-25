@@ -144,6 +144,39 @@ w.back_to_modes()
 w.choose_mode("online")
 check([t.name for t in w.tracks] == ["Wokal 1"] and w.beat_var.get() == "Pościg (90 BPM)", "bit po powrocie z offline")
 
+w.choose_mode("offline")
+w.status.set("Wybierz własny bit z pliku.")
+w.back_to_modes()
+w.choose_mode("online")
+check("własny bit" not in w.status.get() and "Uzbrój" in w.status.get(), "tekst studia po powrocie")
+
+# 3b. The beat picked last time comes back, also when the list comes after the window.
+w._pref_beat = "Pościg (90 BPM)"
+w.beat_var.set("")
+w._save_prefs()
+payload = {"supabaseUrl": "u", "anonKey": "k", "beats": [{"id": "0", "title": "Iskry", "bpm": 120}, {"id": "1", "title": "Pościg", "bpm": 90, "durationSeconds": 150}]}
+w._apply_public(payload)
+check(w.beat_var.get() == "Pościg (90 BPM)", "bit z poprzedniej sesji")
+w.beat_var.set("Iskry (120 BPM)")
+w._save_prefs()
+check(json.loads(app.PREFS.read_text(encoding="utf-8"))["beat"] == "Pościg (90 BPM)", "ustawienia pamiętają tylko wybór człowieka")
+w.beat_var.set("Pościg (90 BPM)")
+
+# 3c. Undo paints the clips again by itself.
+w.root.deiconify()
+w.root.update()
+w.tracks[0].clips = [Clip(second, 0.0, 0.0, 5.0), Clip(second, 6.0, 0.0, 5.0)]
+w._push_undo()
+w.tracks[0].clips = []
+w.undo()
+for _ in range(20):
+    w.root.update()
+    app.time.sleep(0.01)
+lane = w.rows[0]["lane"]
+check(lane.winfo_width() > 100 and len(lane.find_withtag("wave")) == 2, "klipy widać po Cofnij")
+check(max(lane.coords(item)[2] for item in lane.find_withtag("wave")) > 60, "fala ma szerokość po Cofnij")
+w.root.withdraw()
+
 # 4. Gotowe closes with the studio it belongs to.
 w.open_done()
 box = w._boxes[-1]
@@ -182,6 +215,42 @@ check(len(w.undo_stack) == steps, "strzałka nie zjada cofania")
 check(abs(w.tracks[0].clips[0].src_in - 0.60) < 1e-6 and abs(w.tracks[0].clips[0].src_out - 7.6) < 1e-6, "koniec nagrania wraca")
 w.undo()
 check(w.tracks[0].clips[0] == clip, "jedno cofnięcie przywraca miejsce")
+check(w.delay_var.get() == "" and key not in w._sync_known, "cofnięcie wraca też opóźnienie")
+for text, src in (("250", 0.75), ("300", 0.80)):
+    w.delay_var.set(text)
+    w._delay_typed()
+    check(abs(w.tracks[0].clips[0].src_in - src) < 1e-6, "po Cofnij opóźnienie dalej przesuwa nagranie")
+w.undo()
+check(w.tracks[0].clips[0] == clip and key not in w._sync_known, "drugie cofnięcie")
+w.delay_var.set("250")
+w._delay_typed()
+w._learn_delay(key, 0.111)
+w.undo()
+check(w.delay_var.get() == "111" and w.tracks[0].clips[0] == clip, "nowszy pomiar zostaje po Cofnij")
+del w._sync_known[key]
+w._show_delay()
+w.delay_var.set("200")
+w._delay_typed()
+w.delay_var.set("202")
+w._delay_typed()
+w.undo()
+check(w.tracks[0].clips[0] == clip and key not in w._sync_known, "drobna zmiana też się cofa")
+last, w._last_take, steps = w._last_take, None, len(w.undo_stack)
+w.delay_var.set("150")
+w.undo()
+check(key not in w._sync_known and len(w.undo_stack) == steps, "Cofnij wpisanej wartości nie rusza nagrań")
+w._last_take = last
+w._align_take(clip, 0.5, 187.5, key)
+w._delay_flush()
+w.undo()
+check(w.tracks[0].clips[0] == clip and key not in w._sync_known, "ułamek milisekundy nie psuje Cofnij")
+w._take_note = "Prawie cisza."
+w.tracks[0].clips = app.place([clip], [Clip(second, 8.0, 0.0, 3.0)])
+w._align_take(clip, 0.5, 300.0, key)
+check(all(part in w.status.get() for part in ("Wyrównane", "Prawie cisza.", "starego nagrania")), "wyrównanie nie kasuje uwag")
+w.undo()
+w._sync_known.pop(key, None)
+w._show_delay()
 w.output_var.set("Domyślne")
 w.delay_var.set("700")
 w._delay_typed()
@@ -211,6 +280,55 @@ w._cancel_tick()
 w._play_t0 -= 200
 w._tick()
 check(not w.playing, "cichy odsłuch się kończy")
+
+# 6b. Only the beat plays: M silences it in place, no new mix.
+class Player:
+    silent = False
+    note = ""
+
+    def poll(self) -> None:
+        return None
+
+    def terminate(self) -> None:
+        pass
+
+    kill = terminate
+
+    def wait(self, timeout: float | None = None) -> int:
+        return 0
+
+
+w.playing, w.monitor, w._mix_beat_only = True, Player(), True
+w.toggle_beat_mute()
+check(w.monitor.silent and w._remix_after is None, "M wycisza w miejscu")
+w.toggle_beat_mute()
+check(not w.monitor.silent and w._remix_after is None, "M oddaje dźwięk w miejscu")
+w._mix_beat_only = False
+w.toggle_beat_mute()
+check(not w.monitor.silent and w._remix_after is not None, "z wokalem nowy miks")
+w._cancel_remix()
+w.beat_muted, w.playing, w.monitor = False, False, None
+
+# 6c. A question on close ends the measurement.
+w._measuring = True
+w._confirm_close_save(defer=True) if not w._project_dirty() else (answers.append(None), w._confirm_close_save())
+check(not w._measuring, "pytanie kończy pomiar")
+
+# 6d. The smallest window: GOTOWE whole, the vocal lane visible.
+w.root.deiconify()
+for mode in ("online", "offline"):
+    w.choose_mode(mode)
+    for _ in range(3):
+        w.root.geometry("{}x{}".format(*w.root.minsize()))
+        for _ in range(15):
+            w.root.update()
+            app.time.sleep(0.01)
+    check(w.done_button.winfo_height() >= w.done_button.winfo_reqheight(), f"GOTOWE w małym oknie {mode}")
+    low = w.rows[0]["lane"]
+    check(low.winfo_rooty() + low.winfo_height() <= w.track_canvas.winfo_rooty() + w.track_canvas.winfo_height() + 1, f"ścieżka w małym oknie {mode}")
+    check(w.hscroll.winfo_height() > 8, f"przewijanie w małym oknie {mode}")
+w.choose_mode("online")
+w.root.withdraw()
 
 # 7. The plan is not known yet: nothing to buy. A second Enter does nothing.
 w.tier, w._plan_pending = "FREE", True

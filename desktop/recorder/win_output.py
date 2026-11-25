@@ -190,8 +190,10 @@ class WavePlayer:
         self.note = ""
         self._winmm: object | None = None
         self._handle: object | None = None
-        self._alive: list[tuple[object, WAVEHDR]] = []
+        self._alive: list[tuple[object, WAVEHDR, bytes]] = []
         self._align = 0
+        # True: the stream runs on, but the device gets silence.
+        self.silent = False
 
     def start(self) -> None:
         self._thread.start()
@@ -263,8 +265,14 @@ class WavePlayer:
         block = max(align, (rate * align * 80) // 1000)
         block -= block % align
         eof = False
+        quiet = self.silent
         while not self._stop.is_set():
             self._reap(winmm, handle)
+            if self.silent != quiet:
+                # Also what is already queued, otherwise M would act half a second late.
+                quiet = self.silent
+                for buf, _hdr, sound in self._alive:
+                    ctypes.memmove(buf, bytes(len(sound)) if quiet else sound, len(sound))
             while not eof and len(self._alive) < 6 and not self._stop.is_set():
                 data = self._stream.read(block)
                 if not data:
@@ -273,7 +281,7 @@ class WavePlayer:
                 if len(data) % align:
                     data = data[: len(data) - (len(data) % align)]
                 if data:
-                    self._queue(winmm, handle, data)
+                    self._queue(winmm, handle, data, quiet)
             if eof and not self._alive:
                 break
             if self._stop.is_set():
@@ -287,8 +295,8 @@ class WavePlayer:
             pass
         self._reap(winmm, handle, force=True)
 
-    def _queue(self, winmm: object, handle: object, data: bytes) -> None:
-        buf = ctypes_create(data)
+    def _queue(self, winmm: object, handle: object, data: bytes, quiet: bool = False) -> None:
+        buf = ctypes_create(bytes(len(data)) if quiet else data)
         hdr = WAVEHDR()
         hdr.lpData = ctypes_address(buf)
         hdr.dwBufferLength = len(data)
@@ -298,18 +306,18 @@ class WavePlayer:
         wrote = winmm.waveOutWrite(handle, ctypes_byref(hdr), _sizeof(hdr))  # type: ignore[attr-defined]
         if wrote != MMSYSERR_NOERROR:
             raise RuntimeError("To wyjście nie gra. Wybierz inne albo Domyślne.")
-        self._alive.append((buf, hdr))
+        self._alive.append((buf, hdr, data))
 
     def _reap(self, winmm: object, handle: object, force: bool = False) -> None:
-        still: list[tuple[object, WAVEHDR]] = []
-        for buf, hdr in self._alive:
+        still: list[tuple[object, WAVEHDR, bytes]] = []
+        for buf, hdr, data in self._alive:
             if force or (hdr.dwFlags & WHDR_DONE):
                 try:
                     winmm.waveOutUnprepareHeader(handle, ctypes_byref(hdr), _sizeof(hdr))  # type: ignore[attr-defined]
                 except Exception:
                     pass
             else:
-                still.append((buf, hdr))
+                still.append((buf, hdr, data))
         self._alive = still
 
     def _close(self) -> None:

@@ -90,17 +90,52 @@ def mic_at_rate(samples: Any, skip: float, rate: int = 48_000) -> Any:
     return part.reshape(-1, step).mean(axis=1)
 
 
+def stream_slip(ahead: list[float]) -> float:
+    """Seconds the microphone and the output moved against each other during a measurement. ahead: the recording's
+    lead over the played sound, read all the time."""
+    if len(ahead) < 45:
+        return 0.0
+    third = len(ahead) // 3
+    first, last = sorted(ahead[:third]), sorted(ahead[-third:])
+    return abs(last[third // 2] - first[third // 2])
+
+
+def lag_jump(lags: list[float]) -> float:
+    """ms by which the claps moved for good in the middle of the run (a Bluetooth stream that slipped).
+    0 for an uneven hand, and for one that slowly drifts: a step must explain the claps far better than a line."""
+    import numpy as np
+
+    y = np.asarray(lags, dtype=np.float64)
+    if len(y) < 6:
+        return 0.0
+    x = np.arange(len(y))
+    line = float(np.sum((y - np.polyval(np.polyfit(x, y, 1), x)) ** 2))
+    best, found = float("inf"), 0.0
+    for at in range(3, len(y) - 2):
+        left, right = y[:at], y[at:]
+        rest = float(np.sum((left - left.mean()) ** 2) + np.sum((right - right.mean()) ** 2))
+        step = abs(float(np.median(left[-3:])) - float(np.median(right[:3])))
+        clear = step > 2.2 * max(float(np.ptp(left)), float(np.ptp(right)), 5.0) / 2 + 8
+        if rest < best and rest < 0.4 * line and step > 25 and clear:
+            best, found = rest, step
+    return found
+
+
 def clap_lag(samples: Any, skip: float, period: float, count: int, rate: int = 48_000) -> float | None:
+    return clap_delay(samples, skip, period, count, rate)[0]
+
+
+def clap_delay(samples: Any, skip: float, period: float, count: int, rate: int = 48_000) -> tuple[float | None, float]:
     """How many ms late the claps (or the clicks heard by the microphone) are against `count` clicks, one every
     `period` seconds. samples: 16-bit take, `skip` seconds of it lie before the first click.
-    None: too few sounds, or they do not agree.
+    None: too few sounds, or they do not agree. Second: lag_jump of the claps that agree.
     """
     import numpy as np
 
     part = np.abs(np.asarray(samples, dtype=np.float64)[max(0, int(round(skip * rate))) :]) / 32768.0
     frame = rate // 200
     if len(part) < frame * 8:
-        return None
+        return None, 0.0
     level = part[: len(part) // frame * frame].reshape(-1, frame).max(axis=1)
     floor = float(np.median(level))
     lags: list[float] = []
@@ -116,12 +151,12 @@ def clap_lag(samples: Any, skip: float, period: float, count: int, rate: int = 4
         onset = int(np.argmax(window >= top * 0.4))
         lags.append((begin + onset) * 5.0 - index * period * 1000)
     if len(lags) < 5:
-        return None
+        return None, 0.0
     middle = float(np.median(lags))
     near = [lag for lag in lags if abs(lag - middle) <= 60]
     if len(near) < max(5, round(len(lags) * 0.6)):
-        return None
-    return round(min(float(LAG_MAX_MS), max(0.0, float(np.mean(near)))), 1)
+        return None, 0.0
+    return round(min(float(LAG_MAX_MS), max(0.0, float(np.mean(near)))), 1), lag_jump(near)
 
 
 def self_test() -> None:
@@ -145,6 +180,21 @@ def self_test() -> None:
         loose[at : at + 800] += 9000
     if clap_lag(np.clip(loose, -32768, 32767).astype(np.int16), 0.3, 1.0, 12) is not None:
         raise SystemExit("klaskanie: nierówno")
+
+    caught = sum(lag_jump([float(noise.normal(437 + 41 * (i > 4), 5)) for i in range(10)]) > 0 for _ in range(300))
+    if caught < 240:
+        raise SystemExit(f"klaskanie: przeskok 41 ms zauważony {caught}/300")
+    if lag_jump([440.0] * 4 + [481.0] * 6) < 40 or lag_jump([437, 441, 432, 445, 478, 480, 471, 484, 479, 476]) < 35:
+        raise SystemExit("klaskanie: przeskok")
+    for drift in (4, 6, 10):
+        wrong = sum(lag_jump([round((300 + drift * i + noise.normal(0, 10)) / 5) * 5 for i in range(10)]) > 0 for _ in range(300))
+        if wrong > 6:
+            raise SystemExit(f"klaskanie: dryf {drift} ms uznany za przeskok {wrong}/300")
+    false = sum(lag_jump(list(noise.normal(300, spread, 10))) > 0 for spread in (8, 14, 20) for _ in range(300))
+    if false > 18:
+        raise SystemExit(f"klaskanie: {false}/900 równych uznane za przeskok")
+    if stream_slip([0.5] * 100 + [0.54] * 100) < 0.03 or stream_slip([0.5, 0.51] * 100) > 0.011:
+        raise SystemExit("klaskanie: strumień")
 
     rng = np.random.default_rng(5)
     seconds = 12
