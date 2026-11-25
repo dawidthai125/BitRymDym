@@ -325,6 +325,11 @@ for mode in ("online", "offline"):
             app.time.sleep(0.01)
     check(w.done_button.winfo_height() >= w.done_button.winfo_reqheight(), f"GOTOWE w małym oknie {mode}")
     low = w.rows[0]["lane"]
+    print(
+        mode, "okno", w.root.winfo_width(), w.root.winfo_height(), "min", w.root.minsize(), "ekran", w.root.winfo_screenwidth(),
+        w.root.winfo_screenheight(), "ui", w.ui, "zwarte", w._compact, "tory", w.track_canvas.winfo_height(), "potrzeba", w.row_host.winfo_reqheight(),
+        "paski", [flow.winfo_height() for flow in w._flows], "stan", w.status_label.winfo_height(), "szer", w._flows[0].widest(),
+    )
     check(low.winfo_rooty() + low.winfo_height() <= w.track_canvas.winfo_rooty() + w.track_canvas.winfo_height() + 1, f"ścieżka w małym oknie {mode}")
     check(w.hscroll.winfo_height() > 8, f"przewijanie w małym oknie {mode}")
 w.choose_mode("online")
