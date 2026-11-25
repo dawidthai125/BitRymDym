@@ -482,7 +482,7 @@ def wants_remember(value: object) -> bool:
 # Hidden password on this PC. The field stays empty. Zaloguj uses it until this window ends.
 PASSWORD_KEEP_SECONDS = 48 * 60 * 60
 REMEMBER_LABEL = "Zapamiętaj hasło na 48 godzin"
-LOGIN_HINT_READY = "Hasło jest zapisane i ukryte. Naciśnij Zaloguj. Po 48 godzinach wpiszesz je jeszcze raz."
+LOGIN_HINT_READY = "Hasło jest zapamiętane. Nic nie wpisuj, naciśnij Zaloguj. Po 48 godzinach wpiszesz je jeszcze raz."
 LOGIN_HINT_FRESH = "Program sam nie wchodzi. Wpisz hasło i naciśnij Zaloguj. Zaznaczone pole trzyma je ukryte przez 48 godzin."
 LOGIN_HINT_EXPIRED = "Zapisane hasło wygasło po 48 godzinach. Wpisz je jeszcze raz."
 
@@ -508,6 +508,14 @@ def saved_password_state(session: dict | None, now: float, email: str = "") -> s
     if now < until:
         return "ready"
     return "expired"
+
+
+def saved_until_text(session: dict | None) -> str:
+    """When the hidden password ends, as shown in its field."""
+    try:
+        return datetime.fromtimestamp(int(float((session or {}).get("passwordUntil") or "x"))).strftime("%d.%m, %H:%M")
+    except (TypeError, ValueError, OSError, OverflowError):
+        return ""
 
 
 def login_hint(state: str) -> str:
@@ -2077,6 +2085,7 @@ class RecorderWindow:
         self._hide_splash()
         self.studio.pack_forget()
         self.modes.pack_forget()
+        self._sync_saved_password()
         self.gate.pack(fill="both", expand=True)
         scale = dpi_scale()
         self.root.update_idletasks()
@@ -6171,6 +6180,14 @@ class RecorderWindow:
         tk.Label(card, text="HASŁO", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w")
         self.password = self._entry(card, "*")
         self.password.pack_configure(pady=(2, 10))
+        # What a remembered password looks like. Not text of the field: it must never be sent as a password.
+        self.password_dots = tk.Label(self.password, bg=RACK, fg=SOFT, font=(FONT_UI, 9), bd=0, padx=0, pady=0, cursor="xterm")
+        self.password_dots.bind("<Button-1>", lambda _event: self.password.focus_set())
+        self.saved_until = ""
+        self._password_expired = False
+        self._password_text = tk.StringVar(master=self.root)
+        self.password.configure(textvariable=self._password_text)
+        self._password_text.trace_add("write", lambda *_args: self._show_dots())
         if saved:
             self.email.insert(0, saved.get("email", ""))
         self.password.bind("<Return>", lambda _event: self.sign_in())
@@ -6180,10 +6197,12 @@ class RecorderWindow:
         login_state = saved_password_state(saved, time.time(), self.email.get().strip())
         if login_state == "expired":
             drop_saved_password(saved)
+            self._password_expired = True
         tk.Checkbutton(
             card,
             text=REMEMBER_LABEL,
             variable=self.remember_login,
+            command=self._sync_saved_password,
             bg=PAPER,
             fg=INK,
             selectcolor=RACK,
@@ -6194,15 +6213,11 @@ class RecorderWindow:
             highlightthickness=0,
             bd=0,
         ).pack(anchor="w", pady=(0, 2))
-        tk.Label(
-            card,
-            text=login_hint(login_state),
-            bg=PAPER,
-            fg=MUTE,
-            font=(FONT_UI, 9),
-            wraplength=380,
-            justify="left",
-        ).pack(anchor="w", pady=(0, 8))
+        self.login_note = tk.Label(card, bg=PAPER, fg=MUTE, font=(FONT_UI, 9), wraplength=380, justify="left")
+        self.login_note.pack(anchor="w", pady=(0, 8))
+        self.email.bind("<KeyRelease>", lambda _event: self._sync_saved_password())
+        self.email.bind("<FocusOut>", lambda _event: self._sync_saved_password())
+        self._sync_saved_password()
         self._link(card, "Nie pamiętam hasła", "/forgot-password").pack(anchor="w", pady=(2, 10))
         bottom = tk.Frame(card, bg=PAPER)
         bottom.pack(anchor="w")
@@ -6841,6 +6856,22 @@ class RecorderWindow:
         except RuntimeError:
             return ""
 
+    def _sync_saved_password(self) -> None:
+        """The form says whether Zaloguj works with nothing typed, for the e-mail that is in it now."""
+        email = self.email.get().strip()
+        saved = load_session() if email and self.remember_login.get() == 1 else None
+        state = saved_password_state(saved, time.time(), email)
+        self.saved_until = saved_until_text(saved) if state == "ready" else ""
+        self.login_note.configure(text=login_hint("expired" if state == "none" and self._password_expired else state))
+        self._show_dots()
+
+    def _show_dots(self) -> None:
+        if self.saved_until and not self._password_text.get():
+            self.password_dots.configure(text=f"••••••  zapamiętane do {self.saved_until}")
+            self.password_dots.place(x=6, rely=0.5, anchor="w")
+        else:
+            self.password_dots.place_forget()
+
     def _entry(self, parent: tk.Widget, show: str) -> tk.Entry:
         box = tk.Entry(
             parent,
@@ -7053,6 +7084,7 @@ class RecorderWindow:
                     used_saved = True
                 elif state == "expired":
                     drop_saved_password(saved)
+                    self._password_expired = True
                     raise RuntimeError(LOGIN_HINT_EXPIRED)
                 else:
                     raise RuntimeError("Wpisz e-mail i hasło.")
@@ -7093,6 +7125,7 @@ class RecorderWindow:
         if used_saved and "Logowanie nie weszło" in str(error):
             drop_saved_password()
             error = RuntimeError("Zapisane hasło nie weszło. Wpisz je jeszcze raz.")
+        self._sync_saved_password()
         self.status.set(str(error))
         self.gate_status.set(str(error))
 
@@ -7134,6 +7167,7 @@ class RecorderWindow:
         self._listen_cache = None
         self._client_cache = None
         self._signed_in = True
+        self._password_expired = False
         self.password.delete(0, "end")
         self._read_plan()
         self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
@@ -7503,6 +7537,8 @@ def password_keep_self_test() -> None:
         raise SystemExit("hasło: brak zapisu")
     if login_hint("ready") != LOGIN_HINT_READY or "każdym razem" in login_hint("none") or "48" not in login_hint("expired"):
         raise SystemExit("hasło: tekst logowania")
+    if saved_until_text(held) != datetime.fromtimestamp(int(deadline)).strftime("%d.%m, %H:%M") or saved_until_text(None) or saved_until_text({"passwordUntil": "x"}):
+        raise SystemExit("hasło: termin")
     if REMEMBER_LABEL != "Zapamiętaj hasło na 48 godzin":
         raise SystemExit("hasło: pole")
     if gold_offer("FREE") != "Kup Premium Gold" or gold_offer("") != "Kup Premium Gold" or gold_offer(None) != "Kup Premium Gold":

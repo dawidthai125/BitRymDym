@@ -359,4 +359,76 @@ check(app.flow_places(500, [(100, 20), (200, 30), (100, 20)], 10, True) == ([(0,
 check(app.flow_places(320, [(100, 20), (200, 30), (100, 20)], 10, True)[0] == [(0, 5), (110, 0), (0, 34)], "dwa rzędy")
 check(app.plain_text("Pościg ŁĄKI") == "poscig laki", "szukanie bez polskich znaków")
 w.root.destroy()
+
+# 9. A remembered password is seen in the form, and the dots are never sent as a password.
+GRANT = {"access_token": "a.b.c", "refresh_token": "r"}
+app.save_session("https://s.example", "anon", "a@b.pl", GRANT, True, "haslo-testowe", app.password_deadline(app.time.time()))
+app.forget_tokens(remember="1")
+w = app.RecorderWindow()
+
+
+def dots() -> bool:
+    return bool(w.password_dots.winfo_manager())
+
+
+check(dots() and w.saved_until and w.saved_until in w.password_dots.cget("text"), "kropki zapamiętanego hasła")
+w.root.deiconify()
+w.show_gate()
+w.root.update()
+check(w.password_dots.winfo_reqwidth() + 6 <= w.password.winfo_width(), "termin mieści się w polu")
+w.root.withdraw()
+check("haslo-testowe" not in w.password_dots.cget("text") and w.password.get() == "", "pole zostaje puste")
+check(w.login_note.cget("text") == app.LOGIN_HINT_READY, "tekst pod polem")
+w.password.insert(0, "n")
+check(not dots(), "pisanie chowa kropki")
+w.password.delete(0, "end")
+check(dots(), "puste pole znów z kropkami")
+w.email.insert("end", "x")
+w._sync_saved_password()
+check(not dots() and w.login_note.cget("text") == app.LOGIN_HINT_FRESH, "inny e-mail")
+w.email.delete(0, "end")
+w._sync_saved_password()
+check(not dots(), "bez e-maila")
+w.email.insert(0, "A@B.pl")
+w._sync_saved_password()
+check(dots(), "ten sam e-mail")
+w.remember_login.set(0)
+w._sync_saved_password()
+check(not dots(), "odznaczone pole")
+w.remember_login.set(1)
+w._sync_saved_password()
+sent: list[str] = []
+
+
+def grant(_url: str, _key: str, _email: str, password: str) -> dict[str, str]:
+    sent.append(password)
+    raise RuntimeError("Logowanie nie weszło.")
+
+
+app.supabase_password_grant = grant
+w.public_url, w.public_key = "https://s.example", "anon"
+until = app.time.time() + 10
+
+
+def answered() -> None:
+    if w._signing and app.time.time() < until:
+        w.root.after(20, answered)
+    else:
+        w.root.quit()
+
+
+# The answer comes from a thread, so a real main loop has to run.
+w.root.after(0, w.sign_in)
+w.root.after(50, answered)
+w.root.mainloop()
+check(sent == ["haslo-testowe"], "Zaloguj wysyła zapisane hasło, nie kropki")
+check(not dots() and not w.saved_until, "złe hasło znika z pola")
+w.root.destroy()
+
+app.save_session("https://s.example", "anon", "a@b.pl", GRANT, True, "haslo-testowe", str(int(app.time.time()) - 5))
+w = app.RecorderWindow()
+check(not dots() and w.login_note.cget("text") == app.LOGIN_HINT_EXPIRED, "po 48 godzinach")
+w.sign_in()
+check(not w._signing and not dots(), "po 48 godzinach trzeba wpisać")
+w.root.destroy()
 print("project return self-test ok")
