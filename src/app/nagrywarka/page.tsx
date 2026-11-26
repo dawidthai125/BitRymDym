@@ -15,9 +15,9 @@ import type { PremiumTier } from "@/types/premium";
 /** Public Windows setup. The file is not in git and not on Vercel. */
 export const RECORDER_SETUP_URL =
   "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup.exe";
-/** Same program without installing (Velopack portable ZIP); it updates itself like the installed one. */
+/** Same program without installing: one exe that unpacks next to itself and updates itself like the installed one. */
 export const RECORDER_PORTABLE_URL =
-  "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Portable.zip";
+  "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Portable.exe";
 
 const TIERS: PremiumTier[] = ["FREE", "BRONZE", "SILVER", "GOLD"];
 
