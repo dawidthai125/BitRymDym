@@ -109,7 +109,7 @@
       "windowsLead": "Logujesz się tym samym adresem co na stronie. Program bierze opublikowane bity z katalogu i nagrywa tylko mikrofon.",
       "canTitle": "Co można w Nagrywarce",
       "can": [
-        "Zalogować się na istniejące konto i wylogować. Jeśli zaznaczysz „Zapamiętaj hasło na 48 godzin”, hasło leży ukryte w pliku zaszyfrowanym kluczem Twojego konta Windows. Wylogowanie kasuje je i kończy sesję też na serwerze.",
+        "Zalogować się na istniejące konto i wylogować. Jeśli zaznaczysz „Zapamiętaj hasło na 48 godzin”, hasło leży ukryte w pliku zaszyfrowanym kluczem Twojego konta Windows, do 48 godzin od ostatniego logowania. Wylogowanie kasuje je i kończy sesję też na serwerze.",
         "Wejść do Studia Online: bit z katalogu strony leci jako odsłuch i nie jest zapisywany na dysk.",
         "Z Premium Gold wejść do Studia Offline: własny bit z pliku na komputerze, 16 ścieżek wokalu i 6 na podbicia i adliby.",
         "Nagrać mikrofon do zwykłego pliku WAV, jeden kanał, w tej samej jakości co strona.",

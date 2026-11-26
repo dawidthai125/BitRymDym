@@ -507,9 +507,9 @@ def wants_remember(value: object) -> bool:
 # Hidden password on this PC. The field stays empty. Zaloguj uses it until this window ends.
 PASSWORD_KEEP_SECONDS = 48 * 60 * 60
 REMEMBER_LABEL = "Zapamiętaj hasło na 48 godzin"
-LOGIN_HINT_READY = "Hasło jest zapamiętane. Nic nie wpisuj, naciśnij Zaloguj. Po 48 godzinach wpiszesz je jeszcze raz."
-LOGIN_HINT_FRESH = "Program sam nie wchodzi. Wpisz hasło i naciśnij Zaloguj. Zaznaczone pole trzyma je ukryte przez 48 godzin."
-LOGIN_HINT_EXPIRED = "Zapisane hasło wygasło po 48 godzinach. Wpisz je jeszcze raz."
+LOGIN_HINT_READY = "Hasło jest zapamiętane. Nic nie wpisuj, naciśnij Zaloguj. Każde logowanie przedłuża je o 48 godzin."
+LOGIN_HINT_FRESH = "Program sam nie wchodzi. Wpisz hasło i naciśnij Zaloguj. Zaznaczone pole trzyma je ukryte przez 48 godzin od ostatniego logowania."
+LOGIN_HINT_EXPIRED = "Minęło 48 godzin od ostatniego logowania i zapisane hasło wygasło. Wpisz je jeszcze raz."
 
 
 def password_deadline(now: float) -> str:

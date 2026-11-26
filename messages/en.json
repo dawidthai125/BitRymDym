@@ -109,7 +109,7 @@
       "windowsLead": "You sign in with the same address as on the site. The app loads published beats and records only the microphone.",
       "canTitle": "What the app can do",
       "can": [
-        "Sign in to an existing account and sign out. With the 48-hour password box ticked, the password sits hidden in a file encrypted with your Windows account key. Signing out deletes it and also ends the session on the server.",
+        "Sign in to an existing account and sign out. With the 48-hour password box ticked, the password sits hidden in a file encrypted with your Windows account key, for up to 48 hours after your last sign-in. Signing out deletes it and also ends the session on the server.",
         "Open Studio Online: a beat from the site catalog plays as a monitor and is not saved to disk.",
         "With Premium Gold open Studio Offline: your own beat file on the computer, 16 vocal tracks and 6 for doubles and adlibs.",
         "Record the microphone to a plain WAV file, one channel, at the same quality as the site.",
