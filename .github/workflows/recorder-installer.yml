@@ -136,8 +136,11 @@ jobs:
         run: |
           $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
           Remove-Item $note -ErrorAction SilentlyContinue
-          Remove-Item (Join-Path $env:LOCALAPPDATA "BitRymDym\tools") -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item (Join-Path $env:LOCALAPPDATA "BitRymDym\dzwiek") -Recurse -Force -ErrorAction SilentlyContinue
           $env:BITRYMDYM_UI_SMOKE = "1"
+          # Cudze rzeczy obok (na PC Dawida w BitRymDym\tools leżą 7zip i vnc) nie mogą zniknąć.
+          $foreign = @((Join-Path $env:LOCALAPPDATA "BitRymDym\tools\7zip\x.txt"), (Join-Path $env:LOCALAPPDATA "BitRymDym\dzwiek\obce\x.txt"))
+          foreach ($f in $foreign) { New-Item -ItemType Directory -Force (Split-Path $f) | Out-Null; Set-Content $f "x" }
           $p = Start-Process "dist\BitRymDym\BitRymDym.exe" -PassThru
           if (-not $p.WaitForExit(90000)) { $p.Kill(); throw "smoke: program nie zakończył się w 90 s" }
           if (-not (Test-Path $note)) { throw "smoke: brak pliku wyniku" }
@@ -147,6 +150,7 @@ jobs:
           if ($text -notmatch "ffmpeg=") { throw "smoke: brak ffmpeg w wyniku" }
           if ($text -notmatch "ffplay=" -or $text -match "ffplay=None") { throw "smoke: program nie widzi ffplay" }
           if ($text -notmatch "tools=fetched") { throw "smoke: program nie pobrał ffmpeg przy pierwszym starcie" }
+          foreach ($f in $foreign) { if (-not (Test-Path $f)) { throw "pobieranie ffmpeg skasowało cudzy plik $f" } }
           if (Test-Path "dist\BitRymDym\ffmpeg.exe") { throw "ffmpeg nie może być w paczce" }
 
       - name: Velopack 1.2.161
@@ -195,7 +199,7 @@ jobs:
           Get-Process BitRymDym -ErrorAction SilentlyContinue | Stop-Process -Force
           $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
           Remove-Item $note -ErrorAction SilentlyContinue
-          Remove-Item (Join-Path $env:LOCALAPPDATA "BitRymDym\tools") -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item (Join-Path $env:LOCALAPPDATA "BitRymDym\dzwiek") -Recurse -Force -ErrorAction SilentlyContinue
           $env:BITRYMDYM_UI_SMOKE = "1"
           $q = Start-Process (Join-Path $root "current\BitRymDym.exe") -PassThru
           if (-not $q.WaitForExit(90000)) { $q.Kill(); throw "smoke po instalacji: czas" }
@@ -205,7 +209,7 @@ jobs:
           if ($installed -notmatch "ffplay=" -or $installed -match "ffplay=None") { throw "po instalacji program nie widzi ffplay" }
           if ($installed -notmatch "ffmpeg\.exe") { throw "po instalacji program nie widzi ffmpeg" }
           if ($installed -notmatch "tools=fetched") { throw "po instalacji program nie pobrał ffmpeg" }
-          if ($installed -notmatch "BitRymDym\\tools\\") { throw "po instalacji ffmpeg nie z folderu tools" }
+          if ($installed -notmatch "BitRymDym\\dzwiek\\") { throw "po instalacji ffmpeg nie z folderu dzwiek" }
 
       - name: Portable.exe - jeden plik, rozpakowanie obok, smoke, aktualizacja, drugi start
         working-directory: desktop/recorder
@@ -248,7 +252,7 @@ jobs:
           if (Test-Path (Join-Path $root "current\ffmpeg.exe")) { throw "portable: ffmpeg nie może być w paczce" }
 
           # 3. Pierwszy start pobiera ffmpeg.
-          Remove-Item (Join-Path $env:LOCALAPPDATA "BitRymDym\tools") -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item (Join-Path $env:LOCALAPPDATA "BitRymDym\dzwiek") -Recurse -Force -ErrorAction SilentlyContinue
           $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
           Remove-Item $note -ErrorAction SilentlyContinue
           $env:BITRYMDYM_UI_SMOKE = "1"

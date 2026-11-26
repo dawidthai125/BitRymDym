@@ -2,7 +2,7 @@
 
 The installer, the portable copy and every update used to carry 103 MB of ffmpeg. Now the program
 downloads one pinned archive once (31 MB, our R2 bucket, SHA-256 and size checked) into
-%LOCALAPPDATA%\\BitRymDym\\tools\\<version>. Velopack updates replace only the folder named current,
+%LOCALAPPDATA%\\BitRymDym\\dzwiek\\<version>. Velopack updates replace only the folder named current,
 so the tools stay. A copy next to the exe (older installs, developer runs) still wins.
 
 Archive: tar.xz with ffmpeg.exe, ffplay.exe and FFMPEG-LICENSE.txt from Gyan's essentials build
@@ -30,9 +30,14 @@ READY_MARK = ".ok"
 Progress = Callable[[int, int], None]
 
 
+# Own folder: %LOCALAPPDATA%\BitRymDym\tools may hold other people's things (seen on the owner's PC:
+# 7zip, vnc). Only folders this module made (OWNED_PREFIX) are ever removed.
+OWNED_PREFIX = "ffmpeg-"
+
+
 def tools_root() -> Path:
     base = os.environ.get("LOCALAPPDATA") or str(Path.home())
-    return Path(base) / "BitRymDym" / "tools"
+    return Path(base) / "BitRymDym" / "dzwiek"
 
 
 def tools_dir(root: Path | None = None) -> Path:
@@ -121,9 +126,9 @@ def fetch(progress: Progress | None = None, *, root: Path | None = None, url: st
         return final
     finally:
         shutil.rmtree(work, ignore_errors=True)
-        # Older tool versions are no longer used.
+        # Older versions made by this module are no longer used. Anything else in the folder stays.
         for old in parent.iterdir() if parent.is_dir() else ():
-            if old.is_dir() and old.name != TOOLS_VERSION and not old.name.startswith("pobieranie-"):
+            if old.is_dir() and old.name != TOOLS_VERSION and old.name.startswith(OWNED_PREFIX) and (old / READY_MARK).is_file():
                 shutil.rmtree(old, ignore_errors=True)
 
 
@@ -168,10 +173,18 @@ def self_test() -> None:
         port = server.server_address[1]
         try:
             TOOLS_SHA256, TOOLS_SIZE = hashlib.sha256(good).hexdigest(), len(good)
+            foreign = tools_dir(base / "a").parent / "7zip"
+            foreign.mkdir(parents=True)
+            (foreign / "7z.exe").write_bytes(b"x")
+            stale = tools_dir(base / "a").parent / "ffmpeg-0.0-old"
+            stale.mkdir()
+            (stale / READY_MARK).write_text("old")
             seen: list[int] = []
             folder = fetch(lambda done, total: seen.append(done), root=base / "a", url=f"http://127.0.0.1:{port}/good")
             assert ready(folder) and (folder / "ffmpeg.exe").read_bytes() == b"ffmpeg.exe test", "unpack"
             assert seen and seen[-1] == len(good), "progress"
+            assert (foreign / "7z.exe").is_file(), "someone else's folder must stay"
+            assert not stale.exists(), "an older own version is removed"
             assert tool_path("ffplay.exe", folder) == folder / "ffplay.exe", "tool_path"
             assert fetch(root=base / "a", url="http://127.0.0.1:1/never") == folder, "ready folder is reused"
             TOOLS_SHA256 = "0" * 64

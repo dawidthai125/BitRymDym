@@ -41,6 +41,10 @@ Name: "pl"; MessagesFile: "compiler:Languages\Polish.isl"
 
 [Messages]
 pl.SetupWindowTitle=BitRymDym — rozpakowuję program
+pl.SetupAppTitle=BitRymDym
+pl.WizardInstalling=Rozpakowuję
+pl.InstallingLabel=Rozpakowuję BitRymDym do folderu obok tego pliku. To chwila, potem program sam się otworzy.
+pl.StatusExtractFiles=Rozpakowuję pliki...
 
 [Files]
 Source: "{#PortableDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -49,6 +53,14 @@ Source: "{#PortableDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsub
 Filename: "{app}\BitRymDym.exe"; WorkingDir: "{app}"; Flags: nowait skipifsilent
 
 [Code]
+{ With every other page off, Inno still shows "Ready to install" and waits for a click
+  (seen on the owner's PC 2026-11-26). Go straight on. }
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID = wpReady then
+    WizardForm.NextButton.OnClick(WizardForm.NextButton);
+end;
+
 function InitializeSetup(): Boolean;
 var
   Exe: String;

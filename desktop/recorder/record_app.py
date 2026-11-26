@@ -7732,7 +7732,8 @@ def ensure_tools_window() -> bool:
     root.title("BitRymDym")
     root.configure(bg=PAPER)
     root.resizable(False, False)
-    root.geometry("440x210")
+    # No fixed pixel size: at 150 % scale a fixed 440x210 window cut the text (owner's PC 2026-11-26).
+    scale = max(1.0, float(root.winfo_fpixels("1i")) / 96.0)
     try:
         icon = brand_file("cassette.png")
         if icon:
@@ -7743,12 +7744,13 @@ def ensure_tools_window() -> bool:
     message = tk.Label(
         root,
         text="Pobieram dodatki dźwięku (ffmpeg, 31 MB). To dzieje się tylko raz.",
-        bg=PAPER, fg=INK, font=(FONT_UI, 10), wraplength=400, justify="center",
+        bg=PAPER, fg=INK, font=(FONT_UI, 10), wraplength=int(400 * scale), justify="center",
     )
     message.pack(padx=16)
-    bar = tk.Canvas(root, width=360, height=14, bg=LINE, highlightthickness=0)
+    bar_w = int(360 * scale)
+    bar = tk.Canvas(root, width=bar_w, height=int(14 * scale), bg=LINE, highlightthickness=0)
     bar.pack(pady=12)
-    fill = bar.create_rectangle(0, 0, 0, 14, fill=AMBER, width=0)
+    fill = bar.create_rectangle(0, 0, 0, int(14 * scale), fill=AMBER, width=0)
     count = tk.Label(root, text="", bg=PAPER, fg=MUTE, font=(FONT_META, 9))
     count.pack()
     buttons = tk.Frame(root, bg=PAPER)
@@ -7776,7 +7778,7 @@ def ensure_tools_window() -> bool:
     def tick() -> None:
         total = max(1, int(state["total"]))
         got = int(state["got"])
-        bar.coords(fill, 0, 0, int(360 * min(1.0, got / total)), 14)
+        bar.coords(fill, 0, 0, int(bar_w * min(1.0, got / total)), int(14 * scale))
         count.configure(text=f"{got / 1e6:.1f} / {total / 1e6:.1f} MB")
         if not state["done"]:
             root.after(100, tick)
@@ -7789,6 +7791,9 @@ def ensure_tools_window() -> bool:
         tk.Button(buttons, text="Zamknij", command=root.destroy, bg=LINE_STRONG, fg=INK, relief="flat", padx=12, pady=4).pack(side="left", padx=6)
 
     root.protocol("WM_DELETE_WINDOW", root.destroy)
+    root.update_idletasks()
+    w, h = root.winfo_reqwidth() + int(24 * scale), root.winfo_reqheight() + int(12 * scale)
+    root.geometry(f"{w}x{h}+{max(0, (root.winfo_screenwidth() - w) // 2)}+{max(0, (root.winfo_screenheight() - h) // 3)}")
     start()
     root.mainloop()
     return bool(state["ok"]) and tools_present()
