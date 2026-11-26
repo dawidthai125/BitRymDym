@@ -22,6 +22,7 @@ if updater.velopack_hook():
     raise SystemExit(0)
 
 import test_control
+import tools_fetch
 
 # Off unless --test-control. It may move every path below to a folder of its own.
 test_control.use_test_data()
@@ -891,10 +892,12 @@ def first_file(paths: list[Path]) -> Path | None:
 
 def ffmpeg_exe() -> str:
     bundled = app_dir() / "ffmpeg.exe"
+    # Downloaded once on first start (tools_fetch); updates do not touch it.
+    fetched = tools_fetch.tool_path("ffmpeg.exe")
     found = shutil.which("ffmpeg")
     root = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "WinGet" / "Packages"
     matches = sorted(root.glob("Gyan.FFmpeg*/ffmpeg-*/bin/ffmpeg.exe"))
-    picked = first_file([bundled, Path(found) if found else Path(), *matches])
+    picked = first_file([bundled, fetched or Path(), Path(found) if found else Path(), *matches])
     if picked is None:
         raise RuntimeError("Brak ffmpeg. Bez niego mikrofon Intel się nie otworzy.")
     return str(picked)
@@ -909,11 +912,13 @@ def find_tool(name: str, folders: list[Path], on_path: str | None) -> str | None
     return on_path
 
 
-NO_FFPLAY = "Brak ffplay. Zainstaluj program jeszcze raz (ffplay jest w instalatorze) albo dodaj ffplay do PATH."
+NO_FFPLAY = "Brak ffplay. Zamknij program i otwórz go ponownie: pobierze dodatki dźwięku jeszcze raz."
 
 
 def ffplay_exe() -> str | None:
     folders = [app_dir()]
+    if tools_fetch.ready():
+        folders.append(tools_fetch.tools_dir())
     try:
         folders.append(Path(ffmpeg_exe()).parent)
     except RuntimeError:
@@ -7713,6 +7718,82 @@ def self_test_wav_roundtrip() -> None:
     self_test(Path(os.environ.get("TEMP", ".")) / "bitrymdym-recorder-selftest.wav")
 
 
+def tools_present() -> bool:
+    """ffmpeg and ffplay are next to the exe (older installs) or already downloaded."""
+    return (app_dir() / "ffmpeg.exe").is_file() and (app_dir() / "ffplay.exe").is_file() or tools_fetch.ready()
+
+
+def ensure_tools_window() -> bool:
+    """First start: download ffmpeg and ffplay (31 MB) with a small progress window. False = user closed it."""
+    if tools_present():
+        return True
+    windows_app_id()
+    root = tk.Tk()
+    root.title("BitRymDym")
+    root.configure(bg=PAPER)
+    root.resizable(False, False)
+    root.geometry("440x210")
+    try:
+        icon = brand_file("cassette.png")
+        if icon:
+            root.iconphoto(True, tk.PhotoImage(master=root, file=str(icon)))
+    except tk.TclError:
+        pass
+    tk.Label(root, text="Pierwsze uruchomienie", bg=PAPER, fg=AMBER, font=(FONT_UI, 13, "bold")).pack(pady=(18, 4))
+    message = tk.Label(
+        root,
+        text="Pobieram dodatki dźwięku (ffmpeg, 31 MB). To dzieje się tylko raz.",
+        bg=PAPER, fg=INK, font=(FONT_UI, 10), wraplength=400, justify="center",
+    )
+    message.pack(padx=16)
+    bar = tk.Canvas(root, width=360, height=14, bg=LINE, highlightthickness=0)
+    bar.pack(pady=12)
+    fill = bar.create_rectangle(0, 0, 0, 14, fill=AMBER, width=0)
+    count = tk.Label(root, text="", bg=PAPER, fg=MUTE, font=(FONT_META, 9))
+    count.pack()
+    buttons = tk.Frame(root, bg=PAPER)
+    buttons.pack(pady=8)
+    state = {"done": False, "ok": False, "error": "", "got": 0, "total": tools_fetch.TOOLS_SIZE}
+
+    def work() -> None:
+        try:
+            tools_fetch.fetch(lambda got, total: state.update(got=got, total=total))
+            state["ok"] = True
+        except tools_fetch.FetchError as problem:
+            state["error"] = str(problem)
+        except Exception as problem:  # noqa: BLE001 - shown to the user, then retry
+            state["error"] = f"Nie udało się pobrać dodatków dźwięku ({type(problem).__name__})."
+        state["done"] = True
+
+    def start() -> None:
+        for child in buttons.winfo_children():
+            child.destroy()
+        state.update(done=False, ok=False, error="", got=0)
+        message.configure(text="Pobieram dodatki dźwięku (ffmpeg, 31 MB). To dzieje się tylko raz.", fg=INK)
+        threading.Thread(target=work, daemon=True).start()
+        root.after(100, tick)
+
+    def tick() -> None:
+        total = max(1, int(state["total"]))
+        got = int(state["got"])
+        bar.coords(fill, 0, 0, int(360 * min(1.0, got / total)), 14)
+        count.configure(text=f"{got / 1e6:.1f} / {total / 1e6:.1f} MB")
+        if not state["done"]:
+            root.after(100, tick)
+            return
+        if state["ok"]:
+            root.destroy()
+            return
+        message.configure(text=str(state["error"]), fg=AMBER_SOFT)
+        tk.Button(buttons, text="Spróbuj ponownie", command=start, bg=AMBER, fg=PAPER, relief="flat", padx=12, pady=4).pack(side="left", padx=6)
+        tk.Button(buttons, text="Zamknij", command=root.destroy, bg=LINE_STRONG, fg=INK, relief="flat", padx=12, pady=4).pack(side="left", padx=6)
+
+    root.protocol("WM_DELETE_WINDOW", root.destroy)
+    start()
+    root.mainloop()
+    return bool(state["ok"]) and tools_present()
+
+
 if __name__ == "__main__":
     # Velopack install, update and uninstall. Exit before any window or network.
     if updater.velopack_hook():
@@ -7846,6 +7927,13 @@ if __name__ == "__main__":
         print("recorder self-test ok")
     elif os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
         _ = write_pcm16_wav
+        tools_note = "bundled" if tools_present() and not tools_fetch.ready() else "ready"
+        if not tools_present():
+            try:
+                tools_fetch.fetch()
+                tools_note = "fetched"
+            except tools_fetch.FetchError as problem:
+                tools_note = f"blad {problem}"
         window = RecorderWindow()
         window.root.update_idletasks()
         def labels(widget: tk.Widget):
@@ -7875,6 +7963,7 @@ if __name__ == "__main__":
                     f"beats={len(window.beats)}",
                     f"ffmpeg={ffmpeg_exe()}",
                     f"ffplay={ffplay_exe()}",
+                    f"tools={tools_note}",
                     f"gate={window.gate.winfo_manager()}",
                     f"icon={1 if brand_file('cassette.png') else 0}",
                     f"logo={1 if brand_file('logo-light.png') else 0}",
@@ -7895,5 +7984,7 @@ if __name__ == "__main__":
         # Keep the WAV writer available for a silent tone when the mic is closed.
         _ = write_pcm16_wav
         if not single_instance():
+            raise SystemExit(0)
+        if not ensure_tools_window():
             raise SystemExit(0)
         RecorderWindow().run()

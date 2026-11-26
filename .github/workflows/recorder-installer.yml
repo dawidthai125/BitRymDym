@@ -3,7 +3,7 @@ name: recorder-installer
 # Buduje instalator Windows nagrywarki (PyInstaller + Inno Setup). Uruchamiany ręcznie albo tagiem recorder-v*.
 # Czcionki nie leżą w repo: bierze je z poprzedniego instalatora (cicha instalacja na runnerze).
 # ffmpeg i ffplay (GPL, build full shared) pobiera z GyanD/codexffmpeg w przypiętej wersji.
-# Wynik to artefakt BitRymDym-Setup.exe i BitRymDym-Portable.zip (wersja bez instalacji, sama się aktualizuje) + sumy SHA-256. Wgranie na R2 robi właściciel (docs/WINDOWS_NAGRYWARKA.md).
+# Wynik to artefakt BitRymDym-Setup.exe i BitRymDym-Portable.exe (jeden plik bez instalacji, sam się aktualizuje; ffmpeg pobiera program przy 1. starcie) + sumy SHA-256. Wgranie na R2 robi właściciel (docs/WINDOWS_NAGRYWARKA.md).
 
 on:
   push:
@@ -14,9 +14,6 @@ on:
       base_installer_url:
         description: "Poprzedni instalator (źródło czcionek)"
         default: "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup-2026.11.13.17.exe"
-      ffmpeg_tag:
-        description: "Wersja ffmpeg (GyanD/codexffmpeg, build full shared z ffplay)"
-        default: "9.0.2"
 
 permissions:
   contents: read
@@ -53,6 +50,7 @@ jobs:
           python test_updater.py;    if ($LASTEXITCODE) { throw "updater" }
           python test_project_return.py; if ($LASTEXITCODE) { throw "project_return" }
           python test_commands.py;   if ($LASTEXITCODE) { throw "commands" }
+          python tools_fetch.py;     if ($LASTEXITCODE) { throw "tools_fetch" }
           $app = (Select-String -Path updater.py -Pattern 'APP_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
           $iss = (Select-String -Path installer\BitRymDym.iss -Pattern '#define AppVersion "([^"]+)"').Matches[0].Groups[1].Value
           if ($app -ne $iss) { throw "wersja programu ($app) różni się od AppVersion w .iss ($iss)" }
@@ -98,36 +96,31 @@ jobs:
           retention-days: 3
           if-no-files-found: ignore
 
-      - name: ffmpeg i ffplay (Gyan full, shared)
-        env:
-          FFMPEG_TAG: ${{ inputs.ffmpeg_tag || '9.0.2' }}
+      - name: ffmpeg i ffplay (paczka pobierana przy 1. starcie, tools_fetch.py)
+        working-directory: desktop/recorder
         run: |
-          $zip = Join-Path $env:RUNNER_TEMP "ffmpeg.zip"
-          Invoke-WebRequest -Uri "https://github.com/GyanD/codexffmpeg/releases/download/$env:FFMPEG_TAG/ffmpeg-$env:FFMPEG_TAG-full_build-shared.zip" -OutFile $zip
-          if ($env:FFMPEG_TAG -eq "9.0.2") {
-            $sum = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-            if ($sum -ne "8d31e162f1616e37aab3fa2db991b97e1b8dbeb1c8465fd81a81be16ff91b328") { throw "ffmpeg: inna suma ($sum)" }
-          }
-          $out = Join-Path $env:RUNNER_TEMP "ffmpeg"
-          Expand-Archive $zip $out -Force
-          $root = (Get-ChildItem $out -Directory | Select-Object -First 1).FullName
-          $extras = Join-Path $env:RUNNER_TEMP "extras"
-          Remove-Item (Join-Path $extras "ffmpeg.exe") -ErrorAction SilentlyContinue
-          foreach ($exe in "ffmpeg.exe","ffplay.exe") {
-            if (-not (Test-Path "$root\bin\$exe")) { throw "w buildzie ffmpeg brak $exe" }
-            Copy-Item "$root\bin\$exe" $extras -Force
-          }
-          Copy-Item "$root\bin\*.dll" $extras -Force
-          if (Test-Path "$root\LICENSE") { Copy-Item "$root\LICENSE" (Join-Path $extras "FFMPEG-LICENSE.txt") -Force }
-          & "$extras\ffmpeg.exe" -hide_banner -version | Select-Object -First 1 | Write-Host
-          & "$extras\ffplay.exe" -hide_banner -version | Select-Object -First 1 | Write-Host
-          $dev = & "$extras\ffmpeg.exe" -hide_banner -devices 2>&1 | Out-String
+          # Program nie wiezie już ffmpeg: pobiera przypiętą paczkę z R2 przy pierwszym uruchomieniu.
+          # Tu sprawdzamy dokładnie tę paczkę (adres i suma z tools_fetch.py).
+          $env:LOCALAPPDATA_SAVE = $env:LOCALAPPDATA
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP "tools-check"
+          python -c "import tools_fetch, sys; f = tools_fetch.fetch(); print(f)" | Tee-Object -Variable folder
+          if ($LASTEXITCODE) { throw "pobranie paczki ffmpeg" }
+          $tools = ($folder | Select-Object -Last 1).Trim()
+          $env:LOCALAPPDATA = $env:LOCALAPPDATA_SAVE
+          foreach ($exe in "ffmpeg.exe","ffplay.exe") { if (-not (Test-Path "$tools\$exe")) { throw "w paczce brak $exe" } }
+          & "$tools\ffmpeg.exe" -hide_banner -version | Select-Object -First 1 | Write-Host
+          & "$tools\ffplay.exe" -hide_banner -version | Select-Object -First 1 | Write-Host
+          $dev = & "$tools\ffmpeg.exe" -hide_banner -devices 2>&1 | Out-String
           if ($dev -notmatch "dshow") { throw "ffmpeg bez dshow (mikrofon)" }
-          Push-Location desktop\recorder
-          $env:FF = "$extras\ffmpeg.exe"
+          $enc = & "$tools\ffmpeg.exe" -hide_banner -encoders 2>&1 | Out-String
+          if ($enc -notmatch "libmp3lame") { throw "ffmpeg bez libmp3lame" }
+          $env:FF = "$tools\ffmpeg.exe"
           python -c "import os, record_app; record_app.mix_self_test(os.environ['FF'])"; if ($LASTEXITCODE) { throw "mix" }
-          Pop-Location
+          # Stare ffmpeg z poprzedniego instalatora nie może wejść do paczki.
+          $extras = Join-Path $env:RUNNER_TEMP "extras"
+          Get-ChildItem $extras -File | Where-Object { $_.Name -match '^(ffmpeg|ffplay|ffprobe)\.exe$' -or $_.Name -match '^(av|sw|postproc).*\.dll$' } | Remove-Item -Force
           Get-ChildItem $extras | Measure-Object Length -Sum | ForEach-Object { "extras: $($_.Count) plików, $([math]::Round($_.Sum/1MB)) MB" } | Write-Host
+          Get-ChildItem $extras -Name | Write-Host
 
       - name: PyInstaller
         working-directory: desktop/recorder
@@ -143,6 +136,7 @@ jobs:
         run: |
           $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
           Remove-Item $note -ErrorAction SilentlyContinue
+          Remove-Item (Join-Path $env:LOCALAPPDATA "BitRymDym\tools") -Recurse -Force -ErrorAction SilentlyContinue
           $env:BITRYMDYM_UI_SMOKE = "1"
           $p = Start-Process "dist\BitRymDym\BitRymDym.exe" -PassThru
           if (-not $p.WaitForExit(90000)) { $p.Kill(); throw "smoke: program nie zakończył się w 90 s" }
@@ -152,6 +146,8 @@ jobs:
           if ($text -notmatch "align=ok") { throw "smoke: wyrównanie do bitu nie działa w exe" }
           if ($text -notmatch "ffmpeg=") { throw "smoke: brak ffmpeg w wyniku" }
           if ($text -notmatch "ffplay=" -or $text -match "ffplay=None") { throw "smoke: program nie widzi ffplay" }
+          if ($text -notmatch "tools=fetched") { throw "smoke: program nie pobrał ffmpeg przy pierwszym starcie" }
+          if (Test-Path "dist\BitRymDym\ffmpeg.exe") { throw "ffmpeg nie może być w paczce" }
 
       - name: Velopack 1.2.161
         working-directory: desktop/recorder
@@ -174,6 +170,9 @@ jobs:
           $setup = Get-ChildItem $out -Filter *Setup.exe | Select-Object -First 1
           if (-not $setup) { throw "brak Setup.exe" }
           Copy-Item $setup.FullName "$out\BitRymDym-Setup.exe" -Force
+          $mb = [math]::Round((Get-Item "$out\BitRymDym-Setup.exe").Length / 1MB, 1)
+          "Setup: $mb MB" | Write-Host
+          if ($mb -gt 60) { throw "Setup za duży ($mb MB): czy ffmpeg nie wrócił do paczki?" }
           (Get-FileHash "$out\BitRymDym-Setup.exe" -Algorithm SHA256).Hash.ToLower() + "  BitRymDym-Setup.exe" | Out-File "$out\BitRymDym-Setup.exe.sha256" -Encoding ascii
           if (-not (Test-Path "$out\releases.win.json")) { throw "brak releases.win.json" }
           $nupkg = Get-ChildItem $out -Filter *full.nupkg | Select-Object -First 1
@@ -189,13 +188,14 @@ jobs:
           if (-not $p.WaitForExit(180000)) { $p.Kill(); throw "Setup: czas" }
           if ($p.ExitCode -ne 0) { throw "Setup: kod $($p.ExitCode)" }
           $root = Join-Path $env:LOCALAPPDATA "BitRymDym.Nagrywarka"
-          foreach ($need in @("Update.exe","current\BitRymDym.exe","current\ffmpeg.exe","current\ffplay.exe","current\fonts")) {
+          foreach ($need in @("Update.exe","current\BitRymDym.exe","current\fonts")) {
             if (-not (Test-Path (Join-Path $root $need))) { throw "po instalacji brak: $need" }
           }
           "Update.exe jest poziom wyżej niż current" | Write-Host
           Get-Process BitRymDym -ErrorAction SilentlyContinue | Stop-Process -Force
           $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
           Remove-Item $note -ErrorAction SilentlyContinue
+          Remove-Item (Join-Path $env:LOCALAPPDATA "BitRymDym\tools") -Recurse -Force -ErrorAction SilentlyContinue
           $env:BITRYMDYM_UI_SMOKE = "1"
           $q = Start-Process (Join-Path $root "current\BitRymDym.exe") -PassThru
           if (-not $q.WaitForExit(90000)) { $q.Kill(); throw "smoke po instalacji: czas" }
@@ -204,33 +204,64 @@ jobs:
           $installed | Write-Host
           if ($installed -notmatch "ffplay=" -or $installed -match "ffplay=None") { throw "po instalacji program nie widzi ffplay" }
           if ($installed -notmatch "ffmpeg\.exe") { throw "po instalacji program nie widzi ffmpeg" }
+          if ($installed -notmatch "tools=fetched") { throw "po instalacji program nie pobrał ffmpeg" }
+          if ($installed -notmatch "BitRymDym\\tools\\") { throw "po instalacji ffmpeg nie z folderu tools" }
 
-      - name: Portable - rozpakowanie, smoke i aktualizacja do nowszej wersji
+      - name: Portable.exe - jeden plik, rozpakowanie obok, smoke, aktualizacja, drugi start
         working-directory: desktop/recorder
         run: |
           Get-Process BitRymDym -ErrorAction SilentlyContinue | Stop-Process -Force
           $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
-          $root = Join-Path $env:RUNNER_TEMP "portable"
-          Remove-Item $root -Recurse -Force -ErrorAction SilentlyContinue
-          Expand-Archive "installer\velopack\BitRymDym-Portable.zip" $root -Force
+          $ver = (Select-String -Path updater.py -Pattern 'APP_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          # 1. Rozpakowany Portable.zip z Velopacka -> jeden plik BitRymDym-Portable.exe (Inno Setup, bez instalacji).
+          $src = Join-Path $env:RUNNER_TEMP "portable-src"
+          Remove-Item $src -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive "installer\velopack\BitRymDym-Portable.zip" $src -Force
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null; $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          if (-not (Test-Path $iscc)) { throw "brak Inno Setup" }
+          Push-Location installer
+          & $iscc "/DAppVersion=$ver" "/DPortableDir=$src" BitRymDym-Portable.iss | Select-Object -Last 3 | Write-Host
+          if ($LASTEXITCODE) { throw "ISCC" }
+          Pop-Location
+          $pexe = "installer\output\BitRymDym-Portable.exe"
+          Copy-Item $pexe "installer\velopack\BitRymDym-Portable.exe" -Force
+          $mb = [math]::Round((Get-Item $pexe).Length / 1MB, 1)
+          "Portable.exe: $mb MB" | Write-Host
+          if ($mb -gt 60) { throw "Portable.exe za duży ($mb MB)" }
+          (Get-FileHash "installer\velopack\BitRymDym-Portable.exe" -Algorithm SHA256).Hash.ToLower() + "  BitRymDym-Portable.exe" | Out-File "installer\velopack\BitRymDym-Portable.exe.sha256" -Encoding ascii
+
+          # 2. Użytkownik: plik w Pobranych, dwuklik -> folder BitRymDym obok.
+          $dl = Join-Path $env:RUNNER_TEMP "Pobrane"
+          Remove-Item $dl -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force $dl | Out-Null
+          Copy-Item $pexe $dl
+          $p = Start-Process (Join-Path $dl "BitRymDym-Portable.exe") -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); throw "Portable.exe: czas rozpakowania" }
+          if ($p.ExitCode -ne 0) { throw "Portable.exe: kod $($p.ExitCode)" }
+          $root = Join-Path $dl "BitRymDym"
           Get-ChildItem $root -Force | Select-Object Name, Length | Format-Table -AutoSize | Out-String | Write-Host
           # Ten sam układ co po instalacji: przycisk Zaktualizuj szuka Update.exe poziom nad current.
-          foreach ($need in @("Update.exe","BitRymDym.exe","current\BitRymDym.exe","current\ffmpeg.exe","current\ffplay.exe","current\fonts")) {
+          foreach ($need in @("Update.exe","BitRymDym.exe",".portable","current\BitRymDym.exe","current\fonts")) {
             if (-not (Test-Path (Join-Path $root $need))) { throw "portable: brak $need" }
           }
+          if (Test-Path (Join-Path $root "current\ffmpeg.exe")) { throw "portable: ffmpeg nie może być w paczce" }
+
+          # 3. Pierwszy start pobiera ffmpeg.
+          Remove-Item (Join-Path $env:LOCALAPPDATA "BitRymDym\tools") -Recurse -Force -ErrorAction SilentlyContinue
           $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
           Remove-Item $note -ErrorAction SilentlyContinue
           $env:BITRYMDYM_UI_SMOKE = "1"
           $q = Start-Process (Join-Path $root "current\BitRymDym.exe") -PassThru
-          if (-not $q.WaitForExit(90000)) { $q.Kill(); throw "portable smoke: czas" }
+          if (-not $q.WaitForExit(180000)) { $q.Kill(); throw "portable smoke: czas" }
           if (-not (Test-Path $note)) { throw "portable smoke: brak wyniku" }
           $smoke = Get-Content $note -Raw
           $smoke | Write-Host
+          if ($smoke -notmatch "tools=fetched") { throw "portable: program nie pobrał ffmpeg" }
           if ($smoke -notmatch "ffplay=" -or $smoke -match "ffplay=None") { throw "portable: program nie widzi ffplay" }
           if ($smoke -notmatch "ffmpeg\.exe") { throw "portable: program nie widzi ffmpeg" }
 
-          # Aktualizacja: paczka o numer nowsza, ta sama komenda co przycisk Zaktualizuj (updater.update_exe_args).
-          $ver = (Select-String -Path updater.py -Pattern 'APP_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          # 4. Aktualizacja: paczka o numer nowsza, ta sama komenda co przycisk Zaktualizuj (updater.update_exe_args).
           $parts = $ver.Split(".")
           $next = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
           $nextOut = Join-Path $env:RUNNER_TEMP "velopack-next"
@@ -238,10 +269,12 @@ jobs:
           if ($LASTEXITCODE) { throw "vpk pack (nowsza)" }
           $pkg = Get-ChildItem $nextOut -Filter *full.nupkg | Select-Object -First 1
           if (-not $pkg) { throw "brak nowszej paczki" }
+          "aktualizacja (pełna paczka): $([math]::Round($pkg.Length / 1MB, 1)) MB" | Write-Host
           $packages = Join-Path $root "packages"
           New-Item -ItemType Directory -Force $packages | Out-Null
           Copy-Item $pkg.FullName $packages -Force
           $target = Join-Path $packages $pkg.Name
+          Remove-Item $note -ErrorAction SilentlyContinue
           $u = Start-Process (Join-Path $root "Update.exe") -ArgumentList "apply","--package",$target,"--rootDir",$root,"--packageDir",$packages -PassThru
           if (-not $u.WaitForExit(180000)) { $u.Kill(); throw "portable: Update.exe apply - czas" }
           if ($u.ExitCode -ne 0) { throw "portable: Update.exe apply - kod $($u.ExitCode)" }
@@ -251,12 +284,23 @@ jobs:
             if ((Test-Path $sq) -and ((Get-Content $sq -Raw) -match [regex]::Escape($next))) { $ok = $true; break }
             Start-Sleep -Seconds 1
           }
+          for ($i = 0; $i -lt 60 -and -not (Test-Path $note); $i++) { Start-Sleep -Seconds 1 }
           Get-Process BitRymDym -ErrorAction SilentlyContinue | Stop-Process -Force
           if (-not $ok) { throw "portable: po aktualizacji current nie ma wersji $next" }
-          foreach ($need in @("current\BitRymDym.exe","current\ffmpeg.exe","current\ffplay.exe","current\fonts")) {
-            if (-not (Test-Path (Join-Path $root $need))) { throw "portable po aktualizacji: brak $need" }
-          }
-          "portable: $ver -> $next zaktualizowany w miejscu" | Write-Host
+          if (-not (Test-Path $note)) { throw "portable: po aktualizacji program nie wstał" }
+          $after = Get-Content $note -Raw
+          if ($after -notmatch "tools=ready") { throw "portable: po aktualizacji ffmpeg pobierany ponownie" }
+          "portable: $ver -> $next zaktualizowany w miejscu, ffmpeg został" | Write-Host
+
+          # 5. Drugi dwuklik w ten sam plik: tylko start, bez nadpisania nowszej wersji starszą.
+          Remove-Item $note -ErrorAction SilentlyContinue
+          $r = Start-Process (Join-Path $dl "BitRymDym-Portable.exe") -PassThru
+          $r.WaitForExit(60000) | Out-Null
+          for ($i = 0; $i -lt 60 -and -not (Test-Path $note); $i++) { Start-Sleep -Seconds 1 }
+          Get-Process BitRymDym -ErrorAction SilentlyContinue | Stop-Process -Force
+          if (-not (Test-Path $note)) { throw "portable: drugi start z Portable.exe nie uruchomił programu" }
+          if (-not ((Get-Content (Join-Path $root "current\sq.version") -Raw) -match [regex]::Escape($next))) { throw "portable: drugi start nadpisał nowszą wersję" }
+          "portable: drugi start uruchamia program i zostawia wersję $next" | Write-Host
 
       - uses: actions/upload-artifact@v4
         with:
@@ -264,8 +308,8 @@ jobs:
           path: |
             desktop/recorder/installer/velopack/BitRymDym-Setup.exe
             desktop/recorder/installer/velopack/BitRymDym-Setup.exe.sha256
-            desktop/recorder/installer/velopack/BitRymDym-Portable.zip
-            desktop/recorder/installer/velopack/BitRymDym-Portable.zip.sha256
+            desktop/recorder/installer/velopack/BitRymDym-Portable.exe
+            desktop/recorder/installer/velopack/BitRymDym-Portable.exe.sha256
             desktop/recorder/installer/velopack/releases.win.json
             desktop/recorder/installer/velopack/*full.nupkg
           retention-days: 7
