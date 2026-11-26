@@ -537,6 +537,27 @@
     }
   },
   "account": {
+    "tabs": {
+      "overview": "Przegląd",
+      "takes": "Nagrania",
+      "library": "Biblioteka",
+      "works": "Moja twórczość",
+      "settings": "Profil i ustawienia",
+      "favorites": "Ulubione",
+      "downloads": "Pobrane",
+      "purchased": "Kupione",
+      "shared": "Udostępnione dla Ciebie",
+      "catalog": "Katalog i rankingi",
+      "beats": "Moje bity",
+      "account": "Ustawienia konta",
+      "publicProfile": "Profil publiczny"
+    },
+    "purchasedPage": {
+      "title": "Kupione bity",
+      "lead": "Tu są bity kupione na wyłączność. Pobierzesz z nich plik WAV i nagrasz na nich w Studiu.",
+      "empty": "Nie masz jeszcze kupionego bitu.",
+      "browsePaid": "Zobacz płatne bity"
+    },
     "accountBeatsPage": {
       "metaTitle": "Moje bity",
       "mojeBity": "Moje bity",
@@ -562,6 +583,7 @@
       "edytuj": "Edytuj, udostępnianie i okładka"
     },
     "accountDownloadsPage": {
+      "przegladajBity": "Przeglądaj bity",
       "mojePobrane": "Moje pobrane",
       "uslugaJestChwilowoNiedostepna": "Usługa jest chwilowo niedostępna.",
       "stronaGlowna": "Strona główna",
@@ -571,6 +593,8 @@
       "utc": "UTC"
     },
     "accountPage": {
+      "zobaczPlany": "Zobacz plany",
+      "zmienKsywke": "Zmień ksywkę",
       "studio": "Studio",
       "konfiguracjaLokalnaJestNiekompletna": "Konfiguracja lokalna jest niekompletna. Uzupełnij środowisko i wróć.",
       "stronaGlowna": "Strona główna",
@@ -3622,6 +3646,9 @@
       "brakBituWProjekcie": "Brak bitu w projekcie. Dodaj bit, aby odsłuchać."
     },
     "ownTakesList": {
+      "zostaloDni": "Zostało {d, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}} i {h} godz.",
+      "zostaloGodzin": "Zostało {h} godz.",
+      "zostalaMniejNizGodzina": "Została mniej niż godzina",
       "usunacToNagranieTej": "Usunąć to nagranie? Tej operacji nie cofniesz.",
       "pustyDziennik": "Pusty dziennik",
       "nieMaszJeszczeNagran": "Nie masz jeszcze nagrań. Nagraj na stronie bitu — wpis pojawi się tutaj.",
@@ -5739,6 +5766,15 @@
       }
     },
     "consents": {
+      "search": "Szukaj po tytule",
+      "noMatch": "Nic nie pasuje do tej nazwy.",
+      "state": {
+        "off": "Poza katalogiem",
+        "listed": "W katalogu",
+        "ratings": "oceny",
+        "comments": "komentarze",
+        "ranking": "w rankingu"
+      },
       "heading": "Katalog i ranking",
       "legend": "Katalog, oceny, komentarze i ranking",
       "afterReview": "Sam decydujesz. Wybór działa od chwili, gdy moderator przepuści bit. Zmienisz go, kiedy chcesz.",

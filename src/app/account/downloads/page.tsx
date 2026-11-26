@@ -1,6 +1,7 @@
 import { getLibText } from "@/i18n/get-lib-text";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "@/components/ui/app-link";
+import { BrdLink } from "@/components/brand/brd-button";
 import { redirect } from "next/navigation";
 
 import { signInPathWithNext } from "@/lib/auth/next-path";
@@ -53,12 +54,6 @@ export default async function MyDownloadsPage() {
   return (
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
         <div className="space-y-2">
-          <Link
-            href="/account"
-            className="inline-flex min-h-11 w-fit items-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-          >
-            {t("konto")}
-          </Link>
           <h1 className="text-3xl font-semibold tracking-tight">{t("mojePobrane")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("minimalnaHistoriaPobranZalogowanego")}
@@ -66,9 +61,12 @@ export default async function MyDownloadsPage() {
         </div>
 
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground" role="status">
-            {t("niePobranoJeszczeZadnych")}
-          </p>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground" role="status">
+              {t("niePobranoJeszczeZadnych")}
+            </p>
+            <BrdLink href="/beats">{t("przegladajBity")}</BrdLink>
+          </div>
         ) : (
           <ul className="divide-y divide-border/80 border-y border-border/80">
             {items.map((item) => (

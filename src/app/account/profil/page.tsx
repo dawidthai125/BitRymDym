@@ -40,7 +40,7 @@ export default async function PublicProfileSettingsPage() {
             {own.displayName ? null : (
               <p role="status" className="text-sm">
                 {t("noName")}{" "}
-                <Link href="/account#profil" className="underline underline-offset-4">{t("setName")}</Link>
+                <Link href="/account/settings#profil" className="underline underline-offset-4">{t("setName")}</Link>
               </p>
             )}
             <PublicProfileForm

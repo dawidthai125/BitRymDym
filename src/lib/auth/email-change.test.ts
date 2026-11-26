@@ -547,7 +547,7 @@ describe("ACCT-EMAIL-01 source contract", () => {
     expect(clearer).toContain("clearEmailChangeNotice");
     expect(clearer).not.toMatch(/status\s*:/);
     expect(clearer).toContain("maxAge: 0".replace("maxAge: 0", "emailChangeNoticeClearOptions"));
-    const account = read("src/app/account/page.tsx");
+    const account = read("src/app/account/settings/page.tsx");
     const result = read("src/app/auth/email-change/page.tsx");
     expect(account).toContain("ConsumeEmailChangeNotice");
     expect(result).toContain("ConsumeEmailChangeNotice");

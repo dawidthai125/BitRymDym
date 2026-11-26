@@ -15,23 +15,30 @@ export default async function AccountLayout({
   const context = await getCurrentProfile();
   if (!context) redirect("/sign-in");
   const tr = await getTranslations("account.accountPage");
+  const tt = await getTranslations("account.tabs");
   return (
     <FullClientMessages>
     <AppShell tone="studio">
       <PageFrame className="pt-8">
         <AccountSectionNav
           label={tr("twojeStudio")}
-          items={[
-            { href: "/account", label: tr("pulpit") },
-            { href: "/account/profil", label: tr("profilPubliczny") },
-            { href: "/account/takes", label: tr("mojeNagrania") },
-            { href: "/account/beats", label: tr("mojeBity") },
-            { href: "/account/catalog", label: tr("katalogIRankingi") },
-            { href: "/beats?katalog=moj", label: tr("kupione") },
-            { href: "/account/downloads", label: tr("eksportyIPobrania") },
-            { href: "/account/shared", label: tr("udostepnione") },
-            { href: "/account/favorites", label: tr("ulubione") },
-          ]}
+          tabLabels={{
+            overview: tt("overview"),
+            takes: tt("takes"),
+            library: tt("library"),
+            works: tt("works"),
+            settings: tt("settings"),
+          }}
+          pageLabels={{
+            favorites: tt("favorites"),
+            downloads: tt("downloads"),
+            purchased: tt("purchased"),
+            shared: tt("shared"),
+            catalog: tt("catalog"),
+            beats: tt("beats"),
+            settings: tt("account"),
+            publicProfile: tt("publicProfile"),
+          }}
         />
       </PageFrame>
       {children}

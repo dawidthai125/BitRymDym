@@ -16,6 +16,7 @@ import { TakeDownloadMenu } from "@/components/takes/take-download-menu";
 import type { OwnTakeListItem } from "@/lib/takes/list-own-takes";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import { toUserFacingTakeUploadError } from "@/lib/takes/client-upload";
+import { takeTimeLeft } from "@/lib/takes/time-left";
 import {
   isTakeTitleErrorCode,
   takeTitleErrorCode,
@@ -23,7 +24,7 @@ import {
 } from "@/lib/takes/take-title";
 import { TAKE_TITLE_MAX_LENGTH } from "@/config/recording";
 import { toUserFacingError } from "@/lib/ui/user-errors";
-import { labelRecordingMode, labelTakeStatus } from "@/lib/ui/labels";
+import { labelTakeStatus } from "@/lib/ui/labels";
 import { intlTag, resolveLocale } from "@/i18n/config";
 
 function formatWhen(iso: string, tag = "pl-PL"): string {
@@ -80,6 +81,14 @@ export function OwnTakesList({
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [playUrl, setPlayUrl] = useState<string | null>(null);
   const purchased = new Set(purchasedBeatIds);
+  const [now] = useState(() => Date.now());
+
+  function leftText(expiresAt: string): string {
+    const left = takeTimeLeft(expiresAt, now);
+    if (!left) return "";
+    if (left.days > 0) return t("zostaloDni", { d: left.days, h: left.hours });
+    return left.hours > 0 ? t("zostaloGodzin", { h: left.hours }) : t("zostalaMniejNizGodzina");
+  }
 
   async function onPreview(take: OwnTakeListItem) {
     setError(null);
@@ -199,7 +208,7 @@ export function OwnTakesList({
       ) : null}
       {variant === "archive" ? (
         <p className="brd-meta text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-          {t("wpisy", { n: items.length })} {t("dziennikSesji")}
+          {t("wpisy", { n: items.length })}
         </p>
       ) : null}
       <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
@@ -295,11 +304,11 @@ export function OwnTakesList({
                 ) : null}
                 {variant === "archive" ? (
                   <>
-                    <p className="brd-meta text-xs uppercase tracking-[0.12em] text-[var(--brd-mute)]">
-                      {tl(labelTakeStatus(take.displayStatus))}
-                      {" · "}
-                      {tl(labelRecordingMode(take.recordingMode))}
-                    </p>
+                    {take.displayStatus === "READY" && leftText(take.expiresAt) ? (
+                      <p className="text-sm text-[var(--brd-amber)]" data-testid="take-time-left" suppressHydrationWarning>
+                        {leftText(take.expiresAt)}
+                      </p>
+                    ) : null}
                     <p className="brd-meta text-xs text-[var(--brd-mute)]">
                       {t("utworzono")}{" "}{tl(formatWhen(take.createdAt, tag))}
                       {" · "}

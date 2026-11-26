@@ -537,6 +537,27 @@
     }
   },
   "account": {
+    "tabs": {
+      "overview": "Overview",
+      "takes": "Recordings",
+      "library": "Library",
+      "works": "My work",
+      "settings": "Profile and settings",
+      "favorites": "Favourites",
+      "downloads": "Downloads",
+      "purchased": "Purchased",
+      "shared": "Shared with you",
+      "catalog": "Catalogue and rankings",
+      "beats": "My beats",
+      "account": "Account settings",
+      "publicProfile": "Public profile"
+    },
+    "purchasedPage": {
+      "title": "Purchased beats",
+      "lead": "Your exclusive beats. Download the WAV file and record on them in Studio.",
+      "empty": "You have not bought a beat yet.",
+      "browsePaid": "See paid beats"
+    },
     "accountBeatsPage": {
       "metaTitle": "My beats",
       "mojeBity": "My beats",
@@ -562,6 +583,7 @@
       "edytuj": "Edit, sharing and cover"
     },
     "accountDownloadsPage": {
+      "przegladajBity": "Browse beats",
       "mojePobrane": "My downloads",
       "uslugaJestChwilowoNiedostepna": "The service is temporarily unavailable.",
       "stronaGlowna": "Home",
@@ -571,6 +593,8 @@
       "utc": "UTC"
     },
     "accountPage": {
+      "zobaczPlany": "See plans",
+      "zmienKsywke": "Change nickname",
       "studio": "Studio",
       "konfiguracjaLokalnaJestNiekompletna": "Local configuration is incomplete. Fill in the environment and come back.",
       "stronaGlowna": "Home",
@@ -3622,6 +3646,9 @@
       "brakBituWProjekcie": "No beat in the project. Add a beat to listen."
     },
     "ownTakesList": {
+      "zostaloDni": "{d, plural, one {# day} other {# days}} {h} h left",
+      "zostaloGodzin": "{h} h left",
+      "zostalaMniejNizGodzina": "Less than an hour left",
       "usunacToNagranieTej": "Delete this recording? This cannot be undone.",
       "pustyDziennik": "Empty log",
       "nieMaszJeszczeNagran": "You have no recordings yet. Record on a beat page — the entry will appear here.",
@@ -5739,6 +5766,15 @@
       }
     },
     "consents": {
+      "search": "Search by title",
+      "noMatch": "Nothing matches that name.",
+      "state": {
+        "off": "Not in the catalogue",
+        "listed": "In the catalogue",
+        "ratings": "ratings",
+        "comments": "comments",
+        "ranking": "in the ranking"
+      },
       "heading": "Catalogue and ranking",
       "legend": "Catalogue, ratings, comments and ranking",
       "afterReview": "You decide. Your choice applies once a moderator accepts the beat. You can change it at any time.",

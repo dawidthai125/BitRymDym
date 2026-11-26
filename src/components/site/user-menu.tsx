@@ -119,7 +119,7 @@ export function UserMenu({
             <AccountNavLink href="/account/profil" onNavigate={() => setOpen(false)}>
               {t("profilPubliczny")}
             </AccountNavLink>
-            <AccountNavLink href="/settings" onNavigate={() => setOpen(false)}>
+            <AccountNavLink href="/account/settings" onNavigate={() => setOpen(false)}>
               {t("ustawienia")}
             </AccountNavLink>
             {showUpload ? (

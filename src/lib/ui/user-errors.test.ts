@@ -232,7 +232,7 @@ describe("global error / not-found / auth pages copy", () => {
 
   it("account has no Security / Danger Zone English", () => {
     const src = readFileSync(
-      join(process.cwd(), "src/app/account/page.tsx"),
+      join(process.cwd(), "src/app/account/settings/page.tsx"),
       "utf8",
     );
     expect(src).not.toMatch(/Danger Zone/);

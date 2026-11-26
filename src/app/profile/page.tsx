@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function ProfileAliasPage() {
-  redirect("/account#profil");
+  redirect("/account/settings#profil");
 }

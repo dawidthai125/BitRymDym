@@ -1,110 +1,44 @@
 import { readFileSync } from "node:fs";
-
-import enMessages from "../../../messages/en.json";
-import plMessages from "../../../messages/pl.json";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-describe("settings hub (navigation only)", () => {
-  const src = readFileSync(
-    join(process.cwd(), "src/app/settings/page.tsx"),
-    "utf8",
-  );
+const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
-  it("keeps auth gate and AppShell", () => {
+describe("account settings tab", () => {
+  const src = read("src/app/account/settings/page.tsx");
+
+  it("keeps the old addresses working", () => {
+    expect(read("src/app/settings/page.tsx")).toContain('redirect("/account/settings")');
+    expect(read("src/app/library/page.tsx")).toContain('redirect("/account/favorites")');
+    expect(read("src/app/profile/page.tsx")).toContain('redirect("/account/settings#profil")');
+    expect(read("src/app/account/page.tsx")).toContain("<AccountHashRedirect");
+  });
+
+  it("keeps the auth gate", () => {
     expect(src).toContain("getCurrentProfile()");
-    expect(src).toContain('redirect(signInPathWithNext("/settings"))');
-    expect(src).toContain('AppShell tone="studio"');
+    expect(src).toContain('redirect(signInPathWithNext("/account/settings"))');
   });
 
-  it("states it is a hub to existing settings, not new options", () => {
-    expect(src).toMatch(/skróty do ustawień/i);
-    expect(src).toMatch(/Nie\s+ma tu nowych opcji/i);
-    expect(src).not.toMatch(/kolejnej fali/i);
-  });
-
-  it("links only to confirmed working destinations", () => {
-    const expected = [
-      "/account#profil",
-      "/account#security",
-      "/account#powiadomienia",
-      "/account#danger",
-      "/account",
-      "/account/takes",
-      "/account/beats",
-      "/account/downloads",
-      "/account/shared",
-      "/premium",
-    ];
-    for (const href of expected) {
-      expect(src).toContain(`href: "${href}"`);
+  it("has every section that old links point to, with the account forms", () => {
+    for (const id of ["profil", "security", "powiadomienia", "wyglad", "danger"]) {
+      expect(src).toContain(`id="${id}"`);
     }
-    // Do not advertise favorites stub or invent theme route.
-    expect(src).not.toContain("/library/favorites");
-    expect(src).not.toContain("/settings/theme");
+    for (const form of ["<DisplayNameForm", "<ChangeEmailForm", "<ChangePasswordForm", "<DeleteAccountForm", "<NotificationPreferencesForm"]) {
+      expect(src).toContain(form);
+    }
+  });
+
+  it("the overview no longer carries password, e-mail or deletion forms", () => {
+    const overview = read("src/app/account/page.tsx");
+    for (const form of ["ChangeEmailForm", "ChangePasswordForm", "DeleteAccountForm", "DisplayNameForm"]) {
+      expect(overview).not.toContain(form);
+    }
   });
 
   it("reuses ThemeToggle instead of duplicating theme logic", () => {
     expect(src).toContain('from "@/components/site/theme-toggle"');
     expect(src).toContain("<ThemeToggle");
     expect(src).not.toContain("localStorage");
-    expect(src).not.toContain("bitrymdym.theme");
-  });
-
-  it("does not embed duplicate profile/password forms", () => {
-    expect(src).not.toContain("DisplayNameForm");
-    expect(src).not.toContain("ChangePasswordForm");
-    expect(src).not.toContain("ChangeEmailForm");
-    expect(src).not.toContain("DeleteAccountForm");
-  });
-
-  it("Premium copy points at the Premium page and does not claim checkout is always on", () => {
-    expect(src).toContain("informacjaOPoziomachI");
-    const text = plMessages.account.settingsPage.consts.informacjaOPoziomachI;
-    expect(text).toMatch(/gdy płatności są włączone/);
-    expect(text).not.toMatch(/kup teraz/i);
-  });
-
-  it("exposes real h2 headings for theme and link groups", () => {
-    expect(src).toMatch(/id="settings-theme"[\s\S]*?>\s*Motyw\s*</);
-    expect(src).toContain('aria-labelledby={headingId}');
-    expect(src).toMatch(/<h2\b[^>]*\bid=\{headingId\}/);
-    expect(src).toContain('"kontoPowiazaneEkrany"');
-    expect(plMessages.account.settingsPage.consts.kontoPowiazaneEkrany).toBe(
-      "Konto — powiązane ekrany",
-    );
-  });
-
-  it("account hash destinations still exist on /account", () => {
-    const account = readFileSync(
-      join(process.cwd(), "src/app/account/page.tsx"),
-      "utf8",
-    );
-    for (const id of ["profil", "security", "powiadomienia", "danger"] as const) {
-      expect(account).toContain(`id="${id}"`);
-    }
-  });
-
-  it("resolves every hub label from consts in Polish and English", () => {
-    const hub = src.slice(
-      src.indexOf("const SETTINGS_HUB_LINKS"),
-      src.indexOf("] as const"),
-    );
-    const keys = [
-      ...hub.matchAll(/(?:group|title|description): "([^"]+)"/g),
-    ].map((match) => match[1]);
-    expect(keys).toContain("powiadomieniaEMail");
-    expect(keys).toContain("moderacjaMasterMp4");
-    const plConsts = plMessages.account.settingsPage.consts;
-    const enConsts = enMessages.account.settingsPage.consts;
-    for (const key of keys) {
-      const pl = plConsts[key as keyof typeof plConsts];
-      const en = enConsts[key as keyof typeof enConsts];
-      expect(typeof pl, key).toBe("string");
-      expect(typeof en, key).toBe("string");
-      expect(pl.length, key).toBeGreaterThan(0);
-      expect(en.length, key).toBeGreaterThan(0);
-    }
   });
 });

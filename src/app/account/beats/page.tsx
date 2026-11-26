@@ -188,13 +188,6 @@ export default async function AccountBeatsPage() {
               ))}
             </ul>
           )}
-
-          <Link
-            href="/account"
-            className="text-sm text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
-          >
-            {t("wrocDoStudia")}
-          </Link>
         </PageFrame>
       </main>
   );

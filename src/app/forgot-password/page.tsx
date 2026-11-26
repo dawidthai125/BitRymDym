@@ -15,7 +15,7 @@ export default async function ForgotPasswordPage() {
   const t = await getTranslations("auth.forgotPasswordPage");
   const context = await getCurrentProfile();
   if (context) {
-    redirect("/account#security");
+    redirect("/account/settings#security");
   }
 
   return (

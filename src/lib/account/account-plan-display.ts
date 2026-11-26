@@ -12,6 +12,8 @@ export type AccountPlanDisplayInput = {
   premiumExpiresAt: string | null;
   /** True when the live Gold row is the ranking prize. */
   prize?: boolean;
+  /** Language of the summary and the date; Polish by default. */
+  locale?: "pl" | "en";
   /** True when entitlement load failed — do not claim a verified plan. */
   loadError?: boolean;
 };
@@ -19,17 +21,17 @@ export type AccountPlanDisplayInput = {
 export type AccountPlanDisplay = {
   /** OD-PL-03 English Title Case tier label, or em dash on load error. */
   tierLabel: string;
-  /** Polish supporting sentence for /account “Twój plan”. */
+  /** Supporting sentence for /account “Twój plan”, in the asked language. */
   summary: string;
   premiumActive: boolean;
   verified: boolean;
 };
 
-function formatExpiryPl(iso: string): string | null {
+function formatExpiry(iso: string, tag: string): string | null {
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return null;
   try {
-    return new Date(ms).toLocaleDateString("pl-PL", {
+    return new Date(ms).toLocaleDateString(tag, {
       timeZone: "Europe/Warsaw",
       year: "numeric",
       month: "long",
@@ -47,11 +49,13 @@ function formatExpiryPl(iso: string): string | null {
 export function formatAccountPlanDisplay(
   input: AccountPlanDisplayInput,
 ): AccountPlanDisplay {
+  const en = input.locale === "en";
   if (input.loadError) {
     return {
       tierLabel: "—",
-      summary:
-        "Nie udało się odczytać planu Premium. Odśwież stronę i spróbuj ponownie.",
+      summary: en
+        ? "We could not read your Premium plan. Refresh the page and try again."
+        : "Nie udało się odczytać planu Premium. Odśwież stronę i spróbuj ponownie.",
       premiumActive: false,
       verified: false,
     };
@@ -67,22 +71,25 @@ export function formatAccountPlanDisplay(
   if (effectiveTier === "FREE") {
     return {
       tierLabel,
-      summary: `${tierLabel} — odsłuch, nagrania i podstawowy mix. Wyższe jakości eksportu odblokujesz z Premium.`,
+      summary: en
+        ? `${tierLabel} — listening, recording and a basic mix. Premium unlocks higher export quality.`
+        : `${tierLabel} — odsłuch, nagrania i podstawowy mix. Wyższe jakości eksportu odblokujesz z Premium.`,
       premiumActive: false,
       verified: true,
     };
   }
 
   const expiryLabel = input.premiumExpiresAt
-    ? formatExpiryPl(input.premiumExpiresAt)
+    ? formatExpiry(input.premiumExpiresAt, en ? "en-GB" : "pl-PL")
     : null;
-  const expirySuffix = expiryLabel ? ` · ważne do ${expiryLabel}` : "";
+  const expirySuffix = expiryLabel ? (en ? ` · valid until ${expiryLabel}` : ` · ważne do ${expiryLabel}`) : "";
+  const planText = prize
+    ? en ? "plan from a ranking prize" : "pakiet z nagrody rankingu"
+    : en ? "active Premium plan" : "aktywny plan Premium";
 
   return {
     tierLabel,
-    summary: prize
-      ? `${tierLabel} — pakiet z nagrody rankingu${expirySuffix}.`
-      : `${tierLabel} — aktywny plan Premium${expirySuffix}.`,
+    summary: `${tierLabel} — ${planText}${expirySuffix}.`,
     premiumActive: true,
     verified: true,
   };

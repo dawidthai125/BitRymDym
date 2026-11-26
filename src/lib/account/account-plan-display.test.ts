@@ -160,3 +160,12 @@ describe("account page Premium plan wiring (source contract)", () => {
     );
   });
 });
+
+describe("plan text in English", () => {
+  it("has no Polish for an active Gold plan, with or without an end date", () => {
+    const open = formatAccountPlanDisplay({ locale: "en", premiumTier: "GOLD", premiumActive: true, premiumExpiresAt: null });
+    expect(open.summary).toBe("Gold — active Premium plan.");
+    const dated = formatAccountPlanDisplay({ locale: "en", premiumTier: "GOLD", premiumActive: true, premiumExpiresAt: "2026-12-12T10:00:00Z" });
+    expect(dated.summary).toBe("Gold — active Premium plan · valid until 12 December 2026.");
+  });
+});

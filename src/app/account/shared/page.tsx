@@ -72,13 +72,6 @@ export default async function AccountSharedBeatsPage() {
             ))}
           </ul>
         )}
-
-        <Link
-          href="/account"
-          className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-        >
-          {t("konto")}
-        </Link>
       </main>
   );
 }

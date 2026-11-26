@@ -6,6 +6,7 @@ import Link from "@/components/ui/app-link";
 
 import { ConsentSwitches } from "@/components/community/consent-switches";
 import type { ListingConsents } from "@/lib/community/consents";
+import { filterListings, listingSummaryKeys } from "@/lib/community/listing-filter";
 import type { MyListing } from "@/lib/community/listing-service";
 
 /** Saves each change at once and shows what the server stored. */
@@ -14,6 +15,8 @@ export function MyListings({ items }: { items: MyListing[] }) {
   const [rows, setRows] = useState(items);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<{ id: string; ok: boolean } | null>(null);
+  const [query, setQuery] = useState("");
+  const shown = filterListings(rows, query);
 
   async function save(item: MyListing, next: ListingConsents) {
     if (item.kind === "work" && next.listed && !item.consents.listed && !window.confirm(t("relistConfirm"))) return;
@@ -32,27 +35,53 @@ export function MyListings({ items }: { items: MyListing[] }) {
   }
 
   return (
-    <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
-      {rows.map((item) => {
-        const open = item.href && (item.kind === "beat" || item.consents.listed);
-        return (
-          <li key={item.id} className="grid gap-3 py-4 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]" data-testid={`listing-${item.kind}`}>
-            <div className="min-w-0 space-y-1">
-              <p className="break-words font-medium text-[var(--brd-ink)]">{item.title}</p>
-              {item.pending ? <p className="text-xs text-[var(--brd-mute)]">{t("pending")}</p> : null}
-              {open && item.href ? (
-                <Link href={item.href} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t("openPage")}</Link>
-              ) : null}
-              {note?.id === item.id ? (
-                <p role={note.ok ? "status" : "alert"} className={note.ok ? "text-sm text-[var(--brd-green)]" : "text-sm text-destructive"}>
-                  {note.ok ? t("saved") : t("failed")}
-                </p>
-              ) : null}
-            </div>
-            <ConsentSwitches kind={item.kind} value={item.consents} disabled={busy === item.id} onChange={(next) => void save(item, next)} />
-          </li>
-        );
-      })}
-    </ul>
+    <div className="flex flex-col gap-2">
+      {rows.length > 5 ? (
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={t("search")}
+          aria-label={t("search")}
+          data-testid="listing-search"
+          className="min-h-11 w-full max-w-sm border border-[var(--brd-line)] bg-transparent px-3 text-sm text-[var(--brd-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+        />
+      ) : null}
+      {shown.length === 0 ? (
+        <p className="text-sm text-[var(--brd-mute)]" role="status">{t("noMatch")}</p>
+      ) : null}
+      <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
+        {shown.map((item) => {
+          const open = item.href && (item.kind === "beat" || item.consents.listed);
+          return (
+            <li key={item.id} data-testid={`listing-${item.kind}`}>
+              <details className="group">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)] [&::-webkit-details-marker]:hidden">
+                  <span className="min-w-0">
+                    <span className="block break-words font-medium text-[var(--brd-ink)]">{item.title}</span>
+                    <span className="block text-xs text-[var(--brd-mute)]">
+                      {listingSummaryKeys(item.consents).map((key) => t(`state.${key}`)).join(" · ")}
+                      {item.pending ? ` · ${t("pending")}` : ""}
+                    </span>
+                  </span>
+                  <span aria-hidden="true" className="shrink-0 text-[var(--brd-green)] transition-transform group-open:rotate-90">›</span>
+                </summary>
+                <div className="space-y-2 pb-4">
+                  {open && item.href ? (
+                    <Link href={item.href} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t("openPage")}</Link>
+                  ) : null}
+                  {note?.id === item.id ? (
+                    <p role={note.ok ? "status" : "alert"} className={note.ok ? "text-sm text-[var(--brd-green)]" : "text-sm text-destructive"}>
+                      {note.ok ? t("saved") : t("failed")}
+                    </p>
+                  ) : null}
+                  <ConsentSwitches kind={item.kind} value={item.consents} disabled={busy === item.id} onChange={(next) => void save(item, next)} />
+                </div>
+              </details>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

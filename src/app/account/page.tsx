@@ -1,6 +1,4 @@
-import { useLibText } from "@/i18n/use-lib-text";
 import { getLibText } from "@/i18n/get-lib-text";
-import { getTranslations } from "next-intl/server";
 import Link from "@/components/ui/app-link";
 import { redirect } from "next/navigation";
 
@@ -9,42 +7,28 @@ import {
   PageFrame,
   SectionLabel,
 } from "@/components/brand/chrome";
-import {
-  ChangeEmailForm,
-  ChangePasswordForm,
-  DeleteAccountForm,
-} from "@/components/auth/auth-forms";
-import { DisplayNameForm } from "@/components/auth/display-name-form";
-import { CommunityShelf } from "@/components/community/community-shelf";
 import { WorkPrizeDesk } from "@/components/account/work-prize-desk";
 import { OwnStudioTracks } from "@/components/account/own-studio-tracks";
 import { ReferralDesk } from "@/components/account/referral-desk";
 import { RewardDesk } from "@/components/community/reward-desk";
-import { NotificationPreferencesForm } from "@/components/account/notification-preferences-form";
-import { notifyEnv } from "@/lib/email/notify/config";
-import { DEFAULT_PREFERENCES, readPreferences } from "@/lib/email/notify/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { PaymentSuccessDialog } from "@/components/premium/payment-success-dialog";
 import { TrackPurchase } from "@/components/premium/track-purchase";
 import { paymentSuccess, PAYMENT_SUCCESS_PARAM } from "@/lib/payments/return-state";
 import { OwnTakesList } from "@/components/takes/own-takes-list";
-import { listFavoriteBeatIds } from "@/lib/beats/favorites";
 import { listPurchasedBeatIds } from "@/lib/beats/purchased-catalog";
 import { formatAccountPlanDisplay } from "@/lib/account/account-plan-display";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
-import { ConsumeEmailChangeNotice } from "@/components/auth/consume-email-change-notice";
-import { EmailChangeNotice } from "@/components/auth/email-change-notice";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { signOutAction } from "@/lib/auth/actions";
-import { resolveEmailChangeNoticeDisplay } from "@/lib/auth/email-change";
-import { readEmailChangeNotice } from "@/lib/auth/email-change-notice";
 import { canAccessAdminNav } from "@/lib/auth/permissions";
-import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
+import { getCurrentProfile } from "@/lib/auth/session";
+import { AccountHashRedirect } from "@/components/account/account-hash-redirect";
+import { resolveLocale } from "@/i18n/config";
+import { getLocale, getTranslations } from "next-intl/server";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { isStoreApp } from "@/lib/site/store-app-server";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import {
-  countOwnActiveTakes,
   listOwnTakes,
   takeRecentNonDeletedTakes,
 } from "@/lib/takes/list-own-takes";
@@ -85,9 +69,6 @@ export default async function AccountPage({
   if (!context) {
     redirect(signInPathWithNext("/account"));
   }
-  const tn = await getTranslations("account.notifications");
-  const notificationPrefs = await readPreferences(createSupabaseAdminClient(), context.userId).catch(() => DEFAULT_PREFERENCES);
-
   const params = await searchParams;
   const claimParam = params.claim;
   const payment = await paymentSuccess(params[PAYMENT_SUCCESS_PARAM], context.userId);
@@ -95,49 +76,23 @@ export default async function AccountPage({
     claimParam === "ok" || claimParam === "cap" || claimParam === "error"
       ? claimParam
       : null;
-  const authUser = await getSessionUser();
-  const signedEmailChangeStatus = await readEmailChangeNotice();
-  const emailChangeStatus = resolveEmailChangeNoticeDisplay({
-    signedStatus: signedEmailChangeStatus,
-    pendingNewEmail: authUser?.new_email,
-    sessionReadable: true,
-  });
-
   const showAdminNav = canAccessAdminNav(context.profile.role);
   // Profile surface: exclude soft-deleted at query (not slice-then-filter).
   // /account/takes keeps includeDeleted default for lifecycle visibility.
   let takes: Awaited<ReturnType<typeof listOwnTakes>> = [];
-  let takeCounts = { total: 0, ready: 0 };
   try {
-    [takes, takeCounts] = await Promise.all([
-      listOwnTakes({ includeDeleted: false, limit: 5 }),
-      countOwnActiveTakes(context.userId),
-    ]);
+    takes = await listOwnTakes({ includeDeleted: false, limit: 5 });
   } catch {
     takes = [];
   }
   const recentTakes = takeRecentNonDeletedTakes(takes, 5);
-  let favoriteCount = 0;
-  let purchasedBeatIds: string[] = [];
-  try {
-    [favoriteCount, purchasedBeatIds] = await Promise.all([
-      listFavoriteBeatIds(context.userId).then((ids) => ids.length),
-      listPurchasedBeatIds(context.userId),
-    ]);
-  } catch {
-    favoriteCount = 0;
-    purchasedBeatIds = [];
-  }
-  const readyCount = takeCounts.ready;
+  const purchasedBeatIds: string[] = await listPurchasedBeatIds(context.userId).catch(() => []);
+  const locale = resolveLocale(await getLocale());
   const displayName =
     context.profile.displayName?.trim() || tr("tworca");
-  const userNumberLabel =
-    context.profile.userNumber != null
-      ? String(context.profile.userNumber)
-      : "—";
-
   // Premium SSOT — same resolver as Admin / EXPORT_WAV (own user only).
   let planDisplay = formatAccountPlanDisplay({
+    locale,
     premiumTier: "FREE",
     premiumActive: false,
     premiumExpiresAt: null,
@@ -146,6 +101,7 @@ export default async function AccountPage({
   try {
     const product = await resolveProductEntitlementForAuthContext(context);
     planDisplay = formatAccountPlanDisplay({
+      locale,
       premiumTier: product.premiumTier,
       premiumActive: product.premiumActive,
       premiumExpiresAt: product.premiumExpiresAt,
@@ -153,6 +109,7 @@ export default async function AccountPage({
     });
   } catch {
     planDisplay = formatAccountPlanDisplay({
+      locale,
       premiumTier: "FREE",
       premiumActive: false,
       premiumExpiresAt: null,
@@ -164,6 +121,7 @@ export default async function AccountPage({
       <main className="pb-16">
         {payment ? <PaymentSuccessDialog message={payment.message} param={PAYMENT_SUCCESS_PARAM} /> : null}
         {payment?.purchase ? <TrackPurchase purchase={payment.purchase} /> : null}
+        <AccountHashRedirect />
         <PageFrame className="py-10 sm:py-14">
           <header className="mb-10 grid gap-6 border-b border-[var(--brd-line)] pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="space-y-3">
@@ -176,13 +134,11 @@ export default async function AccountPage({
             </div>
             <div className="flex flex-wrap gap-2">
               <BrdLink href="/beats">{tr("noweNagranie")}</BrdLink>
-              <BrdLink href="/account/takes" variant="secondary">
-                {tr("mojeNagrania")}
+              <BrdLink href="/studio" variant="secondary">
+                {tr("studio")}
               </BrdLink>
             </div>
           </header>
-
-          <CommunityShelf current="none" />
 
           {claimBanner === "ok" ? (
             <div
@@ -246,36 +202,6 @@ export default async function AccountPage({
 
               <OwnStudioTracks userId={context.userId} />
 
-              <section className="pt-8">
-                <SectionLabel className="mb-3">{tr("twojaBiblioteka")}</SectionLabel>
-                <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
-                  <LibraryRow
-                    href="/account/takes"
-                    title={tr("nagrania")}
-                    meta={tr("gotowych", { v0: readyCount })}
-                  />
-                  <LibraryRow
-                    href="/account/downloads"
-                    title={tr("pobraneBity")}
-                    meta={tr("twojePobrania")}
-                  />
-                  <LibraryRow
-                    href="/account/favorites"
-                    title={tr("ulubione")}
-                    meta={tr("zapisanych", { v0: favoriteCount })}
-                  />
-                  <LibraryRow
-                    href="/beats?katalog=moj"
-                    title={tr("kupione")}
-                    meta={tr(storeApp ? "kupioneBitySklep" : "kupioneBity")}
-                  />
-                  <LibraryRow
-                    href="/account/beats"
-                    title={tr("mojeBity")}
-                    meta={tr("wgraneIWModeracji")}
-                  />
-                </ul>
-              </section>
             </section>
 
             <aside className="space-y-8">
@@ -296,47 +222,6 @@ export default async function AccountPage({
                   </p>
                 </div>
 
-                <dl className="space-y-3 border-y border-[var(--brd-line)] py-4 text-sm">
-                  <div>
-                    <dt className="text-xs text-[var(--brd-mute)]">
-                      {tr("ksywka")}
-                    </dt>
-                    <dd className="mt-1 text-[var(--brd-ink)]">{tl(displayName)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-[var(--brd-mute)]">
-                      {tr("idUzytkownika")}
-                    </dt>
-                    <dd className="brd-data mt-1 text-[var(--brd-ink)]">{tl(userNumberLabel)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-[var(--brd-mute)]">
-                      {tr("eMail")}
-                    </dt>
-                    <dd className="mt-1 break-all text-[var(--brd-ink)]">
-                      {tl(context.email ?? "—")}
-                    </dd>
-                  </div>
-                </dl>
-
-                <dl className="grid grid-cols-2 gap-3 text-sm">
-                  <Stat label={tr("nagrania")} value={String(takeCounts.total)} />
-                  <Stat label={tr("gotowe")} value={String(readyCount)} />
-                </dl>
-
-                <DisplayNameForm
-                  initialDisplayName={context.profile.displayName ?? ""}
-                />
-
-                <Link
-                  href="/account/profil"
-                  className="inline-flex min-h-11 items-center text-sm text-[var(--brd-green)] underline-offset-4 hover:underline"
-                >
-                  {tr("profilPubliczny")}
-                </Link>
-
-                <RewardDesk userId={context.userId} />
-
                 <div>
                   <SectionLabel className="mb-2">{tr("twojPlan")}</SectionLabel>
                   <p
@@ -350,9 +235,35 @@ export default async function AccountPage({
                       planDisplay.verified ? "true" : "false"
                     }
                   >
-                    {tl(planDisplay.summary)}
+                    {planDisplay.summary}
                   </p>
+                  {/* Store apps show no purchase links. */}
+                  {storeApp ? null : (
+                    <Link
+                      href="/premium"
+                      className="inline-flex min-h-11 items-center text-sm text-[var(--brd-green)] underline-offset-4 hover:underline"
+                    >
+                      {tr("zobaczPlany")}
+                    </Link>
+                  )}
                 </div>
+
+                <div className="flex flex-col">
+                  <Link
+                    href="/account/settings#profil"
+                    className="inline-flex min-h-11 items-center text-sm text-[var(--brd-green)] underline-offset-4 hover:underline"
+                  >
+                    {tr("zmienKsywke")}
+                  </Link>
+                  <Link
+                    href="/account/profil"
+                    className="inline-flex min-h-11 items-center text-sm text-[var(--brd-green)] underline-offset-4 hover:underline"
+                  >
+                    {tr("profilPubliczny")}
+                  </Link>
+                </div>
+
+                <RewardDesk userId={context.userId} />
 
                 <WorkPrizeDesk userId={context.userId} />
 
@@ -376,87 +287,7 @@ export default async function AccountPage({
             </aside>
           </div>
 
-          <div className="mt-10 grid gap-6 lg:grid-cols-2">
-              <section
-                id="security"
-                className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5 lg:col-span-2"
-              >
-                <SectionLabel>{tr("bezpieczenstwo")}</SectionLabel>
-                {emailChangeStatus ? (
-                  <EmailChangeNotice status={emailChangeStatus} />
-                ) : null}
-                {signedEmailChangeStatus ? <ConsumeEmailChangeNotice /> : null}
-                <ChangeEmailForm currentEmail={context.email ?? ""} />
-                <ChangePasswordForm />
-                <p className="text-sm text-[var(--brd-mute)]">
-                  {tr("niePamietaszHasla")}{" "}
-                  <Link
-                    href="/forgot-password"
-                    className="text-[var(--brd-green)] underline-offset-4 hover:underline"
-                  >
-                    {tr("resetPrzezEMail")}
-                  </Link>
-                </p>
-              </section>
-
-              <section
-                id="powiadomienia"
-                className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
-              >
-                <SectionLabel>{tn("tytul")}</SectionLabel>
-                <NotificationPreferencesForm initialPrefs={notificationPrefs} active={notifyEnv(process.env).enabled} />
-                <p className="text-xs text-[var(--brd-mute)]">{tn("informacja")}</p>
-              </section>
-
-              <section
-                id="danger"
-                className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
-              >
-                <SectionLabel>{tr("usuwanieKonta")}</SectionLabel>
-                <DeleteAccountForm />
-              </section>
-          </div>
         </PageFrame>
       </main>
-  );
-}
-
-function LibraryRow({
-  href,
-  title,
-  meta,
-}: {
-  href: string;
-  title: string;
-  meta: string;
-}) {
-  const tl = useLibText();
-  return (
-    <li>
-      <Link
-        href={href}
-        className="flex min-h-11 items-center justify-between gap-3 py-4 hover:text-[var(--brd-green)]"
-      >
-        <div>
-          <p className="font-medium">{tl(title)}</p>
-          <p className="text-sm text-[var(--brd-mute)]">{tl(meta)}</p>
-        </div>
-        <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 shrink-0">
-          <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-      </Link>
-    </li>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  const tl = useLibText();
-  return (
-    <div>
-      <dt className="text-xs text-[var(--brd-mute)]">
-        {tl(label)}
-      </dt>
-      <dd className="brd-data mt-1 text-lg text-[var(--brd-ink)]">{tl(value)}</dd>
-    </div>
   );
 }

@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import Link from "@/components/ui/app-link";
 import { redirect } from "next/navigation";
 
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
@@ -53,21 +52,6 @@ export default async function AccountTakesPage() {
           </header>
 
           <OwnTakesList items={takes} purchasedBeatIds={purchasedBeatIds} />
-
-          <div className="flex flex-wrap gap-4 text-sm">
-            <Link
-              href="/studio"
-              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
-            >
-              {t("studio")}
-            </Link>
-            <Link
-              href="/account"
-              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
-            >
-              {t("konto")}
-            </Link>
-          </div>
         </PageFrame>
       </main>
   );

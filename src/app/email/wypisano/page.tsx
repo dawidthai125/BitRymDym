@@ -18,7 +18,7 @@ export default async function UnsubscribedPage({ searchParams }: { searchParams:
         <PageFrame className="max-w-xl py-16">
           <h1 className="text-2xl font-bold">{ok ? t("wypisanoTytul") : t("wypisanoBladTytul")}</h1>
           <p className="mt-3 text-[var(--brd-mute)]">{ok ? t("wypisanoOpis") : t("wypisanoBladOpis")}</p>
-          <Link href="/account#powiadomienia" className="mt-6 inline-flex min-h-11 items-center underline underline-offset-4">{t("przejdzDoUstawien")}</Link>
+          <Link href="/account/settings#powiadomienia" className="mt-6 inline-flex min-h-11 items-center underline underline-offset-4">{t("przejdzDoUstawien")}</Link>
         </PageFrame>
       </main>
     </AppShell>

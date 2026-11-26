@@ -286,7 +286,7 @@ export function resolveEmailChangeNoticeDisplay(params: {
 }
 
 export function emailChangeResultPath(hasSession: boolean): string {
-  return hasSession ? "/account" : "/auth/email-change";
+  return hasSession ? "/account/settings" : "/auth/email-change";
 }
 
 export const EMAIL_CHANGE_NOTICE_COOKIE = "brd_email_change";
