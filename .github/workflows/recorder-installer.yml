@@ -234,7 +234,7 @@ jobs:
           $parts = $ver.Split(".")
           $next = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
           $nextOut = Join-Path $env:RUNNER_TEMP "velopack-next"
-          vpk pack --packId BitRymDym.Nagrywarka --packVersion $next --packDir dist\BitRymDym --mainExe BitRymDym.exe --packTitle BitRymDym --icon assets\cassette.ico --outputDir $nextOut --channel win --runtime win-x64 --noPortable --noInst
+          vpk pack --packId BitRymDym.Nagrywarka --packVersion $next --packDir dist\BitRymDym --mainExe BitRymDym.exe --packTitle BitRymDym --icon assets\cassette.ico --outputDir $nextOut --channel win --runtime win-x64 --noPortable
           if ($LASTEXITCODE) { throw "vpk pack (nowsza)" }
           $pkg = Get-ChildItem $nextOut -Filter *full.nupkg | Select-Object -First 1
           if (-not $pkg) { throw "brak nowszej paczki" }
