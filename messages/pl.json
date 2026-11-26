@@ -2020,7 +2020,7 @@
       "beatUnavailable": "Bit niedostępny"
     },
     "beatWav": {
-      "opis": "Na wyłączność, jednorazowo {cena} przez PayU. Po wpłacie bit znika z katalogu i jest tylko Twój: pobierasz WAV i nagrywasz na nim w Studiu (w programie na Windows — w Studiu Offline, Gold).",
+      "opis": "Na wyłączność, jednorazowo {cena} przez PayU. Po wpłacie bit znika z katalogu i jest tylko Twój: pobierasz WAV i nagrywasz na nim w Studiu i w programie na Windows.",
       "katalog": "Otwórz w moim katalogu",
       "nagraj": "Nagraj w Studiu",
       "kup": "Kup WAV",
@@ -2056,7 +2056,7 @@
       "mojPusto": "Nie masz jeszcze kupionych bitów.",
       "nagrajWStudio": "Nagraj w Studiu",
       "platnyTytul": "Płatny katalog bitów",
-      "platnyOpis": "Każdy bit w tym katalogu kosztuje 19,99 zł. Kupujesz na wyłączność: po płatności PayU bit znika z katalogu i trafia tylko do Twojego katalogu. Stamtąd pobierasz plik WAV i nagrywasz na nim w Studiu, a w programie na Windows w Studiu Offline (Gold). Bez zakupu nagranie w Studiu zostaje wyłączone.",
+      "platnyOpis": "Każdy bit w tym katalogu kosztuje 19,99 zł. Kupujesz na wyłączność: po płatności PayU bit znika z katalogu i trafia tylko do Twojego katalogu. Stamtąd pobierasz plik WAV i nagrywasz na nim w Studiu oraz w programie na Windows (lista bitów, „Kupiony: …”). Bez zakupu nagranie w Studiu zostaje wyłączone.",
       "platnyWkrotce": "19,99 zł · plik WAV",
       "platnyZakup": "Płatność idzie przez PayU. Po zakupie bit jest w katalogu kupującego, nie w katalogu darmowym.",
       "metaTitle": "Katalog bitów do rapu — trap, boom bap, lo-fi",

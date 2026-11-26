@@ -324,7 +324,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
     webOnly: true,
     metaTitle: "Bity na wyłączność — kup bit do rapu z plikiem WAV",
     metaDescription:
-      "Kup bit do rapu na wyłączność za 19,99 zł: po zakupie znika z katalogu i jest tylko Twój. Pobierasz WAV i nagrywasz na nim w Studiu online.",
+      "Kup bit do rapu na wyłączność za 19,99 zł: po zakupie znika z katalogu i jest tylko Twój. Pobierasz WAV i nagrywasz na nim w Studiu online i w Nagrywarce.",
     h1: "Bity na wyłączność",
     lead: "Chcesz bit, którego nikt inny nie użyje? W płatnym katalogu BitRymDym każdy bit sprzedajemy tylko raz.",
     sections: [
@@ -332,7 +332,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
         h2: "Jak działa zakup na wyłączność",
         paragraphs: [
           "Każdy bit w płatnym katalogu kosztuje 19,99 zł i płacisz za niego jednorazowo przez PayU. Po płatności bit znika z katalogu i trafia tylko do Twojego katalogu — nikt inny nie może go już kupić.",
-          "Ze swojego katalogu pobierasz plik WAV i nagrywasz na bicie w Studiu online. W Nagrywarce na Windows nagrasz na nim w Studiu Offline (Gold), z pobranego pliku WAV.",
+          "Ze swojego katalogu pobierasz plik WAV i nagrywasz na bicie w Studiu online oraz w Nagrywarce na Windows: kupiony bit jest na górze jej listy.",
         ],
       },
       {
@@ -345,7 +345,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
     faq: [
       {
         q: "Co dostaję po kupnie bitu?",
-        a: "Bit na wyłączność: znika z katalogu, pobierasz go jako WAV i nagrywasz na nim w Studiu. W Nagrywarce na Windows — w Studiu Offline (Gold), z pobranego WAV.",
+        a: "Bit na wyłączność: znika z katalogu, pobierasz go jako WAV i możesz na nim nagrywać w Studiu i w Nagrywarce.",
       },
       {
         q: "Czy ktoś inny może kupić ten sam bit?",

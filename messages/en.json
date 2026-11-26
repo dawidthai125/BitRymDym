@@ -2020,7 +2020,7 @@
       "beatUnavailable": "Beat unavailable"
     },
     "beatWav": {
-      "opis": "Exclusive, one payment of {cena} through PayU. After it arrives the beat leaves the catalogue and is yours only: download the wav and record on it in the Studio (in the Windows app: Studio Offline, Gold).",
+      "opis": "Exclusive, one payment of {cena} through PayU. After it arrives the beat leaves the catalogue and is yours only: download the wav and record on it in the Studio and in the Windows app.",
       "katalog": "Open in my catalogue",
       "nagraj": "Record in Studio",
       "kup": "Buy wav",
@@ -2056,7 +2056,7 @@
       "mojPusto": "You have not bought a beat yet.",
       "nagrajWStudio": "Record in Studio",
       "platnyTytul": "Paid beat catalogue",
-      "platnyOpis": "Each beat in this catalogue costs 19.99 PLN. You buy it exclusively: after the PayU payment the beat leaves the catalogue and goes to your catalogue only. Download the wav there and record on it in the Studio, and in the Windows app in Studio Offline (Gold). Without a purchase, Studio recording stays off.",
+      "platnyOpis": "Each beat in this catalogue costs 19.99 PLN. You buy it exclusively: after the PayU payment the beat leaves the catalogue and goes to your catalogue only. Download the wav there and record on it in the Studio and in the Windows app (beat list, “Kupiony: …”). Without a purchase, Studio recording stays off.",
       "platnyWkrotce": "19.99 PLN · wav file",
       "platnyZakup": "Payment goes through PayU. After purchase the beat is in the buyer's catalogue, not in the free catalogue.",
       "metaTitle": "Rap beat catalogue — trap, boom bap, lo-fi",
