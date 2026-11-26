@@ -2726,6 +2726,8 @@ export function StudioRecordingPanel({
         beatId: resolvedBeatId,
         blob: file,
         contentType: gate.contentType,
+        // The file picker opens only after the rights prompt (importPrawa) was accepted.
+        rightsConfirmed: true,
       });
       dispatch({ type: "FINALIZE_START" });
       dispatch({

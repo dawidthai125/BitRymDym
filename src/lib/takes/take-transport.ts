@@ -166,7 +166,24 @@ type SessionParams = {
   ownerId?: string | null;
   bucket?: string | null;
   takeId?: string | null;
+  /** "Importuj wokal": the user confirmed the rights prompt. Stored on the take; mic/recorder leave it off. */
+  rightsConfirmed?: boolean;
 };
+
+/**
+ * Store the rights statement on the take (owner decision 2026-11-26). Evidence only: a failed write is
+ * logged and does not block the upload (the rights check before publishing still runs).
+ */
+async function recordTakeRightsStatement(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  takeId: string,
+): Promise<void> {
+  const { error } = await admin
+    .from("takes")
+    .update({ rights_confirmed_at: new Date().toISOString() })
+    .eq("id", takeId);
+  if (error) console.error("[takes] rights statement not stored", takeId, error.message);
+}
 
 /**
  * Create PENDING_UPLOAD take + signed upload URL (race-safe claim RPC).
@@ -273,6 +290,7 @@ export async function createTakeRecordingSessionFor(
   if (claimError) {
     await mapClaimRpcErrorForUser(context, claimError.message);
   }
+  if (params.rightsConfirmed === true) await recordTakeRightsStatement(admin, takeId);
 
   const { data: signed, error: signError } = await admin.storage
     .from(TAKE_AUDIO_BUCKET)
@@ -629,6 +647,8 @@ export async function createStemUploadSessionFor(
     }
     throw new Error(claimError.message);
   }
+  // The stem route requires the rights statement (?rights=1), so every stem carries it.
+  await recordTakeRightsStatement(admin, takeId);
 
   const { data: signed, error: signError } = await admin.storage
     .from(TAKE_AUDIO_BUCKET)

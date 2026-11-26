@@ -15,13 +15,14 @@ import path from "node:path";
 
 import { resolveFfmpegBin, runCapture } from "@/lib/audio/native-ffmpeg";
 import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
-import { compareFingerprints, parseFpcalcJson, parseFpcalcRaw } from "@/lib/beats/auto-check/fingerprint";
+import { CHROMAPRINT_ITEM_SECONDS, compareFingerprints, parseFpcalcJson, parseFpcalcRaw } from "@/lib/beats/auto-check/fingerprint";
 import { createAcoustIdProvider } from "@/lib/beats/auto-check/providers";
 import type { AutoCheckWorkerConfig } from "@/lib/beats/auto-check/worker-env";
 import {
   decideWorkRights,
   isHardCatalogHit,
   isHardExternalHit,
+  sameAudioBeatIds,
   type CatalogHit,
   type ExternalHit,
   type RightsFileKind,
@@ -358,6 +359,12 @@ export async function evaluateWork(cfg: RunConfig, job: ClaimedWorkCheck): Promi
     const refs = await loadBeatRefs(admin);
     // The project's own (catalogue) beat is allowed in the song and bleeds into vocal takes.
     const skip = new Set(projectBeatId ? [projectBeatId] : []);
+    // ...and so are catalogue copies of the same recording (e.g. a "(remix)" entry identical to the beat).
+    const projectRef = projectBeatId ? refs.find((r) => r.source === "beat" && r.id === projectBeatId) : undefined;
+    if (projectRef) {
+      const seconds = projectRef.fingerprint.length * CHROMAPRINT_ITEM_SECONDS;
+      for (const id of sameAudioBeatIds({ id: projectRef.id, fingerprint: projectRef.fingerprint, durationSeconds: seconds }, refs, compareFingerprints)) skip.add(id);
+    }
     const results: RightsFileResult[] = [];
     let i = 0;
     for (const f of files) {

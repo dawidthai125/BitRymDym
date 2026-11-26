@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-26 (47) — Prawa do nagrań: test na koncie Gold, poprawki, domknięcie
+
+- Test zabezpieczeń praw na produkcji (konto Gold, 21 kroków): 19 PASS, 1 FAIL, 1 zastąpiony. Poprawki `578c62a`: po zdjęciu lub odrzuceniu przez moderatora żaden master projektu nie wraca do katalogu (`projectPublishBlocked`, API 403 `blocked`, panel zablokowany; wycofanie zawsze wolno), komunikat dla tytułu nagrania `smp:`/`catalog:` (400 z kodem), ukryte pola plików przy stemach i `/mastering` wyłączone bez oświadczenia.
+- `961fc7b`: reguła „długa zgodność” w `rights-decision.ts` (wynik ≥ 0,5 przez ≥ 30 s, pliki ≥ 20 s) zatrzymuje utwór do moderatora. Przyczyna: stem z bitem „Klatka Schodowa” pod mową, po masteringu i w MP3 128 dał 0,82 przez 121 s, poniżej ścisłego 0,85. Worker na Contabo zaktualizowany, test na żywo zatrzymał utwór w ok. 20 s.
+- Oświadczenie o prawach jest zapisywane: `takes.rights_confirmed_at` (migracja `20261126140000_takes_rights_confirmed`) dla każdego stemu i pliku `/mastering` oraz dla „Importuj wokal” (pole `rightsConfirmed` w `/api/takes/session`, niewymagane, bo z tej trasy korzysta mikrofon i nagrywarka Windows; serwer nie odróżni pliku z dysku od nagrania, ochroną zostaje sprawdzanie odcisków przed publikacją).
+- Worker praw pomija kopie tego samego nagrania co bit projektu (`sameAudioBeatIds`): „Nikt nie zatrzyma nas” i „(remix)” mają wynik 1,0 przez 105 s, czysty utwór na jednym był zatrzymywany przez drugi.
+- Próg długiej zgodności sprawdzony na katalogu (61 bitów × 61 bitów, 51 sampli × 61 bitów): zero nowych zatrzymań; najbliższe różne bity zgadzają się najwyżej przez 1 s.
+- Ścieżki typu SAMPLE (także stemy) mają etykietę „Sampel / stem”. Nazwa ścieżki z `smp:` nie jest luką: znaczenie ma tylko tytuł nagrania. Mignięcie „Nieprawidłowy e-mail lub hasło.” w teście było prawdziwą odmową Supabase (pierwsza próba), nie błędem strony.
+- Testy: `catalog-service-save.test.ts` (7 przypadków `saveOwnerCatalog` na tabeli w pamięci), `sameAudioBeatIds` w `rights-decision.test.ts`.
+
 ## 2026-11-24 (46) — Starsze iPhone'y i iPady: informacja o ręcznej kalibracji
 
 - Gdy przeglądarka nagrywa tylko MP4/AAC (iOS i iPadOS starsze niż 18.4), panel nagrywania w widoku prostym i pełnym pokazuje ramkę „skalibruj mikrofon ręcznie” z przyciskiem Kalibruj. Znika po kalibracji albo ręcznej korekcie.

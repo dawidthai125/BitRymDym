@@ -201,7 +201,8 @@ export function labelStudioTrackType(trackType: string): string {
     case "BEAT":
       return "Bit";
     case "SAMPLE":
-      return "Sampel";
+      // Imported stems also live on SAMPLE tracks (stems/track route): name both, so a stem is not shown as a bare "Sampel".
+      return "Sampel / stem";
     case "SCRATCH":
       return "Szkic";
     case "INSTRUMENT":

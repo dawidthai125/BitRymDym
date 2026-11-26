@@ -78,6 +78,27 @@ export function isWorkCatalogHit(hit: CatalogHit, durationSeconds: number | null
   return isHardCatalogHit(hit, durationSeconds) || isLongCatalogHit(hit, durationSeconds);
 }
 
+/**
+ * Catalogue beats that are the same recording as the project's own beat (owner check 2026-11-26: a
+ * "(remix)" entry matched its original at score 1.0 over 105 s). The song may use that audio, so a
+ * match with such a copy is a match with the project's beat and must not hold the work. Measured on
+ * the beats' own fingerprints with the strict rule and the beat's full length.
+ */
+export function sameAudioBeatIds(
+  projectBeat: { id: string; fingerprint: number[]; durationSeconds: number | null },
+  refs: ReadonlyArray<{ source: "beat" | "sample"; id: string; fingerprint: number[] }>,
+  compare: (a: number[], b: number[]) => { score: number; matchedSeconds: number },
+): string[] {
+  const out: string[] = [];
+  for (const ref of refs) {
+    if (ref.source !== "beat" || ref.id === projectBeat.id) continue;
+    const m = compare(projectBeat.fingerprint, ref.fingerprint);
+    const hit: CatalogHit = { source: "beat", id: ref.id, title: null, score: m.score, matchedSeconds: m.matchedSeconds };
+    if (isHardCatalogHit(hit, projectBeat.durationSeconds)) out.push(ref.id);
+  }
+  return out;
+}
+
 export function isHardExternalHit(hit: ExternalHit): boolean {
   return hit.score >= AUTO_CHECK_THRESHOLDS.externalHardScore;
 }

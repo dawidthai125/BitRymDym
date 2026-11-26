@@ -6,6 +6,7 @@ import {
   isHardCatalogHit,
   isLongCatalogHit,
   RIGHTS_LONG_MATCH,
+  sameAudioBeatIds,
   type RightsFileResult,
 } from "@/lib/rights/rights-decision";
 
@@ -93,5 +94,21 @@ describe("decideWorkRights", () => {
 
   it("a rejected own beat holds the work", () => {
     expect(decideWorkRights({ files: [clean()], ownBeatRejected: true }).passed).toBe(false);
+  });
+
+  it("a catalogue copy of the project's own beat (remix entry) is skipped, a different beat is not", () => {
+    // Fake compare: the fingerprint's first item names the recording; same recording = full match.
+    const compare = (a: number[], b: number[]) =>
+      a[0] === b[0] ? { score: 1, matchedSeconds: 104.7 } : { score: 0.5, matchedSeconds: 0.2 };
+    const refs = [
+      { source: "beat" as const, id: "orig", fingerprint: [1] },
+      { source: "beat" as const, id: "remix", fingerprint: [1] },
+      { source: "beat" as const, id: "other", fingerprint: [2] },
+      { source: "sample" as const, id: "smp", fingerprint: [1] },
+    ];
+    expect(sameAudioBeatIds({ id: "orig", fingerprint: [1], durationSeconds: 107 }, refs, compare)).toEqual(["remix"]);
+    // A long but weak overlap (another beat sharing a loop) is not "the same recording".
+    const weak = () => ({ score: 0.8, matchedSeconds: 120 });
+    expect(sameAudioBeatIds({ id: "orig", fingerprint: [1], durationSeconds: 150 }, refs, weak)).toEqual([]);
   });
 });

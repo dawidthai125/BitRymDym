@@ -8,7 +8,8 @@ export const runtime = "nodejs";
 
 /**
  * Recording Wave 2 / P2 — take signed upload session.
- * POST JSON { beatId, contentType, byteSize, replaceTakeId? }
+ * POST JSON { beatId, contentType, byteSize, replaceTakeId?, rightsConfirmed? }
+ * rightsConfirmed: "Importuj wokal" rights prompt accepted (stored on the take, not required: mic and recorder share this route).
  * Client must NOT send objectKey / ownerId / bucket / takeId.
  */
 export async function POST(request: Request) {
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
       ownerId?: string | null;
       bucket?: string | null;
       takeId?: string | null;
+      rightsConfirmed?: unknown;
     };
 
     if (
@@ -45,6 +47,7 @@ export async function POST(request: Request) {
       ownerId: body.ownerId,
       bucket: body.bucket,
       takeId: body.takeId,
+      rightsConfirmed: body.rightsConfirmed === true,
     });
 
     return NextResponse.json({ success: true, ...session });

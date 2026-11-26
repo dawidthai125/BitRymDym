@@ -163,6 +163,7 @@ async function runTakeUploadTransport(params: {
   blob: Blob;
   contentType?: string;
   replaceTakeId?: string | null;
+  rightsConfirmed?: boolean;
   sessionPath: string;
   finalizePath: string;
   onStage?: (stage: TakeUploadStage) => void | Promise<void>;
@@ -181,6 +182,7 @@ async function runTakeUploadTransport(params: {
       contentType,
       byteSize: params.blob.size,
       replaceTakeId: params.replaceTakeId ?? null,
+      ...(params.rightsConfirmed ? { rightsConfirmed: true } : {}),
     }),
   });
   const sessionJson = ((await sessionRes.json().catch(() => null)) ?? {}) as {
@@ -257,6 +259,8 @@ export async function uploadTakeRecordingBlob(params: {
   blob: Blob;
   contentType?: string;
   replaceTakeId?: string | null;
+  /** "Importuj wokal": the user confirmed the rights prompt (stored on the take). */
+  rightsConfirmed?: boolean;
   onStage?: (stage: TakeUploadStage) => void | Promise<void>;
 }): Promise<TakeUploadTransportResult> {
   return runTakeUploadTransport({
