@@ -2,6 +2,7 @@ import Link from "@/components/ui/app-link";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { LanguageSwitcher } from "@/components/site/language-switcher";
+import { SupportLinks } from "@/components/support/support-links";
 import { CookieSettingsButton } from "@/components/site/cookie-consent";
 import { SocialIcon } from "@/components/site/social-icon";
 import { InstallAppButton } from "@/components/site/pwa-install";
@@ -14,11 +15,12 @@ import { isStoreApp } from "@/lib/site/store-app-server";
 
 /** `compact`: one line, for work screens such as the Studio. */
 export async function SiteFooter({ compact = false }: { compact?: boolean } = {}) {
-  const [t, nav, shelf, menu, storeApp] = await Promise.all([
+  const [t, nav, shelf, menu, sup, storeApp] = await Promise.all([
     getTranslations("common.legal"),
     getTranslations("nav.items"),
     getTranslations("community.shelf"),
     getTranslations("nav.siteMainNav"),
+    getTranslations("nav.support"),
     isStoreApp(),
   ]);
   const english = (await getLocale()) === "en";
@@ -53,6 +55,7 @@ export async function SiteFooter({ compact = false }: { compact?: boolean } = {}
     "border-b border-[var(--brd-line)] lg:border-0 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-[var(--brd-amber)]";
   const legal = (
     <nav aria-label={t("nawigacja")} className="flex flex-wrap items-center gap-x-4">
+      <SupportLinks opinion={sup("opinion")} bug={sup("bug")} className={link} />
       <Link href={LEGAL_PATHS.terms} className={link}>{t("regulamin")}</Link>
       <Link href={LEGAL_PATHS.privacy} className={link}>{t("prywatnosc")}</Link>
       <Link href={LEGAL_PATHS.cookies} className={link}>{t("cookies")}</Link>

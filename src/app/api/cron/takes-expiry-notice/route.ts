@@ -6,6 +6,7 @@ import { runPlanExpiryNotices } from "@/lib/email/notify/plan-expiry-notice";
 import { runTakeExpiryNotices } from "@/lib/email/notify/take-expiry-notice";
 import { runReferralRewardSweep } from "@/lib/referrals/referral-service";
 import { runOwnerWeeklyReport } from "@/lib/reports/owner-weekly-report-run";
+import { purgeOldThreads } from "@/lib/support/support-service";
 
 export const runtime = "nodejs";
 
@@ -35,6 +36,7 @@ export async function GET(request: Request) {
     noRecording: await step("no-recording-notice", "No-recording notice failed.", () => runNoRecordingNotices()),
     ownerReport: await step("owner-weekly-report", "Owner weekly report failed.", () => runOwnerWeeklyReport()),
     referrals: await step("referral-sweep", "Referral sweep failed.", () => runReferralRewardSweep()),
+    support: await step("support-retention", "Support cleanup failed.", () => purgeOldThreads()),
   });
   try {
     const takes = await runTakeExpiryNotices();

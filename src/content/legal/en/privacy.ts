@@ -25,6 +25,7 @@ export const PRIVACY_EN: LegalDoc = {
       "Block list: the hash and audio fingerprint of files removed from the Service because of an infringement of rights, the reason, the date and the report number.",
       "Infringement reports (“Report a rights violation” („Zgłoś naruszenie praw”), also without an Account): the content indicated, reason and description, name or company name and e-mail of the reporting person, a statement of good faith and a hash of the IP address (limit on reports from a single connection).",
       "Messages: the content of questions to the BITEK assistant, AI cover descriptions, correspondence with us.",
+      "Feedback and bug reports (“Send feedback” („Wyślij opinię”), “Report a bug” („Zgłoś błąd”)): subject, content of messages and replies, the time they were sent and read, the address of the page you are writing from and, for a bug report, also the name of your browser and system.",
       "Billing data: Account e-mail address, order identifier, amount, currency, period and transaction history. We do not store payment card data — it is handled by PayU S.A., based in Poznań, which processes payment data as a separate controller.",
     ] }, `The Service is intended for persons who are at least ${MINIMUM_AGE} years old — younger persons may not create an Account. If we learn that an Account has been created by a person below this age, we will delete it together with its data.`] },
     { id: "p3", h: "3. Purposes and legal bases", blocks: [{ table: { head: ["Purpose", "Basis (GDPR)"], rows: [
@@ -39,6 +40,7 @@ export const PRIVACY_EN: LegalDoc = {
       ["Public creator profile (voluntary)", "Art. 6(1)(a) GDPR — consent (you can withdraw it at any time)"],
       ["Billing and accounting", "Art. 6(1)(c) GDPR — tax and accounting legislation"],
       ["Complaints, pursuit and defence of claims", "Art. 6(1)(f) GDPR"],
+      ["Replying to feedback and bug reports (also by e-mail), fixing and improving the Service", "Art. 6(1)(f) GDPR — legitimate interest"],
       ["Anonymous visit counter: day, page and source of the visit (e.g. search engine, social media), determined from the request headers; without cookies, without recording the IP address or identifiers", "Art. 6(1)(f) GDPR — legitimate interest (knowing how many people use the Service and where they come from); the stored counter contains no personal data"],
       ["Visit statistics (Google Analytics) — only after consent in the cookie banner", "Art. 6(1)(a) GDPR — consent (you can withdraw it at any time)"],
     ] } }, "We do not send a newsletter or third-party advertising, and we do not use advertising tools."] },
@@ -69,6 +71,7 @@ export const PRIVACY_EN: LegalDoc = {
     ] },
     { id: "p6", h: "6. How long we keep data", blocks: [{ list: [
       "Account and published content — until the Account is deleted; after deletion we erase them without undue delay (backups expire in the provider's cycle).",
+      "Feedback and bug reports — 24 months from the last message in the conversation, and no longer than until the Account is deleted.",
       "Recording (voice or instrument) — Free 24 hours, Bronze 36 hours, Silver 60 hours, Gold 84 hours; it is then deleted automatically. This is shorter than for Studio working files.",
       "Studio working files (mixes, masters, exports, videos) — depending on the Plan: Free 2 days, Bronze 7 days, Silver 30 days, Gold 45 days; they are then deleted automatically.",
       "Reference track for mastering — deleted immediately after the job is completed.",

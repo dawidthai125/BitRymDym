@@ -35,7 +35,7 @@ export function unsubscribeLinks(secret: string, userId: string, category: Notif
   const base = getSiteUrl();
   return {
     unsubscribe: `${base}/api/email/unsubscribe?t=${encodeURIComponent(signUnsubscribeToken(secret, userId, category))}`,
-    preferences: `${base}/account#powiadomienia`,
+    preferences: `${base}/account/settings#powiadomienia`,
   };
 }
 

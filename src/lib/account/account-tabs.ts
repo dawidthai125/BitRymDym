@@ -1,6 +1,6 @@
-/** Profile tabs (pure): five groups, each with the pages that belong to it. */
+/** Profile tabs (pure): the groups, each with the pages that belong to it. */
 
-export type AccountTabId = "overview" | "takes" | "library" | "works" | "settings";
+export type AccountTabId = "overview" | "takes" | "library" | "works" | "settings" | "support";
 
 export const ACCOUNT_TABS: readonly { id: AccountTabId; pages: readonly { id: string; href: string }[] }[] = [
   { id: "overview", pages: [{ id: "overview", href: "/account" }] },
@@ -28,6 +28,7 @@ export const ACCOUNT_TABS: readonly { id: AccountTabId; pages: readonly { id: st
       { id: "publicProfile", href: "/account/profil" },
     ],
   },
+  { id: "support", pages: [{ id: "support", href: "/account/support" }] },
 ];
 
 export function isAccountPageActive(path: string, href: string): boolean {

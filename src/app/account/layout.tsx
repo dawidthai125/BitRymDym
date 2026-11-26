@@ -6,6 +6,7 @@ import { FullClientMessages } from "@/i18n/client-messages";
 import { PageFrame } from "@/components/brand/chrome";
 import { AppShell } from "@/components/site/app-shell";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { countUserUnread } from "@/lib/support/support-service";
 
 export default async function AccountLayout({
   children,
@@ -16,6 +17,7 @@ export default async function AccountLayout({
   if (!context) redirect("/sign-in");
   const tr = await getTranslations("account.accountPage");
   const tt = await getTranslations("account.tabs");
+  const unread = await countUserUnread(context.userId).catch(() => 0);
   return (
     <FullClientMessages>
     <AppShell tone="studio">
@@ -28,6 +30,8 @@ export default async function AccountLayout({
             library: tt("library"),
             works: tt("works"),
             settings: tt("settings"),
+            // New replies show as a number on the tab.
+            support: unread > 0 ? `${tt("support")} (${unread})` : tt("support"),
           }}
           pageLabels={{
             favorites: tt("favorites"),

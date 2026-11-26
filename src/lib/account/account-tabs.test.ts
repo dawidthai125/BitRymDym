@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 import { ACCOUNT_TABS, activeAccountTab, settingsPathForHash } from "./account-tabs";
 
 describe("profile tabs", () => {
-  it("has five tabs and every page exists", () => {
-    expect(ACCOUNT_TABS.map((t) => t.id)).toEqual(["overview", "takes", "library", "works", "settings"]);
+  it("has six tabs and every page exists", () => {
+    expect(ACCOUNT_TABS.map((t) => t.id)).toEqual(["overview", "takes", "library", "works", "settings", "support"]);
     for (const page of ACCOUNT_TABS.flatMap((t) => t.pages)) {
       expect(existsSync(join(process.cwd(), "src/app", page.href, "page.tsx")), page.href).toBe(true);
     }

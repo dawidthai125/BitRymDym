@@ -11,6 +11,9 @@ vi.mock("@/lib/reports/owner-weekly-report-run", () => ({ runOwnerWeeklyReport: 
 const referrals = vi.fn();
 vi.mock("@/lib/referrals/referral-service", () => ({ runReferralRewardSweep: () => referrals() }));
 
+const supportPurge = vi.fn();
+vi.mock("@/lib/support/support-service", () => ({ purgeOldThreads: () => supportPurge() }));
+
 import { GET } from "./route";
 
 const req = (auth?: string) => new Request("https://x/api/cron/takes-expiry-notice", { headers: auth ? { authorization: auth } : {} });
@@ -23,6 +26,7 @@ describe("GET /api/cron/takes-expiry-notice", () => {
     nudges.mockReset().mockResolvedValue({ candidates: 0, mails: 0, results: {} });
     report.mockReset().mockResolvedValue({ status: "not_monday" });
     referrals.mockReset().mockResolvedValue({ candidates: 0, results: {} });
+    supportPurge.mockReset().mockResolvedValue({ removed: 0 });
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
   it("rejects without the cron secret", async () => {
@@ -48,6 +52,7 @@ describe("GET /api/cron/takes-expiry-notice", () => {
       noRecording: { candidates: 5, mails: 4, results: { sent: 4 } },
       ownerReport: { status: "sent", period: "2026-11-23", recipients: 1 },
       referrals: { candidates: 0, results: {} },
+      support: { removed: 0 },
     });
   });
   it("a nudge or report failure does not fail the run or the other steps", async () => {

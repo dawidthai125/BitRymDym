@@ -1,4 +1,60 @@
 {
+  "support": {
+    "page": {
+      "title": "Opinie i błędy",
+      "lead": "Napisz, co poprawić albo co nie działa. Odpiszemy w tej samej rozmowie i damy znać e-mailem.",
+      "mine": "Twoje rozmowy",
+      "empty": "Nie masz jeszcze żadnej rozmowy.",
+      "listFailed": "Nie udało się wczytać rozmów. Odśwież stronę.",
+      "kind": {
+        "opinion": "Opinia",
+        "bug": "Błąd"
+      },
+      "closed": "zamknięta",
+      "answered": "jest odpowiedź",
+      "waiting": "czeka na odpowiedź",
+      "unread": "{n, plural, one {# nowa} few {# nowe} many {# nowych} other {# nowej}}",
+      "back": "← Wszystkie rozmowy",
+      "closedHint": "zamknięta; nowa wiadomość otworzy ją ponownie",
+      "replyHint": "Odpowiedź zobaczysz tutaj. E-mail wysyłamy, gdy nie masz otwartej rozmowy (przełącznik „Konto” w powiadomieniach)."
+    },
+    "form": {
+      "kindLegend": "Co chcesz wysłać?",
+      "kind": {
+        "opinion": "Wyślij opinię",
+        "bug": "Zgłoś błąd"
+      },
+      "subject": "Temat",
+      "body": "Wiadomość",
+      "hint": {
+        "opinion": "Co Ci się podoba, czego brakuje, co zmienić?",
+        "bug": "Co robisz, co się dzieje, a co powinno się stać?"
+      },
+      "sentWithBug": "Razem ze zgłoszeniem zapiszemy nazwę Twojej przeglądarki i systemu.",
+      "sentWithOpinion": "Zapiszemy treść i Twoje konto.",
+      "fromPage": "Strona, z której piszesz: {page}.",
+      "noSecrets": "Nie wpisuj haseł ani danych kart.",
+      "send": "Wyślij",
+      "sending": "Wysyłam…",
+      "incomplete": "Wpisz temat (co najmniej {min} znaki) i wiadomość.",
+      "limit": "Za dużo wiadomości naraz. Spróbuj później.",
+      "signedOut": "Sesja wygasła. Zaloguj się ponownie.",
+      "failed": "Nie udało się wysłać. Spróbuj ponownie, treść zostaje w formularzu."
+    },
+    "chat": {
+      "log": "Rozmowa",
+      "you": "Ty",
+      "team": "BitRymDym",
+      "user": "Użytkownik",
+      "write": "Napisz wiadomość…",
+      "send": "Wyślij",
+      "sent": "wysłane",
+      "read": "przeczytane",
+      "limit": "Za dużo wiadomości naraz. Spróbuj później.",
+      "signedOut": "Sesja wygasła. Zaloguj się ponownie.",
+      "failed": "Nie udało się wysłać. Spróbuj ponownie."
+    }
+  },
   "common": {
     "licenseSummary": {
       "tytul": "Co wolno zrobić z utworem na naszym bicie",
@@ -539,6 +595,7 @@
   },
   "account": {
     "tabs": {
+      "support": "Opinie i błędy",
       "overview": "Przegląd",
       "takes": "Nagrania",
       "library": "Biblioteka",
@@ -991,7 +1048,7 @@
     "notifications": {
       "tytul": "Powiadomienia e-mail",
       "kontoEtykieta": "Konto",
-      "kontoOpis": "Powitanie po założeniu konta.",
+      "kontoOpis": "Powitanie po założeniu konta, zakupy, koniec planu i odpowiedzi na Twoje opinie i zgłoszenia.",
       "moderacjaEtykieta": "Moderacja bitów",
       "moderacjaOpis": "Wynik moderacji Twoich bitów (zatwierdzony / odrzucony).",
       "studioEtykieta": "Studio",
@@ -1294,6 +1351,7 @@
       "doGeneratora": "Otwórz generator"
     },
     "adminLayout": {
+      "opinie": "Opinie i błędy",
       "wycieki": "Wycieki",
       "grupaPrzeglad": "Przegląd",
       "grupaTresci": "Treści",
@@ -5345,6 +5403,10 @@
     }
   },
   "nav": {
+    "support": {
+      "opinion": "Wyślij opinię",
+      "bug": "Zgłoś błąd"
+    },
     "headerSearch": {
       "podpowiedz": "Szukaj bitu po tytule, autorze, gatunku, tonacji albo tempie (np. 90 BPM)",
       "szukajBitow": "Szukaj bitów",

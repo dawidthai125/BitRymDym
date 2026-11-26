@@ -29,6 +29,7 @@ export function UserMenu({
 }: UserMenuProps) {
   const tl = useLibText();
   const t = useTranslations("nav.userMenu");
+  const ts = useTranslations("nav.support");
   const storeApp = useStoreApp();
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -121,6 +122,12 @@ export function UserMenu({
             </AccountNavLink>
             <AccountNavLink href="/account/settings" onNavigate={() => setOpen(false)}>
               {t("ustawienia")}
+            </AccountNavLink>
+            <AccountNavLink href="/account/support?new=opinion" onNavigate={() => setOpen(false)}>
+              {ts("opinion")}
+            </AccountNavLink>
+            <AccountNavLink href="/account/support?new=bug" onNavigate={() => setOpen(false)}>
+              {ts("bug")}
             </AccountNavLink>
             {showUpload ? (
               <AccountNavLink

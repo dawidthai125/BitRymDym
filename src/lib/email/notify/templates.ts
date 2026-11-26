@@ -11,6 +11,9 @@ export type TemplateData = {
   projectId?: string | null;
   workTitle?: string | null;
   workId?: string | null;
+  /** Feedback / bug report conversation. */
+  threadId?: string | null;
+  threadSubject?: string | null;
   /** Server-composed purchase receipt line (already plain text). */
   detail?: string | null;
 };
@@ -91,6 +94,15 @@ function body(kind: NotifyKind, d: TemplateData): Body {
         cta: { label: "Otwórz Studio", path: "/studio" },
         links: [{ label: "Zaproś kolejną osobę", path: "/account#zapros" }],
       };
+    case "support_reply": {
+      const topic = clean(d.threadSubject) || "Twoje zgłoszenie";
+      return {
+        subject: `Odpowiedź od BitRymDym: ${topic}`,
+        heading: "Masz odpowiedź",
+        lines: [hi, `odpisaliśmy w rozmowie „${topic}”:`, ...(clean(d.detail, 500) ? [`„${clean(d.detail, 500)}”`] : []), "Odpisać możesz w serwisie. Odpowiedź na ten e-mail nie trafi do rozmowy."],
+        cta: { label: "Otwórz rozmowę", path: d.threadId ? `/account/support/${encodeURIComponent(d.threadId)}` : "/account/support" },
+      };
+    }
     case "work_featured": {
       const work = clean(d.workTitle) || "Twój utwór";
       return {
@@ -121,6 +133,8 @@ export function buildMail(kind: NotifyKind, d: TemplateData, links: { unsubscrib
     ? "Dostajesz tę wiadomość, bo założono konto w BitRymDym."
     : kind === "purchase_confirmed"
       ? "Dostajesz tę wiadomość, bo opłacono zamówienie w BitRymDym."
+      : kind === "support_reply"
+        ? "Dostajesz tę wiadomość, bo napisałeś do nas w BitRymDym."
       : kind === "referral_reward"
         ? "Dostajesz tę wiadomość, bo ktoś założył konto w BitRymDym z Twojego linku polecającego."
       : "Dostajesz tę wiadomość, bo masz włączone powiadomienia w BitRymDym.";

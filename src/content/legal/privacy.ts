@@ -25,6 +25,7 @@ export const PRIVACY: LegalDoc = {
       "Lista blokad: skrót i odcisk dźwięku plików zdjętych z Serwisu z powodu naruszenia praw, powód, data i numer zgłoszenia.",
       "Zgłoszenia naruszeń („Zgłoś naruszenie praw”, także bez Konta): wskazana treść, powód i opis, imię lub nazwa oraz e-mail zgłaszającego, oświadczenie o dobrej wierze i skrót adresu IP (limit zgłoszeń z jednego połączenia).",
       "Wiadomości: treść pytań do asystenta BITEK, opisy okładek AI, korespondencja z nami.",
+      "Opinie i zgłoszenia błędów („Wyślij opinię”, „Zgłoś błąd”): temat, treść wiadomości i odpowiedzi, czas ich wysłania i przeczytania, adres podstrony, z której piszesz, a przy zgłoszeniu błędu także nazwa przeglądarki i systemu.",
       "Dane do rozliczeń: adres e-mail Konta, identyfikator zamówienia, kwota, waluta, okres i historia transakcji. Danych kart płatniczych nie przechowujemy — obsługuje je PayU S.A. z siedzibą w Poznaniu, który przetwarza dane płatnicze jako odrębny administrator.",
     ] }, `Serwis jest przeznaczony dla osób, które ukończyły ${MINIMUM_AGE} lat — młodsze osoby nie mogą zakładać Konta. Jeśli dowiemy się, że Konto założyła osoba poniżej tego wieku, usuniemy je wraz z danymi.`] },
     { id: "p3", h: "3. Cele i podstawy prawne", blocks: [{ table: { head: ["Cel", "Podstawa (RODO)"], rows: [
@@ -39,6 +40,7 @@ export const PRIVACY: LegalDoc = {
       ["Publiczny profil twórcy (dobrowolny)", "art. 6 ust. 1 lit. a — zgoda (możesz ją wycofać w każdej chwili)"],
       ["Rozliczenia i księgowość", "art. 6 ust. 1 lit. c — przepisy podatkowe i rachunkowe"],
       ["Reklamacje, dochodzenie i obrona roszczeń", "art. 6 ust. 1 lit. f"],
+      ["Odpowiadanie na opinie i zgłoszenia błędów (także e-mailem), naprawianie i ulepszanie Serwisu", "art. 6 ust. 1 lit. f — prawnie uzasadniony interes"],
       ["Anonimowy licznik wejść: dzień, strona i źródło wejścia (np. wyszukiwarka, media społecznościowe), ustalone z nagłówków zapytania; bez cookies, bez zapisu adresu IP i identyfikatorów", "art. 6 ust. 1 lit. f — prawnie uzasadniony interes (wiedza, ile osób korzysta z Serwisu i skąd); zapisany licznik nie zawiera danych osobowych"],
       ["Statystyki odwiedzin (Google Analytics) — tylko po zgodzie w banerze cookies", "art. 6 ust. 1 lit. a — zgoda (możesz ją wycofać w każdej chwili)"],
     ] } }, "Nie wysyłamy newslettera ani reklam innych firm i nie używamy narzędzi reklamowych."] },
@@ -69,6 +71,7 @@ export const PRIVACY: LegalDoc = {
     ] },
     { id: "p6", h: "6. Jak długo przechowujemy dane", blocks: [{ list: [
       "Konto i opublikowane treści — do usunięcia Konta; po usunięciu kasujemy je bez zbędnej zwłoki (kopie zapasowe wygasają w cyklu dostawcy).",
+      "Opinie i zgłoszenia błędów — 24 miesiące od ostatniej wiadomości w rozmowie, nie dłużej niż do usunięcia Konta.",
       "Nagranie (głos lub instrument) — Free 24 godziny, Bronze 36 godzin, Silver 60 godzin, Gold 84 godziny; potem jest usuwane automatycznie. To krócej niż pliki robocze Studia.",
       "Pliki robocze Studia (mixy, mastery, eksporty, wideo) — zależnie od Planu: Free 2 dni, Bronze 7 dni, Silver 30 dni, Gold 45 dni; potem są usuwane automatycznie.",
       "Utwór referencyjny do masteringu — usuwany zaraz po zakończeniu zadania.",

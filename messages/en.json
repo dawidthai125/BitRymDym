@@ -1,4 +1,60 @@
 {
+  "support": {
+    "page": {
+      "title": "Feedback and bugs",
+      "lead": "Tell us what to improve or what does not work. We reply in the same conversation and let you know by e-mail.",
+      "mine": "Your conversations",
+      "empty": "You have no conversations yet.",
+      "listFailed": "We could not load your conversations. Refresh the page.",
+      "kind": {
+        "opinion": "Feedback",
+        "bug": "Bug"
+      },
+      "closed": "closed",
+      "answered": "answered",
+      "waiting": "waiting for a reply",
+      "unread": "{n} new",
+      "back": "← All conversations",
+      "closedHint": "closed; a new message reopens it",
+      "replyHint": "The reply shows up here. We send an e-mail when you do not have the conversation open (the “Account” switch in notifications)."
+    },
+    "form": {
+      "kindLegend": "What do you want to send?",
+      "kind": {
+        "opinion": "Send feedback",
+        "bug": "Report a bug"
+      },
+      "subject": "Subject",
+      "body": "Message",
+      "hint": {
+        "opinion": "What do you like, what is missing, what should change?",
+        "bug": "What are you doing, what happens, and what should happen?"
+      },
+      "sentWithBug": "With the report we also save the name of your browser and system.",
+      "sentWithOpinion": "We save the text and your account.",
+      "fromPage": "Page you are writing from: {page}.",
+      "noSecrets": "Do not enter passwords or card details.",
+      "send": "Send",
+      "sending": "Sending…",
+      "incomplete": "Enter a subject (at least {min} characters) and a message.",
+      "limit": "Too many messages at once. Try again later.",
+      "signedOut": "Your session expired. Sign in again.",
+      "failed": "Could not send. Try again; your text stays in the form."
+    },
+    "chat": {
+      "log": "Conversation",
+      "you": "You",
+      "team": "BitRymDym",
+      "user": "User",
+      "write": "Write a message…",
+      "send": "Send",
+      "sent": "sent",
+      "read": "read",
+      "limit": "Too many messages at once. Try again later.",
+      "signedOut": "Your session expired. Sign in again.",
+      "failed": "Could not send. Try again."
+    }
+  },
   "common": {
     "licenseSummary": {
       "tytul": "What you may do with a track made on our beat",
@@ -539,6 +595,7 @@
   },
   "account": {
     "tabs": {
+      "support": "Feedback and bugs",
       "overview": "Overview",
       "takes": "Recordings",
       "library": "Library",
@@ -991,7 +1048,7 @@
     "notifications": {
       "tytul": "E-mail notifications",
       "kontoEtykieta": "Account",
-      "kontoOpis": "Welcome e-mail after sign-up.",
+      "kontoOpis": "Welcome after sign-up, purchases, plan expiry and replies to your feedback and reports.",
       "moderacjaEtykieta": "Beat moderation",
       "moderacjaOpis": "Moderation result for your beats (approved / rejected).",
       "studioEtykieta": "Studio",
@@ -1294,6 +1351,7 @@
       "doGeneratora": "Open the generator"
     },
     "adminLayout": {
+      "opinie": "Feedback and bugs",
       "wycieki": "Leaks",
       "grupaPrzeglad": "Overview",
       "grupaTresci": "Content",
@@ -5345,6 +5403,10 @@
     }
   },
   "nav": {
+    "support": {
+      "opinion": "Send feedback",
+      "bug": "Report a bug"
+    },
     "headerSearch": {
       "podpowiedz": "Find a beat by title, producer, genre, key or tempo (e.g. 90 BPM)",
       "szukajBitow": "Search beats",

@@ -4,7 +4,7 @@ import { getMessages } from "next-intl/server";
 import type { AbstractIntlMessages } from "next-intl";
 
 /** Studio and admin copy is about half the catalog. Public pages do not ship it. */
-const OMIT_ON_PUBLIC = new Set(["studio", "admin"]);
+const OMIT_ON_PUBLIC = new Set(["studio", "admin", "support"]);
 
 /**
  * Namespaces that public pages ship only in part: the listed subtrees are the

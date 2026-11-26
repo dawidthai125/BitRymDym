@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AuthError, requireRole } from "@/lib/auth/session";
 import { canAccessAdminNav, canAccessModerationNav } from "@/lib/auth/permissions";
+import { countStaffUnread } from "@/lib/support/support-service";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("admin.adminLayout");
@@ -77,7 +78,14 @@ export default async function AdminLayout({
 
   const groups: AdminNavGroup[] = [];
   if (showPlatform) {
-    groups.push({ label: t("grupaPrzeglad"), items: [{ href: "/admin", label: t("pulpit"), exact: true }] });
+    const unread = await countStaffUnread().catch(() => 0);
+    groups.push({
+      label: t("grupaPrzeglad"),
+      items: [
+        { href: "/admin", label: t("pulpit"), exact: true },
+        { href: "/admin/zgloszenia", label: unread > 0 ? `${t("opinie")} (${unread})` : t("opinie") },
+      ],
+    });
   }
   const content: AdminNavItem[] = [];
   if (showPlatform) {
