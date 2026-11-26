@@ -1,6 +1,8 @@
+import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 
 import { coverDataUrl, OG_CONTENT_TYPE, OG_SIZE, shareCard } from "@/lib/share/og-card";
+import { clientIpFromHeaders } from "@/lib/security/client-ip";
 import { listenShareData } from "@/lib/share/share-server";
 
 export const runtime = "nodejs";
@@ -12,6 +14,6 @@ export const contentType = OG_CONTENT_TYPE;
 export default async function Image({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const t = await getTranslations("common.share");
-  const d = await listenShareData(token);
+  const d = await listenShareData(token, clientIpFromHeaders(await headers()));
   return shareCard({ kicker: t("ogOdsluch"), title: d?.title || "BitRymDym", meta: d?.meta ?? null, cover: await coverDataUrl(d?.cover) });
 }

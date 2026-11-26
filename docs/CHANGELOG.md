@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-26 (48) — Luki: prywatne linki, blokada zdjętych plików, oświadczenie przy wgraniu, dokumenty
+
+- Prywatne linki do odsłuchu: limit zgadywania tokenów (20 nietrafionych prób z IP / 10 min, `studio_listen_peek`, migracja `20261126170000`) na stronie, w audio i w karcie OG; nieznany, wygasły, cofnięty albo cudzy link daje 404 (strona też, `not-found.tsx`); master musi należeć do projektu i właściciela linku; nagłówki `noindex` i `Referrer-Policy: no-referrer` dla `/listen` i `/api/listen`.
+- Lista blokad (`20261126171000_blocked_audio_fingerprints`): zdjęcie utworu, bitu albo sampla w `/admin/prawa` dopisuje pliki (SHA-256 + Chromaprint); migracja dopisała wszystko zdjęte wcześniej. Każde wgranie (nagranie, import wokalu, stem, „Sam mastering”, gość, nagrywarka, bit użytkownika, sampel) sprawdza przy finalize typ z zawartości i SHA-256, a nowy worker `upload-screen` odcisk akustyczny. Trafienie: odmowa, usunięcie pliku, wpis w `upload_block_events` i w panelu. Bramka w bazie wstrzymuje master, miks i czyszczenie do końca kontroli.
+- „Importuj wokal”, stemy i „Sam mastering”: serwer wymaga oświadczenia w bieżącej wersji (`UPLOAD_RIGHTS_STATEMENT_VERSION`) i zapisuje je w `upload_rights_statements` (`20261126172000`) ze skrótem pliku. Nagrywarka Windows bez zmian.
+- Regulamin 2026-11-26.1 (§ 6 ust. 3, 5–8, 10; § 12: dotychczasowe Konta od 11 grudnia 2026), Polityka prywatności i cookies 2026-11-26.1; archiwum regulaminu 2026-11-24.2.
+- CI dla PR: `.github/workflows/ci.yml` (tsc, eslint, vitest, next build).
+- Testy: `listen-policy.test.ts` (zgadywanie), `upload-screen-policy.test.ts`, `vocal-import-server-rights.test.ts` (API bez interfejsu), `upload-screen.media.test.ts` (prawdziwy fpcalc: MP3, inny bitrate, −3 dB, cięcie 5 s), test bazy na PGlite (48 przypadków, poza repo).
+
 ## 2026-11-26 (47) — Prawa do nagrań: test na koncie Gold, poprawki, domknięcie
 
 - Test zabezpieczeń praw na produkcji (konto Gold, 21 kroków): 19 PASS, 1 FAIL, 1 zastąpiony. Poprawki `578c62a`: po zdjęciu lub odrzuceniu przez moderatora żaden master projektu nie wraca do katalogu (`projectPublishBlocked`, API 403 `blocked`, panel zablokowany; wycofanie zawsze wolno), komunikat dla tytułu nagrania `smp:`/`catalog:` (400 z kodem), ukryte pola plików przy stemach i `/mastering` wyłączone bez oświadczenia.

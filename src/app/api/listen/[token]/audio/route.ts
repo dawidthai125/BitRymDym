@@ -5,7 +5,7 @@ import {
   countListenPlay,
   downloadListenObject,
   listenObjectKeys,
-  resolveListenToken,
+  lookupListenToken,
   signListenObject,
 } from "@/lib/studio/listen/listen-server";
 import { clientIpFromHeaders } from "@/lib/security/client-ip";
@@ -24,9 +24,14 @@ const NO_STORE = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofoll
  */
 export async function GET(request: Request, context: RouteContext) {
   const { token } = await context.params;
-  const link = await resolveListenToken(token).catch(() => null);
-  if (!link) return NextResponse.json({ error: "not_found" }, { status: 404, headers: NO_STORE });
-  if (!(await allowListenHit(link.linkId, clientIpFromHeaders(request.headers)).catch(() => false))) {
+  const ip = clientIpFromHeaders(request.headers);
+  const lookup = await lookupListenToken(token, ip).catch(() => ({ status: "not_found" as const }));
+  if (lookup.status === "limited") {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { ...NO_STORE, "Retry-After": "600" } });
+  }
+  if (lookup.status !== "ok") return NextResponse.json({ error: "not_found" }, { status: 404, headers: NO_STORE });
+  const link = lookup.link;
+  if (!(await allowListenHit(link.linkId, ip).catch(() => false))) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { ...NO_STORE, "Retry-After": "60" } });
   }
   const range = request.headers.get("range");

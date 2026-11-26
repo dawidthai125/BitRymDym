@@ -21,7 +21,8 @@ export interface RecognitionProvider {
   recognize(ctx: RecognitionContext): Promise<RecognitionProviderResult>;
 }
 
-export type CatalogFingerprint = { beatId: string; ownerId: string; title: string | null; fingerprint: number[] };
+/** ownerId null: a taken-down file from blocked_audio_fingerprints (nobody's, always compared). */
+export type CatalogFingerprint = { beatId: string; ownerId: string | null; title: string | null; fingerprint: number[] };
 
 export function createOwnCatalogProvider(deps: {
   loadCatalog: (excludeBeatId: string) => Promise<CatalogFingerprint[]>;

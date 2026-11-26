@@ -1,12 +1,12 @@
 /** Polityka cookies. Necessary storage without consent; Google Analytics only after consent (banner, src/components/site/cookie-consent.tsx). */
-import { PRIVACY_VERSION } from "@/lib/legal/legal-config";
+import { PRIVACY_EFFECTIVE_DATE, PRIVACY_VERSION } from "@/lib/legal/legal-config";
 
 import type { LegalDoc } from "./types";
 
 export const COOKIES: LegalDoc = {
   title: "Polityka cookies BitRymDym",
   version: PRIVACY_VERSION,
-  lead: "Pliki cookie niezbędne do działania Serwisu zapisujemy bez pytania. Cookies statystyczne Google Analytics zapisujemy tylko za Twoją zgodą wyrażoną w banerze. Nie używamy cookies reklamowych. Zgodę możesz w każdej chwili zmienić przyciskiem „Ustawienia cookies” w stopce.",
+  lead: `Pliki cookie niezbędne do działania Serwisu zapisujemy bez pytania. Cookies statystyczne Google Analytics zapisujemy tylko za Twoją zgodą wyrażoną w banerze. Nie używamy cookies reklamowych. Zgodę możesz w każdej chwili zmienić przyciskiem „Ustawienia cookies” w stopce. Obowiązuje od ${PRIVACY_EFFECTIVE_DATE}`,
   sections: [
     { id: "c1", h: "1. Pliki cookie", blocks: [{ table: { head: ["Nazwa", "Cel", "Ważność"], rows: [
       ["sb-…-auth-token", "sesja logowania (Supabase)", "do wylogowania, najdłużej 400 dni; bez „Nie wylogowuj mnie” do zamknięcia przeglądarki"],
@@ -34,7 +34,7 @@ export const COOKIES: LegalDoc = {
     { id: "c2", h: "2. Pamięć przeglądarki", blocks: [
       "To nie są pliki cookie. Zostają na Twoim urządzeniu i nie wysyłamy ich do analityki.",
       { list: [
-        "localStorage: motyw jasny albo ciemny; szkic tekstu w Studiu; zapasowa historia czatu BITEK; położenie okna BITEK; wyłącznik automatycznego mixu i mastera; ukrycie pierwszych kroków; ustawienia strony „Sam mastering”; zamknięcie komunikatu o zmianie Regulaminu.",
+        "localStorage: motyw jasny albo ciemny; szkic tekstu w Studiu; zapasowa historia czatu BITEK i stan jego okienka; położenie okna BITEK; wyłącznik automatycznego mixu i mastera; ukrycie pierwszych kroków; ustawienia strony „Sam mastering”; zamknięcie komunikatu o zmianie Regulaminu; wybrany mikrofon i wyjście dźwięku (identyfikator urządzenia z przeglądarki); ustawienia słuchawek i opóźnienia nagrania dla urządzenia; układ ścieżek w Studiu; tryb klawiszy odtwarzania; pamięć nagrania, które jeszcze nie trafiło na ścieżkę, i miejsca jego wstawienia.",
         "sessionStorage (znika po zamknięciu karty): czat BITEK w tej karcie; skrót limitów Planu na około minutę; wskazówka głośności nagrania przekazywana do mixu; znacznik trwającego automatycznego mixu albo mastera.",
         "IndexedDB, baza brd-take-recovery: kawałki trwającego nagrania, żeby dało się je dokończyć po zerwaniu połączenia. To nie jest kopia na naszym serwerze. Po wysłaniu nagrania albo po wyczyszczeniu danych strony ta baza znika.",
       ] },

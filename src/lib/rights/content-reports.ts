@@ -162,7 +162,40 @@ export type HeldWork = {
   stale: boolean;
 };
 
-export type RightsDesk = { reports: StaffReport[]; works: HeldWork[] };
+export type UploadBlockRow = {
+  id: number; createdAt: string; ownerId: string | null; uploadKind: string; matchKind: string;
+  score: number | null; matchedSeconds: number | null;
+};
+
+/** Blocklist size (taken-down files) and the latest refused uploads (moderation log, 2026-11-26). */
+export type BlocklistDesk = {
+  blocked: number; pending: number; events: UploadBlockRow[];
+  /** New uploads still waiting for the acoustic screen after 5 minutes: the E3 upload-screen worker is probably down. */
+  staleScreens: number;
+};
+
+export type RightsDesk = { reports: StaffReport[]; works: HeldWork[]; blocklist: BlocklistDesk };
+
+async function loadBlocklistDesk(admin: Admin): Promise<BlocklistDesk> {
+  const staleBefore = new Date(Date.now() - 5 * 60_000).toISOString();
+  const [all, pending, events, stale] = await Promise.all([
+    admin.from("blocked_audio_fingerprints").select("id", { count: "exact", head: true }),
+    admin.from("blocked_audio_fingerprints").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    admin.from("upload_block_events").select("id, created_at, owner_id, upload_kind, match_kind, score, matched_seconds").order("created_at", { ascending: false }).limit(50),
+    admin.from("takes").select("id", { count: "exact", head: true }).eq("screen_status", "pending").lt("updated_at", staleBefore),
+  ]);
+  // Before the migration the tables are missing: show an empty log instead of failing the desk.
+  if (all.error || pending.error || events.error) return { blocked: 0, pending: 0, events: [], staleScreens: 0 };
+  return {
+    staleScreens: stale.error ? 0 : (stale.count ?? 0),
+    blocked: all.count ?? 0,
+    pending: pending.count ?? 0,
+    events: ((events.data ?? []) as Array<{ id: number; created_at: string; owner_id: string | null; upload_kind: string; match_kind: string; score: number | null; matched_seconds: number | null }>).map((e) => ({
+      id: e.id, createdAt: e.created_at, ownerId: e.owner_id, uploadKind: e.upload_kind, matchKind: e.match_kind,
+      score: e.score == null ? null : Number(e.score), matchedSeconds: e.matched_seconds == null ? null : Number(e.matched_seconds),
+    })),
+  };
+}
 
 async function titles(admin: Admin, kind: ReportKind, ids: string[]): Promise<Map<string, string>> {
   if (!ids.length) return new Map();
@@ -189,6 +222,7 @@ export async function loadRightsDesk(): Promise<RightsDesk> {
       .limit(200),
   ]);
   if (reports.error || works.error) throw new Error("rights_desk_load_failed");
+  const blocklist = await loadBlocklistDesk(admin);
   const rows = (reports.data ?? []) as Array<{ id: string; target_kind: ReportKind; target_id: string; reason: ReportReason; details: string; reporter_name: string | null; reporter_email: string | null; created_at: string }>;
   const names = new Map<string, string>();
   for (const kind of REPORT_KINDS) {
@@ -196,6 +230,7 @@ export async function loadRightsDesk(): Promise<RightsDesk> {
     for (const [k, v] of m) names.set(`${kind}:${k}`, v);
   }
   return {
+    blocklist,
     reports: rows.map((r) => ({
       id: r.id, kind: r.target_kind, targetId: r.target_id, title: names.get(`${r.target_kind}:${r.target_id}`) ?? null,
       reason: r.reason, details: r.details, name: r.reporter_name, email: r.reporter_email, createdAt: r.created_at,

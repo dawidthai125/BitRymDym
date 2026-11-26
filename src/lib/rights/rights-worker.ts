@@ -48,7 +48,7 @@ type Ref = { source: "beat" | "sample"; id: string; title: string | null; finger
 /** Chromaprint needs a few seconds of sound: a one-shot sample or a short take is looped to this length. */
 const SHORT_LOOP_SECONDS = 12;
 
-async function fingerprintFile(cfg: RunConfig, work: string, src: string): Promise<Print> {
+export async function fingerprintFile(cfg: Pick<RunConfig, "fpcalcBin" | "maxDurationSeconds">, work: string, src: string): Promise<Print> {
   const wav = path.join(work, `fp-${path.basename(src)}.wav`);
   const decode = (loop: boolean) =>
     runCapture(resolveFfmpegBin(), [
@@ -78,14 +78,14 @@ async function fingerprintFile(cfg: RunConfig, work: string, src: string): Promi
   }
 }
 
-async function downloadTo(admin: Admin, bucket: string, key: string, file: string): Promise<void> {
+export async function downloadTo(admin: Admin, bucket: string, key: string, file: string): Promise<void> {
   const { data, error } = await admin.storage.from(bucket).download(key);
   if (error || !data) throw new Error("download_failed");
   await writeFile(file, Buffer.from(await data.arrayBuffer()));
 }
 
 /** Master results may be stored in .pNNN parts (studio master worker). */
-async function downloadMaster(admin: Admin, key: string, file: string): Promise<void> {
+export async function downloadMaster(admin: Admin, key: string, file: string): Promise<void> {
   const dir = key.slice(0, key.lastIndexOf("/"));
   const base = key.slice(key.lastIndexOf("/") + 1);
   const listed = await admin.storage.from(MASTER_BUCKET).list(dir, { limit: 1000 });
@@ -140,6 +140,14 @@ async function loadSampleRefs(admin: Admin, excludeSampleId?: string): Promise<R
     }
     if ((data ?? []).length < PAGE) return out;
   }
+}
+
+/** Taken-down files (2026-11-26) as references for the staff hint on samples in review. */
+async function loadBlockedRefs(admin: Admin): Promise<Ref[]> {
+  const { data, error } = await admin.from("blocked_audio_fingerprints").select("id, fingerprint")
+    .eq("algorithm", ALGORITHM).not("fingerprint", "is", null).limit(5000);
+  if (error) return [];
+  return (data ?? []).map((r) => ({ source: "beat" as const, id: String(r.id), title: "Plik zdjęty z katalogu (lista blokad)", fingerprint: r.fingerprint as number[] }));
 }
 
 function catalogHits(print: Print, refs: Ref[], skipIds: Set<string>): CatalogHit[] {
@@ -216,7 +224,7 @@ export async function fingerprintSample(cfg: RunConfig, job: SampleJob): Promise
     let matches: unknown[] = [];
     if (job.review) {
       // Staff hint: is the sample someone else's (our beat, another catalogue sample, a known recording)?
-      const refs = [...(await loadBeatRefs(admin)), ...(await loadSampleRefs(admin, job.sampleId))];
+      const refs = [...(await loadBeatRefs(admin)), ...(await loadSampleRefs(admin, job.sampleId)), ...(await loadBlockedRefs(admin))];
       const cat = catalogHits(print, refs, new Set()).filter((h) => isHardCatalogHit(h, print.duration));
       const ext = await externalHits(cfg, print, job.sampleId);
       matches = [...cat, ...ext.hits.filter(isHardExternalHit).map((h) => ({ source: "acoustid", ...h })), ...(ext.error ? [{ source: "acoustid", error: ext.error }] : [])];

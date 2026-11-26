@@ -35,7 +35,7 @@ describe("Studio vocal import UI contract", () => {
   it("reuses eligibility + place CAS path; does not MediaRecorder for import", () => {
     expect(panel).toMatch(/async function onImportVocalFile/);
     const importIdx = panel.indexOf("async function onImportVocalFile");
-    const importTail = panel.slice(importIdx, importIdx + 3500);
+    const importTail = panel.slice(importIdx, importIdx + 4000);
     expect(importTail).toMatch(/\/api\/takes\/eligibility/);
     expect(importTail).toMatch(/uploadTakeRecordingBlob/);
     expect(importTail).toMatch(/placeReadyTakeOnTimeline/);

@@ -30,6 +30,8 @@ export const DENY_STATUS: Record<string, number> = {
   reference_locked: 403, addon_missing: 402, reference_invalid: 409, upload_incomplete: 409, not_available: 503, video_soon: 503,
   // Master quota RPC missing (fail closed, nothing queued or charged).
   quota_unavailable: 503,
+  // Upload screen (2026-11-26): a file of the project is still being checked / was blocked.
+  upload_screening: 409, upload_blocked: 403,
   bad_format: 415, too_big: 413, too_long: 422, too_short: 422,
   // Gold YouTube MP4.
   tier_video: 403, image_missing: 409, daily_limit: 429, image_rejected: 422, in_progress: 409, busy: 409,

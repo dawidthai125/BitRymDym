@@ -44,6 +44,9 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 import { approveStudioMaster, commitStudioDeliver } from "./server";
 
+// 2026-11-26 upload screen: passes in these tests (covered by its own tests).
+vi.mock("@/lib/rights/upload-screen", async () => (await import("@/test/upload-screen-mock")).uploadScreenMock());
+
 beforeEach(() => {
   s.version = 3;
   s.job = { id: J, result_object_key: "k/out/master.flac", source_document_version: 3 };

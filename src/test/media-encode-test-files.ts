@@ -9,6 +9,7 @@ export const MEDIA_ENCODE_TEST_FILES = [
   "src/lib/beats/preview/beat-preview-encode.test.ts",
   "src/lib/catalog/work-clip-encode.test.ts",
   "src/lib/studio/master/free-watermark.media.test.ts",
+  "src/lib/rights/upload-screen.media.test.ts",
 ] as const;
 
 export const MP3_QC_REJECT_TEST_FILE = "src/lib/audio/mp3-qc-reject.test.ts";

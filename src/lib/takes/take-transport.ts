@@ -50,6 +50,21 @@ import {
 } from "@/lib/takes/object-key";
 import { validateTakeUploadMeta } from "@/lib/takes/validation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  assertUploadNotBlocked,
+  attachStatementFileHash,
+  queueTakeScreening,
+  recordUploadRightsStatement,
+} from "@/lib/rights/upload-screen";
+import {
+  contentMatchesDeclaredType,
+  isCurrentRightsStatement,
+  parseTakeUploadSource,
+  RightsStatementRequiredError,
+  UPLOAD_RIGHTS_STATEMENT_VERSION,
+  UploadBlockedError,
+  type UploadRightsKind,
+} from "@/lib/rights/upload-screen-policy";
 import type { PremiumTier } from "@/types/premium";
 
 /** Allow small probe rounding vs client auto-stop. */
@@ -166,9 +181,43 @@ type SessionParams = {
   ownerId?: string | null;
   bucket?: string | null;
   takeId?: string | null;
-  /** "Importuj wokal": the user confirmed the rights prompt. Stored on the take; mic/recorder leave it off. */
+  /** Legacy "Importuj wokal" flag (clients before 2026-11-26): treated as source "import". */
   rightsConfirmed?: boolean;
+  /** "import" (a file from disk) needs the rights statement; "mic" / "recorder" record live. */
+  source?: unknown;
+  /** Version of the rights statement the user accepted (UPLOAD_RIGHTS_STATEMENT_VERSION). */
+  rightsStatementVersion?: unknown;
+  /** Studio project the imported file goes to (stored with the statement; must be the caller's). */
+  projectId?: unknown;
 };
+
+/** The caller's own project id, or null (unknown / someone else's / malformed: not stored). */
+async function ownProjectIdOrNull(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+  projectId: unknown,
+): Promise<string | null> {
+  if (typeof projectId !== "string" || !/^[0-9a-f-]{36}$/i.test(projectId)) return null;
+  const { data } = await admin.from("studio_projects").select("id").eq("id", projectId).eq("owner_id", userId).maybeSingle();
+  return (data as { id?: string } | null)?.id ?? null;
+}
+
+/**
+ * Rights statement of a new upload session (owner order 2026-11-26): stored before the signed URL is
+ * handed out. A failed write refuses the session (fail closed).
+ */
+async function storeRightsStatementOrFail(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  p: { userId: string; takeId: string; projectId: string | null; kind: UploadRightsKind },
+): Promise<void> {
+  try {
+    await recordUploadRightsStatement(admin, { ...p, version: UPLOAD_RIGHTS_STATEMENT_VERSION });
+  } catch (e) {
+    await markPendingTakeFailed({ takeId: p.takeId, failureReason: "RIGHTS_STATEMENT_NOT_STORED" });
+    throw e;
+  }
+  await recordTakeRightsStatement(admin, p.takeId);
+}
 
 /**
  * Store the rights statement on the take (owner decision 2026-11-26). Evidence only: a failed write is
@@ -204,6 +253,12 @@ export async function createTakeRecordingSessionFor(
   });
   if (!meta.ok) {
     throw new AuthError("FORBIDDEN", meta.errors.join("; "));
+  }
+
+  // "Importuj wokal": the server needs the current rights statement (the browser prompt is only a convenience).
+  const source = parseTakeUploadSource(params.source, params.rightsConfirmed);
+  if (source === "import" && !isCurrentRightsStatement(params.rightsStatementVersion)) {
+    throw new RightsStatementRequiredError();
   }
 
   const beat = await loadBeatOrThrow(params.beatId);
@@ -290,7 +345,14 @@ export async function createTakeRecordingSessionFor(
   if (claimError) {
     await mapClaimRpcErrorForUser(context, claimError.message);
   }
-  if (params.rightsConfirmed === true) await recordTakeRightsStatement(admin, takeId);
+  if (source === "import") {
+    await storeRightsStatementOrFail(admin, {
+      userId: context.userId,
+      takeId,
+      projectId: await ownProjectIdOrNull(admin, context.userId, params.projectId),
+      kind: "vocal_import",
+    });
+  }
 
   const { data: signed, error: signError } = await admin.storage
     .from(TAKE_AUDIO_BUCKET)
@@ -449,6 +511,41 @@ export async function finalizeTakeRecordingFor(
     throw new AuthError("FORBIDDEN", meta.errors.join("; "));
   }
 
+  // Type from the content, not from the declared type or the file name.
+  if (!contentMatchesDeclaredType(bytes, meta.contentType)) {
+    await markPendingTakeFailed({
+      takeId: take.id as string,
+      failureReason: "CONTENT_TYPE_MISMATCH",
+      objectKey: take.object_key as string,
+      removeObject: true,
+    });
+    throw new AuthError("FORBIDDEN", "To nie jest plik audio w zgłoszonym formacie.");
+  }
+
+  // Taken-down files and catalogue beats (exact copy): before the file becomes READY or is processed.
+  let sha: string;
+  try {
+    sha = await assertUploadNotBlocked({
+      admin,
+      bytes,
+      kind: isStem ? "stem" : "take",
+      ownerId: context.userId,
+      takeId: take.id as string,
+      // A stem may be the project's own beat; a vocal take never is a catalogue beat.
+      allowedBeatId: isStem ? ((take.beat_id as string | null) ?? null) : null,
+    });
+  } catch (e) {
+    if (e instanceof UploadBlockedError) {
+      await markPendingTakeFailed({
+        takeId: take.id as string,
+        failureReason: "BLOCKED_AUDIO",
+        objectKey: take.object_key as string,
+        removeObject: true,
+      });
+    }
+    throw e;
+  }
+
   const probe = await probeAudioDurationFromBytes({
     bytes,
     contentTypeHint: meta.contentType,
@@ -479,6 +576,11 @@ export async function finalizeTakeRecordingFor(
       `Duration ${probe.durationSeconds}s exceeds max ${maxAllowed}s.`,
     );
   }
+
+  // Acoustic screen (same recording re-encoded, louder or quieter, cut) runs on the E3 worker;
+  // until it passes, mastering / mixing / cleanup of this file is refused by the DB gate.
+  await queueTakeScreening(admin, take.id as string, sha);
+  await attachStatementFileHash(admin, take.id as string, sha);
 
   let swap;
   try {
@@ -529,6 +631,8 @@ export type StemSessionParams = {
   byteSize: number;
   /** "Sam mastering": the project has no beat and must stay without one. In the Studio a stem still needs a beat. */
   masterOnly?: boolean;
+  /** Version of the rights statement the user ticked (required, UPLOAD_RIGHTS_STATEMENT_VERSION). */
+  rightsStatementVersion?: unknown;
 };
 
 /** Same retention as the plan's takes. */
@@ -581,6 +685,7 @@ export async function createStemUploadSessionFor(
   context: AuthContext,
   params: StemSessionParams,
 ): Promise<TakeSignedUploadSession> {
+  if (!isCurrentRightsStatement(params.rightsStatementVersion)) throw new RightsStatementRequiredError();
   const meta = validateTakeUploadMeta({
     contentType: params.contentType,
     byteSize: params.byteSize,
@@ -647,8 +752,13 @@ export async function createStemUploadSessionFor(
     }
     throw new Error(claimError.message);
   }
-  // The stem route requires the rights statement (?rights=1), so every stem carries it.
-  await recordTakeRightsStatement(admin, takeId);
+  // Every stem carries the rights statement (checked above, stored before the upload URL is handed out).
+  await storeRightsStatementOrFail(admin, {
+    userId: context.userId,
+    takeId,
+    projectId: params.projectId,
+    kind: masterOnly ? "master_only" : "stem",
+  });
 
   const { data: signed, error: signError } = await admin.storage
     .from(TAKE_AUDIO_BUCKET)

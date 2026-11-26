@@ -19,6 +19,9 @@ import {
   buildUserBeatAudioObjectKey,
 } from "@/lib/beats/audio-validation";
 
+// 2026-11-26 upload screen: passes in these tests (covered by its own tests).
+vi.mock("@/lib/rights/upload-screen", async () => (await import("@/test/upload-screen-mock")).uploadScreenMock());
+
 type Row = Record<string, unknown>;
 type Filter = [column: string, kind: "eq" | "in", value: unknown];
 type Op = {

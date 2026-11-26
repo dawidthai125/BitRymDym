@@ -26,6 +26,8 @@ import {
   finalizeTakeRecordingFor,
 } from "@/lib/takes/take-transport";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { assertUploadNotBlocked } from "@/lib/rights/upload-screen";
+import { UploadBlockedError } from "@/lib/rights/upload-screen-policy";
 import { isMissingRpcFunction } from "@/lib/supabase/rpc-errors";
 import {
   SAMPLE_CAP,
@@ -333,6 +335,14 @@ export async function createStudioSample(
     contentType: sniffed.sniffedContentType,
   });
   if (!meta.ok) return meta;
+
+  // Owner order 2026-11-26: a taken-down file or a catalogue beat is refused before it is stored.
+  try {
+    await assertUploadNotBlocked({ admin, bytes: input.bytes, kind: "sample", ownerId: context.userId, takeId: null });
+  } catch (error) {
+    if (error instanceof UploadBlockedError) return { ok: false, error: SAMPLE_INVALID, details: [error.message] };
+    throw error;
+  }
 
   const objectKey = buildUserSampleObjectKey(sampleId);
   const { error: uploadError } = await admin.storage

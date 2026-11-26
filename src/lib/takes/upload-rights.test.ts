@@ -6,6 +6,8 @@ import { readFileSync } from "node:fs";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { UPLOAD_RIGHTS_STATEMENT_VERSION } from "@/config/rights-statement";
+
 const createStemUploadSession = vi.fn();
 vi.mock("@/lib/takes/take-transport", () => ({ createStemUploadSession: (...a: unknown[]) => createStemUploadSession(...a) }));
 
@@ -27,8 +29,10 @@ describe("stem upload session — rights statement on the server", () => {
     createStemUploadSession.mockResolvedValue({ takeId: "t1", path: "x", token: "y" });
   });
 
-  it("refuses without ?rights=1 and opens no session", async () => {
-    for (const q of ["", "?masterOnly=1", "?rights=0", "?rights=true"]) {
+  const rv = `rv=${UPLOAD_RIGHTS_STATEMENT_VERSION}`;
+
+  it("refuses without ?rights=1 and the current statement version, opens no session", async () => {
+    for (const q of ["", "?masterOnly=1", "?rights=0", "?rights=true", "?rights=1", "?rights=1&rv=2026-01-01", `?${rv}`]) {
       const res = await post(q);
       expect(res.status).toBe(400);
       const json = (await res.json()) as { code?: string; error?: string };
@@ -38,16 +42,18 @@ describe("stem upload session — rights statement on the server", () => {
     expect(createStemUploadSession).not.toHaveBeenCalled();
   });
 
-  it("opens a session with ?rights=1 (Studio stems and Sam mastering)", async () => {
-    expect((await post("?rights=1")).status).toBe(200);
-    expect((await post("?masterOnly=1&rights=1")).status).toBe(200);
+  it("opens a session with ?rights=1 and the current version (Studio stems and Sam mastering)", async () => {
+    expect((await post(`?rights=1&${rv}`)).status).toBe(200);
+    expect((await post(`?masterOnly=1&rights=1&${rv}`)).status).toBe(200);
     expect(createStemUploadSession).toHaveBeenCalledTimes(2);
-    expect(createStemUploadSession.mock.calls[1][0]).toMatchObject({ projectId: "p1", masterOnly: true });
+    expect(createStemUploadSession.mock.calls[1][0]).toMatchObject({ projectId: "p1", masterOnly: true, rightsStatementVersion: UPLOAD_RIGHTS_STATEMENT_VERSION });
   });
 
   it("the client sends the statement only when ticked", () => {
     const src = read("src/lib/takes/client-upload.ts");
-    expect(src).toContain('if (params.rightsAccepted) query.set("rights", "1");');
+    expect(src).toContain('query.set("rights", "1");');
+    expect(src).toContain('query.set("rv", UPLOAD_RIGHTS_STATEMENT_VERSION);');
+    expect(src.indexOf("if (params.rightsAccepted) {")).toBeLessThan(src.indexOf('query.set("rights", "1");'));
     expect(read("src/lib/studio/master/master-only-bootstrap.ts")).toContain("masterOnly: true, rightsAccepted: true");
   });
 });

@@ -50,6 +50,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // Private listen links (2026-11-26): never indexed, never cached, the token never leaks in a Referer.
+      // Listed after the global block so this Referrer-Policy wins.
+      ...["/listen/:path*", "/api/listen/:path*"].map((source) => ({
+        source,
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      })),
       // Same for everyone and not in the middleware matcher: the CDN answers, not the server.
       ...["/sitemap.xml", "/robots.txt"].map((source) => ({
         source,

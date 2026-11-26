@@ -4,7 +4,9 @@ import pl from "../../../../messages/pl.json";
 import en from "../../../../messages/en.json";
 import {
   decideListenCreate,
+  guardedListenLookup,
   hashListenToken,
+  LISTEN_RATE,
   LISTEN_TOKEN_RE,
   listenDayOptions,
   listenLinkState,
@@ -76,5 +78,56 @@ describe("listenPlayKey (Free hears only the watermarked file)", () => {
   });
   it("paid plans keep the approved master", () => {
     expect(listenPlayKey(key, "GOLD")).toBe(key);
+  });
+});
+
+describe("listen links — public lookup and token guessing (2026-11-26)", () => {
+  const good = "A".repeat(32);
+  /** In-memory stand-in for studio_listen_peek / studio_listen_hit on one IP bucket. */
+  function fakeIp() {
+    let misses = 0;
+    return {
+      get misses() { return misses; },
+      missAllowed: async () => misses < LISTEN_RATE.miss.limit,
+      recordMiss: async () => { misses++; },
+    };
+  }
+  const links: Record<string, { id: string }> = { [good]: { id: "ok" } };
+  const resolve = async (t: string) => links[t] ?? null;
+
+  it("good token works; wrong, expired, revoked and other-project tokens look the same (not_found)", async () => {
+    const ip = fakeIp();
+    expect(await guardedListenLookup({ token: good, ...ip, resolve })).toEqual({ status: "ok", link: { id: "ok" } });
+    // resolve() returns null for unknown, expired, revoked and cross-project tokens alike (listen-server).
+    for (const t of ["B".repeat(32), "short", "../../etc", ""]) {
+      expect(await guardedListenLookup({ token: t, ...ip, resolve })).toEqual({ status: "not_found" });
+    }
+    expect(ip.misses).toBe(4);
+  });
+
+  it("guessing hits the limit: after the miss limit even a valid token is refused from that IP", async () => {
+    const ip = fakeIp();
+    for (let i = 0; i < LISTEN_RATE.miss.limit; i++) {
+      const t = `G${String(i).padStart(31, "0")}`;
+      expect((await guardedListenLookup({ token: t, ...ip, resolve })).status).toBe("not_found");
+    }
+    expect(await guardedListenLookup({ token: "Z".repeat(32), ...ip, resolve })).toEqual({ status: "limited" });
+    expect(await guardedListenLookup({ token: good, ...ip, resolve })).toEqual({ status: "limited" });
+    // Another IP is not affected.
+    expect((await guardedListenLookup({ token: good, ...fakeIp(), resolve })).status).toBe("ok");
+  });
+
+  it("fails closed when the limiter cannot answer; a resolver error counts as a miss", async () => {
+    const down = { missAllowed: async () => { throw new Error("db"); }, recordMiss: async () => undefined };
+    expect(await guardedListenLookup({ token: good, ...down, resolve })).toEqual({ status: "limited" });
+    const ip = fakeIp();
+    const broken = async () => { throw new Error("db"); };
+    expect(await guardedListenLookup({ token: good, ...ip, resolve: broken })).toEqual({ status: "not_found" });
+    expect(ip.misses).toBe(1);
+  });
+
+  it("the miss limit is strict enough that guessing a 192-bit token is hopeless", () => {
+    expect(LISTEN_RATE.miss.limit).toBeLessThanOrEqual(20);
+    expect(LISTEN_TOKEN_RE.source).toContain("{32}");
   });
 });

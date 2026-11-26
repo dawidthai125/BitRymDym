@@ -15,6 +15,9 @@ import { StudioProjectLimitError } from "@/lib/studio/studio-plan-limits";
 import { insertStudioProjectCapped } from "@/lib/studio/studio-project-create";
 import { isMissingRpcFunction } from "@/lib/supabase/rpc-errors";
 
+// 2026-11-26 upload screen: passes in these tests (covered by its own tests).
+vi.mock("@/lib/rights/upload-screen", async () => (await import("@/test/upload-screen-mock")).uploadScreenMock());
+
 const read = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
 const OWNER = "33333333-3333-4333-8333-333333333333";
 const SAMPLE_ID = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";

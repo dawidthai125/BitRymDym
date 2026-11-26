@@ -4,8 +4,15 @@ import { AudioEntitlementError } from "@/lib/audio/effective-entitlement";
 import { AuthError } from "@/lib/auth/session";
 import { TakeClaimError } from "@/lib/takes/claim-errors";
 import { TakeTitleError, type TakeTitleErrorCode } from "@/lib/takes/take-title";
+import { RightsStatementRequiredError, UploadBlockedError } from "@/lib/rights/upload-screen-policy";
 
 export function takeApiErrorResponse(error: unknown): NextResponse {
+  if (error instanceof RightsStatementRequiredError) {
+    return NextResponse.json({ error: error.message, code: error.code }, { status: 400 });
+  }
+  if (error instanceof UploadBlockedError) {
+    return NextResponse.json({ error: error.message, code: error.code }, { status: error.code === "SCREENING_PENDING" ? 409 : 403 });
+  }
   if (error instanceof TakeClaimError) {
     const status =
       error.code === "UNAUTHENTICATED"

@@ -72,7 +72,7 @@ export async function listCleanupJobs(p: { ownerId: string; projectId: string; t
   return { available: true as const, perDay, usedToday, jobs };
 }
 
-export type EnqueueCleanupResult = { ok: true; job: CleanupJobView } | { ok: false; error: "not_found" | "take_unavailable" | "in_progress" | "daily_limit" };
+export type EnqueueCleanupResult = { ok: true; job: CleanupJobView } | { ok: false; error: "not_found" | "take_unavailable" | "in_progress" | "daily_limit" | "upload_screening" | "upload_blocked" };
 
 export async function enqueueCleanupJob(p: { ownerId: string; projectId: string; takeId: string; settings: unknown; tier: PremiumTier }): Promise<EnqueueCleanupResult> {
   if (!UUID.test(p.takeId) || !(await ownsProject(p.ownerId, p.projectId))) return { ok: false, error: "not_found" };
@@ -87,6 +87,9 @@ export async function enqueueCleanupJob(p: { ownerId: string; projectId: string;
   });
   if (rErr?.message?.includes("CLEANUP_IN_PROGRESS")) return { ok: false, error: "in_progress" };
   if (rErr?.message?.includes("CLEANUP_DAILY_LIMIT")) return { ok: false, error: "daily_limit" };
+  // Upload screen gate (trigger on studio_cleanup_jobs, 2026-11-26).
+  if (rErr?.message?.includes("UPLOAD_SCREENING_PENDING")) return { ok: false, error: "upload_screening" };
+  if (rErr?.message?.includes("UPLOAD_BLOCKED")) return { ok: false, error: "upload_blocked" };
   check(rErr);
   return { ok: true, job: view((Array.isArray(data) ? data[0] : data) as Record<string, unknown>) };
 }

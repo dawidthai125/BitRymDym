@@ -3345,5 +3345,29 @@
  {
   "src": "Ten bit był już zgłoszony, wydany albo kupiony, więc jego wpisy o prawach muszą zostać. Zarchiwizuj go, zamiast kasować.",
   "en": "This beat was already submitted, released or bought, so its rights records must stay. Archive it instead of deleting it."
+ },
+ {
+  "src": "Potwierdź oświadczenie o prawach do pliku. Jeśli nie widzisz okna, odśwież stronę.",
+  "en": "Confirm the rights statement for the file. If you do not see the prompt, reload the page."
+ },
+ {
+  "src": "Tego pliku nie można wgrać: został zdjęty z BitRymDym po zgłoszeniu naruszenia praw.",
+  "en": "This file cannot be uploaded: it was taken down from BitRymDym after a rights report."
+ },
+ {
+  "src": "To jest bit z katalogu BitRymDym. Nie można go wgrać jako własnego pliku.",
+  "en": "This is a beat from the BitRymDym catalogue. It cannot be uploaded as your own file."
+ },
+ {
+  "src": "Sprawdzamy wgrany plik. Spróbuj ponownie za chwilę.",
+  "en": "We are checking the uploaded file. Try again in a moment."
+ },
+ {
+  "src": "To nie jest plik audio w zgłoszonym formacie.",
+  "en": "This is not an audio file in the declared format."
+ },
+ {
+  "src": "Zaznacz, że masz prawa do wgrywanych plików. Jeśli pole już jest zaznaczone, odśwież stronę.",
+  "en": "Confirm that you have the rights to the files you upload. If the box is already ticked, reload the page."
  }
 ]
