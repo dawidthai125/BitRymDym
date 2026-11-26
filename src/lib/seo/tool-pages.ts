@@ -195,7 +195,7 @@ export const TOOL_PAGES: readonly ToolPage[] = [
         h2: "Jak zrobić wersję slowed + reverb",
         paragraphs: [
           "Wybierz plik audio i zacznij od ustawienia „Slowed + reverb”: 85% prędkości i średni pogłos. Razem z prędkością spada wysokość dźwięku, jak przy wolniej kręcącej się taśmie — 85% to niecałe trzy półtony w dół.",
-          "Pogłos dodawaj z umiarem. Przy gęstym miksie 30–40% wystarcza, a dłuższy ogon (4–6 s) pasuje do wolnych, przestrzennych numerów. Gdy wokal się rozmywa, skróć pogłos zamiast go ściszać.",
+          "Pogłos dodawaj z umiarem. Przy gęstym mixie 30–40% wystarcza, a dłuższy ogon (4–6 s) pasuje do wolnych, przestrzennych numerów. Gdy wokal się rozmywa, skróć pogłos zamiast go ściszać.",
         ],
       },
       {

@@ -97,7 +97,7 @@
     },
     "recorderPage": {
       "metaTitle": "Vocal recorder for Windows — free download",
-      "metaDescription": "Two ways to record on BitRymDym: the Windows app and the browser studio. What the app does, and what stays on the site.",
+      "metaDescription": "BitRymDym Recorder for Windows 10 and 11: a free app for recording vocals on beats from the catalogue. It records straight from the microphone, lines your voice up with the beat and does not lose recordings. Installer or one no-install file.",
       "kicker": "Recording",
       "title": "Two ways to record",
       "lead": "The account, plan and limits are the same. The Windows app records a vocal on the computer. The site arranges the song, the mix and the master. The site terms cover the app, because it uses the same account.",
@@ -105,10 +105,12 @@
       "downloadNeedAccount": "Sign in to download",
       "downloadPortable": "No-install version (.exe)",
       "portableNote": "The no-install version is one file, BitRymDym-Portable.exe (21 MB). Run it from a folder you can write to (e.g. Downloads or Desktop): it unpacks the program into a BitRymDym folder next to itself and opens it. After that you start it with the same file. It updates itself, just like the installer. It makes no shortcuts, and you remove it by deleting that folder.",
-      "downloadNote": "Downloading and signing in to the app both need an account on the site. The installer is for Windows, weighs 35 MB and does not need an administrator. The shortcut is named BitRymDym. On first start the app downloads its sound add-ons once (ffmpeg and ffplay, 31 MB), so beat monitoring and recording work. A Mac and Apple version is coming soon. Until then, on a Mac you record in the browser.",
+      "downloadNote": "Downloading and signing in to the app both need an account on the site. The app runs on Windows 10 and 11 (64-bit). The installer weighs 35 MB and does not need an administrator. The shortcut is named BitRymDym. On first start the app downloads its sound add-ons once (ffmpeg and ffplay, 31 MB), so beat monitoring and recording work. A Mac and Apple version is coming soon. Until then, on a Mac you record in the browser.",
       "openStudio": "Open Studio",
       "windowsTitle": "Windows app",
       "windowsLead": "You sign in with the same address as on the site. The app loads published beats and records only the microphone.",
+      "whyTitle": "Why an app when there is the site?",
+      "why": ["It records straight from the microphone to a WAV file on your PC, with a small buffer and no browser in between.", "It lines your voice up with the beat by itself and remembers the delay for your microphone and headphones. With Bluetooth headphones you measure it by clapping (Measure).", "You pick the microphone and the output separately, for example a USB mic and Bluetooth headphones.", "Recordings stay on your disk: after a crash, closing the app or a dropped connection it returns to the project and finishes the upload.", "You can stack and cut several vocal tracks before uploading. With Gold you can also record on your own beat file (Studio Offline) and download stems.", "On a Mac or a phone the browser is enough: the Studio on the site records the same way, on the same account."],
       "canTitle": "What the app can do",
       "can": [
         "Sign in to an existing account and sign out. With the 48-hour password box ticked, the password sits hidden in a file encrypted with your Windows account key, for up to 48 hours after your last sign-in. Signing out deletes it and also ends the session on the server.",
@@ -126,7 +128,7 @@
         "Bring a project back after a crash or a close: when you enter the Studio, the app asks whether to restore it.",
         "Check the microphone with the mic test: a level bar and a hint (too quiet, good, too loud). Nothing is saved.",
         "After Stop, get a rating of the recording (clipping, near silence, quiet, or good level) and a warning when the mic dropped samples or vanished mid-recording.",
-        "Check by itself whether a new version exists. When you click Update it downloads, verifies and installs it. Nothing happens during recording or an upload.",
+        "Check for a new version by itself. A new version is mandatory: the UPDATE bar downloads it (about 28 MB), checks its signature and installs it, and the app reopens. Nothing happens during a recording or an upload.",
         "Send the recordings to Studio as a project and open it in the browser. The upload runs in the background. If the network drops, the next try finishes the same project, even after restarting the app.",
         "In Gold download stems: every vocal track as its own WAV from the start of the song."
       ],
@@ -145,7 +147,7 @@
       ],
       "stepsTitle": "How to record in the app",
       "steps": [
-        "Create an account on the site, sign in, download the installer, open the shortcut and sign in to the app with the same address.",
+        "Create an account on the site and sign in. Download the installer or the no-install version, start the app (the first time it downloads its sound add-ons, 31 MB) and sign in with the same address.",
         "Pick a beat. Put on headphones. Press the mic test and check that the level is good when you speak.",
         "Set the count-in, press Record, then Stop. The file stays on this computer, in the app data.",
         "Cut and move the recordings on the timeline. Set volume and pan. Play uses the chosen output.",
@@ -2018,7 +2020,7 @@
       "beatUnavailable": "Beat unavailable"
     },
     "beatWav": {
-      "opis": "Exclusive, one payment of {cena} through PayU. After it arrives the beat leaves the catalogue and is yours only: download the wav and record on it in the Studio and in the Windows app.",
+      "opis": "Exclusive, one payment of {cena} through PayU. After it arrives the beat leaves the catalogue and is yours only: download the wav and record on it in the Studio (in the Windows app: Studio Offline, Gold).",
       "katalog": "Open in my catalogue",
       "nagraj": "Record in Studio",
       "kup": "Buy wav",
@@ -2054,7 +2056,7 @@
       "mojPusto": "You have not bought a beat yet.",
       "nagrajWStudio": "Record in Studio",
       "platnyTytul": "Paid beat catalogue",
-      "platnyOpis": "Each beat in this catalogue costs 19.99 PLN. You buy it exclusively: after the PayU payment the beat leaves the catalogue and goes to your catalogue only. Download the wav there and record on it in the Studio and in the Windows app. Without a purchase, Studio recording stays off.",
+      "platnyOpis": "Each beat in this catalogue costs 19.99 PLN. You buy it exclusively: after the PayU payment the beat leaves the catalogue and goes to your catalogue only. Download the wav there and record on it in the Studio, and in the Windows app in Studio Offline (Gold). Without a purchase, Studio recording stays off.",
       "platnyWkrotce": "19.99 PLN · wav file",
       "platnyZakup": "Payment goes through PayU. After purchase the beat is in the buyer's catalogue, not in the free catalogue.",
       "metaTitle": "Rap beat catalogue — trap, boom bap, lo-fi",

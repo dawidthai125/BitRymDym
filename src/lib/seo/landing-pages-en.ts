@@ -173,7 +173,7 @@ export const EN_LANDING_PAGES: readonly EnglishLandingPage[] = [
       {
         h2: "Installation",
         paragraphs: [
-          "Download the installer after signing in on the website. It doesn't need administrator rights, and beat playback works out of the box with no extra programs. The Recorder checks for updates itself. On a Mac you record in the browser — a version for Apple devices is coming.",
+          "Download the installer after signing in on the website. It runs on Windows 10 and 11 (64-bit). The installer is 35 MB and doesn't need administrator rights. There is also a no-install version: one Portable.exe file (21 MB). On first start the app downloads its sound add-ons once (31 MB). It updates itself, and a new version is mandatory. On a Mac you record in the browser — a version for Apple devices is coming.",
         ],
       },
     ],

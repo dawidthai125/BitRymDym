@@ -266,7 +266,9 @@ export function recorderAppJsonLd(origin: string, input: { name: string; descrip
     description: input.description,
     url,
     applicationCategory: "MultimediaApplication",
-    operatingSystem: "Windows",
+    operatingSystem: "Windows 10, Windows 11",
+    // ffmpeg (Gyan build) needs Windows 10; the program is 64-bit only.
+    softwareRequirements: "Windows 10 or 11, 64-bit",
     inLanguage: ["pl-PL", "en"],
     offers: { "@type": "Offer", price: "0", priceCurrency: "PLN" },
     publisher: { "@id": `${absoluteUrl(origin, "/")}#organization` },

@@ -38,6 +38,7 @@ export default async function RecorderPage() {
   const cannot = lines(t.raw("cannot"));
   const steps = lines(t.raw("steps"));
   const siteDoes = lines(t.raw("siteDoes"));
+  const why = lines(t.raw("why"));
 
   return (
     <AppShell tone="public">
@@ -78,6 +79,15 @@ export default async function RecorderPage() {
           </div>
           <p className="mt-3 text-sm text-[var(--brd-mute)]">{t("downloadNote")}</p>
           {signedIn ? <p className="mt-2 text-sm text-[var(--brd-mute)]">{t("portableNote")}</p> : null}
+
+          <section className="mt-12 space-y-4">
+            <h2 className="brd-display text-2xl font-semibold">{t("whyTitle")}</h2>
+            <ul className="list-disc space-y-2 pl-5 text-[var(--brd-ink-soft)] leading-relaxed">
+              {why.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
 
           <section className="mt-12 space-y-4">
             <h2 className="brd-display text-2xl font-semibold">{t("windowsTitle")}</h2>

@@ -131,7 +131,7 @@ describe("app and video JSON-LD", () => {
     const o = "https://www.bitrymdym.pl";
     const app = recorderAppJsonLd(o, { name: "N", description: "D" });
     expect(app["@type"]).toBe("SoftwareApplication");
-    expect(app.operatingSystem).toBe("Windows");
+    expect(app.operatingSystem).toBe("Windows 10, Windows 11");
     expect(app.offers).toEqual({ "@type": "Offer", price: "0", priceCurrency: "PLN" });
     const v = promoVideoJsonLd(o, { name: "F", description: "D", uploadDate: "2026-11-19" });
     expect(v.contentUrl).toBe(`${o}/promo/jak-to-dziala.mp4`);

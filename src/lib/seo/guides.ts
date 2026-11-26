@@ -435,7 +435,7 @@ export const GUIDES: readonly Guide[] = [
       {
         h2: "Ustawienie i poziom",
         paragraphs: [
-          "Mów z odległości mniej więcej dłoni, lekko obok osi mikrofonu, i ustaw głośność wejścia tak, żeby najgłośniejsze fragmenty nie przesterowywały. Przed nagraniem w Studiu BitRymDym zrób próbę mikrofonu, a w Nagrywarce na Windows użyj przycisku „Próba mikrofonu”.",
+          "Mów z odległości mniej więcej dłoni, lekko obok osi mikrofonu, i ustaw głośność wejścia tak, żeby najgłośniejsze fragmenty nie przesterowywały. Przed nagraniem w Studiu BitRymDym zrób próbę mikrofonu, a w Nagrywarce na Windows użyj przycisku „Test mikrofonu”.",
         ],
       },
     ],
@@ -696,14 +696,14 @@ export const GUIDES: readonly Guide[] = [
       {
         h2: "Nagrywaj w częściach",
         paragraphs: [
-          "Nie musisz nagrać 16 wersów na jednym oddechu. Profesjonaliści często nagrywają zwrotkę po 4–8 wersów i sklejają ujęcia. W Studiu BitRymDym nagrasz kilka ujęć, przytniesz je i ułożysz na osi czasu.",
+          "Nie musisz nagrać 16 wersów na jednym oddechu. Profesjonaliści często nagrywają zwrotkę po 4–8 wersów i sklejają nagrania. W Studiu BitRymDym nagrasz kilka nagrań, przytniesz je i ułożysz na osi czasu.",
         ],
       },
     ],
     faq: [
       { q: "Jak nie tracić tchu podczas rapowania?", a: "Zaplanuj oddechy w tekście, skróć zbyt długie wersy, ćwicz oddech przeponowy i na początek nagrywaj zwrotkę w częściach." },
       { q: "Oddychać nosem czy ustami?", a: "Podczas rapowania szybkie wdechy bierze się zwykle ustami — są krótsze i cichsze w nagraniu niż głośne wdechy nosem." },
-      { q: "Czy wdechy słychać w nagraniu?", a: "Trochę tak i to naturalne. Zbyt głośne wdechy można ściszyć w miksie albo wyciąć między ujęciami." },
+      { q: "Czy wdechy słychać w nagraniu?", a: "Trochę tak i to naturalne. Zbyt głośne wdechy można ściszyć w mixie albo wyciąć między nagraniami." },
     ],
     beats: "free",
     cta: [
@@ -955,7 +955,7 @@ export const GUIDES: readonly Guide[] = [
         h2: "Skąd się bierze szerokość",
         paragraphs: [
           "Nagraj tę samą partię drugi raz i rozłóż duble na boki. Różnice w wykonaniu dają prawdziwą szerokość, której nie da samo skopiowanie ścieżki. Adliby ustaw lekko w lewo i w prawo, a główny głos zostaw na środku.",
-          "Pogłos i echo mogą być stereo, nawet gdy wokal jest mono. Na koniec sprawdź miks w mono, na przykład na głośniku telefonu: jeśli duble znikają, są za podobne do siebie albo mają odwróconą fazę.",
+          "Pogłos i echo mogą być stereo, nawet gdy wokal jest mono. Na koniec sprawdź mix w mono, na przykład na głośniku telefonu: jeśli duble znikają, są za podobne do siebie albo mają odwróconą fazę.",
         ],
       },
       {
@@ -967,7 +967,7 @@ export const GUIDES: readonly Guide[] = [
     ],
     faq: [
       { q: "Czemu wokal słychać tylko w jednym uchu?", a: "Mikrofon trafił do jednego kanału ścieżki stereo. Zmień ścieżkę na mono albo ustaw wejście interfejsu jako mono." },
-      { q: "Czy wokal mono brzmi gorzej?", a: "Nie. Pojedynczy mikrofon i tak daje sygnał mono, a miks z dublami i pogłosem będzie szeroki." },
+      { q: "Czy wokal mono brzmi gorzej?", a: "Nie. Pojedynczy mikrofon i tak daje sygnał mono, a mix z dublami i pogłosem będzie szeroki." },
       { q: "Ile dubli nagrać?", a: "Do refrenu zwykle wystarczą dwa, po jednym na stronę. W zwrotce dubluj tylko mocne słowa." },
     ],
     beats: null,
@@ -1008,7 +1008,7 @@ export const GUIDES: readonly Guide[] = [
       },
     ],
     faq: [
-      { q: "Co jest pierwsze, mix czy mastering?", a: "Mix. Mastering robi się na gotowym, zmiksowanym pliku stereo." },
+      { q: "Co jest pierwsze, mix czy mastering?", a: "Mix. Mastering robi się na gotowym, zmixowanym pliku stereo." },
       { q: "Czy każdy utwór potrzebuje masteringu?", a: "Do wydania warto: wyrównuje brzmienie i głośność względem innych utworów. Do szkicu dla znajomych nie jest konieczny." },
       { q: "Czy mogę zrobić mix i mastering sam?", a: "Tak. Pracuj na umiarkowanej głośności, porównuj z utworem wzorcowym i sprawdzaj efekt na kilku głośnikach." },
     ],

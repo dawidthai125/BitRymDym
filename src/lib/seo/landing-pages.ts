@@ -219,7 +219,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
       },
       {
         q: "W jakim programie nagrać rap?",
-        a: "Możesz nagrywać w przeglądarce w Studiu BitRymDym, bez instalowania. Na Windowsie jest też darmowa Nagrywarka BitRymDym.",
+        a: "Możesz nagrywać w przeglądarce w Studiu BitRymDym, bez instalowania. Na Windowsie jest też darmowa Nagrywarka BitRymDym: nagrywa prosto z mikrofonu do pliku WAV, sama wyrównuje głos do bitu i pamięta opóźnienie dla Twojego sprzętu, a nagrania zostają na komputerze, gdy sieć się urwie.",
       },
       {
         q: "Skąd wziąć bit do nagrania?",
@@ -294,7 +294,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
       {
         h2: "Instalacja",
         paragraphs: [
-          "Instalator pobierzesz po zalogowaniu na stronie. Nie potrzebuje uprawnień administratora, a odsłuch bitu działa od razu, bez dodatkowych programów. Nagrywarka sama sprawdza aktualizacje. Na Macu nagrywasz w przeglądarce — wersja na Apple będzie wkrótce.",
+          "Instalator pobierzesz po zalogowaniu na stronie. Działa na Windows 10 i 11 (64-bit). Instalator waży 35 MB i nie potrzebuje uprawnień administratora. Jest też wersja bez instalacji: jeden plik Portable.exe (21 MB). Przy pierwszym uruchomieniu program raz pobiera dodatki dźwięku (31 MB). Aktualizuje się sam, a nowa wersja jest obowiązkowa. Na Macu nagrywasz w przeglądarce — wersja na Apple będzie wkrótce.",
         ],
       },
     ],
@@ -324,7 +324,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
     webOnly: true,
     metaTitle: "Bity na wyłączność — kup bit do rapu z plikiem WAV",
     metaDescription:
-      "Kup bit do rapu na wyłączność za 19,99 zł: po zakupie znika z katalogu i jest tylko Twój. Pobierasz WAV i nagrywasz na nim w Studiu online i Nagrywarce.",
+      "Kup bit do rapu na wyłączność za 19,99 zł: po zakupie znika z katalogu i jest tylko Twój. Pobierasz WAV i nagrywasz na nim w Studiu online.",
     h1: "Bity na wyłączność",
     lead: "Chcesz bit, którego nikt inny nie użyje? W płatnym katalogu BitRymDym każdy bit sprzedajemy tylko raz.",
     sections: [
@@ -332,7 +332,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
         h2: "Jak działa zakup na wyłączność",
         paragraphs: [
           "Każdy bit w płatnym katalogu kosztuje 19,99 zł i płacisz za niego jednorazowo przez PayU. Po płatności bit znika z katalogu i trafia tylko do Twojego katalogu — nikt inny nie może go już kupić.",
-          "Ze swojego katalogu pobierasz plik WAV i nagrywasz na bicie w Studiu online oraz w Nagrywarce na Windows.",
+          "Ze swojego katalogu pobierasz plik WAV i nagrywasz na bicie w Studiu online. W Nagrywarce na Windows nagrasz na nim w Studiu Offline (Gold), z pobranego pliku WAV.",
         ],
       },
       {
@@ -345,7 +345,7 @@ export const LANDING_PAGES: readonly LandingPage[] = [
     faq: [
       {
         q: "Co dostaję po kupnie bitu?",
-        a: "Bit na wyłączność: znika z katalogu, pobierasz go jako WAV i możesz na nim nagrywać w Studiu i w Nagrywarce.",
+        a: "Bit na wyłączność: znika z katalogu, pobierasz go jako WAV i nagrywasz na nim w Studiu. W Nagrywarce na Windows — w Studiu Offline (Gold), z pobranego WAV.",
       },
       {
         q: "Czy ktoś inny może kupić ten sam bit?",

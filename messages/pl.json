@@ -97,7 +97,7 @@
     },
     "recorderPage": {
       "metaTitle": "Nagrywarka na Windows — pobierz za darmo",
-      "metaDescription": "Nagrywarka BitRymDym na Windows: darmowy program do nagrywania wokalu na bitach z katalogu. Zobacz, co robi program, a co Studio w przeglądarce.",
+      "metaDescription": "Nagrywarka BitRymDym na Windows 10 i 11: darmowy program do nagrywania wokalu na bitach z katalogu. Nagrywa prosto z mikrofonu, sam wyrównuje głos do bitu i nie gubi nagrań. Instalator albo jeden plik bez instalacji.",
       "kicker": "Nagranie",
       "title": "Dwie drogi nagrania",
       "lead": "Konto, plan i limity są te same. Nagrywarka (Windows) nagrywa wokal przy komputerze. Strona układa numer, mix i master. Regulamin strony obejmuje też Nagrywarkę, bo korzysta ona z tego samego konta.",
@@ -105,10 +105,12 @@
       "downloadNeedAccount": "Zaloguj się, żeby pobrać",
       "downloadPortable": "Wersja bez instalacji (.exe)",
       "portableNote": "Wersja bez instalacji to jeden plik, BitRymDym-Portable.exe (21 MB). Uruchom go z folderu, w którym możesz zapisywać (np. Pobrane albo Pulpit): rozpakuje program do folderu BitRymDym obok siebie i go otworzy. Potem uruchamiasz go tym samym plikiem. Aktualizuje się sam, tak jak instalka. Nie tworzy skrótów, a usuwasz go, kasując ten folder.",
-      "downloadNote": "Do pobrania i do logowania w programie potrzebne jest konto na stronie. Instalator jest na Windows, waży 35 MB i nie wymaga uprawnień administratora. Skrót nazywa się BitRymDym. Przy pierwszym uruchomieniu program raz pobiera dodatki dźwięku (ffmpeg i ffplay, 31 MB), żeby działał odsłuch bitu i nagrywanie. Wersja na Maca i urządzenia Apple będzie wkrótce. Do tego czasu na Macu nagrywasz w przeglądarce.",
+      "downloadNote": "Do pobrania i do logowania w programie potrzebne jest konto na stronie. Program działa na Windows 10 i 11 (64-bit). Instalator waży 35 MB i nie wymaga uprawnień administratora. Skrót nazywa się BitRymDym. Przy pierwszym uruchomieniu program raz pobiera dodatki dźwięku (ffmpeg i ffplay, 31 MB), żeby działał odsłuch bitu i nagrywanie. Wersja na Maca i urządzenia Apple będzie wkrótce. Do tego czasu na Macu nagrywasz w przeglądarce.",
       "openStudio": "Otwórz Studio",
       "windowsTitle": "Nagrywarka (Windows)",
       "windowsLead": "Logujesz się tym samym adresem co na stronie. Program bierze opublikowane bity z katalogu i nagrywa tylko mikrofon.",
+      "whyTitle": "Po co program, skoro jest strona?",
+      "why": ["Nagrywa prosto z mikrofonu do pliku WAV na komputerze, z małym buforem, bez pośrednictwa przeglądarki.", "Sam wyrównuje głos do bitu i pamięta opóźnienie dla Twojego mikrofonu i słuchawek. Przy słuchawkach Bluetooth mierzysz je klaskaniem (Zmierz).", "Mikrofon i odsłuch wybierasz osobno, na przykład mikrofon USB i słuchawki Bluetooth.", "Nagrania zostają na dysku: po awarii, zamknięciu albo zerwanej sieci program wraca do projektu i dokańcza wysyłkę.", "Kilka ścieżek wokalu złożysz i potniesz jeszcze przed wysłaniem. W Gold nagrasz też na własnym bicie z pliku (Studio Offline) i pobierzesz stemy.", "Na Macu i w telefonie wystarczy przeglądarka: Studio na stronie nagrywa tak samo, na tym samym koncie."],
       "canTitle": "Co można w Nagrywarce",
       "can": [
         "Zalogować się na istniejące konto i wylogować. Jeśli zaznaczysz „Zapamiętaj hasło na 48 godzin”, hasło leży ukryte w pliku zaszyfrowanym kluczem Twojego konta Windows, do 48 godzin od ostatniego logowania. Wylogowanie kasuje je i kończy sesję też na serwerze.",
@@ -126,7 +128,7 @@
         "Przywrócić projekt po awarii albo zamknięciu: przy wejściu do Studia program pyta, czy ma wrócić.",
         "Sprawdzić mikrofon przyciskiem Test mikrofonu: pasek poziomu i podpowiedź, czy jest za cicho, dobrze albo za głośno. Nic się przy tym nie zapisuje.",
         "Po Stop dostać ocenę nagrania (przester, prawie cisza, cicho albo dobry poziom) i ostrzeżenie, gdy mikrofon zgubił próbki albo zniknął w trakcie nagrywania.",
-        "Sam sprawdzać, czy jest nowa wersja. Na Twoje kliknięcie Zaktualizuj pobiera ją, sprawdza i instaluje. Nic nie dzieje się w trakcie nagrania ani wysyłki.",
+        "Sam sprawdzać, czy jest nowa wersja. Nowa wersja jest obowiązkowa: pasek ZAKTUALIZUJ pobiera ją (około 28 MB), sprawdza podpis i instaluje, a program sam się otwiera. Nic nie dzieje się w trakcie nagrania ani wysyłki.",
         "Wrzucić nagrania do Studia jako projekt i otworzyć go w przeglądarce. Wysyłka idzie w tle. Gdy sieć się urwie, kolejna próba dokończy ten sam projekt, nawet po ponownym uruchomieniu Nagrywarki.",
         "W Gold pobrać stemy: każda ścieżka wokalu jako osobny WAV od początku utworu."
       ],
@@ -145,7 +147,7 @@
       ],
       "stepsTitle": "Jak nagrać w Nagrywarce",
       "steps": [
-        "Załóż konto na stronie, zaloguj się, pobierz instalator, otwórz skrót i zaloguj się w programie tym samym adresem.",
+        "Załóż konto na stronie i zaloguj się. Pobierz instalator albo wersję bez instalacji, uruchom program (za pierwszym razem pobierze dodatki dźwięku, 31 MB) i zaloguj się tym samym adresem.",
         "Wybierz bit. Załóż słuchawki. Naciśnij Test mikrofonu i sprawdź, czy poziom jest dobry, gdy mówisz.",
         "Ustaw odliczanie, naciśnij Nagraj, potem Stop. Plik zostaje na tym komputerze, w danych programu.",
         "Potnij i poprzesuwaj nagrania na osi. Ustaw głośność i stronę. Graj puszcza całość na wybranym odsłuchu.",
@@ -2018,7 +2020,7 @@
       "beatUnavailable": "Bit niedostępny"
     },
     "beatWav": {
-      "opis": "Na wyłączność, jednorazowo {cena} przez PayU. Po wpłacie bit znika z katalogu i jest tylko Twój: pobierasz WAV i nagrywasz na nim w Studiu i w programie na Windows.",
+      "opis": "Na wyłączność, jednorazowo {cena} przez PayU. Po wpłacie bit znika z katalogu i jest tylko Twój: pobierasz WAV i nagrywasz na nim w Studiu (w programie na Windows — w Studiu Offline, Gold).",
       "katalog": "Otwórz w moim katalogu",
       "nagraj": "Nagraj w Studiu",
       "kup": "Kup WAV",
@@ -2054,7 +2056,7 @@
       "mojPusto": "Nie masz jeszcze kupionych bitów.",
       "nagrajWStudio": "Nagraj w Studiu",
       "platnyTytul": "Płatny katalog bitów",
-      "platnyOpis": "Każdy bit w tym katalogu kosztuje 19,99 zł. Kupujesz na wyłączność: po płatności PayU bit znika z katalogu i trafia tylko do Twojego katalogu. Stamtąd pobierasz plik WAV i nagrywasz na nim w Studiu oraz w programie na Windows. Bez zakupu nagranie w Studiu zostaje wyłączone.",
+      "platnyOpis": "Każdy bit w tym katalogu kosztuje 19,99 zł. Kupujesz na wyłączność: po płatności PayU bit znika z katalogu i trafia tylko do Twojego katalogu. Stamtąd pobierasz plik WAV i nagrywasz na nim w Studiu, a w programie na Windows w Studiu Offline (Gold). Bez zakupu nagranie w Studiu zostaje wyłączone.",
       "platnyWkrotce": "19,99 zł · plik WAV",
       "platnyZakup": "Płatność idzie przez PayU. Po zakupie bit jest w katalogu kupującego, nie w katalogu darmowym.",
       "metaTitle": "Katalog bitów do rapu — trap, boom bap, lo-fi",
