@@ -44,13 +44,34 @@ const MAX_FILES = 40;
 type Print = { duration: number; raw: number[]; compressed: string };
 type Ref = { source: "beat" | "sample"; id: string; title: string | null; fingerprint: number[] };
 
+/** Chromaprint needs a few seconds of sound: a one-shot sample or a short take is looped to this length. */
+const SHORT_LOOP_SECONDS = 12;
+
 async function fingerprintFile(cfg: RunConfig, work: string, src: string): Promise<Print> {
   const wav = path.join(work, `fp-${path.basename(src)}.wav`);
-  await runCapture(resolveFfmpegBin(), ["-nostdin", "-v", "error", "-y", "-i", src, "-t", String(Math.min(cfg.maxDurationSeconds, FILE_SECONDS)), "-ac", "2", "-ar", "44100", "-c:a", "pcm_s16le", wav], { timeoutMs: 180_000 });
-  try {
+  const decode = (loop: boolean) =>
+    runCapture(resolveFfmpegBin(), [
+      "-nostdin", "-v", "error", "-y",
+      ...(loop ? ["-stream_loop", "-1"] : []),
+      "-i", src,
+      "-t", String(loop ? SHORT_LOOP_SECONDS : Math.min(cfg.maxDurationSeconds, FILE_SECONDS)),
+      "-ac", "2", "-ar", "44100", "-c:a", "pcm_s16le", wav,
+    ], { timeoutMs: 180_000 });
+  const print = async (): Promise<Print> => {
     const raw = parseFpcalcRaw(await runCapture(cfg.fpcalcBin, ["-json", "-raw", "-length", "0", wav], { timeoutMs: 120_000 }));
     const compressed = parseFpcalcJson(await runCapture(cfg.fpcalcBin, ["-json", "-length", "120", wav], { timeoutMs: 120_000 }));
     return { duration: raw.duration, raw: raw.fingerprint, compressed: String(compressed.fingerprint) };
+  };
+  try {
+    await decode(false);
+    try {
+      return await print();
+    } catch (e) {
+      // "Empty fingerprint": too short. Loop it (the duration reported is then the looped length).
+      if (!(e instanceof Error) || !/empty fingerprint|bad_fingerprint|bad_duration/i.test(e.message)) throw e;
+      await decode(true);
+      return await print();
+    }
   } finally {
     await rm(wav, { force: true });
   }
