@@ -130,7 +130,12 @@ export function StudioTransportBar({
   onFlushPersist,
   recordState = "idle",
   onRecordStop,
+  toolsInGroups = false,
+  onFragmentDetails,
 }: {
+  /** Full record view: master volume, history, export and the space-bar mode live under "Więcej". */
+  toolsInGroups?: boolean;
+  onFragmentDetails?: () => void;
   /** The plan has no WAV export: the button shows a padlock. */
   exportLocked?: boolean;
   /** Set while the selected clip is the locked Bit: its cut / move tools are replaced by a note. */
@@ -253,16 +258,13 @@ export function StudioTransportBar({
   /** Sticky offset = height of the sticky site header (it varies by breakpoint; the bar hid under it). */
   const [siteHeaderH, setSiteHeaderH] = useState(0);
   useEffect(() => {
-    const header = document.querySelector("body header");
+    const header = document.querySelector("header[data-site-header]");
     if (!header || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(() => setSiteHeaderH(Math.round(header.getBoundingClientRect().height)));
     ro.observe(header);
     return () => ro.disconnect();
   }, []);
   const hasSelection = selectionStartMs != null || selectionEndMs != null;
-  /** Tablet and phone: the clip tools stay folded so the tracks get the room (owner video 2026-11-26). */
-  const [clipToolsOpen, setClipToolsOpen] = useState(false);
-  const foldedClass = clipToolsOpen || fragmentConfirmDelete ? "" : "max-lg:hidden";
   const toolsShown = hasSelection || (showFragmentTools && (fragmentEnabled || fragmentConfirmDelete));
   /** Clip tools appear above the timeline: scroll by the same amount, so the clicked clip stays under the pointer. */
   const toolsLayoutRef = useRef<{ shown: boolean; height: number } | null>(null);
@@ -362,12 +364,13 @@ export function StudioTransportBar({
                 {recording ? tr("stop") : tr("nagraj")}
               </span>
             </Button>
-            {!simple ? (
+            {/* A keyboard setting, not a record key: never on touch screens (owner, 2026-11-26). */}
+            {!simple && !toolsInGroups ? (
             <Button
               type="button"
               size="sm"
               variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE} ${extraKeys}`}
+              className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE} ${extraKeys} [@media(pointer:coarse)]:hidden`}
               data-testid="studio-transport-keyboard-mode"
               title={
                 transportKeyboardMode === "quick_rec"
@@ -485,7 +488,7 @@ export function StudioTransportBar({
             >
               <StudioGlyph name="metronome" />
             </Button>
-            {!simple || noBeat ? (
+            {(!simple && !toolsInGroups) || noBeat ? (
             <Button
               type="button"
               size="sm"
@@ -512,9 +515,11 @@ export function StudioTransportBar({
               className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE} sm:hidden`}
               aria-expanded={moreOpen}
               data-testid="studio-transport-more"
+              aria-label={moreOpen ? tr("mniej") : tr("wiecej")}
               onClick={() => setMoreOpen((v) => !v)}
             >
-              {moreOpen ? tr("mniej") : tr("wiecej")}
+              {/* The group bar has its own "Więcej": here only an icon, so the two are not confused. */}
+              {toolsInGroups ? "⋯" : moreOpen ? tr("mniej") : tr("wiecej")}
             </Button>
             )}
           </div>
@@ -543,7 +548,7 @@ export function StudioTransportBar({
             ) : null}
           </div>
 
-          {simple ? null : (
+          {simple || toolsInGroups ? null : (
           <div
             className={`flex w-[8.5rem] shrink-0 items-center gap-2 py-0.5 sm:ml-auto sm:max-[1439px]:w-[5.5rem] ${extraKeys} [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]`}
             data-testid="studio-transport-master"
@@ -608,7 +613,7 @@ export function StudioTransportBar({
             ) : null}
           </div>
 
-          {simple ? null : (
+          {simple || toolsInGroups ? null : (
           <div className={`flex shrink-0 items-center gap-1 max-sm:w-full sm:ml-auto ${extraKeys}`}>
           <StudioMixRevisionHistoryControl
             projectId={projectId}
@@ -629,21 +634,8 @@ export function StudioTransportBar({
         </div>
         {toolsShown ? (
         <div className="flex min-w-0 flex-wrap items-center gap-1" data-testid="studio-transport-row-tools">
-          {onUnlockBeat || !showFragmentTools ? null : (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="min-h-11 px-3 lg:hidden"
-              data-testid="studio-clip-tools-toggle"
-              aria-expanded={clipToolsOpen || fragmentConfirmDelete}
-              onClick={() => setClipToolsOpen((value) => !value)}
-            >
-              {tr(clipToolsOpen || fragmentConfirmDelete ? "zwinNarzedziaKlipu" : "narzedziaKlipu")}
-            </Button>
-          )}
           {hasSelection ? (
-          <div className={`flex shrink-0 flex-nowrap gap-0.5 max-sm:grid max-sm:w-full max-sm:grid-cols-3 ${onUnlockBeat ? "max-lg:hidden" : showFragmentTools ? foldedClass : ""}`} data-testid="studio-selection-readout">
+          <div className={`flex shrink-0 flex-nowrap gap-0.5 max-sm:grid max-sm:w-full max-sm:grid-cols-3 ${showFragmentTools ? "max-lg:hidden" : ""}`} data-testid="studio-selection-readout">
             {(
               [
                 ["poczatek", selectionStartMs],
@@ -673,7 +665,6 @@ export function StudioTransportBar({
               </Button>
             </div>
           ) : showFragmentTools ? (
-            <div className={foldedClass ? "contents max-lg:hidden" : "contents"} data-testid="studio-clip-tools-fold">
             <StudioFragmentTools
               key={fragmentClipId ?? "none"}
               enabled={fragmentEnabled}
@@ -698,8 +689,8 @@ export function StudioTransportBar({
               onAskDelete={onFragmentAskDelete}
               onDelete={onFragmentDelete}
               onCancelDelete={onFragmentCancelDelete}
+              onDetails={onFragmentDetails}
             />
-            </div>
           ) : null}
         </div>
         ) : showFragmentTools && !simple ? (

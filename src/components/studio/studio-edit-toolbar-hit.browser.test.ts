@@ -25,7 +25,7 @@ describe("studio edit-toolbar hit-area source contract", () => {
   it("StudioEditToolbar Buttons declare min-h-11 min-w-11", () => {
     const src = readFileSync(TOOLBAR, "utf8");
     const buttons = src.match(/<Button[\s\S]*?<\/Button>/g) ?? [];
-    expect(buttons.length).toBeGreaterThanOrEqual(10);
+    expect(buttons.length).toBeGreaterThanOrEqual(5);
     expect(src.match(/className="min-h-11 min-w-11/g)?.length ?? 0).toBe(
       buttons.length,
     );

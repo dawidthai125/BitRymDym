@@ -53,24 +53,21 @@ describe("Phase 7.1.1 edit toolbar hit targets", () => {
     expect(editor).toMatch(/<StudioEditToolbar[\s\S]*?\/>/);
     const buttonCount = (editToolbar.match(/<Button[\s\S]*?<\/Button>/g) ?? [])
       .length;
-    expect(buttonCount).toBeGreaterThanOrEqual(10);
+    expect(buttonCount).toBeGreaterThanOrEqual(5);
     expect(
       editToolbar.match(/className="min-h-11 min-w-11/g)?.length ?? 0,
     ).toBe(buttonCount);
     for (const label of [
       "Zaznacz",
       "Edycja",
-      "Podziel",
-      "Usuń",
-      "Przyciąganie",
       "Oddal",
       "Przybliż",
       "Dopasuj",
-      "Mikser",
     ]) {
       expect(editToolbar).toContain(label);
     }
-    expect(editToolbar).toMatch(/studio-add-track/);
+    // Add track moved to the "Dodaj" group.
+    expect(editor).toMatch(/data-testid="studio-add-group"[\s\S]*?testId="studio-add-track"/);
   });
 
   it("track chips and reorder controls stay at least 44px", () => {

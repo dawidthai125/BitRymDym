@@ -302,6 +302,7 @@ describe("Phase 2 editor wiring + architecture", () => {
 
   it("snap UI exposes cycling presets", () => {
     expect(editor).toMatch(/cycleStudioSnapConfig/);
-    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-edit-toolbar.tsx"), "utf8")).toMatch(/studioSnapPresetLabel\(props\.snapPreset\)/);
+    expect(editor).toMatch(/data-testid="studio-more-snap"[\s\S]*?cycleStudioSnapConfig/);
+    expect(editor).toMatch(/studioSnapPresetLabel\(snapPreset\)/);
   });
 });

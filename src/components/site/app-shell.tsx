@@ -21,7 +21,10 @@ export async function AppShell({
   tone = "public",
   className,
   compactFooter = false,
+  chromeless = false,
 }: {
+  /** No site header, bottom menu or mini player: the screen has its own way out (Studio project). */
+  chromeless?: boolean;
   children: React.ReactNode;
   /** One-line footer for work screens (Studio project). */
   compactFooter?: boolean;
@@ -33,7 +36,7 @@ export async function AppShell({
 
   return (
     <div data-app-shell className={cn("min-h-dvh", className)}>
-      <SiteHeader />
+      {chromeless ? null : <SiteHeader />}
       {/*
         Skip target is a div: AppShell children already render their own main landmark.
         Nesting another main landmark would be invalid HTML.
@@ -44,6 +47,7 @@ export async function AppShell({
         className={cn(
           MAIN_CONTENT_LANDMARK_CLASS,
           !isAdminChrome &&
+            !chromeless &&
             // Room for the bottom nav (phone) and, only while it is on screen, the sticky player.
             "pb-[calc(3.75rem+env(safe-area-inset-bottom)+1rem)] lg:pb-2 [[data-app-shell]:has([data-sticky-player])_&]:pb-[calc(3.75rem+env(safe-area-inset-bottom)+10rem)] lg:[[data-app-shell]:has([data-sticky-player])_&]:pb-28",
         )}
@@ -53,7 +57,7 @@ export async function AppShell({
         {children}
         <SiteFooter compact={compactFooter} />
       </div>
-      {!isAdminChrome ? (
+      {!isAdminChrome && !chromeless ? (
         <>
           <StickyMiniPlayer />
           <MobileBottomNav isAuthenticated={Boolean(session)} />

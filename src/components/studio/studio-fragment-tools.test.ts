@@ -55,11 +55,20 @@ describe("timeline fragment tools", () => {
 });
 
 describe("phone clip bar", () => {
-  it("folds the sliders and scrolls the buttons in one row below sm", () => {
+  it("shows one row of five tools and opens the rest one row at a time", () => {
     const tools = readFileSync(join(process.cwd(), "src/components/studio/studio-fragment-tools.tsx"), "utf8");
-    expect(tools).toMatch(/data-testid="studio-fragment-sliders-toggle"/);
-    expect(tools).toMatch(/aria-expanded=\{slidersOpen\}/);
-    expect(tools).toMatch(/slidersOpen \? "max-sm:flex max-sm:flex-col" : "max-sm:hidden"/);
-    expect(tools).toMatch(/max-sm:overflow-x-auto[^"]*" data-testid="studio-fragment-strip"/);
+    const strip = tools.slice(tools.indexOf('data-testid="studio-fragment-strip"'), tools.indexOf('{panel === "trim" ? ('));
+    expect([...strip.matchAll(/data-testid="(studio-fragment-[a-z-]+)"/g)].map((m) => m[1])).toEqual([
+      "studio-fragment-strip",
+      "studio-fragment-split",
+      "studio-fragment-trim",
+      "studio-fragment-duplicate",
+      "studio-fragment-volume",
+      "studio-fragment-delete",
+      "studio-fragment-more",
+    ]);
+    for (const id of ["trim-start", "trim-end", "gain", "nudge-left", "nudge-right", "fade-in", "fade-out", "reverse", "stretch", "pitch", "details"]) {
+      expect(tools).toContain(`studio-fragment-${id}`);
+    }
   });
 });

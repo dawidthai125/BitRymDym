@@ -61,7 +61,8 @@ describe("Studio Visual Shell — Tracks / Mixer / Inspector", () => {
   });
 
   it("inspector visual tabs map to existing context / FxSheet — no InspectorTab SSOT", () => {
-    expect(editor).toMatch(/data-testid="studio-inspector-visual-tabs"/);
+    expect(editor).toMatch(/<StudioGroupTabs/);
+    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-groups.tsx"), "utf8")).toMatch(/data-testid="studio-inspector-visual-tabs"/);
     expect(editor).toMatch(/deriveStudioInspectorContext/);
     expect(editor).not.toMatch(/type InspectorTab/);
     expect(editor).not.toMatch(/useState<\s*InspectorTab/);

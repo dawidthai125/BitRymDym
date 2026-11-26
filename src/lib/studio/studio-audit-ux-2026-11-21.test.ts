@@ -21,7 +21,7 @@ describe("Studio UX audit 2026-11-21", () => {
   });
 
   it("sticky works: no overflow-x-hidden scroll container above the transport", () => {
-    expect(editor).toMatch(/studio-desk flex min-h-\[calc\(100dvh-7rem\)\] flex-col gap-0\.5 overflow-x-clip/);
+    expect(editor).toMatch(/studio-desk flex min-h-\[calc\(100dvh-3rem\)\] flex-col gap-0\.5 overflow-x-clip/);
     expect(transport).toMatch(/sm:sticky sm:top-2/);
     expect(transport).toMatch(/new IntersectionObserver/);
   });

@@ -2776,8 +2776,7 @@
       }
     },
     "studioPPage": {
-      "metaTitle": "Studio project",
-      "wszystkieProjekty": "← All projects"
+      "metaTitle": "Studio project"
     },
     "studioPage": {
       "metaTitle": "Studio",
@@ -2896,7 +2895,6 @@
       "dodajSciezkeWokalna": "Add vocal track",
       "dodajSciezke": "+ Add track",
       "dodajSciezkeKrotko": "+ Track",
-      "inspector": "Inspector",
       "mixer": "Mixer",
       "wiecej": "More",
       "sciezkiBitLiczonyMaster": "Recording tracks {v0} (beat and Master not counted)",
@@ -2913,6 +2911,12 @@
       "snapOff": "OFF"
     },
     "studioEditor": {
+      "zmienPakiet": "Change plan",
+      "przyciaganie": "Snap:",
+      "przyciaganieWyl": "OFF",
+      "przytnij": "Trim",
+      "wiecejNarzedziKlipu": "More clip tools",
+      "szczegolyKlipu": "Details",
       "narzedziaKlipu": "Clip tools ▾",
       "zwinNarzedziaKlipu": "Hide tools ▴",
       "opcjeEfektyPlik": "Track options, effects and file →",
@@ -2960,7 +2964,6 @@
       "widmoPokaz": "Show spectrum and denoise",
       "widmoUkryj": "Hide spectrum and denoise",
       "zapisywanie": "Saving…",
-      "inspector": "Inspector",
       "nagranieDodaneNaOs": "Recording added to the timeline.",
       "nagranieCzeka": "A recording is waiting: keep it or discard it.",
       "nagranieNiewyslane": "The recording has not been uploaded yet.",
@@ -3243,8 +3246,7 @@
       "efekty": "Effects"
     },
     "studioInspectorShell": {
-      "zamknijInspector": "Close Inspector",
-      "inspector": "Inspector ·",
+      "zamknijInspector": "Close panel",
       "zamknij": "Close"
     },
     "studioMarkersPanel": {
@@ -3426,7 +3428,7 @@
       "nagrywanieWStudio": "Recording in the Studio",
       "nagrywanie": "Recording",
       "jakToDziala": "How it works",
-      "zacznijTutaj": "Start here: choose a track and press Record. Instruments and samples are on the Samples tab.",
+      "zacznijTutaj": "Start here: choose a track and press Record. Instruments and samples are under “Add” or the Samples tab.",
       "recPaneNagraj": "Start",
       "recPaneUstawienia": "Setup",
       "recPaneUjecia": "Takes",
@@ -3836,14 +3838,190 @@
       "downloads": "Downloaded",
       "purchased": "Purchased"
     },
+    "featureFinder": {
+      "przycisk": "Find a feature…",
+      "tytul": "Find a feature",
+      "podpowiedz": "e.g. autotune, latency, chorus",
+      "brak": "Nothing found. Try another word, such as “vocal” or “volume”.",
+      "zamknij": "Close",
+      "pelnyWidokOdSilver": "Full view: Silver and up",
+      "miejsca": {
+        "record": "Record",
+        "sound": "Sound",
+        "text": "Lyrics",
+        "add": "Add",
+        "more": "More",
+        "mix": "Mix step",
+        "track": "track",
+        "timeline": "clip on the timeline",
+        "top": "top bar"
+      },
+      "items": {
+        "autotune": {
+          "label": "Autotune (vocal tuning)",
+          "keywords": "auto tune autotune tuning vocal pitch key off-key"
+        },
+        "latency": {
+          "label": "Align vocal with the beat (latency)",
+          "keywords": "latency delay calibration calibrate clap late sync bluetooth"
+        },
+        "lyrics": {
+          "label": "Lyrics and AI help",
+          "keywords": "lyrics words rhymes lines ai help writing teleprompter text"
+        },
+        "importVocal": {
+          "label": "Import a vocal file",
+          "keywords": "import upload file vocal add audio mp3 wav recorder"
+        },
+        "presets": {
+          "label": "Vocal presets",
+          "keywords": "preset sound vocal style"
+        },
+        "cleanup": {
+          "label": "Vocal cleanup (noise, breaths)",
+          "keywords": "cleanup noise breaths denoise room pops sibilance mix"
+        },
+        "export": {
+          "label": "Export WAV (download the song)",
+          "keywords": "export download save file wav mp3 song"
+        },
+        "samples": {
+          "label": "Samples and instruments",
+          "keywords": "samples loops instruments keys pad drums midi"
+        },
+        "effects": {
+          "label": "Effects: reverb, echo, EQ, compressor",
+          "keywords": "effects fx reverb echo delay eq compressor deesser gate"
+        },
+        "markers": {
+          "label": "Verses and choruses on the timeline",
+          "keywords": "verse chorus hook markers structure bridge intro"
+        },
+        "addTrack": {
+          "label": "Add a vocal track",
+          "keywords": "add new track double adlib vocal"
+        },
+        "stems": {
+          "label": "Import stems (separate tracks)",
+          "keywords": "stems stem import upload files tracks"
+        },
+        "mic": {
+          "label": "Microphone and headphones",
+          "keywords": "microphone mic headphones monitor test input level device"
+        },
+        "countdown": {
+          "label": "Count-in and punch recording",
+          "keywords": "count in countdown bars punch overdub"
+        },
+        "recMode": {
+          "label": "Recording mode: loop, punch a line",
+          "keywords": "mode loop punch line section repeat"
+        },
+        "takes": {
+          "label": "My recordings and picking the best one",
+          "keywords": "recordings takes list best comp"
+        },
+        "scratch": {
+          "label": "Scratch (DJ) on a recording",
+          "keywords": "scratch dj jog deck"
+        },
+        "mixer": {
+          "label": "Mixer: track volume and pan",
+          "keywords": "mixer volume pan faders levels master"
+        },
+        "volumeAutomation": {
+          "label": "Volume automation",
+          "keywords": "volume automation envelope fade over time pan"
+        },
+        "trackSettings": {
+          "label": "Track settings (name)",
+          "keywords": "track name rename settings options"
+        },
+        "clipTools": {
+          "label": "Cut and move a recording",
+          "keywords": "split trim move duplicate delete clip cut copy fade"
+        },
+        "beatLock": {
+          "label": "Unlock the beat (move and cut)",
+          "keywords": "beat lock unlock move trim"
+        },
+        "changeBeat": {
+          "label": "Change the beat",
+          "keywords": "beat instrumental change choose catalogue"
+        },
+        "metronome": {
+          "label": "Metronome",
+          "keywords": "metronome click tempo"
+        },
+        "history": {
+          "label": "Mix history (restore a version)",
+          "keywords": "history versions restore previous backup"
+        },
+        "snap": {
+          "label": "Timeline snap",
+          "keywords": "snap grid precision"
+        },
+        "files": {
+          "label": "Project files and clips",
+          "keywords": "files clips list sources"
+        },
+        "makeSong": {
+          "label": "Make the song (mix and mastering)",
+          "keywords": "mix mastering finished song louder auto make"
+        }
+      }
+    },
+    "groups": {
+      "aria": "Studio features",
+      "record": "Record",
+      "sound": "Sound",
+      "text": "Lyrics",
+      "add": "Add",
+      "more": "More",
+      "tekstUtworu": "Lyrics and AI help",
+      "zwrotkiIRefreny": "Verses and choruses",
+      "brzmienieOpis": "Vocal presets, autotune (the vocal tuning effect) and other effects.",
+      "dodajSciezke": "Vocal track",
+      "dodajSciezkeOpis": "A new empty track for a recording.",
+      "importWokal": "Vocal from a file",
+      "importWokalOpis": "A recording from your phone or the recorder.",
+      "stemy": "Stems",
+      "stemyOpis": "Several files, each on its own track.",
+      "sample": "Samples and instruments",
+      "sampleOpis": "Loops, pads and keys.",
+      "scratch": "Scratch (DJ)",
+      "scratchOpis": "Scratching on a chosen recording.",
+      "sekcjaMix": "Mix and file",
+      "sekcjaOs": "Timeline and playback",
+      "sekcjaProjekt": "Track and files",
+      "mixer": "Mixer",
+      "mixerOpis": "Volume and pan of every track.",
+      "ustawieniaSciezki": "Track settings",
+      "ustawieniaSciezkiOpis": "Name and effects of the selected track.",
+      "pliki": "Files and beat",
+      "plikiOpis": "Recordings in the project and the beat.",
+      "spacja": "Space bar: ",
+      "spacjaNagrywa": "records",
+      "spacjaGra": "plays and stops",
+      "najpierwWokal": "Record or import a vocal first.",
+      "dotknijKlipu": "Tap a recording on the timeline and the tools appear above the tracks.",
+      "bitOdblokowany": "Beat unlocked: you can move and trim it.",
+      "automatykaOtwarta": "Volume automation is open on track {name}.",
+      "metronomWl": "Metronome on.",
+      "metronomWyl": "Metronome off.",
+      "wszystkieProjekty": "All projects"
+    },
     "inspectorTitle": {
+      "text": "Lyrics",
+      "add": "Add",
+      "more": "More",
       "record": "Recording",
       "clip": "Clip / file",
       "track": "Track",
-      "empty": "Inspector",
+      "empty": "Options",
       "closeBlocked": "You can't close this panel while a recording is running or saving.",
       "file": "File",
-      "effects": "Effects"
+      "effects": "Sound"
     },
     "exportStatus": {
       "creating": "preparing file",
@@ -3885,7 +4063,7 @@
       "przejdzDoMixuUtwor": "The next step is one button, “Make the song”, which sets the vocal against the beat.",
       "pelnyWidok": "Full view",
       "prostyWidok": "Simple view",
-      "pelnyWidokOpis": "Inspector, mixer, and edit tools.",
+      "pelnyWidokOpis": "All Studio features and editing tools.",
       "widokUproszczonyPlan": "Simple view. The advanced studio is on Silver and Gold.",
       "usunNagranie": "Delete recording",
       "usunNagraniePytanie": "Delete this recording from the timeline?",

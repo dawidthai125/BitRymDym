@@ -418,11 +418,8 @@ describe("STU-10-E — wiring contracts", () => {
 
   it("every overlay close path calls onClose, which is the gate", () => {
     expect(editor).toMatch(/onClose=\{closeInspectorOverlay\}/);
-    expect(editor).toMatch(
-      /if \(inspectorOverlayOpen\) closeInspectorOverlay\(\);/,
-    );
     expect(shell).toMatch(
-      /aria-label="Zamknij Inspektor"[\s\S]{0,120}onClick=\{onClose\}/,
+      /aria-label="Zamknij panel"[\s\S]{0,120}onClick=\{onClose\}/,
     );
     expect(shell).toMatch(/<CloseButton [^>]*onClick=\{onClose\}/);
     expect(shell).toMatch(/event\.key === "Escape"[\s\S]{0,80}closeRef\.current\(\);/);

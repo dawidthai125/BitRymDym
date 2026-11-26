@@ -29,7 +29,7 @@ describe("Record inspector initial mount", () => {
   });
 
   it("explicit inspector exits still clear the Record preference", () => {
-    expect(editor).toMatch(/id: "settings"[\s\S]*?setInspectorPreferRecord\(false\)/);
+    expect(editor).toMatch(/function openTrackOrFiles[\s\S]*?setInspectorPreferRecord\(false\)/);
     expect(editor).toMatch(
       /onSelectClip=\{\(id\) => \{[\s\S]*?studioPreferRecordAfterTimelineSelect/,
     );

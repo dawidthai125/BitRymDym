@@ -4,10 +4,10 @@
  * Priority: record → clip → track → empty.
  */
 
-export type StudioInspectorContext = "record" | "clip" | "track" | "empty" | "effects" | "file";
+export type StudioInspectorContext = "record" | "clip" | "track" | "empty" | "effects" | "file" | "text" | "add" | "more";
 
 /** The tab that the user chose. Recording wins over it (see resolveStudioInspectorPanel). */
-export type StudioInspectorTab = "settings" | "effects" | "file";
+export type StudioInspectorTab = "settings" | "effects" | "file" | "text" | "add" | "more";
 
 /** What the inspector shows. Each tab always opens its own panel, also with nothing selected. */
 export function resolveStudioInspectorPanel(input: {
@@ -17,7 +17,7 @@ export function resolveStudioInspectorPanel(input: {
   selectedTrackId: string | null;
 }): StudioInspectorContext {
   if (input.recordingActive) return "record";
-  if (input.tab === "effects") return "effects";
+  if (input.tab === "effects" || input.tab === "text" || input.tab === "add" || input.tab === "more") return input.tab;
   if (input.tab === "file") return input.selectedClipId ? "clip" : "file";
   return input.selectedTrackId ? "track" : "empty";
 }
@@ -68,7 +68,7 @@ export function studioInspectorOverlayCloseBlocked(input: {
 }
 
 export const STUDIO_INSPECTOR_CLOSE_BLOCKED_PL =
-  "Nie można zamknąć inspektora, dopóki trwa nagrywanie albo zapis.";
+  "Nie można zamknąć panelu, dopóki trwa nagrywanie albo zapis.";
 
 export function studioInspectorContextTitle(
   context: StudioInspectorContext,
@@ -81,10 +81,37 @@ export function studioInspectorContextTitle(
     case "track":
       return "Ścieżka";
     case "effects":
-      return "Efekty";
+      return "Brzmienie";
+    case "text":
+      return "Tekst";
+    case "add":
+      return "Dodaj";
+    case "more":
+      return "Więcej";
     case "file":
       return "Plik";
     case "empty":
-      return "Inspector";
+      return "Opcje";
+  }
+}
+
+/** Which of the five groups the panel belongs to; a clip panel belongs to none. */
+export function studioGroupOfContext(context: StudioInspectorContext): "record" | "sound" | "text" | "add" | "more" | null {
+  switch (context) {
+    case "record":
+      return "record";
+    case "effects":
+      return "sound";
+    case "text":
+      return "text";
+    case "add":
+      return "add";
+    case "more":
+    case "track":
+    case "file":
+      return "more";
+    case "clip":
+    case "empty":
+      return null;
   }
 }

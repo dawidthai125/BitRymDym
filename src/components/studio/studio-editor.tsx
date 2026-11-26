@@ -36,6 +36,7 @@ import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
 import {
   deriveStudioInspectorContext,
+  studioGroupOfContext,
   resolveStudioInspectorPanel,
   type StudioInspectorTab,
   studioPreferRecordAfterCaptureReport,
@@ -64,6 +65,17 @@ import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-r
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
 import { StudioTransportBar } from "@/components/studio/studio-transport-bar";
 import { StudioStepNav } from "@/components/studio/studio-step-nav";
+import { StudioFeatureFinder } from "@/components/studio/studio-feature-finder";
+import { StudioDockBar, StudioGroupRow, StudioGroupSection, StudioGroupTabs, StudioTextGroup } from "@/components/studio/studio-groups";
+import { StudioExportControl } from "@/components/studio/studio-export-control";
+import { StudioMixRevisionHistoryControl } from "@/components/studio/studio-mix-revision-history-control";
+import { LockedAction } from "@/components/plans/locked-action";
+import { useStoreApp } from "@/components/site/store-app-context";
+import Link from "@/components/ui/app-link";
+import { STUDIO_FEATURES, type StudioGroup } from "@/lib/studio/studio-feature-finder";
+import { formatStudioTrackCapacityLabel, STUDIO_TRACK_UPGRADE_HREF } from "@/lib/studio/studio-track-capacity";
+import { studioSnapPresetLabel } from "@/lib/studio/studio-timeline-view";
+import type { StudioRecordFocus } from "@/components/studio/studio-recording-panel";
 import { StudioTrackHeader } from "@/components/studio/studio-track-header";
 import {
   TrackInspectorPanel,
@@ -342,6 +354,9 @@ export function StudioEditor({
   );
 }
 
+/** Plan that raises the recording-track limit (lock bubble). */
+const STUDIO_NEXT_TIER = { FREE: "BRONZE", BRONZE: "SILVER", SILVER: "GOLD", GOLD: "GOLD" } as const;
+
 function StudioEditorInner({
   doc,
   setDoc,
@@ -362,6 +377,11 @@ function StudioEditorInner({
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
   const tInspector = useTranslations("studio.inspectorTitle");
+  const tGroups = useTranslations("studio.groups");
+  const storeApp = useStoreApp();
+  /** "Dodaj" and the feature search point the recording panel at one of its controls. */
+  const [recordFocus, setRecordFocus] = useState<StudioRecordFocus | null>(null);
+  const recordFocusIdRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   // A short note ("Cofnięto zmianę"): after a moment the save state is back.
@@ -598,8 +618,6 @@ function StudioEditorInner({
     selectedTrackId: activeSelectedTrackId,
   });
 
-  /** Recording in the bottom sheet: only the record panel's own tab row (owner video 2026-11-26). */
-  const recordSheetOnly = inspectorContext === "record" && !recordSimple && !inspectorDesktopRail;
   const recordHost = useStudioRecordHost();
   /** Why the record panel may not be unmounted now (recording, undecided take, unsent take). */
   const [recordHold, setRecordHold] = useState<RecordHold>(null);
@@ -773,6 +791,145 @@ function StudioEditorInner({
     if (inspectorDesktopRail) return;
     setMixerOpen(false);
     setInspectorOverlayOpen(true);
+  }
+
+  /** Full record view: the five groups replace the crowded toolbar and the old panel tabs. */
+  const groupsShown = studioStep === "record" && !recordSimple;
+  const activeGroup =
+    inspectorDesktopRail || inspectorOverlayOpen ? studioGroupOfContext(inspectorContext) : null;
+
+  /** A vocal track to work on when nothing is selected: autotune belongs on the voice, not on the Master. */
+  function firstVocalTrack() {
+    return (
+      doc.tracks.find((t) => t.trackType !== "BEAT" && t.trackRole !== "beat" && t.trackRole !== "instrument") ??
+      doc.tracks.find((t) => t.trackType !== "BEAT") ??
+      null
+    );
+  }
+
+  function openGroup(group: StudioGroup) {
+    setConfirmDelete(false);
+    if (group === "record") {
+      setInspectorPreferRecord(true);
+    } else {
+      if (recordingLocked) return;
+      setInspectorPreferRecord(false);
+      setInspectorTab(group === "sound" ? "effects" : group);
+      if (group === "sound") {
+        const target = selectedTrack && selectedTrack.trackType !== "BEAT" ? selectedTrack : firstVocalTrack();
+        if (target) setSelectedTrackId(target.id);
+        setFxInspectorRole(target ? "track" : "master");
+      }
+    }
+    openInspectorOverlay();
+  }
+
+  function focusRecordControl(target: StudioRecordFocus["target"]) {
+    recordFocusIdRef.current += 1;
+    setRecordFocus({ id: recordFocusIdRef.current, target });
+    setInspectorPreferRecord(true);
+    openInspectorOverlay();
+  }
+
+  /** Track settings or the files list: both live under "Więcej". */
+  function openTrackOrFiles(tab: "settings" | "file") {
+    setConfirmDelete(false);
+    setInspectorPreferRecord(false);
+    if (tab === "file") setSelectedClipId(clearClipSelection());
+    else {
+      setSelectedClipId(clearClipSelection());
+      if (!selectedTrack) {
+        const target = firstVocalTrack();
+        if (target) setSelectedTrackId(target.id);
+      }
+    }
+    setInspectorTab(tab);
+    openInspectorOverlay();
+  }
+
+  /** "Znajdź funkcję": open the place where the chosen feature lives. */
+  function openFeature(id: string) {
+    const feature = STUDIO_FEATURES.find((item) => item.id === id);
+    if (!feature || recordingLocked || (feature.fullOnly && !advancedRecord)) return;
+    setSampleTab(false);
+    if (id === "makeSong" || id === "cleanup") {
+      if (canGoMix) setStudioStep("mix");
+      else setStatus(tGroups("najpierwWokal"));
+      return;
+    }
+    if (id === "samples") {
+      setStudioStep("record");
+      setSampleTab(true);
+      return;
+    }
+    if (id === "changeBeat") {
+      setBeatPickerOpen(true);
+      return;
+    }
+    if (id === "metronome") {
+      transport.setMetronomeEnabled(!transport.metronomeEnabled);
+      setStatus(tGroups(transport.metronomeEnabled ? "metronomWyl" : "metronomWl"));
+      return;
+    }
+    setStudioStep("record");
+    if (feature.fullOnly && !recordFullView) setRecordFullView(true);
+    if (id === "clipTools") {
+      closeInspectorOverlay();
+      setStatus(tGroups("dotknijKlipu"));
+      return;
+    }
+    if (id === "beatLock") {
+      closeInspectorOverlay();
+      setBeatUnlocked(true);
+      setStatus(tGroups("bitOdblokowany"));
+      return;
+    }
+    if (id === "volumeAutomation") {
+      const target = selectedTrack && selectedTrack.trackType !== "BEAT" ? selectedTrack : firstVocalTrack();
+      if (!target) {
+        setStatus(tGroups("najpierwWokal"));
+        return;
+      }
+      closeInspectorOverlay();
+      setSelectedTrackId(target.id);
+      setAutomationEdit({ trackId: target.id, param: "gainDb" });
+      setStatus(tGroups("automatykaOtwarta", { name: target.name }));
+      return;
+    }
+    // From the simple view the panel controls open in the simple panel (it is always on screen there).
+    const staysSimple = !advancedRecord || !recordFullView ? !feature.fullOnly : false;
+    const focus: Partial<Record<string, StudioRecordFocus["target"]>> = {
+      latency: "latency",
+      mic: "mic",
+      countdown: "countdown",
+      recMode: "recMode",
+      takes: "takes",
+      scratch: "scratch",
+      stems: "stems",
+      importVocal: "importVocal",
+      ...(staysSimple ? { lyrics: "lyrics" as const } : {}),
+    };
+    const target = focus[id];
+    if (target) {
+      focusRecordControl(target);
+      return;
+    }
+    if (id === "mixer") {
+      openMixerSurface();
+      return;
+    }
+    if (id === "trackSettings") {
+      openTrackOrFiles("settings");
+      return;
+    }
+    if (id === "files") {
+      openTrackOrFiles("file");
+      return;
+    }
+    if (feature.place === "sound") openGroup("sound");
+    else if (id === "lyrics" || id === "markers") openGroup("text");
+    else if (id === "addTrack") openGroup("add");
+    else openGroup("more");
   }
 
   /** Effects open in the inspector when its column is on screen, otherwise in the sheet. */
@@ -3288,6 +3445,8 @@ function StudioEditorInner({
           stemLimit={maxStemsForTier(trackCapacity.premiumTier)}
           trackLimit={maxTracks}
           onSaveTrackMidi={saveTrackMidi}
+          focusRequest={recordFocus}
+          onFocusRequestHandled={() => setRecordFocus(null)}
           preferredTrackId={activeSelectedTrackId}
           selectedClipId={activeSelectedId}
           lastScratchClipId={lastScratchClipId}
@@ -3391,6 +3550,25 @@ function StudioEditorInner({
       )
     : null;
 
+  /** A restored mix version replaces the document: the undo history starts again. */
+  function refreshDocument(next: StudioProjectDocument) {
+    applyPersistedDoc(() => next);
+    undoHistoryRef.current = EMPTY_STUDIO_UNDO_HISTORY;
+    setUndoHistory(EMPTY_STUDIO_UNDO_HISTORY);
+    undoAliasRef.current = new Map();
+    setError(null);
+  }
+  async function flushBeforeRestore() {
+    const snap = await flushPersist();
+    return !snap?.unsaved;
+  }
+  function previewMasterGain(masterGainDb: number) {
+    setDoc((prev) => ({
+      ...prev,
+      project: { ...prev.project, masterGainDb },
+    }));
+  }
+
   const spectrogramSection = selectedClip ? (
     <StudioClipSpectrogramSection
       key={selectedClip.id}
@@ -3407,102 +3585,19 @@ function StudioEditorInner({
       data-testid="studio-inspector-content"
       data-inspector-context={inspectorContext}
     >
-      <div
-        role="tablist"
-        aria-label={tr("inspector")}
-        data-testid="studio-inspector-visual-tabs"
-        hidden={recordSimple || recordSheetOnly}
-        className={`${recordSimple || recordSheetOnly ? "hidden" : "grid"} grid-cols-4 gap-1 border-b border-[var(--brd-line)] pb-2`}
-      >
-        {(
-          [
-            {
-              id: "settings",
-              label: tr("tabSettings"),
-              active:
-                inspectorContext === "track" || inspectorContext === "empty",
-              onClick: () => {
-                setInspectorTab("settings");
-                setInspectorPreferRecord(false);
-                setConfirmDelete(false);
-                openInspectorOverlay();
-              },
-            },
-            {
-              id: "effects",
-              label: tr("tabEffects"),
-              active: inspectorContext === "effects",
-              onClick: () => {
-                setInspectorTab("effects");
-                setFxInspectorRole(selectedTrack ? "track" : "master");
-                setInspectorPreferRecord(false);
-                setConfirmDelete(false);
-                openInspectorOverlay();
-              },
-            },
-            {
-              id: "file",
-              label: tr("tabFile"),
-              active: inspectorContext === "clip" || inspectorContext === "file",
-              onClick: () => {
-                setInspectorTab("file");
-                setInspectorPreferRecord(false);
-                setConfirmDelete(false);
-                openInspectorOverlay();
-              },
-            },
-            {
-              id: "record",
-              label: tr("tabRecord"),
-              active: inspectorContext === "record",
-              onClick: () => {
-                setInspectorPreferRecord(true);
-                openInspectorOverlay();
-              },
-            },
-          ] as const
-        ).map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={tab.active}
-            disabled={recordingLocked && tab.id !== "record"}
-            data-testid={`studio-inspector-tab-${tab.id}`}
-            className={`min-h-11 rounded border px-1 text-[10px] font-medium uppercase tracking-[0.08em] ${
-              tab.active
-                ? "border-[var(--brd-green)] bg-[color-mix(in_srgb,var(--brd-bg)_80%,var(--brd-green)_20%)] text-[var(--brd-ink)]"
-                : "border-[var(--brd-line)] bg-[var(--brd-paper)] text-[var(--brd-mute)]"
-            }`}
-            onClick={tab.onClick}
-          >
-            {tl(tab.label)}
-          </button>
-        ))}
-      </div>
-      {recordSimple || recordSheetOnly ? null : (
+      <StudioGroupTabs
+        active={activeGroup}
+        recordingLocked={recordingLocked}
+        onOpen={openGroup}
+        hidden={recordSimple || !inspectorDesktopRail}
+      />
+      {recordSimple || !inspectorDesktopRail ? null : (
         <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           {tInspector(inspectorContext)}
         </p>
       )}
 
       {inspectorContext === "record" ? <StudioRecordSlot host={recordHost} /> : null}
-      {recordSheetOnly ? (
-        <button
-          type="button"
-          className="min-h-11 text-xs text-[var(--brd-green)] underline-offset-4 hover:underline disabled:opacity-50"
-          data-testid="studio-record-other-tabs"
-          disabled={recordingLocked}
-          onClick={() => {
-            setInspectorTab("settings");
-            setInspectorPreferRecord(false);
-            setConfirmDelete(false);
-            openInspectorOverlay();
-          }}
-        >
-          {tr("opcjeEfektyPlik")}
-        </button>
-      ) : null}
 
       {inspectorContext === "track" && selectedTrack ? (
         <TrackInspectorPanel
@@ -3540,6 +3635,7 @@ function StudioEditorInner({
 
       {inspectorContext === "effects" ? (
         <div className="space-y-2" data-testid="studio-inspector-effects">
+          <p className="text-xs text-[var(--brd-mute)]">{tGroups("brzmienieOpis")}</p>
           <div className="grid grid-cols-2 gap-1" role="group" aria-label={tr("tabEffects")}>
             {(
               [
@@ -3591,6 +3687,142 @@ function StudioEditorInner({
           }}
           onChangeBeat={() => setBeatPickerOpen(true)}
         />
+      ) : null}
+
+      {inspectorContext === "text" ? (
+        <StudioTextGroup
+          projectId={doc.project.id}
+          getExpectedDocumentVersion={expectedDocumentVersion}
+          enqueuePersistAsync={enqueuePersistAsync}
+          getPlayheadMs={getPlayheadMs}
+          onSeek={transport.seek}
+          onDocumentVersionAck={applyAckedDocumentVersion}
+          tempoBpm={doc.project.tempoBpm}
+        />
+      ) : null}
+
+      {inspectorContext === "add" ? (
+        <div className="space-y-2" data-testid="studio-add-group">
+          {atTrackCapacity && trackCapacity.premiumTier !== "GOLD" ? (
+            // Plan lock with a bubble (hover/focus/tap) → plans; server enforces too.
+            <LockedAction
+              reason="plan"
+              action="track"
+              minTier={STUDIO_NEXT_TIER[trackCapacity.premiumTier]}
+              testId="studio-add-track"
+              buttonClassName="px-3"
+              dataAttrs={{ "data-capacity": "full" }}
+            >
+              {tGroups("dodajSciezke")}
+            </LockedAction>
+          ) : (
+            <StudioGroupRow
+              testId="studio-add-track"
+              title={tGroups("dodajSciezke")}
+              hint={tGroups("dodajSciezkeOpis")}
+              disabled={recordingLocked || pending || atTrackCapacity}
+              onClick={() => {
+                addTrack();
+              }}
+            />
+          )}
+          <p
+            className="px-1 font-mono text-xs text-[var(--brd-mute)]"
+            data-testid="studio-track-capacity"
+            data-track-count={trackCount}
+            data-max-tracks={maxTracks}
+            data-premium-tier={trackCapacity.premiumTier}
+          >
+            {tl(formatStudioTrackCapacityLabel(trackCount, maxTracks))}
+          </p>
+          {showUpgradeCta && !storeApp ? (
+            <Link
+              href={STUDIO_TRACK_UPGRADE_HREF}
+              data-testid="studio-track-upgrade-cta"
+              className="inline-flex min-h-11 items-center px-1 text-xs font-medium text-[var(--brd-green)] underline-offset-4 hover:underline"
+            >
+              {tr("zmienPakiet")}
+            </Link>
+          ) : null}
+          <StudioGroupRow testId="studio-add-vocal-file" title={tGroups("importWokal")} hint={tGroups("importWokalOpis")} onClick={() => focusRecordControl("importVocal")} />
+          {maxStemsForTier(trackCapacity.premiumTier) > 0 ? (
+            <StudioGroupRow testId="studio-add-stems" title={tGroups("stemy")} hint={tGroups("stemyOpis")} onClick={() => focusRecordControl("stems")} />
+          ) : null}
+          <StudioGroupRow
+            testId="studio-add-samples"
+            title={tGroups("sample")}
+            hint={tGroups("sampleOpis")}
+            onClick={() => openFeature("samples")}
+          />
+          <StudioGroupRow testId="studio-add-scratch" title={tGroups("scratch")} hint={tGroups("scratchOpis")} onClick={() => focusRecordControl("scratch")} />
+        </div>
+      ) : null}
+
+      {inspectorContext === "more" ? (
+        <div className="space-y-4" data-testid="studio-more-group">
+          <StudioGroupSection title={tGroups("sekcjaMix")}>
+            <StudioGroupRow testId="studio-more-mixer" title={tGroups("mixer")} hint={tGroups("mixerOpis")} onClick={openMixerSurface} />
+            <div className="flex flex-wrap items-center gap-2" data-testid="studio-more-file">
+              <StudioMixRevisionHistoryControl
+                projectId={doc.project.id}
+                tipDocumentVersion={doc.project.documentVersion}
+                getExpectedDocumentVersion={expectedDocumentVersion}
+                onDocumentRefreshed={refreshDocument}
+                trackNames={Object.fromEntries(doc.tracks.map((t) => [t.id, t.name]))}
+                onBeforeRestore={flushBeforeRestore}
+                disabled={pending}
+              />
+              <StudioExportControl
+                projectId={doc.project.id}
+                getExpectedDocumentVersion={expectedDocumentVersion}
+                planLocked={trackCapacity.premiumTier !== "GOLD"}
+              />
+            </div>
+            <div className="studio-transport rounded px-2 py-1 [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]" data-testid="studio-more-master">
+              <StudioMixControl
+                label={tr("master")}
+                ariaLabel={tr("glosnoscMaster")}
+                value={doc.project.masterGainDb}
+                display={tr("db", { v0: doc.project.masterGainDb.toFixed(1) })}
+                min={STUDIO_MASTER_GAIN_DB_MIN}
+                max={STUDIO_MASTER_GAIN_DB_MAX}
+                step={0.5}
+                stacked
+                disabled={pending}
+                onLocalChange={previewMasterGain}
+                onCommit={(masterGainDb) => patchMasterMix({ masterGainDb })}
+              />
+            </div>
+          </StudioGroupSection>
+          <StudioGroupSection title={tGroups("sekcjaOs")}>
+            <Button
+              type="button"
+              size="sm"
+              variant={snapPreset === "off" ? "outline" : "default"}
+              className="min-h-11 w-full"
+              data-testid="studio-more-snap"
+              aria-pressed={snapPreset !== "off"}
+              onClick={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
+            >
+              {tr("przyciaganie")}{" "}{tl(snapPreset === "off" ? tr("przyciaganieWyl") : studioSnapPresetLabel(snapPreset))}
+            </Button>
+            {/* A keyboard setting: nothing to set on a touch screen. */}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 w-full [@media(pointer:coarse)]:hidden"
+              data-testid="studio-more-keyboard-mode"
+              onClick={() => setStudioTransportKeyboardModeLive(transportKeyboardMode === "quick_rec" ? "standard_daw" : "quick_rec")}
+            >
+              {tGroups("spacja")}{tGroups(transportKeyboardMode === "quick_rec" ? "spacjaNagrywa" : "spacjaGra")}
+            </Button>
+          </StudioGroupSection>
+          <StudioGroupSection title={tGroups("sekcjaProjekt")}>
+            <StudioGroupRow testId="studio-more-track" title={tGroups("ustawieniaSciezki")} hint={tGroups("ustawieniaSciezkiOpis")} onClick={() => openTrackOrFiles("settings")} />
+            <StudioGroupRow testId="studio-more-files" title={tGroups("pliki")} hint={tGroups("plikiOpis")} onClick={() => openTrackOrFiles("file")} />
+          </StudioGroupSection>
+        </div>
       ) : null}
 
       {inspectorContext === "empty" ? (
@@ -3843,21 +4075,31 @@ function StudioEditorInner({
       data-studio-visual-parity="v2"
       data-record-view={studioStep === "record" ? (recordSimple ? "simple" : "full") : undefined}
       data-studio-tab={onSampleTab ? "samples" : studioStep}
-      className="studio-desk flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-clip max-lg:pb-[var(--bitek-dock-h,0px)] lg:pb-[min(var(--bitek-dock-h,0px),5.5rem)] max-sm:pb-[max(var(--bitek-dock-h,0px),5rem)]"
+      data-studio-groups={groupsShown ? "true" : undefined}
+      className="studio-desk flex min-h-[calc(100dvh-3rem)] flex-col gap-0.5 overflow-x-clip max-lg:pb-[var(--bitek-dock-h,0px)] lg:pb-[min(var(--bitek-dock-h,0px),5.5rem)] max-sm:pb-[max(var(--bitek-dock-h,0px),5rem)]"
     >
       <header
         data-testid="studio-header"
         className="studio-brand-bar flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 pb-1"
       >
-        {/* Phones: the site header already shows the logo. */}
-        <span className="studio-brand max-sm:hidden">BitRymDym</span>
-        <span className="studio-kicker max-sm:hidden">{tr("studioOnline")}</span>
+        {/* The Studio has no site header or bottom menu: this arrow is the way out (the leave guard covers it). */}
+        <Link
+          href="/studio"
+          data-testid="studio-back"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-[2px] border border-[var(--brd-line)] text-lg text-[var(--brd-ink)] hover:bg-[var(--brd-paper)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+          aria-label={tGroups("wszystkieProjekty")}
+          title={tGroups("wszystkieProjekty")}
+        >
+          ←
+        </Link>
+        <span className="studio-brand max-md:hidden">BitRymDym</span>
+        <span className="studio-kicker max-lg:hidden">{tr("studioOnline")}</span>
         <StudioProjectTitle
           projectId={doc.project.id}
           title={doc.project.title}
           onRenamed={(title) => applyPersistedDoc((prev) => ({ ...prev, project: { ...prev.project, title } }))}
         />
-      <div className="flex min-w-0 items-center gap-2 max-sm:ml-auto max-sm:max-w-[60%] sm:max-w-[50%] sm:shrink-0">
+      <div className="flex min-w-0 items-center gap-2 max-sm:ml-auto max-sm:max-w-[60%] sm:max-w-[50%] md:shrink">
         <span className="studio-gear-label max-sm:hidden">BIT</span>
         <button
           type="button"
@@ -3872,12 +4114,19 @@ function StudioEditorInner({
         </button>
         <StudioFullscreenToggle />
       </div>
+        <StudioFeatureFinder
+          fullViewAllowed={advancedRecord}
+          disabled={recordingLocked}
+          onPick={openFeature}
+          className="max-md:order-last max-md:w-full md:ml-auto md:w-56"
+        />
       </header>
 
       <StudioStepNav
         studioStep={studioStep}
         onStepIntent={prefetchStudioStepPanels}
         onSampleTab={onSampleTab}
+        showSamplesTab={onSampleTab || !(advancedRecord && recordFullView)}
         recordingLocked={recordingLocked}
         canGoMix={canGoMix}
         songReady={autoMixMasterMaterial({ beatId: doc.project.beatId, tracks: doc.tracks, clips: doc.clips }).ready}
@@ -3921,17 +4170,8 @@ function StudioEditorInner({
         trackNames={Object.fromEntries(doc.tracks.map((t) => [t.id, t.name]))}
         tipDocumentVersion={doc.project.documentVersion}
         getExpectedDocumentVersion={expectedDocumentVersion}
-        onDocumentRefreshed={(next) => {
-          applyPersistedDoc(() => next);
-          undoHistoryRef.current = EMPTY_STUDIO_UNDO_HISTORY;
-          setUndoHistory(EMPTY_STUDIO_UNDO_HISTORY);
-          undoAliasRef.current = new Map();
-          setError(null);
-        }}
-        onFlushPersist={async () => {
-          const snap = await flushPersist();
-          return !snap?.unsaved;
-        }}
+        onDocumentRefreshed={refreshDocument}
+        onFlushPersist={flushBeforeRestore}
         onChooseBeat={() => setBeatPickerOpen(true)}
         onRecord={() => requestRecord("button")}
         recordState={
@@ -3960,18 +4200,23 @@ function StudioEditorInner({
             ? () => persistRef.current?.retryNow()
             : null
         }
-        onMasterGainLocal={(masterGainDb) =>
-          setDoc((prev) => ({
-            ...prev,
-            project: { ...prev.project, masterGainDb },
-          }))
-        }
+        onMasterGainLocal={previewMasterGain}
         onMasterGainCommit={(masterGainDb) => {
           patchMasterMix({ masterGainDb });
         }}
         canUndo={undoHistory.past.length > 0 && !recordingLocked}
         canRedo={undoHistory.future.length > 0 && !recordingLocked}
         showFragmentTools={studioStep === "record"}
+        toolsInGroups={groupsShown}
+        onFragmentDetails={
+          groupsShown
+            ? () => {
+                setInspectorTab("file");
+                setInspectorPreferRecord(false);
+                openInspectorOverlay();
+              }
+            : undefined
+        }
         exportLocked={trackCapacity.premiumTier !== "GOLD"}
         fragmentClipId={activeSelectedId}
         fragmentEnabled={Boolean(selectedClip) && !recordingLocked}
@@ -4370,39 +4615,8 @@ function StudioEditorInner({
       <StudioEditToolbar
         timelineMode={timelineMode}
         recordingLocked={recordingLocked}
-        pending={pending}
-        hasSelectedClip={Boolean(selectedClip)}
-        atTrackCapacity={atTrackCapacity}
-        showUpgradeCta={showUpgradeCta}
-        trackCount={trackCount}
-        maxTracks={maxTracks}
-        premiumTier={trackCapacity.premiumTier}
-        inspectorOverlayOpen={inspectorOverlayOpen}
-        inspectorPanelId={inspectorPanelId}
-        mixerOpen={mixerOpen}
-        mixerPanelId={mixerPanelId}
-        snapPreset={snapPreset}
-        showClipMutations={studioStep !== "record"}
         onSeekMode={() => setMode("seek")}
         onEditMode={() => setMode("edit")}
-        onSplit={() => {
-          splitSelectedAtPlayhead();
-        }}
-        onDeleteClip={() => {
-          setInspectorTab("file");
-          setInspectorPreferRecord(false);
-          setConfirmDelete(true);
-          openInspectorOverlay();
-        }}
-        onAddTrack={() => {
-          addTrack();
-        }}
-        onToggleInspector={() => {
-          if (inspectorOverlayOpen) closeInspectorOverlay();
-          else openInspectorOverlay();
-        }}
-        onToggleMixer={toggleMixerSurface}
-        onSnapCycle={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
         onZoomOut={() => {
           userAdjustedZoomRef.current = true;
           zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current));
@@ -4634,6 +4848,9 @@ function StudioEditorInner({
       >
         {renderFxEditor(fxPanel, false)}
       </StudioFxSheet>
+      ) : null}
+      {groupsShown ? (
+        <StudioDockBar active={activeGroup} recordingLocked={recordingLocked} onOpen={openGroup} />
       ) : null}
       <StudioLazyPanelsIdlePrefetch />
       {recordPanelNode}

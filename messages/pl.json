@@ -2776,8 +2776,7 @@
       }
     },
     "studioPPage": {
-      "metaTitle": "Projekt Studio",
-      "wszystkieProjekty": "← Wszystkie projekty"
+      "metaTitle": "Projekt Studio"
     },
     "studioPage": {
       "metaTitle": "Studio",
@@ -2896,8 +2895,7 @@
       "dodajSciezkeWokalna": "Dodaj ścieżkę wokalną",
       "dodajSciezke": "+ Dodaj ścieżkę",
       "dodajSciezkeKrotko": "+ Ścieżka",
-      "inspector": "Inspektor",
-      "mixer": "Mikser",
+      "mixer": "Mixer",
       "wiecej": "Więcej",
       "sciezkiBitLiczonyMaster": "Ścieżki nagrań {v0} (bit i Master się nie liczą)",
       "zmienPakiet": "Zmień pakiet",
@@ -2913,6 +2911,12 @@
       "snapOff": "WYŁ."
     },
     "studioEditor": {
+      "zmienPakiet": "Zmień pakiet",
+      "przyciaganie": "Przyciąganie:",
+      "przyciaganieWyl": "WYŁ.",
+      "przytnij": "Przytnij",
+      "wiecejNarzedziKlipu": "Więcej narzędzi klipu",
+      "szczegolyKlipu": "Szczegóły",
       "narzedziaKlipu": "Narzędzia klipu ▾",
       "zwinNarzedziaKlipu": "Zwiń narzędzia ▴",
       "opcjeEfektyPlik": "Opcje ścieżki, efekty i plik →",
@@ -2960,7 +2964,6 @@
       "widmoPokaz": "Pokaż widmo i odszumianie",
       "widmoUkryj": "Ukryj widmo i odszumianie",
       "zapisywanie": "Zapisywanie…",
-      "inspector": "Inspektor",
       "nagranieDodaneNaOs": "Nagranie dodane na oś czasu.",
       "nagranieCzeka": "Nagranie czeka: zachowaj je albo odrzuć.",
       "nagranieNiewyslane": "Nagranie nie zostało jeszcze wysłane.",
@@ -3005,7 +3008,7 @@
       "stanSciezkiSkrot": "Stan ścieżki (skrót)",
       "gain": "Wzmocnienie",
       "dbPan": "dB · Panorama",
-      "mSRVol": "M/S/R · Poziom/Panorama: nagłówek ścieżki i Mikser (ten sam stan)",
+      "mSRVol": "M/S/R · Poziom/Panorama: nagłówek ścieżki i Mixer (ten sam stan)",
       "nagrajNaTejSciezce": "Nagraj na tej ścieżce",
       "wybierzKlipAbyEdytowac": "Wybierz klip. Potem ustawisz głośność, wyciszenie, ciche wejście i zejście, przycięcie, podział, powielenie albo usunięcie. Zanim przytniesz albo podzielisz, ustaw głowicę.",
       "zaznaczonyKlipStart": "Zaznaczony klip · start",
@@ -3243,8 +3246,7 @@
       "efekty": "Efekty"
     },
     "studioInspectorShell": {
-      "zamknijInspector": "Zamknij Inspektor",
-      "inspector": "Inspektor ·",
+      "zamknijInspector": "Zamknij panel",
       "zamknij": "Zamknij"
     },
     "studioMarkersPanel": {
@@ -3333,13 +3335,13 @@
       "po": "→ po"
     },
     "studioMixerShell": {
-      "zamknijMixer": "Zamknij Mikser",
-      "mixer": "Mikser",
+      "zamknijMixer": "Zamknij Mixer",
+      "mixer": "Mixer",
       "zamknij": "Zamknij",
       "mix": "Mix",
-      "zwinMixer": "Zwiń Mikser",
-      "rozwinMixer": "Rozwiń Mikser",
-      "kanalyMixera": "Kanały miksera"
+      "zwinMixer": "Zwiń Mixer",
+      "rozwinMixer": "Rozwiń Mixer",
+      "kanalyMixera": "Kanały mixera"
     },
     "studioPeakMeter": {
       "samplePeakClipping": "{v0} szczyt próbki, przester",
@@ -3426,7 +3428,7 @@
       "nagrywanieWStudio": "Nagrywanie w Studiu",
       "nagrywanie": "Nagrywanie",
       "jakToDziala": "Jak to działa",
-      "zacznijTutaj": "Zacznij tutaj: wybierz ścieżkę i kliknij Nagraj. Instrumenty i sample są w zakładce Sample.",
+      "zacznijTutaj": "Zacznij tutaj: wybierz ścieżkę i kliknij Nagraj. Instrumenty i sample otworzysz przez „Dodaj” albo zakładkę Sample.",
       "recPaneNagraj": "Start",
       "recPaneUstawienia": "Ustawienia",
       "recPaneUjecia": "Nagrania",
@@ -3836,14 +3838,190 @@
       "downloads": "Pobrane",
       "purchased": "Kupione"
     },
+    "featureFinder": {
+      "przycisk": "Znajdź funkcję…",
+      "tytul": "Znajdź funkcję",
+      "podpowiedz": "np. autotune, opóźnienie, refren",
+      "brak": "Nic takiego nie ma. Spróbuj innego słowa, np. „wokal” albo „głośność”.",
+      "zamknij": "Zamknij",
+      "pelnyWidokOdSilver": "Pełny widok: od Silver",
+      "miejsca": {
+        "record": "Nagrywanie",
+        "sound": "Brzmienie",
+        "text": "Tekst",
+        "add": "Dodaj",
+        "more": "Więcej",
+        "mix": "krok Mix",
+        "track": "ścieżka",
+        "timeline": "klip na osi",
+        "top": "górny pasek"
+      },
+      "items": {
+        "autotune": {
+          "label": "Autotune (strojenie wokalu)",
+          "keywords": "auto tune autotune strojenie wokal ton falsz tonacja melodyne"
+        },
+        "latency": {
+          "label": "Wyrównanie wokalu do bitu (opóźnienie)",
+          "keywords": "opoznienie latencja kalibracja kalibruj klaskanie rozjezdza spozniony synchronizacja bluetooth"
+        },
+        "lyrics": {
+          "label": "Tekst utworu i pomoc AI",
+          "keywords": "tekst slowa rymy wersy ai pomoc pisanie notatnik teleprompter"
+        },
+        "importVocal": {
+          "label": "Importuj wokal z pliku",
+          "keywords": "import wgraj plik wokal dodaj audio mp3 wav z telefonu z nagrywarki"
+        },
+        "presets": {
+          "label": "Presety wokalu",
+          "keywords": "preset brzmienie wokal gotowe ustawienia styl"
+        },
+        "cleanup": {
+          "label": "Czyszczenie wokalu (szum, oddechy)",
+          "keywords": "czyszczenie szum oddechy odszumianie halas pokoj popy sybilanty mix"
+        },
+        "export": {
+          "label": "Eksport WAV (pobierz utwór)",
+          "keywords": "eksport export pobierz zapisz plik wav mp3 sciagnij gotowy utwor"
+        },
+        "samples": {
+          "label": "Sample i instrumenty",
+          "keywords": "sample sampel probki petle instrumenty klawisze pad perkusja midi"
+        },
+        "effects": {
+          "label": "Efekty: pogłos, echo, EQ, kompresor",
+          "keywords": "efekty fx poglos reverb echo delay eq korektor kompresor deeser bramka"
+        },
+        "markers": {
+          "label": "Zwrotki i refreny na osi",
+          "keywords": "zwrotka zwrotki refren refreny znaczniki markery struktura bridge intro"
+        },
+        "addTrack": {
+          "label": "Dodaj ścieżkę wokalną",
+          "keywords": "dodaj nowa sciezka track dubel adlib wokal"
+        },
+        "stems": {
+          "label": "Wgraj stemy (osobne ścieżki)",
+          "keywords": "stemy stem import wgraj pliki sciezki bit osobno"
+        },
+        "mic": {
+          "label": "Mikrofon i słuchawki",
+          "keywords": "mikrofon sluchawki odsluch test wejscie poziom urzadzenie monitor"
+        },
+        "countdown": {
+          "label": "Odliczanie i dogrywka (punch)",
+          "keywords": "odliczanie liczenie takt punch dogrywka wejscie wyjscie"
+        },
+        "recMode": {
+          "label": "Tryb nagrywania: pętla, dogrywka linijki",
+          "keywords": "tryb petla loop punch linijka fragment powtarzaj"
+        },
+        "takes": {
+          "label": "Moje nagrania i wybór najlepszego",
+          "keywords": "nagrania lista ujecia podejscia najlepsze skladanie comp"
+        },
+        "scratch": {
+          "label": "Scratch (DJ) na nagraniu",
+          "keywords": "scratch dj skrecz jog talerz"
+        },
+        "mixer": {
+          "label": "Mixer: głośność i panorama ścieżek",
+          "keywords": "mixer mikser glosnosc panorama suwaki poziomy lewo prawo master"
+        },
+        "volumeAutomation": {
+          "label": "Automatyka głośności",
+          "keywords": "automatyka glosnosci obwiednia wyciszanie podglosnienie w czasie panorama"
+        },
+        "trackSettings": {
+          "label": "Ustawienia ścieżki (nazwa)",
+          "keywords": "sciezka nazwa zmien ustawienia opcje"
+        },
+        "clipTools": {
+          "label": "Tnij i przesuwaj nagranie",
+          "keywords": "podziel przytnij przesun powiel usun klip fragment tnij kopiuj wytnij wyciszenie"
+        },
+        "beatLock": {
+          "label": "Odblokuj bit (przesuwanie i cięcie)",
+          "keywords": "bit blokada klodka odblokuj przesun przytnij"
+        },
+        "changeBeat": {
+          "label": "Zmień bit",
+          "keywords": "bit beat podklad zmien wybierz katalog"
+        },
+        "metronome": {
+          "label": "Metronom",
+          "keywords": "metronom klik tempo takt"
+        },
+        "history": {
+          "label": "Historia mixu (przywróć wersję)",
+          "keywords": "historia wersje przywroc cofnij poprzednia kopia"
+        },
+        "snap": {
+          "label": "Przyciąganie na osi",
+          "keywords": "przyciaganie snap siatka dokladnosc"
+        },
+        "files": {
+          "label": "Pliki projektu i klipy",
+          "keywords": "pliki lista klipow nagran zrodla"
+        },
+        "makeSong": {
+          "label": "Zrób utwór (mix i mastering)",
+          "keywords": "mix miks mastering gotowy utwor glosniej automatyczny zrob"
+        }
+      }
+    },
+    "groups": {
+      "aria": "Funkcje Studia",
+      "record": "Nagrywanie",
+      "sound": "Brzmienie",
+      "text": "Tekst",
+      "add": "Dodaj",
+      "more": "Więcej",
+      "tekstUtworu": "Tekst i pomoc AI",
+      "zwrotkiIRefreny": "Zwrotki i refreny",
+      "brzmienieOpis": "Presety wokalu, autotune (efekt „Strojenie wokalu”) i pozostałe efekty.",
+      "dodajSciezke": "Ścieżka wokalna",
+      "dodajSciezkeOpis": "Nowa pusta ścieżka na nagranie.",
+      "importWokal": "Wokal z pliku",
+      "importWokalOpis": "Nagranie z telefonu albo z nagrywarki.",
+      "stemy": "Stemy",
+      "stemyOpis": "Kilka osobnych plików, każdy na swojej ścieżce.",
+      "sample": "Sample i instrumenty",
+      "sampleOpis": "Pętle, pady i klawisze.",
+      "scratch": "Scratch (DJ)",
+      "scratchOpis": "Scratch na wybranym nagraniu.",
+      "sekcjaMix": "Mix i plik",
+      "sekcjaOs": "Oś czasu i odtwarzanie",
+      "sekcjaProjekt": "Ścieżka i pliki",
+      "mixer": "Mixer",
+      "mixerOpis": "Głośność i panorama każdej ścieżki.",
+      "ustawieniaSciezki": "Ustawienia ścieżki",
+      "ustawieniaSciezkiOpis": "Nazwa i efekty wybranej ścieżki.",
+      "pliki": "Pliki i bit",
+      "plikiOpis": "Lista nagrań w projekcie i zmiana bitu.",
+      "spacja": "Klawisz spacji: ",
+      "spacjaNagrywa": "nagrywa",
+      "spacjaGra": "gra i zatrzymuje",
+      "najpierwWokal": "Najpierw nagraj albo zaimportuj wokal.",
+      "dotknijKlipu": "Dotknij nagrania na osi, a narzędzia pojawią się nad ścieżkami.",
+      "bitOdblokowany": "Bit odblokowany: można go przesuwać i przycinać.",
+      "automatykaOtwarta": "Automatyka głośności jest otwarta na ścieżce {name}.",
+      "metronomWl": "Metronom włączony.",
+      "metronomWyl": "Metronom wyłączony.",
+      "wszystkieProjekty": "Wszystkie projekty"
+    },
     "inspectorTitle": {
+      "text": "Tekst",
+      "add": "Dodaj",
+      "more": "Więcej",
       "record": "Nagrywanie",
       "clip": "Klip / plik",
       "track": "Ścieżka",
-      "empty": "Inspektor",
+      "empty": "Opcje",
       "closeBlocked": "Nie da się zamknąć tego panelu, dopóki trwa nagrywanie albo zapis nagrania.",
       "file": "Plik",
-      "effects": "Efekty"
+      "effects": "Brzmienie"
     },
     "exportStatus": {
       "creating": "przygotowuję plik",
@@ -3885,7 +4063,7 @@
       "przejdzDoMixuUtwor": "Następny krok to jeden przycisk „Zrób utwór”, który ustawia wokal do bitu.",
       "pelnyWidok": "Pełny widok",
       "prostyWidok": "Prosty widok",
-      "pelnyWidokOpis": "Inspektor, mikser i narzędzia edycji.",
+      "pelnyWidokOpis": "Wszystkie funkcje Studia i narzędzia edycji.",
       "widokUproszczonyPlan": "Uproszczony widok. Zaawansowane studio jest w Silver i Gold.",
       "usunNagranie": "Usuń nagranie",
       "usunNagraniePytanie": "Usunąć to nagranie z osi?",
@@ -4023,7 +4201,7 @@
       "nutkiBrakWokalu": "Najpierw nagraj główny wokal.",
       "nutkiBlad": "Nie udało się wczytać wokalu. Sprawdź połączenie i spróbuj jeszcze raz.",
       "nutkiGotowe": "Dodałem {count, plural, one {# nutę} few {# nuty} other {# nut}} na ścieżkę „{track}”. Cofniesz to przez Ctrl+Z.",
-      "mikserEfekty": "Mikser i efekty",
+      "mikserEfekty": "Mixer i efekty",
       "bladSciezka": "Nie udało się wczytać nagrania ze ścieżki „{track}”. Sprawdź połączenie i spróbuj jeszcze raz albo wycisz tę ścieżkę.",
       "poprawWszystko": "Popraw wszystko",
       "poprawWszystkoOpis": "BITEK poprawi głośność, balans, EQ, sybilanty, kompresję, szumy, panoramę i doda przestrzeń w tempie bitu.",

@@ -33,7 +33,8 @@ describe("Phase 7.1.4 mixer state / XOR", () => {
     expect(editor).toMatch(/setMixerOpen\(false\)/);
     // Toolbar uses toggle helper — open path goes through openMixerSurface;
     // Visual Parity V2 also expands on xl matchMedia.
-    expect(editor).toMatch(/onToggleMixer=\{toggleMixerSurface\}/);
+    expect(editor).toMatch(/studio-more-mixer[\s\S]*?onClick=\{openMixerSurface\}/);
+    expect(editor).toMatch(/onToggle=\{toggleMixerSurface\}/);
     expect(editor.match(/setMixerOpen\(true\)/g)?.length ?? 0).toBeGreaterThanOrEqual(
       2,
     );
@@ -74,8 +75,7 @@ describe("Phase 7.1.4 desktop dock + collapse", () => {
     expect(shell).toMatch(/aria-expanded=\{expanded\}/);
     expect(shell).toMatch(/aria-controls=\{panelId\}/);
     expect(shell).toMatch(/max-h-\[30rem\]/);
-    expect(editor).toMatch(/mixerPanelId=\{mixerPanelId\}/);
-    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-edit-toolbar.tsx"), "utf8")).toMatch(/aria-controls=\{props\.mixerPanelId\}/);
+    expect(editor).toMatch(/panelId=\{mixerPanelId\}/);
   });
 
   it("collapsed state is UI-only — selection SSOT untouched", () => {

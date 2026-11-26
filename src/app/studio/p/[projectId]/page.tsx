@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import Link from "@/components/ui/app-link";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 
@@ -27,7 +26,6 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 type PageProps = { params: Promise<{ projectId: string }> };
 
 export default async function StudioProjectPage({ params }: PageProps) {
-  const t = await getTranslations("studio.studioPPage");
   const { projectId } = await params;
   let auth;
   try {
@@ -64,24 +62,17 @@ export default async function StudioProjectPage({ params }: PageProps) {
   ]);
 
   return (
-    <AppShell tone="studio" compactFooter>
+    <AppShell tone="studio" compactFooter chromeless>
       <main
         data-brd-surface="control-room"
         data-surface="tape"
-        className="min-h-[calc(100dvh-4.5rem)] overflow-x-clip pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4"
+        // Without the site header the screen keeps clear of the notch itself; the bottom room is for the group bar.
+        className="min-h-dvh overflow-x-clip pt-[env(safe-area-inset-top)] pb-[calc(4.75rem+env(safe-area-inset-bottom))] xl:pb-4"
       >
         <PageFrame
           width="full"
-          className="flex min-h-[calc(100dvh-4.5rem)] flex-col gap-2 overflow-x-clip py-2 sm:py-3"
+          className="flex min-h-dvh flex-col gap-2 overflow-x-clip py-1 sm:py-2"
         >
-          <div className="flex items-center justify-between gap-2">
-            <Link
-              href="/studio"
-              className="-my-1 inline-flex min-h-11 items-center text-sm text-[var(--brd-mute)] sm:min-h-8 underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
-            >
-              {t("wszystkieProjekty")}
-            </Link>
-          </div>
           <StudioTakeExpiryBanner notice={takeExpiry} />
           <StudioUnplacedTakeBanner
             projectId={document.project.id}

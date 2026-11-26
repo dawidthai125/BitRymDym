@@ -58,10 +58,11 @@ describe("record simple surface wiring", () => {
     expect(panel).toMatch(/simple = false/);
     expect(panel).toMatch(/data-record-density=\{simple \? "simple" : "full"\}/);
     expect(panel).toMatch(/setupOpen \? \(\s*<StudioLatencyCard/);
-    expect(panel).toMatch(/setupOpen \? \(\s*<StudioRecModeCard/);
-    expect(panel).toMatch(/setupOpen \? \(\s*<StudioLyricsCard/);
+    expect(panel).toMatch(/setupOpen \? \(\s*<div data-record-focus="recMode">\s*<StudioRecModeCard/);
+    // Lyrics stay under the record button; the setup copy moved to the "Tekst" group.
+    expect(panel).toMatch(/lyricsOpen \? \([\s\S]*?<StudioLyricsCard/);
     expect(panel).toMatch(/lanesOpen \? \(\s*<>\s*<StudioTakeLanesCard/);
-    expect(panel).toMatch(/scratchOpen[\s\S]*StudioMarkersPanel/);
+    expect(panel).not.toMatch(/<StudioMarkersPanel/);
     expect(panel).toMatch(/setupOpen \? \(\s*<div[\s\S]*?outputDevices\.pickerEnabled/);
     expect(panel).toMatch(/samplesMode \? \(\s*<>[\s\S]*?<div hidden=\{samplesPane !== "keys"\}>\s*<StudioPlayKeys/);
     expect(panel).toMatch(/<div hidden=\{samplesPane !== "samples"\}>\s*<StudioSampleDesk/);

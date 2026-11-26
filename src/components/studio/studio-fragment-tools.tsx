@@ -30,7 +30,12 @@ type StudioFragmentToolsProps = {
   onAskDelete: () => void;
   onDelete: () => void;
   onCancelDelete: () => void;
+  /** Opens the full clip panel (exact values, spectrogram). */
+  onDetails?: () => void;
 };
+
+/** The one open row under the five main tools. */
+type FragmentPanel = "trim" | "gain" | "more" | null;
 
 const TEMPO_MIN = 0.5;
 const TEMPO_MAX = 2;
@@ -81,14 +86,16 @@ export function StudioFragmentTools({
   onAskDelete,
   onDelete,
   onCancelDelete,
+  onDetails,
 }: StudioFragmentToolsProps) {
   const t = useTranslations("studio.studioEditor");
   const locked = !enabled || pending;
   const [stretchLocal, setStretchLocal] = useState(stretch);
   const [pitchLocal, setPitchLocal] = useState(pitchCents);
   const [gainLocal, setGainLocal] = useState(gainDb);
-  /** Phones: the three sliders stay folded, so the bar does not push the timeline off the screen. */
-  const [slidersOpen, setSlidersOpen] = useState(false);
+  /** Trim, volume and the rarer tools open one at a time, so the tracks keep the room. */
+  const [panel, setPanel] = useState<FragmentPanel>(null);
+  const togglePanel = (next: FragmentPanel) => setPanel((open) => (open === next ? null : next));
   const [seenStretch, setSeenStretch] = useState(stretch);
   const [seenPitch, setSeenPitch] = useState(pitchCents);
   const [seenGain, setSeenGain] = useState(gainDb);
@@ -119,7 +126,7 @@ export function StudioFragmentTools({
 
   return (
     <div
-      className="contents max-sm:flex max-sm:w-full max-sm:min-w-0 max-sm:flex-col max-sm:gap-1"
+      className="contents"
       role="group"
       aria-label={t("fragmentyAria")}
       data-testid="studio-fragment-tools"
@@ -145,223 +152,274 @@ export function StudioFragmentTools({
         </>
       ) : (
         <>
-          <div className="contents max-sm:flex max-sm:flex-nowrap max-sm:gap-1 max-sm:overflow-x-auto max-sm:overscroll-x-contain max-sm:pb-1" data-testid="studio-fragment-strip">
-          {onPlayback || onGain ? (
+          <div className="flex min-w-0 flex-nowrap gap-1 max-sm:grid max-sm:w-full max-sm:grid-cols-6 max-sm:gap-0.5" data-testid="studio-fragment-strip">
             <Button
               type="button"
               size="sm"
               variant="outline"
-              className="min-h-11 shrink-0 px-2 sm:hidden"
-              aria-expanded={slidersOpen}
-              data-testid="studio-fragment-sliders-toggle"
-              onClick={() => setSlidersOpen((open) => !open)}
+              className="min-h-11 min-w-0 shrink-0 px-2 max-sm:px-0.5 max-sm:text-[11px]"
+              data-testid="studio-fragment-split"
+              disabled={locked}
+              title={t("podzielWPlayhead")}
+              onClick={onSplit}
             >
-              {t("fragmentSuwaki")}
+              {t('podzielFragment')}
             </Button>
-          ) : null}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 shrink-0 px-2 studio-tool-danger"
-            data-testid="studio-fragment-delete"
-            disabled={locked}
-            title={t("usunFragmentOpis")}
-            onClick={onAskDelete}
-          >
-            {t("usun")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 shrink-0 px-2"
-            data-testid="studio-fragment-split"
-            disabled={locked}
-            title={t("podzielWPlayhead")}
-            onClick={onSplit}
-          >
-            {t("podzielFragment")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 shrink-0 px-2"
-            data-testid="studio-fragment-trim-start"
-            disabled={locked}
-            title={t("przytnijPoczatekDoPlayhead")}
-            onClick={onTrimStart}
-          >
-            {t("przytnijPoczatek")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 shrink-0 px-2"
-            data-testid="studio-fragment-trim-end"
-            disabled={locked}
-            title={t("przytnijKoniecDoPlayhead")}
-            onClick={onTrimEnd}
-          >
-            {t("przytnijKoniec")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 min-w-11 shrink-0 px-2"
-            data-testid="studio-fragment-nudge-left"
-            disabled={locked}
-            title={t("przesunFragmentLewo")}
-            aria-label={t("przesunFragmentLewo")}
-            onClick={onNudgeLeft}
-          >
-            {t("przesunFragmentLewoKrotko")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 min-w-11 shrink-0 px-2"
-            data-testid="studio-fragment-nudge-right"
-            disabled={locked}
-            title={t("przesunFragmentPrawo")}
-            aria-label={t("przesunFragmentPrawo")}
-            onClick={onNudgeRight}
-          >
-            {t("przesunFragmentPrawoKrotko")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 shrink-0 px-2"
-            data-testid="studio-fragment-duplicate"
-            disabled={locked}
-            title={t("powielKlip")}
-            onClick={onDuplicate}
-          >
-            {t("powiel")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 shrink-0 px-2"
-            data-testid="studio-fragment-fade-in"
-            disabled={locked}
-            title={t("wejscieOpis")}
-            onClick={onFadeIn}
-          >
-            {t("wejscie")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="min-h-11 shrink-0 px-2"
-            data-testid="studio-fragment-fade-out"
-            disabled={locked}
-            title={t("zejscieOpis")}
-            onClick={onFadeOut}
-          >
-            {t("zejscie")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className={`min-h-11 shrink-0 px-2 ${reverseOn ? "border-[var(--brd-ink)] bg-[var(--brd-ink)] text-[var(--brd-paper)]" : ""}`}
-            data-testid="studio-fragment-reverse"
-            disabled={locked}
-            aria-pressed={reverseOn}
-            title={t("odwrocFragmentOpis")}
-            aria-label={reverseOn ? t("odwrocFragmentWlaczone") : t("odwrocFragment")}
-            onClick={onReverse}
-          >
-            {t("odwrocFragment")}
-          </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 min-w-0 shrink-0 px-2 max-sm:px-0.5 max-sm:text-[11px]"
+              data-testid="studio-fragment-trim"
+              disabled={locked}
+              aria-expanded={panel === "trim"}
+              onClick={() => togglePanel("trim")}
+            >
+              {t('przytnij')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 min-w-0 shrink-0 px-2 max-sm:px-0.5 max-sm:text-[11px]"
+              data-testid="studio-fragment-duplicate"
+              disabled={locked}
+              title={t("powielKlip")}
+              onClick={onDuplicate}
+            >
+              {t('powiel')}
+            </Button>
+            {onGain ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11 min-w-0 shrink-0 px-2 max-sm:px-0.5 max-sm:text-[11px]"
+                data-testid="studio-fragment-volume"
+                disabled={locked}
+                aria-expanded={panel === "gain"}
+                onClick={() => togglePanel("gain")}
+              >
+                {t('gainKlipuEtykieta')}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 min-w-0 shrink-0 px-2 max-sm:px-0.5 max-sm:text-[11px] studio-tool-danger"
+              data-testid="studio-fragment-delete"
+              disabled={locked}
+              title={t("usunFragmentOpis")}
+              onClick={onAskDelete}
+            >
+              {t('usun')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 min-w-0 shrink-0 px-2 max-sm:px-0.5 max-sm:text-[11px] min-w-11"
+              data-testid="studio-fragment-more"
+              disabled={locked}
+              aria-label={t("wiecejNarzedziKlipu")}
+              aria-expanded={panel === "more"}
+              onClick={() => togglePanel("more")}
+            >
+              ⋯
+            </Button>
           </div>
-          <div className={`contents ${slidersOpen ? "max-sm:flex max-sm:flex-col" : "max-sm:hidden"}`} data-testid="studio-fragment-sliders">
-          {onPlayback ? (
-            <>
-              <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
-                {t("tempoKlipuEtykieta")}
-                <input
-                  type="range"
-                  min={TEMPO_MIN}
-                  max={TEMPO_MAX}
-                  step={0.05}
-                  value={tempoLocal}
-                  disabled={locked}
-                  aria-label={t("tempoKlipuAria")}
-                  aria-valuetext={`${tempoLocal.toFixed(2)}×`}
-                  data-testid="studio-fragment-stretch"
-                  onChange={(event) => setStretchLocal(stretchFromTempo(Number(event.target.value)))}
-                  {...commitHandlers(() => commitStretch(stretchLocal))}
-                />
-                <span className="w-11 tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-stretch-value">
-                  {tempoLocal.toFixed(2)}×
-                </span>
-              </label>
-              <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
-                {t("wysokoscKlipuEtykieta")}
-                <input
-                  type="range"
-                  min={-1200}
-                  max={1200}
-                  step={100}
-                  value={pitchLocal}
-                  disabled={locked || pitchLocked}
-                  aria-label={t("wysokoscKlipuAria")}
-                  title={pitchLocked ? t("wysokoscKlipuOdSilver") : undefined}
-                  data-testid="studio-fragment-pitch"
-                  onChange={(event) => setPitchLocal(Number(event.target.value))}
-                  {...commitHandlers(() => commitPitch(pitchLocal))}
-                />
-                <span className="w-16 tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-pitch-value">
-                  {t("poltony", { v0: `${pitchLocal > 0 ? "+" : ""}${pitchLocal / 100}` })}
-                </span>
-              </label>
-              {pitchLocked && pitchLocal !== 0 ? (
+          {panel === "trim" ? (
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-1" data-testid="studio-fragment-trim-row">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11 shrink-0 px-2"
+                data-testid="studio-fragment-trim-start"
+                disabled={locked}
+                title={t("przytnijPoczatekDoPlayhead")}
+                onClick={onTrimStart}
+              >
+                {t('przytnijPoczatek')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11 shrink-0 px-2"
+                data-testid="studio-fragment-trim-end"
+                disabled={locked}
+                title={t("przytnijKoniecDoPlayhead")}
+                onClick={onTrimEnd}
+              >
+                {t('przytnijKoniec')}
+              </Button>
+            </div>
+          ) : null}
+          {panel === "gain" ? (
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-1" data-testid="studio-fragment-gain-row">
+              {onGain ? (
+                <label className="inline-flex min-h-11 min-w-0 items-center gap-2 px-1 text-xs">
+                  {t("gainKlipuEtykieta")}
+                  <input
+                    type="range"
+                    min={-24}
+                    max={12}
+                    step={0.5}
+                    value={gainLocal}
+                    disabled={locked}
+                    aria-label={t("gainKlipuAria")}
+                    data-testid="studio-fragment-gain"
+                    onChange={(event) => setGainLocal(Number(event.target.value))}
+                    {...commitHandlers(() => commitGain(gainLocal))}
+                  />
+                  <span className="tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-gain-value">
+                    {gainLocal > 0 ? "+" : ""}
+                    {gainLocal.toFixed(1)} dB
+                  </span>
+                </label>
+              ) : null}
+            </div>
+          ) : null}
+          {panel === "more" ? (
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-1" data-testid="studio-fragment-more-row">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11 min-w-11 shrink-0 px-2"
+                data-testid="studio-fragment-nudge-left"
+                disabled={locked}
+                title={t("przesunFragmentLewo")}
+                aria-label={t("przesunFragmentLewo")}
+                onClick={onNudgeLeft}
+              >
+                {t('przesunFragmentLewoKrotko')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11 min-w-11 shrink-0 px-2"
+                data-testid="studio-fragment-nudge-right"
+                disabled={locked}
+                title={t("przesunFragmentPrawo")}
+                aria-label={t("przesunFragmentPrawo")}
+                onClick={onNudgeRight}
+              >
+                {t('przesunFragmentPrawoKrotko')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11 shrink-0 px-2"
+                data-testid="studio-fragment-fade-in"
+                disabled={locked}
+                title={t("wejscieOpis")}
+                onClick={onFadeIn}
+              >
+                {t('wejscie')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11 shrink-0 px-2"
+                data-testid="studio-fragment-fade-out"
+                disabled={locked}
+                title={t("zejscieOpis")}
+                onClick={onFadeOut}
+              >
+                {t('zejscie')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className={`min-h-11 shrink-0 px-2 ${reverseOn ? "border-[var(--brd-ink)] bg-[var(--brd-ink)] text-[var(--brd-paper)]" : ""}`}
+                data-testid="studio-fragment-reverse"
+                disabled={locked}
+                title={t("odwrocFragmentOpis")}
+                aria-label={reverseOn ? t("odwrocFragmentWlaczone") : t("odwrocFragment")}
+                aria-pressed={reverseOn}
+                onClick={onReverse}
+              >
+                {t('odwrocFragment')}
+              </Button>
+              {onDetails ? (
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
                   className="min-h-11 shrink-0 px-2"
-                  disabled={locked}
-                  data-testid="studio-fragment-pitch-reset"
-                  onClick={() => onPlayback({ stretch: stretchLocal, pitchCents: 0 })}
+                  data-testid="studio-fragment-details"
+                  disabled={!enabled}
+                  onClick={onDetails}
                 >
-                  {t("wyzerujWysokosc")}
+                  {t('szczegolyKlipu')}
                 </Button>
               ) : null}
-            </>
+              <div className="flex w-full min-w-0 flex-wrap items-center gap-x-3" data-testid="studio-fragment-sliders">
+                {onPlayback ? (
+                  <>
+                    <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
+                      {t("tempoKlipuEtykieta")}
+                      <input
+                        type="range"
+                        min={TEMPO_MIN}
+                        max={TEMPO_MAX}
+                        step={0.05}
+                        value={tempoLocal}
+                        disabled={locked}
+                        aria-label={t("tempoKlipuAria")}
+                        aria-valuetext={`${tempoLocal.toFixed(2)}×`}
+                        data-testid="studio-fragment-stretch"
+                        onChange={(event) => setStretchLocal(stretchFromTempo(Number(event.target.value)))}
+                        {...commitHandlers(() => commitStretch(stretchLocal))}
+                      />
+                      <span className="w-11 tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-stretch-value">
+                        {tempoLocal.toFixed(2)}×
+                      </span>
+                    </label>
+                    <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
+                      {t("wysokoscKlipuEtykieta")}
+                      <input
+                        type="range"
+                        min={-1200}
+                        max={1200}
+                        step={100}
+                        value={pitchLocal}
+                        disabled={locked || pitchLocked}
+                        aria-label={t("wysokoscKlipuAria")}
+                        title={pitchLocked ? t("wysokoscKlipuOdSilver") : undefined}
+                        data-testid="studio-fragment-pitch"
+                        onChange={(event) => setPitchLocal(Number(event.target.value))}
+                        {...commitHandlers(() => commitPitch(pitchLocal))}
+                      />
+                      <span className="w-16 tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-pitch-value">
+                        {t("poltony", { v0: `${pitchLocal > 0 ? "+" : ""}${pitchLocal / 100}` })}
+                      </span>
+                    </label>
+                    {pitchLocked && pitchLocal !== 0 ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="min-h-11 shrink-0 px-2"
+                        disabled={locked}
+                        data-testid="studio-fragment-pitch-reset"
+                        onClick={() => onPlayback({ stretch: stretchLocal, pitchCents: 0 })}
+                      >
+                        {t("wyzerujWysokosc")}
+                      </Button>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+            </div>
           ) : null}
-          {onGain ? (
-            <label className="inline-flex min-h-11 shrink-0 items-center gap-2 px-1 text-xs">
-              {t("gainKlipuEtykieta")}
-              <input
-                type="range"
-                min={-24}
-                max={12}
-                step={0.5}
-                value={gainLocal}
-                disabled={locked}
-                aria-label={t("gainKlipuAria")}
-                data-testid="studio-fragment-gain"
-                onChange={(event) => setGainLocal(Number(event.target.value))}
-                {...commitHandlers(() => commitGain(gainLocal))}
-              />
-              <span className="tabular-nums text-[var(--brd-mute)]" data-testid="studio-fragment-gain-value">
-                {gainLocal > 0 ? "+" : ""}
-                {gainLocal.toFixed(1)} dB
-              </span>
-            </label>
-          ) : null}
-          </div>
           <p className="sr-only" data-testid="studio-fragment-hint">
             {enabled ? t("fragmentEdycja") : t("zaznaczFragment")}
           </p>

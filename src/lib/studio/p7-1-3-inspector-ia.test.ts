@@ -66,7 +66,7 @@ describe("Phase 7.1.3 derived context priority", () => {
     expect(studioInspectorContextTitle("record")).toBe("Nagrywanie");
     expect(studioInspectorContextTitle("clip")).toBe("Klip / plik");
     expect(studioInspectorContextTitle("track")).toBe("Ścieżka");
-    expect(studioInspectorContextTitle("empty")).toBe("Inspector");
+    expect(studioInspectorContextTitle("empty")).toBe("Opcje");
   });
 });
 

@@ -27,7 +27,6 @@ const guardSrc = read("src/components/studio/studio-leave-guard.ts");
 const mobileNav = read("src/components/site/mobile-bottom-nav.tsx");
 const siteHeader = read("src/components/site/site-header.tsx");
 const siteMainNav = read("src/components/site/site-main-nav.tsx");
-const studioPage = read("src/app/studio/p/[projectId]/page.tsx");
 
 const STUDIO_URL = "http://localhost:3000/studio/p/project-1";
 
@@ -181,8 +180,9 @@ describe("STU-12 A — active capture blocks standard app navigation", () => {
   });
 
   it("Studio's own links (all projects, upgrade CTA) are intercepted", () => {
-    expect(studioPage).toMatch(/href="\/studio"/);
-    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-edit-toolbar.tsx"), "utf8")).toMatch(/href=\{STUDIO_TRACK_UPGRADE_HREF\}/);
+    // The way back is the arrow inside the Studio shell, so the guard covers it.
+    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8")).toMatch(/href="\/studio"\s+data-testid="studio-back"/);
+    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8")).toMatch(/href=\{STUDIO_TRACK_UPGRADE_HREF\}/);
     for (const href of ["/studio", "/pricing", "https://example.com/elsewhere"]) {
       const { win, intents } = setup();
       const link = fakeAnchor(win, href);

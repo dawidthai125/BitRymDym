@@ -15,6 +15,7 @@ export type StudioStepId = "record" | "mix" | "master";
 export function StudioStepNav({
   studioStep,
   onSampleTab,
+  showSamplesTab = true,
   recordingLocked,
   canGoMix,
   songReady,
@@ -29,6 +30,8 @@ export function StudioStepNav({
 }: {
   studioStep: StudioStepId;
   onSampleTab: boolean;
+  /** False in the full record view: samples open from "Dodaj". */
+  showSamplesTab?: boolean;
   recordingLocked: boolean;
   canGoMix: boolean;
   /** autoMixMasterMaterial(...).ready: beat + vocal are enough for "Zrób utwór". */
@@ -70,6 +73,7 @@ export function StudioStepNav({
               1. {tMix("krokNagranie")}
             </button>
           </li>
+          {showSamplesTab ? (
           <li className="flex items-center">
             <span aria-hidden className="px-0.5 text-[var(--brd-mute)]">·</span>
             <button
@@ -87,6 +91,7 @@ export function StudioStepNav({
               {tMix("krokSample")}
             </button>
           </li>
+          ) : null}
           {(["mix", "master"] as const).map((s, i) => {
             const label = `${i + 2}. ${s === "mix" ? tMix("krokMix") : tMix("krokMastering")}`;
             const active = studioStep === s;
@@ -124,7 +129,7 @@ export function StudioStepNav({
                 {!active ? (
                   <>
                     <span aria-hidden>🔒</span>
-                    <span className="text-[10px] font-normal tracking-normal max-sm:sr-only">{s === "master" ? tMix("krokMasteringZamek") : tMix("krokMixZamek")}</span>
+                    <span className="text-[10px] font-normal tracking-normal max-lg:sr-only">{s === "master" ? tMix("krokMasteringZamek") : tMix("krokMixZamek")}</span>
                   </>
                 ) : null}
               </li>

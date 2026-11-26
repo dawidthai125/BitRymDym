@@ -83,7 +83,10 @@ describe("Studio markers CAS + Inspector slice", () => {
     expect(panel).toMatch(/enqueuePersistAsync/);
     expect(panel).toMatch(/Dodaj zwrotkę/);
     expect(panel).toMatch(/Dodaj refren/);
-    expect(recording).toMatch(/StudioMarkersPanel/);
+    // Markers live in the "Tekst" group, no longer in the Scratch pane.
+    expect(recording).not.toMatch(/<StudioMarkersPanel/);
+    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-groups.tsx"), "utf8")).toMatch(/<StudioMarkersPanel/);
+    expect(editor).toMatch(/<StudioTextGroup[\s\S]*?enqueuePersistAsync=\{enqueuePersistAsync\}/);
     expect(freeze).toMatch(/A3 \/ P7 lite/);
     expect(freeze).toMatch(/OD-15:\*\* OPEN/);
   });
@@ -99,7 +102,7 @@ describe("Studio markers CAS + Inspector slice", () => {
     expect(recording).toMatch(/persistVersionTip\.expected/);
     expect(recording).toMatch(/const next = persistVersionTip\.applyAck\(ack\)/);
     expect(recording).toMatch(/onDocumentVersionAck\?\.\(next\)/);
-    expect(recording).toMatch(/onDocumentVersionAck=\{ackDocumentVersion\}/);
+    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-groups.tsx"), "utf8")).toMatch(/onDocumentVersionAck=\{ack\}/);
     expect(editor).toMatch(/onDocumentVersionAck=\{applyAckedDocumentVersion\}/);
     expect(editor).toMatch(/advanceStudioPersistDocumentVersion/);
     expect(editor).toMatch(

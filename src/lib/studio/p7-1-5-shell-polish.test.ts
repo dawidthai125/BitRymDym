@@ -304,38 +304,17 @@ describe("Phase 7.1.5.3 — minimal transport keyboard", () => {
 });
 
 describe("Phase 7.1.5.4 — mobile toolbar overflow", () => {
-  it("exposes Więcej overflow while keeping primary controls and ≥44px", () => {
+  it("moves the rest into five groups and keeps ≥44px timeline controls", () => {
     expect(editor).toMatch(/<StudioEditToolbar[\s\S]*?\/>/);
-    expect(editToolbar).toMatch(/studio-toolbar-more/);
-    expect(editToolbar).toMatch(/Więcej/);
-    expect(editToolbar).toMatch(/studio-toolbar-overflow/);
-    for (const label of [
-      "Zaznacz",
-      "Edycja",
-      "Podziel",
-      "Usuń",
-      "Mikser",
-      "Inspector",
-      "Przyciąganie",
-      "Oddal",
-      "Przybliż",
-      "Dopasuj",
-    ]) {
-      expect(editToolbar).toContain(label);
-    }
-    expect(editToolbar).toMatch(/studio-add-track/);
-    const buttons = editToolbar.match(/<Button[\s\S]*?<\/Button>/g) ?? [];
-    expect(buttons.length).toBeGreaterThanOrEqual(10);
-    expect(
-      editToolbar.match(/className="min-h-11 min-w-11/g)?.length ?? 0,
-    ).toBe(buttons.length);
+    expect(editToolbar).not.toMatch(/studio-toolbar-overflow/);
+    expect(editToolbar).toMatch(/min-h-11 min-w-11/);
+    expect(editor).toMatch(/<StudioDockBar active=\{activeGroup\} recordingLocked=\{recordingLocked\} onOpen=\{openGroup\}/);
   });
 });
 
 describe("Phase 7.1.5.5 — optional micro-polish", () => {
-  it("wires Inspector aria-controls to overlay panel id", () => {
-    expect(editor).toMatch(/inspectorPanelId=\{inspectorPanelId\}/);
-    expect(editToolbar).toMatch(/aria-controls=\{props\.inspectorPanelId\}/);
+  it("gives the panel overlay its id", () => {
+    expect(editor).toMatch(/panelId=\{inspectorPanelId\}/);
     expect(inspectorShell).toMatch(/panelId\?:/);
     expect(inspectorShell).toMatch(/id=\{panelId\}/);
   });

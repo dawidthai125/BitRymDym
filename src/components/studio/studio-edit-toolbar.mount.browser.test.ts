@@ -26,7 +26,7 @@ describe("studio edit-toolbar — real component mount hit-area", () => {
     const src = readFileSync(TOOLBAR_SRC, "utf8");
     expect(src).toMatch(/data-testid="studio-edit-toolbar"/);
     const buttons = src.match(/<Button[\s\S]*?<\/Button>/g) ?? [];
-    expect(buttons.length).toBeGreaterThanOrEqual(10);
+    expect(buttons.length).toBeGreaterThanOrEqual(5);
     expect(src.match(/className="min-h-11 min-w-11/g)?.length ?? 0).toBe(
       buttons.length,
     );
@@ -39,7 +39,7 @@ describe("studio edit-toolbar — real component mount hit-area", () => {
       true,
     );
     expect(m.audioElementCount).toBe(0);
-    expect(m.controls.length).toBeGreaterThanOrEqual(10);
+    expect(m.controls.length).toBeGreaterThanOrEqual(5);
     expect(m.overlaps, JSON.stringify(m.overlaps)).toEqual([]);
     for (const c of m.controls) {
       expect(c.height, JSON.stringify(c)).toBeGreaterThanOrEqual(MIN_HIT_PX);
@@ -47,8 +47,8 @@ describe("studio edit-toolbar — real component mount hit-area", () => {
     }
     expect(m.fit, "Fit control present").toBeTruthy();
     expect(m.fit!.width).toBeGreaterThanOrEqual(MIN_HIT_PX);
-    expect(m.upgrade, "Zmień pakiet CTA present").toBeTruthy();
-    expect(m.upgrade!.width).toBeGreaterThanOrEqual(MIN_HIT_PX);
+    // Track capacity and the plan link moved to the "Dodaj" group (2026-11-26).
+    expect(m.upgrade).toBeNull();
   }, 90_000);
 
   it("mobile 390×844: real mount controls ≥44×44, Fit≥44, no overlap, no audio", async () => {
@@ -56,7 +56,7 @@ describe("studio edit-toolbar — real component mount hit-area", () => {
     expect(m.mounted, JSON.stringify(m)).toBe(true);
     expect(m.usedRealButtonAttr).toBe(true);
     expect(m.audioElementCount).toBe(0);
-    expect(m.controls.length).toBeGreaterThanOrEqual(10);
+    expect(m.controls.length).toBeGreaterThanOrEqual(5);
     expect(m.overlaps, JSON.stringify(m.overlaps)).toEqual([]);
     for (const c of m.controls) {
       expect(c.height, JSON.stringify(c)).toBeGreaterThanOrEqual(MIN_HIT_PX);

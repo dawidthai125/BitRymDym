@@ -11,7 +11,6 @@ import { createPortal } from "react-dom";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
 import { Button } from "@/components/ui/button";
-import { StudioMarkersPanel } from "@/components/studio/studio-markers-panel";
 import { StudioScratchPanel } from "@/components/studio/studio-scratch-panel";
 import {
   useStudioTransportControls,
@@ -204,6 +203,23 @@ function clock(seconds: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
+/** A control of this panel that "Dodaj" or "Znajdź funkcję" can lead to. */
+export type StudioRecordFocus = {
+  id: number;
+  target: "latency" | "mic" | "countdown" | "recMode" | "takes" | "scratch" | "stems" | "importVocal" | "lyrics";
+};
+
+const STUDIO_RECORD_FOCUS_PANE: Partial<Record<StudioRecordFocus["target"], "take" | "setup" | "lanes" | "scratch">> = {
+  mic: "take",
+  countdown: "setup",
+  recMode: "setup",
+  takes: "lanes",
+  scratch: "scratch",
+  stems: "setup",
+  importVocal: "take",
+  lyrics: "take",
+};
+
 /** Only this label follows the playhead, not the whole panel. */
 function PlayheadTime() {
   const tl = useLibText();
@@ -256,6 +272,8 @@ export function StudioRecordingPanel({
   stemLimit = 0,
   trackLimit = 0,
   onSaveTrackMidi,
+  focusRequest = null,
+  onFocusRequestHandled,
 }: {
   projectId: string;
   /** Phase 7.1.6 — read docRef version at executor start (not stale prop). */
@@ -326,6 +344,9 @@ export function StudioRecordingPanel({
   trackLimit?: number;
   /** Key clicks become MIDI notes on the armed track. */
   onSaveTrackMidi?: (trackId: string, midi: StudioMidiV1) => void;
+  /** "Dodaj" and "Znajdź funkcję": open the pane with this control and scroll to it. */
+  focusRequest?: StudioRecordFocus | null;
+  onFocusRequestHandled?: () => void;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioRecordingPanel");
@@ -1437,6 +1458,40 @@ export function StudioRecordingPanel({
     setLatencyShown(true);
     setLatencyOpenSignal((n) => n + 1);
   }
+
+  const focusHandlersRef = useRef({ openLatencyCard, done: onFocusRequestHandled });
+  useEffect(() => {
+    focusHandlersRef.current = { openLatencyCard, done: onFocusRequestHandled };
+  });
+  useEffect(() => {
+    if (!focusRequest) return;
+    const { target } = focusRequest;
+    let scrollTimer = 0;
+    const timer = window.setTimeout(() => {
+      if (target === "latency") focusHandlersRef.current.openLatencyCard();
+      else {
+        const pane = STUDIO_RECORD_FOCUS_PANE[target];
+        if (pane) setRecordPane(pane);
+      }
+      if (target === "lyrics") setLyricsOpen(true);
+      if (target === "takes") setLibraryOpen(true);
+      // The pane renders (and the sheet opens) first; then the control is scrolled into view.
+      scrollTimer = window.setTimeout(() => {
+        const anchor = target === "takes" ? "importVocal" : target;
+        const el = document.querySelector<HTMLElement>(
+          target === "latency" ? '[data-testid="studio-latency-card"]' : `[data-record-focus="${anchor}"]`,
+        );
+        el?.scrollIntoView({ block: "center", behavior: "smooth" });
+        el?.querySelector<HTMLElement>(target === "importVocal" ? '[data-testid="studio-record-import"]' : "button, select, input, summary")?.focus({ preventScroll: true });
+        focusHandlersRef.current.done?.();
+      }, 120);
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(scrollTimer);
+    };
+    // One run per request; the handlers live in a ref.
+  }, [focusRequest]);
 
   /** The one record key: panel button, transport REC and keyboard all end here. */
   function pressRecord() {
@@ -3361,6 +3416,7 @@ export function StudioRecordingPanel({
       ) : null}
 
       {setupOpen ? (
+      <div data-record-focus="recMode">
       <StudioRecModeCard
         mode={recMode}
         onMode={chooseRecMode}
@@ -3374,19 +3430,11 @@ export function StudioRecordingPanel({
         disabled={busy && state.phase !== "READY"}
         lockedReason={null}
       />
-      ) : null}
-
-      {setupOpen ? (
-      <StudioLyricsCard
-        projectId={projectId}
-        getPlayheadMs={transport.getPlayheadMs}
-        mode={section ? recMode : "single"}
-        loopStartMs={section?.startMs ?? null}
-        punchLine={recMode === "punch" && lines.length ? Math.min(punchLine, lines.length - 1) : null}
-      />
+      </div>
       ) : null}
 
       {setupOpen && stemLimit > 0 ? (
+        <div data-record-focus="stems">
         <StudioStemImport
           projectId={projectId}
           freeSlots={Math.max(0, trackLimit - recordableTracks.length)}
@@ -3396,6 +3444,7 @@ export function StudioRecordingPanel({
           disabled={isRecordingBusy(state.phase)}
           onBusyChange={setStemsBusy}
         />
+        </div>
       ) : null}
 
       <StudioCountdown beatsLeft={countdown} label={tRec("wejscieZa")} />
@@ -3412,7 +3461,7 @@ export function StudioRecordingPanel({
       ) : null}
 
       {setupOpen ? (
-      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
+      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2" data-record-focus="countdown">
         <p className="text-xs font-medium text-[var(--brd-ink)]">
           {tr("countInPunch")}
         </p>
@@ -3673,7 +3722,7 @@ export function StudioRecordingPanel({
       </>
       ) : null}
       {samplesMode || scratchOpen ? (
-      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
+      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2" data-record-focus="scratch">
         {catalogMessage ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
             {tl(catalogMessage)}
@@ -3707,15 +3756,6 @@ export function StudioRecordingPanel({
         </div>
         {samplesMode ? null : (
         <>
-        <StudioMarkersPanel
-          projectId={projectId}
-          getExpectedDocumentVersion={persistVersionTip.expected}
-          enqueuePersistAsync={enqueuePersistAsync}
-          getPlayheadMs={transport.getPlayheadMs}
-          onSeek={transport.seek}
-          onDocumentVersionAck={ackDocumentVersion}
-          tempoBpm={transport.tempoBpm}
-        />
         <p className="text-xs text-[var(--brd-mute)]" role="status">
           {scratchClip
             ? tr("scratchKlip", { time: formatStudioTimeMs(scratchClip.timelineStartMs) })
@@ -3797,7 +3837,7 @@ export function StudioRecordingPanel({
       ) : null}
 
       {takeOpen ? (
-      <div className="studio-gear">
+      <div className="studio-gear" data-record-focus="mic">
         <p className="studio-gear-label text-xs font-medium text-[var(--brd-ink)]">{tr("mikrofon")}</p>
         <label className="block w-full text-xs text-[var(--brd-mute)]">
           <span className="sr-only">{tr("mikrofon")}</span>
@@ -4053,6 +4093,7 @@ export function StudioRecordingPanel({
           open={lyricsOpen}
           onToggle={(e) => setLyricsOpen(e.currentTarget.open)}
           data-testid="studio-record-lyrics"
+          data-record-focus="lyrics"
         >
           <summary className="flex min-h-11 cursor-pointer items-center text-sm text-[var(--brd-mute)]">{tr("tekstUtworu")}</summary>
           {lyricsOpen ? (
@@ -4070,7 +4111,7 @@ export function StudioRecordingPanel({
       ) : null}
 
       {!samplesMode && !showWorkflow ? (
-        <div className={`flex w-full flex-col gap-2 bg-[var(--brd-paper)] py-1 ${simple ? "xl:sticky xl:bottom-0 xl:z-10" : "sticky bottom-0 z-10"}`} data-testid="studio-record-bar">
+        <div className={`flex w-full flex-col gap-2 bg-[var(--brd-paper)] py-1 ${simple ? "xl:sticky xl:bottom-0 xl:z-10" : "sticky bottom-0 z-10"}`} data-testid="studio-record-bar" data-record-focus="importVocal">
           {takeOpen ? <StudioQuotaLine /> : null}
           <div className={`flex w-full flex-col gap-2 ${simple ? "" : "sm:flex-row sm:flex-wrap"}`}>
           <Button
@@ -4098,6 +4139,7 @@ export function StudioRecordingPanel({
           />
           {takeOpen ? (
           <Button
+            data-testid="studio-record-import"
             type="button"
             size="sm"
             className="w-full sm:w-auto"

@@ -167,7 +167,8 @@ describe("P5.4 regression guards", () => {
     expect(editor).toMatch(/method: "DELETE"/);
     // Phase 1–2 DAW toolbar — Snap cycle + zoom affordances (ops unchanged).
     const toolbar = readFileSync(join(process.cwd(), "src/components/studio/studio-edit-toolbar.tsx"), "utf8");
-    expect(toolbar).toMatch(/studioSnapPresetLabel\(props\.snapPreset\)/);
+    // Snap moved to the "Więcej" group; the preset cycle is the same.
+    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-editor.tsx"), "utf8")).toMatch(/studioSnapPresetLabel\(snapPreset\)/);
     expect(toolbar).toMatch(/Przybliż oś czasu/);
   });
 
