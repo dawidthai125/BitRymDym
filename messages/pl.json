@@ -85,12 +85,121 @@
     },
     "aboutPage": {
       "metaTitle": "O BitRymDym — polski serwis do nagrywania rapu",
-      "metaDescription": "O BitRymDym — darmowe bity, nagrywanie online i Studio z mixem i masteringiem. Zobacz, jak działa serwis od bitu do gotowego kawałka.",
+      "metaDescription": "BitRymDym to polski serwis dla raperów i producentów: darmowy odsłuch bitów, nagrywanie wokalu, Studio z mixem i masteringiem. Zobacz, po co powstał i jak działa.",
       "oBitrymdym": "O BitRymDym",
       "bitGlosStudio": "Bit. Głos. Studio.",
-      "bitrymdymToMiejsceW": "BitRymDym to miejsce, w którym znajdujesz bity, nagrywasz głos i składasz numer w Studiu. BITEK proponuje mix i mastering — stosujesz je, gdy chcesz.",
-      "programAkapit": "Jest też Nagrywarka (Windows), program do nagrywania na komputerze. Pobranie instalatora i logowanie w Nagrywarce wymagają konta na stronie. Wersja na Maca i urządzenia Apple będzie wkrótce. Do tego czasu na Macu nagrywasz w przeglądarce: na stronie bitu albo w Studiu.",
-      "dlaProducentowRaperowI": "Dla producentów, raperów i twórców, którzy chcą wracać tu codziennie: odsłuchać, nagrać i dopracować brzmienie.",
+      "lead": "BitRymDym to polski serwis dla rapu i hip-hopu. W jednym miejscu wybierasz bit, nagrywasz wokal i składasz kawałek aż do mixu i masteringu, na jednym koncie.",
+      "poCoTitle": "Po co to jest",
+      "poCo": [
+        "Żeby od pomysłu na zwrotkę do gotowego numeru nie trzeba było skakać między kilkoma programami i stronami.",
+        "Na start nie potrzebujesz studia nagrań ani drogiego programu: wystarczy mikrofon, słuchawki i przeglądarka.",
+        "Narzędzia są po polsku i pod rap: tekst na ekranie przy nagrywaniu, metronom, takty, słownik rymów."
+      ],
+      "dlaKogoTitle": "Dla kogo",
+      "dlaKogo": {
+        "raper": {
+          "t": "Raperzy i wokaliści",
+          "d": "Szukasz bitu, nagrywasz zwrotki i refreny, sprawdzasz, jak brzmi cały numer. Pierwsze kroki zrobisz na darmowym planie."
+        },
+        "producent": {
+          "t": "Producenci",
+          "d": "Wgrywasz własne bity, które przechodzą moderację przed publikacją. Sam decydujesz, czy można na nich nagrywać i czy można je pobrać. Autor bitu ma być podpisany przy utworze."
+        },
+        "start": {
+          "t": "Ci, którzy dopiero zaczynają",
+          "d": "Poradniki i darmowe narzędzia pomagają ogarnąć mikrofon, tempo, sylaby i rymy."
+        }
+      },
+      "drogaTitle": "Od bitu do kawałka",
+      "droga": {
+        "sluchasz": {
+          "t": "Słuchasz",
+          "d": "Katalog jest otwarty. Bez konta posłuchasz {preview} s każdego bitu."
+        },
+        "nagrywasz": {
+          "t": "Nagrywasz",
+          "d": "Z kontem nagrywasz w przeglądarce (na stronie bitu albo w Studiu) lub w darmowej Nagrywarce na Windows."
+        },
+        "skladasz": {
+          "t": "Składasz",
+          "d": "W Studiu tniesz i układasz nagrania na osi czasu, dodajesz efekty i korektę wysokości głosu, ustawiasz głośność."
+        },
+        "konczysz": {
+          "t": "Kończysz",
+          "d": "BITEK proponuje mix i mastering. Nic nie zmienia się w projekcie bez Twojej zgody."
+        },
+        "pokazujesz": {
+          "t": "Pokazujesz",
+          "d": "Wysyłasz prywatny link do odsłuchu albo publikujesz utwór w katalogu. Publicznie gra wtedy tylko fragment do 45 s, a pełny utwór zostaje u Ciebie."
+        }
+      },
+      "wSerwisieTitle": "Co znajdziesz w serwisie",
+      "wSerwisie": {
+        "beats": {
+          "href": "/beats",
+          "t": "Bity",
+          "d": "Katalog bitów BitRymDym i producentów z tempem i gatunkiem."
+        },
+        "studio": {
+          "href": "/studio",
+          "t": "Studio",
+          "d": "Nagrywanie, edycja, sample, mix, mastering i eksport."
+        },
+        "mastering": {
+          "href": "/mastering",
+          "t": "Sam mastering",
+          "d": "Mastering gotowego pliku."
+        },
+        "nagrywarka": {
+          "href": "/nagrywarka",
+          "t": "Nagrywarka (Windows)",
+          "d": "Darmowy program do nagrywania wokalu przy komputerze, na tym samym koncie."
+        },
+        "utwory": {
+          "href": "/utwory",
+          "t": "Utwory",
+          "d": "Fragmenty kawałków opublikowanych przez użytkowników."
+        },
+        "ranking": {
+          "href": "/ranking",
+          "t": "Ranking",
+          "d": "Oceniasz bity i sample. Trzy pierwsze miejsca tygodnia i miesiąca dostają nagrody premium."
+        },
+        "narzedzia": {
+          "href": "/narzedzia",
+          "t": "Darmowe narzędzia",
+          "d": "Między innymi metronom, licznik BPM i tonacji, test mikrofonu, licznik sylab i tematy do freestyle. Bez konta."
+        },
+        "rymy": {
+          "href": "/rymy",
+          "t": "Słownik rymów",
+          "d": "Rymy do polskich słów, także wielosylabowe."
+        },
+        "poradniki": {
+          "href": "/poradniki",
+          "t": "Poradniki",
+          "d": "Krótkie instrukcje o nagrywaniu rapu."
+        }
+      },
+      "prawaTitle": "Twój kawałek i prawa",
+      "prawa": [
+        "Zachowujesz prawa do tego, co sam dodajesz: nagrań, tekstów i własnych bitów. Serwis dostaje tylko zgodę potrzebną do działania usług.",
+        "Utwór nagrany na bicie z katalogu możesz publikować, wrzucać do streamingu i na nim zarabiać, jeśli podpiszesz autora bitu, na przykład „prod. [ksywka] / BitRymDym”. Dotyczy to wersji bez znaku wodnego, dostępnej w płatnych planach. Plik z planu Free ma znak wodny i służy do odsłuchu i pokazania innym.",
+        "Osobnej zgody wymagają: Content ID i podobne systemy, użycie w reklamie, filmie, serialu lub grze oraz udostępnianie albo sprzedaż samego bitu. Autorstwa bitu nie wolno przypisywać sobie.",
+        "Wgrywane pliki są sprawdzane, a naruszenie praw można zgłosić. Od automatycznej decyzji możesz się odwołać do człowieka."
+      ],
+      "regulaminLink": "Pełne zasady: regulamin",
+      "aiTitle": "BITEK i narzędzia AI",
+      "ai": "BITEK to asystent w serwisie: podpowiada w Studiu i proponuje mix oraz mastering. Części funkcji, na przykład podpowiedziom do tekstu i okładkom, pomagają zewnętrzne modele AI. Ich wyniki mogą być niedokładne, więc ostatnie słowo należy do Ciebie.",
+      "gdzieTitle": "Na czym działa",
+      "gdzie": "Strona działa w przeglądarce na komputerze i telefonie. Na Windows 10 i 11 możesz też użyć Nagrywarki. Wersja programu na Maca i urządzenia Apple będzie wkrótce, a do tego czasu nagrywasz tam w przeglądarce.",
+      "cenaTitle": "Ile to kosztuje",
+      "cena": "Konto jest darmowe. Plan Free to nagrania do {seconds} s, {perDay} dziennie, {tracks} ścieżka wokalu i {masters} mastery w miesiącu. Bronze, Silver i Gold dają większe limity. Płacisz jednorazowo za miesiąc albo rok.",
+      "cenaLink": "Porównaj plany",
+      "ktoTitle": "Kto za tym stoi",
+      "kto": "Serwis prowadzi firma {name}, {address}, NIP {nip}.",
+      "kontakt": "Pytania, pomysły i zgłoszenia:",
+      "sledz": "BitRymDym znajdziesz też tutaj:",
       "przegladajBity": "Przeglądaj bity",
       "zalozKonto": "Załóż konto",
       "programWindows": "Nagrywarka (Windows)"

@@ -85,12 +85,121 @@
     },
     "aboutPage": {
       "metaTitle": "About BitRymDym — record rap online",
-      "metaDescription": "About BitRymDym — free beats, online recording and a Studio with mixing and mastering. See how it works, from beat to finished track.",
+      "metaDescription": "BitRymDym is a Polish service for rappers and producers: free beat previews, vocal recording, and a Studio with mixing and mastering. See why it exists and how it works.",
       "oBitrymdym": "About BitRymDym",
       "bitGlosStudio": "Beat. Voice. Studio.",
-      "bitrymdymToMiejsceW": "BitRymDym is where you find beats, record your voice and build a track in Studio. BITEK suggests a mix and a master — you apply them when you want.",
-      "programAkapit": "There is also a recording app for Windows. Downloading the installer and signing in to the app both need an account on the site. A Mac and Apple version is coming soon. Until then, on a Mac you record in the browser: on the beat page or in Studio.",
-      "dlaProducentowRaperowI": "For producers, rappers and creators who want to come back every day: listen, record and shape the sound.",
+      "lead": "BitRymDym is a Polish service for rap and hip-hop. In one place you pick a beat, record your vocals and build a track all the way to mixing and mastering, on one account.",
+      "poCoTitle": "Why it exists",
+      "poCo": [
+        "So that getting from a verse idea to a finished track does not mean jumping between several apps and websites.",
+        "You do not need a recording studio or expensive software to start: a microphone, headphones and a browser are enough.",
+        "The tools are made for rap: lyrics on screen while you record, a metronome, bars, and a Polish rhyme dictionary."
+      ],
+      "dlaKogoTitle": "Who it is for",
+      "dlaKogo": {
+        "raper": {
+          "t": "Rappers and vocalists",
+          "d": "Find a beat, record verses and hooks, and hear how the whole track sounds. You can take your first steps on the free plan."
+        },
+        "producent": {
+          "t": "Producers",
+          "d": "Upload your own beats, which are moderated before they are published. You decide whether others can record on them and download them. The beat's author must be credited on the track."
+        },
+        "start": {
+          "t": "Beginners",
+          "d": "Guides and free tools help with the microphone, tempo, syllables and rhymes."
+        }
+      },
+      "drogaTitle": "From beat to track",
+      "droga": {
+        "sluchasz": {
+          "t": "Listen",
+          "d": "The catalogue is open. Without an account you can hear {preview} s of each beat."
+        },
+        "nagrywasz": {
+          "t": "Record",
+          "d": "With an account you record in the browser (on the beat page or in Studio) or in the free Windows recording app."
+        },
+        "skladasz": {
+          "t": "Arrange",
+          "d": "In Studio you cut and arrange takes on a timeline, add effects and pitch correction, and set the levels."
+        },
+        "konczysz": {
+          "t": "Finish",
+          "d": "BITEK suggests a mix and a master. Nothing in your project changes without your approval."
+        },
+        "pokazujesz": {
+          "t": "Share",
+          "d": "Send a private listen link or publish the track in the catalogue. Only a clip of up to 45 s then plays in public, and the full track stays with you."
+        }
+      },
+      "wSerwisieTitle": "What you will find",
+      "wSerwisie": {
+        "beats": {
+          "href": "/beats",
+          "t": "Beats",
+          "d": "Beats from BitRymDym and producers, with tempo and genre."
+        },
+        "studio": {
+          "href": "/studio",
+          "t": "Studio",
+          "d": "Recording, editing, samples, mixing, mastering and export."
+        },
+        "mastering": {
+          "href": "/mastering",
+          "t": "Mastering only",
+          "d": "Mastering for a finished file."
+        },
+        "nagrywarka": {
+          "href": "/nagrywarka",
+          "t": "Recording app (Windows)",
+          "d": "A free app for recording vocals at your computer, on the same account."
+        },
+        "utwory": {
+          "href": "/utwory",
+          "t": "Tracks",
+          "d": "Clips of tracks published by users."
+        },
+        "ranking": {
+          "href": "/ranking",
+          "t": "Ranking",
+          "d": "Rate beats and samples. The weekly and monthly top three get premium rewards."
+        },
+        "narzedzia": {
+          "href": "/narzedzia",
+          "t": "Free tools",
+          "d": "Including a metronome, BPM and key finder, microphone test, syllable counter and freestyle topics. No account needed."
+        },
+        "rymy": {
+          "href": "/rymy",
+          "t": "Rhyme dictionary",
+          "d": "Rhymes for Polish words, including multisyllable ones."
+        },
+        "poradniki": {
+          "href": "/poradniki",
+          "t": "Guides",
+          "d": "Short instructions on recording rap."
+        }
+      },
+      "prawaTitle": "Your track and rights",
+      "prawa": [
+        "You keep the rights to what you add yourself: recordings, lyrics and your own beats. The service only gets the permission it needs to run its features.",
+        "You may publish, stream and earn money from a track recorded on a catalogue beat if you credit the beat's author, for example “prod. [name] / BitRymDym”. This applies to the version without the watermark, available in paid plans. A Free plan file carries a watermark and is meant for listening and showing others.",
+        "These need separate permission: Content ID and similar systems, use in an advert, film, series or game, and sharing or selling the beat on its own. You must not claim to be the beat's author.",
+        "Uploaded files are checked, and you can report a rights violation. You can appeal an automated decision to a person."
+      ],
+      "regulaminLink": "Full rules: terms of service",
+      "aiTitle": "BITEK and AI tools",
+      "ai": "BITEK is the assistant in the service: it gives tips in Studio and suggests a mix and a master. External AI models help with some features, such as lyric suggestions and covers. Their results can be inaccurate, so you have the final say.",
+      "gdzieTitle": "Where it works",
+      "gdzie": "The site works in a browser on computers and phones. On Windows 10 and 11 you can also use the recording app. A Mac and Apple version of the app is coming soon; until then you record there in the browser.",
+      "cenaTitle": "What it costs",
+      "cena": "An account is free. The Free plan gives takes of up to {seconds} s, {perDay} a day, {tracks} vocal track and {masters} masters a month. Bronze, Silver and Gold raise the limits. You make a one-off payment for a month or a year.",
+      "cenaLink": "Compare plans",
+      "ktoTitle": "Who runs it",
+      "kto": "The service is run by {name}, {address}, Polish tax number (NIP) {nip}.",
+      "kontakt": "Questions, ideas and reports:",
+      "sledz": "You can also find BitRymDym here:",
       "przegladajBity": "Browse beats",
       "zalozKonto": "Create account",
       "programWindows": "Recording app"
