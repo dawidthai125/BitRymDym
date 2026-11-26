@@ -30,6 +30,11 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
+      # The default vitest run mounts components in headless Chromium and encodes with ffmpeg.
+      - name: Chromium (Playwright) i ffmpeg
+        run: |
+          npx playwright install --with-deps chromium-headless-shell
+          sudo apt-get install -y --no-install-recommends ffmpeg
       - name: tsc
         run: npx tsc --noEmit -p .
       - name: eslint
