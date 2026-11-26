@@ -88,6 +88,7 @@ export default async function AdminLayout({
       { href: "/admin/beats/waiting", label: t("oczekujace") },
       { href: "/admin/samples/generate", label: t("generatorSampli") },
       { href: "/admin/utwory", label: t("utwory") },
+      { href: "/admin/prawa", label: t("prawa") },
     );
   }
   if (showModeration) {

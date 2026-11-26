@@ -85,7 +85,7 @@ describe("master-only bootstrap", () => {
     const stages: string[] = [];
     const s = server(() => new Response(JSON.stringify({ success: true, clip: { id: "c" }, takeId: "take-1", documentVersion: 4 }), { status: 201 }));
     const uploadStem = vi.fn(async () => uploaded);
-    const result = await bootstrapMasterOnlyProject({ file: wav(), fetchImpl: s.fetchImpl, uploadStem, probeDuration: async () => 12, onStage: (x) => stages.push(x) });
+    const result = await bootstrapMasterOnlyProject({ rightsAccepted: true, file: wav(), fetchImpl: s.fetchImpl, uploadStem, probeDuration: async () => 12, onStage: (x) => stages.push(x) });
     expect(result).toEqual({ ok: true, projectId: "proj-1", trackId: "v", takeId: "take-1", documentVersion: 4 });
     expect(uploadStem).toHaveBeenCalledWith(expect.objectContaining({ projectId: "proj-1", masterOnly: true }));
     expect(stages).toEqual(["create", "upload", "place"]);
@@ -100,7 +100,7 @@ describe("master-only bootstrap", () => {
       [async () => uploaded, () => new Response(JSON.stringify({ success: true }), { status: 201 }), "place"],
     ] as const) {
       const s = server(place);
-      const result = await bootstrapMasterOnlyProject({ file: wav(), fetchImpl: s.fetchImpl, uploadStem, probeDuration: async () => null });
+      const result = await bootstrapMasterOnlyProject({ rightsAccepted: true, file: wav(), fetchImpl: s.fetchImpl, uploadStem, probeDuration: async () => null });
       expect(result).toMatchObject({ ok: false, code });
       if (!result.ok) expect(result.message === null || /limit stemów/.test(result.message)).toBe(true);
       expect(s.calls.at(-1)).toBe("DELETE /api/studio/projects/proj-1");
@@ -111,7 +111,7 @@ describe("master-only bootstrap", () => {
     const never = (async () => {
       throw new Error("should not fetch");
     }) as unknown as typeof fetch;
-    const run = (file: File, seconds: number | null = null) => bootstrapMasterOnlyProject({ file, fetchImpl: never, probeDuration: async () => seconds });
+    const run = (file: File, seconds: number | null = null) => bootstrapMasterOnlyProject({ rightsAccepted: true, file, fetchImpl: never, probeDuration: async () => seconds });
     expect(await run(new File([new Uint8Array([1])], "x.txt", { type: "text/plain" }))).toMatchObject({ ok: false, code: "format" });
     expect(await run(wav(), 260)).toMatchObject({ ok: false, code: "too_long" });
     const big = wav();
@@ -121,6 +121,6 @@ describe("master-only bootstrap", () => {
     const song = wav();
     Object.defineProperty(song, "size", { value: 42 * 1024 * 1024 });
     const s = server(() => new Response(JSON.stringify({ documentVersion: 4 }), { status: 201 }));
-    expect((await bootstrapMasterOnlyProject({ file: song, fetchImpl: s.fetchImpl, uploadStem: async () => uploaded, probeDuration: async () => 239.6 })).ok).toBe(true);
+    expect((await bootstrapMasterOnlyProject({ rightsAccepted: true, file: song, fetchImpl: s.fetchImpl, uploadStem: async () => uploaded, probeDuration: async () => 239.6 })).ok).toBe(true);
   });
 });

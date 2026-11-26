@@ -231,6 +231,11 @@ export async function executeAccountProfile01Deletion(
         await admin.storage.from(BEAT_AUDIO_BUCKET).remove(keysToRemove);
       }
 
+      // Fingerprints reference the assets (ON DELETE RESTRICT): drop them first.
+      const { error: fpDel } = await admin.from("beat_audio_fingerprints").delete().in("beat_id", deleteBeatIds);
+      if (fpDel) {
+        return { ok: false, error: "Nie udało się przygotować usunięcia.", step: "assets_delete" };
+      }
       const { error: aDel } = await admin
         .from("beat_audio_assets")
         .delete()

@@ -34,6 +34,8 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
   const [rows, setRows] = useState<Row[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  /** Rights statement (owner decision 2026-11-26): the server refuses stems without it. */
+  const [rights, setRights] = useState(false);
 
   const patch = (rowId: number, next: Partial<Row>) => setRows((cur) => cur.map((r) => (r.id === rowId ? { ...r, ...next } : r)));
 
@@ -56,7 +58,7 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
             continue;
           }
           patch(rowId, { state: "uploading" });
-          const uploaded = await uploadStemBlob({ projectId, blob: file, contentType: gate.contentType });
+          const uploaded = await uploadStemBlob({ projectId, blob: file, contentType: gate.contentType, rightsAccepted: rights });
           patch(rowId, { state: "track" });
           const track = await createStemTrack({ name: stemTrackName(file.name), role: guessStemRole(file.name) });
           if (!track.ok || !track.trackId) {
@@ -89,6 +91,10 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
         <span className="text-[11px] text-[var(--brd-mute)]">{t("limit", { n: stemLimit })}</span>
       </div>
       <p className="text-xs text-[var(--brd-mute)]">{t("opis")}</p>
+      <label className="flex min-h-11 items-start gap-2 text-xs" data-testid="studio-stem-rights">
+        <input type="checkbox" className="mt-0.5" checked={rights} disabled={busy} onChange={(e) => setRights(e.target.checked)} />
+        <span>{t("prawa")}</span>
+      </label>
       <input
         ref={inputRef}
         type="file"
@@ -108,7 +114,7 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
         variant="outline"
         className="min-h-9"
         data-testid="studio-stem-pick"
-        disabled={disabled || busy || freeSlots < 1}
+        disabled={disabled || busy || freeSlots < 1 || !rights}
         onClick={() => inputRef.current?.click()}
       >
         {busy ? t("importuje") : t("wybierz")}

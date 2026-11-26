@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       allowComments?: unknown;
       inRankings?: unknown;
       withdrawOlder?: unknown;
+      rightsAccepted?: unknown;
     };
     if (typeof body.projectId !== "string" || typeof body.masterJobId !== "string" || typeof body.publish !== "boolean") {
       return NextResponse.json({ result: "invalid" }, { status: 400 });
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
       title: body.title,
       publish: body.publish,
       withdrawOlder: flag(body.withdrawOlder),
+      rightsAccepted: flag(body.rightsAccepted),
       consents: {
         allowRatings: flag(body.allowRatings),
         allowComments: flag(body.allowComments),
@@ -56,7 +58,16 @@ export async function POST(request: Request) {
       },
     });
     if (result === "ok") revalidateCreatorFacts(auth.userId);
-    const status = result === "ok" ? 200 : result === "missing" ? 404 : result === "off" ? 503 : 400;
+    const status =
+      result === "ok" || result === "checking" || result === "held"
+        ? 200
+        : result === "missing"
+          ? 404
+          : result === "off"
+            ? 503
+            : result === "blocked"
+              ? 403
+              : 400;
     return NextResponse.json({ result }, { status });
   } catch (error) {
     if (error instanceof AuthError) return NextResponse.json({ result: "signed_out" }, { status: 401 });

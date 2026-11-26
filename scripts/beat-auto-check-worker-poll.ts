@@ -8,6 +8,9 @@
  *   BEAT_PREVIEW_ENABLED=true (render guest 20 s preview after each check),
  *   BEAT_PREVIEW_SWEEP_MS (>=10000: when idle, fill one missing/stale preview).
  *   Admin OPS MP3 (tag ops-mp3-wanted) is always swept when idle — Contabo ffmpeg.
+ *   Rights (owner decision 2026-11-26): catalogue work checks are claimed after beat checks;
+ *   when idle, one missing beat fingerprint (APPROVED/PUBLISHED) and one missing sample
+ *   fingerprint (catalogue + waiting for review) are filled per loop.
  * Logs never include secrets or fingerprints.
  */
 import { decideAutoCheckWorkerConfig } from "../src/lib/beats/auto-check/worker-env";
@@ -20,7 +23,65 @@ import {
   ensureBeatPreviewAsset,
   listBeatsNeedingPreview,
 } from "../src/lib/beats/preview/beat-preview-service";
+import {
+  claimNextWorkCheck,
+  fingerprintBeat,
+  fingerprintSample,
+  nextBeatNeedingFingerprint,
+  nextSampleNeedingFingerprint,
+  runWorkCheck,
+} from "../src/lib/rights/rights-worker";
 import { createSupabaseAdminClient } from "../src/lib/supabase/admin";
+
+/** Files that failed in this process are not retried until the poller restarts. */
+const failedBeatAssets = new Set<string>();
+const failedSampleKeys = new Set<string>();
+/** Nothing to fingerprint (or a listing error): look again after a minute (not urgent). */
+let fingerprintIdleUntil = 0;
+
+/** A catalogue work waiting for the rights check: run it. True when one was handled. */
+async function workCheckStep(cfg: Parameters<typeof runWorkCheck>[0]): Promise<boolean> {
+  const work = await claimNextWorkCheck(cfg);
+  if (!work) return false;
+  const t0 = Date.now();
+  const status = await runWorkCheck(cfg, work);
+  console.log(JSON.stringify({ event: "work_check_done", workId: work.id, status, ms: Date.now() - t0 }));
+  return true;
+}
+
+/** At most one missing fingerprint per loop (beats first, then samples). Never blocks the other idle jobs. */
+async function fingerprintStep(cfg: Parameters<typeof runWorkCheck>[0]): Promise<void> {
+  if (Date.now() < fingerprintIdleUntil) return;
+  try {
+    const admin = createSupabaseAdminClient();
+    const beat = await nextBeatNeedingFingerprint(admin, failedBeatAssets);
+    if (beat) {
+      try {
+        await fingerprintBeat(cfg, beat);
+        console.log(JSON.stringify({ event: "beat_fingerprint_done", beatId: beat.beatId }));
+      } catch (e) {
+        failedBeatAssets.add(beat.assetId);
+        console.log(JSON.stringify({ event: "beat_fingerprint_error", beatId: beat.beatId, message: e instanceof Error ? e.message.slice(0, 120) : "unknown" }));
+      }
+      return;
+    }
+    const sample = await nextSampleNeedingFingerprint(admin, failedSampleKeys);
+    if (sample) {
+      try {
+        await fingerprintSample(cfg, sample);
+        console.log(JSON.stringify({ event: "sample_fingerprint_done", sampleId: sample.sampleId, review: sample.review }));
+      } catch (e) {
+        failedSampleKeys.add(sample.key);
+        console.log(JSON.stringify({ event: "sample_fingerprint_error", sampleId: sample.sampleId, message: e instanceof Error ? e.message.slice(0, 120) : "unknown" }));
+      }
+      return;
+    }
+    fingerprintIdleUntil = Date.now() + 60_000;
+  } catch (e) {
+    fingerprintIdleUntil = Date.now() + 60_000;
+    console.log(JSON.stringify({ event: "fingerprint_list_error", message: e instanceof Error ? e.message.slice(0, 120) : "unknown" }));
+  }
+}
 
 async function preview(beatId: string) {
   // Best effort: a preview failure never changes the auto-check verdict.
@@ -61,6 +122,7 @@ async function main() {
         if (cfg.previewEnabled) await preview(check.beat_id);
         continue;
       }
+      if (await workCheckStep(cfg)) continue;
       {
         const [opsId] = await listBeatsNeedingOpsMp3(createSupabaseAdminClient(), { limit: 1 });
         if (opsId) {
@@ -68,6 +130,7 @@ async function main() {
           continue;
         }
       }
+      await fingerprintStep(cfg);
       if (cfg.previewSweepMs > 0 && Date.now() - lastSweep >= cfg.previewSweepMs) {
         lastSweep = Date.now();
         const [beatId] = await listBeatsNeedingPreview(createSupabaseAdminClient(), { limit: 1 });

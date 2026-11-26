@@ -7,6 +7,7 @@ import { intlTag, resolveLocale } from "@/i18n/config";
 import { AuthError } from "@/lib/auth/session";
 import { loadAdminWorks, type AdminWorksView } from "@/lib/catalog/featured-work-server";
 
+import { RemoveWorkButton } from "../prawa/rights-controls";
 import { FeaturedWorkControls } from "./featured-work-controls";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -80,6 +81,7 @@ export default async function AdminWorksPage() {
                       note={featured ? view.current?.note ?? null : null}
                     />
                   ) : null}
+                  <RemoveWorkButton workId={work.id} />
                 </li>
               );
             })}

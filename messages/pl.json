@@ -1181,7 +1181,8 @@
       "katalog": "Katalog",
       "trybPrac": "Tryb prac",
       "generatorSampli": "Generator sampli",
-      "utwory": "Utwory"
+      "utwory": "Utwory",
+      "prawa": "Prawa i zgłoszenia"
     },
     "adminPaymentsPage": {
       "tytul": "Historia płatności",
@@ -3479,7 +3480,8 @@
       "nagrywamWSluchawkach": "Nagrywam w słuchawkach",
       "nagrywamWSluchawkachOpis": "Czysty mikrofon, mniejsze opóźnienie i samo wyrównanie do bitu. Przez głośnik zostaw wyłączone.",
       "kalibrujRecznieTytul": "Na tym iPhonie lub iPadzie skalibruj mikrofon ręcznie.",
-      "kalibrujRecznieOpis": "Starszy system nie wyrównuje głosu do bitu sam. Załóż słuchawki, zaznacz „Nagrywam w słuchawkach” i zrób test raz: zapamiętam wynik. Po aktualizacji do iOS 18.4 lub nowszego wyrówna się samo."
+      "kalibrujRecznieOpis": "Starszy system nie wyrównuje głosu do bitu sam. Załóż słuchawki, zaznacz „Nagrywam w słuchawkach” i zrób test raz: zapamiętam wynik. Po aktualizacji do iOS 18.4 lub nowszego wyrówna się samo.",
+      "importPrawa": "Wgrywasz plik z zewnątrz. Potwierdź: to Twój wokal albo masz zgodę autora. Cudzych nagrań nie wolno wgrywać (regulamin § 6)."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch",
@@ -4520,7 +4522,8 @@
       },
       "podsumowanie": "Zaimportowano {done} z {total}.",
       "blad": "Nie udało się zaimportować pliku.",
-      "brakSciezki": "Nie udało się dodać ścieżki."
+      "brakSciezki": "Nie udało się dodać ścieżki.",
+      "prawa": "Mam prawa do tych plików: to moje nagrania albo mam zgodę autorów. Cudzych utworów, bitów i wokali nie wgrywam (regulamin § 6)."
     },
     "lyrics": {
       "tytul": "Tekst",
@@ -5299,7 +5302,8 @@
       "no_vocal_track": "Nie udało się przygotować projektu. Spróbuj ponownie.",
       "upload": "Nie udało się wgrać pliku. Spróbuj ponownie.",
       "place": "Nie udało się wstawić pliku. Spróbuj ponownie.",
-      "network": "Połączenie się urwało. Spróbuj ponownie."
+      "network": "Połączenie się urwało. Spróbuj ponownie.",
+      "rights": "Najpierw zaznacz, że masz prawa do tego utworu."
     },
     "bledy": {
       "monthlyLimit": "Pula masterów na ten miesiąc się skończyła.",
@@ -5326,7 +5330,8 @@
       "create": "Tworzę projekt…",
       "upload": "Wgrywam plik…",
       "place": "Kładę na oś…"
-    }
+    },
+    "prawa": "Mam prawa do tego utworu: to moje nagranie albo mam zgodę autorów. Rozumiem, że cudzych utworów nie wolno tu wgrywać ani publikować (regulamin § 6)."
   },
   "listen": {
     "metaTitle": "Prywatny odsłuch",
@@ -5524,7 +5529,12 @@
       "featuredAll": "Wszystkie utwory",
       "featuredCover": "Okładka: {title}",
       "okruszekUtwory": "Katalog utworów",
-      "allMine": "Wszystkie Twoje utwory w katalogu"
+      "allMine": "Wszystkie Twoje utwory w katalogu",
+      "rightsLabel": "Oświadczam, że mam prawa do wszystkiego w tym utworze: tekst, wokal, bit i sample są moje albo mam zgodę autorów. Rozumiem, że przed publikacją sprawdzamy utwór, a cudze nagrania zdejmujemy (regulamin § 6).",
+      "rightsNeeded": "Zaznacz oświadczenie o prawach do utworu.",
+      "checkingSaved": "Zapisane. Sprawdzamy utwór, zwykle kilka minut. Potem sam pojawi się w katalogu.",
+      "heldSaved": "Zapisane. Utwór czeka na moderatora, bo coś w nim przypomina cudze nagranie.",
+      "blocked": "Moderator zdjął ten utwór z katalogu. Napisz do nas, jeśli to pomyłka."
     },
     "sampleCatalog": {
       "opisPl": "Opis (polski)",
@@ -5733,5 +5743,28 @@
       "excludedTitle": "Działa zawsze",
       "excludedBody": "/admin, /sign-in, /forgot-password, /auth/*, /api/admin, /api/cron, /api/mix/worker (E3), /api/webhooks, /api/health, robots.txt i pliki statyczne."
     }
+  },
+  "report": {
+    "open": "Zgłoś naruszenie praw",
+    "title": "Zgłoś naruszenie praw autorskich",
+    "lead": "Ktoś użył Twojego utworu, bitu, wokalu albo sampla bez zgody? Opisz to. Sprawdzimy zgłoszenie i zdejmiemy materiał, jeśli naruszenie się potwierdzi.",
+    "reason": "Co jest nie tak",
+    "reasons": {
+      "copyright": "Cudzy utwór lub nagranie",
+      "stolen_beat": "Ukradziony bit",
+      "stolen_vocal": "Ukradziony wokal",
+      "other": "Inne naruszenie praw"
+    },
+    "details": "Opis (czyje to nagranie, gdzie jest oryginał, link)",
+    "name": "Imię i nazwisko albo nazwa",
+    "email": "E-mail do odpowiedzi",
+    "goodFaith": "Oświadczam w dobrej wierze, że informacje w zgłoszeniu są prawdziwe i kompletne.",
+    "send": "Wyślij zgłoszenie",
+    "sending": "Wysyłam…",
+    "sent": "Dziękujemy. Zgłoszenie dotarło, odpowiemy na podany e-mail.",
+    "invalid": "Uzupełnij opis (min. 10 znaków), imię, e-mail i oświadczenie.",
+    "limit": "Za dużo zgłoszeń z tego połączenia. Spróbuj za godzinę albo napisz na kontakt@bitrymdym.pl.",
+    "error": "Nie udało się wysłać. Napisz na kontakt@bitrymdym.pl.",
+    "cancel": "Anuluj"
   }
 }

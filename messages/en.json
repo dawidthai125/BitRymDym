@@ -1181,7 +1181,8 @@
       "katalog": "Catalogue",
       "trybPrac": "Maintenance",
       "generatorSampli": "Sample generator",
-      "utwory": "Tracks"
+      "utwory": "Tracks",
+      "prawa": "Rights and reports"
     },
     "adminPaymentsPage": {
       "tytul": "Payment history",
@@ -3479,7 +3480,8 @@
       "nagrywamWSluchawkach": "I record in headphones",
       "nagrywamWSluchawkachOpis": "Clean microphone, less delay and automatic alignment to the beat. Leave it off with speakers.",
       "kalibrujRecznieTytul": "On this iPhone or iPad, calibrate the microphone by hand.",
-      "kalibrujRecznieOpis": "An older system does not line the voice up with the beat by itself. Put on headphones, tick “I record in headphones” and run the test once: I will remember it. After an update to iOS 18.4 or newer it lines up by itself."
+      "kalibrujRecznieOpis": "An older system does not line the voice up with the beat by itself. Put on headphones, tick “I record in headphones” and run the test once: I will remember it. After an update to iOS 18.4 or newer it lines up by itself.",
+      "importPrawa": "You are uploading an outside file. Confirm: it is your vocal or you have the author's permission. Other people's recordings must not be uploaded (terms § 6)."
     },
     "studioScratchPanel": {
       "scratchDjV1": "Scratch DJ v1",
@@ -4520,7 +4522,8 @@
       },
       "podsumowanie": "Imported {done} of {total}.",
       "blad": "Could not import the file.",
-      "brakSciezki": "Could not add the track."
+      "brakSciezki": "Could not add the track.",
+      "prawa": "I hold the rights to these files: they are my recordings or I have the authors' permission. I do not upload other people's songs, beats or vocals (terms § 6)."
     },
     "lyrics": {
       "tytul": "Lyrics",
@@ -5299,7 +5302,8 @@
       "no_vocal_track": "Couldn't prepare the project. Try again.",
       "upload": "Couldn't upload the file. Try again.",
       "place": "Couldn't place the file. Try again.",
-      "network": "The connection dropped. Try again."
+      "network": "The connection dropped. Try again.",
+      "rights": "First confirm that you hold the rights to this track."
     },
     "bledy": {
       "monthlyLimit": "This month's masters are used up.",
@@ -5326,7 +5330,8 @@
       "create": "Creating project…",
       "upload": "Uploading file…",
       "place": "Placing on the timeline…"
-    }
+    },
+    "prawa": "I hold the rights to this track: it is my recording or I have the authors' permission. I understand other people's songs must not be uploaded or published here (terms § 6)."
   },
   "listen": {
     "metaTitle": "Private listen",
@@ -5524,7 +5529,12 @@
       "featuredAll": "All tracks",
       "featuredCover": "Cover: {title}",
       "okruszekUtwory": "Tracks catalogue",
-      "allMine": "All your tracks in the catalogue"
+      "allMine": "All your tracks in the catalogue",
+      "rightsLabel": "I confirm I hold the rights to everything in this track: lyrics, vocals, beat and samples are mine or I have the authors' permission. I understand the track is checked before it goes public and that other people's recordings are taken down (terms § 6).",
+      "rightsNeeded": "Tick the rights statement for this track.",
+      "checkingSaved": "Saved. We are checking the track, usually a few minutes. It will then appear in the catalogue by itself.",
+      "heldSaved": "Saved. The track is waiting for a moderator because something in it resembles another recording.",
+      "blocked": "A moderator took this track down. Write to us if this is a mistake."
     },
     "sampleCatalog": {
       "opisPl": "Description (Polish)",
@@ -5733,5 +5743,28 @@
       "excludedTitle": "Always available",
       "excludedBody": "/admin, /sign-in, /forgot-password, /auth/*, /api/admin, /api/cron, /api/mix/worker (E3), /api/webhooks, /api/health, robots.txt and static files."
     }
+  },
+  "report": {
+    "open": "Report a rights violation",
+    "title": "Report a copyright violation",
+    "lead": "Someone used your song, beat, vocal or sample without permission? Describe it. We will review the report and take the material down if the violation is confirmed.",
+    "reason": "What is wrong",
+    "reasons": {
+      "copyright": "Someone else's song or recording",
+      "stolen_beat": "Stolen beat",
+      "stolen_vocal": "Stolen vocal",
+      "other": "Other rights violation"
+    },
+    "details": "Description (whose recording it is, where the original is, a link)",
+    "name": "Full name or company name",
+    "email": "E-mail for our reply",
+    "goodFaith": "I state in good faith that the information in this report is true and complete.",
+    "send": "Send report",
+    "sending": "Sending…",
+    "sent": "Thank you. The report arrived; we will reply to the e-mail you gave.",
+    "invalid": "Fill in the description (min. 10 characters), name, e-mail and the statement.",
+    "limit": "Too many reports from this connection. Try again in an hour or write to kontakt@bitrymdym.pl.",
+    "error": "Sending failed. Write to kontakt@bitrymdym.pl.",
+    "cancel": "Cancel"
   }
 }

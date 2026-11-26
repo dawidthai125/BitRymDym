@@ -67,6 +67,8 @@ export function MasterOnlyPanel({ tier }: { tier: Tier }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [error, setError] = useState<string | null>(null);
+  /** Rights statement (owner decision 2026-11-26): required before the file is sent. */
+  const [rights, setRights] = useState(false);
   const [offline, setOffline] = useState(false);
   const [approving, setApproving] = useState(false);
   const [dl, setDl] = useState<"idle" | "working" | "done">("idle");
@@ -177,7 +179,7 @@ export function MasterOnlyPanel({ tier }: { tier: Tier }) {
     setDl("idle");
     try {
       setPhase({ kind: "boot", stage: "create" });
-      const result = await bootstrapMasterOnlyProject({ file, onStage: (stage) => setPhase({ kind: "boot", stage }) });
+      const result = await bootstrapMasterOnlyProject({ file, rightsAccepted: rights, onStage: (stage) => setPhase({ kind: "boot", stage }) });
       if (!result.ok) {
         setError(result.message ? tl(result.message) : t(`wgrywanie.${result.code}`, { mb: MASTER_ONLY_MAX_MB, min: Math.floor(MASTER_ONLY_MAX_SECONDS / 60) }));
         return setPhase({ kind: "idle" });
@@ -308,7 +310,11 @@ export function MasterOnlyPanel({ tier }: { tier: Tier }) {
               void onFile(file);
             }}
           />
-          <Button type="button" className="self-start" data-testid="master-only-pick" disabled={working || dl === "working"} onClick={() => inputRef.current?.click()}>
+          <label className="flex min-h-11 items-start gap-2 text-sm" data-testid="master-only-rights">
+            <input type="checkbox" className="mt-1" checked={rights} disabled={working} onChange={(e) => setRights(e.target.checked)} />
+            <span>{t("prawa")}</span>
+          </label>
+          <Button type="button" className="self-start" data-testid="master-only-pick" disabled={working || dl === "working" || !rights} onClick={() => inputRef.current?.click()}>
             {t(phase.kind === "idle" ? "wybierzPlik" : "innyPlik")}
           </Button>
           <p className="text-xs text-[var(--brd-mute)]">{t("limityPliku", { mb: MASTER_ONLY_MAX_MB, min: Math.floor(MASTER_ONLY_MAX_SECONDS / 60) })}</p>

@@ -304,14 +304,20 @@ export async function uploadStemBlob(params: {
   contentType: string;
   /** "Sam mastering": a project without a beat. */
   masterOnly?: boolean;
+  /** The user ticked the rights statement for this file (required by the server since 2026-11-26). */
+  rightsAccepted: boolean;
   onStage?: (stage: TakeUploadStage) => void | Promise<void>;
 }): Promise<TakeUploadTransportResult> {
+  const query = new URLSearchParams();
+  if (params.masterOnly) query.set("masterOnly", "1");
+  if (params.rightsAccepted) query.set("rights", "1");
+  const qs = query.toString();
   return runTakeUploadTransport({
     beatId: "",
     blob: params.blob,
     contentType: params.contentType,
     onStage: params.onStage,
-    sessionPath: `/api/studio/projects/${encodeURIComponent(params.projectId)}/stems/session${params.masterOnly ? "?masterOnly=1" : ""}`,
+    sessionPath: `/api/studio/projects/${encodeURIComponent(params.projectId)}/stems/session${qs ? `?${qs}` : ""}`,
     finalizePath: "/api/takes/finalize",
   });
 }

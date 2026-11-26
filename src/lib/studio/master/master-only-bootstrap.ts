@@ -27,6 +27,7 @@ export type MasterOnlyBootstrapOk = {
 };
 
 export type MasterOnlyBootstrapCode =
+  | "rights"
   | "format"
   | "too_big"
   | "too_long"
@@ -76,6 +77,8 @@ export async function discardMasterOnlyProject(projectId: string, fetchImpl: Fet
 
 export async function bootstrapMasterOnlyProject(input: {
   file: File;
+  /** The user ticked the rights statement (owner decision 2026-11-26). */
+  rightsAccepted: boolean;
   title?: string;
   fetchImpl?: FetchLike;
   uploadStem?: typeof uploadStemBlob;
@@ -85,6 +88,7 @@ export async function bootstrapMasterOnlyProject(input: {
   const fetchImpl = input.fetchImpl ?? fetch;
   const uploadStem = input.uploadStem ?? uploadStemBlob;
   // Everything that can be refused here is refused before a project exists.
+  if (!input.rightsAccepted) return { ok: false, code: "rights", message: null };
   const contentType = resolveStudioVocalImportContentType(input.file);
   if (!contentType) return { ok: false, code: "format", message: null };
   if (input.file.size <= 0 || input.file.size > STEM_AUDIO_MAX_BYTES) return { ok: false, code: "too_big", message: null };
@@ -125,7 +129,7 @@ export async function bootstrapMasterOnlyProject(input: {
   input.onStage?.("upload");
   let takeId: string;
   try {
-    const uploaded = await uploadStem({ projectId, blob: input.file, contentType, masterOnly: true });
+    const uploaded = await uploadStem({ projectId, blob: input.file, contentType, masterOnly: true, rightsAccepted: true });
     takeId = uploaded.takeId;
   } catch (error) {
     if (error instanceof TypeError) return fail("network", null);

@@ -6,6 +6,7 @@ import { cache } from "react";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { CommunityThread } from "@/components/community/community-thread";
+import { ReportRightsButton } from "@/components/rights/report-rights-button";
 import { SampleCatalog } from "@/components/community/sample-catalog";
 import { UseSampleButton } from "@/components/community/use-sample-button";
 import { ShareButtons } from "@/components/share/share-buttons";
@@ -163,6 +164,9 @@ export default async function SamplePage({ params }: Props) {
               comments={thread.comments}
             />
           ) : null}
+          <div className="mt-6">
+            <ReportRightsButton kind="sample" id={id} />
+          </div>
         </PageFrame>
       </main>
     </AppShell>

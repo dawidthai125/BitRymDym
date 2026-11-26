@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { CommunityThread } from "@/components/community/community-thread";
+import { ReportRightsButton } from "@/components/rights/report-rights-button";
 import { AuthorName } from "@/components/creators/author-name";
 import { BrdAudioDeck } from "@/components/player/brd-audio-deck";
 import { ShareButtons } from "@/components/share/share-buttons";
@@ -112,6 +113,9 @@ export default async function FinishedWorkPage({ params }: Props) {
               comments={thread.comments}
             />
           ) : null}
+          <div className="mt-6">
+            <ReportRightsButton kind="work" id={work.id} />
+          </div>
         </PageFrame>
       </main>
     </AppShell>

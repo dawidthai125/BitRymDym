@@ -9,6 +9,7 @@ import { after } from "next/server";
 import { BeatDetailClient } from "@/app/beat/[id]/beat-detail-client";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { CommunityThread } from "@/components/community/community-thread";
+import { ReportRightsButton } from "@/components/rights/report-rights-button";
 import { PageFrame } from "@/components/brand/chrome";
 import { LicenseSummary } from "@/components/site/license-summary";
 import { ShareButtons } from "@/components/share/share-buttons";
@@ -322,6 +323,9 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               comments={thread.comments}
             />
           ) : null}
+          <div className="mt-6">
+            <ReportRightsButton kind="beat" id={beat.id} />
+          </div>
         </PageFrame>
       </main>
     </AppShell>

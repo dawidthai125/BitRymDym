@@ -75,12 +75,13 @@ export async function listMyListings(userId: string): Promise<Record<EngageKind,
       id: entry.id,
       title: entry.title,
       consents: {
-        listed: entry.listed,
+        listed: entry.listed || entry.check === "checking" || entry.check === "held",
         allowRatings: entry.allowRatings,
         allowComments: entry.allowComments,
         inRankings: entry.inRankings,
       },
-      pending: false,
+      // Waiting for the rights check (or a moderator): shown like a beat/sample under review.
+      pending: entry.check === "checking" || entry.check === "held",
       href: entry.listed ? `/utwor/${entry.id}` : null,
     })),
   };
@@ -104,5 +105,8 @@ export async function updateMyListing(
     if (!saved.ok && (saved.error === "SAMPLE_NOT_FOUND" || saved.error === "SAMPLE_FORBIDDEN")) return { result: "missing" };
     return { result: "invalid" };
   }
-  return updateOwnerCatalogEntry(context.userId, id, patch);
+  const saved = await updateOwnerCatalogEntry(context.userId, id, patch);
+  if (saved.result === "checking" || saved.result === "held") return { result: "ok", consents: saved.consents };
+  if (saved.result === "blocked" || saved.result === "rights") return { result: "invalid" };
+  return { result: saved.result, consents: saved.consents };
 }

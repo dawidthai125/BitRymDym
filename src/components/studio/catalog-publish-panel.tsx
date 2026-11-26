@@ -18,6 +18,8 @@ type Entry = {
   allowComments: boolean;
   inRankings: boolean;
   listed: boolean;
+  check?: "passed" | "checking" | "held" | "removed" | "cancelled";
+  checkNote?: string | null;
 };
 
 export function CatalogPublishPanel({
@@ -42,11 +44,17 @@ export function CatalogPublishPanel({
   const [allowComments, setAllowComments] = useState(false);
   const [inRankings, setInRankings] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  /** Rights statement (2026-11-26): needed for the first publish of this master. */
+  const [rights, setRights] = useState(false);
+  const [check, setCheck] = useState<Entry["check"]>(undefined);
+  const [checkNote, setCheckNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // Live catalogue entry (id + author) → share block under the form.
   const [live, setLive] = useState<{ id: string; title: string; author: string } | null>(null);
 
   function applyLive(entry: Entry | null | undefined) {
+    setCheck(entry?.check);
+    setCheckNote(entry?.checkNote ?? null);
     setLive(entry?.listed && entry.id ? { id: entry.id, title: entry.title, author: entry.author ?? "" } : null);
   }
 
@@ -76,10 +84,11 @@ export function CatalogPublishPanel({
         setOlder(payload.older ?? null);
         if (payload.entry) {
           setTitle(payload.entry.title);
-          setPublish(payload.entry.listed);
+          const waiting = payload.entry.check === "checking" || payload.entry.check === "held";
+          setPublish(payload.entry.listed || waiting);
           setAllowRatings(payload.entry.allowRatings);
           setAllowComments(payload.entry.allowComments);
-          setInRankings(payload.entry.listed && payload.entry.inRankings);
+          setInRankings((payload.entry.listed || waiting) && payload.entry.inRankings);
           applyLive(payload.entry);
         }
       }
@@ -99,8 +108,12 @@ export function CatalogPublishPanel({
 
   async function save() {
     if (busy) return;
-    if (!publish && !live) {
+    if (!publish && !live && check !== "checking" && check !== "held") {
       setNote(t("notListed"));
+      return;
+    }
+    if (publish && needsRights && !rights) {
+      setNote(t("rightsNeeded"));
       return;
     }
     setBusy(true);
@@ -118,17 +131,24 @@ export function CatalogPublishPanel({
           allowComments,
           inRankings,
           ...(publish && older ? { withdrawOlder } : {}),
+          ...(publish && rights ? { rightsAccepted: true } : {}),
         }),
       });
       const payload = (await response.json().catch(() => ({}))) as { result?: string };
-      if (payload.result === "ok") {
-        setNote(publish ? t("saved") : t("withdrawn"));
+      if (payload.result === "ok" || payload.result === "checking" || payload.result === "held") {
+        setNote(publish ? (payload.result === "ok" ? t("saved") : payload.result === "held" ? t("heldSaved") : t("checkingSaved")) : t("withdrawn"));
         if (publish) await refreshLive();
-        else setLive(null);
+        else {
+          setLive(null);
+          setCheck("cancelled");
+          setCheckNote(null);
+        }
         return;
       }
       setNote(
-        payload.result === "off" ? t("off")
+        payload.result === "rights" ? t("rightsNeeded")
+        : payload.result === "blocked" ? t("blocked")
+        : payload.result === "off" ? t("off")
           : payload.result === "missing" ? t("missing")
             : response.status === 401 ? t("signedOut")
               : response.status === 400 ? t("invalid")
@@ -140,6 +160,9 @@ export function CatalogPublishPanel({
       setBusy(false);
     }
   }
+
+  // Live or passed before: the statement was given. Otherwise it must be ticked now.
+  const needsRights = check !== "passed";
 
   if (!ready) return null;
   if (off) return <p className="text-sm text-[var(--brd-mute)]">{t("off")}</p>;
@@ -187,6 +210,17 @@ export function CatalogPublishPanel({
           />
         </div>
       ) : null}
+      {publish && needsRights ? (
+        <label className="flex min-h-11 items-start gap-2 text-sm" data-testid="catalog-publish-rights">
+          <input type="checkbox" className="mt-1" checked={rights} onChange={(event) => setRights(event.target.checked)} />
+          <span>{t("rightsLabel")}</span>
+        </label>
+      ) : null}
+      {check === "checking" || check === "held" || check === "removed" ? (
+        <p role="status" data-testid="catalog-publish-check" className="border-l-4 border-l-[var(--brd-amber)] px-3 py-1 text-sm">
+          {checkNote ?? (check === "checking" ? t("checkingSaved") : check === "held" ? t("heldSaved") : t("blocked"))}
+        </p>
+      ) : null}
       {older ? (
         <div className="border-l-4 border-l-[var(--brd-amber)] px-3 py-1 text-sm" data-testid="catalog-publish-older">
           <p>{t("olderLive", { title: older.title })}</p>
@@ -198,7 +232,7 @@ export function CatalogPublishPanel({
           ) : null}
         </div>
       ) : null}
-      <Button type="button" className="min-h-11 self-start px-4" disabled={busy || (publish && title.trim().length === 0)} onClick={() => void save()}>
+      <Button type="button" className="min-h-11 self-start px-4" disabled={busy || check === "removed" || (publish && title.trim().length === 0) || (publish && needsRights && !rights)} onClick={() => void save()}>
         {busy ? t("saving") : t("save")}
       </Button>
       {note ? <p role="status" className="text-sm">{note}</p> : null}

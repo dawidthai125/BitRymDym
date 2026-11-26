@@ -329,6 +329,8 @@ export function StudioRecordingPanel({
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioRecordingPanel");
+  /** The user confirmed the rights statement for imported vocal files. */
+  const importRightsRef = useRef(false);
   const locale = useLocale();
   const getBaseVersionRef = useRef(getExpectedDocumentVersion);
   getBaseVersionRef.current = getExpectedDocumentVersion;
@@ -4103,7 +4105,14 @@ export function StudioRecordingPanel({
               state.phase === "READY" ||
               state.phase === "REQUESTING_MIC"
             }
-            onClick={() => importFileInputRef.current?.click()}
+            onClick={() => {
+              // Rights statement before an outside file (owner decision 2026-11-26). Once per open panel.
+              if (!importRightsRef.current) {
+                if (!window.confirm(tr("importPrawa"))) return;
+                importRightsRef.current = true;
+              }
+              importFileInputRef.current?.click();
+            }}
             aria-label={tr("importujGotowyPlikWokalu")}
           >
             {tl(workflowBusy === "import"
