@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { catalogMinSeconds, decideWorkRights, type RightsFileResult } from "@/lib/rights/rights-decision";
+import {
+  catalogMinSeconds,
+  decideWorkRights,
+  isHardCatalogHit,
+  isLongCatalogHit,
+  RIGHTS_LONG_MATCH,
+  type RightsFileResult,
+} from "@/lib/rights/rights-decision";
 
 const clean = (over: Partial<RightsFileResult> = {}): RightsFileResult => ({
   kind: "take", ref: "t1", durationSeconds: 60, catalog: [], external: [], externalError: null, error: null, ...over,
@@ -36,6 +43,39 @@ describe("decideWorkRights", () => {
     expect(catalogMinSeconds(null)).toBe(20);
     const hit = { source: "beat" as const, id: "b", title: null, score: 0.9, matchedSeconds: 9 };
     expect(decideWorkRights({ files: [clean({ durationSeconds: 10, catalog: [hit] })] }).passed).toBe(false);
+  });
+
+  it("holds a long match below the strict score (production case: Klatka Schodowa, 0.8202 over 120.8 s)", () => {
+    const hit = { source: "beat" as const, id: "b", title: "Klatka Schodowa", score: 0.8202, matchedSeconds: 120.8 };
+    expect(isHardCatalogHit(hit, 150)).toBe(false);
+    expect(isLongCatalogHit(hit, 150)).toBe(true);
+    const v = decideWorkRights({ files: [clean({ kind: "stem", durationSeconds: 150, catalog: [hit] })] });
+    expect(v.passed).toBe(false);
+    expect(v.reasons).toEqual(["Wgrana ścieżka pasuje do bitu z katalogu „Klatka Schodowa”."]);
+    expect(v.findings).toEqual(v.reasons);
+    const m = decideWorkRights({ files: [clean({ kind: "master", durationSeconds: 150, catalog: [hit] })] });
+    expect(m.reasons).toEqual(["Gotowy utwór pasuje do bitu z katalogu „Klatka Schodowa”."]);
+    expect(m.summaryPl).toContain("„Klatka Schodowa”");
+  });
+
+  it("a weak score passes even over a long span", () => {
+    const hit = { source: "beat" as const, id: "b", title: "x", score: RIGHTS_LONG_MATCH.minScore - 0.05, matchedSeconds: 120 };
+    expect(decideWorkRights({ files: [clean({ kind: "stem", durationSeconds: 150, catalog: [hit] })] }).passed).toBe(true);
+  });
+
+  it("a strong score over a few seconds of a long file still passes (strict rule unchanged)", () => {
+    const hit = { source: "beat" as const, id: "b", title: "x", score: 0.9, matchedSeconds: 3 };
+    expect(decideWorkRights({ files: [clean({ kind: "stem", durationSeconds: 150, catalog: [hit] })] }).passed).toBe(true);
+  });
+
+  it("a short looped one-shot keeps the strict rule only", () => {
+    // fingerprintFile loops a too-short file to 12 s and reports the looped length.
+    const near = { source: "sample" as const, id: "s", title: "Kick", score: 0.82, matchedSeconds: 9.8 };
+    expect(isLongCatalogHit(near, 12)).toBe(false);
+    expect(decideWorkRights({ files: [clean({ durationSeconds: 12, catalog: [near] })] }).passed).toBe(true);
+    const strict = { ...near, score: 0.9, matchedSeconds: 10.8 };
+    expect(decideWorkRights({ files: [clean({ durationSeconds: 12, catalog: [strict] })] }).passed).toBe(false);
+    expect(isLongCatalogHit(near, null)).toBe(false);
   });
 
   it("errors and an unanswered AcoustID never pass, but are not findings", () => {

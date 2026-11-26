@@ -46,8 +46,36 @@ export function catalogMinSeconds(durationSeconds: number | null): number {
   return Math.min(full, Math.max(4, durationSeconds * 0.8));
 }
 
+/** Strict match (same bar as the beat upload filter). Also used for the staff hint on samples in review. */
 export function isHardCatalogHit(hit: CatalogHit, durationSeconds: number | null): boolean {
   return hit.score >= AUTO_CHECK_THRESHOLDS.ownCatalogHardScore && hit.matchedSeconds >= catalogMinSeconds(durationSeconds);
+}
+
+/**
+ * Long match (rights check only, owner incident 2026-11-26): a beat buried under vocals, mastered and
+ * sent as a 128 kbps MP3 scores ~0.8 (score = matched share of the overlap), below the strict 0.85,
+ * yet matches for minutes. Such a file holds the work for a moderator; it does not reject anything.
+ * - minFileSeconds: the worker loops a file Chromaprint cannot read to 12 s (SHORT_LOOP_SECONDS) and then
+ *   reports the looped length. A looped one-shot repeats one pattern and can align with any beat that
+ *   uses it, so files under 20 s keep the strict rule only. (Below 20 s the rule could add little
+ *   anyway: matched ≥ 80 % of the file already forces score ≥ 0.8.)
+ */
+export const RIGHTS_LONG_MATCH = {
+  minScore: 0.5,
+  minSeconds: 30,
+  minFileSeconds: 20,
+} as const;
+
+export function isLongCatalogHit(hit: CatalogHit, durationSeconds: number | null): boolean {
+  if (durationSeconds == null || !Number.isFinite(durationSeconds) || durationSeconds < RIGHTS_LONG_MATCH.minFileSeconds) return false;
+  // At least 30 s of real overlap (catalogMinSeconds tops out at 20 s), so a shared short loop is not enough.
+  const minSeconds = Math.max(RIGHTS_LONG_MATCH.minSeconds, catalogMinSeconds(durationSeconds));
+  return hit.score >= RIGHTS_LONG_MATCH.minScore && hit.matchedSeconds >= minSeconds;
+}
+
+/** A catalogue hit that holds a work for the moderator: strict or long. */
+export function isWorkCatalogHit(hit: CatalogHit, durationSeconds: number | null): boolean {
+  return isHardCatalogHit(hit, durationSeconds) || isLongCatalogHit(hit, durationSeconds);
 }
 
 export function isHardExternalHit(hit: ExternalHit): boolean {
@@ -88,7 +116,7 @@ export function decideWorkRights(input: {
       reasons.push(`${label[0]!.toUpperCase()}${label.slice(1)} pasuje do znanego nagrania${name ? `: ${name}` : ""}.`);
       findings.push(reasons[reasons.length - 1]!);
     }
-    const cat = f.catalog.find((h) => isHardCatalogHit(h, f.durationSeconds));
+    const cat = f.catalog.find((h) => isWorkCatalogHit(h, f.durationSeconds));
     if (cat) {
       const what = cat.source === "beat" ? "bitu z katalogu" : "sampla z katalogu";
       reasons.push(`${label[0]!.toUpperCase()}${label.slice(1)} pasuje do ${what}${cat.title ? ` „${cat.title}”` : ""}.`);
