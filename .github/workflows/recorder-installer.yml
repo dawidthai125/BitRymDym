@@ -3,7 +3,7 @@ name: recorder-installer
 # Buduje instalator Windows nagrywarki (PyInstaller + Inno Setup). Uruchamiany ręcznie albo tagiem recorder-v*.
 # Czcionki nie leżą w repo: bierze je z poprzedniego instalatora (cicha instalacja na runnerze).
 # ffmpeg i ffplay (GPL, build full shared) pobiera z GyanD/codexffmpeg w przypiętej wersji.
-# Wynik to artefakt BitRymDym-Setup.exe + suma SHA-256. Wgranie na R2 robi właściciel (docs/WINDOWS_NAGRYWARKA.md).
+# Wynik to artefakt BitRymDym-Setup.exe i BitRymDym-Portable.zip (wersja bez instalacji, sama się aktualizuje) + sumy SHA-256. Wgranie na R2 robi właściciel (docs/WINDOWS_NAGRYWARKA.md).
 
 on:
   push:
@@ -167,7 +167,10 @@ jobs:
           Set-Content -Path $notes -Encoding utf8NoBOM -Value "Program sam wyrównuje głos do bitu."
           vpk pack --packId BitRymDym.Nagrywarka --packVersion $ver --packDir dist\BitRymDym --mainExe BitRymDym.exe --packTitle BitRymDym --icon assets\cassette.ico --outputDir $out --channel win --runtime win-x64 --shortcuts Desktop,StartMenuRoot --releaseNotes $notes
           if ($LASTEXITCODE) { throw "vpk pack" }
-          Remove-Item "$out\*Portable.zip" -ErrorAction SilentlyContinue
+          $portable = Get-ChildItem $out -Filter *Portable.zip | Select-Object -First 1
+          if (-not $portable) { throw "brak Portable.zip" }
+          Copy-Item $portable.FullName "$out\BitRymDym-Portable.zip" -Force
+          (Get-FileHash "$out\BitRymDym-Portable.zip" -Algorithm SHA256).Hash.ToLower() + "  BitRymDym-Portable.zip" | Out-File "$out\BitRymDym-Portable.zip.sha256" -Encoding ascii
           $setup = Get-ChildItem $out -Filter *Setup.exe | Select-Object -First 1
           if (-not $setup) { throw "brak Setup.exe" }
           Copy-Item $setup.FullName "$out\BitRymDym-Setup.exe" -Force
@@ -202,12 +205,67 @@ jobs:
           if ($installed -notmatch "ffplay=" -or $installed -match "ffplay=None") { throw "po instalacji program nie widzi ffplay" }
           if ($installed -notmatch "ffmpeg\.exe") { throw "po instalacji program nie widzi ffmpeg" }
 
+      - name: Portable - rozpakowanie, smoke i aktualizacja do nowszej wersji
+        working-directory: desktop/recorder
+        run: |
+          Get-Process BitRymDym -ErrorAction SilentlyContinue | Stop-Process -Force
+          $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
+          $root = Join-Path $env:RUNNER_TEMP "portable"
+          Remove-Item $root -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive "installer\velopack\BitRymDym-Portable.zip" $root -Force
+          Get-ChildItem $root -Force | Select-Object Name, Length | Format-Table -AutoSize | Out-String | Write-Host
+          # Ten sam układ co po instalacji: przycisk Zaktualizuj szuka Update.exe poziom nad current.
+          foreach ($need in @("Update.exe","BitRymDym.exe","current\BitRymDym.exe","current\ffmpeg.exe","current\ffplay.exe","current\fonts")) {
+            if (-not (Test-Path (Join-Path $root $need))) { throw "portable: brak $need" }
+          }
+          $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
+          Remove-Item $note -ErrorAction SilentlyContinue
+          $env:BITRYMDYM_UI_SMOKE = "1"
+          $q = Start-Process (Join-Path $root "current\BitRymDym.exe") -PassThru
+          if (-not $q.WaitForExit(90000)) { $q.Kill(); throw "portable smoke: czas" }
+          if (-not (Test-Path $note)) { throw "portable smoke: brak wyniku" }
+          $smoke = Get-Content $note -Raw
+          $smoke | Write-Host
+          if ($smoke -notmatch "ffplay=" -or $smoke -match "ffplay=None") { throw "portable: program nie widzi ffplay" }
+          if ($smoke -notmatch "ffmpeg\.exe") { throw "portable: program nie widzi ffmpeg" }
+
+          # Aktualizacja: paczka o numer nowsza, ta sama komenda co przycisk Zaktualizuj (updater.update_exe_args).
+          $ver = (Select-String -Path updater.py -Pattern 'APP_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          $parts = $ver.Split(".")
+          $next = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
+          $nextOut = Join-Path $env:RUNNER_TEMP "velopack-next"
+          vpk pack --packId BitRymDym.Nagrywarka --packVersion $next --packDir dist\BitRymDym --mainExe BitRymDym.exe --packTitle BitRymDym --icon assets\cassette.ico --outputDir $nextOut --channel win --runtime win-x64 --noPortable --noInst
+          if ($LASTEXITCODE) { throw "vpk pack (nowsza)" }
+          $pkg = Get-ChildItem $nextOut -Filter *full.nupkg | Select-Object -First 1
+          if (-not $pkg) { throw "brak nowszej paczki" }
+          $packages = Join-Path $root "packages"
+          New-Item -ItemType Directory -Force $packages | Out-Null
+          Copy-Item $pkg.FullName $packages -Force
+          $target = Join-Path $packages $pkg.Name
+          $u = Start-Process (Join-Path $root "Update.exe") -ArgumentList "apply","--package",$target,"--rootDir",$root,"--packageDir",$packages -PassThru
+          if (-not $u.WaitForExit(180000)) { $u.Kill(); throw "portable: Update.exe apply - czas" }
+          if ($u.ExitCode -ne 0) { throw "portable: Update.exe apply - kod $($u.ExitCode)" }
+          $ok = $false
+          for ($i = 0; $i -lt 60; $i++) {
+            $sq = Join-Path $root "current\sq.version"
+            if ((Test-Path $sq) -and ((Get-Content $sq -Raw) -match [regex]::Escape($next))) { $ok = $true; break }
+            Start-Sleep -Seconds 1
+          }
+          Get-Process BitRymDym -ErrorAction SilentlyContinue | Stop-Process -Force
+          if (-not $ok) { throw "portable: po aktualizacji current nie ma wersji $next" }
+          foreach ($need in @("current\BitRymDym.exe","current\ffmpeg.exe","current\ffplay.exe","current\fonts")) {
+            if (-not (Test-Path (Join-Path $root $need))) { throw "portable po aktualizacji: brak $need" }
+          }
+          "portable: $ver -> $next zaktualizowany w miejscu" | Write-Host
+
       - uses: actions/upload-artifact@v4
         with:
           name: BitRymDym-Setup
           path: |
             desktop/recorder/installer/velopack/BitRymDym-Setup.exe
             desktop/recorder/installer/velopack/BitRymDym-Setup.exe.sha256
+            desktop/recorder/installer/velopack/BitRymDym-Portable.zip
+            desktop/recorder/installer/velopack/BitRymDym-Portable.zip.sha256
             desktop/recorder/installer/velopack/releases.win.json
             desktop/recorder/installer/velopack/*full.nupkg
           retention-days: 7
