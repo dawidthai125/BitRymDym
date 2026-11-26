@@ -46,6 +46,36 @@ export function cleanWorkTitle(value: unknown): string | null {
   return text;
 }
 
+/** One catalogue row (one master) of a Studio project. */
+export type ProjectWorkVersion = {
+  masterJobId: string;
+  checkStatus: string | null;
+  withdrawnAt: string | null;
+  staffAt: string | null;
+};
+
+function staffTime(value: string | null): number {
+  const at = value ? Date.parse(value) : Number.NaN;
+  // A takedown without a time counts as the newest decision.
+  return Number.isFinite(at) ? at : Number.POSITIVE_INFINITY;
+}
+
+/**
+ * A moderator rejected or took down a version of the project: the owner cannot publish any master
+ * of that project again (a new master is the same work). Exceptions: a version still live from
+ * before (its switches may change), or one staff let in ("Wpuść do katalogu") after the takedown.
+ */
+export function projectPublishBlocked(versions: ProjectWorkVersion[], masterJobId: string): boolean {
+  const takedowns = versions.filter((v) => v.checkStatus === "rejected" || v.checkStatus === "removed");
+  if (takedowns.length === 0) return false;
+  const self = versions.find((v) => v.masterJobId === masterJobId);
+  if (!self || self.checkStatus !== "passed") return true;
+  if (self.withdrawnAt == null) return false;
+  const latest = Math.max(...takedowns.map((v) => staffTime(v.staffAt)));
+  const released = self.staffAt ? Date.parse(self.staffAt) : Number.NaN;
+  return !(Number.isFinite(released) && released > latest);
+}
+
 export function workWindow(now: Date, period: WorkBoardPeriod, timeZone = COMMUNITY_ZONE): WorkWindow {
   if (period === "week" || period === "month") {
     const window = warsawPeriod(now, period, timeZone);

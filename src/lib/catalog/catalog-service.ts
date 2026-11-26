@@ -7,6 +7,7 @@ import { loadPublicAuthorDisplayNames } from "@/lib/beats/public-author";
 import {
   cleanWorkTitle,
   normalizeWorkConsents,
+  projectPublishBlocked,
   warsawHalfYear,
   workWindow,
   type WorkBoardPeriod,
@@ -233,7 +234,13 @@ export async function loadOwnerCatalogEntry(
   userId: string,
   projectId: string,
   masterJobId: string,
-): Promise<{ enabled: boolean; entry: OwnerCatalogEntry | null; older: { id: string; title: string } | null }> {
+): Promise<{
+  enabled: boolean;
+  entry: OwnerCatalogEntry | null;
+  older: { id: string; title: string } | null;
+  /** Staff took a version of this project down: this master cannot be published (owner-facing note). */
+  blocked?: { note: string } | null;
+}> {
   if (!isUuid(projectId) || !isUuid(masterJobId)) return { enabled: true, entry: null, older: null };
   const admin = adminOrNull();
   if (!admin) return { enabled: false, entry: null, older: null };
@@ -259,20 +266,22 @@ export async function loadOwnerCatalogEntry(
     .maybeSingle();
   if (before.error) throw new Error(before.error.message ?? "catalog_works read failed");
   const older = before.data ? { id: String(before.data.id), title: String(before.data.title) } : null;
-  if (!loaded.data) return { enabled: true, entry: null, older };
+  const blocked = (await projectTakenDown(admin, userId, projectId, masterJobId)) ? { note: REMOVED_NOTE } : null;
+  if (!loaded.data) return { enabled: true, entry: null, older, blocked };
   const row = loaded.data as Row;
   const [card] = await cardsOf([row]);
   if (!card) throw new Error("catalog_works card read failed");
   return {
     enabled: true,
     older,
+    blocked,
     entry: {
       ...card,
       projectId: row.project_id,
       masterJobId: row.master_job_id,
       listed: row.withdrawn_at == null,
-      check: workCheckState(row.check_status),
-      checkNote: ownerCheckNote(row),
+      check: blocked ? "removed" : workCheckState(row.check_status),
+      checkNote: blocked ? blocked.note : ownerCheckNote(row),
       rightsAccepted: Boolean(row.rights_accepted_at),
     },
   };
@@ -283,6 +292,26 @@ function hasFindings(result: unknown): boolean {
   const findings = (result as { findings?: unknown } | null)?.findings;
   return Array.isArray(findings) && findings.length > 0;
 }
+
+/** Staff took a version of the project down: no master of it may be published again (see projectPublishBlocked). */
+async function projectTakenDown(admin: Admin, userId: string, projectId: string, masterJobId: string): Promise<boolean> {
+  const rows = await admin
+    .from(TABLE)
+    .select("master_job_id, check_status, withdrawn_at, staff_at")
+    .eq("owner_id", userId)
+    .eq("project_id", projectId)
+    .limit(500);
+  if (rows.error) throw new Error(rows.error.message ?? "catalog_works read failed");
+  const versions = ((rows.data ?? []) as Array<{ master_job_id: string; check_status: string | null; withdrawn_at: string | null; staff_at: string | null }>).map((r) => ({
+    masterJobId: String(r.master_job_id),
+    checkStatus: r.check_status,
+    withdrawnAt: r.withdrawn_at,
+    staffAt: r.staff_at,
+  }));
+  return projectPublishBlocked(versions, masterJobId);
+}
+
+const REMOVED_NOTE = "Utwór został zdjęty z katalogu przez moderatora. Napisz do nas, jeśli to pomyłka.";
 
 /** Another version of the project was held with findings or taken down by staff. */
 async function projectFlagged(admin: Admin, userId: string, projectId: string, masterJobId: string): Promise<boolean> {
@@ -303,7 +332,7 @@ async function projectFlagged(admin: Admin, userId: string, projectId: string, m
 function ownerCheckNote(row: Row): string | null {
   const state = workCheckState(row.check_status);
   if (state === "held") return "Sprawdzamy prawa do nagrań w tym utworze. Moderator zdecyduje, czy utwór trafi do katalogu.";
-  if (state === "removed") return "Utwór został zdjęty z katalogu przez moderatora. Napisz do nas, jeśli to pomyłka.";
+  if (state === "removed") return REMOVED_NOTE;
   if (state === "checking") return "Sprawdzamy utwór. Zwykle trwa to kilka minut.";
   return null;
 }
@@ -380,6 +409,12 @@ export async function saveOwnerCatalog(input: {
   const state = workCheckState(prev?.check_status);
   // A moderator took this master down: the owner cannot put it back.
   if (state === "removed") return "blocked";
+  // ... nor any other master of the same project (a re-mastered track is the same work).
+  try {
+    if (await projectTakenDown(admin, input.userId, input.projectId, input.masterJobId)) return "blocked";
+  } catch {
+    return "invalid";
+  }
   // Rights statement: ticked now, or once before for this very master.
   const rightsNow = input.rightsAccepted === true;
   // Works published before 2026-11-26 (passed, no stored statement) keep their place.

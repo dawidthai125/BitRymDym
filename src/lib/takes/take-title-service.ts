@@ -14,15 +14,8 @@ export async function updateOwnTakeTitleFor(
   context: AuthContext,
   params: { takeId: string; title: unknown },
 ): Promise<{ takeId: string; title: string | null }> {
-  let title: string | null;
-  try {
-    title = normalizeTakeTitle(params.title);
-  } catch (e) {
-    throw new AuthError(
-      "FORBIDDEN",
-      e instanceof Error ? e.message : "Invalid title.",
-    );
-  }
+  // Throws TakeTitleError (→ 400 VALIDATION in takeApiErrorResponse), not a permission error.
+  const title = normalizeTakeTitle(params.title);
 
   if (typeof params.takeId !== "string" || params.takeId.length < 8) {
     throw new AuthError("FORBIDDEN", "Invalid takeId.");

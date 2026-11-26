@@ -1,7 +1,62 @@
 import { describe, expect, it } from "vitest";
 
 import { warsawPeriod } from "@/lib/community/ranking-policy";
-import { cleanWorkTitle, normalizeWorkConsents, warsawHalfYear, workWindow } from "@/lib/catalog/catalog-policy";
+import {
+  cleanWorkTitle,
+  normalizeWorkConsents,
+  projectPublishBlocked,
+  warsawHalfYear,
+  workWindow,
+  type ProjectWorkVersion,
+} from "@/lib/catalog/catalog-policy";
+
+const OLD = "00000000-0000-4000-8000-000000000001";
+const NEW = "00000000-0000-4000-8000-000000000002";
+const v = (masterJobId: string, checkStatus: string | null, withdrawnAt: string | null = null, staffAt: string | null = null): ProjectWorkVersion => ({
+  masterJobId,
+  checkStatus,
+  withdrawnAt,
+  staffAt,
+});
+
+describe("project takedown blocks every master of the project", () => {
+  it("does not block a project nobody took down", () => {
+    expect(projectPublishBlocked([], NEW)).toBe(false);
+    expect(projectPublishBlocked([v(OLD, "held", "2026-11-26T10:00:00Z"), v(OLD, "cancelled")], NEW)).toBe(false);
+  });
+
+  it("blocks a new master after the old one was rejected or removed", () => {
+    for (const status of ["rejected", "removed"]) {
+      const old = v(OLD, status, "2026-11-26T10:00:00Z", "2026-11-26T10:00:00Z");
+      expect(projectPublishBlocked([old], NEW)).toBe(true);
+      expect(projectPublishBlocked([old, v(NEW, "pending", "2026-11-26T11:00:00Z")], NEW)).toBe(true);
+      expect(projectPublishBlocked([old, v(NEW, "cancelled", "2026-11-26T11:00:00Z")], NEW)).toBe(true);
+      expect(projectPublishBlocked([old, v(NEW, "held", "2026-11-26T11:00:00Z")], NEW)).toBe(true);
+    }
+  });
+
+  it("blocks the taken-down master itself", () => {
+    expect(projectPublishBlocked([v(OLD, "rejected", "2026-11-26T10:00:00Z", "2026-11-26T10:00:00Z")], OLD)).toBe(true);
+  });
+
+  it("blocks republishing a version withdrawn before or after the takedown", () => {
+    const old = v(OLD, "removed", "2026-11-26T10:00:00Z", "2026-11-26T10:00:00Z");
+    expect(projectPublishBlocked([old, v(NEW, "passed", "2026-11-26T12:00:00Z")], NEW)).toBe(true);
+    expect(projectPublishBlocked([old, v(NEW, "passed", "2026-11-26T12:00:00Z", "2026-11-26T09:00:00Z")], NEW)).toBe(true);
+  });
+
+  it("keeps a version staff let in after the takedown, and a version still live", () => {
+    const old = v(OLD, "rejected", "2026-11-26T10:00:00Z", "2026-11-26T10:00:00Z");
+    expect(projectPublishBlocked([old, v(NEW, "passed", null, "2026-11-26T12:00:00Z")], NEW)).toBe(false);
+    expect(projectPublishBlocked([old, v(NEW, "passed", "2026-11-26T13:00:00Z", "2026-11-26T12:00:00Z")], NEW)).toBe(false);
+    expect(projectPublishBlocked([old, v(NEW, "passed")], NEW)).toBe(false);
+  });
+
+  it("treats a takedown without a time as the newest decision", () => {
+    const old = v(OLD, "removed", "2026-11-26T10:00:00Z", null);
+    expect(projectPublishBlocked([old, v(NEW, "passed", "2026-11-26T13:00:00Z", "2026-11-26T12:00:00Z")], NEW)).toBe(true);
+  });
+});
 
 const NOW = new Date("2026-11-07T12:00:00.000Z");
 

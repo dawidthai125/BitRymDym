@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { AudioEntitlementError } from "@/lib/audio/effective-entitlement";
 import { AuthError } from "@/lib/auth/session";
 import { TakeClaimError } from "@/lib/takes/claim-errors";
+import { TakeTitleError, type TakeTitleErrorCode } from "@/lib/takes/take-title";
 
 export function takeApiErrorResponse(error: unknown): NextResponse {
   if (error instanceof TakeClaimError) {
@@ -40,6 +41,12 @@ export function takeApiErrorResponse(error: unknown): NextResponse {
       { status: error.code === "UNAUTHENTICATED" ? 401 : 403 },
     );
   }
+  if (error instanceof TakeTitleError) {
+    return NextResponse.json(
+      { error: TAKE_TITLE_ERROR_MESSAGE[error.code], code: error.code },
+      { status: 400 },
+    );
+  }
   // A body that is not JSON is the caller's mistake, not ours.
   if (error instanceof SyntaxError) {
     return NextResponse.json({ error: "Nieprawidłowe żądanie.", code: "VALIDATION" }, { status: 400 });
@@ -55,6 +62,13 @@ export function takeApiErrorResponse(error: unknown): NextResponse {
     { status: 500 },
   );
 }
+
+/** Polish copy per title rule (EN via messages/lib-text.json). */
+export const TAKE_TITLE_ERROR_MESSAGE: Record<TakeTitleErrorCode, string> = {
+  TITLE_NOT_STRING: "Tytuł jest za długi albo nieprawidłowy.",
+  TITLE_RESERVED_PREFIX: "Tytuł nie może zaczynać się od „smp:” ani „catalog:”.",
+  TITLE_TOO_LONG: "Tytuł może mieć najwyżej 120 znaków.",
+};
 
 /** The only text a client sees for an unknown server error. */
 export const TAKE_INTERNAL_ERROR = "Coś poszło nie tak na serwerze. Spróbuj ponownie za chwilę.";

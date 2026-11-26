@@ -3528,6 +3528,9 @@
       "podgladNiedostepny": "Preview unavailable.",
       "usuwanieNiePowiodloSie": "Deleting failed.",
       "nieUdaloSieZapisac": "Could not save the title.",
+      "tytulZastrzezonyPrefiks": "The title cannot start with “smp:” or “catalog:”.",
+      "tytulZaDlugi": "The title can be at most {max} characters long.",
+      "tytulNieprawidlowy": "The title is invalid.",
       "operacjaNiePowiodlaSie": "The operation failed."
     },
     "recordingPanel": {

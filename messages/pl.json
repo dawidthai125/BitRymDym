@@ -3528,6 +3528,9 @@
       "podgladNiedostepny": "Podgląd niedostępny.",
       "usuwanieNiePowiodloSie": "Nie udało się usunąć nagrania.",
       "nieUdaloSieZapisac": "Nie udało się zapisać tytułu.",
+      "tytulZastrzezonyPrefiks": "Tytuł nie może zaczynać się od „smp:” ani „catalog:”.",
+      "tytulZaDlugi": "Tytuł może mieć najwyżej {max} znaków.",
+      "tytulNieprawidlowy": "Tytuł jest nieprawidłowy.",
       "operacjaNiePowiodlaSie": "Nie udało się. Spróbuj ponownie."
     },
     "recordingPanel": {

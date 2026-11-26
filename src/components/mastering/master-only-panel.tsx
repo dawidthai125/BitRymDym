@@ -302,6 +302,8 @@ export function MasterOnlyPanel({ tier }: { tier: Tier }) {
             accept={STUDIO_VOCAL_IMPORT_ACCEPT}
             className="sr-only"
             tabIndex={-1}
+            // Same gate as the button: without the rights statement the picker cannot open at all.
+            disabled={working || dl === "working" || !rights}
             aria-label={t("wybierzPlik")}
             data-testid="master-only-file"
             onChange={(e) => {

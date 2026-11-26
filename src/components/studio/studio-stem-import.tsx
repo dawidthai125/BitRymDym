@@ -103,6 +103,8 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
         className="sr-only"
         aria-hidden
         tabIndex={-1}
+        // Same gate as the button: without the rights statement the picker cannot open at all.
+        disabled={disabled || busy || freeSlots < 1 || !rights}
         data-testid="studio-stem-input"
         onChange={(e) => {
           if (e.target.files && e.target.files.length) void importFiles(e.target.files);

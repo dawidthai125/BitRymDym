@@ -3256,6 +3256,8 @@
  { "src": "Nieprawidłowy identyfikator.", "en": "Invalid identifier." },
  { "src": "Coś poszło nie tak na serwerze. Spróbuj ponownie za chwilę.", "en": "Something went wrong on the server. Try again in a moment." },
  { "src": "Tytuł jest za długi albo nieprawidłowy.", "en": "The title is too long or invalid." },
+ { "src": "Tytuł nie może zaczynać się od „smp:” ani „catalog:”.", "en": "The title cannot start with “smp:” or “catalog:”." },
+ { "src": "Tytuł może mieć najwyżej 120 znaków.", "en": "The title can be at most 120 characters long." },
  { "src": "Ten bit nie ma poprawnej długości.", "en": "This beat has no valid length." },
  { "src": "Ten plik nie jest w Twoim planie.", "en": "This file is not in your plan." },
  { "src": "Ten plik nie jest dostępny w projekcie.", "en": "This file is not available in the project." },

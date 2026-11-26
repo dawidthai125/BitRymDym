@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const masterJobId = url.searchParams.get("masterJobId") ?? "";
     const loaded = await loadOwnerCatalogEntry(auth.userId, projectId, masterJobId);
     if (!loaded.enabled) return NextResponse.json({ result: "off", entry: null }, { status: 503 });
-    return NextResponse.json({ result: "ok", entry: loaded.entry, older: loaded.older });
+    return NextResponse.json({ result: "ok", entry: loaded.entry, older: loaded.older, blocked: loaded.blocked ?? null });
   } catch (error) {
     if (error instanceof AuthError) return NextResponse.json({ result: "signed_out" }, { status: 401 });
     console.error("[studio-catalog] read failed", error);

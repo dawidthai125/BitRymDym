@@ -55,6 +55,7 @@ import { buildTakeExportLadder } from "@/lib/takes/take-export-capability";
 import { createTakeExportJobFor } from "@/lib/takes/take-export-service";
 import { createOwnTakePreviewSignedUrlFor } from "@/lib/takes/take-preview";
 import { updateOwnTakeTitleFor } from "@/lib/takes/take-title-service";
+import { TakeTitleError } from "@/lib/takes/take-title";
 import {
   createTakeRecordingSessionFor,
   finalizeTakeRecordingFor,
@@ -262,7 +263,7 @@ describe.runIf(live)("P4 live verification", () => {
             takeId: session.takeId,
             title: "x".repeat(121),
           }),
-        ).rejects.toBeInstanceOf(AuthError);
+        ).rejects.toBeInstanceOf(TakeTitleError);
 
         const listed = await listOwnTakesFor(free.context);
         const item = listed.find((t) => t.id === session.takeId);

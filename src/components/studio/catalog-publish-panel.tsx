@@ -63,12 +63,21 @@ export function CatalogPublishPanel({
 
   const url = `/api/studio/catalog?projectId=${encodeURIComponent(projectId)}&masterJobId=${encodeURIComponent(masterJobId)}`;
 
+  /** Staff took a version of the project down: no master of it can be published (any new master too). */
+  function applyBlocked(blocked: { note?: string } | null | undefined) {
+    if (!blocked) return;
+    setCheck("removed");
+    setCheckNote(blocked.note ?? null);
+    setPublish(false);
+  }
+
   async function refreshLive() {
     try {
       const response = await fetch(url);
-      const payload = (await response.json().catch(() => null)) as { entry?: Entry | null; older?: { id: string; title: string } | null } | null;
+      const payload = (await response.json().catch(() => null)) as { entry?: Entry | null; older?: { id: string; title: string } | null; blocked?: { note?: string } | null } | null;
       if (!response.ok || !payload) return;
       applyLive(payload.entry);
+      applyBlocked(payload.blocked);
       setOlder(payload.older ?? null);
     } catch {
       // saved anyway; the share block appears after a reload
@@ -78,7 +87,7 @@ export function CatalogPublishPanel({
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
       const response = await fetch(url, { signal });
-      const payload = (await response.json().catch(() => null)) as { result?: string; entry?: Entry | null; older?: { id: string; title: string } | null } | null;
+      const payload = (await response.json().catch(() => null)) as { result?: string; entry?: Entry | null; older?: { id: string; title: string } | null; blocked?: { note?: string } | null } | null;
       if (signal?.aborted) return;
       if (payload?.result === "off") setOff(true);
       else if (!response.ok || payload?.result !== "ok") setLoadError(response.status === 401 ? "signed_out" : "error");
@@ -94,6 +103,7 @@ export function CatalogPublishPanel({
           setInRankings((payload.entry.listed || waiting) && payload.entry.inRankings);
           applyLive(payload.entry);
         }
+        applyBlocked(payload.blocked);
       }
       setReady(true);
     } catch {
@@ -188,10 +198,10 @@ export function CatalogPublishPanel({
       </p>
       {/* The publish box is the consent to the public 45 s clip (terms § 7 ust. 8). */}
       <label className="flex min-h-11 items-center gap-2 text-sm" data-testid="catalog-publish-consent">
-        <input type="checkbox" checked={publish} onChange={(event) => setPublish(event.target.checked)} />
+        <input type="checkbox" checked={publish} disabled={check === "removed"} onChange={(event) => setPublish(event.target.checked)} />
         {t("publish")}
       </label>
-      {publish ? (
+      {publish && check !== "removed" ? (
         <div className="flex flex-col gap-2">
           <label className="text-sm" htmlFor="catalog-work-title">{t("titleLabel")}</label>
           <input
@@ -213,7 +223,7 @@ export function CatalogPublishPanel({
           />
         </div>
       ) : null}
-      {publish && needsRights ? (
+      {publish && needsRights && check !== "removed" ? (
         <label className="flex min-h-11 items-start gap-2 text-sm" data-testid="catalog-publish-rights">
           <input type="checkbox" className="mt-1" checked={rights} onChange={(event) => setRights(event.target.checked)} />
           <span>{t("rightsLabel")}</span>

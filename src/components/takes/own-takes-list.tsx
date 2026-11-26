@@ -16,6 +16,13 @@ import { TakeDownloadMenu } from "@/components/takes/take-download-menu";
 import type { OwnTakeListItem } from "@/lib/takes/list-own-takes";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import { toUserFacingTakeUploadError } from "@/lib/takes/client-upload";
+import {
+  isTakeTitleErrorCode,
+  takeTitleErrorCode,
+  type TakeTitleErrorCode,
+} from "@/lib/takes/take-title";
+import { TAKE_TITLE_MAX_LENGTH } from "@/config/recording";
+import { toUserFacingError } from "@/lib/ui/user-errors";
 import { labelRecordingMode, labelTakeStatus } from "@/lib/ui/labels";
 import { intlTag, resolveLocale } from "@/i18n/config";
 
@@ -123,8 +130,20 @@ export function OwnTakesList({
     }
   }
 
+  function titleErrorText(code: TakeTitleErrorCode): string {
+    if (code === "TITLE_RESERVED_PREFIX") return t("tytulZastrzezonyPrefiks");
+    if (code === "TITLE_TOO_LONG") return t("tytulZaDlugi", { max: TAKE_TITLE_MAX_LENGTH });
+    return t("tytulNieprawidlowy");
+  }
+
   async function onSaveTitle(take: OwnTakeListItem) {
     setError(null);
+    // Same rules as the server, so an obvious mistake never leaves the browser.
+    const invalid = takeTitleErrorCode(titleDraft);
+    if (invalid) {
+      setError(titleErrorText(invalid));
+      return;
+    }
     setBusyId(take.id);
     try {
       const res = await fetch("/api/takes/title", {
@@ -132,21 +151,24 @@ export function OwnTakesList({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ takeId: take.id, title: titleDraft }),
       });
-      const json = (await res.json()) as {
+      const json = ((await res.json().catch(() => null)) ?? {}) as {
         success?: boolean;
         error?: string;
+        code?: string;
       };
       if (!res.ok || !json.success) {
-        throw new Error(json.error ?? t("nieUdaloSieZapisac"));
+        if (isTakeTitleErrorCode(json.code)) {
+          setError(titleErrorText(json.code));
+          return;
+        }
+        throw new Error(json.error ?? "");
       }
       setEditingId(null);
       router.refresh();
     } catch (e) {
-      setError(
-        toUserFacingTakeUploadError(
-          e instanceof Error ? e.message : t("nieUdaloSieZapisac"),
-        ),
-      );
+      // Not the "recording" fallback: this is a title save, not a take upload.
+      const mapped = toUserFacingError(e instanceof Error ? e.message : null, "generic");
+      setError(mapped === toUserFacingError(null, "generic") ? t("nieUdaloSieZapisac") : mapped);
     } finally {
       setBusyId(null);
     }
