@@ -103,6 +103,8 @@
       "lead": "Konto, plan i limity są te same. Nagrywarka (Windows) nagrywa wokal przy komputerze. Strona układa numer, mix i master. Regulamin strony obejmuje też Nagrywarkę, bo korzysta ona z tego samego konta.",
       "download": "Pobierz na Windows",
       "downloadNeedAccount": "Zaloguj się, żeby pobrać",
+      "downloadPortable": "Wersja bez instalacji (ZIP)",
+      "portableNote": "Wersja bez instalacji: rozpakuj ZIP do folderu, w którym możesz zapisywać (np. Pulpit albo Dokumenty), i uruchom BitRymDym.exe. Aktualizuje się sama, tak jak instalka. Nie tworzy skrótów, a usuwasz ją, kasując folder. Ustawienia i nagrania są w tym samym miejscu co przy instalce.",
       "downloadNote": "Do pobrania i do logowania w programie potrzebne jest konto na stronie. Instalator jest na Windows. Nie trzeba uprawnień administratora. Skrót nazywa się BitRymDym. Instalator zawiera ffmpeg i ffplay, więc odsłuch bitu działa bez dodatkowych programów. Wersja na Maca i urządzenia Apple będzie wkrótce. Do tego czasu na Macu nagrywasz w przeglądarce.",
       "openStudio": "Otwórz Studio",
       "windowsTitle": "Nagrywarka (Windows)",

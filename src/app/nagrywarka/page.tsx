@@ -15,6 +15,9 @@ import type { PremiumTier } from "@/types/premium";
 /** Public Windows setup. The file is not in git and not on Vercel. */
 export const RECORDER_SETUP_URL =
   "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup.exe";
+/** Same program without installing (Velopack portable ZIP); it updates itself like the installed one. */
+export const RECORDER_PORTABLE_URL =
+  "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Portable.zip";
 
 const TIERS: PremiumTier[] = ["FREE", "BRONZE", "SILVER", "GOLD"];
 
@@ -56,6 +59,16 @@ export default async function RecorderPage() {
               >
                 {t("download")}
               </a>
+            ) : null}
+            {signedIn ? (
+              <a
+                href={RECORDER_PORTABLE_URL}
+                rel="noopener noreferrer"
+                data-testid="recorder-portable"
+                className="inline-flex min-h-11 items-center rounded-[var(--brd-radius,10px)] border border-[var(--brd-line)] px-4 font-poster text-base font-bold uppercase tracking-[0.08em] text-[var(--brd-ink)]"
+              >
+                {t("downloadPortable")}
+              </a>
             ) : (
               <BrdLink href={signInPathWithNext("/nagrywarka")}>{t("downloadNeedAccount")}</BrdLink>
             )}
@@ -64,6 +77,7 @@ export default async function RecorderPage() {
             </BrdLink>
           </div>
           <p className="mt-3 text-sm text-[var(--brd-mute)]">{t("downloadNote")}</p>
+          {signedIn ? <p className="mt-2 text-sm text-[var(--brd-mute)]">{t("portableNote")}</p> : null}
 
           <section className="mt-12 space-y-4">
             <h2 className="brd-display text-2xl font-semibold">{t("windowsTitle")}</h2>
