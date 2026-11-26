@@ -148,7 +148,7 @@
         "mastering": {
           "href": "/mastering",
           "t": "Sam mastering",
-          "d": "Mastering gotowego pliku."
+          "d": "Mastering gotowego pliku. Od planu Silver."
         },
         "nagrywarka": {
           "href": "/nagrywarka",
@@ -5398,6 +5398,21 @@
     "hint": "Język całej strony. Domyślnie polski."
   },
   "mastering": {
+    "gosc": {
+      "jakTitle": "Jak to działa",
+      "kroki": [
+        "Wrzucasz gotowy mix stereo: WAV, MP3, M4A albo AAC, do {mb} MB i {min} minut.",
+        "Potwierdzasz, że masz prawa do utworu.",
+        "Serwis robi master pod streaming (−14 LUFS).",
+        "Słuchasz, zatwierdzasz i pobierasz plik."
+      ],
+      "planTitle": "Dla kogo",
+      "plan": "Sam mastering jest od planu Silver: {silver} masterów w miesiącu i plik MP3. W Gold masz {gold} masterów i plik WAV. Masterowanie w Studiu liczy się do tej samej puli.",
+      "studio": "Na planach Free i Bronze zmasterujesz w Studiu to, co tam nagrasz.",
+      "zaloz": "Załóż konto",
+      "zaloguj": "Mam konto, zaloguj",
+      "plany": "Zobacz plany"
+    },
     "intro": "Wrzuć gotowy mix stereo (WAV/MP3). Robimy master pod streaming (−14 LUFS). Od planu Silver. Plik trafia do nowego projektu w Studiu.",
     "wymagaSilver": "Sam mastering — od Silver",
     "wybierzPlik": "Wybierz plik",

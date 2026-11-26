@@ -108,11 +108,9 @@ function hasAuthSessionCookie(request: NextRequest): boolean {
     .some((cookie) => cookie.name.includes("-auth-token"));
 }
 
-/** Guests have no Studio (Owner 2026-10-29) nor Master only: pages → sign-in, APIs → 401. */
+/** Guests have no Studio (Owner 2026-10-29): pages → sign-in, APIs → 401. /mastering shows guests a description. */
 export function isGuestBlockedPath(pathname: string): "page" | "api" | null {
   if (pathname === "/studio" || pathname.startsWith("/studio/")) return "page";
-  // Master only lives on the Studio plane: same early sign-in redirect (the page re-checks).
-  if (pathname === "/mastering") return "page";
   // Account areas: early sign-in redirect that keeps the address (?next=), e.g. the mail link
   // /account#powiadomienia. Pages still re-check the session and roles (admin).
   for (const area of ["/account", "/settings", "/library", "/admin"]) {

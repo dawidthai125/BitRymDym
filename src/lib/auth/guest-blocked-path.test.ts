@@ -11,12 +11,12 @@ describe("guest Studio gate (middleware)", () => {
     expect(isGuestBlockedPath("/api/takes/anon/session")).toBe("api");
   });
   it("blocks account areas so the sign-in keeps ?next=", () => {
-    for (const p of ["/account", "/account/takes", "/settings", "/library", "/admin", "/admin/lejek", "/mastering"]) {
+    for (const p of ["/account", "/account/takes", "/settings", "/library", "/admin", "/admin/lejek"]) {
       expect(isGuestBlockedPath(p)).toBe("page");
     }
   });
   it("leaves everything else alone", () => {
-    for (const p of ["/", "/beat/1", "/studios", "/studiox", "/api/takes/user", "/premium", "/sign-in", "/accounts", "/administracja", "/api/admin/x"]) {
+    for (const p of ["/", "/mastering", "/beat/1", "/studios", "/studiox", "/api/takes/user", "/premium", "/sign-in", "/accounts", "/administracja", "/api/admin/x"]) {
       expect(isGuestBlockedPath(p)).toBeNull();
     }
   });

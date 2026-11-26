@@ -14,7 +14,7 @@ import { RYMY_BASE, rhymePagePath, rhymePageWords } from "@/lib/rymy/dictionary"
 import { EN_LANDING_PAGES, englishLandingPath, englishTwinOf } from "@/lib/seo/landing-pages-en";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
-/** Public, indexable pages only (no auth-gated or API routes; /mastering sends guests to sign-in). */
+/** Public, indexable pages only (no auth-gated or API routes). */
 const PUBLIC_PATHS = [
   "/",
   "/beats",
@@ -26,6 +26,7 @@ const PUBLIC_PATHS = [
   "/about",
   "/jak-nagrac",
   "/nagrywarka",
+  "/mastering",
   "/premium",
 ];
 

@@ -148,7 +148,7 @@
         "mastering": {
           "href": "/mastering",
           "t": "Mastering only",
-          "d": "Mastering for a finished file."
+          "d": "Mastering for a finished file. From the Silver plan."
         },
         "nagrywarka": {
           "href": "/nagrywarka",
@@ -5398,6 +5398,21 @@
     "hint": "Language of the whole site. Polish by default."
   },
   "mastering": {
+    "gosc": {
+      "jakTitle": "How it works",
+      "kroki": [
+        "Upload a finished stereo mix: WAV, MP3, M4A or AAC, up to {mb} MB and {min} minutes.",
+        "Confirm that you have the rights to the track.",
+        "The service makes a master for streaming (−14 LUFS).",
+        "Listen, approve and download the file."
+      ],
+      "planTitle": "Who it is for",
+      "plan": "Mastering only starts with the Silver plan: {silver} masters a month and an MP3 file. Gold gives {gold} masters and a WAV file. Mastering in Studio counts towards the same monthly limit.",
+      "studio": "On the Free and Bronze plans you can master in Studio what you record there.",
+      "zaloz": "Create account",
+      "zaloguj": "I have an account, sign in",
+      "plany": "See plans"
+    },
     "intro": "Drop a finished stereo mix (WAV/MP3). Streaming master (−14 LUFS). From the Silver plan. The file goes to a new Studio project.",
     "wymagaSilver": "Master only — Silver and up",
     "wybierzPlik": "Choose file",
