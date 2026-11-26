@@ -18,6 +18,7 @@ import { masterQuotaWithCredits } from "@/lib/studio/quota-credits";
 import { monthlyMasterLimit, warsawMonthWindow, type MasterQuota } from "@/lib/studio/studio-plan-limits";
 import { clampIntensity, clampMasterSettings, DEFAULT_MASTER_INTENSITY, isMasterStyleId, isMasterTargetId, type MasterStyleId } from "@/lib/studio/master/targets";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { projectUploadGate, uploadGateCode } from "@/lib/rights/upload-screen";
 import type { PremiumTier } from "@/types/premium";
 
 import { downloadFilename, partsOf } from "./parts";
@@ -35,6 +36,7 @@ export class StudioMasterUnavailable extends Error {}
 const missing = (e: { code?: string } | null) => !!e && (e.code === "42P01" || e.code === "PGRST205");
 /** RPC not deployed yet (plan migration pending) → fail closed, never claim in the app. */
 const missingFn = (e: { code?: string } | null) => !!e && (e.code === "PGRST202" || e.code === "42883");
+
 
 /** Masters this calendar month (Europe/Warsaw); failed/cancelled do not count. */
 async function masterMonthUsage(admin: Admin, ownerId: string, tier: PremiumTier): Promise<MasterQuota> {
@@ -184,6 +186,8 @@ export async function commitStudioMaster(p: { ownerId: string; projectId: string
   const { documentVersion } = await assertOwner(admin, p.ownerId, p.projectId);
   if (versionMismatch(p.documentVersion, documentVersion)) return { ok: false as const, error: "doc_changed" };
   if (!(await projectHasOwnContent(admin, p.projectId))) return { ok: false as const, error: "no_own_track" };
+  const gate = await projectUploadGate(admin, p.projectId);
+  if (gate) return { ok: false as const, error: gate };
   if (referenceId) {
     // Gold: in the plan; Silver: only with the add-on; Free/Bronze: locked (server decides, UI mirrors).
     const gate = await referenceGateFor(admin, p.ownerId, p.tier);
@@ -202,6 +206,7 @@ export async function commitStudioMaster(p: { ownerId: string; projectId: string
     p_source_document_version: documentVersion, p_month_limit: monthLimit, ...extras,
   });
   if (qe && (qe.message ?? "").includes("MASTER_REFERENCE_INVALID")) return { ok: false as const, error: "reference_invalid" };
+  if (uploadGateCode(qe)) return { ok: false as const, error: uploadGateCode(qe)! };
   // W7: the RPC is the only way to claim a master. No app-side read-then-insert fallback:
   // a missing RPC fails closed (503) and any other error throws, so nothing is queued or charged.
   if (missingFn(qe)) return { ok: false as const, error: "quota_unavailable" };
@@ -266,6 +271,8 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   const format = p.format as DeliverFormat;
   if (kind === "master" && !approved?.result_object_key) return { ok: false as const, error: "not_approved" };
   if (kind !== "master" && versionMismatch(p.documentVersion, documentVersion)) return { ok: false as const, error: "doc_changed" };
+  const gate = await projectUploadGate(admin, p.projectId);
+  if (gate) return { ok: false as const, error: gate };
   // Free watermark: 3 per rolling 24 h. The RPC keeps the 7-day backstop (21).
   const wm = d.watermark ? await freeWatermarkUsage(admin, p.ownerId) : null;
   if (wm && (wm.dailyUsed ?? 0) >= FREE_WATERMARK_PER_DAY) return { ok: false as const, error: "daily_limit", usage: wm };
@@ -313,6 +320,7 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
     if (dup) return { ok: true as const, jobId: p.jobId, usage: withDay(false) };
   }
   if (error) await giveBackSlot();
+  if (uploadGateCode(error)) return { ok: false as const, error: uploadGateCode(error)! };
   check(error);
   return { ok: true as const, jobId: p.jobId, usage: withDay(true) };
 }

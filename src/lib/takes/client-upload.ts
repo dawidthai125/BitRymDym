@@ -7,6 +7,7 @@
 
 import { requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
+import { UPLOAD_RIGHTS_STATEMENT_VERSION } from "@/config/rights-statement";
 import { toUserFacingError } from "@/lib/ui/user-errors";
 import type { ReplaceableTakeSummary } from "@/lib/takes/claim-errors";
 
@@ -164,6 +165,8 @@ async function runTakeUploadTransport(params: {
   contentType?: string;
   replaceTakeId?: string | null;
   rightsConfirmed?: boolean;
+  /** Studio project of an imported file (stored with the rights statement). */
+  projectId?: string;
   sessionPath: string;
   finalizePath: string;
   onStage?: (stage: TakeUploadStage) => void | Promise<void>;
@@ -182,7 +185,9 @@ async function runTakeUploadTransport(params: {
       contentType,
       byteSize: params.blob.size,
       replaceTakeId: params.replaceTakeId ?? null,
-      ...(params.rightsConfirmed ? { rightsConfirmed: true } : {}),
+      ...(params.rightsConfirmed
+        ? { source: "import", rightsStatementVersion: UPLOAD_RIGHTS_STATEMENT_VERSION, ...(params.projectId ? { projectId: params.projectId } : {}) }
+        : {}),
     }),
   });
   const sessionJson = ((await sessionRes.json().catch(() => null)) ?? {}) as {
@@ -259,8 +264,9 @@ export async function uploadTakeRecordingBlob(params: {
   blob: Blob;
   contentType?: string;
   replaceTakeId?: string | null;
-  /** "Importuj wokal": the user confirmed the rights prompt (stored on the take). */
+  /** "Importuj wokal": the user accepted the rights statement (required and stored by the server). */
   rightsConfirmed?: boolean;
+  projectId?: string;
   onStage?: (stage: TakeUploadStage) => void | Promise<void>;
 }): Promise<TakeUploadTransportResult> {
   return runTakeUploadTransport({
@@ -314,7 +320,10 @@ export async function uploadStemBlob(params: {
 }): Promise<TakeUploadTransportResult> {
   const query = new URLSearchParams();
   if (params.masterOnly) query.set("masterOnly", "1");
-  if (params.rightsAccepted) query.set("rights", "1");
+  if (params.rightsAccepted) {
+    query.set("rights", "1");
+    query.set("rv", UPLOAD_RIGHTS_STATEMENT_VERSION);
+  }
   const qs = query.toString();
   return runTakeUploadTransport({
     beatId: "",

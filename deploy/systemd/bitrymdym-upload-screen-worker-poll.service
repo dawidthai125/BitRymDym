@@ -1,0 +1,27 @@
+# BitRymDym - upload screen poller (blocked files + catalogue beats) (repository artifact only).
+# Runs on the existing E3 Contabo host next to bitrymdym-e3-worker-poll,
+# reusing /opt/bitrymdym-e3-worker checkout. Install steps:
+# docs/runbooks/UPLOAD_FILTER_WORKER.md. Do not enable/start from the repo.
+# Kill switch: UPLOAD_SCREEN_ENABLED (missing/false -> exit 0, no claim).
+
+[Unit]
+Description=BitRymDym upload screen poller (blocked audio, catalogue beats)
+After=network-online.target
+
+[Service]
+User=bitrymdym-e3
+Group=bitrymdym-e3
+WorkingDirectory=/opt/bitrymdym-e3-worker
+EnvironmentFile=/etc/bitrymdym-e3-worker/worker.env
+EnvironmentFile=/etc/bitrymdym-e3-worker/upload-screen.env
+Environment=HOME=/var/lib/bitrymdym-e3-worker
+ExecStart=/usr/bin/npm run upload-screen:worker:poll
+Restart=on-failure
+RestartSec=30
+# ffmpeg + fpcalc only (seconds per file).
+MemoryMax=1G
+CPUQuota=100%
+Nice=5
+
+[Install]
+WantedBy=multi-user.target

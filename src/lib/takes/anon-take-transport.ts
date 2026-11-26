@@ -48,6 +48,8 @@ import {
   type TakeSignedUploadSession,
 } from "@/lib/takes/take-transport";
 import { validateTakeUploadMeta } from "@/lib/takes/validation";
+import { assertUploadNotBlocked, queueTakeScreening } from "@/lib/rights/upload-screen";
+import { contentMatchesDeclaredType, UploadBlockedError } from "@/lib/rights/upload-screen-policy";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 /** Allow small probe rounding vs client auto-stop. */
@@ -391,6 +393,31 @@ export async function finalizeAnonTakeRecordingFor(
     throw new AuthError("FORBIDDEN", meta.errors.join("; "));
   }
 
+  // Same upload screen as signed-in takes: real audio of the declared type, not a taken-down file or a catalogue beat.
+  if (!contentMatchesDeclaredType(bytes, meta.contentType)) {
+    await markPendingTakeFailed({
+      takeId: take.id as string,
+      failureReason: "CONTENT_TYPE_MISMATCH",
+      objectKey: take.object_key as string,
+      removeObject: true,
+    });
+    throw new AuthError("FORBIDDEN", "To nie jest plik audio w zgłoszonym formacie.");
+  }
+  let sha: string;
+  try {
+    sha = await assertUploadNotBlocked({ admin, bytes, kind: "anon_take", ownerId: null, takeId: take.id as string });
+  } catch (e) {
+    if (e instanceof UploadBlockedError) {
+      await markPendingTakeFailed({
+        takeId: take.id as string,
+        failureReason: "BLOCKED_AUDIO",
+        objectKey: take.object_key as string,
+        removeObject: true,
+      });
+    }
+    throw e;
+  }
+
   const probe = await probeAudioDurationFromBytes({
     bytes,
     contentTypeHint: meta.contentType,
@@ -421,6 +448,8 @@ export async function finalizeAnonTakeRecordingFor(
       `Duration ${probe.durationSeconds}s exceeds max ${maxAllowed}s.`,
     );
   }
+
+  await queueTakeScreening(admin, take.id as string, sha);
 
   try {
     const swap = await invokeFinalizeTakeReadySwap({

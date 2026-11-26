@@ -377,7 +377,7 @@
       "prywatnosc": "Privacy policy",
       "cookies": "Cookies",
       "zmianaTytul": "We are changing the Terms",
-      "zmianaTresc": "The new version applies to you from 9 December 2026. It covers the public profile, the track catalogue, referrals, exclusive beats and the hidden mark in the beat copy. If you do not agree, you can delete your account in settings before that day.",
+      "zmianaTresc": "The new version applies to you from 11 December 2026 (the changes of 7–24 November already from 9 December). It covers the public profile, the track catalogue, referrals, exclusive beats, the hidden mark in the beat copy and, since 26 November, the check of every uploaded file, the rights statement and the blocklist of taken-down files. If you do not agree, you can delete your account in settings before that day.",
       "zmianaCzytaj": "Read the terms (Polish)",
       "zmianaZamknij": "Got it",
       "archiwumTytul": "Earlier versions of the Terms",
@@ -4196,7 +4196,9 @@
         "rateLimited": "Too many tries at once. Wait a minute.",
         "missing": "This job is gone. Order it again.",
         "notApproved": "Approve the master of this mix first. If the mix changed, make the master again.",
-        "format": "This format is not in your plan."
+        "format": "This format is not in your plan.",
+        "uploadScreening": "We are checking an uploaded file (usually a few seconds). Try again in a moment. Nothing was counted.",
+        "uploadBlocked": "A file in this project was blocked: it was taken down from BitRymDym after a rights report, or it is a catalogue beat. Remove it from the project."
       },
       "finalTytul": "Listen to the finished song",
       "finalOpis": "This is the server master. The player has the “Bit Rym Dym” voice tag every 15 s. The downloaded file does not (except the MP3 on the Free plan).",
@@ -4838,7 +4840,9 @@
         "in_progress": "This take is already being cleaned.",
         "take_unavailable": "This take is unavailable (expired or deleted).",
         "load": "Could not load vocal cleanup.",
-        "generic": "Something went wrong. Try again."
+        "generic": "Something went wrong. Try again.",
+        "upload_screening": "We are checking this recording. Try again in a moment.",
+        "upload_blocked": "This recording was blocked and cannot be cleaned."
       }
     },
     "tuneNotes": {
@@ -5325,7 +5329,9 @@
       "missing": "This job is gone. Order it again.",
       "notApproved": "Approve the master first.",
       "format": "This format is not in your plan.",
-      "other": "Mastering failed. Try again."
+      "other": "Mastering failed. Try again.",
+      "uploadScreening": "We are checking an uploaded file (usually a few seconds). Try again in a moment. Nothing was counted.",
+      "uploadBlocked": "A file in this project was blocked: it was taken down from BitRymDym after a rights report, or it is a catalogue beat. Remove it from the project."
     },
     "bladApprove": "Could not approve.",
     "bladDeliver": "Could not download the file.",

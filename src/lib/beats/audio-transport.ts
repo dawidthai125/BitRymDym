@@ -54,6 +54,8 @@ import {
   type NormalizedBeatInput,
 } from "@/lib/beats/validation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { assertUploadNotBlocked } from "@/lib/rights/upload-screen";
+import { UploadBlockedError } from "@/lib/rights/upload-screen-policy";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /** Placeholder until analyze/finalize overwrite. Never leave after successful finalize. */
@@ -1084,6 +1086,19 @@ export async function finalizeUserBeatAfterUploadFor(
   if (!analyzed.ok) {
     await markAssetFailed(params.assetId);
     throw new BeatRequestError(analyzed.error);
+  }
+
+  // Owner order 2026-11-26: a file taken down from the catalogue (or someone else's catalogue beat)
+  // cannot come back as a new user beat. The acoustic match runs in the auto-check before moderation.
+  try {
+    await assertUploadNotBlocked({ bytes, kind: "beat", ownerId: context.userId, takeId: null, allowedBeatId: params.beatId });
+  } catch (error) {
+    if (error instanceof UploadBlockedError) {
+      await markAssetFailed(params.assetId);
+      await createSupabaseAdminClient().storage.from(BEAT_AUDIO_BUCKET).remove([asset.object_key]).catch(() => undefined);
+      throw new BeatRequestError(error.message);
+    }
+    throw error;
   }
 
   const envelope = buildBpmUncertaintyEnvelopeFromProbe(analyzed.bpmProbe);

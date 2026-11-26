@@ -15,7 +15,34 @@ export const LISTEN_DAY_CHOICES = [1, 7, 30] as const;
 export const LISTEN_RATE = {
   link: { limit: 240, windowSeconds: 3600 },
   ip: { limit: 60, windowSeconds: 600 },
+  /**
+   * Token guessing (2026-11-26): unknown, expired, revoked or malformed tokens per client IP.
+   * Over the limit every lookup from that IP answers like an unknown link (page 404, audio 429)
+   * until the window passes, also for a valid token. Counted on the page, the audio route and the share card.
+   */
+  miss: { limit: 20, windowSeconds: 600 },
 } as const;
+
+export type ListenLookup<T> = { status: "ok"; link: T } | { status: "not_found" } | { status: "limited" };
+
+/**
+ * One public lookup of a listen token behind the guessing limit. Pure orchestration (IO injected):
+ * - `missAllowed()` false (or throws) → limited, before the token is even looked at (fails closed);
+ * - malformed token or no active link → one miss recorded → not_found (same answer for all of them).
+ */
+export async function guardedListenLookup<T>(p: {
+  token: string;
+  missAllowed: () => Promise<boolean>;
+  recordMiss: () => Promise<void>;
+  resolve: (token: string) => Promise<T | null>;
+}): Promise<ListenLookup<T>> {
+  const open = await p.missAllowed().catch(() => false);
+  if (!open) return { status: "limited" };
+  const link = LISTEN_TOKEN_RE.test(p.token) ? await p.resolve(p.token).catch(() => null) : null;
+  if (link) return { status: "ok", link };
+  await p.recordMiss().catch(() => undefined);
+  return { status: "not_found" };
+}
 /** Signed storage URL lifetime handed to the player (seconds). */
 export const LISTEN_SIGNED_URL_SECONDS = 60;
 

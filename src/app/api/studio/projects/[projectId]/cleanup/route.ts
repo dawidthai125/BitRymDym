@@ -9,7 +9,7 @@ import { readJson, tierOf } from "../master/_shared";
 export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ projectId: string }> };
 
-const DENY: Record<string, number> = { not_found: 404, take_unavailable: 409, in_progress: 409, daily_limit: 429 };
+const DENY: Record<string, number> = { not_found: 404, take_unavailable: 409, in_progress: 409, daily_limit: 429, upload_screening: 409, upload_blocked: 403 };
 
 function errorResponse(error: unknown) {
   if (error instanceof CleanupUnavailable) return NextResponse.json({ success: true, available: false });

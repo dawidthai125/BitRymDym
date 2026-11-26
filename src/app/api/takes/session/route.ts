@@ -8,8 +8,10 @@ export const runtime = "nodejs";
 
 /**
  * Recording Wave 2 / P2 — take signed upload session.
- * POST JSON { beatId, contentType, byteSize, replaceTakeId?, rightsConfirmed? }
- * rightsConfirmed: "Importuj wokal" rights prompt accepted (stored on the take, not required: mic and recorder share this route).
+ * POST JSON { beatId, contentType, byteSize, replaceTakeId?, source?, rightsStatementVersion?, projectId? }
+ * source "import" ("Importuj wokal", a file from disk) is refused without the current rights statement
+ * (400 RIGHTS_REQUIRED); the statement is stored server-side. "mic" / "recorder" (default) record live.
+ * Legacy rightsConfirmed: true counts as source "import".
  * Client must NOT send objectKey / ownerId / bucket / takeId.
  */
 export async function POST(request: Request) {
@@ -24,6 +26,9 @@ export async function POST(request: Request) {
       bucket?: string | null;
       takeId?: string | null;
       rightsConfirmed?: unknown;
+      source?: unknown;
+      rightsStatementVersion?: unknown;
+      projectId?: unknown;
     };
 
     if (
@@ -48,6 +53,9 @@ export async function POST(request: Request) {
       bucket: body.bucket,
       takeId: body.takeId,
       rightsConfirmed: body.rightsConfirmed === true,
+      source: body.source,
+      rightsStatementVersion: body.rightsStatementVersion,
+      projectId: body.projectId,
     });
 
     return NextResponse.json({ success: true, ...session });

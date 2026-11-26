@@ -18,7 +18,9 @@ import type { PremiumTier } from "@/types/premium";
 
 import {
   decideListenCreate,
+  guardedListenLookup,
   hashListenToken,
+  type ListenLookup,
   LISTEN_RATE,
   LISTEN_TOKEN_RE,
   listenDayOptions,
@@ -155,21 +157,49 @@ export type ResolvedListenLink = { linkId: string; title: string; expiresAt: str
 export async function resolveListenToken(token: string): Promise<ResolvedListenLink | null> {
   if (!LISTEN_TOKEN_RE.test(token)) return null;
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.from("studio_listen_links").select("id, title, expires_at, revoked_at, master_job_id, owner_id")
+  const { data, error } = await admin.from("studio_listen_links").select("id, title, expires_at, revoked_at, master_job_id, owner_id, project_id")
     .eq("token_hash", await hashListenToken(token)).maybeSingle();
   if (error) {
     if (missing(error)) return null;
     throw new Error("listen_db");
   }
-  const link = data as { id: string; title: string; expires_at: string; revoked_at: string | null; master_job_id: string; owner_id: string } | null;
+  const link = data as { id: string; title: string; expires_at: string; revoked_at: string | null; master_job_id: string; owner_id: string; project_id: string } | null;
   if (!link || listenLinkState({ expiresAt: link.expires_at, revokedAt: link.revoked_at }) !== "active") return null;
-  const { data: job } = await admin.from("studio_master_jobs").select("result_object_key, status, approved_at, project_id").eq("id", link.master_job_id).maybeSingle();
-  const j = job as { result_object_key: string | null; status: string; approved_at: string | null; project_id?: string | null } | null;
+  const { data: job } = await admin.from("studio_master_jobs").select("result_object_key, status, approved_at, project_id, owner_id").eq("id", link.master_job_id).maybeSingle();
+  const j = job as { result_object_key: string | null; status: string; approved_at: string | null; project_id?: string | null; owner_id?: string | null } | null;
   if (!j?.result_object_key || j.status !== "succeeded" || !j.approved_at) return null;
+  // The master must still belong to the link's own project and owner (no cross-project playback).
+  if (j.project_id !== link.project_id || j.owner_id !== link.owner_id) return null;
   const tier = await resolveProductEntitlementForUserId(link.owner_id).then((e) => e.premiumTier, () => null);
   const objectKey = listenPlayKey(j.result_object_key, tier);
   if (!objectKey) return null;
   return { linkId: link.id, title: link.title, expiresAt: link.expires_at, objectKey, projectId: j.project_id ?? null };
+}
+
+async function ipBucket(prefix: string, clientIp: string): Promise<string> {
+  return `${prefix}:${(await hashListenToken(`ip:${clientIp}`)).slice(0, 32)}`;
+}
+
+/**
+ * Public lookup behind the token-guessing limit (LISTEN_RATE.miss per hashed client IP).
+ * Page, audio route and share card all go through here, so guessing is limited everywhere.
+ */
+export async function lookupListenToken(token: string, clientIp: string): Promise<ListenLookup<ResolvedListenLink>> {
+  const bucket = await ipBucket("m", clientIp);
+  const admin = createSupabaseAdminClient();
+  return guardedListenLookup({
+    token,
+    missAllowed: async () => {
+      const { data, error } = await admin.rpc("studio_listen_peek", { p_bucket: bucket, p_limit: LISTEN_RATE.miss.limit, p_window_seconds: LISTEN_RATE.miss.windowSeconds });
+      // Before the migration the function is missing: keep links working (old behaviour) instead of failing every page.
+      if (error) return missing(error);
+      return data === true;
+    },
+    recordMiss: async () => {
+      await admin.rpc("studio_listen_hit", { p_bucket: bucket, p_limit: LISTEN_RATE.miss.limit, p_window_seconds: LISTEN_RATE.miss.windowSeconds });
+    },
+    resolve: resolveListenToken,
+  });
 }
 
 /** Sliding-window rate limit (per link and per hashed client IP). Fails closed on DB errors. */

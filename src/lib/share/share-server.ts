@@ -8,7 +8,7 @@ import { loadBeatCoverForViewer } from "@/lib/beats/cover/cover-service";
 import { toPublicBeatDetail } from "@/lib/beats/public";
 import { getPublishedBeat } from "@/lib/beats/service";
 import { findLiveCatalogWork } from "@/lib/catalog/catalog-service";
-import { resolveListenToken } from "@/lib/studio/listen/listen-server";
+import { lookupListenToken } from "@/lib/studio/listen/listen-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { presentBeat } from "@/lib/ui/demo-beats";
 
@@ -33,9 +33,11 @@ export async function beatShareData(beatId: string): Promise<ShareCardData | nul
   return { title: clampText(p.title, 70), meta: clampText(meta, 60) || null, cover: await publicCover(beatId) };
 }
 
-export async function listenShareData(token: string): Promise<ShareCardData | null> {
-  const link = await resolveListenToken(token).catch(() => null);
-  if (!link) return null;
+export async function listenShareData(token: string, clientIp: string): Promise<ShareCardData | null> {
+  // Same guessing limit as the page: a share card must not tell valid tokens apart faster than the page does.
+  const lookup = await lookupListenToken(token, clientIp).catch(() => null);
+  if (lookup?.status !== "ok") return null;
+  const link = lookup.link;
   return { title: clampText(link.title, 70), meta: null, cover: await publicCover(await projectBeatId(link.projectId)) };
 }
 

@@ -95,7 +95,7 @@ export function StudioVocalCleanup({ doc, onAppliedChange }: {
 
   const run = (takeId: string) =>
     send(takeId, "POST", { takeId, settings: settings[takeId] ?? { noise: 0.6, reverb: 0.4 } }, (ok, error) => {
-      if (!ok) setMsg(t(`error.${error === "daily_limit" || error === "in_progress" || error === "take_unavailable" ? error : "generic"}`));
+      if (!ok) setMsg(t(`error.${error === "daily_limit" || error === "in_progress" || error === "take_unavailable" || error === "upload_screening" || error === "upload_blocked" ? error : "generic"}`));
     });
 
   const use = (takeId: string, jobId: string | null) =>

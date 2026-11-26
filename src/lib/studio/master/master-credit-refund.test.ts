@@ -38,6 +38,9 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 import { commitStudioMaster } from "./server";
 
+// 2026-11-26 upload screen: passes in these tests (covered by its own tests).
+vi.mock("@/lib/rights/upload-screen", async () => (await import("@/test/upload-screen-mock")).uploadScreenMock());
+
 const O = "11111111-1111-4111-8111-111111111111";
 const P = "22222222-2222-4222-8222-222222222222";
 const J = "44444444-4444-4444-8444-444444444444";

@@ -21,6 +21,14 @@ const KIND: Record<string, { label: string; href: (id: string) => string }> = {
   sample: { label: "Sampel", href: (id) => `/sampel/${id}` },
 };
 
+const MATCH: Record<string, string> = {
+  blocked_sha256: "kopia zdjętego pliku (identyczny plik)",
+  blocked_fingerprint: "zdjęty plik (odcisk dźwięku)",
+  catalog_sha256: "bit z katalogu (identyczny plik)",
+  catalog_fingerprint: "bit z katalogu (odcisk dźwięku)",
+};
+const UPLOAD: Record<string, string> = { take: "nagranie / import wokalu", stem: "stem / Sam mastering", anon_take: "nagranie gościa", beat: "bit", sample: "sampel" };
+
 const when = new Intl.DateTimeFormat("pl-PL", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Warsaw" });
 
 /**
@@ -74,6 +82,30 @@ export default async function AdminRightsPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section aria-labelledby="blk-t" className="space-y-3" data-testid="admin-rights-blocklist">
+          <h2 id="blk-t" className="text-xl font-semibold">Lista blokad i odrzucone wgrania</h2>
+          <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
+            Zdjęcie utworu, bitu albo sampla dopisuje jego pliki do listy blokad. Każde nowe wgranie porównujemy z nią: najpierw identyczny plik, potem odcisk dźwięku.
+            Na liście: {desk.blocklist.blocked} plików{desk.blocklist.pending ? `, ${desk.blocklist.pending} czeka na odcisk` : ""}.
+          </p>
+          {desk.blocklist.staleScreens > 0 ? (
+            <p role="alert" className="text-sm font-medium text-[var(--brd-rec)]">
+              {desk.blocklist.staleScreens} nowych plików czeka na kontrolę dłużej niż 5 minut. Sprawdź program bitrymdym-upload-screen-worker-poll na serwerze: do kontroli ich projekty nie zrobią mastera.
+            </p>
+          ) : null}
+          {desk.blocklist.events.length === 0 ? <p className="text-sm text-[var(--brd-mute)]">Nikt nie próbował wgrać zablokowanego pliku.</p> : (
+            <ul className="space-y-1 text-xs">
+              {desk.blocklist.events.map((e) => (
+                <li key={e.id} className="border-b border-[var(--brd-line)] py-1">
+                  {when.format(new Date(e.createdAt))} · {UPLOAD[e.uploadKind] ?? e.uploadKind} · {MATCH[e.matchKind] ?? e.matchKind}
+                  {e.score != null ? ` · zgodność ${Math.round(e.score * 100)}%${e.matchedSeconds != null ? ` na ${Math.round(e.matchedSeconds)} s` : ""}` : ""}
+                  {e.ownerId ? <> · <Link href={`/admin/users?q=${e.ownerId}`} className="underline">konto</Link></> : null}
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section aria-labelledby="rep-t" className="space-y-3">

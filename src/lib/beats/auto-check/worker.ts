@@ -45,10 +45,23 @@ async function loadCatalog(excludeBeatId: string): Promise<CatalogFingerprint[]>
     .eq("algorithm", ALGORITHM)
     .neq("beat_id", excludeBeatId);
   if (error) throw new Error("catalog_load_failed");
-  return (data ?? []).map((r) => {
+  const beats: CatalogFingerprint[] = (data ?? []).map((r) => {
     const b = (Array.isArray(r.beats) ? r.beats[0] : r.beats) as { owner_id: string; title: string | null };
     return { beatId: r.beat_id as string, ownerId: b.owner_id, title: b.title, fingerprint: r.fingerprint as number[] };
   });
+  // Owner order 2026-11-26: files taken down from the catalogue count as catalogue entries of nobody,
+  // so a re-upload of a taken-down file is a hard match (rejected_match) like a copy of our beat.
+  const blocked = await admin
+    .from("blocked_audio_fingerprints")
+    .select("id, fingerprint")
+    .eq("algorithm", ALGORITHM)
+    .not("fingerprint", "is", null)
+    .limit(5000);
+  if (blocked.error && blocked.error.code !== "42P01" && blocked.error.code !== "PGRST205") throw new Error("catalog_load_failed");
+  for (const r of blocked.data ?? []) {
+    beats.push({ beatId: String(r.id), ownerId: null, title: "Plik zdjęty z katalogu (lista blokad)", fingerprint: r.fingerprint as number[] });
+  }
+  return beats;
 }
 
 async function complete(cfg: RunConfig, check: ClaimedCheck, payload: {

@@ -377,7 +377,7 @@
       "prywatnosc": "Polityka prywatności",
       "cookies": "Cookies",
       "zmianaTytul": "Zmieniamy Regulamin",
-      "zmianaTresc": "Nowa wersja obowiązuje Cię od 9 grudnia 2026. Opisuje profil publiczny, katalog utworów, polecenia, bity na wyłączność i ukryty znak w kopii bitu. Nie zgadzasz się? Do tego dnia możesz usunąć konto w ustawieniach.",
+      "zmianaTresc": "Nowa wersja obowiązuje Cię od 11 grudnia 2026 (zmiany z 7–24 listopada już od 9 grudnia). Opisuje profil publiczny, katalog utworów, polecenia, bity na wyłączność, ukryty znak w kopii bitu, a od 26 listopada także sprawdzanie każdego wgranego pliku, oświadczenie o prawach i listę blokad zdjętych plików. Nie zgadzasz się? Do tego dnia możesz usunąć konto w ustawieniach.",
       "zmianaCzytaj": "Przeczytaj regulamin",
       "zmianaZamknij": "Rozumiem",
       "archiwumTytul": "Wcześniejsze wersje Regulaminu",
@@ -4196,7 +4196,9 @@
         "rateLimited": "Za dużo prób naraz. Odczekaj minutę.",
         "missing": "Tego zadania już nie ma. Zleć je jeszcze raz.",
         "notApproved": "Najpierw zatwierdź master tego mixu. Jeśli mix się zmienił, zrób go od nowa.",
-        "format": "Ten format nie jest w Twoim planie."
+        "format": "Ten format nie jest w Twoim planie.",
+        "uploadScreening": "Sprawdzamy wgrany plik (zwykle kilkanaście sekund). Spróbuj ponownie za chwilę. Nic nie zostało odliczone.",
+        "uploadBlocked": "Jeden z plików w projekcie został zablokowany: to plik zdjęty z BitRymDym po zgłoszeniu naruszenia praw albo bit z katalogu. Usuń go z projektu."
       },
       "finalTytul": "Posłuchaj gotowego numeru",
       "finalOpis": "To jest master z serwera. Odsłuch ma głosowy znak „Bit Rym Dym” co 15 s. Plik do pobrania go nie ma (wyjątek: MP3 w planie Free).",
@@ -4838,7 +4840,9 @@
         "in_progress": "To nagranie jest już w trakcie oczyszczania.",
         "take_unavailable": "To nagranie jest niedostępne (wygasło albo zostało usunięte).",
         "load": "Nie udało się wczytać oczyszczania wokalu.",
-        "generic": "Coś poszło nie tak. Spróbuj ponownie."
+        "generic": "Coś poszło nie tak. Spróbuj ponownie.",
+        "upload_screening": "Sprawdzamy to nagranie. Spróbuj ponownie za chwilę.",
+        "upload_blocked": "To nagranie zostało zablokowane i nie można go oczyścić."
       }
     },
     "tuneNotes": {
@@ -5325,7 +5329,9 @@
       "missing": "Tego zadania już nie ma. Zleć je jeszcze raz.",
       "notApproved": "Najpierw zatwierdź master.",
       "format": "Ten format nie jest w Twoim planie.",
-      "other": "Master się nie udał. Spróbuj jeszcze raz."
+      "other": "Master się nie udał. Spróbuj jeszcze raz.",
+      "uploadScreening": "Sprawdzamy wgrany plik (zwykle kilkanaście sekund). Spróbuj ponownie za chwilę. Nic nie zostało odliczone.",
+      "uploadBlocked": "Jeden z plików w projekcie został zablokowany: to plik zdjęty z BitRymDym po zgłoszeniu naruszenia praw albo bit z katalogu. Usuń go z projektu."
     },
     "bladApprove": "Nie udało się zatwierdzić mastera.",
     "bladDeliver": "Nie udało się pobrać pliku.",

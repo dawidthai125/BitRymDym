@@ -4,18 +4,20 @@
  * LEGAL_PLACEHOLDERS (legal.test.ts enforces that none remain).
  * Bump a version whenever the text changes materially (stored with each consent).
  */
-export const TERMS_VERSION = "2026-11-24.2"; // 2026-11-24.2: okres przejściowy obejmuje też zmianę z 7.11; 2026-11-24.1: § 3 lista usług, § 5 profil publiczny, § 7 kopia Bitu ze znakiem Konta, § 9 limity po usunięciu, § 12 zasady zmian i okres przejściowy; 2026-11-22.4: 2026-11-22.4: § 9 ust. 8 program poleceń „Zaproś znajomego” (pakiet 10 nagrań dla obu kont, limit 10/mies., zakaz kont-słupów); 2026-11-22.3: § 9 ust. 5 bit z katalogu płatnego na wyłączność (jeden kupujący, znika z katalogu);  2026-11-22.2: § 7 ust. 8 publiczny fragment 45 s utworu z katalogu (Free ze znakiem), § 6 zgłaszanie komentarzy (DSA art. 16); .1: § 9 oferta startowa
-export const PRIVACY_VERSION = "2026-11-24.4"; // 2026-11-24.4: licznik wejść bez cookies, zdarzenia Google Analytics (Konto, odtworzenie, zakup); 2026-11-24.3: znak Konta w kopii Bitu i dziennik odsłuchów, Turnstile, YouTube, xAI w BITEK-u, oceny/komentarze, polecenia, czasy przechowywania; 2026-11-24.2: doprecyzowanie pkt 5; 2026-11-24.1: pkt 5 publiczny profil twórcy (zgoda); 2026-11-23.1: Google Analytics 4 tylko po zgodzie (baner cookies), cookie brd_consent
+export const TERMS_VERSION = "2026-11-26.1"; // 2026-11-26.1: § 6 ust. 4–8 sprawdzanie każdego wgranego pliku (skrót i odcisk dźwięku), lista blokad zdjętych plików, oświadczenie o prawach przed wgraniem pliku z zewnątrz, sprawdzanie utworu przed katalogiem, przycisk „Zgłoś naruszenie praw”, odwołanie do człowieka; § 12 ust. 4 okres przejściowy do 11 grudnia; 2026-11-24.2: okres przejściowy obejmuje też zmianę z 7.11; 2026-11-24.1: § 3 lista usług, § 5 profil publiczny, § 7 kopia Bitu ze znakiem Konta, § 9 limity po usunięciu, § 12 zasady zmian i okres przejściowy; 2026-11-22.4: 2026-11-22.4: § 9 ust. 8 program poleceń „Zaproś znajomego” (pakiet 10 nagrań dla obu kont, limit 10/mies., zakaz kont-słupów); 2026-11-22.3: § 9 ust. 5 bit z katalogu płatnego na wyłączność (jeden kupujący, znika z katalogu);  2026-11-22.2: § 7 ust. 8 publiczny fragment 45 s utworu z katalogu (Free ze znakiem), § 6 zgłaszanie komentarzy (DSA art. 16); .1: § 9 oferta startowa
+export const PRIVACY_VERSION = "2026-11-26.1"; // 2026-11-26.1: odcisk i skrót każdego wgranego pliku, lista blokad, oświadczenia o prawach, zgłoszenia naruszeń, limit prób linków do odsłuchu, kopia zapasowa plików katalogu, czasy przechowywania; cookies: brakujące wpisy pamięci przeglądarki; 2026-11-24.4: licznik wejść bez cookies, zdarzenia Google Analytics (Konto, odtworzenie, zakup); 2026-11-24.3: znak Konta w kopii Bitu i dziennik odsłuchów, Turnstile, YouTube, xAI w BITEK-u, oceny/komentarze, polecenia, czasy przechowywania; 2026-11-24.2: doprecyzowanie pkt 5; 2026-11-24.1: pkt 5 publiczny profil twórcy (zgoda); 2026-11-23.1: Google Analytics 4 tylko po zgodzie (baner cookies), cookie brd_consent
 
 /**
  * Terms: whoever accepts this version at sign-up is bound at once, everybody else after the 14 days of § 12
  * (announced 2026-11-24). The notice in the service (TermsNotice) is shown until that day.
  */
-export const TERMS_DATE = "24 listopada 2026 r.";
-export const TERMS_EFFECTIVE_EXISTING = "9 grudnia 2026 r.";
+export const TERMS_DATE = "26 listopada 2026 r.";
+export const TERMS_EFFECTIVE_EXISTING = "11 grudnia 2026 r.";
+/** Day the versions of 7–24 November bind existing accounts (announced 2026-11-24, unchanged). */
+export const TERMS_EFFECTIVE_EXISTING_PREVIOUS = "9 grudnia 2026 r.";
 /** Accounts created before this moment did not accept TERMS_VERSION at sign-up. */
-export const TERMS_NOTICE_BEFORE = "2026-11-25T00:00:00+01:00";
-export const TERMS_NOTICE_UNTIL = "2026-12-09T00:00:00+01:00";
+export const TERMS_NOTICE_BEFORE = "2026-11-27T00:00:00+01:00";
+export const TERMS_NOTICE_UNTIL = "2026-12-11T00:00:00+01:00";
 
 export function termsNoticeDue(accountCreatedAt: string | null | undefined, now = Date.now()): boolean {
   const created = accountCreatedAt ? Date.parse(accountCreatedAt) : Number.NaN;
@@ -23,7 +25,7 @@ export function termsNoticeDue(accountCreatedAt: string | null | undefined, now 
 }
 
 /** The privacy policy has its own date: it changes more often than the terms. */
-export const PRIVACY_EFFECTIVE_DATE = "24 listopada 2026 r.";
+export const PRIVACY_EFFECTIVE_DATE = "26 listopada 2026 r.";
 
 export const LEGAL_PATHS = { terms: "/regulamin", privacy: "/polityka-prywatnosci", cookies: "/cookies", archive: "/regulamin/archiwum" } as const;
 

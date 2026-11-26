@@ -2727,7 +2727,9 @@ export function StudioRecordingPanel({
         blob: file,
         contentType: gate.contentType,
         // The file picker opens only after the rights prompt (importPrawa) was accepted.
+        // The server requires and stores the statement (version + project) for every import.
         rightsConfirmed: true,
+        projectId,
       });
       dispatch({ type: "FINALIZE_START" });
       dispatch({

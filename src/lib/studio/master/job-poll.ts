@@ -88,11 +88,14 @@ export async function followStudioJob(projectId: string, jobId: string, options:
 /** Why a master / download was refused or failed → text key under studio.masterStep.bledy.* */
 export type MasterErrorKey =
   | "docChanged" | "referenceInvalid" | "referenceLocked" | "sourceMissing" | "tooLong" | "noAudio"
-  | "server" | "network" | "signedOut" | "rateLimited" | "missing" | "notApproved" | "format" | "other";
+  | "server" | "network" | "signedOut" | "rateLimited" | "missing" | "notApproved" | "format"
+  | "uploadScreening" | "uploadBlocked" | "other";
 
 export function masterErrorKey(code: string | null | undefined): MasterErrorKey {
   const c = (code ?? "").toLowerCase();
   if (c === "doc_changed") return "docChanged";
+  if (c === "upload_screening") return "uploadScreening";
+  if (c === "upload_blocked") return "uploadBlocked";
   if (c === "reference_locked" || c === "addon_missing") return "referenceLocked";
   if (c.startsWith("reference_")) return "referenceInvalid";
   if (c.includes("expired") || c.includes("deleted") || c === "source_missing" || c.includes("take_not_found") || c.includes("source_take")) return "sourceMissing";
