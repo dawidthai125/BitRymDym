@@ -14,19 +14,11 @@ describe("isSiteNavHrefActive", () => {
     expect(isSiteNavHrefActive("/beats", "/about")).toBe(false);
   });
 
-  it("marks Studio for /studio tree only by default", () => {
+  it("marks Studio for the /studio tree only", () => {
     expect(isSiteNavHrefActive("/studio", "/studio")).toBe(true);
     expect(isSiteNavHrefActive("/studio/p/abc", "/studio")).toBe(true);
     expect(isSiteNavHrefActive("/account", "/studio")).toBe(false);
     expect(isSiteNavHrefActive("/studios", "/studio")).toBe(false);
-  });
-
-  it("optionally includes /account under Studio (mobile tab)", () => {
-    expect(
-      isSiteNavHrefActive("/account/takes", "/studio", {
-        studioIncludesAccount: true,
-      }),
-    ).toBe(true);
   });
 
   it("marks library and profile prefixes", () => {
@@ -113,3 +105,16 @@ describe("desktop SiteMainNav aria-current contract", () => {
   });
 });
 
+
+describe("profile pages in the phone menu", () => {
+  const lit = (path: string) => ["/beats", "/studio", "/library", "/profile"].filter((href) => isSiteNavHrefActive(path, href));
+  it("lights exactly Library or Profile, never Studio", () => {
+    for (const path of ["/account/favorites", "/account/downloads", "/account/purchased", "/account/shared"]) {
+      expect(lit(path), path).toEqual(["/library"]);
+    }
+    for (const path of ["/account", "/account/takes", "/account/catalog", "/account/beats/x/edit", "/account/settings", "/account/profil"]) {
+      expect(lit(path), path).toEqual(["/profile"]);
+    }
+    expect(lit("/studio/p/1")).toEqual(["/studio"]);
+  });
+});

@@ -177,7 +177,7 @@ export default async function AccountPage({
                 <SectionLabel>{tr("ostatnieNagrania")}</SectionLabel>
                 <Link
                   href="/account/takes"
-                  className="text-sm text-[var(--brd-green)] hover:underline"
+                  className="inline-flex min-h-11 items-center text-sm text-[var(--brd-green)] hover:underline"
                 >
                   {tr("wszystkie")}
                 </Link>

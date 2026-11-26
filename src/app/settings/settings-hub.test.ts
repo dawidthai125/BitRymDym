@@ -11,7 +11,7 @@ describe("account settings tab", () => {
   it("keeps the old addresses working", () => {
     expect(read("src/app/settings/page.tsx")).toContain('redirect("/account/settings")');
     expect(read("src/app/library/page.tsx")).toContain('redirect("/account/favorites")');
-    expect(read("src/app/profile/page.tsx")).toContain('redirect("/account/settings#profil")');
+    expect(read("src/app/profile/page.tsx")).toContain('redirect("/account")');
     expect(read("src/app/account/page.tsx")).toContain("<AccountHashRedirect");
   });
 

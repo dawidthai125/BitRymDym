@@ -50,9 +50,7 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
         )}
       >
         {items.map((item) => {
-          const active = isSiteNavHrefActive(pathname, item.href, {
-            studioIncludesAccount: true,
-          });
+          const active = isSiteNavHrefActive(pathname, item.href);
 
           const NavLink = item.href === "/sign-in" ? SignInLink : Link;
 
