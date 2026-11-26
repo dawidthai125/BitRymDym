@@ -489,7 +489,7 @@ describe("beats catalog — result status live region (real mount)", () => {
     expect(p.mounted, JSON.stringify(p)).toBe(true);
     expect(p.searchFoundByAccessibleName, JSON.stringify(p)).toBe(true);
     expect(p.searchPlaceholder, JSON.stringify(p)).toBe(
-      "Szukaj bitu, producenta, gatunku…",
+      "Tytuł, autor, gatunek, tonacja, tempo…",
     );
     expect(p.searchPlaceholderIsNotAccessibleName, JSON.stringify(p)).toBe(
       true,

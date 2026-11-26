@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   filterPresentedBeatsCatalogByQuery,
+  catalogSearchPool,
   foldCatalogSearchText,
+  parseTempoQuery,
 } from "@/lib/ui/beats-catalog-search";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
 
@@ -233,11 +235,6 @@ describe("filterPresentedBeatsCatalogByQuery", () => {
     expect(multi).not.toBe(input);
   });
 
-  it("does not match BPM as text search", () => {
-    const input = [beat("bpm", { title: "Solo", bpm: 140 })];
-    expect(filterPresentedBeatsCatalogByQuery(input, "140")).toEqual([]);
-  });
-
   it("client wires text search through the shared helper", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
@@ -249,5 +246,27 @@ describe("filterPresentedBeatsCatalogByQuery", () => {
     expect(src).not.toMatch(
       /b\.title\.toLowerCase\(\)\.includes\(q\)/,
     );
+  });
+});
+
+describe("search by tempo and users' beats", () => {
+  const beat = (id: string, title: string, bpm: number, community = false) =>
+    ({ id, title, producer: "x", genre: null, mood: null, key: null, bpm, durationSeconds: 1, artworkVariant: 0, community }) as PresentedBeat;
+  const list = [beat("a", "Noc", 90), beat("b", "Blok 90", 140), beat("c", "Dym", 190)];
+  const ids = (q: string) => filterPresentedBeatsCatalogByQuery(list, q).map((b) => b.id);
+
+  it("finds the exact tempo, and a bare number also titles", () => {
+    expect(ids("90")).toEqual(["a", "b"]);
+    expect(ids("90 BPM")).toEqual(["a"]);
+    expect(ids("90bpm")).toEqual(["a"]);
+    expect(ids("bpm 140")).toEqual(["b"]);
+    expect(ids("999")).toEqual([]);
+    expect(parseTempoQuery("blok 90")).toBeNull();
+  });
+
+  it("adds users' beats only while something is typed", () => {
+    const mine = [beat("u", "Cudzy", 90, true)];
+    expect(catalogSearchPool(list, mine, "  ")).toBe(list);
+    expect(catalogSearchPool(list, mine, "90").map((b) => b.id)).toEqual(["a", "b", "c", "u"]);
   });
 });

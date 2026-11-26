@@ -45,6 +45,7 @@ export function HeaderSearch({
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder={tl(compact ? t("szukajCompact") : t("szukajBitow2"))}
+        title={t("podpowiedz")}
         autoComplete="off"
         className={cn(
           "min-h-11 w-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 text-sm text-[var(--brd-ink)] placeholder:text-[var(--brd-mute)] outline-none focus-visible:border-[var(--brd-green)] focus-visible:ring-1 focus-visible:ring-[var(--brd-green-soft)]",

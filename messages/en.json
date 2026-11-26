@@ -303,6 +303,7 @@
       "okladka": "Cover: {v0}"
     },
     "beatCatalogRow": {
+      "odUzytkownika": "User's beat",
       "wyrozniony": "Featured",
       "przebieg": "Waveform: {v0}",
       "dodajDoUlubionych": "Add to favourites",
@@ -321,7 +322,7 @@
     },
     "beatsCatalogClient": {
       "szukajBitow": "Search beats",
-      "szukajBituProducentaGatunku": "Search beats, producers, genres…",
+      "szukajBituProducentaGatunku": "Title, producer, genre, key, tempo…",
       "filtry": "Filters",
       "cicho": "Quiet.",
       "brakBitowDlaTych": "No beats match these filters. Change the criteria or clear the filters.",
@@ -5345,6 +5346,7 @@
   },
   "nav": {
     "headerSearch": {
+      "podpowiedz": "Find a beat by title, producer, genre, key or tempo (e.g. 90 BPM)",
       "szukajBitow": "Search beats",
       "szukajBitow2": "Search beats…",
       "szukajCompact": "Search"

@@ -303,6 +303,7 @@
       "okladka": "Okładka: {v0}"
     },
     "beatCatalogRow": {
+      "odUzytkownika": "Bit użytkownika",
       "wyrozniony": "Wyróżniony",
       "przebieg": "Przebieg: {v0}",
       "dodajDoUlubionych": "Dodaj do ulubionych",
@@ -321,7 +322,7 @@
     },
     "beatsCatalogClient": {
       "szukajBitow": "Szukaj bitów",
-      "szukajBituProducentaGatunku": "Szukaj bitu, producenta, gatunku…",
+      "szukajBituProducentaGatunku": "Tytuł, autor, gatunek, tonacja, tempo…",
       "filtry": "Filtry",
       "cicho": "Cicho.",
       "brakBitowDlaTych": "Brak bitów dla tych filtrów. Zmień kryteria albo wyczyść filtry.",
@@ -5345,6 +5346,7 @@
   },
   "nav": {
     "headerSearch": {
+      "podpowiedz": "Szukaj bitu po tytule, autorze, gatunku, tonacji albo tempie (np. 90 BPM)",
       "szukajBitow": "Szukaj bitów",
       "szukajBitow2": "Szukaj bitów…",
       "szukajCompact": "Szukaj"

@@ -26,7 +26,7 @@ import {
   countActiveCatalogChipFilters,
   filterPresentedBeatsCatalogByChips,
 } from "@/lib/ui/beats-catalog-filters";
-import { filterPresentedBeatsCatalogByQuery } from "@/lib/ui/beats-catalog-search";
+import { catalogSearchPool, filterPresentedBeatsCatalogByQuery } from "@/lib/ui/beats-catalog-search";
 import {
   sortPresentedBeatsCatalog,
   type BeatsCatalogSortId,
@@ -72,6 +72,8 @@ export function beatsCatalogResultStatusMessage(
 
 type BeatsCatalogClientProps = {
   beats: PresentedBeat[];
+  /** Users' beats: only search results include them. */
+  communityBeats?: PresentedBeat[];
   initialQuery?: string;
   favoriteIds?: readonly string[];
   signedIn?: boolean;
@@ -87,6 +89,7 @@ type BeatsCatalogClientProps = {
  */
 export function BeatsCatalogClient({
   beats,
+  communityBeats = [],
   initialQuery = "",
   favoriteIds = [],
   signedIn = false,
@@ -147,8 +150,10 @@ export function BeatsCatalogClient({
     [beats],
   );
 
+  const pool = useMemo(() => catalogSearchPool(beats, communityBeats, query), [beats, communityBeats, query]);
+
   const filtered = useMemo(() => {
-    const chipFiltered = filterPresentedBeatsCatalogByChips(beats, {
+    const chipFiltered = filterPresentedBeatsCatalogByChips(pool, {
       genres,
       keys,
       bpmFilterActive,
@@ -157,13 +162,13 @@ export function BeatsCatalogClient({
     });
     const list = filterPresentedBeatsCatalogByQuery(chipFiltered, query);
     return sortPresentedBeatsCatalog(list, sort);
-  }, [beats, query, genres, keys, bpmFilterActive, bpmMin, bpmMax, sort]);
+  }, [pool, query, genres, keys, bpmFilterActive, bpmMin, bpmMax, sort]);
 
   const paged = paginate(filtered, pageState.view === viewKey ? pageState.page : 1);
 
   const liveResultStatus = beatsCatalogResultStatusMessage(
     filtered.length,
-    beats.length,
+    pool.length,
     {
       empty: tCount("emptyStatus"),
       count: (n) => tCount("count", { count: n }),
@@ -283,8 +288,8 @@ export function BeatsCatalogClient({
                 className="brd-meta text-xs tracking-[0.04em] text-[var(--brd-ink-soft)]"
                 aria-hidden
               >
-                {filtered.length !== beats.length
-                  ? tCount("ofTotal", { label: tCount("count", { count: filtered.length }), total: beats.length })
+                {filtered.length !== pool.length
+                  ? tCount("ofTotal", { label: tCount("count", { count: filtered.length }), total: pool.length })
                   : tCount("count", { count: filtered.length })}
               </p>
               <div className="hidden lg:block">

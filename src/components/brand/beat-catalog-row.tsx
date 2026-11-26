@@ -167,6 +167,11 @@ export function BeatCatalogRow({
             </Link>
           </h2>
           <p className="truncate text-[13px] text-[var(--brd-ink-soft)]">
+            {beat.community ? (
+              <span className="mr-2 border border-[var(--brd-green)] px-1 text-xs text-[var(--brd-green)]" data-testid="beat-community-tag">
+                {t("odUzytkownika")}
+              </span>
+            ) : null}
             <AuthorName name={tl(beat.producer)} href={beat.authorHref} />
           </p>
           <BrdAudioMeta
@@ -237,6 +242,11 @@ export function BeatCatalogRow({
               </Link>
             </h2>
             <p className="truncate text-[13px] text-[var(--brd-ink-soft)]">
+              {beat.community ? (
+                <span className="mr-2 border border-[var(--brd-green)] px-1 text-xs text-[var(--brd-green)]" data-testid="beat-community-tag">
+                  {t("odUzytkownika")}
+                </span>
+              ) : null}
               <AuthorName name={tl(beat.producer)} href={beat.authorHref} />
             </p>
             <BrdAudioMeta

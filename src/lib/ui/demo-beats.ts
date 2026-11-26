@@ -23,6 +23,8 @@ export type PresentedBeat = {
   /** Approved owner cover (thumb) — overrides the generated artwork. */
   coverUrl?: string | null;
   coverFullUrl?: string | null;
+  /** A user's beat shown among search results of the BitRymDym catalogue. */
+  community?: boolean;
 };
 
 type PresentableInput = {

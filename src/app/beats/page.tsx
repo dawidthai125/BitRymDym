@@ -69,6 +69,15 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const favoriteIds = session ? await listFavoriteBeatIds(session.userId) : [];
   const beats = presentBeats(raw);
   const genreLinks = !mine && !paid ? collectGenres(beats) : [];
+  // Searching the BitRymDym catalogue also finds users' free beats (marked as theirs).
+  const communityBeats =
+    !mine && !paid && source === "PLATFORM"
+      ? presentBeats(
+          (await listPublishedBeats({ catalogLane: "free", ownershipType: "USER" }).catch(() => []))
+            .filter((beat) => beat.ownershipType === "USER" && catalogLaneOf(beat.catalogLane) === "free")
+            .map(toPublicCatalogItem),
+        ).map((beat) => ({ ...beat, community: true }))
+      : [];
   const initialQuery =
     typeof params.q === "string" ? params.q.trim().slice(0, 80) : "";
 
@@ -192,6 +201,7 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
             <BeatsCatalogClient
                 key={pageQuery}
               beats={beats}
+              communityBeats={communityBeats}
               initialQuery={initialQuery}
               favoriteIds={favoriteIds}
               signedIn={session != null}
