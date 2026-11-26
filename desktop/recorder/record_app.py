@@ -890,6 +890,40 @@ def first_file(paths: list[Path]) -> Path | None:
     return None
 
 
+PURCHASED_PREFIX = "Kupiony: "
+
+
+def beat_choice(beat: object, prefix: str = "") -> tuple[str, str, tuple[str, int, float]] | None:
+    """(id, list label, (title, bpm, seconds)) from a site beat row, or None for a broken row."""
+    if not (isinstance(beat, dict) and beat.get("id") and beat.get("title")):
+        return None
+    tempo = beat.get("bpm")
+    bpm = int(round(tempo)) if isinstance(tempo, (int, float)) and not isinstance(tempo, bool) else 0
+    seconds = beat.get("durationSeconds")
+    label = prefix + str(beat["title"])
+    if bpm > 0:
+        label = f"{label} ({bpm} BPM)"
+    length = float(seconds) if isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and seconds > 0 else 0.0
+    return str(beat["id"]), label, (str(beat["title"]), bpm, length)
+
+
+def merge_purchased(
+    beats: list[tuple[str, str]], info: dict[str, tuple[str, int, float]], purchased: list[object],
+) -> tuple[list[tuple[str, str]], dict[str, tuple[str, int, float]]]:
+    """Bought beats first (marked „Kupiony:”), then the catalogue. A beat already on the list is not doubled."""
+    known = {beat_id for beat_id, _label in beats}
+    extra: list[tuple[str, str]] = []
+    merged = dict(info)
+    for row in purchased:
+        choice = beat_choice(row, PURCHASED_PREFIX)
+        if choice is None or choice[0] in known:
+            continue
+        known.add(choice[0])
+        extra.append((choice[0], choice[1]))
+        merged[choice[0]] = choice[2]
+    return extra + list(beats), merged
+
+
 def ffmpeg_exe() -> str:
     bundled = app_dir() / "ffmpeg.exe"
     # Downloaded once on first start (tools_fetch); updates do not touch it.
@@ -1889,6 +1923,7 @@ class RecorderWindow:
         self.public_key = ""
         self.beats: list[tuple[str, str]] = []
         self.beat_info: dict[str, tuple[str, int, float]] = {}
+        self._purchased: list[object] = []
         self.tier = "FREE"
         self.gate_status = tk.StringVar(value="Łączę ze stroną.")
         self.status = tk.StringVar(value="Ładuję listę bitów ze strony.")
@@ -3038,20 +3073,13 @@ class RecorderWindow:
             self.beat_info = {}
             if isinstance(raw, list):
                 for beat in raw:
-                    if not (isinstance(beat, dict) and beat.get("id") and beat.get("title")):
+                    choice = beat_choice(beat)
+                    if choice is None:
                         continue
-                    tempo = beat.get("bpm")
-                    bpm = int(round(tempo)) if isinstance(tempo, (int, float)) and not isinstance(tempo, bool) else 0
-                    seconds = beat.get("durationSeconds")
-                    label = str(beat["title"])
-                    if bpm > 0:
-                        label = f"{label} ({bpm} BPM)"
-                    self.beats.append((str(beat["id"]), label))
-                    self.beat_info[str(beat["id"])] = (
-                        str(beat["title"]),
-                        bpm,
-                        float(seconds) if isinstance(seconds, (int, float)) and seconds > 0 else 0.0,
-                    )
+                    self.beats.append((choice[0], choice[1]))
+                    self.beat_info[choice[0]] = choice[2]
+            # Bought exclusive beats are not in the public list (owner order 2026-11-26).
+            self.beats, self.beat_info = merge_purchased(self.beats, self.beat_info, self._purchased)
             if self.beats and self.studio_mode == "online" and not self.beat_var.get():
                 labels = [label for _beat_id, label in self.beats]
                 picked = next((item for item in (self._desk_beat, self._pref_beat) if item in labels), labels[0])
@@ -3062,9 +3090,36 @@ class RecorderWindow:
             self.status.set(str(error))
             self.gate_status.set(str(error))
 
+    def _load_purchased(self) -> None:
+        """Signed in: fetch bought beats off the Tk thread and put them on top of the list."""
+        if not self._signed_in:
+            return
+        epoch = self._session_epoch
+
+        def work() -> None:
+            try:
+                rows = self._client().purchased_beats()
+            except Exception:
+                return  # an older site or no network: the catalogue still works
+
+            def apply() -> None:
+                if epoch != self._session_epoch or not self._signed_in:
+                    return
+                self._purchased = list(rows)
+                self.beats, self.beat_info = merge_purchased(
+                    [item for item in self.beats if not item[1].startswith(PURCHASED_PREFIX)],
+                    self.beat_info, self._purchased,
+                )
+                self._sync_beat_button()
+
+            self.root.after(0, apply)
+
+        threading.Thread(target=work, daemon=True).start()
+
     def reload_beats(self) -> None:
         current = self.beat_var.get()
         self._load_public()
+        self._load_purchased()
         labels = [label for _beat_id, label in self.beats]
         if current in labels:
             self.beat_var.set(current)
@@ -7108,6 +7163,9 @@ class RecorderWindow:
         self._client_cache = None
         self._listen_cache = None
         self._signed_in = False
+        # Another account must not see this one's bought beats.
+        self._purchased = []
+        self.beats = [item for item in self.beats if not item[1].startswith(PURCHASED_PREFIX)]
         email = self.email.get().strip()
         old = load_session()
         if old and old.get("accessToken"):
@@ -7232,6 +7290,8 @@ class RecorderWindow:
         self._password_expired = ""
         self.password.delete(0, "end")
         self._read_plan()
+        self._purchased = []
+        self._load_purchased()
         self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
         self.gate_status.set("")
         self.show_modes()

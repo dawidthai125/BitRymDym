@@ -274,6 +274,11 @@ class SiteClient:
     def plan_usage(self) -> dict[str, Any]:
         return self._json("GET", "/api/account/plan-usage")
 
+    def purchased_beats(self) -> list[dict[str, Any]]:
+        """Bought exclusive beats of this account. They leave the public list once sold."""
+        beats = self._json("GET", "/api/desktop/purchased-beats").get("beats")
+        return [beat for beat in beats if isinstance(beat, dict)] if isinstance(beats, list) else []
+
     def playback(self, beat_id: str) -> dict[str, Any]:
         payload = self._json("POST", "/api/beats/audio/playback", {"beatId": beat_id})
         playback_target(payload)

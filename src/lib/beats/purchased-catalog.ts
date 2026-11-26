@@ -10,6 +10,8 @@ export type PurchasedCatalogBeat = {
   title: string;
   producer: string | null;
   bpm: number;
+  /** For the Windows recorder's beat lane; 0 when unknown. */
+  durationSeconds: number;
 };
 
 /** Beats this user bought, newest purchase first. Unpublished or free-lane rows stay out. */
@@ -20,6 +22,7 @@ export async function listPurchasedCatalog(userId: string): Promise<PurchasedCat
     title: beat.title,
     producer: beat.producer,
     bpm: beat.bpm,
+    durationSeconds: beat.durationSeconds ?? 0,
   }));
 }
 
