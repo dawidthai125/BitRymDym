@@ -27,7 +27,9 @@ import {
   type RightsFileKind,
   type RightsFileResult,
 } from "@/lib/rights/rights-decision";
+import { parseCatalogCopyTakeTitle } from "@/lib/catalog/catalog-originals";
 import { partsOf } from "@/lib/studio/master/parts";
+import { parseSampleCopyTakeTitle } from "@/lib/studio/samples/sample-policy";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type RunConfig = Extract<AutoCheckWorkerConfig, { action: "run" }>;
@@ -209,7 +211,11 @@ export async function fingerprintSample(cfg: RunConfig, job: SampleJob): Promise
 
 // ---------------------------------------------------------------- 3) catalogue work check
 
-export type ClaimedWorkCheck = { id: string; owner_id: string; project_id: string; master_job_id: string; result_object_key: string };
+export type ClaimedWorkCheck = {
+  id: string; owner_id: string; project_id: string; master_job_id: string; result_object_key: string;
+  /** Dry run only: judge these files instead of the project's. */
+  files?: ProjectFile[];
+};
 
 export async function claimNextWorkCheck(cfg: RunConfig): Promise<ClaimedWorkCheck | null> {
   const { data, error } = await createSupabaseAdminClient().rpc("claim_next_work_rights_check", { p_worker_ref: cfg.workerRef });
@@ -222,7 +228,7 @@ export async function claimNextWorkCheck(cfg: RunConfig): Promise<ClaimedWorkChe
   return row?.id ? row : null;
 }
 
-type ProjectFile = { kind: RightsFileKind; ref: string; bucket: string; key: string; master?: boolean };
+export type ProjectFile = { kind: RightsFileKind; ref: string; bucket: string; key: string; master?: boolean };
 
 async function projectFiles(admin: Admin, job: ClaimedWorkCheck): Promise<{ files: ProjectFile[]; truncated: boolean; projectBeatId: string | null; ownBeatRejected: boolean }> {
   const project = await admin.from("studio_projects").select("id, owner_id, beat_id").eq("id", job.project_id).maybeSingle();
@@ -249,51 +255,85 @@ async function projectFiles(admin: Admin, job: ClaimedWorkCheck): Promise<{ file
     }
   }
 
-  const tracks = await admin.from("studio_tracks").select("id").eq("project_id", job.project_id);
+  // Every take the project uses (clips on its tracks) and every stem uploaded to it, also deleted ones whose
+  // file still exists: removing a clip or a take after mastering must not hide the source. Titles are not trusted.
+  const tracks = await admin.from("studio_tracks").select("id").eq("project_id", job.project_id).limit(1000);
   if (tracks.error) throw new Error("tracks_load_failed");
   const trackIds = (tracks.data ?? []).map((t) => String(t.id));
-  if (trackIds.length) {
-    const clips = await admin.from("studio_clips").select("source_take_id").in("track_id", trackIds).eq("source_kind", "TAKE");
-    if (clips.error) throw new Error("clips_load_failed");
-    const takeIds = [...new Set((clips.data ?? []).map((c) => c.source_take_id).filter(Boolean).map(String))];
-    if (takeIds.length) {
-      const takes = await admin
-        .from("takes")
-        .select("id, owner_id, title, is_stem, storage_bucket, object_key, deleted_at, object_removed_at")
-        .in("id", takeIds);
-      if (takes.error) throw new Error("takes_load_failed");
-      const sampleIds: string[] = [];
-      const rows = (takes.data ?? []) as Array<{ id: string; owner_id: string | null; title: string | null; is_stem: boolean | null; storage_bucket: string | null; object_key: string | null; deleted_at: string | null; object_removed_at: string | null }>;
-      for (const t of rows) {
-        const smp = t.title?.startsWith("smp:") ? t.title.slice(4) : null;
-        if (smp) sampleIds.push(smp);
-      }
-      const published = new Set<string>();
-      if (sampleIds.length) {
-        const s = await admin.from("studio_samples").select("id").in("id", sampleIds).eq("status", "PUBLISHED");
-        if (s.error) throw new Error("samples_load_failed");
-        for (const r of s.data ?? []) published.add(String(r.id));
-      }
-      for (const t of rows) {
-        if (t.owner_id !== job.owner_id || t.deleted_at || t.object_removed_at || !t.storage_bucket || !t.object_key) continue;
-        if (t.title?.startsWith("catalog:")) continue; // our catalogue sample copy
-        const smp = t.title?.startsWith("smp:") ? t.title.slice(4) : null;
-        if (smp && published.has(smp)) continue; // a reviewed catalogue sample: allowed in songs
-        files.push({ kind: t.is_stem ? "stem" : "take", ref: t.id, bucket: t.storage_bucket, key: t.object_key });
-      }
+  const takeIds = new Set<string>();
+  for (let i = 0; i < trackIds.length; i += 100) {
+    for (let from = 0; ; from += PAGE) {
+      const clips = await admin
+        .from("studio_clips")
+        .select("id, source_take_id")
+        .in("track_id", trackIds.slice(i, i + 100))
+        .eq("source_kind", "TAKE")
+        .order("id")
+        .range(from, from + PAGE - 1);
+      if (clips.error) throw new Error("clips_load_failed");
+      for (const c of clips.data ?? []) if (c.source_take_id) takeIds.add(String(c.source_take_id));
+      if ((clips.data ?? []).length < PAGE) break;
     }
+  }
+  const stems = await admin.from("takes").select("id").eq("stem_project_id", job.project_id).eq("owner_id", job.owner_id).is("object_removed_at", null).limit(1000);
+  if (stems.error) throw new Error("takes_load_failed");
+  for (const t of stems.data ?? []) takeIds.add(String(t.id));
+  const ids = [...takeIds];
+  type TakeRow = { id: string; owner_id: string | null; title: string | null; byte_size: number | null; is_stem: boolean | null; storage_bucket: string | null; object_key: string | null; object_removed_at: string | null };
+  const rows: TakeRow[] = [];
+  for (let i = 0; i < ids.length; i += 100) {
+    const takes = await admin
+      .from("takes")
+      .select("id, owner_id, title, byte_size, is_stem, storage_bucket, object_key, object_removed_at")
+      .in("id", ids.slice(i, i + 100));
+    if (takes.error) throw new Error("takes_load_failed");
+    rows.push(...((takes.data ?? []) as TakeRow[]));
+  }
+  // Copies of reviewed catalogue samples are allowed in songs. The title is only a hint: the copy must be
+  // byte-identical (same size) to a PUBLISHED sample or catalogue asset, otherwise it is checked like any upload.
+  const smpIds = new Set<string>();
+  const assetIds = new Set<string>();
+  for (const t of rows) {
+    const smp = parseSampleCopyTakeTitle(t.title);
+    if (smp) smpIds.add(smp);
+    const cat = parseCatalogCopyTakeTitle(t.title);
+    if (cat) assetIds.add(cat.catalogAssetId);
+  }
+  const sampleSize = new Map<string, number>();
+  const assetSize = new Map<string, number>();
+  const smpList = [...smpIds];
+  for (let i = 0; i < smpList.length; i += 100) {
+    const r = await admin.from("studio_samples").select("id, byte_size").in("id", smpList.slice(i, i + 100)).eq("status", "PUBLISHED");
+    if (r.error) throw new Error("samples_load_failed");
+    for (const x of r.data ?? []) sampleSize.set(String(x.id), Number(x.byte_size));
+  }
+  const assetList = [...assetIds];
+  for (let i = 0; i < assetList.length; i += 100) {
+    const r = await admin.from("catalog_assets").select("id, byte_size").in("id", assetList.slice(i, i + 100)).eq("publish_state", "PUBLISHED");
+    if (r.error) throw new Error("assets_load_failed");
+    for (const x of r.data ?? []) assetSize.set(String(x.id), Number(x.byte_size));
+  }
+  for (const t of rows) {
+    if (t.owner_id !== job.owner_id || t.object_removed_at || !t.storage_bucket || !t.object_key) continue;
+    const size = Number(t.byte_size);
+    const smp = parseSampleCopyTakeTitle(t.title);
+    if (smp && sampleSize.has(smp) && sampleSize.get(smp) === size) continue;
+    const cat = parseCatalogCopyTakeTitle(t.title);
+    if (cat && cat.projectId === job.project_id && assetSize.has(cat.catalogAssetId) && assetSize.get(cat.catalogAssetId) === size) continue;
+    files.push({ kind: t.is_stem ? "stem" : "take", ref: t.id, bucket: t.storage_bucket, key: t.object_key });
   }
   return { files: files.slice(0, MAX_FILES), truncated: files.length > MAX_FILES, projectBeatId, ownBeatRejected };
 }
 
-export async function runWorkCheck(cfg: RunConfig, job: ClaimedWorkCheck): Promise<string> {
+/** Fingerprint and judge one work without writing anything (worker + dry-run script). */
+export async function evaluateWork(cfg: RunConfig, job: ClaimedWorkCheck): Promise<{ passed: boolean; result: Record<string, unknown>; summary: string }> {
   const admin = createSupabaseAdminClient();
   const work = await mkdtemp(path.join(tmpdir(), "brd-work-check-"));
-  let passed = false;
-  let result: Record<string, unknown> = {};
-  let summary = "";
   try {
-    const { files, truncated, projectBeatId, ownBeatRejected } = await projectFiles(admin, job);
+    const planned = job.id === "dry-run" && job.files
+      ? { files: job.files, truncated: false, projectBeatId: null, ownBeatRejected: false }
+      : await projectFiles(admin, job);
+    const { files, truncated, projectBeatId, ownBeatRejected } = planned;
     const refs = await loadBeatRefs(admin);
     // The project's own (catalogue) beat is allowed in the song and bleeds into vocal takes.
     const skip = new Set(projectBeatId ? [projectBeatId] : []);
@@ -318,17 +358,25 @@ export async function runWorkCheck(cfg: RunConfig, job: ClaimedWorkCheck): Promi
       }
     }
     const verdict = decideWorkRights({ files: results, ownBeatRejected, truncated });
-    passed = verdict.passed;
-    summary = verdict.summaryPl;
-    result = { files: results, reasons: verdict.reasons, acoustid: cfg.acoustidKey ? "configured" : "not_configured" };
+    return {
+      passed: verdict.passed,
+      summary: verdict.summaryPl,
+      result: { files: results, reasons: verdict.reasons, findings: verdict.findings, acoustid: cfg.acoustidKey ? "configured" : "not_configured", catalogRefs: refs.length },
+    };
   } catch (e) {
-    passed = false;
-    summary = "Utwór czeka na moderatora. Sprawdzenie się nie udało.";
-    result = { stage_error: e instanceof Error ? e.message.slice(0, 80) : "failed" };
+    return {
+      passed: false,
+      summary: "Utwór czeka na moderatora. Sprawdzenie się nie udało.",
+      result: { stage_error: e instanceof Error ? e.message.slice(0, 80) : "failed" },
+    };
   } finally {
     await rm(work, { recursive: true, force: true });
   }
-  const { data, error } = await admin.rpc("complete_work_rights_check", {
+}
+
+export async function runWorkCheck(cfg: RunConfig, job: ClaimedWorkCheck): Promise<string> {
+  const { passed, result, summary } = await evaluateWork(cfg, job);
+  const { data, error } = await createSupabaseAdminClient().rpc("complete_work_rights_check", {
     p_work_id: job.id, p_worker_ref: cfg.workerRef, p_passed: passed, p_result: result, p_summary: summary,
   });
   if (error) throw new Error(`work_check_complete_failed:${error.code ?? "?"}`);

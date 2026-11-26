@@ -39,7 +39,7 @@ export function ReportRightsButton({ kind, id }: { kind: Kind; id: string }) {
       if (json.result === "ok") {
         setSent(true);
         setNote(t("sent"));
-      } else setNote(json.result === "limit" ? t("limit") : json.result === "invalid" ? t("invalid") : t("error"));
+      } else setNote(json.result === "limit" ? t("limit") : json.result === "invalid" ? t("invalid") : json.result === "missing" ? t("missing") : t("error"));
     } catch {
       setNote(t("error"));
     } finally {

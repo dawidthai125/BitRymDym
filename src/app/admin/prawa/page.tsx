@@ -55,7 +55,11 @@ export default async function AdminRightsPage() {
                 <div className="min-w-0 space-y-1">
                   <p className="font-medium break-words">{w.title}</p>
                   <p className="text-xs text-[var(--brd-mute)]">
-                    {w.status === "held" ? "Zatrzymany" : "Sprawdzanie w toku"}
+                    {w.status === "held"
+                      ? "Zatrzymany"
+                      : w.stale
+                        ? "Czeka ponad 30 min: sprawdź, czy działa program na serwerze"
+                        : "Sprawdzanie w toku"}
                     {w.requestedAt ? ` · zgłoszony ${when.format(new Date(w.requestedAt))}` : ""}
                     {" · "}
                     <Link href={`/admin/users?q=${w.ownerId}`} className="underline">właściciel</Link>

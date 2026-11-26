@@ -34,6 +34,8 @@ export type RightsFileResult = {
 export type RightsVerdict = {
   passed: boolean;
   reasons: string[];
+  /** Real matches only (not technical errors): they keep the project with a moderator on later versions. */
+  findings: string[];
   summaryPl: string;
 };
 
@@ -67,7 +69,11 @@ export function decideWorkRights(input: {
   truncated?: boolean;
 }): RightsVerdict {
   const reasons: string[] = [];
-  if (input.ownBeatRejected) reasons.push("Bit w projekcie został odrzucony przy sprawdzaniu.");
+  const findings: string[] = [];
+  if (input.ownBeatRejected) {
+    reasons.push("Bit w projekcie został odrzucony przy sprawdzaniu.");
+    findings.push(reasons[reasons.length - 1]!);
+  }
   if (input.truncated) reasons.push("Projekt ma za dużo wgranych plików, żeby sprawdzić je automatycznie.");
   for (const f of input.files) {
     const label = KIND_PL[f.kind];
@@ -80,11 +86,13 @@ export function decideWorkRights(input: {
     if (ext) {
       const name = [ext.artist, ext.title].filter(Boolean).join(" – ");
       reasons.push(`${label[0]!.toUpperCase()}${label.slice(1)} pasuje do znanego nagrania${name ? `: ${name}` : ""}.`);
+      findings.push(reasons[reasons.length - 1]!);
     }
     const cat = f.catalog.find((h) => isHardCatalogHit(h, f.durationSeconds));
     if (cat) {
       const what = cat.source === "beat" ? "bitu z katalogu" : "sampla z katalogu";
       reasons.push(`${label[0]!.toUpperCase()}${label.slice(1)} pasuje do ${what}${cat.title ? ` „${cat.title}”` : ""}.`);
+      findings.push(reasons[reasons.length - 1]!);
     }
   }
   if (input.files.length === 0) reasons.push("Brak plików do sprawdzenia.");
@@ -92,6 +100,7 @@ export function decideWorkRights(input: {
   return {
     passed,
     reasons,
+    findings,
     summaryPl: passed
       ? "Sprawdzone: brak podobieństwa do cudzych nagrań."
       : `Utwór czeka na moderatora. ${reasons.slice(0, 4).join(" ")}`,

@@ -20,6 +20,7 @@ type Entry = {
   listed: boolean;
   check?: "passed" | "checking" | "held" | "removed" | "cancelled";
   checkNote?: string | null;
+  rightsAccepted?: boolean;
 };
 
 export function CatalogPublishPanel({
@@ -48,6 +49,7 @@ export function CatalogPublishPanel({
   const [rights, setRights] = useState(false);
   const [check, setCheck] = useState<Entry["check"]>(undefined);
   const [checkNote, setCheckNote] = useState<string | null>(null);
+  const [rightsBefore, setRightsBefore] = useState(false);
   const [busy, setBusy] = useState(false);
   // Live catalogue entry (id + author) → share block under the form.
   const [live, setLive] = useState<{ id: string; title: string; author: string } | null>(null);
@@ -55,6 +57,7 @@ export function CatalogPublishPanel({
   function applyLive(entry: Entry | null | undefined) {
     setCheck(entry?.check);
     setCheckNote(entry?.checkNote ?? null);
+    setRightsBefore(entry?.rightsAccepted === true);
     setLive(entry?.listed && entry.id ? { id: entry.id, title: entry.title, author: entry.author ?? "" } : null);
   }
 
@@ -162,7 +165,7 @@ export function CatalogPublishPanel({
   }
 
   // Live or passed before: the statement was given. Otherwise it must be ticked now.
-  const needsRights = check !== "passed";
+  const needsRights = check !== "passed" && !rightsBefore;
 
   if (!ready) return null;
   if (off) return <p className="text-sm text-[var(--brd-mute)]">{t("off")}</p>;

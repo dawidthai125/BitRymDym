@@ -9,6 +9,7 @@ import {
   staffRemoveWork,
   type StaffOutcome,
 } from "@/lib/rights/content-reports";
+import { requireRole } from "@/lib/auth/session";
 import { archiveBeat } from "@/lib/beats/service";
 
 function refresh(path?: string) {
@@ -40,6 +41,7 @@ export async function hideSampleAction(sampleId: string, note: string, reportId?
 }
 
 export async function archiveBeatAction(beatId: string, note: string, reportId?: string): Promise<StaffOutcome> {
+  await requireRole(["ADMIN"]);
   try {
     await archiveBeat(beatId);
   } catch (e) {

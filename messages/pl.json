@@ -5765,6 +5765,7 @@
     "invalid": "Uzupełnij opis (min. 10 znaków), imię, e-mail i oświadczenie.",
     "limit": "Za dużo zgłoszeń z tego połączenia. Spróbuj za godzinę albo napisz na kontakt@bitrymdym.pl.",
     "error": "Nie udało się wysłać. Napisz na kontakt@bitrymdym.pl.",
-    "cancel": "Anuluj"
+    "cancel": "Anuluj",
+    "missing": "Tego nie ma publicznie w katalogu, więc nie da się tego zgłosić tutaj. Napisz na kontakt@bitrymdym.pl."
   }
 }

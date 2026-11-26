@@ -5765,6 +5765,7 @@
     "invalid": "Fill in the description (min. 10 characters), name, e-mail and the statement.",
     "limit": "Too many reports from this connection. Try again in an hour or write to kontakt@bitrymdym.pl.",
     "error": "Sending failed. Write to kontakt@bitrymdym.pl.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "missing": "This is not public in the catalogue, so it cannot be reported here. Write to kontakt@bitrymdym.pl."
   }
 }

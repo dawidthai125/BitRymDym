@@ -52,6 +52,8 @@ export type OwnerCatalogEntry = CatalogCard & {
   check: WorkCheckState;
   /** Short Polish reason shown to the owner when held/rejected. */
   checkNote: string | null;
+  /** The rights statement for this master was given before. */
+  rightsAccepted: boolean;
 };
 
 export type WorkCheckState = "passed" | "checking" | "held" | "removed" | "cancelled";
@@ -104,6 +106,7 @@ type Row = {
   withdrawn_at: string | null;
   check_status?: string | null;
   check_summary?: string | null;
+  rights_accepted_at?: string | null;
 };
 
 function adminOrNull(): Admin | null {
@@ -236,7 +239,7 @@ export async function loadOwnerCatalogEntry(
   if (!admin) return { enabled: false, entry: null, older: null };
   const loaded = await admin
     .from(TABLE)
-    .select("id, owner_id, project_id, master_job_id, title, allow_ratings, allow_comments, in_rankings, published_at, withdrawn_at, check_status, check_summary")
+    .select("id, owner_id, project_id, master_job_id, title, allow_ratings, allow_comments, in_rankings, published_at, withdrawn_at, check_status, check_summary, rights_accepted_at")
     .eq("master_job_id", masterJobId)
     .eq("owner_id", userId)
     .eq("project_id", projectId)
@@ -270,8 +273,30 @@ export async function loadOwnerCatalogEntry(
       listed: row.withdrawn_at == null,
       check: workCheckState(row.check_status),
       checkNote: ownerCheckNote(row),
+      rightsAccepted: Boolean(row.rights_accepted_at),
     },
   };
+}
+
+/** Real matches from a rights check (technical errors like an AcoustID timeout are not findings). */
+function hasFindings(result: unknown): boolean {
+  const findings = (result as { findings?: unknown } | null)?.findings;
+  return Array.isArray(findings) && findings.length > 0;
+}
+
+/** Another version of the project was held with findings or taken down by staff. */
+async function projectFlagged(admin: Admin, userId: string, projectId: string, masterJobId: string): Promise<boolean> {
+  const rows = await admin
+    .from(TABLE)
+    .select("check_status, check_result")
+    .eq("owner_id", userId)
+    .eq("project_id", projectId)
+    .neq("master_job_id", masterJobId)
+    .in("check_status", ["held", "rejected", "removed", "cancelled"])
+    .limit(50);
+  if (rows.error) return true; // unknown: a moderator decides
+  // Staff took a version down: always. Held or withdrawn while held: only with real matches.
+  return (rows.data ?? []).some((r) => r.check_status === "rejected" || r.check_status === "removed" || hasFindings(r.check_result));
 }
 
 /** Owner-facing reason. Staff notes and match details stay internal. */
@@ -319,7 +344,7 @@ export async function saveOwnerCatalog(input: {
   consents: WorkConsents;
   /** The owner ticked the rights statement now (needed for a first publish of this master). */
   rightsAccepted?: boolean;
-}): Promise<SaveCatalogResult> {
+}, retried = false): Promise<SaveCatalogResult> {
   if (!isUuid(input.projectId) || !isUuid(input.masterJobId) || typeof input.publish !== "boolean") return "invalid";
   const admin = adminOrNull();
   if (!admin) return "off";
@@ -327,7 +352,7 @@ export async function saveOwnerCatalog(input: {
   if (input.publish && !(await approvedMaster(admin, input.userId, input.projectId, input.masterJobId))) return "missing";
   const existing = await admin
     .from(TABLE)
-    .select("id, owner_id, withdrawn_at, check_status, rights_accepted_at")
+    .select("id, owner_id, withdrawn_at, check_status, check_result, rights_accepted_at")
     .eq("master_job_id", input.masterJobId)
     .maybeSingle();
   if (missingRelation(existing.error, TABLE)) return "off";
@@ -350,7 +375,7 @@ export async function saveOwnerCatalog(input: {
 
   const title = cleanWorkTitle(input.title);
   if (!title) return "invalid";
-  const prev = existing.data as { id: string; owner_id: string; withdrawn_at: string | null; check_status: string | null; rights_accepted_at: string | null } | null;
+  const prev = existing.data as { id: string; owner_id: string; withdrawn_at: string | null; check_status: string | null; check_result: unknown; rights_accepted_at: string | null } | null;
   if (prev && prev.owner_id !== input.userId) return "invalid";
   const state = workCheckState(prev?.check_status);
   // A moderator took this master down: the owner cannot put it back.
@@ -369,22 +394,53 @@ export async function saveOwnerCatalog(input: {
     allow_comments: consents.allowComments,
     in_rankings: consents.inRankings,
     ...(rightsNow ? { rights_accepted_at: nowIso } : {}),
-    withdraw_older: input.withdrawOlder === true,
+    // Only the Studio panel sends it; account-page switches keep the stored choice.
+    ...(input.withdrawOlder !== undefined ? { withdraw_older: input.withdrawOlder === true } : {}),
   };
   // passed before (also withdrawn by the owner later): straight back to live, no new check.
   // checking/held: keep waiting with the new choices. New or cancelled: queue the rights check.
   const goLive = state === "passed" && prev != null;
   const keepWaiting = state === "checking" || state === "held";
+  // A new check must not wash away an earlier finding: a held result of this master (withdrawn, then
+  // republished), or a held/removed version of the same project (re-mastered) goes straight to a moderator.
+  const needsStaff = !goLive && !keepWaiting && (hasFindings(prev?.check_result) || (await projectFlagged(admin, input.userId, input.projectId, input.masterJobId)));
   const patch = goLive
     ? { ...base, withdrawn_at: null }
     : keepWaiting
-      ? { ...base, withdrawn_at: prev?.withdrawn_at ?? nowIso }
-      : { ...base, withdrawn_at: nowIso, check_status: "pending", check_requested_at: nowIso, check_attempts: 0, check_claimed_at: null, check_worker_ref: null };
-  const saved = prev
-    ? await admin.from(TABLE).update(patch).eq("id", prev.id).eq("owner_id", input.userId)
-    : await admin.from(TABLE).insert({ ...patch, published_at: nowIso });
-  if (missingRelation(saved.error, TABLE)) return "off";
-  if (saved.error) return "invalid";
+      ? base
+      : {
+          ...base,
+          withdrawn_at: nowIso,
+          check_status: needsStaff ? "held" : "pending",
+          check_requested_at: nowIso,
+          check_attempts: 0,
+          check_claimed_at: null,
+          check_worker_ref: null,
+          ...(needsStaff ? { check_summary: "Wcześniejsza wersja tego utworu czekała na moderatora albo została zdjęta." } : {}),
+        };
+  if (prev && keepWaiting) {
+    // Only while still waiting: the worker may have finished between the read and this write.
+    const updated = await admin.from(TABLE).update(patch).eq("id", prev.id).eq("owner_id", input.userId).in("check_status", ["pending", "running", "held"]).select("id");
+    if (missingRelation(updated.error, TABLE)) return "off";
+    if (updated.error) return "invalid";
+    if (!updated.data?.length) return retried ? "invalid" : saveOwnerCatalog(input, true);
+  } else if (prev) {
+    // Filtered on the state read above: a moderator decision in between is not overwritten.
+    const updated = await admin
+      .from(TABLE)
+      .update(patch)
+      .eq("id", prev.id)
+      .eq("owner_id", input.userId)
+      .eq("check_status", prev.check_status ?? "passed")
+      .select("id");
+    if (missingRelation(updated.error, TABLE)) return "off";
+    if (updated.error) return "invalid";
+    if (!updated.data?.length) return retried ? "invalid" : saveOwnerCatalog(input, true);
+  } else {
+    const saved = await admin.from(TABLE).insert({ ...patch, published_at: nowIso });
+    if (missingRelation(saved.error, TABLE)) return "off";
+    if (saved.error) return "invalid";
+  }
   if (input.withdrawOlder === true) {
     // Earlier versions still waiting for the check would go live later: cancel them now.
     const queued = await admin
@@ -409,7 +465,7 @@ export async function saveOwnerCatalog(input: {
   }
   // Public 45 s clip: queue the E3 cut (best effort; never fails the publish). It is cut only once the work is live.
   await queueWorkClip(admin, input.userId, input.masterJobId);
-  if (!goLive) return state === "held" ? "held" : "checking";
+  if (!goLive) return state === "held" || needsStaff ? "held" : "checking";
   return "ok";
 }
 
@@ -419,7 +475,7 @@ export async function listOwnerCatalogEntries(userId: string): Promise<OwnerCata
   if (!admin) return [];
   const loaded = await admin
     .from(TABLE)
-    .select("id, owner_id, project_id, master_job_id, title, allow_ratings, allow_comments, in_rankings, published_at, withdrawn_at, check_status, check_summary")
+    .select("id, owner_id, project_id, master_job_id, title, allow_ratings, allow_comments, in_rankings, published_at, withdrawn_at, check_status, check_summary, rights_accepted_at")
     .eq("owner_id", userId)
     .order("published_at", { ascending: false })
     .limit(500);
@@ -432,6 +488,7 @@ export async function listOwnerCatalogEntries(userId: string): Promise<OwnerCata
     listed: row.withdrawn_at == null,
     check: workCheckState(row.check_status),
     checkNote: ownerCheckNote(row),
+    rightsAccepted: Boolean(row.rights_accepted_at),
   }));
 }
 

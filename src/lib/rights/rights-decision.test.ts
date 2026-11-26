@@ -27,6 +27,7 @@ describe("decideWorkRights", () => {
     const v = decideWorkRights({ files: [clean({ kind: "stem", catalog: [{ source: "beat", id: "b", title: "Iskry", score: 0.92, matchedSeconds: 50 }] })] });
     expect(v.passed).toBe(false);
     expect(v.reasons[0]).toContain("bitu z katalogu");
+    expect(v.findings).toHaveLength(1);
   });
 
   it("a short file needs 80 % of its length, not 20 s", () => {
@@ -37,7 +38,10 @@ describe("decideWorkRights", () => {
     expect(decideWorkRights({ files: [clean({ durationSeconds: 10, catalog: [hit] })] }).passed).toBe(false);
   });
 
-  it("errors and an unanswered AcoustID never pass", () => {
+  it("errors and an unanswered AcoustID never pass, but are not findings", () => {
+    const v = decideWorkRights({ files: [clean({ error: "download_failed" }), clean({ externalError: "acoustid_timeout" })] });
+    expect(v.passed).toBe(false);
+    expect(v.findings).toEqual([]);
     expect(decideWorkRights({ files: [clean({ error: "download_failed" })] }).passed).toBe(false);
     expect(decideWorkRights({ files: [clean({ externalError: "acoustid_timeout" })] }).passed).toBe(false);
     expect(decideWorkRights({ files: [] }).passed).toBe(false);

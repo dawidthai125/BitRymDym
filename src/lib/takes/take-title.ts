@@ -11,6 +11,10 @@ export function normalizeTakeTitle(raw: unknown): string | null {
   }
   const trimmed = raw.trim().replace(/\s+/g, " ");
   if (trimmed.length === 0) return null;
+  // "smp:" / "catalog:" mark sample copies (Studio plumbing, download guard, rights check): never typed by owners.
+  if (/^(smp|catalog):/i.test(trimmed)) {
+    throw new Error("Title cannot start with smp: or catalog:.");
+  }
   if (trimmed.length > TAKE_TITLE_MAX_LENGTH) {
     throw new Error(
       `Title must be at most ${TAKE_TITLE_MAX_LENGTH} characters.`,

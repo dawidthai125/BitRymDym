@@ -158,6 +158,8 @@ export type HeldWork = {
   summary: string | null;
   reasons: string[];
   requestedAt: string | null;
+  /** Waiting longer than 30 minutes: the worker is probably down. */
+  stale: boolean;
 };
 
 export type RightsDesk = { reports: StaffReport[]; works: HeldWork[] };
@@ -202,6 +204,7 @@ export async function loadRightsDesk(): Promise<RightsDesk> {
       id: w.id, title: w.title, ownerId: w.owner_id, projectId: w.project_id, status: w.check_status, summary: w.check_summary,
       reasons: Array.isArray(w.check_result?.reasons) ? (w.check_result!.reasons as unknown[]).map(String).slice(0, 8) : [],
       requestedAt: w.check_requested_at,
+      stale: w.check_status !== "held" && !!w.check_requested_at && Date.now() - new Date(w.check_requested_at).getTime() > 30 * 60_000,
     })),
   };
 }
