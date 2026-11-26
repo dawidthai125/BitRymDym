@@ -39,16 +39,18 @@ function Block({ b }: { b: LegalBlock }) {
   );
 }
 
-export function LegalDocument({ doc, englishNote }: { doc: LegalDoc; englishNote?: string | null }) {
+/** `lang` is the language of `doc` (English translations pass "en"). */
+export function LegalDocument({ doc, englishNote, lang = "pl" }: { doc: LegalDoc; englishNote?: string | null; lang?: "pl" | "en" }) {
+  const en = lang === "en";
   return (
-    <article className="mx-auto max-w-3xl space-y-8 py-10 text-[15px] leading-relaxed" lang="pl" data-testid="legal-document">
+    <article className="mx-auto max-w-3xl space-y-8 py-10 text-[15px] leading-relaxed" lang={lang} data-testid="legal-document">
       <header className="space-y-3">
         <h1 className="text-3xl font-bold tracking-tight">{doc.title}</h1>
         <p className="text-[var(--brd-mute)]">{withMarks(doc.lead)}</p>
-        <p className="text-sm text-[var(--brd-mute)]" data-testid="legal-version">Wersja: {doc.version}.</p>
+        <p className="text-sm text-[var(--brd-mute)]" data-testid="legal-version">{en ? "Version" : "Wersja"}: {doc.version}.</p>
         {englishNote ? <p className="text-sm text-[var(--brd-mute)]" lang="en">{englishNote}</p> : null}
       </header>
-      <nav aria-label="Spis treści" className="text-sm">
+      <nav aria-label={en ? "Contents" : "Spis treści"} className="text-sm">
         <ol className="flex flex-col">{doc.sections.map((s) => <li key={s.id}><a href={`#${s.id}`} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">{s.h}</a></li>)}</ol>
       </nav>
       {doc.sections.map((s) => (

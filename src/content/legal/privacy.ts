@@ -54,6 +54,7 @@ export const PRIVACY: LegalDoc = {
         ["Google (Gemini API)", "asystent BITEK, podpowiedzi muzyczne AI, moderacja obrazów", "USA"],
         ["Groq", "asystent BITEK, teksty i podpowiedzi muzyczne AI, kontrola i doprecyzowanie opisów okładek", "USA"],
         ["xAI (Grok)", "asystent BITEK, teksty i podpowiedzi muzyczne AI, generowanie okładek — treść polecenia, bez e-maila i hasła", "USA"],
+        ["Stability AI", "generowanie Bitów i sampli do katalogu Serwisu przez nas (panel operatora) — tylko opis muzyczny; danych Użytkowników nie wysyłamy", "Wielka Brytania / USA"],
         ["Cloudflare (Workers AI)", "zapasowe generowanie okładek AI — tylko opis tekstowy", "USA / globalnie"],
         ["Cloudflare (Turnstile)", "ochrona logowania i rejestracji przed botami — adres IP i dane przeglądarki", "USA / globalnie"],
         ["Resend", "wysyłka e-maili", "USA"],

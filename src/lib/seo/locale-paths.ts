@@ -24,6 +24,9 @@ const STATIC_PATHS = new Set([
   "/nagrywarka",
   "/mastering",
   "/premium",
+  "/regulamin",
+  "/polityka-prywatnosci",
+  "/cookies",
 ]);
 const DYNAMIC_PREFIXES = ["/beat/", "/sampel/", "/utwor/", "/beats/gatunek/"];
 

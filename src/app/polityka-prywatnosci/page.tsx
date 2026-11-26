@@ -4,17 +4,24 @@ import { getLocale } from "next-intl/server";
 import { PageFrame } from "@/components/brand/chrome";
 import { LegalDocument } from "@/components/legal/legal-document";
 import { AppShell } from "@/components/site/app-shell";
+import { PRIVACY_EN } from "@/content/legal/en/privacy";
 import { PRIVACY } from "@/content/legal/privacy";
+import { LEGAL_TRANSLATION_NOTE_EN } from "@/lib/legal/legal-config";
+import type { AppLocale } from "@/i18n/config";
+import { localeAlternates } from "@/lib/seo/locale-paths";
 
-export const metadata: Metadata = { title: PRIVACY.title, alternates: { canonical: "/polityka-prywatnosci" } };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = (await getLocale()) as AppLocale;
+  return { title: (locale === "en" ? PRIVACY_EN : PRIVACY).title, alternates: localeAlternates(locale, "/polityka-prywatnosci") };
+}
 
 export default async function Page() {
-  const locale = await getLocale();
+  const en = (await getLocale()) === "en";
   return (
     <AppShell>
       <main>
         <PageFrame>
-          <LegalDocument doc={PRIVACY} englishNote={locale === "pl" ? null : "This document is available in Polish only; the Polish version is binding."} />
+          <LegalDocument doc={en ? PRIVACY_EN : PRIVACY} lang={en ? "en" : "pl"} englishNote={en ? LEGAL_TRANSLATION_NOTE_EN : null} />
         </PageFrame>
       </main>
     </AppShell>
