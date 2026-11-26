@@ -232,3 +232,12 @@ describe("device profile + warnings", () => {
     expect(panel).toMatch(/startsRaw\.length\s*>\s*0\s*\?\s*startsRaw\s*:\s*\[0\]/);
   });
 });
+
+describe("hand-set correction (owner video, tablet)", () => {
+  it("stops asking to calibrate once the user set it by hand, but keeps the Bluetooth note", () => {
+    const base = { labels: ["Domyślny"], compensationMs: 322, calibrated: false };
+    expect(latencyWarning(base)).toBe("high");
+    expect(latencyWarning({ ...base, manualSet: true })).toBeNull();
+    expect(latencyWarning({ ...base, labels: ["Galaxy Buds2"], manualSet: true })).toBe("bluetooth");
+  });
+});

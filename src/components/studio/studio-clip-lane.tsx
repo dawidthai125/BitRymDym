@@ -41,6 +41,8 @@ export type StudioClipLaneItemProps = {
   mode: TimelineMode;
   selected: boolean;
   interactionLocked?: boolean;
+  /** The locked Bit: no move and no trim; a tap selects and seeks, a swipe scrolls. */
+  geometryLocked?: boolean;
   laneHeightPx: number;
   snapConfig: StudioSnapConfig;
   resolveSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
@@ -73,6 +75,7 @@ export function StudioClipLaneItem({
   mode,
   selected,
   interactionLocked = false,
+  geometryLocked = false,
   laneHeightPx,
   snapConfig,
   resolveSourceUrl,
@@ -82,8 +85,8 @@ export function StudioClipLaneItem({
 }: StudioClipLaneItemProps) {
   const t = useTranslations("studio.studioClipLane");
   const density = clampPxPerMs(pxPerMs);
-  const editEnabled = mode === "edit" && !interactionLocked;
-  const seekEnabled = mode === "seek" && !interactionLocked;
+  const editEnabled = mode === "edit" && !interactionLocked && !geometryLocked;
+  const seekEnabled = (mode === "seek" || geometryLocked) && !interactionLocked;
   const clipInteractive = !interactionLocked;
 
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -271,6 +274,7 @@ export function StudioClipLaneItem({
       data-source-offset-ms={clip.sourceOffsetMs}
       data-duration-ms={clip.durationMs}
       data-source-kind={clip.sourceKind}
+      data-geometry-locked={geometryLocked ? "true" : undefined}
       className={`absolute bottom-1 top-1 flex overflow-visible rounded ${
         selected
           ? "z-[2] bg-[var(--brd-ink)]/20 ring-2 ring-[var(--brd-ink)]"

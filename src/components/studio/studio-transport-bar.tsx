@@ -125,6 +125,7 @@ export function StudioTransportBar({
   simple = false,
   exportLocked = false,
   fragmentClipId = null,
+  onUnlockBeat = null,
   onRetrySave = null,
   onFlushPersist,
   recordState = "idle",
@@ -132,6 +133,8 @@ export function StudioTransportBar({
 }: {
   /** The plan has no WAV export: the button shows a padlock. */
   exportLocked?: boolean;
+  /** Set while the selected clip is the locked Bit: its cut / move tools are replaced by a note. */
+  onUnlockBeat?: (() => void) | null;
   /** Selected clip: local slider drafts never move to another clip. */
   fragmentClipId?: string | null;
   /** Set while a failed save waits for another try. */
@@ -257,6 +260,9 @@ export function StudioTransportBar({
     return () => ro.disconnect();
   }, []);
   const hasSelection = selectionStartMs != null || selectionEndMs != null;
+  /** Tablet and phone: the clip tools stay folded so the tracks get the room (owner video 2026-11-26). */
+  const [clipToolsOpen, setClipToolsOpen] = useState(false);
+  const foldedClass = clipToolsOpen || fragmentConfirmDelete ? "" : "max-lg:hidden";
   const toolsShown = hasSelection || (showFragmentTools && (fragmentEnabled || fragmentConfirmDelete));
   /** Clip tools appear above the timeline: scroll by the same amount, so the clicked clip stays under the pointer. */
   const toolsLayoutRef = useRef<{ shown: boolean; height: number } | null>(null);
@@ -623,8 +629,21 @@ export function StudioTransportBar({
         </div>
         {toolsShown ? (
         <div className="flex min-w-0 flex-wrap items-center gap-1" data-testid="studio-transport-row-tools">
+          {onUnlockBeat || !showFragmentTools ? null : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 px-3 lg:hidden"
+              data-testid="studio-clip-tools-toggle"
+              aria-expanded={clipToolsOpen || fragmentConfirmDelete}
+              onClick={() => setClipToolsOpen((value) => !value)}
+            >
+              {tr(clipToolsOpen || fragmentConfirmDelete ? "zwinNarzedziaKlipu" : "narzedziaKlipu")}
+            </Button>
+          )}
           {hasSelection ? (
-          <div className="flex shrink-0 flex-nowrap gap-0.5 max-sm:grid max-sm:w-full max-sm:grid-cols-3" data-testid="studio-selection-readout">
+          <div className={`flex shrink-0 flex-nowrap gap-0.5 max-sm:grid max-sm:w-full max-sm:grid-cols-3 ${onUnlockBeat ? "max-lg:hidden" : showFragmentTools ? foldedClass : ""}`} data-testid="studio-selection-readout">
             {(
               [
                 ["poczatek", selectionStartMs],
@@ -646,7 +665,15 @@ export function StudioTransportBar({
             ))}
           </div>
           ) : null}
-          {showFragmentTools ? (
+          {showFragmentTools && onUnlockBeat ? (
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-2 px-1 text-xs text-[var(--brd-mute)]" data-testid="studio-beat-locked">
+              <span>{tr("bitZablokowanyOpis")}</span>
+              <Button type="button" size="sm" variant="outline" className="min-h-11 px-3" disabled={recording} onClick={onUnlockBeat}>
+                {tr("odblokujBit")}
+              </Button>
+            </div>
+          ) : showFragmentTools ? (
+            <div className={foldedClass ? "contents max-lg:hidden" : "contents"} data-testid="studio-clip-tools-fold">
             <StudioFragmentTools
               key={fragmentClipId ?? "none"}
               enabled={fragmentEnabled}
@@ -672,6 +699,7 @@ export function StudioTransportBar({
               onDelete={onFragmentDelete}
               onCancelDelete={onFragmentCancelDelete}
             />
+            </div>
           ) : null}
         </div>
         ) : showFragmentTools && !simple ? (

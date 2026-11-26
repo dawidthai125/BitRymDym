@@ -268,14 +268,18 @@ export function clampManualOffset(ms: number): number {
 
 export type LatencyWarning = "bluetooth" | "high" | null;
 
+export const MANUAL_NUDGE_MS = 10;
+
 export function latencyWarning(params: {
   labels: ReadonlyArray<string | null | undefined>;
   compensationMs: number;
   calibrated: boolean;
+  /** The user set the correction by hand: stop asking to calibrate (owner video 2026-11-26). */
+  manualSet?: boolean;
 }): LatencyWarning {
   if (looksLikeBluetooth(params.labels)) return "bluetooth";
   // Measured (by the test or by the take itself): the correction is exact, however long it is.
-  if (!params.calibrated && params.compensationMs > LATENCY_HIGH_WARN_MS) return "high";
+  if (!params.calibrated && !params.manualSet && params.compensationMs > LATENCY_HIGH_WARN_MS) return "high";
   return null;
 }
 

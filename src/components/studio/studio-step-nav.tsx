@@ -152,7 +152,7 @@ export function StudioStepNav({
                 {tMix("widokUproszczonyPlan")}
               </span>
             )}
-            <span id="studio-go-mix-hint" className={canGoMix ? "text-xs text-[var(--brd-mute)] max-sm:sr-only sm:max-w-[22rem]" : "sr-only"}>
+            <span id="studio-go-mix-hint" className={canGoMix ? "text-xs text-[var(--brd-mute)] max-lg:sr-only sm:max-w-[22rem]" : "sr-only"}>
               {songReady
                 ? tMix("przejdzDoMixuUtwor")
                 : canGoMix

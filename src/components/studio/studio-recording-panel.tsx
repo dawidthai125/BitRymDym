@@ -3204,7 +3204,8 @@ export function StudioRecordingPanel({
           )
         : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-medium text-[var(--brd-ink)]">
+        {/* In the bottom sheet its title already says "Nagrywanie". */}
+        <h2 className={`text-sm font-medium text-[var(--brd-ink)] ${embedded && !samplesMode ? "max-xl:sr-only" : ""}`}>
           {samplesMode ? tr("sampleNaglowek") : tr("nagrywanie")}
         </h2>
         {state.phase === "RECORDING" ? (
@@ -3258,7 +3259,7 @@ export function StudioRecordingPanel({
         </>
       ) : null}
       {!simple && !samplesMode ? (
-        <div className="grid grid-cols-2 gap-1" role="tablist" aria-label={tr("nagrywanie")} data-testid="studio-record-panes">
+        <div className="grid grid-cols-4 gap-1" role="tablist" aria-label={tr("nagrywanie")} data-testid="studio-record-panes">
           {(
             [
               ["take", "recPaneNagraj"],

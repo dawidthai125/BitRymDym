@@ -90,7 +90,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1 max-sm:gap-0.5 max-sm:[&_button]:px-1.5 max-sm:[&_button]:text-[11px] max-[389px]:[&_button]:px-1 max-[389px]:[&_button]:text-[10px]"
+      className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1 max-sm:gap-0.5 max-sm:[&_button]:px-1.5 max-sm:[&_button]:text-[11px] max-[389px]:[&_button]:px-1 max-[389px]:[&_button]:text-[10px] sm:max-md:[&_button]:px-1.5"
       role="toolbar"
       aria-label={t("edycjaOsiCzasu")}
       data-testid="studio-edit-toolbar"
@@ -153,8 +153,8 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           buttonClassName="px-3"
           dataAttrs={{ "data-capacity": "full" }}
         >
-          <span className="max-sm:hidden">{t("dodajSciezke")}</span>
-          <span className="sm:hidden">{t("dodajSciezkeKrotko")}</span>
+          <span className="max-md:hidden">{t("dodajSciezke")}</span>
+          <span className="md:hidden">{t("dodajSciezkeKrotko")}</span>
         </LockedAction>
       ) : (
       <Button
@@ -173,8 +173,8 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         }
         onClick={props.onAddTrack}
       >
-        <span className="max-sm:hidden">{t("dodajSciezke")}</span>
-        <span className="sm:hidden">{t("dodajSciezkeKrotko")}</span>
+        <span className="max-md:hidden">{t("dodajSciezke")}</span>
+        <span className="md:hidden">{t("dodajSciezkeKrotko")}</span>
       </Button>
       )}
       <Button
@@ -201,6 +201,39 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
       >
         {t("mixer")}
       </Button>
+      {/* Zoom stays on the bar at every width: on a 640 px tablet it was hidden under "More". */}
+      <div className="flex shrink-0 items-center gap-1" data-testid="studio-toolbar-zoom">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11 min-w-11"
+          title={t("pomniejszOsCzasu")}
+          onClick={props.onZoomOut}
+        >
+          {t("zoom")}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11 min-w-11"
+          title={t("powiekszOsCzasu")}
+          onClick={props.onZoomIn}
+        >
+          {t("zoom2")}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11 min-w-11 max-md:hidden"
+          title={t("dopasujOsCzasuDo")}
+          onClick={props.onFit}
+        >
+          {t("fit")}
+        </Button>
+      </div>
       <Button
         ref={moreButtonRef}
         type="button"
@@ -271,27 +304,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           type="button"
           size="sm"
           variant="outline"
-          className="min-h-11 min-w-11"
-          title={t("pomniejszOsCzasu")}
-          onClick={props.onZoomOut}
-        >
-          {t("zoom")}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="min-h-11 min-w-11"
-          title={t("powiekszOsCzasu")}
-          onClick={props.onZoomIn}
-        >
-          {t("zoom2")}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="min-h-11 min-w-11"
+          className="min-h-11 min-w-11 md:hidden"
           title={t("dopasujOsCzasuDo")}
           onClick={props.onFit}
         >

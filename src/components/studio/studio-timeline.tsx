@@ -248,6 +248,7 @@ export function StudioTimeline({
   pxPerMs,
   mode,
   interactionLocked = false,
+  beatLocked = false,
   selectedClipId,
   renderTrackHeader,
   renderLaneOverlay,
@@ -270,6 +271,8 @@ export function StudioTimeline({
   pxPerMs: number;
   mode: TimelineMode;
   interactionLocked?: boolean;
+  /** The Bit cannot be dragged or trimmed on the lanes. */
+  beatLocked?: boolean;
   selectedClipId: string | null;
   renderTrackHeader?: (track: StudioTrackDto, index: number) => ReactNode;
   /** Silver/Gold automation editor drawn over a track's lane (null = nothing). */
@@ -500,6 +503,7 @@ export function StudioTimeline({
                         mode={mode}
                         selected={clip.id === selectedClipId}
                         interactionLocked={interactionLocked}
+                        geometryLocked={beatLocked && clip.sourceKind === "BEAT_REF"}
                         laneHeightPx={STUDIO_DAW_LANE_HEIGHT_PX}
                         snapConfig={snapConfig}
                         resolveSourceUrl={resolveClipSourceUrl}

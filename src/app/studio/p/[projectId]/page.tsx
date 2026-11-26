@@ -14,7 +14,7 @@ import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { prewarmListenCopy } from "@/lib/beats/listen-copy/listen-copy-server";
 import { getStudioProjectDocument } from "@/lib/studio/studio-service";
-import { loadStudioBeatTitle } from "@/lib/studio/studio-beat-title";
+import { loadStudioBeatDurationMs, loadStudioBeatTitle } from "@/lib/studio/studio-beat-title";
 import { loadStudioTakeExpiryNotice } from "@/lib/studio/studio-take-expiry-server";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -56,9 +56,10 @@ export default async function StudioProjectPage({ params }: PageProps) {
     after(() => prewarmListenCopy({ beatId: projectBeatId, userId: warmFor }));
   }
 
-  const [product, beatTitle, takeExpiry] = await Promise.all([
+  const [product, beatTitle, beatDurationMs, takeExpiry] = await Promise.all([
     resolveProductEntitlementForAuthContext(auth),
     loadStudioBeatTitle(document.project.beatId),
+    loadStudioBeatDurationMs(document.project.beatId),
     loadStudioTakeExpiryNotice(auth.userId, document.clips),
   ]);
 
@@ -91,6 +92,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
           <StudioEditor
             initialDocument={document}
             initialBeatTitle={beatTitle}
+            initialBeatDurationMs={beatDurationMs}
             trackCapacity={{
               maxTracks: maxRecordingTracksForTier(product.premiumTier),
               premiumTier: product.premiumTier,

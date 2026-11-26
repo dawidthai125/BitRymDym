@@ -117,6 +117,7 @@ import type {
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
 import { beatDurationMs } from "@/lib/studio/studio-daw-clock";
+import { beatRestorePlan, isBeatClip, isClipLocked } from "@/lib/studio/studio-beat-lock";
 import { studioAdvancedRecordAllowed, studioRecordView } from "@/lib/studio/studio-record-view";
 import {
   clearClipSelection,
@@ -227,15 +228,27 @@ const STATUS_NOTE_MS = 6000;
 export function StudioEditor({
   initialDocument,
   initialBeatTitle = null,
+  initialBeatDurationMs = null,
   trackCapacity,
 }: {
   initialDocument: StudioProjectDocument;
   /** Title of the attached beat (the beat track is always named "Bit"). */
   initialBeatTitle?: string | null;
+  /** Full length of the attached Bit, for "put the Bit back". */
+  initialBeatDurationMs?: number | null;
   trackCapacity: StudioTrackCapacityProps;
 }) {
   const [doc, setDoc] = useState(initialDocument);
   const [beatTitle, setBeatTitle] = useState<string | null>(initialBeatTitle);
+  const [fullBeat, setFullBeat] = useState({ beatId: initialDocument.project.beatId, ms: initialBeatDurationMs });
+  // A newly chosen Bit is seeded whole: its fresh clip gives the full length (adjust during render).
+  if (doc.project.beatId !== fullBeat.beatId) {
+    const seeded = doc.clips.filter(isBeatClip);
+    setFullBeat({
+      beatId: doc.project.beatId,
+      ms: seeded.length === 1 && seeded[0].sourceBeatId === doc.project.beatId ? seeded[0].durationMs : null,
+    });
+  }
   /** Stage 2 — A/B: "before BITEK" mix plane heard instead of the saved one (playback only). */
   const [mixAbOverride, setMixAbOverride] = useState<StudioProjectDocument | null>(null);
   const beatRef = useMemo(
@@ -323,6 +336,7 @@ export function StudioEditor({
         onMixAbOverride={setMixAbOverride}
         beatTitle={beatTitle}
         onBeatTitle={setBeatTitle}
+        fullBeatMs={doc.project.beatId === fullBeat.beatId ? fullBeat.ms : null}
       />
     </StudioTransportProvider>
   );
@@ -335,7 +349,9 @@ function StudioEditorInner({
   onMixAbOverride,
   beatTitle,
   onBeatTitle,
+  fullBeatMs,
 }: {
+  fullBeatMs: number | null;
   doc: StudioProjectDocument;
   setDoc: Dispatch<SetStateAction<StudioProjectDocument>>;
   trackCapacity: StudioTrackCapacityProps;
@@ -382,6 +398,8 @@ function StudioEditorInner({
   const writeSeqRef = useRef(new Map<string, number>());
   const undoRevertRef = useRef<{ before: StudioUndoHistory; after: StudioUndoHistory } | null>(null);
   const [mode, setMode] = useState<TimelineMode>("seek");
+  /** The Bit cannot be moved or cut until unlocked; every visit starts locked. */
+  const [beatUnlocked, setBeatUnlocked] = useState(false);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [pxPerMs, setPxPerMs] = useState(STUDIO_TIMELINE_DEFAULT_PX_PER_MS);
   /** When true, skip auto-fit on resize (user zoomed in/out). Fit button clears it. */
@@ -580,6 +598,8 @@ function StudioEditorInner({
     selectedTrackId: activeSelectedTrackId,
   });
 
+  /** Recording in the bottom sheet: only the record panel's own tab row (owner video 2026-11-26). */
+  const recordSheetOnly = inspectorContext === "record" && !recordSimple && !inspectorDesktopRail;
   const recordHost = useStudioRecordHost();
   /** Why the record panel may not be unmounted now (recording, undecided take, unsent take). */
   const [recordHold, setRecordHold] = useState<RecordHold>(null);
@@ -2701,8 +2721,26 @@ function StudioEditorInner({
     });
   }
 
+  /** True when the action would change the locked Bit; says why nothing happened. */
+  function beatLockBlocks(clip: StudioClipDto | null | undefined = selectedClip): boolean {
+    if (!isClipLocked(clip, beatUnlocked)) return false;
+    setStatus(tr("bitZablokowanyKrotko"));
+    return true;
+  }
+
+  function restoreBeat(): void {
+    const plan = beatRestorePlan(docRef.current.clips, fullBeatMs);
+    if (!plan || recordingLocked) return;
+    persistClipGeometryCommit(plan.clipId, {
+      kind: "set_geometry",
+      timelineStartMs: plan.timelineStartMs,
+      durationMs: plan.durationMs,
+      sourceOffsetMs: plan.sourceOffsetMs,
+    });
+  }
+
   function nudgeSelectedBy(deltaMs: number): void {
-    if (!selectedClip || recordingLocked || pending) return;
+    if (!selectedClip || recordingLocked || pending || beatLockBlocks()) return;
     const next = nudgeClipTimelineStartMs({
       timelineStartMs: selectedClip.timelineStartMs,
       durationMs: selectedClip.durationMs,
@@ -2717,7 +2755,7 @@ function StudioEditorInner({
 
   function splitSelectedAtPlayhead(): void {
     const clipId = selectedClip?.id;
-    if (!clipId) return;
+    if (!clipId || beatLockBlocks()) return;
     setError(null);
     setFragmentConfirmDelete(false);
     const atTimelineMs = getPlayheadMs();
@@ -2940,7 +2978,7 @@ function StudioEditorInner({
 
   function deleteSelectedClip(): void {
     const clipId = selectedClip?.id;
-    if (!clipId) return;
+    if (!clipId || beatLockBlocks()) return;
     setError(null);
     enqueuePersist(async () => {
       const beforeDelete = committedClip(clipId);
@@ -3010,7 +3048,7 @@ function StudioEditorInner({
   /** V1 / 7.1.6 — Duplicate Clip via CAS + serial orchestrator. */
   function duplicateSelectedClip(): void {
     const clipId = selectedClip?.id;
-    if (!clipId) return;
+    if (!clipId || beatLockBlocks()) return;
     setError(null);
     enqueuePersist(async () => {
       try {
@@ -3121,6 +3159,7 @@ function StudioEditorInner({
       saveClipMute(muted);
     },
     onMove: (timelineStartMs: number) => {
+      if (beatLockBlocks()) return;
       const maxStart = selectedClip
         ? Math.max(0, length - selectedClip.durationMs)
         : 0;
@@ -3133,6 +3172,7 @@ function StudioEditorInner({
       });
     },
     onTrimLeftToPlayhead: () => {
+      if (beatLockBlocks()) return;
       const playheadMs = getPlayheadMs();
       if (!playheadInsideClip(selectedClip, playheadMs)) {
         setStatus(tl("Ustaw głowicę wewnątrz zaznaczonego fragmentu, aby przyciąć początek."));
@@ -3141,6 +3181,7 @@ function StudioEditorInner({
       patchClip({ op: "trim_left_to_playhead", playheadMs });
     },
     onTrimRightToPlayhead: () => {
+      if (beatLockBlocks()) return;
       const playheadMs = getPlayheadMs();
       if (!playheadInsideClip(selectedClip, playheadMs)) {
         setStatus(tl("Ustaw głowicę wewnątrz zaznaczonego fragmentu, aby przyciąć koniec."));
@@ -3370,8 +3411,8 @@ function StudioEditorInner({
         role="tablist"
         aria-label={tr("inspector")}
         data-testid="studio-inspector-visual-tabs"
-        hidden={recordSimple}
-        className={`${recordSimple ? "hidden" : "grid"} grid-cols-4 gap-1 border-b border-[var(--brd-line)] pb-2`}
+        hidden={recordSimple || recordSheetOnly}
+        className={`${recordSimple || recordSheetOnly ? "hidden" : "grid"} grid-cols-4 gap-1 border-b border-[var(--brd-line)] pb-2`}
       >
         {(
           [
@@ -3439,13 +3480,29 @@ function StudioEditorInner({
           </button>
         ))}
       </div>
-      {recordSimple ? null : (
+      {recordSimple || recordSheetOnly ? null : (
         <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           {tInspector(inspectorContext)}
         </p>
       )}
 
       {inspectorContext === "record" ? <StudioRecordSlot host={recordHost} /> : null}
+      {recordSheetOnly ? (
+        <button
+          type="button"
+          className="min-h-11 text-xs text-[var(--brd-green)] underline-offset-4 hover:underline disabled:opacity-50"
+          data-testid="studio-record-other-tabs"
+          disabled={recordingLocked}
+          onClick={() => {
+            setInspectorTab("settings");
+            setInspectorPreferRecord(false);
+            setConfirmDelete(false);
+            openInspectorOverlay();
+          }}
+        >
+          {tr("opcjeEfektyPlik")}
+        </button>
+      ) : null}
 
       {inspectorContext === "track" && selectedTrack ? (
         <TrackInspectorPanel
@@ -3918,6 +3975,7 @@ function StudioEditorInner({
         exportLocked={trackCapacity.premiumTier !== "GOLD"}
         fragmentClipId={activeSelectedId}
         fragmentEnabled={Boolean(selectedClip) && !recordingLocked}
+        onUnlockBeat={isClipLocked(selectedClip, beatUnlocked) ? () => setBeatUnlocked(true) : null}
         fragmentConfirmDelete={fragmentConfirmDelete}
         onFragmentSplit={() => {
           setMode("edit");
@@ -3948,7 +4006,7 @@ function StudioEditorInner({
         }}
         fragmentReverseOn={Boolean(selectedClip?.scratchReverse)}
         onFragmentReverse={() => {
-          if (!selectedClip) return;
+          if (!selectedClip || beatLockBlocks()) return;
           setFragmentConfirmDelete(false);
           saveClipScratch({
             clipId: selectedClip.id,
@@ -3961,7 +4019,7 @@ function StudioEditorInner({
         fragmentPitchCents={selectedClip?.pitchCents ?? 0}
         fragmentPitchLocked={!clipPitchForTier(trackCapacity.premiumTier)}
         onFragmentPlayback={(next) => {
-          if (!selectedClip) return;
+          if (!selectedClip || beatLockBlocks()) return;
           saveClipPlayback(selectedClip.id, next);
         }}
         fragmentGainDb={selectedClip?.gainDb ?? 0}
@@ -4364,7 +4422,7 @@ function StudioEditorInner({
         {recordSimple ? (
         <div
           data-testid="studio-record-simple"
-          className={`flex flex-col gap-2 lg:order-2 lg:max-h-[max(30rem,calc(100dvh-17rem))] lg:shrink-0 lg:overflow-y-auto lg:rounded lg:border lg:border-[var(--brd-line)] lg:bg-[var(--brd-paper)] lg:p-3 ${
+          className={`flex flex-col gap-2 sm:max-lg:order-2 lg:order-2 lg:max-h-[max(30rem,calc(100dvh-17rem))] lg:shrink-0 lg:overflow-y-auto lg:rounded lg:border lg:border-[var(--brd-line)] lg:bg-[var(--brd-paper)] lg:p-3 ${
             onSampleTab ? "lg:w-[24rem] xl:w-[30rem]" : "lg:w-[20rem] xl:w-[24rem]"
           }`}
         >
@@ -4416,7 +4474,19 @@ function StudioEditorInner({
           ) : null}
         </div>
         ) : null}
-        <div className={`min-w-0 max-xl:w-full xl:order-1 xl:w-full ${recordSimple ? "lg:order-1 lg:flex-1" : "flex-1"}`}>
+        <div className={`min-w-0 max-xl:w-full xl:order-1 xl:w-full ${recordSimple ? "sm:max-lg:order-1 lg:order-1 lg:flex-1" : "flex-1"}`}>
+          {!recordingLocked && beatRestorePlan(doc.clips, fullBeatMs) ? (
+            <div
+              className="flex flex-wrap items-center justify-between gap-2 border border-[var(--brd-amber)] px-2 py-1 text-xs text-[var(--brd-ink)]"
+              role="status"
+              data-testid="studio-beat-changed"
+            >
+              <span>{tr("bitZmieniony")}</span>
+              <Button type="button" size="sm" variant="outline" className="min-h-11 px-3" disabled={pending} onClick={restoreBeat}>
+                {tr("przywrocBit")}
+              </Button>
+            </div>
+          ) : null}
           <StudioTimeline
             tracks={doc.tracks}
             clips={doc.clips}
@@ -4456,6 +4526,8 @@ function StudioEditorInner({
                 recordSimple={recordSimple}
                 pending={pending}
                 recordingLocked={recordingLocked}
+                beatUnlocked={beatUnlocked}
+                onToggleBeatLock={() => setBeatUnlocked((value) => !value)}
                 menuOpen={trackMenuId === track.id}
                 onSelect={setSelectedTrackId}
                 onToggleMenu={() => setTrackMenuId((prev) => (prev === track.id ? null : track.id))}
@@ -4494,8 +4566,9 @@ function StudioEditorInner({
             }}
             resolveClipSourceUrl={resolveClipSourceUrl}
             snapConfig={snapConfig}
+            beatLocked={!beatUnlocked}
             onCommitClipGeometry={(clipId, commit) => {
-              if (recordingLocked) return;
+              if (recordingLocked || beatLockBlocks(doc.clips.find((c) => c.id === clipId))) return;
               setSelectedClipId(selectClipId(activeSelectedId, clipId));
               const clip = doc.clips.find((c) => c.id === clipId);
               if (clip) setSelectedTrackId(clip.trackId);

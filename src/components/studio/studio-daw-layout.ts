@@ -17,7 +17,7 @@ export const STUDIO_TRACK_EDGE = ["#e8735a", "#f2a93b", "#d9c45a", "#7cc68d", "#
  * (audit 2026-11-21: a fixed 28rem box gave three nested scrollbars). From sm, a side column.
  */
 export const STUDIO_DAW_HEADER_WIDTH_CLASS =
-  "w-full border-b sm:h-auto sm:max-h-none sm:w-[272px] sm:border-b-0 sm:border-r";
+  "w-full border-b sm:h-auto sm:max-h-none sm:w-[232px] sm:border-b-0 sm:border-r lg:w-[272px]";
 
 /** Track header pan readout: C, L 35, R 100 (mono, fixed width). */
 export function formatStudioPanShort(

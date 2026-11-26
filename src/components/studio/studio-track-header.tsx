@@ -40,6 +40,8 @@ export function StudioTrackHeader({
   pending,
   recordingLocked,
   menuOpen,
+  beatUnlocked = false,
+  onToggleBeatLock,
   onSelect,
   onToggleMenu,
   patchTrack,
@@ -57,6 +59,9 @@ export function StudioTrackHeader({
   pending: boolean;
   recordingLocked: boolean;
   menuOpen: boolean;
+  /** Bit track only: whether the Bit may be moved and cut. */
+  beatUnlocked?: boolean;
+  onToggleBeatLock?: () => void;
   onSelect: (trackId: string | null) => void;
   onToggleMenu: () => void;
   patchTrack: PatchTrack;
@@ -70,6 +75,22 @@ export function StudioTrackHeader({
   const trRole = useTranslations("studio.trackRole");
   const isBeat = track.trackType === "BEAT";
   const typeLabel = labelStudioTrackType(track.trackType);
+  const lockButton = isBeat && onToggleBeatLock ? (
+    <button
+      type="button"
+      className={`inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm border px-1 text-[11px] font-semibold ${
+        beatUnlocked ? "border-[var(--brd-amber)] text-[var(--brd-amber)]" : "border-[var(--brd-line)] text-[var(--brd-ink-soft)]"
+      }`}
+      aria-pressed={!beatUnlocked}
+      title={tr(beatUnlocked ? "zablokujBitOpis" : "odblokujBitOpis")}
+      data-testid="studio-beat-lock"
+      disabled={recordingLocked}
+      onClick={onToggleBeatLock}
+    >
+      <span aria-hidden="true">{beatUnlocked ? "🔓" : "🔒"}</span>
+      <span className="truncate">{tr(beatUnlocked ? "bitOdblokowany" : "bitZablokowany")}</span>
+    </button>
+  ) : null;
   return (
       <div
               data-testid="studio-track-header"
@@ -93,7 +114,7 @@ export function StudioTrackHeader({
         <div className="flex min-h-11 items-center gap-0.5">
           <button
             type="button"
-            className="min-h-11 min-w-[4.5rem] flex-1 overflow-hidden rounded-sm px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+            className="min-h-11 min-w-[4.5rem] flex-1 overflow-hidden sm:max-lg:min-w-10 sm:max-lg:px-0 rounded-sm px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
             aria-pressed={isSelected}
             aria-label={
               tl(isSelected
@@ -140,7 +161,7 @@ export function StudioTrackHeader({
           {!isBeat ? (
             <span
               aria-hidden
-              className="studio-track-swatch"
+              className="studio-track-swatch sm:max-lg:hidden"
               style={{
                 background: STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
               }}
@@ -159,36 +180,39 @@ export function StudioTrackHeader({
             )}
           </p>
         ) : null}
+        {recordSimple && lockButton ? <div className="flex px-1">{lockButton}</div> : null}
         {!recordSimple ? (
         <>
         <div className="flex min-h-11 min-w-0 items-center gap-0.5">
-          <label
-            className="studio-track-role relative flex h-11 min-w-0 flex-1 items-center"
-            title={`${typeLabel} · ${trRole(track.trackRole)}`}
-          >
-            <span className="sr-only">
-              {tr("rolaSciezki", { v0: track.name })}
-            </span>
-            <select
-              className="studio-track-role-select h-11 w-full min-w-0 max-w-[11rem] cursor-pointer truncate rounded-sm text-[11px] font-semibold"
-              value={track.trackRole}
-              disabled={pending || recordingLocked}
-              data-testid="studio-track-role"
-              data-track-id={track.id}
-              aria-label={tr("rolaSciezki", { v0: track.name })}
-              onChange={(event) => {
-                const next = event.target.value;
-                if (!isStudioTrackRole(next) || next === track.trackRole) return;
-                patchTrack(track.id, { trackRole: next });
-              }}
+          {lockButton ?? (
+            <label
+              className="studio-track-role relative flex h-11 min-w-0 flex-1 items-center"
+              title={`${typeLabel} · ${trRole(track.trackRole)}`}
             >
-              {STUDIO_TRACK_ROLES.map((role) => (
-                <option key={role} value={role}>
-                  {trRole(role)}
-                </option>
-              ))}
-            </select>
-          </label>
+              <span className="sr-only">
+                {tr("rolaSciezki", { v0: track.name })}
+              </span>
+              <select
+                className="studio-track-role-select h-11 w-full min-w-0 max-w-[11rem] cursor-pointer truncate rounded-sm text-[11px] font-semibold"
+                value={track.trackRole}
+                disabled={pending || recordingLocked}
+                data-testid="studio-track-role"
+                data-track-id={track.id}
+                aria-label={tr("rolaSciezki", { v0: track.name })}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  if (!isStudioTrackRole(next) || next === track.trackRole) return;
+                  patchTrack(track.id, { trackRole: next });
+                }}
+              >
+                {STUDIO_TRACK_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {trRole(role)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <Button
             type="button"
             size="xs"

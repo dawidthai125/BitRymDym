@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
+  MANUAL_NUDGE_MS,
   LATENCY_HIGH_WARN_MS,
   MANUAL_OFFSET_MAX_MS,
   MANUAL_OFFSET_MIN_MS,
@@ -128,6 +129,7 @@ export function useStudioLatency(params: {
     labels: [inputLabel, outputLabel],
     compensationMs: resolved.baseMs,
     calibrated: resolved.source === "calibrated",
+    manualSet: (profile?.manualOffsetMs ?? 0) !== 0,
   });
 
   const persist = useCallback(
@@ -391,7 +393,7 @@ export function StudioLatencyCard(props: {
       <p className="text-sm text-[var(--brd-ink)]" role="status">
         {t("korekta", { ms: latency.compensationMs })}{" "}
         <span className="text-xs text-[var(--brd-mute)]">
-          {latency.source === "calibrated" ? t("zrodloKalibracja") : t("zrodloSzacunek")}
+          {latency.source === "calibrated" ? t("zrodloKalibracja") : savedManual !== 0 ? t("zrodloReczna") : t("zrodloSzacunek")}
         </span>
       </p>
       {latency.warning ? (
@@ -439,9 +441,19 @@ export function StudioLatencyCard(props: {
             </p>
           ) : null}
           {calibration.status === "failed" ? (
-            <p className="text-xs text-destructive" role="alert">
-              {t(`blad.${calibration.reason}`)}
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-destructive" role="alert">
+                {t(`blad.${calibration.reason}`)}
+              </p>
+              {calibration.reason !== "ERROR" ? (
+                <div className="space-y-1" data-testid="studio-latency-next">
+                  <p className="text-xs text-[var(--brd-ink)]">{t("poNieudanym")}</p>
+                  <Button type="button" size="sm" className="min-h-11 w-full" disabled={props.disabled} onClick={() => props.onCalibrate("clap")}>
+                    {t("sprobujKlaskania")}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           ) : null}
           <label className="block text-xs text-[var(--brd-mute)]">
             {t("recznaKorekta", { ms: manual > 0 ? `+${manual}` : String(manual) })}
@@ -460,7 +472,26 @@ export function StudioLatencyCard(props: {
               aria-label={t("recznaKorektaAria")}
             />
           </label>
-          <p className="text-[11px] text-[var(--brd-mute)]">{t("recznaPodpowiedz")}</p>
+          <div className="grid grid-cols-2 gap-2" role="group" aria-label={t("recznaKorektaAria")}>
+            {[-MANUAL_NUDGE_MS, MANUAL_NUDGE_MS].map((step) => (
+              <Button
+                key={step}
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11"
+                data-testid={step < 0 ? "studio-latency-minus" : "studio-latency-plus"}
+                disabled={running || clampManualOffset(manual + step) === manual}
+                onClick={() => {
+                  setDraftManual(null);
+                  latency.save({ manualOffsetMs: clampManualOffset(manual + step) });
+                }}
+              >
+                {t(step < 0 ? "mniej" : "wiecej", { ms: MANUAL_NUDGE_MS })}
+              </Button>
+            ))}
+          </div>
+          <p className="text-[11px] text-[var(--brd-mute)]">{t("recznaPodpowiedz")} {t("dzialaNaNastepne")}</p>
           {latency.profile ? (
             <button
               type="button"
