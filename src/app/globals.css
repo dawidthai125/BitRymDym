@@ -1152,3 +1152,21 @@ main[data-brd-surface="control-room"] input:is([type="radio"], [type="checkbox"]
 html:not([data-theme="dark"]) main [data-testid="studio-daw-shell"] {
   box-shadow: 0 0 0 0.5rem #0e0c0a;
 }
+
+/* Studio full screen (src/lib/studio/studio-fullscreen.ts): only the Studio desk stays on screen. */
+html.brd-studio-full [data-site-header],
+html.brd-studio-full [data-testid="site-footer"],
+html.brd-studio-full [data-mobile-bottom-nav],
+html.brd-studio-full [data-sticky-player],
+html.brd-studio-full [data-testid="terms-notice"] {
+  display: none !important;
+}
+html.brd-studio-full #main-content {
+  padding-bottom: env(safe-area-inset-bottom) !important;
+}
+html.brd-studio-full [data-studio-shell] {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}

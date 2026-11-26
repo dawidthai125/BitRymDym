@@ -47,6 +47,7 @@ export async function SiteHeader({
     <>
       <SkipToMainContent />
       <header
+        data-site-header=""
         className={cn(
           "sticky top-0 z-40 border-b border-[var(--brd-tier-line)] bg-[var(--brd-paper)] shadow-[0_1px_0_0_rgba(0,0,0,0.6)]",
           className,

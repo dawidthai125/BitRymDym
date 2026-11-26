@@ -31,6 +31,7 @@ import {
   StudioMixStep,
   prefetchStudioStepPanels,
 } from "@/components/studio/studio-lazy-panels";
+import { StudioFullscreenToggle } from "@/components/studio/studio-fullscreen-toggle";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
 import {
@@ -3812,6 +3813,7 @@ function StudioEditorInner({
             : tr("wybierzBit")}{" "}
           ▾
         </button>
+        <StudioFullscreenToggle />
       </div>
       </header>
 
