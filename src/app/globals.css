@@ -523,6 +523,22 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
   color: #f1e7d3;
   text-align: left;
 }
+/* Phones: the full-screen button sits next to the beat picker in the same row. */
+@media (max-width: 639px) {
+  .studio-desk .studio-bit-picker {
+    min-width: min(16rem, calc(50vw - 3.25rem));
+  }
+}
+.studio-desk .studio-fullscreen-btn {
+  border: 1px solid #5c4c3c;
+  background: #17130f;
+  color: #f1e7d3;
+}
+.studio-desk .studio-fullscreen-btn:hover,
+.studio-desk .studio-fullscreen-btn[aria-pressed="true"] {
+  border-color: #f2a93b;
+  color: #f2a93b;
+}
 .studio-desk [data-testid="studio-step-nav"] [aria-current="step"],
 .studio-desk [data-testid="studio-step-nav"] li[aria-current="step"] {
   background: #f2a93b;

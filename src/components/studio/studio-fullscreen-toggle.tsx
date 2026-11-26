@@ -100,7 +100,7 @@ export function StudioFullscreenToggle() {
       aria-label={label}
       title={`${label} (F)`}
       onClick={toggle}
-      className="studio-bit-picker inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center px-2"
+      className="studio-fullscreen-btn inline-flex size-11 shrink-0 items-center justify-center"
     >
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         {on ? (
