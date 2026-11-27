@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const exchangeCodeForSession = vi.fn();
-const signOut = vi.fn();
-const maintenance = vi.fn();
+const { exchangeCodeForSession, signOut, maintenance } = vi.hoisted(() => ({
+  exchangeCodeForSession: vi.fn(),
+  signOut: vi.fn(),
+  maintenance: vi.fn(),
+}));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({
