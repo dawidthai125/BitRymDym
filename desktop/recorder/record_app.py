@@ -54,6 +54,7 @@ import auto_align
 import beat_speed
 import countin
 import offline_session
+import track_kind
 import win_output
 from account_upload import (
     NETWORK_ERRORS,
@@ -92,7 +93,7 @@ from desk import (
     write_prefs,
 )
 from own_fx import display_tier, limits_from_usage
-from record_wav import apply_gain_int16, raise_db_for_peak, read_mono16, replace_mono16, take_stats, write_pcm16_wav
+from record_wav import apply_gain_int16, auto_level, raise_db_for_peak, read_mono16, replace_mono16, take_stats, write_pcm16_wav
 from timeline import (
     RATE,
     Clip,
@@ -319,6 +320,10 @@ DESK = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-sesja.json"
 DESK_OFFLINE = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-sesja-offline.json"
 
 
+# A pan released this close to the middle (in slider steps of 100) lands on C.
+PAN_SNAP = 6
+
+
 @dataclass(eq=False)
 class Track:
     """One vocal track. The beat is not a Track and does not count to the plan limit."""
@@ -333,6 +338,13 @@ class Track:
     role: str = "wokal"
 
 
+def align_check_text(residual_ms: float | None) -> str:
+    """What the second measurement says after the take was moved by the found delay."""
+    if residual_ms is not None and abs(residual_ms) <= 5:
+        return f"Sprawdzone: wokal jest równo z bitem (różnica {abs(residual_ms):.0f} ms)."
+    return "Nie udało się potwierdzić wyrównania: posłuchaj, a jeśli się rozjeżdża, kliknij ZMIERZ przy OPÓŹNIENIE."
+
+
 @dataclass(eq=False)
 class UndoStep:
     """What Cofnij brings back. delay: (key of the pair, value before, value after) when the step moved a take by it."""
@@ -341,6 +353,8 @@ class UndoStep:
     armed: int
     last_take: tuple[Clip, float, str, float] | None = None
     delay: tuple[str, float | None, float] | None = None
+    # The beat fader before the step, when the step (Bitek after a quiet take) moved it.
+    beat_gain: float | None = None
 
 
 def clock_text(seconds: float) -> str:
@@ -2584,7 +2598,7 @@ class RecorderWindow:
         self.done_button = self._tool(foot, "GOTOWE  ✓", self.open_done, ON_AMBER, AMBER, 15)
         self.done_button.configure(padx=22, pady=6)
         self.done_button.pack(side="right")
-        self.add_button = self._tool(foot, "+ DODAJ ŚCIEŻKĘ", self.add_track, INK, size=12)
+        self.add_button = self._tool(foot, "+ DODAJ ŚCIEŻKĘ", self.ask_new_track, INK, size=12)
         self.add_button.pack(side="left")
         self.plan_label = tk.Label(foot, textvariable=self.plan_text, bg=PAPER, fg=SOFT, font=(FONT_UI, 9), justify="left", anchor="w")
         self.plan_label.pack(side="left", padx=12, fill="x", expand=True)
@@ -2682,14 +2696,30 @@ class RecorderWindow:
         return scale
 
     def _pan_scale(self, parent: tk.Widget, pan: float, command: Callable[[float], None]) -> tk.Scale:
-        """Slider is -100..100 so the thumb lands on whole steps. Stored pan is -1..1."""
+        """Slider is -100..100 so the thumb lands on whole steps. Stored pan is -1..1.
+
+        A release near the middle lands on C, a double click puts it back on C."""
         scale = tk.Scale(
-            parent, from_=-100, to=100, resolution=1, orient="horizontal", showvalue=False, length=int(110 * self.ui),
+            parent, from_=-100, to=100, resolution=1, orient="horizontal", showvalue=False, length=int(92 * self.ui),
             bg=PANEL, fg=INK, troughcolor=RACK, highlightthickness=0, sliderlength=int(14 * self.ui), width=int(9 * self.ui),
             bd=0, activebackground=AMBER, command=lambda raw: command(float(raw)),
         )
         scale.set(max(-100.0, min(100.0, pan * 100)))
+
+        def snap(_event: object = None) -> None:
+            if 0 < abs(float(scale.get())) <= PAN_SNAP:
+                scale.set(0)
+
+        scale.bind("<ButtonRelease-1>", snap, add="+")
+        scale.bind("<Double-Button-1>", lambda _event: scale.set(0), add="+")
         return scale
+
+    def _pan_presets(self, parent: tk.Widget, scale: tk.Scale) -> None:
+        """L / C / P under the eye: one click puts the track on the left, the middle or the right."""
+        for text, value in (("L", -100), ("C", 0), ("P", 100)):
+            button = tk.Label(parent, text=text, bg=RACK, fg=INK, font=(FONT_META, 7, "bold"), width=2, cursor="hand2")
+            button.pack(side="left", padx=(1, 0))
+            button.bind("<Button-1>", lambda _event, target=value: scale.set(target))
 
     def _build_beat_row(self) -> None:
         row, head, lane = self._row_frame(self.row_host)
@@ -2723,7 +2753,9 @@ class RecorderWindow:
         )
         self.beat_pan_scale = self._pan_scale(balance, self.beat_pan, self._set_beat_pan)
         self.beat_pan_scale.pack(side="left", padx=4)
+        self.beat_pan_label.configure(width=5)
         self.beat_pan_label.pack(side="left")
+        self._pan_presets(balance, self.beat_pan_scale)
         self.beat_lane, self.beat_head = lane, head
         lane.bind("<Button-1>", lambda event: self._lane_click_plain(event))
         lane.bind("<B1-Motion>", lambda event: self._lane_click_plain(event))
@@ -2759,9 +2791,11 @@ class RecorderWindow:
         balance = tk.Frame(head, bg=PANEL)
         balance.pack(fill="x", padx=8, pady=(2, 0))
         tk.Label(balance, text="PAN", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
-        pan_label = tk.Label(balance, text=offline_session.pan_text(track.pan), bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=6, anchor="w")
-        self._pan_scale(balance, track.pan, lambda value, slot=track: self._set_pan(slot, value)).pack(side="left", padx=4)
+        pan_label = tk.Label(balance, text=offline_session.pan_text(track.pan), bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=5, anchor="w")
+        pan_scale = self._pan_scale(balance, track.pan, lambda value, slot=track: self._set_pan(slot, value))
+        pan_scale.pack(side="left", padx=4)
         pan_label.pack(side="left")
+        self._pan_presets(balance, pan_scale)
         widgets: dict[str, object] = {
             "row": row, "head": head, "lane": lane, "name": name, "rec": rec, "mute": mute, "solo": solo, "gain": gain_label, "pan": pan_label,
         }
@@ -2867,18 +2901,87 @@ class RecorderWindow:
             return True
         return False
 
-    def add_track(self) -> None:
-        if self._busy():
-            return
+    def _track_room(self, kind: str | None = None) -> bool:
+        """False, with the reason in the status line, when the plan or Studio Offline has no room for it."""
         cap = self._track_cap()
-        if len(self.tracks) >= cap:
+        full = len(self.tracks) >= cap
+        if not full and kind is not None and self.studio_mode == "offline":
+            role = track_kind.ROLE_OF.get(kind, "wokal")
+            same = sum(1 for track in self.tracks if (track.role == "podbicie") == (role == "podbicie"))
+            full = same >= (offline_session.OFFLINE_EXTRAS if role == "podbicie" else offline_session.OFFLINE_VOCALS)
+        if full:
             if self.studio_mode == "offline":
                 self.status.set("Studio Offline mieści 16 wokali i 6 podbić albo adlibów. Bit się nie liczy.")
             else:
                 self.status.set(f"Plan {display_tier(self.tier)} mieści {cap} ścieżek nagrania. Bit się nie liczy.")
+        return not full
+
+    def ask_new_track(self) -> None:
+        """+ DODAJ ŚCIEŻKĘ: first what it is (Wokal, Podbicie, Adlib) and its name, so the numbers stay in order."""
+        if self._busy() or not self._track_room():
             return
+        box = getattr(self, "_new_track_box", None)
+        if box is not None and box.winfo_exists():
+            box.lift()
+            return
+        box = self._new_track_box = tk.Toplevel(self.root)
+        box.title("Nowa ścieżka")
+        box.configure(bg=PANEL)
+        box.transient(self.root)
+        box.resizable(False, False)
+        names = [track.name for track in self.tracks]
+        kind = tk.StringVar(value=track_kind.KINDS[0])
+        name = tk.StringVar(value=track_kind.next_name(kind.get(), names))
+        typed = {"own": False}
+        tk.Label(box, text="Nowa ścieżka", bg=PANEL, fg=INK, font=(FONT_DISPLAY, 18, "italic")).pack(anchor="w", padx=16, pady=(12, 6))
+        kinds = tk.Frame(box, bg=PANEL)
+        kinds.pack(fill="x", padx=16)
+        buttons: dict[str, tk.Button] = {}
+
+        def pick(choice: str) -> None:
+            kind.set(choice)
+            if not typed["own"]:
+                name.set(track_kind.next_name(choice, names))
+            for key, button in buttons.items():
+                button.configure(bg=AMBER if key == choice else RACK, fg=ON_AMBER if key == choice else INK)
+
+        for choice in track_kind.KINDS:
+            buttons[choice] = self._tool(kinds, choice.upper(), lambda c=choice: pick(c), INK, size=11)
+            buttons[choice].pack(side="left", padx=(0, 6))
+        tk.Label(box, text="NAZWA", bg=PANEL, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", padx=16, pady=(10, 2))
+        entry = tk.Entry(box, textvariable=name, width=30, bg=RACK, fg=INK, insertbackground=INK, relief="flat", font=(FONT_UI, 11))
+        entry.pack(anchor="w", padx=16, ipady=4)
+        entry.bind("<Key>", lambda _event: typed.update(own=True), add="+")
+
+        def done() -> None:
+            choice = kind.get()
+            title = track_kind.clean_name(name.get(), track_kind.next_name(choice, names))
+            box.destroy()
+            self.add_track(choice, title)
+
+        foot = tk.Frame(box, bg=PANEL)
+        foot.pack(fill="x", padx=16, pady=(12, 14))
+        self._tool(foot, "DODAJ", done, AMBER).pack(side="right")
+        self._tool(foot, "ANULUJ", box.destroy, SOFT).pack(side="right", padx=(0, 8))
+        box.bind("<Return>", lambda _event: done())
+        box.bind("<Escape>", lambda _event: box.destroy())
+        pick(kind.get())
+        self._center(box)
+        entry.focus_set()
+        entry.select_range(0, "end")
+
+    def add_track(self, kind: str | None = None, name: str | None = None) -> None:
+        """Without a kind: the next "Wokal N" (shortcuts, scripts). With one: from the + DODAJ ŚCIEŻKĘ window."""
+        if self._busy() or not self._track_room(kind):
+            return
+        cap = self._track_cap()
         self._push_undo()
-        self.tracks.append(self._new_track())
+        track = self._new_track()
+        if kind is not None:
+            track.name = track_kind.clean_name(name or "", track_kind.next_name(kind, [item.name for item in self.tracks]))
+            if self.studio_mode == "offline":
+                track.role = track_kind.ROLE_OF.get(kind, "wokal")
+        self.tracks.append(track)
         self.armed = len(self.tracks) - 1
         self.focus = self.armed
         self._rebuild_rows()
@@ -3936,6 +4039,8 @@ class RecorderWindow:
         self.sel = None
         # The last take is the one of these tracks again, so OPÓŹNIENIE finds it.
         self._last_take = step.last_take
+        if step.beat_gain is not None and hasattr(self, "beat_gain_scale"):
+            self.beat_gain_scale.set(step.beat_gain)
         if step.delay is not None:
             key, before, after = step.delay
             # Only when nothing measured it anew since.
@@ -4356,8 +4461,8 @@ class RecorderWindow:
         sync = prefs.get("sync")
         if isinstance(sync, dict):
             self._sync_known = dict(sync)
-        count = prefs.get("countIn")
-        if isinstance(count, str) and count in dict(countin.CHOICES):
+        count = countin.label_of(prefs.get("countIn"))
+        if count is not None:
             self.count_var.set(count)
         beat = prefs.get("beat")
         if isinstance(beat, str):
@@ -4563,12 +4668,12 @@ class RecorderWindow:
             vocals = self._render_for_play(plan, start)
         except Exception as problem:
             error = str(problem) or "Nie dało się złożyć odsłuchu."
-        bars, bpm = count
-        if record_to is not None and bars > 0:
+        beats, bpm = count
+        if record_to is not None and beats > 0:
             try:
                 path = self._play_folder() / f"odliczanie-{os.getpid()}-{token}.wav"
-                replace_mono16(path, countin.click_samples(bars, bpm))
-                clicks = (path, countin.lead_seconds(bars, bpm))
+                replace_mono16(path, countin.click_samples(beats, bpm))
+                clicks = (path, countin.lead_seconds(beats, bpm))
             except Exception:
                 clicks = None
         target, limit, note = heard
@@ -4815,7 +4920,7 @@ class RecorderWindow:
         self.sel = None
         plan = self._mix_plan(self.rec_start, self.rec_track)
         beat_id, local = self._play_beat()
-        count = (countin.bars_of(self.count_var.get()), self._tempo())
+        count = (countin.beats_of(self.count_var.get()), self._tempo())
         self._take_seconds = self._take_cap()
         self._armed_mix = self._mix_settings()
         self._take_beat = (beat_id, local)
@@ -4923,6 +5028,9 @@ class RecorderWindow:
         track.clips = drop_sliver(place(track.clips, [clip]), clip)
         tail, pieces = left_after(track.clips, clip)
         self._last_take = (clip, base, self._take_key, cap) if self.mix_was_on else None
+        leveled = self._auto_level(track)
+        if leveled:
+            self._take_note = f"{self._take_note} {leveled}".strip()
         self._peaks.pop(str(path), None)
         self._audio.pop(str(path), None)
         self.focus = self.rec_track
@@ -5068,7 +5176,7 @@ class RecorderWindow:
         player: object = None
         try:
             clicks = self._play_folder() / f"pomiar-{os.getpid()}.wav"
-            replace_mono16(clicks, countin.click_samples(DELAY_CLICKS // countin.BEATS_PER_BAR, 60))
+            replace_mono16(clicks, countin.click_samples(DELAY_CLICKS, 60))
             feed = MixFeed(mix_argv(ffmpeg_exe(), None, [], None, clicks=(clicks, float(DELAY_CLICKS))))
             if not feed.warm():
                 return None, "Nie dało się zagrać stuków."
@@ -5158,6 +5266,7 @@ class RecorderWindow:
     def _measure_take(self, clip: Clip, base: float, beat: tuple[str, str], key: str, stretch: float = 1.0) -> None:
         """The real delay of this take from the beat that leaked into the microphone. Off the Tk thread."""
         lag: float | None = None
+        residual: float | None = None
         try:
             beat_id, local = beat
             target = local or self._beat_listen(beat_id)[0]
@@ -5176,14 +5285,17 @@ class RecorderWindow:
                 rate, samples = read_mono16(Path(clip.path))
                 if rate == RATE:
                     lag = auto_align.bleed_lag(auto_align.mic_at_rate(samples, base), song)
+                    if lag is not None:
+                        # Check: from where the take goes now, the beat in the mic must start on time.
+                        residual = auto_align.bleed_lag(auto_align.mic_at_rate(samples, base + lag / 1000), song)
         except Exception:
             lag = None
         try:
-            self.root.after(0, lambda: self._align_take(clip, base, lag, key))
+            self.root.after(0, lambda: self._align_take(clip, base, lag, key, residual))
         except (RuntimeError, tk.TclError):
             pass
 
-    def _align_take(self, clip: Clip, base: float, lag: float | None, key: str) -> None:
+    def _align_take(self, clip: Clip, base: float, lag: float | None, key: str, residual: float | None = None) -> None:
         """lag is the whole delay, measured from `base` in the file: the same answer whatever was learned before."""
         self._aligning = max(0, self._aligning - 1)
         if lag is None:
@@ -5209,7 +5321,7 @@ class RecorderWindow:
             mine = last is not None and last[0].path == clip.path
             self.status.set(
                 (f"{self._take_end} " if mine and self._take_end else "")
-                + f"Wyrównane do bitu: {abs(move) * 1000:.0f} ms. Cofnij wraca do poprzedniego miejsca."
+                + f"Wyrównane do bitu: {abs(move) * 1000:.0f} ms. {align_check_text(residual)} Cofnij wraca do poprzedniego miejsca."
                 + (f" {self._take_note}" if mine and self._take_note else "")
                 + (f" {tail_text(tail, pieces)}" if tail else "")
             )
@@ -7522,15 +7634,37 @@ class RecorderWindow:
             return ""
         gain = raise_db_for_peak(before, clipped)
         after = before
+        self._take_peak = before
         if gain >= 0.5:
             try:
                 rate, samples = read_mono16(path)
                 replace_mono16(path, apply_gain_int16(samples, gain), rate)
                 after, clipped, _seconds = take_stats(path)
+                self._take_peak = after
             except Exception:
                 gain = 0.0
                 after = before
         return take_level_note(before, after, gain, clipped, drops)
+
+    def _auto_level(self, track: Track) -> str:
+        """Bitek after a quiet take: the track fader up, then the beat down. Cofnij brings both back."""
+        vocal, beat = auto_level(track.gain_db, None if self.beat_muted else self.beat_gain_db, getattr(self, "_take_peak", 0.0))
+        if vocal is None and beat is None:
+            return ""
+        parts = []
+        if vocal is not None:
+            track.gain_db = vocal
+            parts.append(f"{track.name} na {vocal:+.0f} dB")
+        if beat is not None and hasattr(self, "beat_gain_scale"):
+            if self.undo_stack:
+                self.undo_stack[-1].beat_gain = self.beat_gain_db
+            self.beat_gain_scale.set(beat)
+            self._set_beat_gain(beat)
+            parts.append(f"bit na {beat:+.0f} dB")
+        self._touched = True
+        self._rebuild_rows()
+        self._schedule_remix()
+        return "Bitek: wokal był cichy, ustawiłem " + " i ".join(parts) + " (Ctrl+Z cofa)."
 
     def _build_update_bar(self) -> None:
         """Bottom strip, shown only when a newer signed build exists. Visible on every screen."""
@@ -7918,8 +8052,8 @@ def mix_self_test(exe: str) -> None:
     folder.mkdir(parents=True, exist_ok=True)
     voice, click = folder / "głos.wav", folder / "stuk.wav"
     replace_mono16(voice, array.array("h", [(i // 48) % 30000 for i in range(RATE * 3)]))
-    replace_mono16(click, countin.click_samples(1, 93))
-    lead = countin.lead_seconds(1, 93)
+    replace_mono16(click, countin.click_samples(4, 93))
+    lead = countin.lead_seconds(4, 93)
 
     def left_channel(feed: MixFeed, size: int) -> array.array:
         blob = b""

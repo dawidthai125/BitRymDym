@@ -70,14 +70,14 @@ def clamp_pan(value: object) -> float:
 
 
 def pan_text(pan: float) -> str:
-    """Console panorama: C, or L/R and 0–100 away from center. That is the fader unit."""
+    """Console panorama: C, or L/P (lewo/prawo) and 0–100 away from center. That is the fader unit."""
     bounded = clamp_pan(pan)
     steps = int(round(abs(bounded) * 100))
     if steps < 5:
         return "C"
     if bounded < 0:
         return f"L {steps}"
-    return f"R {steps}"
+    return f"P {steps}"
 
 
 def clock_text(seconds: float) -> str:
@@ -493,7 +493,7 @@ def checklist_lines(document: dict[str, object]) -> list[str]:
 def self_test() -> None:
     if offline_track_cap() != 22 or OFFLINE_VOCALS != 16 or OFFLINE_EXTRAS != 6 or SITE_GOLD_TRACKS != 16:
         raise SystemExit("limit offline")
-    if pan_text(0) != "C" or pan_text(-1) != "L 100" or pan_text(0.5) != "R 50":
+    if pan_text(0) != "C" or pan_text(-1) != "L 100" or pan_text(0.5) != "P 50":
         raise SystemExit("balans")
     if abs(seconds_from_ffmpeg_banner("Duration: 00:01:02.50, start") - 62.5) > 0.001:
         raise SystemExit("czas bitu")
@@ -555,7 +555,7 @@ def self_test() -> None:
     if parse_session({"format": "inne", "version": 1}) is not None:
         raise SystemExit("obcy plik")
     lines = checklist_lines(document)
-    if len(lines) != 3 or "L 40" not in lines[1] or "R 100" not in lines[2] or "C" not in lines[0]:
+    if len(lines) != 3 or "L 40" not in lines[1] or "P 100" not in lines[2] or "C" not in lines[0]:
         raise SystemExit(f"ściąga {lines}")
     tone = b"RIFF" + b"\x00" * 8
     try:

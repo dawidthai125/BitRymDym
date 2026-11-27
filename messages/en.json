@@ -2679,6 +2679,18 @@
     }
   },
   "studio": {
+    "newTrack": {
+      "tytul": "New track",
+      "coToZaSciezka": "What the track is for",
+      "rodzaj": {
+        "vocal": "Vocal",
+        "double": "Double",
+        "adlib": "Adlib"
+      },
+      "nazwa": "Track name",
+      "dodaj": "Add track",
+      "anuluj": "Cancel"
+    },
     "shortcuts": {
       "tytul": "Keyboard shortcuts",
       "zamknij": "Close shortcuts",
@@ -3229,6 +3241,9 @@
       "poziomKrotko": "Vol",
       "panoramaKrotko": "Pan",
       "panSrodekKrotko": "C",
+      "panNaLewo": "Pan {v0} hard left",
+      "panNaSrodek": "Pan {v0} to the centre",
+      "panNaPrawo": "Pan {v0} hard right",
       "panLewoKrotko": "L",
       "panPrawoKrotko": "R",
       "przeliczamStrojenie": "retuning…",
@@ -3505,7 +3520,7 @@
       "startPlayhead": "Start: playhead",
       "sciezka": "Track",
       "wybierzSciezke": "Choose a track",
-      "countInPunch": "Count-in / punch",
+      "countInPunch": "Punch: record a part",
       "countIn": "Count-in",
       "wylaczone": "Off",
       "takt": "{n, plural, one {# bar} other {# bars}}",
@@ -3514,6 +3529,8 @@
       "punchInMs": "Start in seconds",
       "outMs": "Out (s)",
       "punchOutMs": "End in seconds",
+      "stuki": "{n, plural, one {# click} other {# clicks}} of count-in",
+      "bez": "Off",
       "countIn2": "Count-in…",
       "studioTakeWorkflow": "Studio take workflow",
       "nagranieGotoweKliknijZachowaj": "Recording ready — click Keep to put it on the track.",
@@ -3754,6 +3771,9 @@
       "limitNagranPelny": "Today's recording limit is used up. You can record again from {when}. Every recording counts, discarded ones too.",
       "limitNagranPelnyBezCzasu": "Today's recording limit is used up. Every recording counts, discarded ones too.",
       "wyrownaneAutomatycznie": "Lined up with the beat automatically: {ms} ms.",
+      "wyrownanieSprawdzone": "✓ Checked: the vocal sits on the beat (off by {ms} ms).",
+      "wyrownanieNiepewne": "Could not confirm the alignment. Listen back; if it drifts, measure the delay with a clap.",
+      "wyrownanieBezBitu": "Could not measure the delay from this take (e.g. with headphones the mic does not hear the beat), so I used the saved one: {ms} ms. To check it, measure the delay with a clap.",
       "nagrywamWSluchawkach": "I record in headphones",
       "nagrywamWSluchawkachOpis": "Clean microphone, less delay and automatic alignment to the beat. Leave it off with speakers.",
       "kalibrujRecznieTytul": "On this iPhone or iPad, calibrate the microphone by hand.",
@@ -4429,6 +4449,10 @@
         "keysDrumsOk": "Kick and snare are in. This already holds the tempo.",
         "keysLineOk": "The line stays close and it moves. It can go on like this.",
         "keysScratch": "The scratch is on this track. On play it sits in the beat with the rest.",
+        "takeQuietLeveled": "The take was quiet (peak {db} dB), so I evened out the levels.",
+        "takeQuietVocal": "Vocal on this track: {gain} dB.",
+        "takeQuietBeat": "Beat lowered to {gain} dB.",
+        "takeQuietUndo": "The recording itself did not change. Undo (Ctrl+Z) brings the old settings back.",
         "takeQuiet": "The take is quiet (peak {db} dB). I'll lift the vocal in the mix — only after you click.",
         "takeClip": "The take is hitting the ceiling (peak {db} dB). I'll turn the track down in the mix. The clipped audio itself has to be recorded again.",
         "handoffQuiet": "From the take: the vocal was quiet (peak {db} dB). I'll raise that track from the measurement. Nothing changes until you click.",

@@ -69,6 +69,8 @@ import { StudioStepNav } from "@/components/studio/studio-step-nav";
 import { StudioFeatureFinder } from "@/components/studio/studio-feature-finder";
 import { StudioLyricsCard } from "@/components/studio/studio-lazy-panels";
 import { StudioDockBar, StudioGroupRow, StudioGroupSection, StudioGroupTabs, StudioTextGroup } from "@/components/studio/studio-groups";
+import { StudioNewTrack } from "@/components/studio/studio-new-track";
+import { autoLevelForQuietTake } from "@/lib/studio/bitek/record-handoff";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioMixRevisionHistoryControl } from "@/components/studio/studio-mix-revision-history-control";
 import { LockedAction } from "@/components/plans/locked-action";
@@ -189,7 +191,7 @@ import {
   shouldShowStudioTrackUpgradeCta,
   countRecordingTracks,
 } from "@/lib/studio/studio-track-capacity";
-import { STUDIO_MAX_SONG_MS } from "@/config/studio";
+import { STUDIO_MAX_SONG_MS, type StudioTrackRole } from "@/config/studio";
 import {
   EMPTY_STUDIO_UNDO_HISTORY,
   pickStudioPatchBefore,
@@ -545,6 +547,8 @@ function StudioEditorInner({
   const [fxInspectorRole, setFxInspectorRole] = useState<"track" | "master">("track");
   /** Mix Track selection (SoT) — drives P6.6.1 Track meter target. */
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  /** The "Nowa ścieżka" form (kind + name) is open in the Add group. */
+  const [newTrackOpen, setNewTrackOpen] = useState(false);
   /**
    * Phase 7.1.4 + Visual Parity V2 — dock / overlay open (XOR with Inspector).
    * xl default expanded is applied via matchMedia (not mobile overlay-on-load).
@@ -2230,8 +2234,11 @@ function StudioEditorInner({
     }, { blocking: true });
   }
 
-  /** Phase 5 / 7.1.6 — add VOCAL track via CAS + serial orchestrator. */
-  function addTrack(): void {
+  /**
+   * Phase 5 / 7.1.6 — add VOCAL track via CAS + serial orchestrator.
+   * `choice` (the "Nowa ścieżka" form): its name and role are saved in the same step, before it shows.
+   */
+  function addTrack(choice?: { name: string; trackRole: StudioTrackRole }): void {
     setError(null);
     enqueuePersist(async () => {
       try {
@@ -2270,8 +2277,25 @@ function StudioEditorInner({
           }
           return failure;
         }
-        const track = json.track;
-        const documentVersion = json.documentVersion;
+        let track = json.track;
+        let documentVersion = json.documentVersion;
+        if (choice) {
+          // The track exists already: a failed rename keeps it as "Wokal N", nothing is lost.
+          try {
+            const named = await fetch(`/api/studio/projects/${projectId()}/tracks/${track.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...choice, expectedDocumentVersion: documentVersion }),
+            });
+            const body = (await named.json()) as { track?: StudioTrackDto; documentVersion?: number };
+            if (named.ok && body.track && typeof body.documentVersion === "number") {
+              track = body.track;
+              documentVersion = body.documentVersion;
+            }
+          } catch {
+            // network: keep the default name
+          }
+        }
         return {
           ok: true as const,
           documentVersion,
@@ -3595,6 +3619,16 @@ function StudioEditorInner({
           onLocalRecoveryChanged={() => setRecoveryRefreshKey((key) => key + 1)}
           recoverySavedKey={recoverySavedKey}
           onBitekBubble={setRecToolsBubble}
+          onQuietTake={({ trackId, peakDb }) => {
+            const tracks = docRef.current.tracks;
+            const vocal = tracks.find((t) => t.id === trackId);
+            if (!vocal) return null;
+            const beat = tracks.find((t) => t.trackType === "BEAT") ?? null;
+            const change = autoLevelForQuietTake({ vocalGainDb: vocal.gainDb, beatGainDb: beat?.gainDb ?? null, peakDb });
+            if (change.vocalGainDb != null) patchTrack(vocal.id, { gainDb: change.vocalGainDb });
+            if (change.beatGainDb != null && beat) patchTrack(beat.id, { gainDb: change.beatGainDb });
+            return change;
+          }}
           onDocumentReplaced={(next) => {
             // Comp apply = several server CAS ops → fresh document, no partial undo.
             applyPersistedDoc(() => next);
@@ -3855,15 +3889,25 @@ function StudioEditorInner({
               {tGroups("dodajSciezke")}
             </LockedAction>
           ) : (
-            <StudioGroupRow
-              testId="studio-add-track"
-              title={tGroups("dodajSciezke")}
-              hint={tGroups("dodajSciezkeOpis")}
-              disabled={recordingLocked || pending || atTrackCapacity}
-              onClick={() => {
-                addTrack();
-              }}
-            />
+            newTrackOpen ? (
+              <StudioNewTrack
+                existingNames={doc.tracks.map((t) => t.name)}
+                disabled={recordingLocked || pending || atTrackCapacity}
+                onCancel={() => setNewTrackOpen(false)}
+                onCreate={(choice) => {
+                  setNewTrackOpen(false);
+                  addTrack(choice);
+                }}
+              />
+            ) : (
+              <StudioGroupRow
+                testId="studio-add-track"
+                title={tGroups("dodajSciezke")}
+                hint={tGroups("dodajSciezkeOpis")}
+                disabled={recordingLocked || pending || atTrackCapacity}
+                onClick={() => setNewTrackOpen(true)}
+              />
+            )
           )}
           <p
             className="px-1 font-mono text-xs text-[var(--brd-mute)]"

@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-27 (55) — Studio i nagrywarka 2026.11.50: odliczanie, nowa ścieżka, pan L/C/P, Bitek i sprawdzanie opóźnienia
+
+- Odliczanie liczone w stukach (Bez, 1, 2, 4, 8), domyślnie 2 zamiast całego taktu (4). Na stronie wybór stoi nad przyciskiem Nagraj w obu widokach i zostaje zapamiętany (`brd.studio.countInBeats`). W nagrywarce stare ustawienie „1 takt” przechodzi na „2 stuki”.
+- „Ścieżka wokalna” / „+ DODAJ ŚCIEŻKĘ”: najpierw wybór Wokal / Podbicie / Adlib i nazwa (podpowiedź „Wokal 1, Wokal 2…”, numer po najwyższym zajętym). Na stronie rola ścieżki ustawia się od razu (lead_vocal / double / adlib).
+- Pan: przyciski L / C / P przy suwaku, puszczenie blisko środka ląduje na C (nagrywarka: też podwójne kliknięcie). W nagrywarce prawa strona to „P”.
+- Bitek po cichym nagraniu (szczyt poniżej −20 dB): suwak wokalu w górę do +6 dB, a gdy to za mało, bit w dół do −3 dB. Nagranie się nie zmienia; Cofnij przywraca oba suwaki.
+- Po automatycznym wyrównaniu do bitu drugi pomiar sprawdza wynik: „Sprawdzone: wokal równo z bitem” (do 5 ms) albo jasna informacja, że trzeba zmierzyć klaśnięciem. Gdy pomiaru nie było, strona mówi, jakiego zapisanego opóźnienia użyła.
+
 ## 2026-11-27 (54) — Podglądy bitów: tag głosowy co 3 takty
 
 - Tag „Bit Rym Dym” w podglądach katalogu od 3. taktu i potem co 3 takty, z BPM bitu (bez BPM: 120). Nowy znacznik pliku `preview-wm-full-of-bar3-…` każe przegenerować stare podglądy (co 15 s). Mastery utworów zostają co 15 s.

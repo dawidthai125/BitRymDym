@@ -305,6 +305,12 @@ export function StudioTrackHeader({
             max={1}
             step={0.01}
             stacked
+            snap={{ value: 0, within: 0.06 }}
+            presets={[
+              { label: tr("panLewoKrotko"), value: -1, ariaLabel: tr("panNaLewo", { v0: track.name }) },
+              { label: tr("panSrodekKrotko"), value: 0, ariaLabel: tr("panNaSrodek", { v0: track.name }) },
+              { label: tr("panPrawoKrotko"), value: 1, ariaLabel: tr("panNaPrawo", { v0: track.name }) },
+            ]}
             disabled={pending}
             onLocalChange={(pan) =>
               setDoc((prev) => ({

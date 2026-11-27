@@ -104,7 +104,8 @@ describe("P5.6 auto-place decoupling", () => {
     expect(panel).toMatch(/placeReadyTakeOnTimeline/);
     expect(panel).toMatch(/Zastąp/);
     expect(panel).toMatch(/replaceOverlapping/);
-    expect(panel).toMatch(/Odliczanie \/ punch/);
+    expect(panel).toMatch(/Punch: nagraj kawałek/);
+    expect(panel).toMatch(/odliczania/);
     expect(panel).toMatch(/Odsłuch w słuchawkach/);
   });
 });

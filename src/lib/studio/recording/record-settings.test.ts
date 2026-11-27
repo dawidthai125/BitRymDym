@@ -12,8 +12,8 @@ const t = (id: string, recordArmed = false) => ({ id, recordArmed });
 
 describe("record settings", () => {
   it("survive an unmount, per project", () => {
-    writeRecordSettings("p1", { ...readRecordSettings("p1"), recMode: "loop", countInBars: 2 });
-    expect(readRecordSettings("p1")).toMatchObject({ recMode: "loop", countInBars: 2 });
+    writeRecordSettings("p1", { ...readRecordSettings("p1"), recMode: "loop", countInBeats: 4 });
+    expect(readRecordSettings("p1")).toMatchObject({ recMode: "loop", countInBeats: 4 });
     expect(readRecordSettings("p2").recMode).toBe("single");
   });
 

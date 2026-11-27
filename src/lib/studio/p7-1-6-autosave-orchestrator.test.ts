@@ -511,7 +511,7 @@ describe("P7.1.6 CAS completeness source contracts", () => {
   it("legacy track/clip mutations enqueue through orchestrator (no startTransition+fetch)", () => {
     expect(editor).not.toMatch(/startTransition/);
     expect(editor).toMatch(
-      /function addTrack\(\): void \{[\s\S]*?enqueuePersist/,
+      /function addTrack\([^)]*\): void \{[\s\S]*?enqueuePersist/,
     );
     expect(editor).toMatch(
       /function duplicateTrack\([\s\S]*?enqueuePersist/,

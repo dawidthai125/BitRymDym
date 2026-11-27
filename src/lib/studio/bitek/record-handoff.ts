@@ -56,6 +56,32 @@ export function gainDbForTakePeak(currentGainDb: number, issue: BitekRecordIssue
   return clamped === Math.round(currentGainDb * 2) / 2 ? null : clamped;
 }
 
+/** How far Bitek moves the beat down when raising the vocal alone is not enough. */
+export const AUTO_BEAT_CUT_DB = 3;
+
+/**
+ * Right after a quiet take: the vocal track goes up (at most 6 dB, not over +12), and what is still
+ * missing comes off the beat (at most 3 dB, not under -24). The recording itself does not change.
+ * null fields: that track stays as it is.
+ */
+export function autoLevelForQuietTake(input: {
+  vocalGainDb: number;
+  beatGainDb: number | null;
+  peakDb: number;
+}): { vocalGainDb: number | null; beatGainDb: number | null } {
+  const half = (v: number) => Math.round(v * 2) / 2;
+  const missing = Math.max(0, half(-12 - input.peakDb));
+  if (missing < 0.5) return { vocalGainDb: null, beatGainDb: null };
+  const vocalUp = Math.max(0, Math.min(6, missing, half(12 - input.vocalGainDb)));
+  const rest = missing - vocalUp;
+  const beatDown =
+    input.beatGainDb == null ? 0 : Math.max(0, Math.min(AUTO_BEAT_CUT_DB, rest, half(input.beatGainDb + 24)));
+  return {
+    vocalGainDb: vocalUp >= 0.5 ? half(input.vocalGainDb + vocalUp) : null,
+    beatGainDb: beatDown >= 0.5 && input.beatGainDb != null ? half(input.beatGainDb - beatDown) : null,
+  };
+}
+
 export function saveBitekRecordHandoff(handoff: BitekRecordHandoff): void {
   try {
     sessionStorage.setItem(KEY, JSON.stringify(handoff));

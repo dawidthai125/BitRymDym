@@ -4,9 +4,15 @@
  */
 
 export const STUDIO_DEFAULT_TEMPO_BPM = 120;
-export const STUDIO_COUNT_IN_BARS = [0, 1, 2, 4] as const;
+/** Count-in length in clicks (beats), not bars: a whole bar of 4 clicks felt too long before the first word. */
+export const STUDIO_COUNT_IN_BEATS = [0, 1, 2, 4, 8] as const;
+export const STUDIO_DEFAULT_COUNT_IN_BEATS = 2;
 
-export type StudioCountInBars = (typeof STUDIO_COUNT_IN_BARS)[number];
+export type StudioCountInBeats = (typeof STUDIO_COUNT_IN_BEATS)[number];
+
+export function isStudioCountInBeats(value: unknown): value is StudioCountInBeats {
+  return (STUDIO_COUNT_IN_BEATS as readonly unknown[]).includes(value);
+}
 
 export function clampStudioTempoBpm(bpm: number): number {
   if (!Number.isFinite(bpm)) return STUDIO_DEFAULT_TEMPO_BPM;
@@ -40,13 +46,11 @@ export function barDurationMs(
 
 export function countInDurationMs(
   bpm: number,
-  bars: StudioCountInBars,
-  timeSignatureNum = 4,
+  beats: StudioCountInBeats,
   timeSignatureDen = 4,
 ): number {
-  if (bars === 0) return 0;
-  const beats = timeSignatureNum > 0 ? timeSignatureNum : 4;
-  return Math.round(exactBeatDurationMs(bpm, timeSignatureDen) * beats * bars);
+  if (beats <= 0) return 0;
+  return Math.round(exactBeatDurationMs(bpm, timeSignatureDen) * beats);
 }
 
 export function countInSeekMs(

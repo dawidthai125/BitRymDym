@@ -97,6 +97,27 @@ def raise_db_for_peak(peak_db: float, clipped: int = 0) -> float:
     return min(LIFT_MAX_DB, LIFT_TARGET_DB - peak_db)
 
 
+# Bitek after a quiet take: what the file still misses to about -12 dB goes on the track fader first
+# (at most +6, never over +12), then off the beat (at most 3 dB, never under -24).
+LEVEL_QUIET_BELOW_DB = -20.0
+LEVEL_VOCAL_MAX_DB = 6.0
+LEVEL_BEAT_CUT_DB = 3.0
+
+
+def auto_level(vocal_gain: float, beat_gain: float | None, peak_db: float) -> tuple[float | None, float | None]:
+    """New (track gain, beat gain) after a quiet take, None where nothing changes."""
+    if peak_db <= LIFT_SILENCE_DB or peak_db >= LEVEL_QUIET_BELOW_DB:
+        return None, None
+    missing = round(LIFT_TARGET_DB - peak_db)
+    vocal_up = max(0.0, min(LEVEL_VOCAL_MAX_DB, missing, 12 - vocal_gain))
+    rest = missing - vocal_up
+    beat_down = 0.0 if beat_gain is None else max(0.0, min(LEVEL_BEAT_CUT_DB, rest, beat_gain + 24))
+    return (
+        vocal_gain + vocal_up if vocal_up >= 1 else None,
+        beat_gain - beat_down if beat_gain is not None and beat_down >= 1 else None,
+    )
+
+
 def apply_gain_int16(samples: array.array, gain_db: float) -> array.array:
     """Multiply mono samples. Values that would pass full scale are held at the int16 ends."""
     if gain_db < 0.05 or len(samples) == 0:
@@ -157,6 +178,10 @@ def edit_span(samples: array.array, rate: int, start: float, end: float, mode: s
 
 
 def self_test(path: Path) -> None:
+    if auto_level(0, 0, -16) != (None, None) or auto_level(0, 0, -21) != (6, -3) or auto_level(12, 0, -21) != (None, -3) or auto_level(10, 0, -21) != (12, -3):
+        raise SystemExit("auto_level: wokal i bit")
+    if auto_level(0, None, -30) != (6, None) or auto_level(0, 0, -11) != (None, None) or auto_level(0, 0, -95) != (None, None):
+        raise SystemExit("auto_level: granice")
     samples = tone()
     write_pcm16_wav(path, samples)
     with wave.open(str(path), "rb") as handle:

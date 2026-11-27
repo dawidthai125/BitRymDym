@@ -3,14 +3,14 @@
  * another tab); the mode, count-in and monitoring the user chose must still be there afterwards.
  */
 import type { SectionBars } from "@/lib/studio/recording/section-loop";
-import type { StudioCountInBars } from "@/lib/studio/studio-daw-clock";
+import { STUDIO_DEFAULT_COUNT_IN_BEATS, isStudioCountInBeats, type StudioCountInBeats } from "@/lib/studio/studio-daw-clock";
 
 export type RecordSettings = {
   recMode: "single" | "loop" | "punch";
   sectionBars: SectionBars;
   sectionStartMs: number | null;
   punchLine: number;
-  countInBars: StudioCountInBars;
+  countInBeats: StudioCountInBeats;
   punchEnabled: boolean;
   punchInMs: number;
   punchOutMs: number;
@@ -23,7 +23,7 @@ export const DEFAULT_RECORD_SETTINGS: RecordSettings = {
   sectionBars: 4,
   sectionStartMs: null,
   punchLine: 0,
-  countInBars: 1,
+  countInBeats: STUDIO_DEFAULT_COUNT_IN_BEATS,
   punchEnabled: false,
   punchInMs: 0,
   punchOutMs: 4000,
@@ -33,12 +33,35 @@ export const DEFAULT_RECORD_SETTINGS: RecordSettings = {
 
 const byProject = new Map<string, RecordSettings>();
 
+const COUNT_IN_KEY = "brd.studio.countInBeats";
+
+/** The count-in the user picked last time, in every project and after a reload. */
+export function readCountInPreference(): StudioCountInBeats {
+  try {
+    const raw = globalThis.localStorage?.getItem(COUNT_IN_KEY);
+    const value = raw == null ? NaN : Number(raw);
+    return isStudioCountInBeats(value) ? value : STUDIO_DEFAULT_COUNT_IN_BEATS;
+  } catch {
+    return STUDIO_DEFAULT_COUNT_IN_BEATS;
+  }
+}
+
+function writeCountInPreference(beats: StudioCountInBeats): void {
+  try {
+    globalThis.localStorage?.setItem(COUNT_IN_KEY, String(beats));
+  } catch {
+    // private mode: the choice still lasts for this visit
+  }
+}
+
 export function readRecordSettings(projectId: string): RecordSettings {
-  return byProject.get(projectId) ?? DEFAULT_RECORD_SETTINGS;
+  return byProject.get(projectId) ?? { ...DEFAULT_RECORD_SETTINGS, countInBeats: readCountInPreference() };
 }
 
 export function writeRecordSettings(projectId: string, settings: RecordSettings): void {
+  const before = byProject.get(projectId)?.countInBeats ?? readCountInPreference();
   byProject.set(projectId, settings);
+  if (settings.countInBeats !== before) writeCountInPreference(settings.countInBeats);
 }
 
 /** Track the take goes to: the user's pick in the panel, then the armed track (R), then the selected one. */

@@ -19,7 +19,9 @@ describe("studio-daw-clock", () => {
   it("derives beat/bar/count-in from project tempo", () => {
     expect(beatDurationMs(120)).toBe(500);
     expect(barDurationMs(120, 4, 4)).toBe(2000);
-    expect(countInDurationMs(120, 1)).toBe(2000);
+    expect(countInDurationMs(120, 4)).toBe(2000);
+    expect(countInDurationMs(120, 2)).toBe(1000);
+    expect(countInDurationMs(120, 1)).toBe(500);
     expect(countInDurationMs(120, 0)).toBe(0);
     expect(countInSeekMs(8000, 2000)).toBe(6000);
     expect(countInSeekMs(500, 2000)).toBe(0);

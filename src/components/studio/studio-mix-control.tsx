@@ -21,6 +21,8 @@ export function StudioMixControl({
   orientation = "horizontal",
   compact = false,
   stacked = false,
+  presets,
+  snap,
 }: {
   label: string;
   ariaLabel: string;
@@ -41,6 +43,10 @@ export function StudioMixControl({
    * slider, so two controls side by side never overlap (PL/EN alike).
    */
   stacked?: boolean;
+  /** Quick buttons under a stacked slider, e.g. pan L / C / P. One tap saves. */
+  presets?: readonly { label: string; value: number; ariaLabel: string }[];
+  /** A drag that ends this close to `snap.value` lands on it (pan: centre). */
+  snap?: { value: number; within: number };
 }) {
   const tl = useLibText();
   const [draft, setDraft] = useState<number | null>(null);
@@ -48,7 +54,9 @@ export function StudioMixControl({
   const startRef = useRef<number | null>(null);
   const keyTimer = useRef<number | null>(null);
   /** Saves only a real change: a click without a move adds no save and no undo step. */
-  const commit = (next: number) => {
+  const commit = (raw: number) => {
+    const next = snap && raw !== snap.value && Math.abs(raw - snap.value) <= snap.within ? snap.value : raw;
+    if (next !== raw) onLocalChange(next);
     if (keyTimer.current !== null) window.clearTimeout(keyTimer.current);
     keyTimer.current = null;
     // The parent may already show the dragged value, so compare with where the drag began.
@@ -95,9 +103,36 @@ export function StudioMixControl({
         title={tl(ariaLabel)}
       >
         <span className="flex min-w-0 items-baseline justify-between gap-1">
-          <span className="truncate" aria-hidden="true">
-            {tl(label)}
-          </span>
+          {presets?.length ? (
+            // The track header has a fixed height: L / C / P sit in the label line, not in a row of their own.
+            <span className="flex gap-0.5" data-testid="studio-mix-presets">
+              {presets.map((preset) => {
+                const on = Math.abs(shown - preset.value) < 0.005;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    disabled={disabled}
+                    aria-label={tl(preset.ariaLabel)}
+                    aria-pressed={on}
+                    className={`min-w-5 rounded-sm border px-1 py-px text-[10px] font-semibold leading-none disabled:opacity-50 pointer-coarse:min-w-7 pointer-coarse:py-0.5 ${on ? "border-[var(--brd-green)] bg-[var(--brd-green)] text-black" : "border-[var(--brd-line)] text-[var(--brd-ink)]"}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (preset.value === value) return;
+                      onLocalChange(preset.value);
+                      onCommit(preset.value);
+                    }}
+                  >
+                    {tl(preset.label)}
+                  </button>
+                );
+              })}
+            </span>
+          ) : (
+            <span className="truncate" aria-hidden="true">
+              {tl(label)}
+            </span>
+          )}
           <span
             className="shrink-0 font-mono tabular-nums text-[var(--brd-ink)]"
             aria-hidden="true"

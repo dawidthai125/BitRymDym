@@ -33,13 +33,13 @@ import type {
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
 import {
-  STUDIO_COUNT_IN_BARS,
+  STUDIO_COUNT_IN_BEATS,
   countInDurationMs,
   countInSeekMs,
   findOverlappingTakeClips,
   normalizePunchWindow,
   shouldAutoStopPunch,
-  type StudioCountInBars,
+  type StudioCountInBeats,
 } from "@/lib/studio/studio-daw-clock";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import {
@@ -266,6 +266,7 @@ export function StudioRecordingPanel({
   lastScratchClipId: editorScratchClipId,
   onLastScratchClipIdChange,
   onBitekBubble,
+  onQuietTake,
   onDocumentReplaced,
   recordRequest = 0,
   onRecordRequestHandled,
@@ -332,6 +333,11 @@ export function StudioRecordingPanel({
   onLastScratchClipIdChange: (clipId: string | null) => void;
   /** Recording P0 — BITEK notice (latency / Bluetooth); null clears it. */
   onBitekBubble?: (bubble: BitekBubble | null) => void;
+  /**
+   * After a quiet take: the editor raises the vocal track and, when that is not enough, lowers the beat
+   * (undo restores both). Returns what it changed, null when nothing.
+   */
+  onQuietTake?: (input: { trackId: string; peakDb: number }) => { vocalGainDb: number | null; beatGainDb: number | null } | null;
   /** Recording P0 — comp apply returns a fresh document (several CAS ops). */
   onDocumentReplaced?: (doc: StudioProjectDocument) => void;
   /**
@@ -577,7 +583,7 @@ export function StudioRecordingPanel({
   const [libraryBusyId, setLibraryBusyId] = useState<string | null>(null);
   const [libraryPreviewId, setLibraryPreviewId] = useState<string | null>(null);
   const [savedSettings] = useState(() => readRecordSettings(projectId));
-  const [countInBars, setCountInBars] = useState<StudioCountInBars>(savedSettings.countInBars);
+  const [countInBeats, setCountInBeats] = useState<StudioCountInBeats>(savedSettings.countInBeats);
   const [punchEnabled, setPunchEnabled] = useState(savedSettings.punchEnabled);
   const [punchInMs, setPunchInMs] = useState(savedSettings.punchInMs);
   const [punchOutMs, setPunchOutMs] = useState(savedSettings.punchOutMs);
@@ -698,14 +704,14 @@ export function StudioRecordingPanel({
       sectionBars,
       sectionStartMs,
       punchLine,
-      countInBars,
+      countInBeats,
       punchEnabled,
       punchInMs,
       punchOutMs,
       monitorOn,
       monitorReverbOn,
     });
-  }, [projectId, recMode, sectionBars, sectionStartMs, punchLine, countInBars, punchEnabled, punchInMs, punchOutMs, monitorOn, monitorReverbOn]);
+  }, [projectId, recMode, sectionBars, sectionStartMs, punchLine, countInBeats, punchEnabled, punchInMs, punchOutMs, monitorOn, monitorReverbOn]);
   const captureActive = isRecordingCaptureActive(state.phase);
   const showWorkflow = state.phase === "READY_TAKE" && state.takeId;
 
@@ -806,6 +812,11 @@ export function StudioRecordingPanel({
     !latency.profile?.manualOffsetMs &&
     recordsWithoutAutoAlign(recorderMime());
   const [autoAlignedMs, setAutoAlignedMs] = useState<number | null>(null);
+  /**
+   * After the correction the take is measured once more against the beat:
+   * "ok" = now within 5 ms, "off" = it could not be confirmed, "none" = no beat in the mic (headphones).
+   */
+  const [alignCheck, setAlignCheck] = useState<{ kind: "ok" | "off" | "none"; residualMs?: number; usedMs?: number } | null>(null);
   const laneStore = useTakeLanes(projectId, true);
   // Unrounded, and counted from the grid's bar 1: loops and punch lines match the timeline.
   const beatMs = exactBeatDurationMs(transport.tempoBpm);
@@ -831,7 +842,16 @@ export function StudioRecordingPanel({
   });
   const takePeakRef = useRef<{ peakDb: number; clipping: boolean } | null>(null);
   const prevRecPhase = useRef(state.phase);
-  const [takeIssue, setTakeIssue] = useState<{ issue: "quiet" | "clip"; peakDb: number } | null>(null);
+  const [takeIssue, setTakeIssue] = useState<{
+    issue: "quiet" | "clip";
+    peakDb: number;
+    /** Set when Bitek already turned the vocal up / the beat down after this take. */
+    leveled?: { vocalGainDb: number | null; beatGainDb: number | null } | null;
+  } | null>(null);
+  const quietTakeRef = useRef(onQuietTake);
+  useEffect(() => {
+    quietTakeRef.current = onQuietTake;
+  });
   const coachSamplesRef = useRef<LiveCoachSample[]>([]);
   const coachLastRef = useRef<{ cue: LiveCoachCue | null; at: number }>({ cue: null, at: 0 });
   const [liveCue, setLiveCue] = useState<LiveCoachCue | null>(null);
@@ -888,8 +908,9 @@ export function StudioRecordingPanel({
     if (!latched) return;
     setBitekLiveTakeLevel(projectId, latched);
     const issue = takeIssueFromPeak(latched.peakDb, latched.clipping);
-    setTakeIssue(issue ? { issue, peakDb: latched.peakDb } : null);
-  }, [state.phase, mic.peak, mic.peakDb, mic.windowPeak, mic.level, projectId, hasBeat, tempoBpm, getPlayheadMs]);
+    const leveled = issue === "quiet" && trackId ? quietTakeRef.current?.({ trackId, peakDb: latched.peakDb }) ?? null : null;
+    setTakeIssue(issue ? { issue, peakDb: latched.peakDb, leveled } : null);
+  }, [state.phase, mic.peak, mic.peakDb, mic.windowPeak, mic.level, projectId, hasBeat, tempoBpm, getPlayheadMs, trackId]);
   useEffect(() => {
     const report = bitekReportRef.current;
     if (!report) return;
@@ -899,6 +920,21 @@ export function StudioRecordingPanel({
         key: `rec-live-${liveCue}`,
         mood: "alert",
         text: tBitek(liveKey),
+      });
+      return;
+    }
+    if (takeIssue?.leveled && (takeIssue.leveled.vocalGainDb != null || takeIssue.leveled.beatGainDb != null)) {
+      const { vocalGainDb, beatGainDb } = takeIssue.leveled;
+      const fmt = (v: number) => `${v > 0 ? "+" : ""}${v}`;
+      report({
+        key: `rec-take-leveled-${Math.round(takeIssue.peakDb)}-${vocalGainDb}-${beatGainDb}`,
+        mood: "happy",
+        text: tBitek("msg.takeQuietLeveled", { db: Math.round(takeIssue.peakDb) }),
+        details: [
+          ...(vocalGainDb != null ? [tBitek("msg.takeQuietVocal", { gain: fmt(vocalGainDb) })] : []),
+          ...(beatGainDb != null ? [tBitek("msg.takeQuietBeat", { gain: fmt(beatGainDb) })] : []),
+          tBitek("msg.takeQuietUndo"),
+        ],
       });
       return;
     }
@@ -1953,6 +1989,7 @@ export function StudioRecordingPanel({
     align.compensationMs = latency.compensationMs;
     align.auto = null;
     setAutoAlignedMs(null);
+    setAlignCheck(null);
     align.placement = null;
     align.recT0 = null;
     align.restore = null;
@@ -1986,11 +2023,7 @@ export function StudioRecordingPanel({
     const countMs =
       flow !== "single"
         ? 0
-        : countInDurationMs(
-            transport.tempoBpm,
-            countInBars,
-            transport.timeSignatureNum,
-          );
+        : countInDurationMs(transport.tempoBpm, countInBeats);
     const countIn = countInPlan({ startMs, countMs });
     const beatsPerBar = transport.timeSignatureNum > 0 ? transport.timeSignatureNum : 4;
     setWorkflowError(null);
@@ -2067,7 +2100,7 @@ export function StudioRecordingPanel({
         transport.pause();
         transport.seek(startMs);
         await new Promise<void>((resolve) => {
-          clicksDone = auxCountIn(beatsPerBar * countInBars, current, {
+          clicksDone = auxCountIn(countInBeats, current, {
             leadMs: RECORD_LEAD_MS,
             onLead: resolve,
           });
@@ -2375,7 +2408,7 @@ export function StudioRecordingPanel({
       const beatUrl = await transport.resolveClipSourceUrl(clip);
       if (!beatUrl) return;
       const { measureTakeLag } = await import("@/lib/studio/recording/auto-align-client");
-      const found = await measureTakeLag({
+      const lagInput = {
         take,
         recPositionMs,
         beatPositionMs: targetMs - clip.timelineStartMs + clip.sourceOffsetMs * (clip.stretchRatio ?? 1),
@@ -2385,8 +2418,12 @@ export function StudioRecordingPanel({
           a.mode === "loop" && a.section ? a.section.endMs - a.section.startMs : Number.POSITIVE_INFINITY,
         ),
         beatUrl,
-      });
-      if (!found) return;
+      };
+      const found = await measureTakeLag(lagInput);
+      if (!found) {
+        if (mountedRef.current && a.recT0 === recT0) setAlignCheck({ kind: "none", usedMs: Math.round(a.compensationMs) });
+        return;
+      }
       const measured = Math.round(found.lagMs);
       const known = latency.profile?.roundTripMs ?? null;
       // A manual shift made up for a wrong value. On top of a right one it is the singer's taste: kept.
@@ -2398,6 +2435,12 @@ export function StudioRecordingPanel({
         latency.save({ roundTripMs: measured, method: "click", spreadMs: null, manualOffsetMs: manual });
       }
       if (!late && mountedRef.current) setAutoAlignedMs(a.compensationMs);
+      // Check: the take moved by the found delay must now sit on the beat.
+      const again = await measureTakeLag({ ...lagInput, recPositionMs: recPositionMs + measured });
+      const residualMs = again ? Math.round(again.lagMs) : null;
+      if (!late && mountedRef.current) {
+        setAlignCheck(residualMs != null && Math.abs(residualMs) <= 5 ? { kind: "ok", residualMs } : { kind: "off", residualMs: residualMs ?? undefined });
+      }
     } catch {
       // No measurement: the calibrated or estimated value stays.
     }
@@ -3476,24 +3519,6 @@ export function StudioRecordingPanel({
         <p className="text-xs font-medium text-[var(--brd-ink)]">
           {tr("countInPunch")}
         </p>
-        <label className="block text-xs text-[var(--brd-mute)]">
-          {tr("countIn")}
-          <select
-            className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
-            value={countInBars}
-            disabled={busy && state.phase !== "READY"}
-            onChange={(e) =>
-              setCountInBars(Number(e.target.value) as StudioCountInBars)
-            }
-            aria-label={tr("countIn")}
-          >
-            {STUDIO_COUNT_IN_BARS.map((bars) => (
-              <option key={bars} value={bars}>
-                {tl(bars === 0 ? tr("wylaczone") : tr("takt", { n: bars }))}
-              </option>
-            ))}
-          </select>
-        </label>
         <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--brd-ink)]">
           <input
             type="checkbox"
@@ -3549,6 +3574,19 @@ export function StudioRecordingPanel({
           {autoAlignedMs != null ? (
             <p className="text-xs text-[var(--brd-mute)]" data-testid="studio-auto-aligned">
               {tr("wyrownaneAutomatycznie", { ms: autoAlignedMs })}
+            </p>
+          ) : null}
+          {alignCheck ? (
+            <p
+              className={`text-xs ${alignCheck.kind === "ok" ? "text-[var(--brd-green)]" : "text-[var(--brd-ink-soft)]"}`}
+              data-testid="studio-align-check"
+              data-kind={alignCheck.kind}
+            >
+              {alignCheck.kind === "ok"
+                ? tr("wyrownanieSprawdzone", { ms: Math.abs(alignCheck.residualMs ?? 0) })
+                : alignCheck.kind === "off"
+                  ? tr("wyrownanieNiepewne")
+                  : tr("wyrownanieBezBitu", { ms: alignCheck.usedMs ?? 0 })}
             </p>
           ) : null}
           <p className="text-sm text-[var(--brd-ink)]" role="status">
@@ -4124,6 +4162,26 @@ export function StudioRecordingPanel({
       {!samplesMode && !showWorkflow ? (
         <div className={`flex w-full flex-col gap-2 bg-[var(--brd-paper)] py-1 ${simple ? "xl:sticky xl:bottom-0 xl:z-10" : "sticky bottom-0 z-10"}`} data-testid="studio-record-bar" data-record-focus="importVocal">
           {takeOpen ? <StudioQuotaLine /> : null}
+          {recMode === "single" ? (
+            <div className="flex flex-wrap items-center gap-1" role="radiogroup" aria-label={tr("countIn")} data-testid="studio-count-in" data-record-focus="countdown">
+              <span className="mr-1 text-xs text-[var(--brd-mute)]">{tr("countIn")}</span>
+              {STUDIO_COUNT_IN_BEATS.map((beats) => (
+                <button
+                  key={beats}
+                  type="button"
+                  role="radio"
+                  aria-checked={countInBeats === beats}
+                  aria-label={beats === 0 ? tr("wylaczone") : tr("stuki", { n: beats })}
+                  disabled={busy && state.phase !== "READY"}
+                  data-testid={`studio-count-in-${beats}`}
+                  onClick={() => setCountInBeats(beats)}
+                  className={`min-h-9 min-w-9 rounded border px-2 text-xs tabular-nums ${countInBeats === beats ? "border-[var(--brd-amber)] bg-[var(--brd-amber)] font-semibold text-black" : "border-[var(--brd-line)] text-[var(--brd-ink)]"} disabled:opacity-50`}
+                >
+                  {beats === 0 ? tr("bez") : beats}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className={`flex w-full flex-col gap-2 ${simple ? "" : "sm:flex-row sm:flex-wrap"}`}>
           <Button
             type="button"

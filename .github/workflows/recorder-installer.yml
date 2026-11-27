@@ -45,6 +45,7 @@ jobs:
           python -m pip install -q numpy==2.3.5; if ($LASTEXITCODE) { throw "numpy" }
           python auto_align.py;      if ($LASTEXITCODE) { throw "auto_align" }
           python countin.py;         if ($LASTEXITCODE) { throw "countin" }
+          python track_kind.py;      if ($LASTEXITCODE) { throw "track_kind" }
           python beat_speed.py;      if ($LASTEXITCODE) { throw "beat_speed" }
           python timeline.py;        if ($LASTEXITCODE) { throw "timeline" }
           python win_output.py;      if ($LASTEXITCODE) { throw "win_output" }
@@ -55,6 +56,7 @@ jobs:
           python test_purchased.py;  if ($LASTEXITCODE) { throw "purchased" }
           python test_beat_speed.py; if ($LASTEXITCODE) { throw "beat_speed_okno" }
           python test_shortcuts.py;  if ($LASTEXITCODE) { throw "skroty" }
+          python test_new_track.py;  if ($LASTEXITCODE) { throw "nowa_sciezka" }
           $app = (Select-String -Path updater.py -Pattern 'APP_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
           $iss = (Select-String -Path installer\BitRymDym.iss -Pattern '#define AppVersion "([^"]+)"').Matches[0].Groups[1].Value
           if ($app -ne $iss) { throw "wersja programu ($app) różni się od AppVersion w .iss ($iss)" }

@@ -420,10 +420,10 @@ def self_test() -> None:
     prefs_path = folder / "prefs.json"
     write_prefs(
         prefs_path,
-        {"device": "Mic", "title": "T", "effects": ["eq"], "beat": "Bit", "output": "Słuchawki", "countIn": "2 takty", "accessToken": "no"},
+        {"device": "Mic", "title": "T", "effects": ["eq"], "beat": "Bit", "output": "Słuchawki", "countIn": "2 stuki", "accessToken": "no"},
     )
     loaded = read_prefs(prefs_path)
-    if "accessToken" in loaded or loaded.get("effects") != ["eq"] or loaded.get("output") != "Słuchawki" or loaded.get("countIn") != "2 takty":
+    if "accessToken" in loaded or loaded.get("effects") != ["eq"] or loaded.get("output") != "Słuchawki" or loaded.get("countIn") != "2 stuki":
         raise SystemExit("prefs")
     prefs_path.unlink(missing_ok=True)
     if studio_url("https://www.bitrymdym.pl", "p1") != "https://www.bitrymdym.pl/studio/p/p1":
