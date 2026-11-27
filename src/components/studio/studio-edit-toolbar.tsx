@@ -38,7 +38,8 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
       data-testid="studio-edit-toolbar"
     >
       {props.onSnapPreset ? (
-        <label className="flex min-h-11 items-center gap-1 text-[11px] text-[var(--brd-mute)]" title={t("siatkaOpis")}>
+        // Phones (upright or sideways) have no room for it: snap and the Mixer are under "More" there.
+        <label className="flex min-h-11 items-center gap-1 text-[11px] text-[var(--brd-mute)] max-sm:hidden [@media(max-height:500px)]:hidden" title={t("siatkaOpis")}>
           <span className="sr-only">{t("siatka")}</span>
           <select
             className="min-h-11 rounded-sm border border-[var(--brd-line)] bg-[var(--brd-paper)] px-1 text-xs font-semibold text-[var(--brd-ink)]"
@@ -80,7 +81,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           type="button"
           size="sm"
           variant={props.mixerOpen ? "default" : "outline"}
-          className="min-h-11 min-w-11 px-2"
+          className="min-h-11 min-w-11 px-2 max-sm:hidden [@media(max-height:500px)]:hidden"
           aria-pressed={Boolean(props.mixerOpen)}
           title={t("mikserOpis")}
           data-testid="studio-toolbar-mixer"
