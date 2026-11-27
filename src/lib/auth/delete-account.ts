@@ -5,6 +5,7 @@ import {
   filterPrivateStorageKeysToDelete,
 } from "@/lib/auth/delete-account-policy";
 import { ANONYMIZED_PUBLIC_AUTHOR } from "@/lib/auth/display-name";
+import { revokeAppleSignIn } from "@/lib/auth/apple-tokens";
 import { reauthenticateWithPassword } from "@/lib/auth/reauth";
 import { getSessionUser } from "@/lib/auth/session";
 import { isFreshSignIn, isSocialOnlyUser, SOCIAL_REAUTH_REQUIRED_ERROR } from "@/lib/auth/social";
@@ -286,6 +287,8 @@ export async function executeAccountProfile01Deletion(
     }
 
     await selectiveUserStorageCleanup(admin, userId, retainedKeys);
+
+    await revokeAppleSignIn(userId);
 
     const { error: authDel } = await admin.auth.admin.deleteUser(userId);
     if (authDel) {

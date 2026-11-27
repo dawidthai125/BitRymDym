@@ -9,6 +9,8 @@ export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number];
 
 export const OAUTH_CALLBACK_FLOW = "oauth";
 export const SOCIAL_FINISH_PATH = "/auth/finish";
+/** Which provider this sign-in uses (set by /auth/oauth/start, read by the callback). */
+export const OAUTH_PROVIDER_COOKIE = "brd_oauth_provider";
 /** Custom URL scheme of the iOS app (ios-app/scripts/patch-ios.sh). */
 export const APP_AUTH_SCHEME_URL = "bitrymdym://auth-callback";
 /** Delete without a password: the provider sign-in must be this fresh. */

@@ -32,7 +32,13 @@ import {
 } from "@/lib/auth/password-recovery-seal-cookie";
 import { postAuthRedirectPath, safeNextPath, SIGN_IN_NEXT_PARAM } from "@/lib/auth/next-path";
 import { SESSION_ONLY_COOKIE, sessionOnlyCookieOptions } from "@/lib/auth/keep-signed-in";
-import { needsSocialProfileCompletion, OAUTH_CALLBACK_FLOW, SOCIAL_FINISH_PATH } from "@/lib/auth/social";
+import { saveAppleRefreshToken } from "@/lib/auth/apple-tokens";
+import {
+  needsSocialProfileCompletion,
+  OAUTH_CALLBACK_FLOW,
+  OAUTH_PROVIDER_COOKIE,
+  SOCIAL_FINISH_PATH,
+} from "@/lib/auth/social";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { sendWelcomeOnce } from "@/lib/email/notify/server";
 import { normalizeReferralCode, REFERRAL_METADATA_KEY } from "@/lib/referrals/referral-policy";
@@ -98,6 +104,11 @@ async function handleSocialCallback(request: NextRequest, code: string | null, n
     if (maintenance.enabled && !maintenance.viewerIsAdmin) {
       await supabase.auth.signOut();
       return redirectAbsolute(request, "/sign-in");
+    }
+    // Apple hands out its refresh token only now; account deletion needs it to revoke access.
+    const appleToken = data.session.provider_refresh_token;
+    if (appleToken && request.cookies.get(OAUTH_PROVIDER_COOKIE)?.value === "apple") {
+      await saveAppleRefreshToken(data.user.id, appleToken);
     }
     let response: NextResponse;
     if (needsSocialProfileCompletion(data.user)) {

@@ -1,7 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { safeNextPath, SIGN_IN_NEXT_PARAM } from "@/lib/auth/next-path";
-import { enabledSocialProviders, OAUTH_CALLBACK_FLOW, parseSocialProvider } from "@/lib/auth/social";
+import {
+  enabledSocialProviders,
+  OAUTH_CALLBACK_FLOW,
+  OAUTH_PROVIDER_COOKIE,
+  parseSocialProvider,
+} from "@/lib/auth/social";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -44,6 +49,13 @@ export async function GET(request: NextRequest) {
     if (error || !data.url) return fail();
     const response = forApp ? NextResponse.json({ url: data.url }) : NextResponse.redirect(data.url);
     response.headers.set("Cache-Control", "no-store");
+    response.cookies.set(OAUTH_PROVIDER_COOKIE, provider, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/auth/callback",
+      maxAge: 15 * 60,
+    });
     return response;
   } catch {
     return fail();
