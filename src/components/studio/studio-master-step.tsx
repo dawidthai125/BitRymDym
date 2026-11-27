@@ -27,7 +27,7 @@ import { joinParts, loadMasterMix, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix,
 import { followStudioJob, masterErrorKey, refusalCode, studioJobUrl, type StudioJobBody } from "@/lib/studio/master/job-poll";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
 import { explainReferenceMatch, isReferenceMatchReport } from "@/lib/studio/master/reference";
-import { DEFAULT_MASTER_INTENSITY, DEFAULT_MASTER_SETTINGS, DEFAULT_REFERENCE_INTENSITY, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, applyMasterStyle, clampMasterSettings, isMasterStyleId, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterStyleId, type MasterTargetId } from "@/lib/studio/master/targets";
+import { DEFAULT_MASTER_INTENSITY, DEFAULT_MASTER_TARGET, DEFAULT_MASTER_SETTINGS, DEFAULT_REFERENCE_INTENSITY, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, applyMasterStyle, clampMasterSettings, isMasterStyleId, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterStyleId, type MasterTargetId } from "@/lib/studio/master/targets";
 import { buildMasterVerdict, type MasterCard } from "@/lib/studio/master/verdict";
 import { buildStreamingReadiness } from "@/lib/studio/master/streaming-readiness";
 import { MixSourceError } from "@/lib/studio/mix-analysis/client";
@@ -145,7 +145,7 @@ export function StudioMasterStep({
   const [renderTry, setRenderTry] = useState(0);
   const [mixChanged, setMixChanged] = useState(false);
   const [mix, setMix] = useState<{ stereo: Stereo; raw: Stereo; metrics: MasterMetrics } | null>(null);
-  const [target, setTarget] = useState<MasterTargetId>(initialState?.target ?? "streaming");
+  const [target, setTarget] = useState<MasterTargetId>(initialState?.target ?? DEFAULT_MASTER_TARGET);
   const [settings, setSettings] = useState<MasterSettings>(DEFAULT_MASTER_SETTINGS);
   /** Style (Ciepły / Jasny / Głośny / Dynamiczny) × intensity on top of the settings; reference mastering. */
   const [style, setStyle] = useState<MasterStyleId | null>(initialState?.style ?? null);
@@ -366,7 +366,7 @@ export function StudioMasterStep({
       const approvedJob = j.approved && (j.approved as JobView).status === "succeeded" ? (j.approved as JobView) : null;
       const view = running ?? approvedJob ?? (latest && current(latest) && latest.status === "succeeded" ? latest : null);
       if (view?.id) {
-        const madeTarget = view.target && isMasterTargetId(view.target) ? view.target : (initialState?.target ?? "streaming");
+        const madeTarget = view.target && isMasterTargetId(view.target) ? view.target : (initialState?.target ?? DEFAULT_MASTER_TARGET);
         const madeSettings = clampMasterSettings(view.settings ?? DEFAULT_MASTER_SETTINGS);
         const madeStyle = isMasterStyleId(view.style) ? view.style : null;
         const madeIntensity = typeof view.styleIntensity === "number" && madeStyle ? view.styleIntensity : DEFAULT_MASTER_INTENSITY;
@@ -490,7 +490,7 @@ export function StudioMasterStep({
   };
   const sessionLive = useRef<MasterSessionSnap>({
     settings: { ...DEFAULT_MASTER_SETTINGS },
-    target: initialState?.target ?? "streaming",
+    target: initialState?.target ?? DEFAULT_MASTER_TARGET,
     style: initialState?.style ?? null,
     styleIntensity: DEFAULT_MASTER_INTENSITY,
   });
@@ -572,7 +572,7 @@ export function StudioMasterStep({
       ? snap.target
       : isMasterTargetId(sessionLive.current.target)
         ? sessionLive.current.target
-        : "streaming";
+        : DEFAULT_MASTER_TARGET;
     const styleNext = isMasterStyleId(snap.style) ? snap.style : null;
     sessionLive.current = {
       settings: { ...settingsNext },

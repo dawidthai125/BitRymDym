@@ -129,8 +129,8 @@ function badMetrics(): MixMetrics {
     vocalStem: { integratedLufs: -20, shortTermMaxLufs: -16 },
     beatStem: { integratedLufs: -14, shortTermMaxLufs: -10 },
     vocalVsBeatLu: -6.5,
-    presenceDb: -2,
-    maskingPercent: 30,
+    presenceDb: -6,
+    maskingPercent: 65,
     sibilanceDb: 10,
   };
 }
@@ -267,8 +267,8 @@ describe("Stage 2 autofix — parameters from metrics", () => {
 
   it("EQ yellow → gentler −2 dB beat cut", () => {
     const m = badMetrics();
-    m.presenceDb = 1;
-    m.maskingPercent = 15;
+    m.presenceDb = -3;
+    m.maskingPercent = 50;
     const p = plan(["eq"], doc(), m);
     const e = chainOf(p, BEAT)!.effects[0]!;
     expect(e.type === "eq" && e.params.mid.gainDb).toBe(-2);

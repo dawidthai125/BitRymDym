@@ -13,7 +13,7 @@ Usage:
                     -> reference mode: tonal balance (smoothed, capped matching EQ),
                        loudness and stereo width matched to ref.wav
 
-Chain: HPF 25 Hz -> tonal shelves -> [reference matching EQ] -> 3-band compression
+Chain: HPF 25 Hz -> tonal shelves -> [reference matching EQ | "rap" tone match] -> glue compression
 (LR4 split) -> mid/side width [× reference width] -> gain to target LUFS -> limiter,
 iterated until integrated LUFS is within ±0.3 LU and true peak (4x oversampled) <= target.
 
@@ -40,6 +40,8 @@ TARGETS = {
     "youtube": {"lufs": -14.0, "tp": -1.0},
     "headphones": {"lufs": -16.0, "tp": -1.0},
     "club": {"lufs": -9.0, "tp": -0.3},
+    # Loud rap release, like the big AI mix services (about -10 LUFS, -0.5 dBTP).
+    "rap": {"lufs": -10.0, "tp": -0.5},
 }
 
 # Hip-hop / rap reference tonal balance: band energy relative to total (dB).
@@ -317,25 +319,24 @@ def lr4(x: np.ndarray, sr: int, f: float, kind: str) -> np.ndarray:
     return sos_apply(np.vstack([sos, sos]), x)
 
 
+GLUE_OVER_LUFS = (7.0, 4.5, 1.0)   # threshold above the mix loudness for squash -3 / 0 / 3
+GLUE_RATIO = (1.2, 2.0, 4.0)
+LOW_MONO_HZ = 150.0
+LOW_SIDE_KEEP = 0.4                # side below LOW_MONO_HZ: 40 % (tight, mono-safe low end)
+
+
 def multiband(x: np.ndarray, sr: int, squash: float) -> np.ndarray:
-    # squash -3..3 → ratio/threshold; 0 = gentle glue.
-    # Bands are built and compressed one at a time (float32) so a 4:00 song stays well
-    # under the worker's memory cap; the result is identical to summing all three at once.
-    ratio = float(np.interp(squash, [-3, 0, 3], [1.2, 2.0, 4.0]))
-    thr = float(np.interp(squash, [-3, 0, 3], [-12, -18, -26]))
-
-    def comp(band: np.ndarray, attack: float, release: float) -> np.ndarray:
-        c = Pedalboard([Compressor(threshold_db=thr, ratio=ratio, attack_ms=attack, release_ms=release)])
-        return c(band, sr)
-
-    # Sequential on purpose: concurrent bands save ~1 s but keep three more full copies alive.
-    y = comp(lr4(x, sr, 150, "lowpass"), 30, 200)
-    rest = lr4(x, sr, 150, "highpass")
-    y = y + comp(lr4(rest, sr, 4000, "lowpass"), 15, 150)
-    high = lr4(rest, sr, 4000, "highpass")
-    del rest
-    y = y + comp(high, 5, 80)
-    return y.astype(np.float32)
+    """Glue: one wideband compressor whose threshold follows the mix loudness, so the tone of the
+    mix stays as it is (the old 3-band version at a fixed -18 dB pressed the bass hardest and left
+    songs thinner than the raw mix). Then the side below 150 Hz is narrowed for a mono-safe low end.
+    The name stays: the worker and tests call multiband()."""
+    ratio = float(np.interp(squash, [-3, 0, 3], list(GLUE_RATIO)))
+    thr = integrated_lufs(x, sr) + float(np.interp(squash, [-3, 0, 3], list(GLUE_OVER_LUFS)))
+    y = Pedalboard([Compressor(threshold_db=thr, ratio=ratio, attack_ms=25, release_ms=160)])(x.T.copy(), sr).T
+    mid, side = (y[:, 0] + y[:, 1]) / 2, (y[:, 0] - y[:, 1]) / 2
+    low = lr4(side, sr, LOW_MONO_HZ, "lowpass")
+    side = side - low * np.float32(1 - LOW_SIDE_KEEP)
+    return np.stack([mid + side, mid - side], axis=1).astype(np.float32)
 
 
 def width(x: np.ndarray, amount: float, sr: int = 44100, ref_k: float = 1.0) -> np.ndarray:
@@ -473,15 +474,71 @@ def reference_plan(y: np.ndarray, sr: int, ref: dict, intensity: float, base_goa
     }
 
 
+# ---------------------------------------------------------------- rap tone (automatic, no reference file)
+
+# Band balance (dB of total) a finished rap master sits near; measured on loud commercial-style rap masters.
+RAP_TONE_TARGET_DB = {"sub": -3.5, "bass": -5.5, "lowmid": -10.5, "mid": -15.5, "high": -19.5, "air": -27.0}
+RAP_TONE_INTENSITY = 0.7
+RAP_TONE_CAP_DB = 3.0
+RAP_TONE_DEADBAND_DB = 0.5
+
+
+def rap_tone_curve(x: np.ndarray, sr: int) -> np.ndarray:
+    """dB on GRID: 70 % of the way from the mix band balance to RAP_TONE_TARGET_DB, small differences
+    left alone, at most ±3 dB, smooth between band centres. The mix keeps its character; only a
+    clearly boxy, thin or dull balance moves."""
+    tonal = tonal_balance(x, sr)
+    centres, gains = [], []
+    for name, lo, hi in BANDS:
+        d = RAP_TONE_TARGET_DB[name] - tonal[name]["db"]
+        d = 0.0 if abs(d) <= RAP_TONE_DEADBAND_DB else d - np.sign(d) * RAP_TONE_DEADBAND_DB
+        centres.append(np.sqrt(lo * min(hi, sr / 2)))
+        gains.append(float(np.clip(d * RAP_TONE_INTENSITY, -RAP_TONE_CAP_DB, RAP_TONE_CAP_DB)))
+    # Loudness is set later by the limiter stage, so the curve needs no level anchor.
+    return np.interp(np.log(GRID), np.log(centres), np.array(gains))
+
+
 LUFS_TOL = 0.3  # final loudness must land within ±0.3 LU of the goal
 
 
+CLIP_OVER_DB = 2.0  # the soft-clip curve sits this far above the limiter
 FIRST_PROBE_DB = -2.0  # 2nd gain tried alongside the first guess (the limiter usually overshoots)
+
+
+LIMITER_LOOKAHEAD_MS = 5.0
+LIMITER_RELEASE_DB_PER_S = 40.0
+
+
+def brickwall(x: np.ndarray, sr: int, ceiling_db: float) -> np.ndarray:
+    """Lookahead peak limiter: only samples over the ceiling are turned down, the gain comes back at
+    a fixed dB/s. (pedalboard's Limiter is JUCE's: a 4:1 compressor from 10 dB under the threshold
+    first, which flattened whole songs; its release setting is ignored.) x, out: (N, C) float32."""
+    n = len(x)
+    la = max(1, int(sr * LIMITER_LOOKAHEAD_MS / 1000))
+    peak = np.max(np.abs(x), axis=1).astype(np.float64)
+    need = np.minimum(0.0, ceiling_db - 20 * np.log10(np.maximum(peak, 1e-9)))  # dB, <= 0
+    # Hold the deepest cut over the lookahead window (sliding min, centred so the ramp starts early).
+    padded = np.concatenate([need, np.zeros(la)])
+    held = np.minimum.reduce([padded[i:i + n] for i in range(0, la + 1, max(1, la // 16))]) if la > 1 else need
+    # Release: the gain may rise at most r dB per sample: y[n] = min_k(held[k] + r*(n-k)) = r*n + cummin(held - r*k).
+    r = LIMITER_RELEASE_DB_PER_S / sr
+    k = np.arange(n, dtype=np.float64)
+    rel = r * k + np.minimum.accumulate(held - r * k)
+    # Attack: a moving average over the lookahead keeps the ramp smooth and still reaches the cut in time.
+    kern = np.ones(la) / la
+    smooth = np.convolve(np.concatenate([rel, np.zeros(la)]), kern, mode="full")[la:la + n]
+    gain = np.minimum(rel, smooth)
+    return (x * (10 ** (gain / 20))[:, None]).astype(np.float32)
 
 
 def _limit_pass(pre: np.ndarray, sr: int, gain: float, goal_tp: float, ceiling: float) -> tuple[np.ndarray, float, float]:
     """gain → limiter → 4x true peak → trim overs → integrated LUFS. Returns (out, lufs, tp)."""
-    out = Pedalboard([Gain(gain_db=gain), Limiter(threshold_db=ceiling, release_ms=120)])(pre, sr).T
+    # Soft clipper before the limiter: short peaks (kick, snare) are rounded off instead of the
+    # limiter riding the whole mix down, which pressed the bass and flattened the song.
+    g = pre * np.float32(10 ** (gain / 20))
+    c = np.float32(10 ** ((ceiling + CLIP_OVER_DB) / 20))
+    g = (c * np.tanh(g / c)).astype(np.float32)
+    out = brickwall(g.T, sr, ceiling)
     tp = true_peak_db(out)
     if tp > goal_tp:
         trim_db = goal_tp - 0.05 - tp
@@ -558,6 +615,12 @@ def master(x: np.ndarray, sr: int, target: str, settings: dict, reference: dict 
             y = apply_fir(y, fir_from_curve(plan["curve"], sr))
         ref_k, goal_lufs, ref_report = plan["widthK"], plan["goalLufs"], plan["report"]
         _progress(0.15)
+    tone_report = None
+    if reference is None and target == "rap":
+        curve = rap_tone_curve(y, sr)
+        if np.max(np.abs(curve)) >= 0.3:
+            y = apply_fir(y, fir_from_curve(curve, sr))
+            tone_report = band_db(curve)
     y = multiband(y, sr, s["squash"])
     tame = 0.0
     if reference is None:  # a reference decides the tone by itself
@@ -580,6 +643,8 @@ def master(x: np.ndarray, sr: int, target: str, settings: dict, reference: dict 
         report["topTameDb"] = tame
     if ref_report:
         report["reference"] = ref_report
+    if tone_report:
+        report["rapToneDb"] = tone_report
     return out, report
 
 

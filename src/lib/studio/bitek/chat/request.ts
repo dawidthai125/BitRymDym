@@ -144,7 +144,7 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
   const master =
     step === "master" && mm && typeof mm === "object"
       ? {
-          target: ["streaming", "youtube", "headphones", "club"].includes(String(mm.target)) ? String(mm.target) : "streaming",
+          target: ["streaming", "youtube", "headphones", "club", "rap"].includes(String(mm.target)) ? String(mm.target) : "streaming",
           settings: Object.fromEntries(
             BITEK_MASTER_SETTINGS.map((k) => [k, Math.round(num((mm.settings as Record<string, unknown> | undefined)?.[k], -3, 3) * 2) / 2]),
           ) as Record<BitekMasterSetting, number>,

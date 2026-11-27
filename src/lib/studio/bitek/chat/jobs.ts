@@ -69,8 +69,8 @@ const TONE_NAME: Record<BitekLang, Record<BitekMasterSetting, string>> = {
 };
 
 const TARGET_NAME: Record<BitekLang, Record<BitekMasterTarget, string>> = {
-  pl: { streaming: "streaming (−14 LUFS)", youtube: "YouTube (−14 LUFS)", headphones: "słuchawki (−16 LUFS)", club: "klub (−9 LUFS)" },
-  en: { streaming: "streaming (−14 LUFS)", youtube: "YouTube (−14 LUFS)", headphones: "headphones (−16 LUFS)", club: "club (−9 LUFS)" },
+  pl: { streaming: "streaming (−14 LUFS)", youtube: "YouTube (−14 LUFS)", headphones: "słuchawki (−16 LUFS)", club: "klub (−9 LUFS)", rap: "głośny rap (−10 LUFS)" },
+  en: { streaming: "streaming (−14 LUFS)", youtube: "YouTube (−14 LUFS)", headphones: "headphones (−16 LUFS)", club: "club (−9 LUFS)", rap: "loud rap (−10 LUFS)" },
 };
 
 /** Drop jobs that do not match the current project. Labels are rebuilt here. */

@@ -194,3 +194,26 @@ def test_top_tame_only_for_a_clearly_bright_mix():
     assert m.top_tame_db(harsh, 0) == 4.2
     assert m.top_tame_db({"air": {"delta": 30.0}, "high": {"delta": 9.0}}, 0) == 5.0
     assert m.top_tame_db(harsh, 1) == 0.0
+
+
+def test_rap_target_is_loud_and_keeps_the_song_moving():
+    """-10 LUFS / -0.5 dBTP without squashing: verse and hook keep their difference (LRA),
+    which the old JUCE limiter (4:1 from 10 dB under the ceiling) flattened."""
+    sr = 44100
+    quiet, loud = synth(10.0, 0.05, seed=3), synth(10.0, 0.2, seed=4)
+    x = np.concatenate([quiet, loud, quiet, loud]).astype(np.float32)
+    y, rep = m.master(x, sr, "rap", {})
+    assert abs(rep["lufs"] - -10.0) <= 0.3
+    assert rep["truePeakDb"] <= -0.5 + 1e-6
+    assert m.loudness_range(y, sr) >= 0.6 * m.loudness_range(x, sr)
+
+
+def test_brickwall_only_touches_peaks():
+    sr = 44100
+    t = np.arange(sr) / sr
+    x = np.stack([0.3 * np.sin(2 * np.pi * 220 * t)] * 2, axis=1).astype(np.float32)
+    x[sr // 2: sr // 2 + 50] *= 3.0  # one short peak over the ceiling
+    y = m.brickwall(x, sr, -6.0)
+    assert np.max(np.abs(y)) <= 10 ** (-6.0 / 20) + 1e-4
+    # A second later the gain is back: the rest of the song is not turned down.
+    assert np.allclose(y[: sr // 4], x[: sr // 4], atol=1e-6)

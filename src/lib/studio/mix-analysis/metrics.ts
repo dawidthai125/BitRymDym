@@ -5,6 +5,7 @@
  */
 
 import type { StudioTrackRole } from "@/config/studio";
+import { STUDIO_SPECTRUM_HZ } from "@/lib/studio/studio-fx-chain";
 import { percentile, powerToDb, stftBandPowers } from "@/lib/studio/mix-analysis/dsp";
 import { measureLoudness } from "@/lib/studio/mix-analysis/loudness";
 import { duckBeatMids, isPocketBeat, isPocketLead, pocketLeadStage } from "@/lib/studio/mix-analysis/rap-pocket";
@@ -31,6 +32,11 @@ export type TrackMetrics = {
   clipEvents: number;
   /** 10th percentile of 50 ms RMS inside clip regions (dBFS); null if too short. */
   noiseFloorDbfs: number | null;
+  /**
+   * Vocal tone: energy at the 7 spectrum centres (STUDIO_SPECTRUM_HZ, ±½ octave) while the voice
+   * sounds, dB relative to the 1200 Hz band. Vocal roles only; null when too short or silent.
+   */
+  toneDb?: number[] | null;
 };
 
 export type MixMetrics = {
@@ -106,6 +112,32 @@ function dryForNoise(input: MixAnalysisInput, r: RenderedTrack, anySolo: boolean
     { ...r.track, effectsChain: { ...chain, effects: effects.filter((e) => e.type !== "reverb" && e.type !== "delay") } },
     anySolo,
   );
+}
+
+const TONE_BANDS = STUDIO_SPECTRUM_HZ.map((hz) => ({ loHz: hz / Math.SQRT2, hiHz: hz * Math.SQRT2 }));
+const TONE_REF_INDEX = STUDIO_SPECTRUM_HZ.indexOf(1200);
+
+/** See TrackMetrics.toneDb. Frames within 30 dB of the loud (p95) frames count as the voice. */
+export function vocalTone(left: Float32Array, right: Float32Array, sampleRate: number): number[] | null {
+  const mono = new Float32Array(left.length);
+  for (let i = 0; i < mono.length; i++) mono[i] = 0.5 * (left[i]! + right[i]!);
+  const nyq = sampleRate / 2;
+  const bands = TONE_BANDS.map((b) => ({ loHz: Math.min(b.loHz, nyq * 0.9), hiHz: Math.min(b.hiHz, nyq * 0.99) }));
+  const st = stftBandPowers(mono, sampleRate, bands, 4096);
+  const level = Array.from(st.full, (p) => powerToDb(p));
+  if (level.length < 16) return null;
+  const loud = percentile(level, 95);
+  const sum = new Float64Array(bands.length);
+  let n = 0;
+  for (let f = 0; f < level.length; f++) {
+    if (level[f]! < -60 || level[f]! < loud - 30) continue;
+    n++;
+    for (let b = 0; b < bands.length; b++) sum[b] += st.bands[b]![f]!;
+  }
+  if (n < 16) return null;
+  const db = Array.from(sum, (v) => powerToDb(v / n, -200));
+  const ref = db[TONE_REF_INDEX]!;
+  return db.map((v) => Math.round((v - ref) * 10) / 10);
 }
 
 const MASK_BANDS = (() => {
@@ -229,6 +261,7 @@ export function computeMixMetrics(input: MixAnalysisInput, onProgress?: MixProgr
       samplePeakDbfs: lo?.samplePeakDbfs ?? -120,
       clipEvents: hasAudio ? countClipEvents(r.left, r.right) : 0,
       noiseFloorDbfs: hasAudio && VOCAL_ROLES.includes(t.role) ? noiseFloor(dryForNoise(input, r, anySolo), sr) : null,
+      toneDb: hasAudio && VOCAL_ROLES.includes(t.role) ? vocalTone(r.left, r.right, sr) : null,
     };
     if (r.audible && hasAudio) {
       for (let i = 0; i < len; i++) {

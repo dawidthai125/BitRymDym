@@ -94,7 +94,7 @@ export function bitekMasterRulesChat(message: string, ctx: BitekChatContext, sco
     const proposals = validateProposals([{ trackRef: BITEK_MASTER_REF, param: key, value: next, label: "" } satisfies BitekProposal], ctx);
     if (!proposals.length) return { provider: "rules", reply: tx.limit, proposals: [] };
     const up = dir > 0;
-    const goalLufs = { streaming: -14, youtube: -14, headphones: -16, club: -9 }[ctx.master!.target as "streaming"] ?? -14;
+    const goalLufs = { streaming: -14, youtube: -14, headphones: -16, club: -9, rap: -10 }[ctx.master!.target as "streaming"] ?? -14;
     const reply = key === "loudness" ? tx.loudness(up, String(goalLufs + next).replace(".", ctx.lang === "pl" ? "," : ".")) : tx[key](up);
     return { provider: "rules", reply, proposals };
   }
@@ -127,11 +127,12 @@ const TARGET_ASK: { re: RegExp; id: BitekMasterTarget }[] = [
   { re: /youtube|tiktok/, id: "youtube" },
   { re: /sluchawk|headphone/, id: "headphones" },
   { re: /klub|club/, id: "club" },
+  { re: /glosn\w* rap|pod rap|rap/, id: "rap" },
 ];
 
 const TARGET_NAME: Record<"pl" | "en", Record<BitekMasterTarget, string>> = {
-  pl: { streaming: "streamingu", youtube: "YouTube", headphones: "słuchawek", club: "klubu" },
-  en: { streaming: "streaming", youtube: "YouTube", headphones: "headphones", club: "club" },
+  pl: { streaming: "streamingu", youtube: "YouTube", headphones: "słuchawek", club: "klubu", rap: "głośnego rapu" },
+  en: { streaming: "streaming", youtube: "YouTube", headphones: "headphones", club: "club", rap: "loud rap" },
 };
 
 /** Switch the mastering loudness target. Null when the message is not that ask. */

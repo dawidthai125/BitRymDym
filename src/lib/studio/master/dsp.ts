@@ -2,7 +2,8 @@
  * Stage 3 — browser mastering PREVIEW (approximate). The final master is made
  * on the server (scripts/master/master.py). Pure, no Web Audio: runs in a worker
  * and in tests. Chain mirrors the server: HPF 25 Hz → shelves → glue
- * compressor → M/S width → gain to target → look-ahead limiter → TP trim.
+ * compressor (threshold follows the mix loudness) → narrower low side → M/S width → gain to target
+ * → soft clip → look-ahead limiter → TP trim. The server's "rap" tone match is left out (±1–2 dB).
  */
 
 import { applyBiquad, type Biquad, stftBandPowers, toDb, truePeak } from "@/lib/studio/mix-analysis/dsp";
@@ -60,11 +61,12 @@ function highpass(f0: number, sr: number): Biquad {
 
 const interp = (v: number, lo: number, mid: number, hi: number) => (v <= 0 ? mid + (mid - lo) * (v / 3) : mid + (hi - mid) * (v / 3));
 
-function compress(l: Float32Array, r: Float32Array, sr: number, squash: number): void {
+/** Same numbers as GLUE_* in master.py: one wideband compressor, threshold above the mix loudness. */
+function compress(l: Float32Array, r: Float32Array, sr: number, squash: number, mixLufs: number): void {
   const ratio = interp(squash, 1.2, 2, 4);
-  const thr = interp(squash, -12, -18, -26);
-  const att = Math.exp(-1 / (0.015 * sr));
-  const rel = Math.exp(-1 / (0.15 * sr));
+  const thr = (Number.isFinite(mixLufs) ? mixLufs : -18) + interp(squash, 7, 4.5, 1);
+  const att = Math.exp(-1 / (0.025 * sr));
+  const rel = Math.exp(-1 / (0.16 * sr));
   let env = 0;
   for (let i = 0; i < l.length; i++) {
     const x = Math.max(Math.abs(l[i]), Math.abs(r[i]));
@@ -76,6 +78,36 @@ function compress(l: Float32Array, r: Float32Array, sr: number, squash: number):
       l[i] *= g;
       r[i] *= g;
     }
+  }
+}
+
+function lowpass(f0: number, sr: number): Biquad {
+  const w = (2 * Math.PI * f0) / sr;
+  const cos = Math.cos(w);
+  const alpha = Math.sin(w) / (2 * Math.SQRT1_2);
+  const a0 = 1 + alpha;
+  return { b0: (1 - cos) / 2 / a0, b1: (1 - cos) / a0, b2: (1 - cos) / 2 / a0, a1: (-2 * cos) / a0, a2: (1 - alpha) / a0 };
+}
+
+/** LOW_MONO_HZ / LOW_SIDE_KEEP in master.py: the side under 150 Hz kept at 40 %. */
+function narrowLowSide(l: Float32Array, r: Float32Array, sr: number): void {
+  const side = new Float32Array(l.length);
+  for (let i = 0; i < l.length; i++) side[i] = (l[i] - r[i]) / 2;
+  const f = lowpass(150, sr);
+  const low = applyBiquad(applyBiquad(side, f), f);
+  for (let i = 0; i < l.length; i++) {
+    const cut = 0.6 * low[i];
+    l[i] -= cut;
+    r[i] += cut;
+  }
+}
+
+/** CLIP_OVER_DB in master.py: round off short peaks 2 dB over the limiter before it rides the gain. */
+function softClip(l: Float32Array, r: Float32Array, ceilingDb: number): void {
+  const c = Math.pow(10, (ceilingDb + 2) / 20);
+  for (let i = 0; i < l.length; i++) {
+    l[i] = c * Math.tanh(l[i] / c);
+    r[i] = c * Math.tanh(r[i] / c);
   }
 }
 
@@ -154,7 +186,8 @@ export function masterPreview(input: Stereo, target: MasterTargetId, settings: M
     L = applyBiquad(L, f);
     R = applyBiquad(R, f);
   }
-  compress(L, R, sr, settings.squash);
+  compress(L, R, sr, settings.squash, lufsOf({ left: L, right: R, sampleRate: sr }));
+  narrowLowSide(L, R, sr);
   const tame = topTameDb(measureMaster({ left: L, right: R, sampleRate: sr }).tonal, settings.bright);
   if (tame >= 0.3) {
     const f = shelf("high", 7000, -tame, sr);
@@ -171,6 +204,7 @@ export function masterPreview(input: Stereo, target: MasterTargetId, settings: M
     const ol = new Float32Array(L);
     const or = new Float32Array(R);
     gainInPlace(ol, or, gain);
+    softClip(ol, or, goal.tp - 0.6);
     limit(ol, or, sr, goal.tp - 0.6);
     out = { left: ol, right: or, sampleRate: sr };
     const tp = truePeakDbOf(out);

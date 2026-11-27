@@ -41,7 +41,7 @@ export const BITEK_MASTER_STYLES = ["warm", "bright", "loud", "dynamic"] as cons
 export type BitekMasterStyle = (typeof BITEK_MASTER_STYLES)[number];
 
 /** One confirmed action. Labels are built on the server, never taken from model text. */
-export const BITEK_MASTER_TARGETS = ["streaming", "youtube", "headphones", "club"] as const;
+export const BITEK_MASTER_TARGETS = ["streaming", "youtube", "headphones", "club", "rap"] as const;
 export type BitekMasterTarget = (typeof BITEK_MASTER_TARGETS)[number];
 
 export type BitekJob =

@@ -36,13 +36,19 @@ export type MixVerdict = {
   canMaster: boolean;
 };
 
+/**
+ * Calibrated 2026-11-27 on two real songs mixed by a reference AI mix service: a finished rap mix
+ * sits the vocal about 3-4 LU under the beat, ~0 dB presence and ~30-40 % "masked" frames. The old
+ * limits (vocal over the beat, ≤25 % masking) called such a mix red and drove the fix loop to push
+ * the vocal up again and again.
+ */
 export const MIX_THRESHOLDS = {
   /** Lead vocal − beat (integrated LU). */
-  balance: { greenMin: 0, greenMax: 3, yellowMin: -6, yellowMax: 6 },
+  balance: { greenMin: -5, greenMax: 3, yellowMin: -9, yellowMax: 6 },
   /** Vocal − beat energy 1–4 kHz (dB). */
-  presence: { green: 3, yellow: 0 },
+  presence: { green: -1.5, yellow: -5 },
   /** % frames masked. */
-  masking: { green: 10, yellow: 25 },
+  masking: { green: 45, yellow: 60 },
   /** p99 sibilance over median vocal (dB). */
   sibilance: { green: 4, yellow: 8 },
   /** Clip events / master true peak (dBTP). */

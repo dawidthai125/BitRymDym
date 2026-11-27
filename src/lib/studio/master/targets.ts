@@ -1,11 +1,16 @@
 /** Stage 3 — Mastering targets + whole-track settings (shared by UI, API, worker, BITEK). */
 
 export const MASTER_TARGETS = {
+  /** Loud rap release, like the AI mix services: about -10 LUFS, -0.5 dBTP. First and default in Studio. */
+  rap: { lufs: -10, tp: -0.5 },
   streaming: { lufs: -14, tp: -1 },
   youtube: { lufs: -14, tp: -1 },
   headphones: { lufs: -16, tp: -1 },
   club: { lufs: -9, tp: -0.3 },
 } as const;
+
+/** What Studio and "Sam mastering" start with. */
+export const DEFAULT_MASTER_TARGET: MasterTargetId = "rap";
 
 export type MasterTargetId = keyof typeof MASTER_TARGETS;
 export const MASTER_TARGET_IDS = Object.keys(MASTER_TARGETS) as MasterTargetId[];

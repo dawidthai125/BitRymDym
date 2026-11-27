@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-27 (56) — „Zrób utwór” w jednym przebiegu i nowy master (porównanie z Cryo Mix)
+
+- Diagnoza na dwóch prawdziwych utworach Dawida (stemy i wynik z Cryo Mix): stara pętla „zmierz → popraw → zmierz” przebudowywała łańcuchy co rundę; progi oceny (wokal nad bitem, maskowanie ≤ 25 %) wymuszały coraz głośniejszy wokal; master ściskał całość limiterem z pedalboard (JUCE: kompresor 4:1 od 10 dB pod progiem, release ignorowany) i 3-pasmową kompresją przy stałym −18 dB, która najmocniej cisnęła bas — utwór wychodził cieńszy i płaski, ciszej (−14 LUFS) niż u konkurencji (−10,8).
+- Mix: `lib/studio/mix-autofix/one-shot.ts` — surowe ślady → pomiar barwy wokalu (`TrackMetrics.toneDb`) → stały łańcuch na rolę (HPF, bramka przy szumie, dopasowanie barwy do wokalu rapowego, rider, kompresor, de-esser, saturacja, echo, pogłos) → jeden krok poziomu na rolę → jedna zmiana z cofaniem. „Zrób utwór” i Bitek auto używają tylko tego; gotowy mix sam przechodzi do masteringu.
+- Ocena mixu skalibrowana na gotowych mixach rapowych (`MIX_THRESHOLDS`: balans −5…+3 LU zielony, obecność ≥ −1,5 dB, maskowanie ≤ 45 %).
+- Master (`scripts/master/master.py` + podgląd `master/dsp.ts`): cel „Głośny rap” −10 LUFS / −0,5 dBTP (domyślny), kompresja całości 2:1 z progiem nad głośnością mixu, węższy bok pod 150 Hz, miękki clipper, własny limiter z wyprzedzeniem (tylko szczyty), dopasowanie barwy „rap” (70 %, ±3 dB).
+- Wynik względem Cryo: głośność −10,1 vs −10,8 LUFS, LRA 5,8 vs 5,7 (wcześniej master „klub” 1,5), barwa wokalu w ±1 dB, wokal względem bitu w ±1 dB na obu utworach. Wymaga wgrania `master.py` na Contabo (worker masteringu).
+
 ## 2026-11-27 (55) — Studio i nagrywarka 2026.11.50: odliczanie, nowa ścieżka, pan L/C/P, Bitek i sprawdzanie opóźnienia
 
 - Odliczanie liczone w stukach (Bez, 1, 2, 4, 8), domyślnie 2 zamiast całego taktu (4). Na stronie wybór stoi nad przyciskiem Nagraj w obu widokach i zostaje zapamiętany (`brd.studio.countInBeats`). W nagrywarce stare ustawienie „1 takt” przechodzi na „2 stuki”.

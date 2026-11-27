@@ -15,8 +15,6 @@ import type { StudioMidiV1 } from "@/lib/studio/studio-midi";
 import {
   autoMixMasterMaterial,
   clearAutoMixHandoff,
-  nextAutoMixStep,
-  nextSongStep,
   readAutoMixHandoff,
   saveAutoMasterHandoff,
 } from "@/lib/studio/bitek/auto-mix-master";
@@ -58,6 +56,7 @@ import {
 import { BITEK_POLISH_TILES } from "@/lib/studio/bitek-polish-tiles";
 import { planBeatDucker } from "@/lib/studio/beat-ducker-plan";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
+import { oneShotDryDocument, oneShotOps, oneShotWetDocument } from "@/lib/studio/mix-autofix/one-shot";
 import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
 import { StudioVocalSetsCard } from "@/components/studio/studio-vocal-presets";
 import { StudioChangeReport } from "@/components/studio/studio-change-report";
@@ -689,108 +688,88 @@ export function StudioMixStep({
   }, [pending]);
   const autoLock = useRef(false);
   /** Bumped when an automatic step ends, so the next one is always considered (never left on "Poprawiam…"). */
-  const [autoTick, setAutoTick] = useState(0);
+  const [, setAutoTick] = useState(0);
+  /**
+   * "Zrób utwór" and Bitek auto mix: one pass (lib/studio/mix-autofix/one-shot). Dry measurement →
+   * fixed chains → one level step → one undoable change. No measure-fix loop any more: it rebuilt the
+   * chains round after round and could end worse than the raw recording.
+   */
+  const runOneShotSong = async (): Promise<boolean> => {
+    const apply = applyAutofixRef.current;
+    if (!apply) return false;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setRunning(true);
+    setFailure(null);
+    setFailedTrack(null);
+    setProgress(0);
+    const original = doc;
+    const dry = oneShotDryDocument(original);
+    const first = await runStudioMixAnalysis({ doc: dry, resolveSourceUrl: resolveClipSourceUrl, onProgress: (f) => setProgress(0.5 * f), signal: controller.signal });
+    if (abortRef.current !== controller) return false;
+    if (!first.ok) {
+      setRunning(false);
+      setFailure(first.reason);
+      setFailedTrack(first.track ?? null);
+      return false;
+    }
+    const wet = oneShotWetDocument(dry, first.metrics.tracks);
+    const second = await runStudioMixAnalysis({ doc: wet, resolveSourceUrl: resolveClipSourceUrl, onProgress: (f) => setProgress(0.5 + 0.5 * f), signal: controller.signal });
+    if (abortRef.current !== controller) return false;
+    setRunning(false);
+    if (!second.ok) {
+      setFailure(second.reason);
+      setFailedTrack(second.track ?? null);
+      return false;
+    }
+    setFixing("song");
+    setListen("mix");
+    const summary = t("zrobUtwor");
+    const res = await safeApply(apply, oneShotOps(original, wet, second.metrics.tracks), t("autofix.historia", { summary }));
+    setFixing(null);
+    if (!res.ok) {
+      setPanel({ kind: "error", conflict: res.conflict });
+      return false;
+    }
+    reanalyzeRef.current = true;
+    setAb({ before: res.before, afterSig: null, metricsBefore: result && !stale ? result.metrics : null });
+    setPanel({ kind: "done", notes: [], after: null });
+    setFixSeq((n) => n + 1);
+    setRounds((n) => n + 1);
+    onBitekNote?.(t("autofix.historia", { summary }), { notes: [t("autofix.jedenPrzebieg")] });
+    return true;
+  };
+  const runOneShotRef = useRef(runOneShotSong);
+  useLayoutEffect(() => {
+    runOneShotRef.current = runOneShotSong;
+  });
   useEffect(() => {
-    // Auto mix advances when analysis or a fix round finishes.
-    /* eslint-disable react-hooks/set-state-in-effect -- same dispatch pattern as the bubble actions above */
-    if (autoPhase !== "run") return;
-    if (autoLock.current || reanalyzeRef.current) return;
-    if (failure || panel?.kind === "error") {
-      setAutoPhase("stay");
-      return;
-    }
-    if (panel?.kind === "nothing" || panel?.kind === "limit") {
-      setListen("mix");
-      setAutoPhase("ask");
-      return;
-    }
-    const fresh = Boolean(result && !stale);
-    const opsLeft = fresh && result
-      ? planForPlan({
-          doc,
-          metrics: result.metrics,
-          verdict: result.verdict,
-          fixes: MIX_AUTOFIX_ALL,
-          createId: () => "x",
-        }).ops.length
-      : 0;
-    const step = nextAutoMixStep({
-      hasFreshAnalysis: fresh,
-      running,
-      fixing: Boolean(fixing),
-      canApply: canAutofix,
-      opsLeft,
-      fixSeq,
-      failed: false,
-    });
-    if (step === "wait") return;
-    if (step === "stop") {
-      setAutoPhase("stay");
-      return;
-    }
-    if (step === "ask") {
-      setListen("mix");
-      setAutoPhase("ask");
-      return;
-    }
-    autoLock.current = true;
-    const job =
-      step === "analyze"
-        ? analyze()
-        : runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"), { immediate: true });
-    void job.finally(() => {
-      autoLock.current = false;
-      setAutoTick((n) => n + 1);
-    });
-    /* eslint-enable react-hooks/set-state-in-effect */
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one tick per analysis / fix round
-  }, [autoPhase, result, stale, running, fixing, fixSeq, failure, panel, canAutofix, doc, analyze, t, autoTick]);
-  useEffect(() => {
-    if (songPhase !== "run") return;
+    if (songPhase !== "run" && autoPhase !== "run") return;
     if (autoLock.current) return;
-    // After the Nova pass, keep going (one more full pass) while the mix is still not master-ready
-    // and Bitek has moves left. Otherwise the song would be offered for mastering while still red.
-    const freshResult = result && !stale ? result : null;
-    const needMore = Boolean(
-      songFixed.current &&
-        songRounds.current < 2 &&
-        freshResult &&
-        !freshResult.verdict.canMaster &&
-        planForPlan({ doc, metrics: freshResult.metrics, verdict: freshResult.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length > 0,
-    );
-    const step = nextSongStep({
-      failed: Boolean(failure || panel?.kind === "error"),
-      running,
-      fixing: Boolean(fixing),
-      hasFreshAnalysis: Boolean(result && !stale),
-      canApply: canAutofix,
-      fixed: songFixed.current && !needMore,
-    });
-    if (step === "wait") return;
-    if (step === "stop") {
-      setSongPhase("stay");
-      return;
-    }
-    if (step === "ask") {
-      setListen("mix");
-      setSongPhase("ask");
-      return;
-    }
     autoLock.current = true;
-    const job =
-      step === "analyze"
-        ? analyze()
-        : runFix(songRounds.current === 0 ? NOVA_PASS_FIXES : MIX_AUTOFIX_ALL, songRounds.current === 0 ? "nova" : "all", t("zrobUtwor"), { immediate: true });
-    if (step === "fix") {
-      songFixed.current = true;
-      songRounds.current += 1;
-    }
-    void job.finally(() => {
-      autoLock.current = false;
-      setAutoTick((n) => n + 1);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one tick per analysis or the single Nova pass
-  }, [songPhase, result, stale, running, fixing, failure, panel, canAutofix, analyze, t, autoTick]);
+    void runOneShotRef.current()
+      .then((ok) => {
+        setSongPhase((p) => (p === "run" ? (ok ? "ask" : "stay") : p));
+        setAutoPhase((p) => (p === "run" ? (ok ? "ask" : "stay") : p));
+      })
+      .finally(() => {
+        autoLock.current = false;
+        setAutoTick((n) => n + 1);
+      });
+  }, [songPhase, autoPhase]);
+  // Fully automatic: a finished one-pass mix that may be mastered goes straight to mastering.
+  useEffect(() => {
+    if (songPhase !== "ask" && autoPhase !== "ask") return;
+    if (!result || stale || running || fixing || reanalyzeRef.current) return;
+    if (!result.verdict.canMaster) return;
+    saveAutoMasterHandoff(doc.project.id);
+    /* eslint-disable react-hooks/set-state-in-effect -- one hand-off when the fresh analysis lands, same pattern as the bubble actions */
+    setSongPhase("stay");
+    setAutoPhase("stay");
+    /* eslint-enable react-hooks/set-state-in-effect */
+    goMasterRef.current?.();
+  }, [songPhase, autoPhase, result, stale, running, fixing, doc.project.id]);
   const [manual, setManual] = useState<ManualIssue | null>(null);
   const dismissedManual = useRef(new Set<string>());
   const mixBaseline = useRef<Parameters<typeof watchMixManual>[0]["baseline"]>(null);

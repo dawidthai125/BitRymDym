@@ -18,7 +18,7 @@ import {
   MASTER_ONLY_MAX_SECONDS,
   STUDIO_VOCAL_IMPORT_ACCEPT,
 } from "@/lib/studio/master/master-only-bootstrap";
-import { DEFAULT_MASTER_SETTINGS, type MasterTargetId } from "@/lib/studio/master/targets";
+import { DEFAULT_MASTER_SETTINGS, DEFAULT_MASTER_TARGET, type MasterTargetId } from "@/lib/studio/master/targets";
 
 type Tier = "FREE" | "BRONZE" | "SILVER" | "GOLD";
 type Project = { projectId: string; documentVersion: number };
@@ -73,7 +73,7 @@ export function MasterOnlyPanel({ tier }: { tier: Tier }) {
   const [approving, setApproving] = useState(false);
   const [dl, setDl] = useState<"idle" | "working" | "done">("idle");
   const format = bestFormat(tier);
-  const target: MasterTargetId = "streaming";
+  const target: MasterTargetId = DEFAULT_MASTER_TARGET;
   const canStem = tier === "SILVER" || tier === "GOLD";
   const poll = useRef<AbortController | null>(null);
   const objectUrls = useRef<string[]>([]);

@@ -4326,6 +4326,7 @@
         "zapisane": "Zapisałem to jako wersję „BITEK” w historii mixu. Cofniesz to przez Ctrl+Z.",
         "cofnieto": "BITEK: cofnąłem moje poprawki.",
         "historia": "BITEK: {summary}",
+        "jedenPrzebieg": "Jeden przebieg: każdy wokal dostał stały łańcuch jak w dobrych mixach rapowych (barwa dopasowana do wokalu rapowego, kompresja, de-esser, echo i pogłos), a każda ścieżka poziom dla swojej roli. Cofnij przywraca poprzedni mix.",
         "historiaWszystko": "poprawiłem cały mix",
         "historiaKarta": "poprawiłem: {title}",
         "poAnalizie": {
@@ -4590,6 +4591,10 @@
       "calyNumer": "Od teraz słyszę cały numer jako jedną ścieżkę stereo.",
       "celTytul": "Gdzie ma grać Twój numer?",
       "cele": {
+        "rap": {
+          "nazwa": "Głośny rap",
+          "opis": "Głośno jak wydania rapowe, −10 LUFS"
+        },
         "streaming": {
           "nazwa": "Streaming",
           "opis": "Spotify, Apple Music, Tidal"
@@ -4807,7 +4812,8 @@
           "streaming": "Gotowe. Tak brzmi Twój numer na Spotify.",
           "youtube": "Gotowe. Tak zabrzmi Twój numer na YouTube i TikToku.",
           "headphones": "Gotowe. Tak brzmi Twój numer na słuchawkach.",
-          "club": "Gotowe. Tak zagra Twój numer w klubie."
+          "club": "Gotowe. Tak zagra Twój numer w klubie.",
+          "rap": "Gotowe. Tak brzmi Twój numer głośno, jak wydania rapowe."
         },
         "zatwierdzone": "Numer jest gotowy. Pobierz to, czego potrzebujesz.",
         "blad": "Coś poszło nie tak z masterem. Spróbuję jeszcze raz, jak klikniesz.",

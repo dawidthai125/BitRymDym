@@ -4326,6 +4326,7 @@
         "zapisane": "I saved this as a “BITEK” version in your mix history. Undo it with Ctrl+Z.",
         "cofnieto": "BITEK: I undid my fixes.",
         "historia": "BITEK: {summary}",
+        "jedenPrzebieg": "One pass: every vocal got a fixed chain like in good rap mixes (tone matched to a rap vocal, compression, de-esser, echo and reverb), and every track the level of its role. Undo brings the previous mix back.",
         "historiaWszystko": "I fixed the whole mix",
         "historiaKarta": "I fixed: {title}",
         "poAnalizie": {
@@ -4590,6 +4591,10 @@
       "calyNumer": "From now on I hear the whole song as one stereo track.",
       "celTytul": "Where will your song play?",
       "cele": {
+        "rap": {
+          "nazwa": "Loud rap",
+          "opis": "As loud as rap releases, −10 LUFS"
+        },
         "streaming": {
           "nazwa": "Streaming",
           "opis": "Spotify, Apple Music, Tidal"
@@ -4807,7 +4812,8 @@
           "streaming": "Done. This is how your song sounds on Spotify.",
           "youtube": "Done. This is how your song will sound on YouTube and TikTok.",
           "headphones": "Done. This is how your song sounds on headphones.",
-          "club": "Done. This is how your song will hit in a club."
+          "club": "Done. This is how your song will hit in a club.",
+          "rap": "Done. This is your track loud, like rap releases."
         },
         "zatwierdzone": "The song is ready. Download what you need.",
         "blad": "Something went wrong with the master. Click and I'll try again.",
