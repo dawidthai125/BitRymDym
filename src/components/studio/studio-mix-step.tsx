@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 
+import { makeLibText } from "@/i18n/lib-text";
 import { StudioMixOverview } from "@/components/studio/studio-mix-overview";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
@@ -218,6 +219,8 @@ export function StudioMixStep({
   chatContextRef?: { current: (() => BitekClientContext) | null };
 }) {
   const locale = useLocale();
+  /** Technical chips are built in Polish (lib); memoised so the Bitek bubble stays stable. */
+  const tl = useMemo(() => makeLibText(locale === "en" ? "en" : "pl"), [locale]);
   const t = useTranslations("studio.mixStep");
   const beatKey = useProjectBeatKey(doc.project.id)?.key ?? null;
   /** planMixAutofix limited to what the user's plan can save (otherwise the server rejects the whole fix). */
@@ -423,7 +426,7 @@ export function StudioMixStep({
     setRounds((n) => n + 1);
     const texts = notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
     const tech = techChipsFromAutofixNotes(notes).map((c) =>
-      c.track ? `${c.track}: ${localizeNumberText(c.label, locale)}` : localizeNumberText(c.label, locale),
+      c.track ? `${c.track}: ${localizeNumberText(tl(c.label), locale)}` : localizeNumberText(tl(c.label), locale),
     );
     onBitekNote?.(t("autofix.historia", { summary }), {
       notes: [...texts, ...(tech.length ? [t("autofix.techTytul"), ...tech] : [])],
@@ -978,7 +981,7 @@ export function StudioMixStep({
     if (panel?.kind === "propose") {
       const notes = panel.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
       const tech = techChipsFromAutofixNotes(panel.notes).map((c) =>
-        c.track ? `${c.track}: ${localizeNumberText(c.label, locale)}` : localizeNumberText(c.label, locale),
+        c.track ? `${c.track}: ${localizeNumberText(tl(c.label), locale)}` : localizeNumberText(tl(c.label), locale),
       );
       return {
         key: `propose-${fixSeq}`,
@@ -1005,7 +1008,7 @@ export function StudioMixStep({
     if (panel?.kind === "done") {
       const notes = panel.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
       const tech = techChipsFromAutofixNotes(panel.notes).map((c) =>
-        c.track ? `${c.track}: ${localizeNumberText(c.label, locale)}` : localizeNumberText(c.label, locale),
+        c.track ? `${c.track}: ${localizeNumberText(tl(c.label), locale)}` : localizeNumberText(tl(c.label), locale),
       );
       return {
         key: `fix-${fixSeq}-${panel.after ? "checked" : "checking"}`,
@@ -1110,7 +1113,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, songAsk, autoEnabled, declinedKey, canMaster, canFixMore, maxEffects]);
+  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, songAsk, autoEnabled, declinedKey, canMaster, canFixMore, maxEffects, tl]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
@@ -1508,7 +1511,7 @@ export function StudioMixStep({
                           data-testid="studio-mix-tech-chip"
                           className="border border-[var(--brd-line)] bg-[var(--brd-bg)] px-2 py-1 font-mono text-xs text-[var(--brd-ink)]"
                         >
-                          {localizeNumberText(c.label, locale)}
+                          {localizeNumberText(tl(c.label), locale)}
                         </span>
                       ))}
                     </div>
@@ -1551,7 +1554,7 @@ export function StudioMixStep({
                   className="border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 py-1 font-mono text-xs"
                   title={c.track ?? undefined}
                 >
-                  {c.track ? `${c.track}: ${localizeNumberText(c.label, locale)}` : localizeNumberText(c.label, locale)}
+                  {c.track ? `${c.track}: ${localizeNumberText(tl(c.label), locale)}` : localizeNumberText(tl(c.label), locale)}
                 </span>
               ))}
             </div>

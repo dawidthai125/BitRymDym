@@ -1278,3 +1278,64 @@ html.brd-studio-full [data-studio-shell] {
     min-width: 0;
   }
 }
+
+/* A phone on its side, Studio record step: header and steps share one row, tighter transport — the tracks get the height.
+   Step "2. Mix" does what the "Go to mix" button does (as on upright phones). */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 1023px) {
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: start;
+    column-gap: 0.5rem;
+  }
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] > [data-testid="studio-header"] {
+    grid-column: 1;
+    grid-row: 1;
+    flex-wrap: nowrap;
+    column-gap: 0.4rem;
+    padding-bottom: 0;
+  }
+  /* The beat name gives way first, so full screen and search never slide under the steps. */
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] > [data-testid="studio-header"] > div {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: none;
+  }
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] .studio-bit-picker {
+    min-width: 0;
+  }
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] > [data-testid="studio-step-nav"] {
+    grid-column: 2;
+    grid-row: 1;
+    flex-wrap: nowrap;
+    padding-block: 0;
+  }
+  /* Clock and timeline tools fit next to the transport keys instead of taking a second line. */
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] .studio-counter-time {
+    padding-inline: 0.25rem;
+    font-size: 0.85rem;
+  }
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] [data-testid="studio-transport-row-main"],
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] [data-testid="studio-edit-toolbar"] {
+    column-gap: 0.125rem;
+  }
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] [data-testid="studio-edit-toolbar"] button {
+    min-width: 2.75rem;
+    padding-inline: 0.35rem;
+  }
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] [data-testid="studio-go-mix"],
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] .studio-brand,
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] .studio-gear-label {
+    display: none;
+  }
+}
+/* The narrowest phones on their side have no room for the project title next to the steps. */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 759px) {
+  .studio-desk[data-studio-tab="record"][data-studio-groups="true"] [data-testid="studio-project-title"] {
+    display: none;
+  }
+}
