@@ -3063,14 +3063,15 @@ function StudioEditorInner({
       if (event.key === "Tab") pointerFocusRef.current = false;
       // Handled by the focused part (automation point, BITEK, a dialog).
       if (event.defaultPrevented) return;
-      if (isStudioTypingTarget(event.target)) return;
-      const modal = studioModalState(document);
-      if (modal === "modal") return;
-      if (event.key === "F9" && studioStep !== "master" && !event.repeat) {
+      // F9 types nothing, so it works also while a list or a field has the focus.
+      if (event.key === "F9" && studioStep !== "master" && !event.repeat && studioModalState(document) !== "modal") {
         event.preventDefault();
         toggleMixerSurface();
         return;
       }
+      if (isStudioTypingTarget(event.target)) return;
+      const modal = studioModalState(document);
+      if (modal === "modal") return;
       if (
         !recordingLocked &&
         studioControlKeepsKey({
