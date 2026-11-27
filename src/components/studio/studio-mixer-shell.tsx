@@ -211,7 +211,7 @@ export function StudioMixerDockChrome({
           role="region"
           aria-label={t("kanalyMixera")}
           data-testid="studio-mixer-panel"
-          className="max-h-[min(30rem,55dvh)] min-h-0 overflow-y-auto overflow-x-hidden p-2"
+          className="max-h-[min(30rem,66dvh)] min-h-0 overflow-y-auto overflow-x-hidden p-2"
         >
           {children}
         </div>

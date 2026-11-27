@@ -8,7 +8,7 @@ Format: data, zakres, skrót.
 
 ## 2026-11-27 (49) — Studio: siatka w taktach, niskie ścieżki, mikser na przycisk
 
-- Linijka liczy takty (z BPM i metrum projektu), z kreskami taktów i uderzeń na ścieżkach; w „Więcej” przełącznik na czas. Takt 1 = początek pliku bitu; „Takt zaczyna się w miejscu głowicy” koryguje go (zapis tylko na urządzeniu, `brd-studio-view:<projekt>`). Metronom liczy od tego samego miejsca. Sekcje pętli i znaczniki struktury w panelu nagrywania nadal liczą od zera osi.
+- Linijka liczy takty (z BPM i metrum projektu), z kreskami taktów i uderzeń na ścieżkach; w „Więcej” przełącznik na czas. Takt 1 = początek pliku bitu; „Takt zaczyna się w miejscu głowicy” koryguje go (zapis tylko na urządzeniu, `brd-studio-view:<projekt>`). Metronom liczy od tego samego miejsca. Siatka i metronom używają dokładnej długości uderzenia (wcześniej metronom zaokrąglał do 1 ms i przy 92 BPM po 52 taktach był 36 ms obok). Sekcje pętli i znaczniki struktury w panelu nagrywania nadal liczą od zera osi.
 - Przyciąganie do uderzenia i taktu (poza 20/100/1000 ms), domyślnie wyłączone.
 - „Niskie ścieżki” (104 px zamiast 168). Poprawione rozjeżdżanie nagłówków i ścieżek o 4 px na ścieżkę.
 - Mikser domyślnie zamknięty; przycisk „Mikser” lub F9, na komputerze przypięty do dołu ekranu, Esc zamyka.

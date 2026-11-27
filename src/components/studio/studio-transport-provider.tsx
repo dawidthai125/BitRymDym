@@ -47,7 +47,7 @@ import {
   type StudioTrackLevelSnapshot,
 } from "@/lib/studio/studio-meter";
 import {
-  beatDurationMs,
+  exactBeatDurationMs,
   fireStudioClick,
   loopRegionOrNull,
   wrapLoopPlayhead,
@@ -547,7 +547,7 @@ export function StudioTransportProvider({
       if (phaseRef.current !== "playing") return;
       const ctx = engineRef.current?.getContextForAux();
       if (!ctx) return;
-      const beatMs = beatDurationMs(tempoRef.current);
+      const beatMs = exactBeatDurationMs(tempoRef.current);
       if (beatMs < 1) return;
       const beatIndex = Math.floor((playheadMsRef.current - gridOriginRef.current) / beatMs);
       if (beatIndex === lastClickBeatRef.current) return;

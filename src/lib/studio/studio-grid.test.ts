@@ -37,7 +37,8 @@ describe("Studio musical grid", () => {
     const labelled = ticks.filter((t) => t.label);
     for (const tick of labelled) {
       const bar = Number(tick.label);
-      expect(Math.abs(tick.ms - (bar - 1) * grid.beatMs * 4)).toBeLessThanOrEqual(0.5);
+      // Independent of the code under test: a bar at 92 BPM is 4 × 60 000 / 92 ms.
+      expect(Math.abs(tick.ms - ((bar - 1) * 240_000) / 92)).toBeLessThanOrEqual(0.5);
     }
     for (let i = 1; i < labelled.length; i += 1) {
       expect((labelled[i]!.ms - labelled[i - 1]!.ms) * 0.003).toBeGreaterThanOrEqual(40);
@@ -58,7 +59,8 @@ describe("Studio musical grid", () => {
     const beat = withStudioSnapGrid(snapConfigFromPreset("beat"), grid);
     const bar = withStudioSnapGrid(snapConfigFromPreset("bar"), { ...grid, originMs: 250 });
     expect(snapPresetFromConfig(beat)).toBe("beat");
-    expect(snapTimelineMs(1900, beat)).toBe(Math.round(3 * grid.beatMs));
+    expect(snapTimelineMs(1900, beat)).toBe(1957);
+    expect(snapTimelineMs(135_600, withStudioSnapGrid(snapConfigFromPreset("bar"), grid))).toBe(135_652);
     // The 40th beat stays exact: no accumulated rounding.
     expect(snapTimelineMs(Math.round(40 * grid.beatMs) + 100, beat)).toBe(Math.round(40 * grid.beatMs));
     expect(snapTimelineMs(2500, bar)).toBe(Math.round(250 + grid.beatMs * 4));

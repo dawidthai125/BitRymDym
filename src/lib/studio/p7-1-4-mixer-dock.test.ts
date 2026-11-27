@@ -73,7 +73,7 @@ describe("Phase 7.1.4 desktop dock + collapse", () => {
     expect(shell).toMatch(/data-testid="studio-mixer-collapse"/);
     expect(shell).toMatch(/aria-expanded=\{expanded\}/);
     expect(shell).toMatch(/aria-controls=\{panelId\}/);
-    expect(shell).toMatch(/max-h-\[min\(30rem,55dvh\)\]/);
+    expect(shell).toMatch(/max-h-\[min\(30rem,66dvh\)\]/);
     expect(shell).toMatch(/fixed inset-x-0 bottom-0/);
     expect(editor).toMatch(/panelId=\{mixerPanelId\}/);
   });

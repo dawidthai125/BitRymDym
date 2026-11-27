@@ -13,6 +13,13 @@ export function clampStudioTempoBpm(bpm: number): number {
   return Math.min(400, Math.max(20, bpm));
 }
 
+/** Unrounded beat length. Grid and metronome need it: a rounded beat drifts over a song. */
+export function exactBeatDurationMs(bpm: number, timeSignatureDen = 4): number {
+  const tempo = clampStudioTempoBpm(bpm);
+  const den = timeSignatureDen > 0 ? timeSignatureDen : 4;
+  return (60_000 / tempo) * (4 / den);
+}
+
 export function beatDurationMs(
   bpm: number,
   timeSignatureDen = 4,

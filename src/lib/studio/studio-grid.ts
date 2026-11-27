@@ -3,7 +3,7 @@
  * View only — clip geometry stays integer ms.
  */
 
-import { beatDurationMs } from "@/lib/studio/studio-daw-clock";
+import { exactBeatDurationMs } from "@/lib/studio/studio-daw-clock";
 
 export type StudioGrid = {
   beatMs: number;
@@ -18,7 +18,7 @@ export function buildStudioGrid(input: {
   timeSignatureDen: number;
   originMs: number;
 }): StudioGrid | null {
-  const beatMs = beatDurationMs(input.bpm, input.timeSignatureDen);
+  const beatMs = exactBeatDurationMs(input.bpm, input.timeSignatureDen);
   if (!Number.isFinite(beatMs) || beatMs < 1) return null;
   return {
     beatMs,
