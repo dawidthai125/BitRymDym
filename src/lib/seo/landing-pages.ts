@@ -365,9 +365,9 @@ export const LANDING_PAGES: readonly LandingPage[] = [
   {
     slug: "bity-do-freestyle",
     navLabel: "Bity do freestyle",
-    metaTitle: "Bity do freestyle — darmowe podkłady do nawijania online",
+    metaTitle: "Bity do freestyle za darmo — odpal i nawijaj od razu",
     metaDescription:
-      "Bity do freestyle za darmo: boom bap, trap i lo-fi z podanym BPM. Odpal bit w przeglądarce, wylosuj temat i trenuj nawijkę sam albo na bitwę ze znajomymi.",
+      "Darmowe bity do freestyle: boom bap, trap i lo-fi z BPM. Bez konta odpalasz bit w przeglądarce, losujesz temat i nawijasz. Nagraj najlepsze wejście w Studiu.",
     h1: "Bity do freestyle",
     lead: "Wybierz bit, wylosuj temat i nawijaj. Przy każdym podkładzie jest tempo i tonacja, więc szybko znajdziesz taki, na którym czujesz się pewnie.",
     sections: [

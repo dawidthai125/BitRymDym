@@ -809,7 +809,7 @@ export const GUIDES: readonly Guide[] = [
     slug: "jak-rapowac-pod-bit",
     datePublished: "2026-11-24",
     navLabel: "Jak rapować pod bit",
-    metaTitle: "Jak rapować pod bit — liczenie taktów i wejście w rytm",
+    metaTitle: "Jak rapować pod bit? Liczenie taktów krok po kroku",
     metaDescription:
       "Jak rapować pod bit: gdzie jest raz, jak liczyć takty, kiedy wejść ze zwrotką i co robić, gdy gubisz rytm. Ćwiczenia krok po kroku dla początkujących.",
     h1: "Jak rapować pod bit",
@@ -852,7 +852,7 @@ export const GUIDES: readonly Guide[] = [
     slug: "jak-szybko-rapowac",
     datePublished: "2026-11-24",
     navLabel: "Jak szybko rapować",
-    metaTitle: "Jak szybko rapować — dykcja, oddech i ćwiczenia na tempo",
+    metaTitle: "Jak rapować szybko? Ćwiczenia na dykcję i oddech",
     metaDescription:
       "Jak szybko rapować i dalej być zrozumiałym: ćwiczenia na dykcję, oddech, sylaby pod szybkie tempo i plan treningu z metronomem. Poradnik krok po kroku.",
     h1: "Jak szybko rapować",

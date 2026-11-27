@@ -27,8 +27,9 @@ export async function generateMetadata({ params }: Props) {
   if (!result) notFound();
   const sample = [...result.multi, ...result.exact].slice(0, 6).join(", ");
   return pageMetadata({
-    title: `Rymy do słowa „${word}” — ${rhymeCountLabel(result.total)}`,
-    description: `Rymy do słowa ${word}: ${sample}… Rymy wielosylabowe, dokładne i niedokładne. Znajdź rym i nagraj zwrotkę na darmowym bicie.`,
+    // GSC 27.11: people type "rym do X" / "X rymy"; the title opens with that phrase and the best rhymes.
+    title: `Rym do „${word}” — ${rhymeCountLabel(result.total)}: ${[...result.multi, ...result.exact].slice(0, 3).join(", ")}`,
+    description: `Rymy do ${word}: ${sample} i więcej. Wielosylabowe i dokładne rymy do słowa „${word}” w jednym miejscu. Wybierz rym i nagraj zwrotkę na darmowym bicie.`,
     path: rhymePagePath(word),
   });
 }

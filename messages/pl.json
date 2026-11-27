@@ -2274,9 +2274,9 @@
       "platnyOpis": "Każdy bit w tym katalogu kosztuje 19,99 zł. Kupujesz na wyłączność: po płatności PayU bit znika z katalogu i trafia tylko do Twojego katalogu. Stamtąd pobierasz plik WAV i nagrywasz na nim w Studiu oraz w programie na Windows (lista bitów, „Kupiony: …”). Bez zakupu nagranie w Studiu zostaje wyłączone.",
       "platnyWkrotce": "19,99 zł · plik WAV",
       "platnyZakup": "Płatność idzie przez PayU. Po zakupie bit jest w katalogu kupującego, nie w katalogu darmowym.",
-      "metaTitle": "Katalog bitów do rapu — trap, boom bap, lo-fi",
+      "metaTitle": "Darmowe bity do rapu — katalog trap, boom bap, lo-fi",
       "metaStrona": "strona {page}",
-      "metaDescription": "Katalog bitów do rapu z tempem (BPM) i tonacją: trap, boom bap, lo-fi i hip-hop. Filtruj, odsłuchaj bez konta i nagraj zwrotkę w Studiu online.",
+      "metaDescription": "Darmowe bity do rapu z BPM i tonacją: trap, boom bap, lo-fi, hip-hop. Odsłuchaj bez konta, wybierz darmowy bit i nagraj zwrotkę w Studiu online.",
       "znajdzSwojBit": "Znajdź swój bit.",
       "bitowSluchajPotemNagraj": "{v0, plural, one {# bit} few {# bity} many {# bitów} other {# bitu}} · słuchaj, potem nagraj",
       "cichoKatalogWDrodze": "Cicho · katalog w drodze",
@@ -2289,8 +2289,8 @@
       "platnyOpisSklep": "Bity na wyłączność. Odsłuchasz je tutaj. Te, które są Twoje, znajdziesz w swoim katalogu: pobierasz WAV i nagrywasz na nich w Studiu."
     },
     "genrePage": {
-      "metaTitle": "Darmowe bity {genre} — odsłuch i nagrywanie online",
-      "metaDescription": "Darmowe bity {genre} do rapu. Odpal odsłuch za free, wybierz bit i nagraj swoją zwrotkę w Studiu online BitRymDym, prosto w przeglądarce.",
+      "metaTitle": "Darmowe bity {genre} do rapu — odsłuchaj i nagraj zwrotkę",
+      "metaDescription": "Darmowe bity {genre} z BPM i tonacją. Odsłuchaj bez konta, wybierz darmowy bit {genre} i nagraj zwrotkę w przeglądarce, bez instalowania.",
       "notFoundTitle": "Nie ma takiego gatunku",
       "h1": "Darmowe bity {genre}",
       "lead": "Same bity {genre}, za darmo. Słuchasz, wybierasz, a jak siądzie — nagrywasz zwrotkę w Studiu online. Bez instalowania i bez kombinowania.",
@@ -5763,7 +5763,7 @@
     "siteDescription": "Platforma muzyczna — bity, nagrania, mix i społecznościowy katalog.",
     "ogLocale": "pl_PL",
     "pages": {
-      "homeTitle": "BitRymDym — darmowe bity i Studio online do rapu",
+      "homeTitle": "Darmowe bity do rapu i nagrywanie online — BitRymDym",
       "homeDescription": "Darmowe bity do rapu, nagrywanie w przeglądarce i Studio online z mixem i masteringiem. Odpalasz bit, nagrywasz zwrotkę i robisz gotowy kawałek — bez instalowania.",
       "worksDescription": "Gotowe kawałki nagrane na bitach BitRymDym, po mixie i masterze. Posłuchaj, oceń i zobacz, co ludzie robią w Studiu.",
       "strona": "strona {page}",
