@@ -54,6 +54,9 @@ describe("stem import client — names and roles", () => {
       ["cos.wav", "other"],
     ];
     for (const [name, role] of cases) expect(guessStemRole(name), name).toBe(role);
+    // Polish names of the beat; words that only contain "bit" are not.
+    for (const name of ["bit.wav", "Bit 90bpm.mp3", "moj_bit.wav", "podkład.wav"]) expect(guessStemRole(name), name).toBe("instrument");
+    for (const name of ["bitwa.wav", "orbit.wav", "refren.wav"]) expect(guessStemRole(name), name).toBe("other");
   });
 });
 

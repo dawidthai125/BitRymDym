@@ -10,6 +10,7 @@ import {
   MIX_CARD_FIXES,
   planMixAutofix,
   upsertFx,
+  denoiseGate,
 } from "@/lib/studio/mix-autofix/plan";
 import { validateMixWorkingOps } from "@/lib/studio/mix-working/mix-working-ops";
 import {
@@ -248,10 +249,13 @@ describe("Stage 2 autofix — parameters from metrics", () => {
   it("EQ: beat bell −3.5 dB @2.5 kHz when masking is red; vocal HPF 90/120 Hz + presence", () => {
     const p = plan(["eq"]);
     const beat = chainOf(p, BEAT)!.effects[0]!;
+    // 200–350 Hz dip on the beat and on every vocal.
+    expect(chainOf(p, BEAT)!.effects[1]).toMatchObject({ type: "spectrum", params: { b1: -2 } });
     expect(beat.type).toBe("eq");
     expect(beat.type === "eq" && beat.params.mid).toEqual({ frequencyHz: 2500, gainDb: -3.5, q: 0.9 });
     const lead = chainOf(p, LEAD)!;
-    expect(lead.effects.map((e) => e.type)).toEqual(["highpass", "eq"]);
+    expect(lead.effects.map((e) => e.type)).toEqual(["highpass", "eq", "spectrum"]);
+    expect(lead.effects[2]!.params).toMatchObject({ b1: -3.5, b0: 0, b2: 0 });
     expect(lead.effects[0]!.params).toEqual({ frequencyHz: 90, q: 0.707 });
     const ad = chainOf(p, AD1)!;
     expect(ad.effects[0]!.params).toMatchObject({ frequencyHz: 120 });
@@ -272,11 +276,11 @@ describe("Stage 2 autofix — parameters from metrics", () => {
   it("de-esser: red sibilance → ratio 6, threshold = vocal LUFS − 9, 6.5 kHz", () => {
     const p = plan(["deesser"]);
     const d = chainOf(p, LEAD)!.effects.find((e) => e.type === "deesser")!;
-    expect(d.params).toEqual({ frequencyHz: 6500, thresholdDb: -29, ratio: 6 });
+    expect(d.params).toEqual({ frequencyHz: 6500, thresholdDb: -31, ratio: 6 });
     const m = badMetrics();
     m.sibilanceDb = 6;
     const y = plan(["deesser"], doc(), m);
-    expect(chainOf(y, LEAD)!.effects[0]!.params).toEqual({ frequencyHz: 6500, thresholdDb: -26, ratio: 4 });
+    expect(chainOf(y, LEAD)!.effects[0]!.params).toEqual({ frequencyHz: 6500, thresholdDb: -29, ratio: 4 });
   });
 
   it("compression: lead 3:1, side 2.5:1, threshold from LUFS (+2, clamped)", () => {
@@ -314,6 +318,27 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     });
   });
 
+  it("denoise: a clean-enough take gets a deeper gate over the noise peaks, never close to the voice", () => {
+    // Voice 31 dB over the noise: threshold = floor + 20 (above the noise peaks), cut 18 dB.
+    expect(denoiseGate(-56, -25)).toEqual({ thresholdDb: -36, rangeDb: 18 });
+    // The ceiling is 10 dB under the voice.
+    expect(denoiseGate(-50, -25)).toEqual({ thresholdDb: -35, rangeDb: 18 });
+    // Little room between voice and noise: the gentle gate stays.
+    expect(denoiseGate(-40, -22)).toEqual({ thresholdDb: -34, rangeDb: 8 });
+  });
+
+  it("denoise: a later pass leaves the gate it set alone (it would measure the noise behind it)", () => {
+    const d = doc();
+    const first = applyMixOpsToDocument(d, plan(["denoise"], d).ops);
+    const before = first.tracks.find((t) => t.id === AD1)!.effectsChain.effects.find((e) => e.type === "gate")!;
+    const m = badMetrics();
+    const t = m.tracks.find((x) => x.trackId === AD1)!;
+    t.noiseFloorDbfs = (t.noiseFloorDbfs as number) - 8;
+    const second = applyMixOpsToDocument(first, plan(["denoise"], first, m).ops);
+    const after = second.tracks.find((x) => x.id === AD1)!.effectsChain.effects.find((e) => e.type === "gate")!;
+    expect(after.type === "gate" && before.type === "gate" && after.params.thresholdDb).toBe(before.type === "gate" ? before.params.thresholdDb : 0);
+  });
+
   it("panorama: lead centred, adlibs alternate L/R 40 %, doubles 70 %", () => {
     const p = plan(["panorama"]);
     expect(controls(p, LEAD)?.pan).toBe(0);
@@ -327,11 +352,11 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     const p = plan(["space"], doc(120));
     const lead = chainOf(p, LEAD)!;
     expect(lead.effects.map((e) => e.type)).toEqual(["delay", "reverb"]);
-    expect(lead.effects[0]!.params).toEqual({ mix: 0.12, timeMs: 250, feedback: 0.2 });
-    expect(lead.effects[1]!.params).toEqual({ mix: 0.12, decaySeconds: 1 });
+    expect(lead.effects[0]!.params).toEqual({ mix: 0.04, timeMs: 250, feedback: 0.2 });
+    expect(lead.effects[1]!.params).toEqual({ mix: 0.04, decaySeconds: 0.6 });
     const ad = chainOf(p, AD1)!;
-    expect(ad.effects[0]!.params).toEqual({ mix: 0.22, timeMs: 500, feedback: 0.3 });
-    expect(ad.effects[1]!.params).toEqual({ mix: 0.25, decaySeconds: 1.3 });
+    expect(ad.effects[0]!.params).toEqual({ mix: 0.16, timeMs: 500, feedback: 0.3 });
+    expect(ad.effects[1]!.params).toEqual({ mix: 0.18, decaySeconds: 0.8 });
     expect(autofixBpm(doc(0))).toBe(90);
     const slow = plan(["space"], doc(60));
     expect(chainOf(slow, LEAD)!.effects[0]!.params).toMatchObject({ timeMs: 500 });
@@ -342,6 +367,7 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     expect(chainOf(p, LEAD)!.effects.map((e) => e.type)).toEqual([
       "highpass",
       "eq",
+      "spectrum",
       "compressor",
       "deesser",
       "delay",
@@ -351,6 +377,7 @@ describe("Stage 2 autofix — parameters from metrics", () => {
       "highpass",
       "gate",
       "eq",
+      "spectrum",
       "compressor",
       "deesser",
       "delay",

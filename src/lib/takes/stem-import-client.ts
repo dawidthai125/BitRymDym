@@ -64,6 +64,8 @@ export function guessStemRole(fileName: string): "lead_vocal" | "adlib" | "doubl
   if (/(^|[^a-z])(dbl|double|dubel|dubl)/.test(n)) return "double";
   if (/(back|choir|chor|harm|chór)/.test(n)) return "backing";
   if (/(vocal|vox|lead|wokal|rap|acapella|acappella)/.test(n)) return "lead_vocal";
+  // Polish file names for the beat. "bit" only as a whole word ("bitwa" or "orbit" are not a beat).
+  if (/(^|[^a-ząćęłńóśźż])(bit|podklad|podkład)(?![a-ząćęłńóśźż])/.test(n)) return "instrument";
   if (/(beat|drum|kick|snare|hat|bass|808|keys|piano|synth|guitar|gitara|pad|strings|inst)/.test(n)) return "instrument";
   return "other";
 }

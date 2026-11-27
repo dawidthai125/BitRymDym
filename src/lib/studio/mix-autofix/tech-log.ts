@@ -69,6 +69,9 @@ export function techChipsFromAutofixNotes(notes: readonly MixAutofixNote[]): Mix
       case "eqVocalHighpass":
         chip(`odcięcie dołu ${s(p.hz)} Hz`);
         break;
+      case "eqMud":
+        chip(`EQ −${s(p.db)} dB @ 200–350 Hz`);
+        break;
       case "eqVocalPresence":
         chip("EQ: mniej mułu, +2 dB blasku");
         break;

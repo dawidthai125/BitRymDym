@@ -522,6 +522,22 @@ def _loudness_to_target(pre: np.ndarray, sr: int, goal_lufs: float, goal_tp: flo
     return np.ascontiguousarray(out, dtype=np.float32), got, tp
 
 
+# Harsh-top guard: the analysis already flags a sharp top; the master now eases it instead of passing it on.
+TAME_HZ = 7000.0
+TAME_AIR_OVER_DB = 4.0     # air (10-20 kHz) this far above the reference table before anything happens
+TAME_HIGH_OVER_DB = 2.0    # same for 4-10 kHz
+TAME_MAX_DB = 5.0
+
+
+def top_tame_db(tonal: dict, bright: float) -> float:
+    """Cut (dB, >= 0) of a high shelf for a mix whose top is clearly above the reference. A mix that is
+    not too bright gets 0, and the user's "brighter" setting switches the guard off."""
+    if bright > 0:
+        return 0.0
+    over = max((tonal["air"]["delta"] - TAME_AIR_OVER_DB) * 0.7, (tonal["high"]["delta"] - TAME_HIGH_OVER_DB) * 0.8)
+    return round(float(np.clip(over, 0.0, TAME_MAX_DB)), 1)
+
+
 def master(x: np.ndarray, sr: int, target: str, settings: dict, reference: dict | None = None, reference_intensity: float = 1.0) -> tuple[np.ndarray, dict]:
     if target not in TARGETS:
         raise ValueError("bad_target")
@@ -543,6 +559,12 @@ def master(x: np.ndarray, sr: int, target: str, settings: dict, reference: dict 
         ref_k, goal_lufs, ref_report = plan["widthK"], plan["goalLufs"], plan["report"]
         _progress(0.15)
     y = multiband(y, sr, s["squash"])
+    tame = 0.0
+    if reference is None:  # a reference decides the tone by itself
+        # After the band compressors, or the high band would give half of the cut back.
+        tame = top_tame_db(tonal_balance(y, sr), s["bright"])
+        if tame >= 0.3:
+            y = Pedalboard([HighShelfFilter(cutoff_frequency_hz=TAME_HZ, gain_db=-tame)])(y.T.copy(), sr).T.astype(np.float32)
     y = width(y, s["width"], sr, ref_k)
     _progress(0.25)
     pre_lufs = integrated_lufs(y, sr)
@@ -554,6 +576,8 @@ def master(x: np.ndarray, sr: int, target: str, settings: dict, reference: dict 
     _progress(0.78)
     report = analyze(out, sr, known={"lufs": got, "tp": tp})
     report.update({"target": target, "targetLufs": round(goal_lufs, 2), "targetTp": goal_tp, "settings": s})
+    if tame >= 0.3:
+        report["topTameDb"] = tame
     if ref_report:
         report["reference"] = ref_report
     return out, report

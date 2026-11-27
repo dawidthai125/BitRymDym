@@ -4163,7 +4163,7 @@
         },
         "clipping": {
           "title": "Przester",
-          "ok": "Brak przesteru. Szczyt sumy {tp} dBTP.",
+          "ok": "Brak przesteru. Szczyt sumy około {tp} dBTP (pomiar przybliżony: w pliku bywa o kilka dB wyższy).",
           "clipped": "Nagranie jest przesterowane ({events} miejsc). Ścisz ścieżkę albo nagraj ciszej.",
           "overPeak": "Suma przekracza 0 dB ({tp} dBTP). Ścisz ścieżki albo całość.",
           "fewClips": "Kilka krótkich przesterów ({events}). Warto ściszyć najgłośniejszą ścieżkę.",
@@ -4279,6 +4279,7 @@
           "compSide": "Dodałem delikatny kompresor na „{track}” ({ratio}:1), żeby równo siedziało w tle.",
           "eqBeatCut": "Ściszyłem bit „{track}” o {db} dB w środku pasma (ok. 2,5 kHz), żeby Twój wokal lepiej siedział.",
           "eqVocalHighpass": "Wyciąłem dudnienie poniżej {hz} Hz na „{track}”. Wokal brzmi czyściej, bas ma miejsce.",
+          "eqMud": "Na ścieżce „{track}” zdjąłem {db} dB w okolicy 200–350 Hz, żeby nie mulić.",
           "eqVocalPresence": "Na „{track}” zdjąłem trochę buczenia (250 Hz) i dodałem 2 dB czytelności (3,5 kHz).",
           "deesserSoft": "Ściszyłem ostre s i sz na „{track}”.",
           "deesserStrong": "Mocniej ściszyłem ostre s i sz na „{track}”. Już nie kłują.",

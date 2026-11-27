@@ -185,3 +185,12 @@ def test_cli_zip(tmp_path):
     r = subprocess.run([sys.executable, str(Path(__file__).with_name("master.py")), "zip", "--in", str(d), "--out", str(out)], capture_output=True, text=True)
     assert r.returncode == 0, r.stdout
     assert sorted(zipfile.ZipFile(out).namelist()) == ["01-wokal.flac", "02-bit.flac"]
+
+
+def test_top_tame_only_for_a_clearly_bright_mix():
+    flat = {"air": {"delta": 0.0}, "high": {"delta": 0.0}}
+    harsh = {"air": {"delta": 10.0}, "high": {"delta": 1.0}}
+    assert m.top_tame_db(flat, 0) == 0.0
+    assert m.top_tame_db(harsh, 0) == 4.2
+    assert m.top_tame_db({"air": {"delta": 30.0}, "high": {"delta": 9.0}}, 0) == 5.0
+    assert m.top_tame_db(harsh, 1) == 0.0

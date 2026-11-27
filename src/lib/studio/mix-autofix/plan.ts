@@ -14,7 +14,8 @@
  *    beat cut 1–4 kHz (2.5 kHz bell)
  *  - de-esser 6.5 kHz (5–9 kHz band), ≤ 6 dB reduction
  *  - vocal compression 2.5–3:1, ~3–6 dB GR
- *  - delay 1/8 (lead) or 1/4 (adlibs) from BPM, deeper reverb on adlibs
+ *  - 200 Hz dip (7-band EQ): −3.5 dB on vocals, −2 dB on the beat
+ *  - delay 1/8 (lead) or 1/4 (adlibs) from BPM, short quiet reverb, deeper on adlibs
  *  - lead centre, adlibs alternating L/R 40–55 %, doubles wide 70 %
  *  - gentle gate/expander (~8 dB range, Producent P0 start) on noisy vocals
  */
@@ -92,6 +93,16 @@ export const MIX_AUTOFIX_TARGETS = {
   /** The balance never takes a beat fader below this; the vocal has to come up instead. */
   beatFaderFloorDb: -6,
   defaultBpm: 90,
+  /** Denoise: the voice must be this far above the noise floor for the deeper gate. */
+  cleanGapDb: 24,
+  /** Threshold above the RMS noise floor that clears the noise peaks. */
+  noisePeakMarginDb: 20,
+  /** The threshold stays at least this far under the voice, so soft syllables pass. */
+  gateUnderVoiceDb: 10,
+  deepGateRangeDb: 18,
+  /** Dip around 200–350 Hz. */
+  vocalMudCutDb: -3.5,
+  beatMudCutDb: -2,
 } as const;
 
 /** Canonical insert order for new effects (existing order is preserved). */
@@ -102,6 +113,7 @@ const FX_ORDER: readonly StudioFxType[] = [
   "voice",
   "harmony",
   "eq",
+  "spectrum",
   "rider",
   "compressor",
   "deesser",
@@ -415,6 +427,25 @@ function fixEq(ctx: Ctx): void {
     ) {
       note(ctx, "eqVocalPresence", { track: t.name }, fxOf(t, "eq"));
     }
+    cutMud(ctx, t, MIX_AUTOFIX_TARGETS.vocalMudCutDb);
+  }
+  // The pad of the beat sits in the same place as the chest of the voice.
+  if (vocals(ctx.state).length > 0) {
+    for (const t of ctx.state.tracks) {
+      if (active(t) && BEATS.includes(t.role)) cutMud(ctx, t, MIX_AUTOFIX_TARGETS.beatMudCutDb);
+    }
+  }
+}
+
+/**
+ * A dip around 200–350 Hz (the 200 Hz bell of the 7-band EQ, wide enough to reach 300 Hz).
+ * The 3-band EQ has only a shelf down there, which would also thin the whole low end.
+ * A 7-band EQ the user (or an earlier pass) already set stays as it is.
+ */
+function cutMud(ctx: Ctx, t: TrackState, db: number): void {
+  if (t.chain.effects.some((e) => e.type === "spectrum")) return;
+  if (withFx(ctx, t, "spectrum", (p) => ({ ...p, b1: db }))) {
+    note(ctx, "eqMud", { track: t.name, db: fmtDb(db) }, fxOf(t, "spectrum"));
   }
 }
 
@@ -424,7 +455,7 @@ function fixDeesser(ctx: Ctx): void {
   for (const t of vocals(ctx.state)) {
     const lufs = t.metrics!.integratedLufs;
     if (!Number.isFinite(lufs)) continue;
-    const thresholdDb = clamp(Math.round(atFxInput(t, lufs) - (red ? 9 : 6)), -50, -12);
+    const thresholdDb = clamp(Math.round(atFxInput(t, lufs) - (red ? 11 : 9)), -50, -12);
     const ratio = red ? 6 : 4;
     if (withFx(ctx, t, "deesser", () => ({ frequencyHz: 6500, thresholdDb, ratio }))) {
       note(ctx, red ? "deesserStrong" : "deesserSoft", { track: t.name }, fxOf(t, "deesser"));
@@ -432,13 +463,31 @@ function fixDeesser(ctx: Ctx): void {
   }
 }
 
+/**
+ * The gate listens to peaks, while the noise floor is an average (RMS): noise peaks sit about 12–14 dB
+ * above it, so "floor + 6" never closed the gate (test against Cryo Mix, 2026-11-27).
+ * When the voice is far above the noise, the threshold goes over the noise peaks and the cut is deeper,
+ * never closer than 10 dB under the voice (word frames lose about 0.01 dB in the model of the test take). A noisy take with little room keeps the gentle old setting.
+ */
+export function denoiseGate(floorDbfs: number, voiceLufs: number): { thresholdDb: number; rangeDb: number } {
+  const T = MIX_AUTOFIX_TARGETS;
+  const gentle = { thresholdDb: clamp(Math.round(floorDbfs + 6), -90, -20), rangeDb: P0_DENOISE_RANGE_DB };
+  if (!Number.isFinite(voiceLufs) || voiceLufs - floorDbfs < T.cleanGapDb) return gentle;
+  const thresholdDb = clamp(Math.round(Math.min(floorDbfs + T.noisePeakMarginDb, voiceLufs - T.gateUnderVoiceDb)), -90, -20);
+  return { thresholdDb, rangeDb: T.deepGateRangeDb };
+}
+
 function fixDenoise(ctx: Ctx): void {
   for (const t of vocals(ctx.state)) {
     const floor = t.metrics!.noiseFloorDbfs;
     if (floor === null || floor <= -60) continue;
-    const thresholdDb = clamp(Math.round(atFxInput(t, floor) + 6), -90, -20);
-    const rangeDb = P0_DENOISE_RANGE_DB;
+    // A gate that is already on stays as it is: a later pass would measure the noise behind it and set
+    // the next gate from the wrong number (looser or tighter on every round).
+    const planned = denoiseGate(atFxInput(t, floor), atFxInput(t, t.metrics!.integratedLufs));
+    const old = t.chain.effects.find((e) => e.type === "gate" && e.enabled);
+    const { thresholdDb, rangeDb } = old?.type === "gate" ? old.params : planned;
     if (
+      !old &&
       withFx(ctx, t, "gate", () => ({
         thresholdDb,
         rangeDb,
@@ -482,17 +531,18 @@ function fixPanorama(ctx: Ctx): void {
 function fixSpace(ctx: Ctx): void {
   const bpm = ctx.bpm;
   const quarterMs = 60000 / bpm;
-  const decayBase = clamp(120 / bpm, 0.8, 2.5);
+  // Short and quiet: long tails smeared the consonants of fast rap (test against Cryo Mix, 2026-11-27).
+  const decayBase = clamp(76 / bpm, 0.6, 1.6);
   for (const t of vocals(ctx.state)) {
     const lead = t.role === "lead_vocal";
     const timeMs = Math.round(clamp(lead ? quarterMs / 2 : quarterMs, 1, 2000));
     const okDelay = withFx(ctx, t, "delay", () => ({
-      mix: lead ? 0.12 : 0.22,
+      mix: lead ? 0.04 : 0.16,
       timeMs,
       feedback: lead ? 0.2 : 0.3,
     }));
     const decaySeconds = r1(clamp(lead ? decayBase : decayBase * 1.3, 0.1, 6));
-    const okRev = withFx(ctx, t, "reverb", () => ({ mix: lead ? 0.12 : 0.25, decaySeconds }));
+    const okRev = withFx(ctx, t, "reverb", () => ({ mix: lead ? 0.04 : 0.18, decaySeconds }));
     if (okDelay || okRev) {
       note(ctx, lead ? "spaceLead" : "spaceSide", {
         track: t.name,
@@ -631,7 +681,7 @@ export function autofixBpm(doc: StudioProjectDocument): number {
 }
 
 /** Optional effects Bitek drops first when a plan caps the chain length (least essential first). */
-const CLAMP_DROP_ORDER: readonly string[] = ["saturate", "reverb", "delay", "pocket", "harmony", "rider", "voice", "gate", "tune", "spectrum", "limiter", "deesser", "highpass", "compressor", "eq"];
+const CLAMP_DROP_ORDER: readonly string[] = ["saturate", "reverb", "delay", "spectrum", "pocket", "harmony", "rider", "voice", "gate", "tune", "limiter", "deesser", "highpass", "compressor", "eq"];
 
 /**
  * Fit an auto-fixed chain to the user's plan. Only effects Bitek ADDED are dropped (never the user's own).

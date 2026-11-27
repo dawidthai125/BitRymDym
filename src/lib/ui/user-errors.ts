@@ -34,7 +34,7 @@ const GENERIC_BY_DOMAIN: Record<UserFacingErrorDomain, string> = {
 /** Already-safe Polish (diacritics or known PL product words). */
 export function looksLikePolishUserMessage(message: string): boolean {
   if (/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(message)) return true;
-  return /\b(nagrania|nagranie|mikrofon|sesji|podgląd|hasło|hasła|konto|konta|e-mail|plik|pobrań|odtworzyć|zaloguj|spróbuj|niedostęp|wymaga|anulowan|gotowe|przesył)\b/i.test(
+  return /\b(nagrania|nagranie|mikrofon|sesji|podgląd|hasło|hasła|konto|konta|e-mail|plik|pobrań|odtworzyć|zaloguj|spróbuj|wybierz|najpierw|niedostęp|wymaga|anulowan|gotowe|przesył)\b/i.test(
     message,
   );
 }

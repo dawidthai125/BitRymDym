@@ -4163,7 +4163,7 @@
         },
         "clipping": {
           "title": "Clipping",
-          "ok": "No clipping. Mix peak {tp} dBTP.",
+          "ok": "No clipping. Mix peak about {tp} dBTP (an estimate: peaks in the file can be a few dB higher).",
           "clipped": "The recording clips ({events} spots). Turn the track down or record quieter.",
           "overPeak": "The mix goes over 0 dB ({tp} dBTP). Turn the tracks or the master down.",
           "fewClips": "A few short clips ({events}). Turn the loudest track down a little.",
@@ -4279,6 +4279,7 @@
           "compSide": "I added a gentle compressor on “{track}” ({ratio}:1) so it sits evenly in the back.",
           "eqBeatCut": "I turned the beat “{track}” down {db} dB in the mids (around 2.5 kHz) so your vocal sits better.",
           "eqVocalHighpass": "I cut the rumble below {hz} Hz on “{track}”. The vocal sounds cleaner and the bass has room.",
+          "eqMud": "On “{track}” I took {db} dB off around 200–350 Hz so it does not sound muddy.",
           "eqVocalPresence": "On “{track}” I took out some boom (250 Hz) and added 2 dB of clarity (3.5 kHz).",
           "deesserSoft": "I softened the harsh s and sh on “{track}”.",
           "deesserStrong": "I softened the harsh s and sh on “{track}” more. They don't sting now.",

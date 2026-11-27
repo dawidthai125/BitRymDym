@@ -3,6 +3,8 @@
 import { useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { Button } from "@/components/ui/button";
 import { uploadStemBlob } from "@/lib/takes/client-upload";
 import { gateStemFile, guessStemRole, planStemImport, STEM_IMPORT_ACCEPT, stemTrackName } from "@/lib/takes/stem-import-client";
@@ -28,6 +30,7 @@ type Props = {
 
 /** Silver/Gold: import several audio files at once; each becomes a track on the timeline. */
 export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTrack, placeStemTake, disabled = false, onBusyChange }: Props) {
+  const tl = useLibText();
   const t = useTranslations("studio.stemImport");
   const id = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -127,7 +130,7 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
           {rows.map((r) => (
             <li key={r.id} data-state={r.state} className="flex flex-wrap gap-x-2">
               <span className="font-medium">{r.name}</span>
-              <span className={r.state === "failed" ? "text-destructive" : "text-[var(--brd-mute)]"}>{r.state === "failed" ? r.message : t(`stan.${r.state}`)}</span>
+              <span className={r.state === "failed" ? "text-destructive" : "text-[var(--brd-mute)]"}>{r.state === "failed" ? tl(r.message ?? "") : t(`stan.${r.state}`)}</span>
             </li>
           ))}
         </ul>

@@ -135,6 +135,13 @@ export function truePeakDbOf(s: Stereo): number {
   return toDb(Math.max(truePeak(s.left), truePeak(s.right)));
 }
 
+/** Mirror of top_tame_db in scripts/master/master.py: dB to take off a clearly too bright top. */
+export function topTameDb(tonal: MasterMetrics["tonal"], bright: number): number {
+  if (bright > 0) return 0;
+  const over = Math.max((tonal.air.delta - 4) * 0.7, (tonal.high.delta - 2) * 0.8);
+  return Math.round(Math.min(5, Math.max(0, over)) * 10) / 10;
+}
+
 export function masterPreview(input: Stereo, target: MasterTargetId, settings: MasterSettings): Stereo {
   const sr = input.sampleRate;
   const goal = masterGoal(target, settings);
@@ -148,6 +155,12 @@ export function masterPreview(input: Stereo, target: MasterTargetId, settings: M
     R = applyBiquad(R, f);
   }
   compress(L, R, sr, settings.squash);
+  const tame = topTameDb(measureMaster({ left: L, right: R, sampleRate: sr }).tonal, settings.bright);
+  if (tame >= 0.3) {
+    const f = shelf("high", 7000, -tame, sr);
+    L = applyBiquad(L, f);
+    R = applyBiquad(R, f);
+  }
   widen(L, R, settings.width);
   const pre = { left: L, right: R, sampleRate: sr };
   const preLufs = lufsOf(pre);

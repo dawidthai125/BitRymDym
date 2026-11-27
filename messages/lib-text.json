@@ -3369,5 +3369,8 @@
  {
   "src": "Zaznacz, że masz prawa do wgrywanych plików. Jeśli pole już jest zaznaczone, odśwież stronę.",
   "en": "Confirm that you have the rights to the files you upload. If the box is already ticked, reload the page."
- }
+ },
+  {"src": "Harmonia", "en": "Harmony"},
+  {"src": "Zmiana głosu", "en": "Voice change"},
+  {"src": "Wyrównanie wokalu", "en": "Vocal leveller"}
 ]
