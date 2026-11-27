@@ -2,10 +2,10 @@
 # Dostosowuje projekt Xcode wygenerowany przez `npx cap add ios` (macOS: PlistBuddy).
 # Uruchamiany w CI po `cap add ios` / `cap sync ios`, z katalogu ios-app/.
 #   BUILD_NUMBER   – CFBundleVersion (w CI: github.run_number), domyślnie 1
-#   APP_VERSION    – CFBundleShortVersionString, domyślnie 1.0.0
+#   APP_VERSION    – CFBundleShortVersionString, domyślnie 1.1.0
 set -euo pipefail
 
-APP_VERSION="${APP_VERSION:-1.0.0}"
+APP_VERSION="${APP_VERSION:-1.1.0}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 APP_DIR="$HERE/ios/App/App"
@@ -23,6 +23,14 @@ pset CFBundleDevelopmentRegion string "pl"
 pset NSMicrophoneUsageDescription string "BitRymDym używa mikrofonu do nagrywania Twojego wokalu w Studiu."
 pset ITSAppUsesNonExemptEncryption bool false
 # Odtwarzanie bitu/podglądu także przy wyciszonym przełączniku dzwonka i w tle nie jest potrzebne – bez UIBackgroundModes.
+
+# Powrót z logowania Google / Apple (okienko w aplikacji → bitrymdym://auth-callback).
+"$PB" -c "Delete :CFBundleURLTypes" "$PLIST" >/dev/null 2>&1 || true
+"$PB" -c "Add :CFBundleURLTypes array" "$PLIST"
+"$PB" -c "Add :CFBundleURLTypes:0 dict" "$PLIST"
+"$PB" -c "Add :CFBundleURLTypes:0:CFBundleURLName string pl.bitrymdym.app.auth" "$PLIST"
+"$PB" -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$PLIST"
+"$PB" -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string bitrymdym" "$PLIST"
 
 # Tylko portret na iPhonie (aplikacja jest iPhone-only, iPad uruchamia ją w trybie zgodności).
 "$PB" -c "Delete :UISupportedInterfaceOrientations" "$PLIST" >/dev/null 2>&1 || true

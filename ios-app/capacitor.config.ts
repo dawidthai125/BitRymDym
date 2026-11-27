@@ -22,7 +22,8 @@ const config: CapacitorConfig = {
     backgroundColor: "#0E0C0A",
     scrollEnabled: true,
     allowsLinkPreview: false,
-    appendUserAgent: "BitRymDymApp/iOS",
+    // "BrdAuth/1" = build z @capacitor/browser + @capacitor/app: strona pokazuje logowanie Google / Apple.
+    appendUserAgent: "BitRymDymApp/iOS BrdAuth/1",
   },
   plugins: {
     SplashScreen: {

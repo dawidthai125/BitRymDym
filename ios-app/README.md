@@ -27,7 +27,10 @@ bo lokalnie nie ma Maca. Wszystkie zmiany natywne trzymamy jako konfigurację + 
 ## Ustawienia aplikacji (patch-ios.sh)
 
 - `CFBundleDisplayName` = BitRymDym, `CFBundleDevelopmentRegion` = pl
-- Wersja `1.0.0` (`APP_VERSION` w workflow), build = `github.run_number`
+- Wersja `1.1.0` (`APP_VERSION` w workflow), build = `github.run_number`
+- Logowanie Google / Apple: strona otwiera dostawcę przez `@capacitor/browser`, wraca schematem `bitrymdym://auth-callback`
+  (`CFBundleURLTypes`), a `@capacitor/app` przekazuje kod do web view (`/auth/callback?flow=oauth`). UA `BrdAuth/1`
+  włącza przyciski; wersja 1.0.0 ich nie widzi
 - `NSMicrophoneUsageDescription` = „BitRymDym używa mikrofonu do nagrywania Twojego wokalu w Studiu.”
 - `ITSAppUsesNonExemptEncryption` = NO (tylko HTTPS systemowe → brak pytań o eksport szyfrowania)
 - Tylko iPhone (`TARGETED_DEVICE_FAMILY = 1`), tylko portret. Na iPadzie działa w trybie zgodności iPhone, więc w App Store
