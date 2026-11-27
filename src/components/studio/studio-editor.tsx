@@ -3895,6 +3895,17 @@ function StudioEditorInner({
               size="sm"
               variant="outline"
               className="min-h-11 w-full"
+              data-testid="studio-more-track-height"
+              aria-pressed={viewPrefs.lanes === "low"}
+              onClick={() => writeStudioViewPrefs(doc.project.id, { lanes: viewPrefs.lanes === "low" ? "tall" : "low" })}
+            >
+              {tr(viewPrefs.lanes === "low" ? "sciezkiNiskie" : "sciezkiWysokie")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 w-full"
               data-testid="studio-more-ruler"
               onClick={() => writeStudioViewPrefs(doc.project.id, { ruler: viewPrefs.ruler === "bars" ? "time" : "bars" })}
             >

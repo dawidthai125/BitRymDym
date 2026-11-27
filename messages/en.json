@@ -2920,6 +2920,8 @@
       "snapOff": "OFF"
     },
     "studioEditor": {
+      "sciezkiNiskie": "Tracks: low",
+      "sciezkiWysokie": "Tracks: tall",
       "przyciaganieUderzenie": "to the beat",
       "przyciaganieTakt": "to the bar",
       "linijkaTakty": "Ruler: bars",

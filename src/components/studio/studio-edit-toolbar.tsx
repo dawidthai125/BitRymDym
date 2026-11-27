@@ -38,7 +38,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
       data-testid="studio-edit-toolbar"
     >
       {props.onSnapPreset ? (
-        // Phones (upright or sideways) have no room for it: snap and the Mixer are under "More" there.
+        // Phones have no room for it: snap, track height and the Mixer are under "More" too.
         <label className="flex min-h-11 items-center gap-1 text-[11px] text-[var(--brd-mute)] max-sm:hidden [@media(max-height:500px)]:hidden" title={t("siatkaOpis")}>
           <span className="sr-only">{t("siatka")}</span>
           <select
@@ -66,7 +66,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           type="button"
           size="sm"
           variant={props.lowTracks ? "default" : "outline"}
-          className="min-h-11 min-w-11 px-0 text-base"
+          className="min-h-11 min-w-11 px-0 text-base [@media(max-height:500px)]:hidden"
           aria-pressed={Boolean(props.lowTracks)}
           aria-label={t("niskieSciezki")}
           title={t("niskieSciezkiOpis")}
