@@ -29,6 +29,8 @@ if os.name != "nt":
     app.RecorderWindow._build_chrome = lambda self: None
 asked: list[str] = []
 answer = [False]
+# CI runs the module tests before ffmpeg is there. Only the command line is checked, nothing is played.
+app.ffmpeg_exe = lambda: "ffmpeg"
 app.messagebox.askyesno = lambda title, *_a, **_k: (asked.append(title), answer[0])[1]
 
 w = app.RecorderWindow()
