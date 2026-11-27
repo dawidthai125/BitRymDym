@@ -4301,7 +4301,7 @@
         "nie": "Nie, zostaw",
         "zostawione": "Dobrze, zostawiam mix tak, jak jest. Posłuchaj go w odtwarzaczu. Gdy będziesz gotowy, przejdź do masteringu.",
         "jeszczePytanie": "Po poprawkach {count, plural, one {została jeszcze # uwaga} few {zostały jeszcze # uwagi} other {zostało jeszcze # uwag}}. Poprawiać dalej?",
-        "resztaRecznie": "{count, plural, one {Została # uwaga, której} few {Zostały # uwagi, których} other {Zostało # uwag, których}} sam już nie poprawię. Przy kartach niżej masz przyciski „Popraw” i swoje ucho. Przechodzimy do masteringu czy poprawiasz sam?",
+        "resztaRecznie": "{count, plural, one {Została # uwaga, której} few {Zostały # uwagi, których} other {Zostało # uwag, których}} sam już nie poprawię. Zajrzyj w karty niżej i zaufaj swojemu uchu. Przechodzimy do masteringu czy poprawiasz sam?",
         "jeszczeTak": "Tak, poprawiaj dalej",
         "jeszczeNie": "Nie, idziemy dalej",
         "zostaloPoUtworze": "Mix gra, ale po moim przejściu {count, plural, one {została jeszcze # uwaga} few {zostały jeszcze # uwagi} other {zostało jeszcze # uwag}} (szczegóły niżej). Poprawić? W międzyczasie posłuchaj, a jak coś Ci przeszkadza, napisz mi w „Pogadaj”.",
@@ -4400,7 +4400,7 @@
         "autoReady": "Wokal i bit są. Kliknij, a zmixuję całość — poprawię wszystko, co da się poprawić z pomiaru.",
         "autoMixTrwa": "Mixuję. Poprawiam wszystko, co da się poprawić z pomiaru.",
         "autoMixGotowy": "Mix gotowy. Posłuchaj go. Zrobić mastering?",
-        "autoMixNiegotowy": "Zrobiłem, co się dało automatycznie, ale mix nie jest jeszcze gotowy do masteringu: zostały czerwone punkty ({count}). Przy kartach niżej masz przyciski „Popraw”. Gdy to zrobisz, przejdziemy do masteringu."
+        "autoMixNiegotowy": "Zrobiłem, co się dało automatycznie, ale mix nie jest jeszcze gotowy do masteringu: zostały czerwone punkty ({count}). Zajrzyj w czerwone karty niżej: znajdziesz tam przycisk albo wyjaśnienie. Gdy znikną, przejdziemy do masteringu."
       },
       "chat": {
         "inputLabel": "Wiadomość do BITKA",

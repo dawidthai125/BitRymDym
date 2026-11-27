@@ -4301,7 +4301,7 @@
         "nie": "No, leave it",
         "zostawione": "OK, I leave the mix as it is. Listen to it in the player. When you are ready, go to mastering.",
         "jeszczePytanie": "After the fixes {count, plural, one {# note} other {# notes}} remain. Keep fixing?",
-        "resztaRecznie": "{count, plural, one {# note is} other {# notes are}} left that I will not touch on my own. Use the Fix buttons on the cards below and your ears. Go to mastering, or fix it yourself?",
+        "resztaRecznie": "{count, plural, one {# note is} other {# notes are}} left that I will not touch on my own. Check the cards below and trust your ears. Go to mastering, or fix it yourself?",
         "jeszczeTak": "Yes, keep fixing",
         "jeszczeNie": "No, move on",
         "zostaloPoUtworze": "The mix plays, but {count, plural, one {# note is} other {# notes are}} still open after my pass (details below). Fix them? Listen meanwhile, and if anything bothers you, tell me in “Talk”.",
@@ -4400,7 +4400,7 @@
         "autoReady": "Vocal and beat are ready. Click and I'll mix the whole song — everything the measurement can fix.",
         "autoMixTrwa": "Mixing. I'm fixing everything the measurement can fix.",
         "autoMixGotowy": "Mix is ready. Have a listen. Master it?",
-        "autoMixNiegotowy": "I did what I could automatically, but the mix is not ready for mastering yet: red items left: {count}. Use the Fix buttons on the cards below. Then we move on to mastering."
+        "autoMixNiegotowy": "I did what I could automatically, but the mix is not ready for mastering yet: red items left: {count}. Check the red cards below: each has a button or an explanation. Once they are cleared, we move on to mastering."
       },
       "chat": {
         "inputLabel": "Message to BITEK",
