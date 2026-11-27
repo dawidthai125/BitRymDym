@@ -27,9 +27,30 @@ export function previewSourceMarker(masterAssetId: string): string {
   return `preview-${BEAT_PREVIEW_SECONDS}s-of-${masterAssetId}.mp3`;
 }
 
-/** Paid-catalog full listen with voice watermark (non-buyers). */
+/** Beat previews: the voice tag in every 3rd bar (Owner 2026-11-27; every 15 s was too easy to cut around). */
+export const BEAT_TAG_EVERY_BARS = 3;
+/** Used when a beat has no usable BPM: 3 bars at 120 BPM. */
+const BEAT_TAG_FALLBACK_BPM = 120;
+
+/**
+ * The tag starts bar 3, 6, 9 and so on, in 4/4 from the start of the file. The delay is two bars,
+ * so one repeat of exactly three bars keeps every later tag on a bar line.
+ */
+export function beatTagTiming(bpm: number | null | undefined): { firstMs: number; everySeconds: number } {
+  const tempo = typeof bpm === "number" && bpm >= 40 && bpm <= 220 ? bpm : BEAT_TAG_FALLBACK_BPM;
+  const barSeconds = 240 / tempo;
+  return {
+    firstMs: Math.round(barSeconds * (BEAT_TAG_EVERY_BARS - 1) * 1000),
+    everySeconds: Number((barSeconds * BEAT_TAG_EVERY_BARS).toFixed(6)),
+  };
+}
+
+/**
+ * Paid-catalog full listen with voice watermark (non-buyers). "bar3" makes a preview with the old
+ * 15 s tag stale, so the backfill renders it again; the prefix stays, so access rules still match.
+ */
 export function paidWatermarkPreviewSourceMarker(masterAssetId: string): string {
-  return `preview-wm-full-of-${masterAssetId}.mp3`;
+  return `preview-wm-full-of-bar3-${masterAssetId}.mp3`;
 }
 
 export function isGuestShortPreviewFilename(

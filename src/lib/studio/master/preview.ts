@@ -16,9 +16,15 @@ export function previewKeyFor(resultKey: string): string | null {
   return /\/master\.flac$/.test(resultKey) ? resultKey.replace(/\/master\.flac$/, "/master_preview.mp3") : null;
 }
 
+/** When the first tag sounds and how long one repeat is. */
+export type PreviewTagTiming = { firstMs: number; everySeconds: number };
+
+const MASTER_TAG_TIMING: PreviewTagTiming = { firstMs: PREVIEW_TAG_FIRST_MS, everySeconds: PREVIEW_TAG_EVERY_S };
+
 /** One tag padded to the repeat interval, with the first tag delayed (looped later by -stream_loop). */
-export function tagCycleArgs(tagWav: string, out: string): string[] {
-  return ["-hide_banner", "-loglevel", "error", "-y", "-i", tagWav, "-af", `adelay=${PREVIEW_TAG_FIRST_MS},apad=whole_dur=${PREVIEW_TAG_EVERY_S}`, "-ar", "44100", "-ac", "1", out];
+export function tagCycleArgs(tagWav: string, out: string, timing: PreviewTagTiming = MASTER_TAG_TIMING): string[] {
+  const pad = `adelay=${timing.firstMs},apad=whole_dur=${timing.everySeconds}`;
+  return ["-hide_banner", "-loglevel", "error", "-y", "-i", tagWav, "-af", pad, "-ar", "44100", "-ac", "1", out];
 }
 
 /** Master + looped tag cycle → MP3. Stereo tag, limiter after the mix so the tag never clips the music. */

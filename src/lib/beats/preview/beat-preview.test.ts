@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { validateObjectKey } from "@/lib/beats/audio-validation";
 import {
   BEAT_PREVIEW_SECONDS,
+  beatTagTiming,
   buildPreviewFfmpegArgs,
   buildPreviewObjectKey,
   isGuestShortPreviewFilename,
@@ -56,7 +57,9 @@ describe("beat preview helpers", () => {
   it("paid watermark marker is distinct from the short guest cut", () => {
     const mid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
     const wm = paidWatermarkPreviewSourceMarker(mid);
-    expect(wm).toBe(`preview-wm-full-of-${mid}.mp3`);
+    expect(wm).toBe(`preview-wm-full-of-bar3-${mid}.mp3`);
+    // A preview with the old 15 s tag still plays, but the backfill renders it again.
+    expect(isPaidWatermarkPreviewFilename(`preview-wm-full-of-${mid}.mp3`)).toBe(true);
     expect(isPaidWatermarkPreviewFilename(wm)).toBe(true);
     expect(isGuestShortPreviewFilename(wm)).toBe(false);
     expect(isGuestShortPreviewFilename(previewSourceMarker(mid))).toBe(true);
@@ -78,5 +81,22 @@ describe("beat preview helpers", () => {
         kind: "paidWm",
       }),
     ).toBe(false);
+  });
+});
+
+describe("voice tag in every 3rd bar", () => {
+  it("starts bar 3 and repeats every three bars of the beat's own tempo", () => {
+    for (const bpm of [75, 90, 140, 160]) {
+      const bar = 240 / bpm;
+      const timing = beatTagTiming(bpm);
+      expect(timing.firstMs).toBe(Math.round(bar * 2000));
+      expect(timing.everySeconds).toBeCloseTo(bar * 3, 5);
+      // The 0.83 s tag fits inside one repeat.
+      expect(timing.firstMs / 1000 + 0.83).toBeLessThan(timing.everySeconds);
+    }
+  });
+
+  it("falls back to 120 BPM without a usable tempo", () => {
+    for (const bpm of [null, undefined, 0, 500]) expect(beatTagTiming(bpm)).toEqual({ firstMs: 4000, everySeconds: 6 });
   });
 });

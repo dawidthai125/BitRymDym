@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-27 (54) — Podglądy bitów: tag głosowy co 3 takty
+
+- Tag „Bit Rym Dym” w podglądach katalogu od 3. taktu i potem co 3 takty, z BPM bitu (bez BPM: 120). Nowy znacznik pliku `preview-wm-full-of-bar3-…` każe przegenerować stare podglądy (co 15 s). Mastery utworów zostają co 15 s.
+
 ## 2026-11-27 (53) — Nagrywarka 2026.11.49: legenda skrótów
 
 - Obok urządzeń 9 podstawowych skrótów, pełna lista pod przyciskiem SKRÓTY, F1 albo ?. W małym oknie tylko przycisk.

@@ -19,6 +19,7 @@ import {
 import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
 import {
   BEAT_PREVIEW_CONTENT_TYPE,
+  beatTagTiming,
   buildPreviewFfmpegArgs,
   buildPreviewObjectKey,
   isPreviewFresh,
@@ -104,12 +105,12 @@ export async function ensureBeatPreviewAsset(
 
   const { data: beat, error: beatErr } = await admin
     .from("beats")
-    .select("id, ownership_type, owner_id, catalog_lane")
+    .select("id, ownership_type, owner_id, catalog_lane, bpm")
     .eq("id", beatId)
     .maybeSingle();
   if (beatErr) return fail(beatId, "beat_load_failed");
   if (!beat) return fail(beatId, "beat_missing");
-  // Both lanes: full length with the voice tag every 15 s (Owner 2026-11-22: the free-lane clean
+  // Both lanes: full length with the voice tag in every 3rd bar (Owner 2026-11-22: the free-lane clean
   // 20 s cut is gone). Guests are still capped at 20 s by audio-access.
   const previewKind = previewKindForLane(beat.catalog_lane as string | null);
   const paidWm = previewKind === "paidWm";
@@ -166,9 +167,9 @@ export async function ensureBeatPreviewAsset(
     try {
       if (paidWm) {
         const tag = path.join(work, "wm_tag.wav");
-        const cycle = path.join(work, "wm_tag15.wav");
+        const cycle = path.join(work, "wm_tag_cycle.wav");
         await writeFile(tag, Buffer.from(PREVIEW_TAG_WAV_BASE64, "base64"));
-        await runFfmpeg(tagCycleArgs(tag, cycle));
+        await runFfmpeg(tagCycleArgs(tag, cycle, beatTagTiming(Number(beat.bpm) || null)));
         await runFfmpeg(previewMixArgs(src, cycle, out));
       } else {
         await runFfmpeg(
