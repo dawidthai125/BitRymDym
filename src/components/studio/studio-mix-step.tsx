@@ -43,6 +43,7 @@ import {
   applyMixOpsToDocument,
   MIX_AUTOFIX_ALL,
   MIX_CARD_FIXES,
+  cardsWithNothingToFix,
   NOVA_PASS_FIXES,
   planMixAutofix,
   type MixAutofixId,
@@ -250,6 +251,13 @@ export function StudioMixStep({
   );
   // The cleanup list can arrive after the analysis started: that first value is what was analysed.
   if (result && result.cleanupSig === null && cleanupSig !== null) setResult({ ...result, cleanupSig });
+  const nothingToFix = useMemo(
+    () =>
+      result && !stale
+        ? cardsWithNothingToFix({ doc, metrics: result.metrics, verdict: result.verdict, maxEffects, allowSidechain, beatKey })
+        : null,
+    [result, stale, doc, maxEffects, allowSidechain, beatKey],
+  );
 
   useEffect(() => () => abortRef.current?.abort(), []);
   usePocketMarkers(doc.markers);
@@ -1577,6 +1585,7 @@ export function StudioMixStep({
                   card={card}
                   canFix={Boolean(onApplyAutofix) && !running && !stale && !fixing}
                   busy={fixing === card.id}
+                  nothingToFix={Boolean(nothingToFix?.has(card.id))}
                   onFix={() =>
                     void runFix(
                       MIX_CARD_FIXES[card.id],
@@ -1660,11 +1669,13 @@ function MixCardItem({
   card,
   canFix,
   busy,
+  nothingToFix,
   onFix,
 }: {
   card: MixCard;
   canFix: boolean;
   busy: boolean;
+  nothingToFix: boolean;
   onFix: () => void;
 }) {
   const t = useTranslations("studio.mixStep");
@@ -1687,7 +1698,26 @@ function MixCardItem({
       <p className="text-sm">{t(`cards.${card.id}.${card.messageKey}`, localizeParams(card.params, locale))}</p>
       {card.status === "red" || card.status === "yellow" ? (
         <div className="flex flex-wrap items-center gap-2">
-          {fixable ? (
+          {fixable && nothingToFix ? (
+            card.id === "noise" ? (
+              <>
+                <span id={hintId} className="text-xs text-[var(--brd-mute)]">{t("poprawSzumOczyszczanie")}</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11"
+                  aria-describedby={hintId}
+                  data-testid="studio-mix-card-cleanup"
+                  onClick={() => document.querySelector('[data-testid="studio-cleanup"]')?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                >
+                  {t("doOczyszczania")}
+                </Button>
+              </>
+            ) : (
+              <span className="text-xs text-[var(--brd-mute)]" data-testid="studio-mix-card-done">{t("poprawJuzWszystko")}</span>
+            )
+          ) : fixable ? (
             <Button
               type="button"
               size="sm"

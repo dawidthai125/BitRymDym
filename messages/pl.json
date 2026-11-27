@@ -4218,6 +4218,9 @@
       "poprawWszystkoOpis": "BITEK poprawi głośność, balans, EQ, sybilanty, kompresję, szumy, panoramę i doda przestrzeń w tempie bitu.",
       "poprawAria": "Popraw: {title}",
       "poprawTrwa": "Poprawiam…",
+      "poprawSzumOczyszczanie": "Bramka szumu już działa. Resztę usunie „Oczyszczanie wokalu”: kliknij „Oczyść”, potem zaznacz „Użyj oczyszczonej wersji w mixie”.",
+      "doOczyszczania": "Do oczyszczania wokalu",
+      "poprawJuzWszystko": "Zrobiłem tu już wszystko, co umiem zrobić automatycznie.",
       "poprawBrak": "Tego nie poprawię automatycznie.",
       "autofix": {
         "podpis": "BITEK",

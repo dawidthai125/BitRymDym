@@ -4218,6 +4218,9 @@
       "poprawWszystkoOpis": "BITEK fixes volume, balance, EQ, sibilance, compression, noise and panning, and adds space in time with the beat.",
       "poprawAria": "Fix: {title}",
       "poprawTrwa": "Fixing…",
+      "poprawSzumOczyszczanie": "The noise gate is already on. “Vocal cleanup” removes the rest: press “Clean up”, then tick “Use cleaned version in the mix”.",
+      "doOczyszczania": "Go to vocal cleanup",
+      "poprawJuzWszystko": "I have already done everything I can do automatically here.",
       "poprawBrak": "I can't fix this one automatically.",
       "autofix": {
         "podpis": "BITEK",

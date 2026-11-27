@@ -5,6 +5,7 @@ import { buildMixVerdict } from "@/lib/studio/mix-analysis/verdict";
 import {
   applyMixOpsToDocument,
   autofixBpm,
+  cardsWithNothingToFix,
   inverseMixAutofixOps,
   MIX_AUTOFIX_ALL,
   MIX_CARD_FIXES,
@@ -337,6 +338,16 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     const second = applyMixOpsToDocument(first, plan(["denoise"], first, m).ops);
     const after = second.tracks.find((x) => x.id === AD1)!.effectsChain.effects.find((e) => e.type === "gate")!;
     expect(after.type === "gate" && before.type === "gate" && after.params.thresholdDb).toBe(before.type === "gate" ? before.params.thresholdDb : 0);
+  });
+
+  it("a noise card whose gate is already on has nothing to fix, so it must not offer a dead „Popraw”", () => {
+    const d = doc();
+    const metrics = badMetrics();
+    const verdict = buildMixVerdict(metrics);
+    expect(verdict.cards.find((c) => c.id === "noise")?.status).not.toBe("green");
+    expect(cardsWithNothingToFix({ doc: d, metrics, verdict }).has("noise")).toBe(false);
+    const gated = applyMixOpsToDocument(d, plan(["denoise"], d).ops);
+    expect(cardsWithNothingToFix({ doc: gated, metrics, verdict }).has("noise")).toBe(true);
   });
 
   it("panorama: lead centred, adlibs alternate L/R 40 %, doubles 70 %", () => {

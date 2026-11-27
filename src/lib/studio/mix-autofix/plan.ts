@@ -802,6 +802,21 @@ export function planMixAutofix(params: {
   return { fixes: order, ops, notes: [...notes, ...limitNotes], unchanged, limited };
 }
 
+/**
+ * Red / yellow cards whose „Popraw” would change nothing (the effect is already on). The card must not
+ * offer a button that does nothing: a red noise card then left the user stuck before Mastering.
+ */
+export function cardsWithNothingToFix(params: Omit<Parameters<typeof planMixAutofix>[0], "fixes" | "createId">): Set<MixCardId> {
+  const out = new Set<MixCardId>();
+  for (const card of params.verdict.cards) {
+    const fixes = MIX_CARD_FIXES[card.id];
+    if ((card.status !== "red" && card.status !== "yellow") || fixes.length === 0) continue;
+    const plan = planMixAutofix({ ...params, fixes, createId: () => "probe" });
+    if (plan.ops.length === 0 && !plan.limited) out.add(card.id);
+  }
+  return out;
+}
+
 /** Inverse ops (restore previous controls / chains) for undo. */
 export function inverseMixAutofixOps(
   doc: StudioProjectDocument,
