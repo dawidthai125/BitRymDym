@@ -44,10 +44,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
             className="min-h-11 rounded-sm border border-[var(--brd-line)] bg-[var(--brd-paper)] px-1 text-xs font-semibold text-[var(--brd-ink)]"
             value={props.snapPreset ?? "off"}
             data-testid="studio-toolbar-snap"
-            onChange={(event) => {
-              props.onSnapPreset!(event.target.value as StudioSnapPreset);
-              event.target.blur();
-            }}
+            onChange={(event) => props.onSnapPreset!(event.target.value as StudioSnapPreset)}
           >
             {STUDIO_SNAP_PRESET_ORDER.map((preset) => (
               <option key={preset} value={preset}>
