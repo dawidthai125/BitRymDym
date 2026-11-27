@@ -213,7 +213,7 @@ def test_brickwall_only_touches_peaks():
     t = np.arange(sr) / sr
     x = np.stack([0.3 * np.sin(2 * np.pi * 220 * t)] * 2, axis=1).astype(np.float32)
     x[sr // 2: sr // 2 + 50] *= 3.0  # one short peak over the ceiling
-    y = m.brickwall(x, sr, -6.0)
+    y = m.brickwall(x.copy(), sr, -6.0)
     assert np.max(np.abs(y)) <= 10 ** (-6.0 / 20) + 1e-4
     # A second later the gain is back: the rest of the song is not turned down.
     assert np.allclose(y[: sr // 4], x[: sr // 4], atol=1e-6)

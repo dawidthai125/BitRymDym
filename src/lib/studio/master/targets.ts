@@ -1,8 +1,8 @@
 /** Stage 3 — Mastering targets + whole-track settings (shared by UI, API, worker, BITEK). */
 
 export const MASTER_TARGETS = {
-  /** Loud rap release, like the AI mix services: about -10 LUFS, -0.5 dBTP. First and default in Studio. */
-  rap: { lufs: -10, tp: -0.5 },
+  /** Loud rap release, like the AI mix services: about -10 LUFS, with -1 dBTP for streaming codecs. First and default in Studio. */
+  rap: { lufs: -10, tp: -1 },
   streaming: { lufs: -14, tp: -1 },
   youtube: { lufs: -14, tp: -1 },
   headphones: { lufs: -16, tp: -1 },

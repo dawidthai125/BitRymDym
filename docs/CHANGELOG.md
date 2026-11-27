@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-27 (57) — Poprawki po pierwszym masterze na żywo
+
+- Baza: `studio_master_jobs_target_check` dopuszcza `rap` (migracja 20261127160000; bez niej serwer odrzucał master z domyślnym celem).
+- `master.py`: limiter i kompresja liczone w miejscu i w blokach, dwie pierwsze próby głośności po kolei dla utworów > 3 min. Pamięć 3,0 GB → 0,8 GB (2:50) / 1,2 GB (6:00); worker ma limit 2 GB i padł na OOM.
+- Cel „Głośny rap”: −10 LUFS, szczyt −1,0 dBTP (było −0,5; kodeki streamingu). Karta streamingu nie radzi ściszać, gdy cel jest głośny z wyboru (rap, klub).
+
 ## 2026-11-27 (56) — „Zrób utwór” w jednym przebiegu i nowy master (porównanie z Cryo Mix)
 
 - Diagnoza na dwóch prawdziwych utworach Dawida (stemy i wynik z Cryo Mix): stara pętla „zmierz → popraw → zmierz” przebudowywała łańcuchy co rundę; progi oceny (wokal nad bitem, maskowanie ≤ 25 %) wymuszały coraz głośniejszy wokal; master ściskał całość limiterem z pedalboard (JUCE: kompresor 4:1 od 10 dB pod progiem, release ignorowany) i 3-pasmową kompresją przy stałym −18 dB, która najmocniej cisnęła bas — utwór wychodził cieńszy i płaski, ciszej (−14 LUFS) niż u konkurencji (−10,8).

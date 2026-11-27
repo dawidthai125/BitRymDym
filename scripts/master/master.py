@@ -30,6 +30,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
+from scipy.ndimage import uniform_filter1d
 import pyloudnorm as pyln
 import soundfile as sf
 from pedalboard import Compressor, Gain, HighpassFilter, HighShelfFilter, Limiter, LowShelfFilter, Pedalboard
@@ -40,8 +41,9 @@ TARGETS = {
     "youtube": {"lufs": -14.0, "tp": -1.0},
     "headphones": {"lufs": -16.0, "tp": -1.0},
     "club": {"lufs": -9.0, "tp": -0.3},
-    # Loud rap release, like the big AI mix services (about -10 LUFS, -0.5 dBTP).
-    "rap": {"lufs": -10.0, "tp": -0.5},
+    # Loud rap release, like the big AI mix services (about -10 LUFS), with the -1 dBTP that
+    # lossy streaming re-encodes need.
+    "rap": {"lufs": -10.0, "tp": -1.0},
 }
 
 # Hip-hop / rap reference tonal balance: band energy relative to total (dB).
@@ -332,11 +334,19 @@ def multiband(x: np.ndarray, sr: int, squash: float) -> np.ndarray:
     The name stays: the worker and tests call multiband()."""
     ratio = float(np.interp(squash, [-3, 0, 3], list(GLUE_RATIO)))
     thr = integrated_lufs(x, sr) + float(np.interp(squash, [-3, 0, 3], list(GLUE_OVER_LUFS)))
-    y = Pedalboard([Compressor(threshold_db=thr, ratio=ratio, attack_ms=25, release_ms=160)])(x.T.copy(), sr).T
-    mid, side = (y[:, 0] + y[:, 1]) / 2, (y[:, 0] - y[:, 1]) / 2
+    y = Pedalboard([Compressor(threshold_db=thr, ratio=ratio, attack_ms=25, release_ms=160)])(np.ascontiguousarray(x.T), sr)
+    if y.shape[0] < 2:
+        return y.T
+    # In place on the (C, N) buffer: L -= cut, R += cut takes the low side down without new full copies.
+    side = y[0] - y[1]
+    side *= np.float32(0.5)
     low = lr4(side, sr, LOW_MONO_HZ, "lowpass")
-    side = side - low * np.float32(1 - LOW_SIDE_KEEP)
-    return np.stack([mid + side, mid - side], axis=1).astype(np.float32)
+    del side
+    low *= np.float32(1 - LOW_SIDE_KEEP)
+    y[0] -= low
+    y[1] += low
+    del low
+    return y.T
 
 
 def width(x: np.ndarray, amount: float, sr: int = 44100, ref_k: float = 1.0) -> np.ndarray:
@@ -502,7 +512,8 @@ LUFS_TOL = 0.3  # final loudness must land within ±0.3 LU of the goal
 
 
 CLIP_OVER_DB = 2.0  # the soft-clip curve sits this far above the limiter
-FIRST_PROBE_DB = -2.0  # 2nd gain tried alongside the first guess (the limiter usually overshoots)
+FIRST_PROBE_DB = -2.0
+PARALLEL_PROBE_MAX_S = 180  # longer songs: the two first probes one after the other (memory)  # 2nd gain tried alongside the first guess (the limiter usually overshoots)
 
 
 LIMITER_LOOKAHEAD_MS = 5.0
@@ -512,32 +523,54 @@ LIMITER_RELEASE_DB_PER_S = 40.0
 def brickwall(x: np.ndarray, sr: int, ceiling_db: float) -> np.ndarray:
     """Lookahead peak limiter: only samples over the ceiling are turned down, the gain comes back at
     a fixed dB/s. (pedalboard's Limiter is JUCE's: a 4:1 compressor from 10 dB under the threshold
-    first, which flattened whole songs; its release setting is ignored.) x, out: (N, C) float32."""
+    first, which flattened whole songs; its release setting is ignored.) x, out: (N, C) float32.
+    Memory: a few float32 arrays of N, worked in place (a 4:00 song: well under 100 MB)."""
     n = len(x)
     la = max(1, int(sr * LIMITER_LOOKAHEAD_MS / 1000))
-    peak = np.max(np.abs(x), axis=1).astype(np.float64)
-    need = np.minimum(0.0, ceiling_db - 20 * np.log10(np.maximum(peak, 1e-9)))  # dB, <= 0
-    # Hold the deepest cut over the lookahead window (sliding min, centred so the ramp starts early).
-    padded = np.concatenate([need, np.zeros(la)])
-    held = np.minimum.reduce([padded[i:i + n] for i in range(0, la + 1, max(1, la // 16))]) if la > 1 else need
-    # Release: the gain may rise at most r dB per sample: y[n] = min_k(held[k] + r*(n-k)) = r*n + cummin(held - r*k).
+    peak = np.empty(n, dtype=np.float32)
+    for a in range(0, n, CHUNK):
+        np.max(np.abs(x[a:a + CHUNK]), axis=1, out=peak[a:a + CHUNK])
+    np.maximum(peak, np.float32(1e-9), out=peak)
+    need = np.log10(peak, out=peak)  # in place: dB cut needed, <= 0
+    need *= np.float32(-20)
+    need += np.float32(ceiling_db)
+    np.minimum(need, np.float32(0), out=need)
+    # Hold the deepest cut over the lookahead (sliding min, window doubled each step: 1, 2, 4… ≥ la).
+    w = 1
+    while w < la:
+        np.minimum(need[: n - w], need[w:], out=need[: n - w])
+        w *= 2
+    # Release: the gain may rise at most r dB per sample: y[i] = min_k(need[k] + r*(i-k)) = r*i + cummin(need - r*k).
+    # In blocks, so no full-length ramp is ever built.
     r = LIMITER_RELEASE_DB_PER_S / sr
-    k = np.arange(n, dtype=np.float64)
-    rel = r * k + np.minimum.accumulate(held - r * k)
-    # Attack: a moving average over the lookahead keeps the ramp smooth and still reaches the cut in time.
-    kern = np.ones(la) / la
-    smooth = np.convolve(np.concatenate([rel, np.zeros(la)]), kern, mode="full")[la:la + n]
-    gain = np.minimum(rel, smooth)
-    return (x * (10 ** (gain / 20))[:, None]).astype(np.float32)
+    carry = np.inf
+    for a in range(0, n, CHUNK):
+        k = np.arange(a, min(n, a + CHUNK), dtype=np.float64) * r
+        blk = need[a:a + len(k)] - k
+        np.minimum.accumulate(blk, out=blk)
+        np.minimum(blk, carry, out=blk)
+        carry = blk[-1]
+        need[a:a + len(k)] = (blk + k).astype(np.float32)
+    # Attack: a moving average over the lookahead (window ending at each sample) keeps the ramp smooth.
+    smooth = uniform_filter1d(need, size=la, mode="nearest", origin=(la - 1) // 2)
+    np.minimum(need, smooth, out=need)
+    del smooth
+    need *= np.float32(1 / 20)
+    np.power(np.float32(10), need, out=need)
+    if x.dtype == np.float32 and x.flags.writeable:
+        x *= need[:, None]  # the caller hands over its own buffer
+        return x
+    return (x * need[:, None]).astype(np.float32)
 
 
 def _limit_pass(pre: np.ndarray, sr: int, gain: float, goal_tp: float, ceiling: float) -> tuple[np.ndarray, float, float]:
     """gain → limiter → 4x true peak → trim overs → integrated LUFS. Returns (out, lufs, tp)."""
     # Soft clipper before the limiter: short peaks (kick, snare) are rounded off instead of the
     # limiter riding the whole mix down, which pressed the bass and flattened the song.
-    g = pre * np.float32(10 ** (gain / 20))
     c = np.float32(10 ** ((ceiling + CLIP_OVER_DB) / 20))
-    g = (c * np.tanh(g / c)).astype(np.float32)
+    g = pre * np.float32(10 ** (gain / 20) / c)
+    np.tanh(g, out=g)
+    g *= c
     out = brickwall(g.T, sr, ceiling)
     tp = true_peak_db(out)
     if tp > goal_tp:
@@ -563,7 +596,9 @@ def _loudness_to_target(pre: np.ndarray, sr: int, goal_lufs: float, goal_tp: flo
     gains concurrently and later rounds step along the measured slope (secant) — usually
     1-2 rounds. Returns (out (N, 2) float32, measured LUFS, true peak dBTP)."""
     g0 = goal_lufs - pre_lufs
-    pts = [(g, *r) for g, r in zip((g0, g0 + FIRST_PROBE_DB), _TASKS.map(lambda g: _limit_pass(pre, sr, g, goal_tp, ceiling), (g0, g0 + FIRST_PROBE_DB)))]
+    # Two probes side by side save a second, but each holds a full copy: a long song runs them in turn.
+    run = _TASKS.map if pre.shape[-1] <= sr * PARALLEL_PROBE_MAX_S else map
+    pts = [(g, *r) for g, r in zip((g0, g0 + FIRST_PROBE_DB), run(lambda g: _limit_pass(pre, sr, g, goal_tp, ceiling), (g0, g0 + FIRST_PROBE_DB)))]
     _progress(0.55)
     for i in range(8):
         best = min(pts, key=lambda p: abs(goal_lufs - p[2]))

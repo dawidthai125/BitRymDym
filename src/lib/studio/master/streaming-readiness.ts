@@ -39,7 +39,10 @@ export type StreamingReadiness = {
 
 const f1 = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 
-export function buildStreamingReadiness(m: MasterMetrics): StreamingReadiness | null {
+/** Targets the user picks to be loud on purpose: "too loud" is then no advice, just a fact in the rows. */
+const LOUD_BY_CHOICE = new Set(["rap", "club"]);
+
+export function buildStreamingReadiness(m: MasterMetrics, target?: string): StreamingReadiness | null {
   if (!Number.isFinite(m.lufs) || !Number.isFinite(m.truePeakDb)) return null;
   const rows: StreamingRow[] = STREAMING_PLATFORMS.map((p) => {
     const gainDb = Math.round((p.lufs - m.lufs) * 10) / 10;
@@ -52,7 +55,7 @@ export function buildStreamingReadiness(m: MasterMetrics): StreamingReadiness | 
     score -= m.truePeakDb > 0 ? 30 : 15;
     notes.push({ key: "tpOver", params: { tp: f1(m.truePeakDb), ceiling: STREAMING_TP_CEILING_DB } });
   }
-  if (m.lufs > -11) {
+  if (m.lufs > -11 && !(target && LOUD_BY_CHOICE.has(target))) {
     score -= Math.min(25, Math.round((m.lufs + 11) * 5 + 8));
     notes.push({ key: "loud", params: { lufs: f1(m.lufs), down: f1(Math.abs(-14 - m.lufs)) } });
   } else if (m.lufs < -17) {

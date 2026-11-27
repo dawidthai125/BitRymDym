@@ -587,7 +587,7 @@ export function StudioMasterStep({
   };
   const useReference = !!refState.gate?.allowed && refState.reference?.status === "ready";
   const measured = preview?.metrics ?? mix?.metrics ?? null;
-  const streaming = useMemo(() => (measured ? buildStreamingReadiness(measured) : null), [measured]);
+  const streaming = useMemo(() => (measured ? buildStreamingReadiness(measured, target) : null), [measured, target]);
   // Entering from the bottom of the Mix step left the page scrolled into the empty render area, and
   // scroll anchoring kept pushing it down as the mix and the preview arrived. While the step is fresh
   // (first 8 s), bring its top back into view whenever that content lands.

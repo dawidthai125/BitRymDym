@@ -34,3 +34,13 @@ describe("streaming readiness", () => {
     expect(buildStreamingReadiness(base({ lufs: -Infinity }))).toBeNull();
   });
 });
+
+describe("loud targets chosen on purpose", () => {
+  it("does not tell the user to turn a Głośny rap master down", () => {
+    const m = { lufs: -10, lraLu: 6, truePeakDb: -1.1, plr: 8.9, correlation: 0.9, sideToMid: 0.2, tonal: {} as never, durationS: 120 };
+    expect(buildStreamingReadiness(m)!.notes.map((n) => n.key)).toContain("loud");
+    const r = buildStreamingReadiness(m, "rap")!;
+    expect(r.notes.map((n) => n.key)).toEqual(["ok"]);
+    expect(r.rows.find((x) => x.id === "spotify")!.gainDb).toBe(-4);
+  });
+});
