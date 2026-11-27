@@ -369,7 +369,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
   );
 }
 
-export function DeleteAccountForm() {
+export function DeleteAccountForm({ passwordless = false }: { passwordless?: boolean } = {}) {
   const locale = useLocale();
   const tl = useLibText();
   const t = useTranslations("auth.authForms");
@@ -383,16 +383,18 @@ export function DeleteAccountForm() {
       <p className="text-sm text-[var(--brd-ink-soft)]">
         {t("usuniecieKontaJestNieodwracalne")}
       </p>
-      <label className="flex flex-col gap-1 text-sm">
-        {t("aktualneHaslo")}
-        <input
-          name="currentPassword"
-          type="password"
-          required
-          autoComplete="current-password"
-          className={AUTH_FIELD_CLASS}
-        />
-      </label>
+      {passwordless ? null : (
+        <label className="flex flex-col gap-1 text-sm">
+          {t("aktualneHaslo")}
+          <input
+            name="currentPassword"
+            type="password"
+            required
+            autoComplete="current-password"
+            className={AUTH_FIELD_CLASS}
+          />
+        </label>
+      )}
       <label className="flex flex-col gap-1 text-sm">
         {t("wpiszUsunAbyPotwierdzic", { word: DELETE_CONFIRM_WORD[resolveLocale(locale)] })}
         <input

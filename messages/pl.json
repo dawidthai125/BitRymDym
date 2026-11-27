@@ -275,7 +275,14 @@
       "windowsTitle": "Nagrywarka (Windows)",
       "windowsLead": "Logujesz się tym samym adresem co na stronie. Program bierze opublikowane bity z katalogu i nagrywa tylko mikrofon.",
       "whyTitle": "Po co program, skoro jest strona?",
-      "why": ["Nagrywa prosto z mikrofonu do pliku WAV na komputerze, z małym buforem, bez pośrednictwa przeglądarki.", "Sam wyrównuje głos do bitu i pamięta opóźnienie dla Twojego mikrofonu i słuchawek. Przy słuchawkach Bluetooth mierzysz je klaskaniem (Zmierz).", "Mikrofon i odsłuch wybierasz osobno, na przykład mikrofon USB i słuchawki Bluetooth.", "Nagrania zostają na dysku: po awarii, zamknięciu albo zerwanej sieci program wraca do projektu i dokańcza wysyłkę.", "Kilka ścieżek wokalu złożysz i potniesz jeszcze przed wysłaniem. W Gold nagrasz też na własnym bicie z pliku (Studio Offline) i pobierzesz stemy.", "Na Macu i w telefonie wystarczy przeglądarka: Studio na stronie nagrywa tak samo, na tym samym koncie."],
+      "why": [
+        "Nagrywa prosto z mikrofonu do pliku WAV na komputerze, z małym buforem, bez pośrednictwa przeglądarki.",
+        "Sam wyrównuje głos do bitu i pamięta opóźnienie dla Twojego mikrofonu i słuchawek. Przy słuchawkach Bluetooth mierzysz je klaskaniem (Zmierz).",
+        "Mikrofon i odsłuch wybierasz osobno, na przykład mikrofon USB i słuchawki Bluetooth.",
+        "Nagrania zostają na dysku: po awarii, zamknięciu albo zerwanej sieci program wraca do projektu i dokańcza wysyłkę.",
+        "Kilka ścieżek wokalu złożysz i potniesz jeszcze przed wysłaniem. W Gold nagrasz też na własnym bicie z pliku (Studio Offline) i pobierzesz stemy.",
+        "Na Macu i w telefonie wystarczy przeglądarka: Studio na stronie nagrywa tak samo, na tym samym koncie."
+      ],
       "canTitle": "Co można w Nagrywarce",
       "can": [
         "Zalogować się na istniejące konto i wylogować. Jeśli zaznaczysz „Zapamiętaj hasło na 48 godzin”, hasło leży ukryte w pliku zaszyfrowanym kluczem Twojego konta Windows, do 48 godzin od ostatniego logowania. Wylogowanie kasuje je i kończy sesję też na serwerze.",
@@ -2176,6 +2183,22 @@
       "wysylanie": "Wysyłanie…",
       "wyslijPonownie": "Wyślij nowy link",
       "wrocDoLogowania": "Wróć do logowania"
+    },
+    "social": {
+      "google": "Kontynuuj z Google",
+      "apple": "Kontynuuj z Apple",
+      "lub": "lub",
+      "blad": "Nie udało się zalogować przez Google lub Apple. Spróbuj jeszcze raz.",
+      "kontoBezHasla": "Logujesz się przez {dostawca}. To konto nie ma hasła w BitRymDym, a adresem e-mail zarządza {dostawca}.",
+      "usuwanieZalogujPonownie": "Aby usunąć konto, wyloguj się, zaloguj ponownie przez Google lub Apple i wróć tutaj w ciągu 15 minut.",
+      "wyloguj": "Wyloguj się",
+      "usuwanieNaStronie": "W tej wersji aplikacji nie zalogujesz się przez Google ani Apple. Zaktualizuj aplikację albo zrób to na www.bitrymdym.pl."
+    },
+    "finishPage": {
+      "metaTitle": "Dokończ zakładanie konta",
+      "tytul": "Ostatni krok",
+      "opis": "Wybierz ksywkę i zaakceptuj zasady. Ksywka to Twoja nazwa w BitRymDym, nie musi być Twoim imieniem.",
+      "wyloguj": "Rezygnuję, wyloguj mnie"
     }
   },
   "beats": {

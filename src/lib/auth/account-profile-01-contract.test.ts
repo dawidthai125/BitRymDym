@@ -57,11 +57,13 @@ describe("ACCOUNT/PROFILE-01 contract (static)", () => {
     expect(del).toContain("admin.auth.admin.deleteUser");
     expect(del).toContain("beat_download_events");
     expect(del).toContain("USER_PREFIX");
+    // Password accounts re-enter the password; only Google / Apple accounts use a fresh sign-in.
+    expect(del).toMatch(/if \(user && isSocialOnlyUser\(user\)\)[\s\S]*isFreshSignIn\(user\.last_sign_in_at\)[\s\S]*return reauthenticateWithPassword\(currentPassword\);/);
     const own = del.indexOf("export async function deleteOwnAccount");
     expect(own).toBeGreaterThan(-1);
-    expect(del.indexOf("reauthenticateWithPassword", own)).toBeGreaterThan(own);
+    expect(del.indexOf("confirmDeletingUser", own)).toBeGreaterThan(own);
     expect(del.indexOf("executeAccountProfile01Deletion", own)).toBeGreaterThan(
-      del.indexOf("reauthenticateWithPassword", own),
+      del.indexOf("confirmDeletingUser", own),
     );
     expect(del.indexOf("signOut()", own)).toBeGreaterThan(
       del.indexOf("executeAccountProfile01Deletion", own),

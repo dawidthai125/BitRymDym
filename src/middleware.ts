@@ -15,6 +15,11 @@ import {
   referralCookieOptions,
 } from "@/lib/referrals/referral-policy";
 import { GUARD_RETRY_AFTER_SECONDS, isOverloadRequest } from "@/lib/security/request-guard";
+import {
+  needsSocialProfileCompletion,
+  pathAllowedBeforeCompletion,
+  SOCIAL_FINISH_PATH,
+} from "@/lib/auth/social";
 import { buildCsp, cspHeaderName, generateNonce, NONCE_HEADER } from "@/lib/security/csp";
 import { decideStoreAppEntry, STORE_APP_COOKIE, storeAppCookieOptions } from "@/lib/site/store-app";
 import { userAccessBearer } from "@/lib/supabase/access-bearer";
@@ -174,7 +179,11 @@ async function handleRequest(request: NextRequest) {
   // Guests have no session to refresh. Skipping getUser keeps every public
   // document, cover, and tab reload off an auth round-trip.
   const shouldReadUser = Boolean(bearer) || hasAuthSessionCookie(request);
-  let user: { id: string } | null = null;
+  let user: {
+    id: string;
+    app_metadata?: Record<string, unknown>;
+    user_metadata?: Record<string, unknown>;
+  } | null = null;
   let error: { name?: string; status?: number } | null = null;
   if (shouldReadUser) {
     const result = bearer
@@ -243,6 +252,23 @@ async function handleRequest(request: NextRequest) {
       enabled: false,
       isAdmin: false,
     });
+  }
+
+  // New Google / Apple account: ksywka + Regulamin first (pages redirect, writes are refused).
+  if (user && needsSocialProfileCompletion(user) && !pathAllowedBeforeCompletion(request.nextUrl.pathname)) {
+    const { pathname, search } = request.nextUrl;
+    if (pathname.startsWith("/api/") || (request.method !== "GET" && request.method !== "HEAD")) {
+      return NextResponse.json(
+        { error: "Najpierw dokończ zakładanie konta.", code: "PROFILE_INCOMPLETE" },
+        { status: 403 },
+      );
+    }
+    const target = request.nextUrl.clone();
+    target.pathname = SOCIAL_FINISH_PATH;
+    target.search = pathname === "/" ? "" : `?next=${encodeURIComponent(`${pathname}${search}`)}`;
+    const redirect = NextResponse.redirect(target);
+    for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+    return redirect;
   }
 
   const blocked = isGuestBlockedPath(request.nextUrl.pathname);

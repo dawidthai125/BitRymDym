@@ -3396,5 +3396,17 @@
   {"src": "harmonia", "en": "harmony"},
   {"src": "zmiana głosu", "en": "voice change"},
   {"src": "lekki pitch", "en": "light pitch correction"},
-  {"src": "limit efektów na ścieżce", "en": "track effect limit reached"}
+  {"src": "limit efektów na ścieżce", "en": "track effect limit reached"},
+ {
+  "src": "Zaloguj się ponownie przez Google lub Apple i usuń konto w ciągu 15 minut.",
+  "en": "Sign in again with Google or Apple and delete the account within 15 minutes."
+ },
+ {
+  "src": "Nie udało się dokończyć zakładania konta. Spróbuj ponownie.",
+  "en": "Could not finish creating your account. Try again."
+ },
+ {
+  "src": "Najpierw dokończ zakładanie konta.",
+  "en": "Finish creating your account first."
+ }
 ]

@@ -31,6 +31,8 @@ import {
   passwordRecoverySetOptions,
 } from "@/lib/auth/password-recovery-seal-cookie";
 import { postAuthRedirectPath, safeNextPath, SIGN_IN_NEXT_PARAM } from "@/lib/auth/next-path";
+import { SESSION_ONLY_COOKIE, sessionOnlyCookieOptions } from "@/lib/auth/keep-signed-in";
+import { needsSocialProfileCompletion, OAUTH_CALLBACK_FLOW, SOCIAL_FINISH_PATH } from "@/lib/auth/social";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { sendWelcomeOnce } from "@/lib/email/notify/server";
 import { normalizeReferralCode, REFERRAL_METADATA_KEY } from "@/lib/referrals/referral-policy";
@@ -77,6 +79,49 @@ function redirectPasswordRecovery(request: NextRequest, userId: string) {
 }
 
 /**
+ * Google / Apple return. The PKCE exchange succeeds only in the browser that started the
+ * sign-in (verifier cookie), so the session is kept — no signup-browser cookie needed.
+ */
+async function handleSocialCallback(request: NextRequest, code: string | null, next: string | null) {
+  const failed = () =>
+    redirectAbsolute(
+      request,
+      `/sign-in?social=error${next ? `&${SIGN_IN_NEXT_PARAM}=${encodeURIComponent(next)}` : ""}`,
+    );
+  if (!code) return failed();
+  try {
+    const supabase = await createSupabaseServerClient({ sessionOnly: false });
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error || !data.session || !data.user) return failed();
+    // Same gate as signInAction: during maintenance only ADMIN keeps a session.
+    const maintenance = await readSiteMaintenanceForViewer(supabase);
+    if (maintenance.enabled && !maintenance.viewerIsAdmin) {
+      await supabase.auth.signOut();
+      return redirectAbsolute(request, "/sign-in");
+    }
+    let response: NextResponse;
+    if (needsSocialProfileCompletion(data.user)) {
+      response = redirectAbsolute(
+        request,
+        `${SOCIAL_FINISH_PATH}${next ? `?${SIGN_IN_NEXT_PARAM}=${encodeURIComponent(next)}` : ""}`,
+      );
+    } else {
+      const context = await getCurrentProfile();
+      const claim = context ? await tryClaimAnonTakeAfterAuth(context) : null;
+      response = redirectAbsolute(request, postAuthRedirectPath(claim, next, "/account"));
+    }
+    // "Nie wylogowuj mnie": social sign-in keeps the session, drop an older session-only marker.
+    response.cookies.set(SESSION_ONLY_COOKIE, "", {
+      ...sessionOnlyCookieOptions(process.env.NODE_ENV === "production"),
+      maxAge: 0,
+    });
+    return response;
+  } catch {
+    return failed();
+  }
+}
+
+/**
  * Auth callback for email confirmation, password recovery, and other Auth redirects.
  *
  * Prefer token_hash + type → verifyOtp (cross-browser safe; no PKCE verifier).
@@ -102,6 +147,13 @@ function redirectPasswordRecovery(request: NextRequest, userId: string) {
  */
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
+  if (url.searchParams.get("flow") === OAUTH_CALLBACK_FLOW) {
+    return handleSocialCallback(
+      request,
+      url.searchParams.get("code"),
+      safeNextPath(url.searchParams.get(SIGN_IN_NEXT_PARAM)),
+    );
+  }
   const classified = classifyAuthCallbackParams({
     code: url.searchParams.get("code"),
     tokenHash: url.searchParams.get("token_hash"),

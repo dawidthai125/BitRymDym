@@ -275,7 +275,14 @@
       "windowsTitle": "Windows app",
       "windowsLead": "You sign in with the same address as on the site. The app loads published beats and records only the microphone.",
       "whyTitle": "Why an app when there is the site?",
-      "why": ["It records straight from the microphone to a WAV file on your PC, with a small buffer and no browser in between.", "It lines your voice up with the beat by itself and remembers the delay for your microphone and headphones. With Bluetooth headphones you measure it by clapping (Measure).", "You pick the microphone and the output separately, for example a USB mic and Bluetooth headphones.", "Recordings stay on your disk: after a crash, closing the app or a dropped connection it returns to the project and finishes the upload.", "You can stack and cut several vocal tracks before uploading. With Gold you can also record on your own beat file (Studio Offline) and download stems.", "On a Mac or a phone the browser is enough: the Studio on the site records the same way, on the same account."],
+      "why": [
+        "It records straight from the microphone to a WAV file on your PC, with a small buffer and no browser in between.",
+        "It lines your voice up with the beat by itself and remembers the delay for your microphone and headphones. With Bluetooth headphones you measure it by clapping (Measure).",
+        "You pick the microphone and the output separately, for example a USB mic and Bluetooth headphones.",
+        "Recordings stay on your disk: after a crash, closing the app or a dropped connection it returns to the project and finishes the upload.",
+        "You can stack and cut several vocal tracks before uploading. With Gold you can also record on your own beat file (Studio Offline) and download stems.",
+        "On a Mac or a phone the browser is enough: the Studio on the site records the same way, on the same account."
+      ],
       "canTitle": "What the app can do",
       "can": [
         "Sign in to an existing account and sign out. With the 48-hour password box ticked, the password sits hidden in a file encrypted with your Windows account key, for up to 48 hours after your last sign-in. Signing out deletes it and also ends the session on the server.",
@@ -2176,6 +2183,22 @@
       "wysylanie": "Sending…",
       "wyslijPonownie": "Send a new link",
       "wrocDoLogowania": "Back to sign-in"
+    },
+    "social": {
+      "google": "Continue with Google",
+      "apple": "Continue with Apple",
+      "lub": "or",
+      "blad": "Signing in with Google or Apple failed. Try again.",
+      "kontoBezHasla": "You sign in with {dostawca}. This account has no BitRymDym password, and {dostawca} manages its e-mail address.",
+      "usuwanieZalogujPonownie": "To delete the account, sign out, sign in again with Google or Apple and come back here within 15 minutes.",
+      "wyloguj": "Sign out",
+      "usuwanieNaStronie": "This app version cannot sign in with Google or Apple. Update the app or do it on www.bitrymdym.pl."
+    },
+    "finishPage": {
+      "metaTitle": "Finish creating your account",
+      "tytul": "One last step",
+      "opis": "Pick a nickname and accept the rules. The nickname is your name on BitRymDym; it does not have to be your real name.",
+      "wyloguj": "Cancel and sign me out"
     }
   },
   "beats": {

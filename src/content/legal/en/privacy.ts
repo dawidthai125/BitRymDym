@@ -13,6 +13,7 @@ export const PRIVACY_EN: LegalDoc = {
     ] },
     { id: "p2", h: "2. What data we process", blocks: [{ list: [
       "Account: e-mail address, encrypted password (stored by the authentication provider), nickname, user number, Plan, Plan end date, name and end date of the scheduled next Plan (if it has been paid for), registration date, version of the accepted Terms of Service and Privacy Policy.",
+      "Signing in with Google or Apple (if you choose it): the provider gives us your e-mail address (with Apple it may be an address that hides your own), your account identifier at the provider and whether the address is verified, and Google also your name and profile picture address (Apple your name, if you share it). We do not receive your password. We do not show your name or picture in the Service — you choose your nickname yourself. If an Account with the same verified address already exists, we sign you in to it. Basis: Art. 6(1)(b) GDPR.",
       "Content: uploaded Beats, covers, Recordings (your voice or instrument), Studio projects, texts (including lyrics), reference tracks for mastering, generated mixes, masters and videos.",
       "Activity: plays, downloads, likes, ratings, comments and reports of them, positions in rankings, points and level, listening links and the number of times they have been played, moderation and appeal history.",
       "Beat protection: a personal copy of a Beat with an inaudible watermark assigned to the Account, and a log of full plays (which Account, which Beat, when). If a Beat leaks, we use the watermark to check which copy the file comes from.",
@@ -51,6 +52,7 @@ export const PRIVACY_EN: LegalDoc = {
       "We entrust data only to the extent necessary for the given feature, on the basis of data processing agreements (DPA):",
       { table: { head: ["Provider", "Purpose", "Location"], rows: [
         ["Supabase", "database, sign-in, file storage", "EU (Ireland)"],
+        ["Google Ireland Ltd. / Apple Distribution International Ltd. (sign-in)", "only when you choose “Continue with Google” or “Continue with Apple” — the provider confirms your identity as a separate controller and learns that you are signing in to BitRymDym", "EU / USA"],
         ["Vercel", "hosting of the website and API, logs", "USA / global"],
         ["E3 compute server", "mix, mastering, transcoding, MP4 video, checking files and their audio fingerprints, encrypted backup of catalogue files (Beats, samples, covers)", "EU (Contabo GmbH; data centre in Lauterbourg, France)"],
         ["Google (Gemini API)", "BITEK assistant, AI music suggestions, image moderation", "USA"],
@@ -88,7 +90,7 @@ export const PRIVACY_EN: LegalDoc = {
     { id: "p7", h: "7. Your rights", blocks: [
       "You have the right of access to your data and to a copy of it, and the rights to rectification, erasure, restriction of processing, data portability, to object to processing based on legitimate interest, and not to be subject to a decision based solely on automated processing (section 4). You can delete your Account and data yourself in the settings.",
       `Send requests to ${O.privacyEmail}; we will respond within one month. You have the right to lodge a complaint with the President of the Personal Data Protection Office (Prezes UODO), ul. Stawki 2, 00-193 Warsaw.`,
-      "Providing data is voluntary, but without an e-mail address and password you cannot create an Account.",
+      "Providing data is voluntary, but without an e-mail address and password, or signing in with Google or Apple, you cannot create an Account.",
     ] },
     { id: "p8", h: "8. Cookies and browser storage", blocks: [
       `Necessary cookies are used for the operation of the Service: sign-in, security and language. We store Google Analytics statistics cookies only with your consent. The theme, drafts and the temporary recording are kept in browser storage, not in cookies. Details: Cookie Policy (${LEGAL_PATHS.cookies}).`,

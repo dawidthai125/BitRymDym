@@ -89,7 +89,7 @@ describe("change of the terms (§ 12)", () => {
     for (const s of ["skrót pliku (SHA-256)", "listą plików zdjętych z Serwisu", "Bez tego oświadczenia Serwis nie przyjmie pliku", "blokuje ten plik w całym Serwisie na stałe", "„Zgłoś naruszenie praw”", "odwołanie rozpatruje człowiek", "11 grudnia 2026"]) expect(t).toContain(s);
     const p = text(PRIVACY);
     for (const s of ["Oświadczenie o prawach do wgrywanego pliku", "Lista blokad", "Zgłoszenia naruszeń", "skrót adresu IP", "zaszyfrowana kopia zapasowa", "bez terminu, dopóki blokada obowiązuje"]) expect(p).toContain(s);
-    for (const s of ["wybrany mikrofon i wyjście dźwięku", "układ ścieżek w Studiu", "Obowiązuje od 26 listopada 2026"]) expect(text(COOKIES)).toContain(s);
+    for (const s of ["wybrany mikrofon i wyjście dźwięku", "układ ścieżek w Studiu", "Obowiązuje od 27 listopada 2026"]) expect(text(COOKIES)).toContain(s);
   });
   it("what the service really does is in the documents", () => {
     for (const s of ["niesłyszalnym znakiem", "Publiczny profil twórcy", "nie przywraca wykorzystanych limitów", "art. 11 i 12 DSA"]) expect(text(TERMS)).toContain(s);

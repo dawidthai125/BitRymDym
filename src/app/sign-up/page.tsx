@@ -6,6 +6,8 @@ import { SignUpForm } from "@/components/auth/auth-forms";
 import { AuthThemeBar } from "@/components/site/auth-theme-bar";
 import { safeNextPath, signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { SocialSignIn } from "@/components/auth/social-sign-in";
+import { socialProvidersForRequest } from "@/lib/auth/social-server";
 
 type PageProps = { searchParams?: Promise<{ next?: string | string[] }> };
 
@@ -18,6 +20,7 @@ export default async function SignUpPage({ searchParams }: PageProps) {
   const t = await getTranslations("auth.signUpPage");
   const params = searchParams ? await searchParams : {};
   const next = safeNextPath(Array.isArray(params.next) ? params.next[0] : params.next);
+  const providers = await socialProvidersForRequest();
   const context = await getCurrentProfile();
   if (context) {
     redirect(next ?? "/account");
@@ -30,6 +33,7 @@ export default async function SignUpPage({ searchParams }: PageProps) {
       <p className="text-sm text-muted-foreground">
         {t("zakladaszKontoTworcyPo")}
       </p>
+      <SocialSignIn providers={providers} next={next} />
       <SignUpForm next={next} />
       <p className="text-sm text-muted-foreground">
         {t("maszJuzKonto")}{" "}

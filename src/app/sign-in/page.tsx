@@ -7,9 +7,13 @@ import { SignInForm } from "@/components/auth/auth-forms";
 import { AuthThemeBar } from "@/components/site/auth-theme-bar";
 import { safeNextPath, signUpPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { SocialSignIn } from "@/components/auth/social-sign-in";
+import { socialProvidersForRequest } from "@/lib/auth/social-server";
 import { MAINTENANCE_HEADER } from "@/lib/site/maintenance-gate";
 
-type PageProps = { searchParams?: Promise<{ next?: string | string[]; haslo?: string | string[] }> };
+type PageProps = {
+  searchParams?: Promise<{ next?: string | string[]; haslo?: string | string[]; social?: string | string[] }>;
+};
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("auth.signInPage");
@@ -24,6 +28,9 @@ export default async function SignInPage({ searchParams }: PageProps) {
   const params = searchParams ? await searchParams : {};
   const next = safeNextPath(Array.isArray(params.next) ? params.next[0] : params.next);
   const passwordChanged = (Array.isArray(params.haslo) ? params.haslo[0] : params.haslo) === "zmienione";
+  const socialFailed = (Array.isArray(params.social) ? params.social[0] : params.social) === "error";
+  const providers = await socialProvidersForRequest();
+  const ts = await getTranslations("auth.social");
   const context = await getCurrentProfile();
   if (context) {
     redirect(next ?? "/account");
@@ -55,6 +62,12 @@ export default async function SignInPage({ searchParams }: PageProps) {
           {t("hasloZmienione")}
         </div>
       ) : null}
+      {socialFailed ? (
+        <p role="alert" data-testid="social-sign-in-error" className="text-sm text-destructive">
+          {ts("blad")}
+        </p>
+      ) : null}
+      <SocialSignIn providers={providers} next={next} />
       <SignInForm next={next} />
       {maintenance ? null : (
         <p className="text-sm text-muted-foreground">

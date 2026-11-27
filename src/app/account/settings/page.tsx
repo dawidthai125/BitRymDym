@@ -17,6 +17,9 @@ import { ThemeToggle } from "@/components/site/theme-toggle";
 import { resolveEmailChangeNoticeDisplay } from "@/lib/auth/email-change";
 import { readEmailChangeNotice } from "@/lib/auth/email-change-notice";
 import { signInPathWithNext } from "@/lib/auth/next-path";
+import { isFreshSignIn, isSocialOnlyUser, socialProviderOf } from "@/lib/auth/social";
+import { socialProvidersForRequest } from "@/lib/auth/social-server";
+import { signOutAction } from "@/lib/auth/actions";
 import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
 import { notifyEnv } from "@/lib/email/notify/config";
 import { DEFAULT_PREFERENCES, readPreferences } from "@/lib/email/notify/server";
@@ -39,6 +42,12 @@ export default async function AccountSettingsPage() {
   const tl = await getTranslations("language");
   const notificationPrefs = await readPreferences(createSupabaseAdminClient(), context.userId).catch(() => DEFAULT_PREFERENCES);
   const authUser = await getSessionUser();
+  // Google / Apple account: no password to change or to confirm with.
+  const passwordless = authUser ? isSocialOnlyUser(authUser) : false;
+  const provider = authUser ? socialProviderOf(authUser) : null;
+  const needsFreshSignIn = passwordless && !isFreshSignIn(authUser?.last_sign_in_at);
+  const offered = passwordless ? await socialProvidersForRequest() : [];
+  const ts = await getTranslations("auth.social");
   const signedEmailChangeStatus = await readEmailChangeNotice();
   const emailChangeStatus = resolveEmailChangeNoticeDisplay({
     signedStatus: signedEmailChangeStatus,
@@ -76,14 +85,22 @@ export default async function AccountSettingsPage() {
           <SectionLabel>{tr("bezpieczenstwo")}</SectionLabel>
           {emailChangeStatus ? <EmailChangeNotice status={emailChangeStatus} /> : null}
           {signedEmailChangeStatus ? <ConsumeEmailChangeNotice /> : null}
-          <ChangeEmailForm currentEmail={context.email ?? ""} />
-          <ChangePasswordForm />
-          <p className="text-sm text-[var(--brd-mute)]">
-            {tr("niePamietaszHasla")}{" "}
-            <Link href="/forgot-password" className="text-[var(--brd-green)] underline-offset-4 hover:underline">
-              {tr("resetPrzezEMail")}
-            </Link>
-          </p>
+          {passwordless ? (
+            <p className="text-sm text-[var(--brd-ink-soft)]" data-testid="social-account-note">
+              {ts("kontoBezHasla", { dostawca: provider === "apple" ? "Apple" : "Google" })}
+            </p>
+          ) : (
+            <>
+              <ChangeEmailForm currentEmail={context.email ?? ""} />
+              <ChangePasswordForm />
+              <p className="text-sm text-[var(--brd-mute)]">
+                {tr("niePamietaszHasla")}{" "}
+                <Link href="/forgot-password" className="text-[var(--brd-green)] underline-offset-4 hover:underline">
+                  {tr("resetPrzezEMail")}
+                </Link>
+              </p>
+            </>
+          )}
         </section>
 
         <section id="powiadomienia" className={CARD}>
@@ -102,7 +119,20 @@ export default async function AccountSettingsPage() {
 
         <section id="danger" className={CARD}>
           <SectionLabel>{tr("usuwanieKonta")}</SectionLabel>
-          <DeleteAccountForm />
+          {needsFreshSignIn ? (
+            // Signed in too long ago: sign out, then sign in again with the provider.
+            <div className="space-y-3 text-sm">
+              <p className="text-[var(--brd-ink-soft)]">{ts("usuwanieZalogujPonownie")}</p>
+              <form action={signOutAction}>
+                <button type="submit" className="min-h-11 underline underline-offset-4">
+                  {ts("wyloguj")}
+                </button>
+              </form>
+              {offered.length === 0 ? <p className="text-[var(--brd-mute)]">{ts("usuwanieNaStronie")}</p> : null}
+            </div>
+          ) : (
+            <DeleteAccountForm passwordless={passwordless} />
+          )}
         </section>
       </PageFrame>
     </main>

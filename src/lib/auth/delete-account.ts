@@ -6,6 +6,8 @@ import {
 } from "@/lib/auth/delete-account-policy";
 import { ANONYMIZED_PUBLIC_AUTHOR } from "@/lib/auth/display-name";
 import { reauthenticateWithPassword } from "@/lib/auth/reauth";
+import { getSessionUser } from "@/lib/auth/session";
+import { isFreshSignIn, isSocialOnlyUser, SOCIAL_REAUTH_REQUIRED_ERROR } from "@/lib/auth/social";
 import { AUDIO_ARTIFACTS_BUCKET } from "@/config/audio-render";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
@@ -305,12 +307,26 @@ export async function executeAccountProfile01Deletion(
 }
 
 /**
+ * Password accounts confirm with the password. Google / Apple accounts have none,
+ * so the provider sign-in must be fresh (identity always from the session).
+ */
+async function confirmDeletingUser(currentPassword: string) {
+  const user = await getSessionUser();
+  if (user && isSocialOnlyUser(user)) {
+    return isFreshSignIn(user.last_sign_in_at)
+      ? { ok: true as const, user }
+      : { ok: false as const, error: SOCIAL_REAUTH_REQUIRED_ERROR };
+  }
+  return reauthenticateWithPassword(currentPassword);
+}
+
+/**
  * ACCOUNT/PROFILE-01 — self-delete. Session + password reauth, then canonical core, then signOut.
  */
 export async function deleteOwnAccount(params: {
   currentPassword: string;
 }): Promise<DeleteAccountResult> {
-  const reauth = await reauthenticateWithPassword(params.currentPassword);
+  const reauth = await confirmDeletingUser(params.currentPassword);
   if (!reauth.ok) {
     return { ok: false, error: reauth.error, step: "reauth" };
   }

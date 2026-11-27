@@ -13,6 +13,7 @@ export const PRIVACY: LegalDoc = {
     ] },
     { id: "p2", h: "2. Jakie dane przetwarzamy", blocks: [{ list: [
       "Konto: adres e-mail, zaszyfrowane hasło (przechowuje je dostawca uwierzytelniania), ksywka, numer użytkownika, Plan, data końca Planu, nazwa i data końca zaplanowanego następnego Planu (jeśli został opłacony), data rejestracji, wersja zaakceptowanego Regulaminu i Polityki.",
+      "Logowanie przez Google lub Apple (jeśli je wybierzesz): od dostawcy dostajemy adres e-mail (w Apple może to być adres ukrywający Twój własny), identyfikator konta u dostawcy i informację, czy adres jest potwierdzony, a od Google także imię i nazwisko oraz adres zdjęcia profilowego (od Apple imię i nazwisko, jeśli je udostępnisz). Hasła nie dostajemy. Imienia, nazwiska i zdjęcia nie pokazujemy w Serwisie — ksywkę wybierasz samodzielnie. Gdy Konto z tym samym potwierdzonym adresem już istnieje, logujemy Cię na nie. Podstawa: art. 6 ust. 1 lit. b RODO.",
       "Treści: wgrane Bity, okładki, Nagrania (Twój głos lub instrument), projekty Studia, teksty, utwory referencyjne do masteringu, wygenerowane mixy, mastery i wideo.",
       "Aktywność: odsłuchy, pobrania, polubienia, oceny, komentarze i ich zgłoszenia, miejsca w rankingach, punkty i poziom, linki do odsłuchu i liczba ich odtworzeń, historia moderacji i odwołań.",
       "Ochrona Bitów: osobista kopia Bitu z niesłyszalnym znakiem przypisanym do Konta i dziennik pełnych odsłuchów (które Konto, który Bit, kiedy). Gdy Bit wycieknie, po znaku sprawdzamy, z której kopii pochodzi plik.",
@@ -51,6 +52,7 @@ export const PRIVACY: LegalDoc = {
       "Powierzamy dane wyłącznie w zakresie potrzebnym do danej funkcji, na podstawie umów powierzenia (DPA):",
       { table: { head: ["Dostawca", "Do czego", "Gdzie"], rows: [
         ["Supabase", "baza danych, logowanie, przechowywanie plików", "UE (Irlandia)"],
+        ["Google Ireland Ltd. / Apple Distribution International Ltd. (logowanie)", "tylko gdy wybierzesz „Kontynuuj z Google” lub „Kontynuuj z Apple” — dostawca potwierdza Twoją tożsamość jako odrębny administrator i dowiaduje się, że logujesz się do BitRymDym", "UE / USA"],
         ["Vercel", "hosting strony i API, logi", "USA / globalnie"],
         ["Serwer obliczeniowy E3", "mix, mastering, transkodowanie, wideo MP4, kontrola plików i ich odcisków dźwięku, zaszyfrowana kopia zapasowa plików katalogu (Bity, sample, okładki)", "UE (Contabo GmbH; centrum danych w Lauterbourg, Francja)"],
         ["Google (Gemini API)", "asystent BITEK, podpowiedzi muzyczne AI, moderacja obrazów", "USA"],
@@ -88,7 +90,7 @@ export const PRIVACY: LegalDoc = {
     { id: "p7", h: "7. Twoje prawa", blocks: [
       "Masz prawo do: dostępu do danych i ich kopii, sprostowania, usunięcia, ograniczenia przetwarzania, przenoszenia danych, sprzeciwu wobec przetwarzania opartego na prawnie uzasadnionym interesie, a także do niepodlegania decyzji opartej wyłącznie na zautomatyzowanym przetwarzaniu (pkt 4). Konto i dane usuniesz samodzielnie w ustawieniach.",
       `Wnioski kieruj na ${O.privacyEmail}; odpowiemy w ciągu miesiąca. Masz prawo wnieść skargę do Prezesa Urzędu Ochrony Danych Osobowych (ul. Stawki 2, 00-193 Warszawa).`,
-      "Podanie danych jest dobrowolne, ale bez adresu e-mail i hasła nie założysz Konta.",
+      "Podanie danych jest dobrowolne, ale bez adresu e-mail i hasła albo logowania przez Google lub Apple nie założysz Konta.",
     ] },
     { id: "p8", h: "8. Pliki cookie i pamięć przeglądarki", blocks: [
       `Cookie niezbędne służą do działania Serwisu: logowanie, bezpieczeństwo i język. Cookies statystyczne Google Analytics zapisujemy tylko za Twoją zgodą. Motyw, szkice i tymczasowe nagranie są w pamięci przeglądarki, nie w cookie. Szczegóły: Polityka cookies (${LEGAL_PATHS.cookies}).`,
