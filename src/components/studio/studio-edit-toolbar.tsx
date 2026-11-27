@@ -39,7 +39,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
     >
       {props.onSnapPreset ? (
         <label className="flex min-h-11 items-center gap-1 text-[11px] text-[var(--brd-mute)]" title={t("siatkaOpis")}>
-          <span className="max-sm:sr-only">{t("siatka")}</span>
+          <span className="sr-only">{t("siatka")}</span>
           <select
             className="min-h-11 rounded-sm border border-[var(--brd-line)] bg-[var(--brd-paper)] px-1 text-xs font-semibold text-[var(--brd-ink)]"
             value={props.snapPreset ?? "off"}
@@ -68,13 +68,14 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           type="button"
           size="sm"
           variant={props.lowTracks ? "default" : "outline"}
-          className="min-h-11 min-w-11"
+          className="min-h-11 min-w-11 px-0 text-base"
           aria-pressed={Boolean(props.lowTracks)}
+          aria-label={t("niskieSciezki")}
           title={t("niskieSciezkiOpis")}
           data-testid="studio-toolbar-track-height"
           onClick={props.onToggleTrackHeight}
         >
-          {t("niskieSciezki")}
+          <span aria-hidden="true">↕</span>
         </Button>
       ) : null}
       {props.onToggleMixer ? (
@@ -82,7 +83,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           type="button"
           size="sm"
           variant={props.mixerOpen ? "default" : "outline"}
-          className="min-h-11 min-w-11"
+          className="min-h-11 min-w-11 px-2"
           aria-pressed={Boolean(props.mixerOpen)}
           title={t("mikserOpis")}
           data-testid="studio-toolbar-mixer"

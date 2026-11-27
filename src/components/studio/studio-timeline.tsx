@@ -167,10 +167,11 @@ function TimelineGridLines({ grid, density }: { grid: StudioGrid; density: numbe
   const patternId = useId();
   const beatPx = grid.beatMs * density;
   const barPx = beatPx * grid.beatsPerBar;
-  // Too dense: show every 4th bar, or nothing.
-  const tilePx = barPx >= 8 ? barPx : barPx * 4;
-  if (!(tilePx >= 8)) return null;
-  const beats = beatPx >= 12 && barPx >= 8 ? grid.beatsPerBar : 1;
+  // Zoomed out: a line every 2nd, 4th, 8th… bar, so the waveforms stay readable.
+  const barsPerLine = [1, 2, 4, 8, 16, 32].find((n) => n * barPx >= 28);
+  if (!barsPerLine) return null;
+  const tilePx = barPx * barsPerLine;
+  const beats = barsPerLine === 1 && beatPx >= 12 ? grid.beatsPerBar : 1;
   return (
     <svg
       className="pointer-events-none absolute inset-x-0 bottom-0 top-7 z-[2] h-[calc(100%-1.75rem)] w-full text-[var(--brd-ink)]"
