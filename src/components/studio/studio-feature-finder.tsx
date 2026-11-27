@@ -55,7 +55,8 @@ export function StudioFeatureFinder({
         onClick={() => setOpen(true)}
       >
         <Search aria-hidden className="size-4 shrink-0" />
-        <span className="truncate">{t("przycisk")}</span>
+        {/* Phones and tablets: only the icon, so the header stays one row. */}
+        <span className="truncate max-lg:sr-only">{t("przycisk")}</span>
       </button>
       {open && typeof document !== "undefined"
         ? createPortal(
@@ -103,7 +104,9 @@ export function StudioFeatureFinder({
                         >
                           <span className="min-w-0">{textOf(item.id).label}</span>
                           <span className="shrink-0 text-xs text-[var(--brd-green)]">
-                            {locked(item) ? t("pelnyWidokOdSilver") : `→ ${t(`miejsca.${item.place}`)}`}
+                            {locked(item)
+                              ? t("pelnyWidokOdSilver")
+                              : `→ ${t(`miejsca.${item.mixWithoutFullView && !fullViewAllowed ? "mix" : item.place}`)}`}
                           </span>
                         </button>
                       </li>

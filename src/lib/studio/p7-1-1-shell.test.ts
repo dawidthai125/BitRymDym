@@ -53,12 +53,11 @@ describe("Phase 7.1.1 edit toolbar hit targets", () => {
     expect(editor).toMatch(/<StudioEditToolbar[\s\S]*?\/>/);
     const buttonCount = (editToolbar.match(/<Button[\s\S]*?<\/Button>/g) ?? [])
       .length;
-    expect(buttonCount).toBeGreaterThanOrEqual(5);
+    expect(buttonCount).toBeGreaterThanOrEqual(4);
     expect(
       editToolbar.match(/className="min-h-11 min-w-11/g)?.length ?? 0,
     ).toBe(buttonCount);
     for (const label of [
-      "Zaznacz",
       "Edycja",
       "Oddal",
       "Przybliż",

@@ -1236,3 +1236,45 @@ html.brd-studio-full [data-studio-shell] {
   background: transparent;
   color: var(--brd-ink);
 }
+
+/* Clip tools of the selected recording: below xl a bar right above the group bar (as in the mockup). */
+@media (max-width: 1279px) {
+  .studio-desk [data-studio-clip-bar] {
+    position: fixed;
+    inset-inline: 0;
+    /* A little under the group bar (which paints above), so no strip of the timeline shows between them. */
+    bottom: calc(3.9rem + env(safe-area-inset-bottom));
+    z-index: 30;
+    max-height: 46dvh;
+    overflow-y: auto;
+    justify-content: center;
+    padding: 0.35rem 0.25rem 0.55rem;
+    border-top: 1px solid #5c4c3c;
+    background: #17130f;
+    box-shadow: 0 -6px 18px rgb(0 0 0 / 45%);
+  }
+  main[data-brd-surface="control-room"]:has([data-studio-clip-bar]) {
+    padding-bottom: calc(9.5rem + env(safe-area-inset-bottom));
+  }
+  main[data-brd-surface="control-room"]:has([data-studio-clip-bar]) [data-testid="studio-bitek-dock"]:not([style*="top"]) {
+    bottom: calc(8.25rem + env(safe-area-inset-bottom));
+  }
+  /* The bottom is taken by the clip tools: the mini player moves to the top of the screen. */
+  main[data-brd-surface="control-room"]:has([data-studio-clip-bar]) [data-testid="studio-mobile-mini-transport"] {
+    top: calc(0.25rem + env(safe-area-inset-top));
+    bottom: auto;
+  }
+}
+
+/* Narrow phones: six clip tools in one row need plain, tight labels. */
+@media (max-width: 639.98px) {
+  .studio-desk [data-testid="studio-fragment-strip"] button {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.7rem;
+    padding-inline: 1px;
+  }
+  .studio-desk .studio-brand-bar .studio-bit-picker {
+    min-width: 0;
+  }
+}

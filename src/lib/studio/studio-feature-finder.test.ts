@@ -48,6 +48,12 @@ describe("studio feature finder", () => {
     expect(ids("automatyka xyzq")).toEqual([]);
   });
 
+  it("does not lock the sound tools for plans without the full view", () => {
+    for (const id of ["autotune", "presets", "effects"]) {
+      expect(STUDIO_FEATURES.find((f) => f.id === id)).toMatchObject({ fullOnly: false, mixWithoutFullView: true });
+    }
+  });
+
   it("drops Polish accents, also ł", () => {
     expect(normalizeFeatureText("Ścieżka, GŁOŚNOŚĆ")).toBe("sciezka, glosnosc");
   });

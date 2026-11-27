@@ -2884,8 +2884,8 @@
       "waveform": "Przebieg · {v0}–{v1}"
     },
     "studioEditToolbar": {
+      "edycjaOpis": "Edycja: przesuwanie nagrań. Wyłączona: dotknięcie osi przesuwa odtwarzanie.",
       "edycjaOsiCzasu": "Edycja osi czasu",
-      "zaznacz": "Zaznacz",
       "edycja": "Edycja",
       "podzielWPlayhead": "Podziel na głowicy odtwarzania",
       "podziel": "Podziel",
@@ -3972,6 +3972,17 @@
       }
     },
     "groups": {
+      "prosteBrzmienieOpis": "Gotowe brzmienia wokalu, czyszczenie i efekty są w kroku Mix.",
+      "doMixu": "Przejdź do mixu",
+      "doMixuOpis": "Brzmienie, czyszczenie wokalu i gotowy utwór.",
+      "efektyPrzyNagraniu": "Strojenie wokalu i efekty przy nagraniu",
+      "wPelnymWidoku": "Otwiera pełny widok.",
+      "efektyPrzyNagraniuOdSilver": "Efekty obok nagrywania ma pełny widok: od Silver.",
+      "zmienBit": "Zmień bit",
+      "pelnyWidok": "Pełny widok",
+      "pelnyWidokOpis": "Wszystkie funkcje Studia i narzędzia edycji.",
+      "widokProsty": "Prosty widok",
+      "widokProstyOpis": "Tylko nagrywanie: mniej przycisków na ekranie.",
       "aria": "Funkcje Studia",
       "record": "Nagrywanie",
       "sound": "Brzmienie",

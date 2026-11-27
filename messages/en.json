@@ -2884,8 +2884,8 @@
       "waveform": "Waveform · {v0}–{v1}"
     },
     "studioEditToolbar": {
+      "edycjaOpis": "Edit: move recordings. Off: tapping the timeline moves the playhead.",
       "edycjaOsiCzasu": "Timeline editing",
-      "zaznacz": "Select",
       "edycja": "Edit",
       "podzielWPlayhead": "Split at playhead",
       "podziel": "Split",
@@ -3972,6 +3972,17 @@
       }
     },
     "groups": {
+      "prosteBrzmienieOpis": "Vocal sounds, cleanup and effects are in the Mix step.",
+      "doMixu": "Go to the mix",
+      "doMixuOpis": "Sound, vocal cleanup and the finished song.",
+      "efektyPrzyNagraniu": "Vocal tuning and effects while recording",
+      "wPelnymWidoku": "Opens the full view.",
+      "efektyPrzyNagraniuOdSilver": "Effects next to recording are in the full view: Silver and up.",
+      "zmienBit": "Change the beat",
+      "pelnyWidok": "Full view",
+      "pelnyWidokOpis": "All Studio features and editing tools.",
+      "widokProsty": "Simple view",
+      "widokProstyOpis": "Just recording: fewer buttons on screen.",
       "aria": "Studio features",
       "record": "Record",
       "sound": "Sound",

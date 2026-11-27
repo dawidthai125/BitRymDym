@@ -1,6 +1,6 @@
 /**
  * Presentational Studio timeline toolbar (hit-area ≥44×44 via min-h-11 min-w-11).
- * Only what works on the timeline itself: mode and zoom. Everything else lives in the five groups.
+ * Only what works on the timeline itself: the edit toggle (off = tapping moves the playhead) and zoom. Everything else lives in the five groups.
  */
 "use client";
 
@@ -25,7 +25,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1 max-sm:gap-0.5 max-sm:[&_button]:px-1.5 max-sm:[&_button]:text-[11px]"
+      className="ml-auto flex shrink-0 items-center gap-1"
       role="toolbar"
       aria-label={t("edycjaOsiCzasu")}
       data-testid="studio-edit-toolbar"
@@ -33,26 +33,16 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
       <Button
         type="button"
         size="sm"
-        variant={props.timelineMode === "seek" ? "default" : "outline"}
-        className="min-h-11 min-w-11"
-        aria-pressed={props.timelineMode === "seek"}
-        disabled={props.recordingLocked}
-        onClick={props.onSeekMode}
-      >
-        {t("zaznacz")}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
         variant={props.timelineMode === "edit" ? "default" : "outline"}
         className="min-h-11 min-w-11"
         aria-pressed={props.timelineMode === "edit"}
         disabled={props.recordingLocked}
-        onClick={props.onEditMode}
+        title={t("edycjaOpis")}
+        onClick={props.timelineMode === "edit" ? props.onSeekMode : props.onEditMode}
       >
         {t("edycja")}
       </Button>
-      <div className="ml-auto flex shrink-0 items-center gap-1" data-testid="studio-toolbar-zoom">
+      <div className="flex shrink-0 items-center gap-1" data-testid="studio-toolbar-zoom">
         <Button
           type="button"
           size="sm"

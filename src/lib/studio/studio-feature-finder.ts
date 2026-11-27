@@ -15,21 +15,25 @@ export type StudioFeatureEntry = {
   place: StudioFeaturePlace;
   /** Exists only in the full view (Silver and Gold). */
   fullOnly: boolean;
+  /** Plans without the full view find it in the Mix step. */
+  mixWithoutFullView?: boolean;
 };
 
 const entry = (id: string, place: StudioFeaturePlace, fullOnly = false): StudioFeatureEntry => ({ id, place, fullOnly });
+/** Presets, tuning and effects: next to the recording in the full view, otherwise in the Mix step. */
+const sound = (id: string): StudioFeatureEntry => ({ ...entry(id, "sound"), mixWithoutFullView: true });
 
 /** Order = order of the list when nothing is typed (most wanted first). */
 export const STUDIO_FEATURES: readonly StudioFeatureEntry[] = [
-  entry("autotune", "sound", true),
+  sound("autotune"),
   entry("latency", "record"),
   entry("lyrics", "text"),
   entry("importVocal", "add"),
-  entry("presets", "sound", true),
+  sound("presets"),
   entry("cleanup", "mix"),
   entry("export", "more", true),
   entry("samples", "add"),
-  entry("effects", "sound", true),
+  sound("effects"),
   entry("markers", "text", true),
   entry("addTrack", "add", true),
   entry("stems", "add", true),

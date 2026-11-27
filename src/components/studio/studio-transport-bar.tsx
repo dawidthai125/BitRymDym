@@ -7,7 +7,7 @@
  * is selected. Phones: the bar is not sticky; a mini transport docks above the bottom nav instead.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -132,7 +132,13 @@ export function StudioTransportBar({
   onRecordStop,
   toolsInGroups = false,
   onFragmentDetails,
+  clipToolsAtBottom = false,
+  timelineTools = null,
 }: {
+  /** Below xl the clip tools sit at the bottom of the screen, above the group bar. */
+  clipToolsAtBottom?: boolean;
+  /** Edit toggle and zoom, drawn in the clock row so they take no row of their own. */
+  timelineTools?: ReactNode;
   /** Full record view: master volume, history, export and the space-bar mode live under "Więcej". */
   toolsInGroups?: boolean;
   onFragmentDetails?: () => void;
@@ -245,6 +251,10 @@ export function StudioTransportBar({
   const beatControlsDisabled = noAudio || busy || recording;
   const saveProblem = saveIsError || conflictActive;
   const extraKeys = simple || moreOpen ? "" : "max-sm:hidden";
+  /** Full view on a tablet: loop, metronome and tempo wait under "⋯", so the keys stay in one row. */
+  const rareKeys = toolsInGroups ? (moreOpen ? "" : "max-xl:hidden") : extraKeys;
+  /** Below xl the pause key takes the place of Play while the song runs. */
+  const swapPlay = toolsInGroups && phase === "playing";
   /** Phones: the transport is not sticky (too tall when wrapped) — a mini transport docks once it scrolls away. */
   const transportRef = useRef<HTMLDivElement | null>(null);
   const [transportOffscreen, setTransportOffscreen] = useState(false);
@@ -308,7 +318,7 @@ export function StudioTransportBar({
             <Button
               type="button"
               size="sm"
-              className={`studio-key studio-key-play ${STUDIO_TRANSPORT_KEY}`}
+              className={`studio-key studio-key-play ${STUDIO_TRANSPORT_KEY} ${swapPlay ? "max-xl:hidden" : ""}`}
               onClick={play}
               disabled={beatControlsDisabled || phase === "playing"}
               title={tl(noAudio ? tr("odtworzNajpierwWybierzBit") : tr("odtworz"))}
@@ -332,7 +342,7 @@ export function StudioTransportBar({
               aria-label={recording ? tr("zatrzymajNagrywanie") : tr("stop")}
             >
               <StudioGlyph name="stop" />
-              <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("stop")}</span>
+              <span className={`font-mono text-[11px] font-semibold tracking-[0.08em] ${toolsInGroups ? "max-xl:hidden" : ""}`}>{tr("stop")}</span>
             </Button>
             <Button
               type="button"
@@ -430,7 +440,7 @@ export function StudioTransportBar({
               type="button"
               size="sm"
               variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY} ${extraKeys}`}
+              className={`studio-key ${STUDIO_TRANSPORT_KEY} ${toolsInGroups ? (swapPlay ? "max-xl:order-first max-xl:w-[4.5rem]" : "max-xl:hidden") : extraKeys}`}
               onClick={pause}
               disabled={noAudio || phase !== "playing" || recording}
               title={tr("pauza")}
@@ -446,8 +456,8 @@ export function StudioTransportBar({
               variant="outline"
               className={
                 loopEnabled
-                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY} ${extraKeys}`
-                  : `studio-key ${STUDIO_TRANSPORT_KEY} ${extraKeys}`
+                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY} ${rareKeys}`
+                  : `studio-key ${STUDIO_TRANSPORT_KEY} ${rareKeys}`
               }
               disabled={noAudio || recording}
               aria-pressed={loopEnabled}
@@ -472,8 +482,8 @@ export function StudioTransportBar({
               variant="outline"
               className={
                 metronomeEnabled
-                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY} ${extraKeys}`
-                  : `studio-key ${STUDIO_TRANSPORT_KEY} ${extraKeys}`
+                  ? `studio-key studio-key-on ${STUDIO_TRANSPORT_KEY} ${rareKeys}`
+                  : `studio-key ${STUDIO_TRANSPORT_KEY} ${rareKeys}`
               }
               disabled={noAudio || recording}
               aria-pressed={metronomeEnabled}
@@ -512,7 +522,7 @@ export function StudioTransportBar({
               type="button"
               size="sm"
               variant="outline"
-              className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE} sm:hidden`}
+              className={`studio-key ${STUDIO_TRANSPORT_KEY_WIDE} ${toolsInGroups ? "min-w-11 xl:hidden" : "sm:hidden"}`}
               aria-expanded={moreOpen}
               data-testid="studio-transport-more"
               aria-label={moreOpen ? tr("mniej") : tr("wiecej")}
@@ -529,10 +539,10 @@ export function StudioTransportBar({
             data-testid="studio-transport-meta"
           >
             <TransportClock durationMs={durationMs} />
-            <span className={`studio-counter-dim sm:max-[1439px]:hidden ${extraKeys}`} aria-label={tr("tempo")}>
+            <span className={`studio-counter-dim sm:max-[1439px]:hidden ${rareKeys}`} aria-label={tr("tempo")}>
               {tempoBpm} {tr("bpm")}
             </span>
-            <span className={`studio-counter-dim sm:max-[1439px]:hidden ${extraKeys}`} aria-label={tr("metrum")}>
+            <span className={`studio-counter-dim sm:max-[1439px]:hidden ${rareKeys}`} aria-label={tr("metrum")}>
               {timeSignatureNum}/{timeSignatureDen}
             </span>
             {tuneBakePendingTrackIds.length > 0 ? (
@@ -631,11 +641,16 @@ export function StudioTransportBar({
           />
           </div>
           )}
+          {timelineTools}
         </div>
         {toolsShown ? (
-        <div className="flex min-w-0 flex-wrap items-center gap-1" data-testid="studio-transport-row-tools">
+        <div
+          className="flex min-w-0 flex-wrap items-center gap-1"
+          data-testid="studio-transport-row-tools"
+          data-studio-clip-bar={clipToolsAtBottom ? "" : undefined}
+        >
           {hasSelection ? (
-          <div className={`flex shrink-0 flex-nowrap gap-0.5 max-sm:grid max-sm:w-full max-sm:grid-cols-3 ${showFragmentTools ? "max-lg:hidden" : ""}`} data-testid="studio-selection-readout">
+          <div className={`flex shrink-0 flex-nowrap gap-0.5 max-sm:grid max-sm:w-full max-sm:grid-cols-3 ${clipToolsAtBottom ? "max-xl:!hidden" : showFragmentTools ? "max-lg:hidden" : ""}`} data-testid="studio-selection-readout">
             {(
               [
                 ["poczatek", selectionStartMs],
@@ -694,7 +709,7 @@ export function StudioTransportBar({
           ) : null}
         </div>
         ) : showFragmentTools && !simple ? (
-          <p className="px-1 text-[11px] text-[var(--brd-mute)] max-sm:hidden" data-testid="studio-transport-select-hint">
+          <p className={`px-1 text-[11px] text-[var(--brd-mute)] ${toolsInGroups ? "max-xl:hidden" : "max-sm:hidden"}`} data-testid="studio-transport-select-hint">
             {tr("zaznaczFragment")}
           </p>
         ) : null}

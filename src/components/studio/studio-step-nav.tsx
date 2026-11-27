@@ -16,6 +16,7 @@ export function StudioStepNav({
   studioStep,
   onSampleTab,
   showSamplesTab = true,
+  hasGroupBar = false,
   recordingLocked,
   canGoMix,
   songReady,
@@ -32,6 +33,8 @@ export function StudioStepNav({
   onSampleTab: boolean;
   /** False in the full record view: samples open from "Dodaj". */
   showSamplesTab?: boolean;
+  /** Below xl the group bar is on screen: samples and the view switch live there. */
+  hasGroupBar?: boolean;
   recordingLocked: boolean;
   canGoMix: boolean;
   /** autoMixMasterMaterial(...).ready: beat + vocal are enough for "Zrób utwór". */
@@ -74,7 +77,7 @@ export function StudioStepNav({
             </button>
           </li>
           {showSamplesTab ? (
-          <li className="flex items-center">
+          <li className={`flex items-center ${hasGroupBar && !onSampleTab ? "max-xl:hidden" : ""}`}>
             <span aria-hidden className="px-0.5 text-[var(--brd-mute)]">·</span>
             <button
               type="button"
@@ -137,13 +140,13 @@ export function StudioStepNav({
           })}
         </ol>
         {studioStep === "record" ? (
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 max-sm:w-full">
+          <div className={`ml-auto flex flex-wrap items-center justify-end gap-2 ${hasGroupBar ? "" : "max-sm:w-full"}`}>
             {onSampleTab ? null : advancedRecord ? (
               <Button
                 type="button"
                 size="sm"
                 variant={recordFullView ? "default" : "outline"}
-                className="min-h-11 px-3"
+                className={`min-h-11 px-3 ${hasGroupBar ? "max-xl:hidden" : ""}`}
                 data-testid="studio-record-full-view"
                 aria-pressed={recordFullView}
                 disabled={recordingLocked}
@@ -153,7 +156,7 @@ export function StudioStepNav({
                 {tMix("pelnyWidok")}
               </Button>
             ) : (
-              <span className="max-w-[18rem] text-xs leading-snug text-[var(--brd-mute)] max-sm:hidden" data-testid="studio-record-simple-only">
+              <span className={`max-w-[18rem] text-xs leading-snug text-[var(--brd-mute)] max-sm:hidden ${hasGroupBar ? "max-xl:hidden" : ""}`} data-testid="studio-record-simple-only">
                 {tMix("widokUproszczonyPlan")}
               </span>
             )}
@@ -167,7 +170,8 @@ export function StudioStepNav({
             <Button
               type="button"
               size="sm"
-              className="min-h-11 px-3"
+              /* Phones: step "2. Mix" in the same row does this. */
+              className={`min-h-11 px-3 ${hasGroupBar ? "max-sm:hidden" : ""}`}
               data-testid="studio-go-mix"
               aria-describedby="studio-go-mix-hint"
               disabled={!canGoMix}

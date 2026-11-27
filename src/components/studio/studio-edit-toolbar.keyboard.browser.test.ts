@@ -24,7 +24,7 @@ describe("studio edit-toolbar — keyboard a11y (real mount)", () => {
       expect(p.audioElementCount).toBe(0);
       expect(p.activatedForbiddenAction).toBe(false);
       expect(p.networkAllowedNonLocal).toBe(0);
-      expect(p.tabStops.length).toBeGreaterThanOrEqual(5);
+      expect(p.tabStops.length).toBeGreaterThanOrEqual(4);
       expect(p.allStopsNamed, JSON.stringify(p.tabStops)).toBe(true);
       expect(p.allStopsFocusVisible, JSON.stringify(p.tabStops)).toBe(true);
       // Everything else lives in the five groups now.

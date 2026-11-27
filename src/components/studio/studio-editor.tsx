@@ -66,6 +66,7 @@ import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
 import { StudioTransportBar } from "@/components/studio/studio-transport-bar";
 import { StudioStepNav } from "@/components/studio/studio-step-nav";
 import { StudioFeatureFinder } from "@/components/studio/studio-feature-finder";
+import { StudioLyricsCard } from "@/components/studio/studio-lazy-panels";
 import { StudioDockBar, StudioGroupRow, StudioGroupSection, StudioGroupTabs, StudioTextGroup } from "@/components/studio/studio-groups";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioMixRevisionHistoryControl } from "@/components/studio/studio-mix-revision-history-control";
@@ -382,6 +383,8 @@ function StudioEditorInner({
   /** "Dodaj" and the feature search point the recording panel at one of its controls. */
   const [recordFocus, setRecordFocus] = useState<StudioRecordFocus | null>(null);
   const recordFocusIdRef = useRef(0);
+  /** Simple view below xl: which group sheet is open (the recording panel is always on the page). */
+  const [simpleGroup, setSimpleGroup] = useState<Exclude<StudioGroup, "record"> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   // A short note ("Cofnięto zmianę"): after a moment the save state is back.
@@ -795,10 +798,11 @@ function StudioEditorInner({
 
   /** Full record view: the five groups replace the crowded toolbar and the old panel tabs. */
   const groupsShown = studioStep === "record" && !recordSimple;
+  const simpleDock = studioStep === "record" && recordSimple;
   const activeGroup =
     inspectorDesktopRail || inspectorOverlayOpen ? studioGroupOfContext(inspectorContext) : null;
 
-  /** A vocal track to work on when nothing is selected: autotune belongs on the voice, not on the Master. */
+  /** A vocal track to work on when nothing is selected: vocal tuning belongs on the voice, not on the Master. */
   function firstVocalTrack() {
     return (
       doc.tracks.find((t) => t.trackType !== "BEAT" && t.trackRole !== "beat" && t.trackRole !== "instrument") ??
@@ -824,11 +828,46 @@ function StudioEditorInner({
     openInspectorOverlay();
   }
 
-  function focusRecordControl(target: StudioRecordFocus["target"]) {
+  /** inPage: the simple view, where the panel is not in a sheet. */
+  function focusRecordControl(target: StudioRecordFocus["target"], inPage = false) {
     recordFocusIdRef.current += 1;
     setRecordFocus({ id: recordFocusIdRef.current, target });
     setInspectorPreferRecord(true);
-    openInspectorOverlay();
+    if (!inPage) openInspectorOverlay();
+  }
+
+  /** The same five buttons in the simple view, with only what that view really has. */
+  function openSimpleGroup(group: StudioGroup) {
+    if (group === "record") {
+      setSimpleGroup(null);
+      setSampleTab(false);
+      window.setTimeout(
+        () => document.querySelector('[data-testid="studio-record-simple"]')?.scrollIntoView({ block: "start", behavior: "smooth" }),
+        50,
+      );
+      return;
+    }
+    if (recordingLocked) return;
+    setSimpleGroup(group);
+  }
+
+  function goToMix() {
+    setSimpleGroup(null);
+    if (!canGoMix) {
+      setStatus(tGroups("najpierwWokal"));
+      return;
+    }
+    closeInspectorOverlay();
+    setSampleTab(false);
+    setStudioStep("mix");
+  }
+
+  /** Silver and Gold: from a simple-view sheet to a group of the full view. */
+  function openFullViewGroup(group: StudioGroup | null) {
+    setSimpleGroup(null);
+    setSampleTab(false);
+    setRecordFullView(true);
+    if (group) openGroup(group);
   }
 
   /** Track settings or the files list: both live under "Więcej". */
@@ -851,8 +890,9 @@ function StudioEditorInner({
   function openFeature(id: string) {
     const feature = STUDIO_FEATURES.find((item) => item.id === id);
     if (!feature || recordingLocked || (feature.fullOnly && !advancedRecord)) return;
+    setSimpleGroup(null);
     setSampleTab(false);
-    if (id === "makeSong" || id === "cleanup") {
+    if (id === "makeSong" || id === "cleanup" || (feature.mixWithoutFullView && !advancedRecord)) {
       if (canGoMix) setStudioStep("mix");
       else setStatus(tGroups("najpierwWokal"));
       return;
@@ -872,7 +912,8 @@ function StudioEditorInner({
       return;
     }
     setStudioStep("record");
-    if (feature.fullOnly && !recordFullView) setRecordFullView(true);
+    const opensFullView = feature.fullOnly || Boolean(feature.mixWithoutFullView);
+    if (opensFullView && !recordFullView) setRecordFullView(true);
     if (id === "clipTools") {
       closeInspectorOverlay();
       setStatus(tGroups("dotknijKlipu"));
@@ -897,7 +938,7 @@ function StudioEditorInner({
       return;
     }
     // From the simple view the panel controls open in the simple panel (it is always on screen there).
-    const staysSimple = !advancedRecord || !recordFullView ? !feature.fullOnly : false;
+    const staysSimple = !advancedRecord || !recordFullView ? !opensFullView : false;
     const focus: Partial<Record<string, StudioRecordFocus["target"]>> = {
       latency: "latency",
       mic: "mic",
@@ -911,7 +952,7 @@ function StudioEditorInner({
     };
     const target = focus[id];
     if (target) {
-      focusRecordControl(target);
+      focusRecordControl(target, staysSimple);
       return;
     }
     if (id === "mixer") {
@@ -3818,6 +3859,21 @@ function StudioEditorInner({
               {tGroups("spacja")}{tGroups(transportKeyboardMode === "quick_rec" ? "spacjaNagrywa" : "spacjaGra")}
             </Button>
           </StudioGroupSection>
+          {advancedRecord ? (
+            <div className="xl:hidden">
+              <StudioGroupRow
+                testId="studio-more-simple-view"
+                title={tGroups("widokProsty")}
+                hint={tGroups("widokProstyOpis")}
+                disabled={recordingLocked}
+                onClick={() => {
+                  if (!closeInspectorOverlay()) return;
+                  setFxPanel(null);
+                  setRecordFullView(false);
+                }}
+              />
+            </div>
+          ) : null}
           <StudioGroupSection title={tGroups("sekcjaProjekt")}>
             <StudioGroupRow testId="studio-more-track" title={tGroups("ustawieniaSciezki")} hint={tGroups("ustawieniaSciezkiOpis")} onClick={() => openTrackOrFiles("settings")} />
             <StudioGroupRow testId="studio-more-files" title={tGroups("pliki")} hint={tGroups("plikiOpis")} onClick={() => openTrackOrFiles("file")} />
@@ -4099,7 +4155,7 @@ function StudioEditorInner({
           title={doc.project.title}
           onRenamed={(title) => applyPersistedDoc((prev) => ({ ...prev, project: { ...prev.project, title } }))}
         />
-      <div className="flex min-w-0 items-center gap-2 max-sm:ml-auto max-sm:max-w-[60%] sm:max-w-[50%] md:shrink">
+      <div className="flex min-w-0 items-center gap-2 max-sm:ml-auto max-sm:max-w-[48%] sm:max-w-[50%] md:shrink">
         <span className="studio-gear-label max-sm:hidden">BIT</span>
         <button
           type="button"
@@ -4118,7 +4174,7 @@ function StudioEditorInner({
           fullViewAllowed={advancedRecord}
           disabled={recordingLocked}
           onPick={openFeature}
-          className="max-md:order-last max-md:w-full md:ml-auto md:w-56"
+          className="shrink-0 max-lg:size-11 max-lg:justify-center max-lg:px-0 lg:ml-auto lg:w-56"
         />
       </header>
 
@@ -4127,6 +4183,7 @@ function StudioEditorInner({
         onStepIntent={prefetchStudioStepPanels}
         onSampleTab={onSampleTab}
         showSamplesTab={onSampleTab || !(advancedRecord && recordFullView)}
+        hasGroupBar={studioStep === "record"}
         recordingLocked={recordingLocked}
         canGoMix={canGoMix}
         songReady={autoMixMasterMaterial({ beatId: doc.project.beatId, tracks: doc.tracks, clips: doc.clips }).ready}
@@ -4208,6 +4265,29 @@ function StudioEditorInner({
         canRedo={undoHistory.future.length > 0 && !recordingLocked}
         showFragmentTools={studioStep === "record"}
         toolsInGroups={groupsShown}
+        clipToolsAtBottom={studioStep === "record"}
+        timelineTools={
+          groupsShown ? (
+            <StudioEditToolbar
+              timelineMode={timelineMode}
+              recordingLocked={recordingLocked}
+              onSeekMode={() => setMode("seek")}
+              onEditMode={() => setMode("edit")}
+              onZoomOut={() => {
+                userAdjustedZoomRef.current = true;
+                zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current));
+              }}
+              onZoomIn={() => {
+                userAdjustedZoomRef.current = true;
+                zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current));
+              }}
+              onFit={() => {
+                userAdjustedZoomRef.current = false;
+                fitTimeline(timelineScrollRef.current);
+              }}
+            />
+          ) : null
+        }
         onFragmentDetails={
           groupsShown
             ? () => {
@@ -4611,26 +4691,6 @@ function StudioEditorInner({
         />
       ) : (
         <>
-      {recordSimple ? null : (
-      <StudioEditToolbar
-        timelineMode={timelineMode}
-        recordingLocked={recordingLocked}
-        onSeekMode={() => setMode("seek")}
-        onEditMode={() => setMode("edit")}
-        onZoomOut={() => {
-          userAdjustedZoomRef.current = true;
-          zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current));
-        }}
-        onZoomIn={() => {
-          userAdjustedZoomRef.current = true;
-          zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current));
-        }}
-        onFit={() => {
-          userAdjustedZoomRef.current = false;
-          fitTimeline(timelineScrollRef.current);
-        }}
-      />
-      )}
 
       <div className={`flex min-h-0 flex-col gap-3 lg:items-start ${recordSimple ? "lg:flex-row" : "xl:flex-row"}`}>
         {recordSimple ? (
@@ -4770,6 +4830,7 @@ function StudioEditorInner({
             onClearSelection={() => {
               if (recordingLocked) return;
               setSelectedClipId(clearClipSelection());
+              setMode("seek");
               setConfirmDelete(false);
               setFragmentConfirmDelete(false);
             }}
@@ -4851,6 +4912,69 @@ function StudioEditorInner({
       ) : null}
       {groupsShown ? (
         <StudioDockBar active={activeGroup} recordingLocked={recordingLocked} onOpen={openGroup} />
+      ) : null}
+      {simpleDock ? (
+        <StudioDockBar
+          active={simpleGroup ?? (onSampleTab ? "add" : "record")}
+          recordingLocked={recordingLocked}
+          onOpen={openSimpleGroup}
+        />
+      ) : null}
+      {simpleDock && simpleGroup && !inspectorDesktopRail ? (
+        <StudioInspectorOverlay
+          open
+          context={simpleGroup === "sound" ? "effects" : simpleGroup}
+          panelId={inspectorPanelId}
+          onClose={() => setSimpleGroup(null)}
+        >
+          <div className="space-y-2" data-testid={`studio-simple-group-${simpleGroup}`}>
+            {simpleGroup === "sound" ? (
+              <>
+                <p className="text-sm text-[var(--brd-ink-soft)]">{tGroups("prosteBrzmienieOpis")}</p>
+                <StudioGroupRow testId="studio-simple-mix" title={tGroups("doMixu")} hint={canGoMix ? undefined : tGroups("najpierwWokal")} disabled={!canGoMix} onClick={goToMix} />
+                {advancedRecord ? (
+                  <StudioGroupRow testId="studio-simple-full-sound" title={tGroups("efektyPrzyNagraniu")} hint={tGroups("wPelnymWidoku")} onClick={() => openFullViewGroup("sound")} />
+                ) : (
+                  <p className="text-xs text-[var(--brd-mute)]">{tGroups("efektyPrzyNagraniuOdSilver")}</p>
+                )}
+              </>
+            ) : null}
+            {simpleGroup === "text" ? (
+              <StudioLyricsCard projectId={doc.project.id} getPlayheadMs={getPlayheadMs} mode="single" loopStartMs={null} punchLine={null} />
+            ) : null}
+            {simpleGroup === "add" ? (
+              <>
+                <StudioGroupRow
+                  testId="studio-simple-vocal-file"
+                  title={tGroups("importWokal")}
+                  hint={tGroups("importWokalOpis")}
+                  onClick={() => {
+                    setSimpleGroup(null);
+                    setSampleTab(false);
+                    focusRecordControl("importVocal", true);
+                  }}
+                />
+                <StudioGroupRow testId="studio-simple-samples" title={tGroups("sample")} hint={tGroups("sampleOpis")} onClick={() => openFeature("samples")} />
+              </>
+            ) : null}
+            {simpleGroup === "more" ? (
+              <>
+                <StudioGroupRow testId="studio-simple-more-mix" title={tGroups("doMixu")} hint={canGoMix ? tGroups("doMixuOpis") : tGroups("najpierwWokal")} disabled={!canGoMix} onClick={goToMix} />
+                <StudioGroupRow
+                  testId="studio-simple-beat"
+                  title={tGroups("zmienBit")}
+                  onClick={() => {
+                    setSimpleGroup(null);
+                    setBeatPickerOpen(true);
+                  }}
+                />
+                {advancedRecord ? (
+                  <StudioGroupRow testId="studio-simple-full-view" title={tGroups("pelnyWidok")} hint={tGroups("pelnyWidokOpis")} onClick={() => openFullViewGroup(null)} />
+                ) : null}
+              </>
+            ) : null}
+          </div>
+        </StudioInspectorOverlay>
       ) : null}
       <StudioLazyPanelsIdlePrefetch />
       {recordPanelNode}
