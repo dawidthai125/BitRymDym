@@ -97,6 +97,13 @@ for scale in (1.0, 1.25, 1.5):
             pump(w.root)
         place = f"{scale:.0%} {mode}"
         whole(w.beat_head, f"{place} bit")
+        # "Tempo bitu" stands in the title line of the Bit: with its widest text M must stay whole.
+        w.speed_label.configure(text="112 BPM +25%")
+        pump(w.root, 3)
+        title_line = w.beat_mute.master
+        for child in title_line.winfo_children():
+            if child.winfo_width() < child.winfo_reqwidth() or child.winfo_x() + child.winfo_width() > title_line.winfo_width():
+                bad.append(f"{place} bit: w górnej linii nie mieści się {child.winfo_class()} ({child.winfo_width()} z {child.winfo_reqwidth()} px)")
         head, lane = w.rows[0]["head"], w.rows[0]["lane"]
         whole(head, f"{place} wokal")
         if w.done_button.winfo_height() < w.done_button.winfo_reqheight():
