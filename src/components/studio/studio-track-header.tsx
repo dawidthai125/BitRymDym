@@ -48,7 +48,12 @@ export function StudioTrackHeader({
   onToggleFlag,
   reorder,
   setDoc,
+  heightPx = STUDIO_DAW_LANE_HEIGHT_PX,
+  low = false,
 }: {
+  heightPx?: number;
+  /** Low tracks: role, reorder, menu and the Bit lock are hidden (tall tracks and "More" have them). */
+  low?: boolean;
   track: StudioTrackDto;
   index: number;
   isSelected: boolean;
@@ -100,7 +105,8 @@ export function StudioTrackHeader({
         data-selected={isSelected ? "true" : "false"}
         className="studio-track-strip flex items-stretch gap-1 border py-1 pl-1.5 pr-1 max-sm:pr-14"
         style={{
-          height: STUDIO_DAW_LANE_HEIGHT_PX,
+          height: heightPx,
+          ["--studio-lane-h" as string]: `${heightPx}px`,
           borderColor: isBeat ? "#b9761e" : STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
         }}
       >
@@ -168,7 +174,7 @@ export function StudioTrackHeader({
             />
           ) : null}
         </div>
-        {isBeat ? (
+        {isBeat && !low ? (
           <p className="truncate px-1 text-[11px] leading-tight text-[var(--brd-ink-soft)]">
             {tl(beatTitle ?? track.name)} · {doc.project.tempoBpm} BPM ·{" "}
             {tl(
@@ -183,6 +189,7 @@ export function StudioTrackHeader({
         {recordSimple && lockButton ? <div className="flex px-1">{lockButton}</div> : null}
         {!recordSimple ? (
         <>
+        {low ? null : (
         <div className="flex min-h-11 min-w-0 items-center gap-0.5">
           {lockButton ?? (
             <label
@@ -260,6 +267,7 @@ export function StudioTrackHeader({
             </Button>
           ) : null}
         </div>
+        )}
         <div className="flex min-h-0 items-center">
           <div
             className="grid min-w-0 flex-1 grid-cols-2 gap-2 pr-0.5"

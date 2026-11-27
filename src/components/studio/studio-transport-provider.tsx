@@ -254,6 +254,7 @@ export function StudioTransportProvider({
   engineDocument,
   tempoBpm = 120,
   timeSignatureNum = 4,
+  gridOriginMs = 0,
   children,
 }: {
   timelineLengthMs: number;
@@ -261,6 +262,8 @@ export function StudioTransportProvider({
   engineDocument: StudioEngineDocument;
   tempoBpm?: number;
   timeSignatureNum?: number;
+  /** Timeline position of bar 1: the metronome counts from here, like the ruler. */
+  gridOriginMs?: number;
   children: ReactNode;
 }) {
   const t = useTranslations("studio.studioTransportProvider");
@@ -294,6 +297,7 @@ export function StudioTransportProvider({
   const loopRef = useRef({ enabled: false, startMs: 0, endMs: timelineLengthMs });
   const tempoRef = useRef(tempoBpm);
   const timeSigRef = useRef(timeSignatureNum);
+  const gridOriginRef = useRef(gridOriginMs);
   const [meter, setMeter] = useState<StudioMeterSnapshot>(STUDIO_METER_NEUTRAL);
   const [trackMeter, setTrackMeter] =
     useState<StudioMeterSnapshot>(STUDIO_METER_NEUTRAL);
@@ -526,12 +530,13 @@ export function StudioTransportProvider({
   useLayoutEffect(() => {
     tempoRef.current = tempoBpm;
     timeSigRef.current = timeSignatureNum;
+    gridOriginRef.current = gridOriginMs;
     loopRef.current = {
       enabled: loopEnabled,
       startMs: loopStartMs,
       endMs: loopEndMs,
     };
-  }, [tempoBpm, timeSignatureNum, loopEnabled, loopStartMs, loopEndMs]);
+  }, [tempoBpm, timeSignatureNum, gridOriginMs, loopEnabled, loopStartMs, loopEndMs]);
 
   useEffect(() => {
     if (!metronomeEnabled) {
@@ -544,11 +549,11 @@ export function StudioTransportProvider({
       if (!ctx) return;
       const beatMs = beatDurationMs(tempoRef.current);
       if (beatMs < 1) return;
-      const beatIndex = Math.floor(playheadMsRef.current / beatMs);
+      const beatIndex = Math.floor((playheadMsRef.current - gridOriginRef.current) / beatMs);
       if (beatIndex === lastClickBeatRef.current) return;
       lastClickBeatRef.current = beatIndex;
       const beatsPerBar = timeSigRef.current > 0 ? timeSigRef.current : 4;
-      fireStudioClick(ctx, beatIndex % beatsPerBar === 0);
+      fireStudioClick(ctx, ((beatIndex % beatsPerBar) + beatsPerBar) % beatsPerBar === 0);
     }, 30);
     return () => window.clearInterval(id);
   }, [metronomeEnabled]);

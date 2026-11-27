@@ -2884,6 +2884,15 @@
       "waveform": "Waveform · {v0}–{v1}"
     },
     "studioEditToolbar": {
+      "siatka": "Snap",
+      "siatkaOpis": "What clips and the playhead snap to",
+      "siatkaWyl": "Off",
+      "siatkaUderzenie": "Beat",
+      "siatkaTakt": "Bar",
+      "niskieSciezki": "Low tracks",
+      "niskieSciezkiOpis": "More tracks on screen. Tall tracks show the role, order and track menu.",
+      "mikser": "Mixer",
+      "mikserOpis": "Show or hide the mixer (F9)",
       "edycjaOpis": "Edit: move recordings. Off: tapping the timeline moves the playhead.",
       "edycjaOsiCzasu": "Timeline editing",
       "edycja": "Edit",
@@ -2911,6 +2920,13 @@
       "snapOff": "OFF"
     },
     "studioEditor": {
+      "przyciaganieUderzenie": "to the beat",
+      "przyciaganieTakt": "to the bar",
+      "linijkaTakty": "Ruler: bars",
+      "linijkaCzas": "Ruler: time",
+      "taktTutaj": "A bar starts at the playhead",
+      "taktZBitu": "Bar 1 from the start of the beat",
+      "taktTutajOpis": "If the lines miss the beat: turn snap off, put the playhead on the first strong beat and use the button above. Saved on this device.",
       "zmienPakiet": "Change plan",
       "przyciaganie": "Snap:",
       "przyciaganieWyl": "OFF",

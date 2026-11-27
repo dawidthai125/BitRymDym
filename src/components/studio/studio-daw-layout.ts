@@ -10,6 +10,8 @@ export type StudioTimelineMode = "seek" | "edit";
  * Clip geometry SSOT unchanged; height is presentation only.
  */
 export const STUDIO_DAW_LANE_HEIGHT_PX = 168;
+/** Low tracks: name + M/S/R and level / pan only, so about twice as many fit on screen. */
+export const STUDIO_DAW_LANE_HEIGHT_LOW_PX = 104;
 /** Same vocal edge colors as the Windows recorder lanes. */
 export const STUDIO_TRACK_EDGE = ["#e8735a", "#f2a93b", "#d9c45a", "#7cc68d", "#5fb6c9", "#9b8be0", "#d27fc0", "#e0937a"] as const;
 /**

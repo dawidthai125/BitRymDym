@@ -696,7 +696,10 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
   background: #0b0907 !important;
 }
 .studio-desk .studio-track-strip {
-  margin: 4px;
+  /* Header pitch = lane height: a taller margin box drifted every next header off its lane. */
+  margin: 2px 4px;
+  /* !important: wins over the inline lane height, which includes these margins. */
+  height: calc(var(--studio-lane-h, 168px) - 4px) !important;
   background: #17130f;
   border-width: 2px;
 }
@@ -725,7 +728,6 @@ html[data-theme="light"] .tape-surface .tape-device .text-tape-amber { color: va
   border-radius: 0;
   background-color: #6b4a1c !important;
   background-image:
-    repeating-linear-gradient(90deg, transparent 0, transparent 63px, #8a6326 63px, #8a6326 64px),
     repeating-linear-gradient(#8a6326 0 1px, transparent 1px 32px);
   box-shadow: none;
 }

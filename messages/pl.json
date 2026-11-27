@@ -2884,6 +2884,15 @@
       "waveform": "Przebieg · {v0}–{v1}"
     },
     "studioEditToolbar": {
+      "siatka": "Przyciąganie",
+      "siatkaOpis": "Do czego przyciągają się klipy i głowica",
+      "siatkaWyl": "Wyłączone",
+      "siatkaUderzenie": "Uderzenie",
+      "siatkaTakt": "Takt",
+      "niskieSciezki": "Niskie ścieżki",
+      "niskieSciezkiOpis": "Więcej ścieżek na ekranie. Rolę, kolejność i menu ścieżki pokażą wysokie.",
+      "mikser": "Mikser",
+      "mikserOpis": "Pokaż lub schowaj mikser (F9)",
       "edycjaOpis": "Edycja: przesuwanie nagrań. Wyłączona: dotknięcie osi przesuwa odtwarzanie.",
       "edycjaOsiCzasu": "Edycja osi czasu",
       "edycja": "Edycja",
@@ -2911,6 +2920,13 @@
       "snapOff": "WYŁ."
     },
     "studioEditor": {
+      "przyciaganieUderzenie": "do uderzenia",
+      "przyciaganieTakt": "do taktu",
+      "linijkaTakty": "Linijka: takty",
+      "linijkaCzas": "Linijka: czas",
+      "taktTutaj": "Takt zaczyna się w miejscu głowicy",
+      "taktZBitu": "Takt 1 z początku bitu",
+      "taktTutajOpis": "Gdy kreski nie trafiają w bit: wyłącz przyciąganie, ustaw głowicę na pierwszym mocnym uderzeniu i użyj przycisku wyżej. Zapisuje się na tym urządzeniu.",
       "zmienPakiet": "Zmień pakiet",
       "przyciaganie": "Przyciąganie:",
       "przyciaganieWyl": "WYŁ.",

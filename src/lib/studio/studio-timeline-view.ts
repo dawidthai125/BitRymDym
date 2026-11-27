@@ -21,10 +21,12 @@ export const STUDIO_SNAP_DEFAULT_GRID_MS = 1000;
 export const STUDIO_SNAP_INTERVALS_MS = [20, 100, 1000] as const;
 export type StudioSnapIntervalMs = (typeof STUDIO_SNAP_INTERVALS_MS)[number];
 
-export type StudioSnapPreset = "off" | "20" | "100" | "1000";
+export type StudioSnapPreset = "off" | "beat" | "bar" | "20" | "100" | "1000";
 
 export const STUDIO_SNAP_PRESET_ORDER: readonly StudioSnapPreset[] = [
   "off",
+  "beat",
+  "bar",
   "20",
   "100",
   "1000",
@@ -44,13 +46,12 @@ export type StudioSnapMode = "off" | "grid";
  */
 export type StudioSnapConfig = {
   mode: StudioSnapMode;
+  /** Grid step in ms; fractional for beats and bars. */
   gridIntervalMs: number;
-  /** Reserved for future BPM snap (not used in P5.4). */
-  bpm?: number;
-  /** Reserved for future bar snap. */
-  beatsPerBar?: number;
-  /** Reserved for future subdivision snap. */
-  subdivision?: number;
+  /** Set for snap to the musical grid: the step follows the project tempo. */
+  musical?: "beat" | "bar";
+  /** Timeline position of grid line zero (bar 1). Fixed ms grids start at 0. */
+  originMs?: number;
 };
 
 export function createDefaultSnapConfig(
@@ -63,10 +64,29 @@ export function createDefaultSnapConfig(
   };
 }
 
+/** Applies the current project grid to a beat / bar snap; other configs pass through. */
+export function withStudioSnapGrid(
+  config: StudioSnapConfig,
+  grid: { beatMs: number; beatsPerBar: number; originMs: number } | null,
+): StudioSnapConfig {
+  if (!config.musical) return config;
+  if (!grid) return createDefaultSnapConfig();
+  return {
+    mode: "grid",
+    musical: config.musical,
+    gridIntervalMs: config.musical === "bar" ? grid.beatMs * grid.beatsPerBar : grid.beatMs,
+    originMs: grid.originMs,
+  };
+}
+
 export function snapConfigFromPreset(
   preset: StudioSnapPreset,
 ): StudioSnapConfig {
   switch (preset) {
+    case "beat":
+    case "bar":
+      // The real step comes from withStudioSnapGrid (project tempo).
+      return createDefaultSnapConfig({ mode: "grid", musical: preset });
     case "off":
       return createDefaultSnapConfig({ mode: "off" });
     case "20":
@@ -82,6 +102,7 @@ export function snapPresetFromConfig(
   config: StudioSnapConfig,
 ): StudioSnapPreset {
   if (config.mode === "off") return "off";
+  if (config.musical) return config.musical;
   if (config.gridIntervalMs === 20) return "20";
   if (config.gridIntervalMs === 100) return "100";
   if (config.gridIntervalMs === 1000) return "1000";
@@ -103,6 +124,10 @@ export function studioSnapPresetLabel(preset: StudioSnapPreset): string {
   switch (preset) {
     case "off":
       return "OFF";
+    case "beat":
+      return "1/4";
+    case "bar":
+      return "1/1";
     case "20":
       return "20 ms";
     case "100":
@@ -239,12 +264,13 @@ export function snapTimelineMs(
   let next = Math.round(requestedMs);
 
   if (config.mode === "grid") {
-    assertIntegerMs(config.gridIntervalMs, "gridIntervalMs");
-    if (config.gridIntervalMs < 1) {
+    if (!config.musical) assertIntegerMs(config.gridIntervalMs, "gridIntervalMs");
+    if (!(config.gridIntervalMs >= 1)) {
       throw new Error("gridIntervalMs must be >= 1.");
     }
+    const origin = config.originMs ?? 0;
     next =
-      Math.round(requestedMs / config.gridIntervalMs) * config.gridIntervalMs;
+      origin + Math.round((requestedMs - origin) / config.gridIntervalMs) * config.gridIntervalMs;
   }
 
   const min = bounds?.minMs ?? Number.NEGATIVE_INFINITY;

@@ -93,6 +93,7 @@ import { StudioDeleteTrackDialog, StudioTrackMenu } from "@/components/studio/st
 import { isStudioTypingTarget, studioControlKeepsKey, studioModalState } from "@/lib/studio/studio-shortcut-guard";
 import {
   STUDIO_DAW_CHIP_CLASS,
+  STUDIO_DAW_LANE_HEIGHT_LOW_PX,
   STUDIO_DAW_LANE_HEIGHT_PX,
   STUDIO_TRACK_GAIN_DB_MAX,
   STUDIO_TRACK_GAIN_DB_MIN,
@@ -130,6 +131,8 @@ import type {
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
 import { beatDurationMs } from "@/lib/studio/studio-daw-clock";
+import { buildStudioGrid, studioGridOriginMs, writeStudioViewPrefs } from "@/lib/studio/studio-grid";
+import { useStudioViewPrefs } from "@/lib/studio/use-studio-view-prefs";
 import { beatRestorePlan, isBeatClip, isClipLocked } from "@/lib/studio/studio-beat-lock";
 import { studioAdvancedRecordAllowed, studioRecordView } from "@/lib/studio/studio-record-view";
 import {
@@ -144,8 +147,10 @@ import {
   resolveNudgeStepMs,
   resolveSelectedClipId,
   selectClipId,
+  snapConfigFromPreset,
   snapPresetFromConfig,
   snapTimelineMs,
+  withStudioSnapGrid,
   STUDIO_TIMELINE_DEFAULT_PX_PER_MS,
   timelineContentOverflowsViewport,
   timelineMsAtViewportX,
@@ -332,6 +337,12 @@ export function StudioEditor({
     [doc, mixAbOverride],
   );
 
+  const outerViewPrefs = useStudioViewPrefs(doc.project.id);
+  const metronomeOriginMs = studioGridOriginMs(
+    doc.clips.filter((c) => c.sourceKind === "BEAT_REF"),
+    outerViewPrefs.gridShiftMs,
+  );
+
   return (
     <StudioTransportProvider
       // Project only: choosing a beat must not remount the editor (undo history, step, running saves).
@@ -341,6 +352,7 @@ export function StudioEditor({
       engineDocument={engineDocument}
       tempoBpm={doc.project.tempoBpm}
       timeSignatureNum={doc.project.timeSignatureNum}
+      gridOriginMs={metronomeOriginMs}
     >
       <StudioEditorInner
         doc={doc}
@@ -427,9 +439,25 @@ function StudioEditorInner({
   const [pxPerMs, setPxPerMs] = useState(STUDIO_TIMELINE_DEFAULT_PX_PER_MS);
   /** When true, skip auto-fit on resize (user zoomed in/out). Fit button clears it. */
   const userAdjustedZoomRef = useRef(false);
-  const [snapConfig, setSnapConfig] = useState<StudioSnapConfig>(() =>
+  const [snapChoice, setSnapConfig] = useState<StudioSnapConfig>(() =>
     createDefaultSnapConfig(),
   );
+  /** Ruler, track height and bar 1: remembered per project on this device. */
+  const viewPrefs = useStudioViewPrefs(doc.project.id);
+  const beatFileStartMs = studioGridOriginMs(doc.clips.filter((c) => c.sourceKind === "BEAT_REF"), 0);
+  const gridOriginMs = beatFileStartMs + viewPrefs.gridShiftMs;
+  const grid = useMemo(
+    () =>
+      buildStudioGrid({
+        bpm: doc.project.tempoBpm,
+        timeSignatureNum: doc.project.timeSignatureNum,
+        timeSignatureDen: doc.project.timeSignatureDen,
+        originMs: gridOriginMs,
+      }),
+    [doc.project.tempoBpm, doc.project.timeSignatureNum, doc.project.timeSignatureDen, gridOriginMs],
+  );
+  const snapConfig = useMemo(() => withStudioSnapGrid(snapChoice, grid), [snapChoice, grid]);
+  const laneHeightPx = viewPrefs.lanes === "low" ? STUDIO_DAW_LANE_HEIGHT_LOW_PX : STUDIO_DAW_LANE_HEIGHT_PX;
   const [confirmDelete, setConfirmDelete] = useState(false);
   /** Fragment bar confirm. Separate from the inspector and the simple-view delete. */
   const [fragmentConfirmDelete, setFragmentConfirmDelete] = useState(false);
@@ -1048,14 +1076,13 @@ function StudioEditorInner({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // The Mixer stays closed until asked for (button or F9): it opens over the bottom of the screen.
     const mq = window.matchMedia("(min-width: 1280px)");
     const apply = () => {
       const desktop = mq.matches;
       setInspectorDesktopRail(desktop);
       if (desktop) {
         setInspectorOverlayOpen(false);
-        // Visual Parity V2 — Mixer Contract C: xl expanded by default.
-        setMixerOpen(true);
       } else {
         // Avoid auto-opening <xl Mixer overlay when leaving desktop.
         setMixerOpen(false);
@@ -3039,6 +3066,11 @@ function StudioEditorInner({
       if (isStudioTypingTarget(event.target)) return;
       const modal = studioModalState(document);
       if (modal === "modal") return;
+      if (event.key === "F9" && studioStep !== "master" && !event.repeat) {
+        event.preventDefault();
+        toggleMixerSurface();
+        return;
+      }
       if (
         !recordingLocked &&
         studioControlKeepsKey({
@@ -3083,7 +3115,10 @@ function StudioEditorInner({
       if (recordingLocked || pending || modal !== "none") return;
 
       if (event.key === "Escape") {
-        if (!selectedClip) return;
+        if (!selectedClip) {
+          if (mixerOpen && inspectorDesktopRail) closeMixerSurface();
+          return;
+        }
         setSelectedClipId(clearClipSelection());
         setConfirmDelete(false);
         setFragmentConfirmDelete(false);
@@ -3172,7 +3207,7 @@ function StudioEditorInner({
     };
     // Intentional: handlers close over latest selected clip / length / pending / transport.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Phase 2 keyboard precision + 7.1.5.3
-  }, [recordingLocked, pending, selectedClip, length, songEndMs, transport]);
+  }, [recordingLocked, pending, selectedClip, length, songEndMs, transport, mixerOpen, inspectorDesktopRail, studioStep]);
 
   function deleteSelectedClip(): void {
     const clipId = selectedClip?.id;
@@ -3845,8 +3880,57 @@ function StudioEditorInner({
               aria-pressed={snapPreset !== "off"}
               onClick={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
             >
-              {tr("przyciaganie")}{" "}{tl(snapPreset === "off" ? tr("przyciaganieWyl") : studioSnapPresetLabel(snapPreset))}
+              {tr("przyciaganie")}{" "}
+              {snapPreset === "off"
+                ? tr("przyciaganieWyl")
+                : snapPreset === "beat"
+                  ? tr("przyciaganieUderzenie")
+                  : snapPreset === "bar"
+                    ? tr("przyciaganieTakt")
+                    : tl(studioSnapPresetLabel(snapPreset))}
             </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 w-full"
+              data-testid="studio-more-ruler"
+              onClick={() => writeStudioViewPrefs(doc.project.id, { ruler: viewPrefs.ruler === "bars" ? "time" : "bars" })}
+            >
+              {tr(viewPrefs.ruler === "bars" ? "linijkaTakty" : "linijkaCzas")}
+            </Button>
+            {viewPrefs.ruler === "bars" && grid ? (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-auto min-h-11 w-full whitespace-normal"
+                  data-testid="studio-more-grid-here"
+                  onClick={() => {
+                    // Keep bar 1 near the start of the beat: only the position inside one bar matters.
+                    const barMs = grid.beatMs * grid.beatsPerBar;
+                    const inBar = (((transport.getPlayheadMs() - beatFileStartMs) % barMs) + barMs) % barMs;
+                    writeStudioViewPrefs(doc.project.id, { gridShiftMs: Math.round(inBar) });
+                  }}
+                >
+                  {tr("taktTutaj")}
+                </Button>
+                {viewPrefs.gridShiftMs !== 0 ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-auto min-h-11 w-full whitespace-normal"
+                    data-testid="studio-more-grid-reset"
+                    onClick={() => writeStudioViewPrefs(doc.project.id, { gridShiftMs: 0 })}
+                  >
+                    {tr("taktZBitu")}
+                  </Button>
+                ) : null}
+                <p className="text-xs text-[var(--brd-mute)]">{tr("taktTutajOpis")}</p>
+              </>
+            ) : null}
             {/* A keyboard setting: nothing to set on a touch screen. */}
             <Button
               type="button"
@@ -4285,6 +4369,14 @@ function StudioEditorInner({
                 userAdjustedZoomRef.current = false;
                 fitTimeline(timelineScrollRef.current);
               }}
+              snapPreset={snapPreset}
+              onSnapPreset={(preset) => setSnapConfig(snapConfigFromPreset(preset))}
+              lowTracks={viewPrefs.lanes === "low"}
+              onToggleTrackHeight={() =>
+                writeStudioViewPrefs(doc.project.id, { lanes: viewPrefs.lanes === "low" ? "tall" : "low" })
+              }
+              mixerOpen={mixerOpen}
+              onToggleMixer={toggleMixerSurface}
             />
           ) : null
         }
@@ -4780,7 +4872,7 @@ function StudioEditorInner({
                   param={automationEdit.param}
                   timelineLengthMs={length}
                   pxPerMs={pxPerMs}
-                  laneHeightPx={STUDIO_DAW_LANE_HEIGHT_PX}
+                  laneHeightPx={laneHeightPx}
                   disabled={recordingLocked || pending}
                   onChangeParam={(param) => setAutomationEdit({ trackId: track.id, param })}
                   onClose={() => setAutomationEdit(null)}
@@ -4809,6 +4901,8 @@ function StudioEditorInner({
                 onToggleFlag={toggleTrackFlag}
                 reorder={reorder}
                 setDoc={setDoc}
+                heightPx={laneHeightPx}
+                low={viewPrefs.lanes === "low"}
               />
             )}
             onSeek={seekSnapped}
@@ -4841,6 +4935,9 @@ function StudioEditorInner({
             }}
             resolveClipSourceUrl={resolveClipSourceUrl}
             snapConfig={snapConfig}
+            grid={grid}
+            rulerMode={viewPrefs.ruler}
+            laneHeightPx={laneHeightPx}
             beatLocked={!beatUnlocked}
             onCommitClipGeometry={(clipId, commit) => {
               if (recordingLocked || beatLockBlocks(doc.clips.find((c) => c.id === clipId))) return;

@@ -179,7 +179,10 @@ export function StudioMixerDockChrome({
       data-studio-mixer="dock"
       data-mixer-expanded={expanded ? "true" : "false"}
       aria-label={t("mix")}
-      className="studio-mixer-dock hidden shrink-0 flex-col xl:flex"
+      // Open: pinned to the bottom of the screen, no page scrolling. Closed: a thin bar under the timeline.
+      className={`studio-mixer-dock hidden shrink-0 flex-col xl:flex ${
+        expanded ? "fixed inset-x-0 bottom-0 z-30 shadow-[0_-12px_32px_rgba(0,0,0,0.5)]" : ""
+      }`}
     >
       <div
         className="flex min-h-11 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-2"
@@ -208,7 +211,7 @@ export function StudioMixerDockChrome({
           role="region"
           aria-label={t("kanalyMixera")}
           data-testid="studio-mixer-panel"
-          className="max-h-[30rem] min-h-0 overflow-y-auto overflow-x-hidden p-2"
+          className="max-h-[min(30rem,55dvh)] min-h-0 overflow-y-auto overflow-x-hidden p-2"
         >
           {children}
         </div>

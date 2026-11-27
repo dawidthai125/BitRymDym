@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-27 (49) — Studio: siatka w taktach, niskie ścieżki, mikser na przycisk
+
+- Linijka liczy takty (z BPM i metrum projektu), z kreskami taktów i uderzeń na ścieżkach; w „Więcej” przełącznik na czas. Takt 1 = początek pliku bitu; „Takt zaczyna się w miejscu głowicy” koryguje go (zapis tylko na urządzeniu, `brd-studio-view:<projekt>`). Metronom liczy od tego samego miejsca. Sekcje pętli i znaczniki struktury w panelu nagrywania nadal liczą od zera osi.
+- Przyciąganie do uderzenia i taktu (poza 20/100/1000 ms), domyślnie wyłączone.
+- „Niskie ścieżki” (104 px zamiast 168). Poprawione rozjeżdżanie nagłówków i ścieżek o 4 px na ścieżkę.
+- Mikser domyślnie zamknięty; przycisk „Mikser” lub F9, na komputerze przypięty do dołu ekranu, Esc zamyka.
+- Usunięte ozdobne pionowe kreski na klipie bitu (udawały siatkę).
+
 ## 2026-11-26 (48) — Luki: prywatne linki, blokada zdjętych plików, oświadczenie przy wgraniu, dokumenty
 
 - Prywatne linki do odsłuchu: limit zgadywania tokenów (20 nietrafionych prób z IP / 10 min, `studio_listen_peek`, migracja `20261126170000`) na stronie, w audio i w karcie OG; nieznany, wygasły, cofnięty albo cudzy link daje 404 (strona też, `not-found.tsx`); master musi należeć do projektu i właściciela linku; nagłówki `noindex` i `Referrer-Policy: no-referrer` dla `/listen` i `/api/listen`.

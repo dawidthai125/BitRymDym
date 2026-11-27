@@ -5,7 +5,7 @@
  * audit 2026-11-21). Clip geometry SSOT stays integer ms; zoom is view only.
  */
 
-import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
+import { Fragment, memo, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 import { useTranslations } from "next-intl";
 
 import { StudioClipLaneItem } from "@/components/studio/studio-clip-lane";
@@ -22,6 +22,7 @@ import {
 } from "@/components/studio/studio-transport-provider";
 import { usePocketMarkers } from "@/components/studio/use-pocket-markers";
 import { useLibText } from "@/i18n/use-lib-text";
+import { buildStudioBarRulerTicks, type StudioGrid } from "@/lib/studio/studio-grid";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { studioMarkerKindLabelPl, type StudioMarkerDto } from "@/lib/studio/studio-markers-state";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
@@ -60,6 +61,7 @@ const TimelineRuler = memo(function TimelineRuler({
   scrollRef,
   markers,
   loop,
+  barGrid,
   onSeek,
 }: {
   timelineLengthMs: number;
@@ -68,12 +70,25 @@ const TimelineRuler = memo(function TimelineRuler({
   markers: readonly StudioMarkerDto[];
   /** Loop range drawn on the ruler, null = off. */
   loop: { startMs: number; endMs: number } | null;
+  /** Set = the ruler counts bars; null = time. */
+  barGrid: StudioGrid | null;
   onSeek: (ms: number) => void;
 }) {
   const tl = useLibText();
   const ticks = useMemo(
-    () => buildTimelineRulerTicks({ timelineLengthMs, pxPerMs: density }),
-    [timelineLengthMs, density],
+    (): { ms: number; label: string | null; major: boolean }[] =>
+      barGrid
+        ? buildStudioBarRulerTicks({ grid: barGrid, timelineLengthMs, pxPerMs: density }).map((tick) => ({
+            ms: tick.ms,
+            label: tick.label,
+            major: Boolean(tick.label && !tick.label.includes(".")),
+          }))
+        : buildTimelineRulerTicks({ timelineLengthMs, pxPerMs: density }).map((tick) => ({
+            ms: tick.ms,
+            label: tick.major ? formatStudioTimeMs(tick.ms) : null,
+            major: tick.major,
+          })),
+    [barGrid, timelineLengthMs, density],
   );
   const [view, setView] = useState({ from: -RULER_CHUNK_PX, to: 4 * RULER_CHUNK_PX });
   useEffect(() => {
@@ -98,6 +113,7 @@ const TimelineRuler = memo(function TimelineRuler({
     <div
       className="sticky top-0 z-[3] h-7 border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_92%,var(--brd-ink)_8%)]"
       data-testid="studio-timeline-ruler"
+      data-ruler={barGrid ? "bars" : "time"}
     >
       {loop && loop.endMs > loop.startMs ? (
         <span
@@ -118,7 +134,7 @@ const TimelineRuler = memo(function TimelineRuler({
             }`}
             style={{ left: x }}
           >
-            {tl(tick.major ? formatStudioTimeMs(tick.ms) : "·")}
+            {tick.label ? tl(tick.label) : "·"}
           </span>
         );
       })}
@@ -142,6 +158,36 @@ const TimelineRuler = memo(function TimelineRuler({
     </div>
   );
 });
+
+/**
+ * Bar and beat lines over the lanes. An SVG pattern keeps fractional bar widths exact
+ * (CSS background tiles drift after many repeats).
+ */
+function TimelineGridLines({ grid, density }: { grid: StudioGrid; density: number }) {
+  const patternId = useId();
+  const beatPx = grid.beatMs * density;
+  const barPx = beatPx * grid.beatsPerBar;
+  // Too dense: show every 4th bar, or nothing.
+  const tilePx = barPx >= 8 ? barPx : barPx * 4;
+  if (!(tilePx >= 8)) return null;
+  const beats = beatPx >= 12 && barPx >= 8 ? grid.beatsPerBar : 1;
+  return (
+    <svg
+      className="pointer-events-none absolute inset-x-0 bottom-0 top-7 z-[2] h-[calc(100%-1.75rem)] w-full text-[var(--brd-ink)]"
+      data-testid="studio-timeline-grid"
+      aria-hidden
+    >
+      <defs>
+        <pattern id={patternId} x={grid.originMs * density} y={0} width={tilePx} height={16} patternUnits="userSpaceOnUse">
+          {Array.from({ length: beats }, (_, i) => (
+            <rect key={i} x={i * beatPx} y={0} width={1} height={16} fill="currentColor" fillOpacity={i === 0 ? 0.22 : 0.08} />
+          ))}
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill={`url(#${patternId})`} />
+    </svg>
+  );
+}
 
 /** Playhead leaf: the only part of the lanes that renders on every playback frame. */
 function TimelinePlayhead({
@@ -256,6 +302,9 @@ export function StudioTimeline({
   onZoomAroundViewport,
   resolveClipSourceUrl,
   snapConfig,
+  grid = null,
+  rulerMode = "time",
+  laneHeightPx = STUDIO_DAW_LANE_HEIGHT_PX,
   onSeek,
   onSelectClip,
   onClearSelection,
@@ -281,6 +330,10 @@ export function StudioTimeline({
   onZoomAroundViewport?: (nextPxPerMs: number, viewportOffsetPx: number) => void;
   resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
   snapConfig: StudioSnapConfig;
+  /** Musical grid of the project (null = no tempo). */
+  grid?: StudioGrid | null;
+  rulerMode?: "bars" | "time";
+  laneHeightPx?: number;
   onSeek: (ms: number) => void;
   onSelectClip: (clipId: string) => void;
   /** Click on an empty part of a lane. */
@@ -456,8 +509,10 @@ export function StudioTimeline({
                 scrollRef={laneScrollRef}
                 markers={markers}
                 loop={loop}
+                barGrid={rulerMode === "bars" ? grid : null}
                 onSeek={seekStable}
               />
+              {grid && rulerMode === "bars" ? <TimelineGridLines grid={grid} density={density} /> : null}
               {tracks.map((track, index) => {
                 const trackClips = clips.filter((c) => c.trackId === track.id);
                 return (
@@ -480,7 +535,7 @@ export function StudioTimeline({
                     data-track-type={track.trackType}
                     style={{
                       width: widthPx,
-                      height: STUDIO_DAW_LANE_HEIGHT_PX,
+                      height: laneHeightPx,
                       ["--studio-lane-edge" as string]: STUDIO_TRACK_EDGE[Math.max(0, index - 1) % STUDIO_TRACK_EDGE.length],
                     }}
                   >
@@ -504,7 +559,7 @@ export function StudioTimeline({
                         selected={clip.id === selectedClipId}
                         interactionLocked={interactionLocked}
                         geometryLocked={beatLocked && clip.sourceKind === "BEAT_REF"}
-                        laneHeightPx={STUDIO_DAW_LANE_HEIGHT_PX}
+                        laneHeightPx={laneHeightPx}
                         snapConfig={snapConfig}
                         resolveSourceUrl={resolveClipSourceUrl}
                         onSelectClip={onSelectClip}
@@ -515,7 +570,7 @@ export function StudioTimeline({
                     <StudioLiveTakeRegion
                       trackId={track.id}
                       pxPerMs={density}
-                      laneHeightPx={STUDIO_DAW_LANE_HEIGHT_PX}
+                      laneHeightPx={laneHeightPx}
                     />
                     {renderLaneOverlay ? renderLaneOverlay(track) : null}
                   </div>

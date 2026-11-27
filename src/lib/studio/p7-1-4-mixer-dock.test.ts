@@ -31,12 +31,11 @@ describe("Phase 7.1.4 mixer state / XOR", () => {
     expect(editor).toMatch(/function openInspectorOverlay/);
     expect(editor).toMatch(/setInspectorOverlayOpen\(false\)/);
     expect(editor).toMatch(/setMixerOpen\(false\)/);
-    // Toolbar uses toggle helper — open path goes through openMixerSurface;
-    // Visual Parity V2 also expands on xl matchMedia.
+    // Toolbar uses toggle helper — the only open path is openMixerSurface.
     expect(editor).toMatch(/studio-more-mixer[\s\S]*?onClick=\{openMixerSurface\}/);
     expect(editor).toMatch(/onToggle=\{toggleMixerSurface\}/);
     expect(editor.match(/setMixerOpen\(true\)/g)?.length ?? 0).toBeGreaterThanOrEqual(
-      2,
+      1,
     );
   });
 
@@ -74,7 +73,8 @@ describe("Phase 7.1.4 desktop dock + collapse", () => {
     expect(shell).toMatch(/data-testid="studio-mixer-collapse"/);
     expect(shell).toMatch(/aria-expanded=\{expanded\}/);
     expect(shell).toMatch(/aria-controls=\{panelId\}/);
-    expect(shell).toMatch(/max-h-\[30rem\]/);
+    expect(shell).toMatch(/max-h-\[min\(30rem,55dvh\)\]/);
+    expect(shell).toMatch(/fixed inset-x-0 bottom-0/);
     expect(editor).toMatch(/panelId=\{mixerPanelId\}/);
   });
 

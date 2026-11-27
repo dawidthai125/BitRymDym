@@ -149,8 +149,12 @@ describe("Phase 2 snap", () => {
     expect(snapTimelineMs(1500, cfg)).toBe(2000);
   });
 
-  it("cycle walks OFF → 20 → 100 → 1000 → OFF", () => {
+  it("cycle walks OFF → beat → bar → 20 → 100 → 1000 → OFF", () => {
     let cfg = snapConfigFromPreset("off");
+    cfg = cycleStudioSnapConfig(cfg);
+    expect(snapPresetFromConfig(cfg)).toBe("beat");
+    cfg = cycleStudioSnapConfig(cfg);
+    expect(snapPresetFromConfig(cfg)).toBe("bar");
     cfg = cycleStudioSnapConfig(cfg);
     expect(snapPresetFromConfig(cfg)).toBe("20");
     cfg = cycleStudioSnapConfig(cfg);

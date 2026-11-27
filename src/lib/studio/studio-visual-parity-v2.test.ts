@@ -40,10 +40,10 @@ describe("Studio Visual Parity V2 — transport empty shell", () => {
 });
 
 describe("Studio Visual Parity V2 — mixer default", () => {
-  it("expands mixer by default on xl via matchMedia", () => {
+  it("keeps the xl mixer closed until the button or F9 asks for it", () => {
     expect(editor).toMatch(/min-width: 1280px/);
     expect(editor).toMatch(/setMixerOpen\(true\)/);
-    expect(editor).toMatch(/Visual Parity V2 — Mixer Contract C/);
+    expect(editor).toMatch(/event\.key === "F9"[\s\S]{0,160}toggleMixerSurface\(\)/);
     expect(editor).toMatch(/inspectorDesktopRail && mixerOpen/);
     expect(editor).toMatch(/mixerOpen && !inspectorDesktopRail/);
   });
