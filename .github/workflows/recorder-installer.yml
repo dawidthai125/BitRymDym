@@ -54,6 +54,7 @@ jobs:
           python tools_fetch.py;     if ($LASTEXITCODE) { throw "tools_fetch" }
           python test_purchased.py;  if ($LASTEXITCODE) { throw "purchased" }
           python test_beat_speed.py; if ($LASTEXITCODE) { throw "beat_speed_okno" }
+          python test_shortcuts.py;  if ($LASTEXITCODE) { throw "skroty" }
           $app = (Select-String -Path updater.py -Pattern 'APP_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
           $iss = (Select-String -Path installer\BitRymDym.iss -Pattern '#define AppVersion "([^"]+)"').Matches[0].Groups[1].Value
           if ($app -ne $iss) { throw "wersja programu ($app) różni się od AppVersion w .iss ($iss)" }

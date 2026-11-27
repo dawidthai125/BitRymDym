@@ -1022,6 +1022,51 @@ MIC_OPEN_SECONDS = 4.0
 # Delay measurement: one click a second, whole bars.
 DELAY_CLICKS = 16
 BLUETOOTH_HINT = "Słuchawki Bluetooth opóźniają dźwięk nawet o pół sekundy. Kliknij ZMIERZ, zanim nagrasz."
+# Keyboard shortcuts: one list for the legend next to the devices, the window behind SKRÓTY / F1 and the tests.
+SHORTCUT_BASICS: tuple[tuple[str, str], ...] = (
+    ("Spacja / R", "nagraj · stop"),
+    ("P", "graj · stop"),
+    ("Esc", "stop"),
+    ("M", "wycisz bit"),
+    ("Ctrl+Z", "cofnij"),
+    ("Ctrl+I", "podziel"),
+    ("Delete", "usuń"),
+    ("← →", "kursor"),
+    ("F1", "wszystkie skróty"),
+)
+SHORTCUT_GROUPS: tuple[tuple[str, tuple[tuple[str, str], ...]], ...] = (
+    ("NAGRYWANIE I ODSŁUCH", (
+        ("Spacja albo R", "nagraj / stop na uzbrojonej ścieżce (●)"),
+        ("P", "graj / stop"),
+        ("Esc", "stop"),
+        ("M", "wycisz bit / włącz bit"),
+    )),
+    ("EDYCJA", (
+        ("Ctrl+Z", "cofnij"),
+        ("Ctrl+X", "wytnij zaznaczenie"),
+        ("Ctrl+C", "kopiuj zaznaczenie"),
+        ("Ctrl+V", "wklej w kursor na aktywnej ścieżce"),
+        ("Ctrl+I", "podziel klip w kursorze"),
+        ("Delete albo Backspace", "usuń zaznaczenie"),
+    )),
+    ("KURSOR I WIDOK", (
+        ("← →", "kursor o 0,1 s"),
+        ("Shift + ← →", "kursor o 1 s"),
+        ("Home", "na początek"),
+        ("Ctrl + kółko", "przybliż / oddal"),
+        ("Shift + kółko", "przewiń w bok"),
+        ("Kółko", "przewiń ścieżki"),
+    )),
+    ("MYSZĄ", (
+        ("Klik", "ustaw kursor"),
+        ("Przeciągnij po ścieżce", "zaznacz fragment"),
+        ("Podwójny klik na klipie", "zaznacz cały klip"),
+        ("Przeciągnij pasek klipu", "przesuń klip, też na inną ścieżkę"),
+        ("Podwójny klik na nazwie", "zmień nazwę ścieżki"),
+    )),
+    ("TA LISTA", (("F1 albo ?", "otwórz skróty"),)),
+)
+
 GEAR_HINT = "Mikrofon i słuchawki mogą być z różnych urządzeń, też Bluetooth."
 # About 170 ms of the mix. When these bytes are here the beat has really connected and decoded.
 MIX_FIRST_BYTES = 32_768
@@ -1987,6 +2032,8 @@ class RecorderWindow:
             ("<Right>", lambda: self._nudge_cursor(0.1)),
             ("<Shift-Left>", lambda: self._nudge_cursor(-1.0)),
             ("<Shift-Right>", lambda: self._nudge_cursor(1.0)),
+            ("<F1>", lambda: self.show_shortcuts()),
+            ("<question>", lambda: self.show_shortcuts()),
         ):
             self.root.bind_all(sequence, lambda event, run=handler: self._key(event, run))
         self.show_splash()
@@ -2044,7 +2091,66 @@ class RecorderWindow:
             low = int(event.height) < int(780 * self.ui)
             narrow = int(event.width) < int(1000 * self.ui) and int(event.height) < int(900 * self.ui)
             self._set_compact(low or narrow)
+            self._sync_legend(int(event.width))
             self._fit_soon()
+
+    def _build_legend(self, parent: tk.Widget) -> tk.Frame:
+        """The most used shortcuts in three columns. The last one opens the whole list. As low as the device rows."""
+        box = tk.Frame(parent, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
+        tk.Label(box, text="SKRÓTY", bg=PANEL, fg=AMBER, font=(FONT_META, 8)).pack(side="left", anchor="n", padx=(8, 4), pady=4)
+        grid = tk.Frame(box, bg=PANEL)
+        grid.pack(side="left", padx=(0, 8), pady=3)
+        last = len(SHORTCUT_BASICS) - 1
+        for index, (keys, what) in enumerate(SHORTCUT_BASICS):
+            row, column = index % 3, (index // 3) * 2
+            tk.Label(grid, text=keys, bg=PANEL, fg=AMBER, font=(FONT_META, 8), anchor="e", pady=0).grid(
+                row=row, column=column, sticky="e", padx=(10 if column else 0, 4)
+            )
+            text = tk.Label(grid, text=what + (" ›" if index == last else ""), bg=PANEL, fg=INK if index == last else SOFT,
+                            font=(FONT_UI, 8, "underline") if index == last else (FONT_UI, 8), anchor="w", pady=0)
+            text.grid(row=row, column=column + 1, sticky="w")
+            if index == last:
+                text.configure(cursor="hand2")
+                text.bind("<Button-1>", lambda _event: self.show_shortcuts())
+        return box
+
+    def _sync_legend(self, width: int) -> None:
+        """Wide window: legend beside the devices. Narrow or low: only the SKRÓTY button at the top."""
+        wanted = not self._compact and width >= int(1350 * self.ui)
+        if wanted and not self.legend.winfo_manager():
+            self.legend.pack(side="right", anchor="n", padx=(12, 0), before=self.head_left)
+        elif not wanted and self.legend.winfo_manager():
+            self.legend.pack_forget()
+
+    def show_shortcuts(self) -> None:
+        """All shortcuts in one window. A second call brings the open one to the front."""
+        box = getattr(self, "_keys_box", None)
+        if box is not None and box.winfo_exists():
+            box.lift()
+            box.focus_force()
+            return
+        box = self._keys_box = tk.Toplevel(self.root)
+        box.title("Skróty klawiszowe")
+        box.configure(bg=PANEL)
+        box.transient(self.root)
+        box.resizable(False, False)
+        tk.Label(box, text="Skróty klawiszowe", bg=PANEL, fg=INK, font=(FONT_DISPLAY, 18, "italic")).pack(anchor="w", padx=16, pady=(12, 2))
+        tk.Label(
+            box, text="Działają na osi i ścieżkach. W polach do wpisywania (BPM, opóźnienie) klawisze piszą tekst.",
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 9), wraplength=820, justify="left",
+        ).pack(anchor="w", padx=16)
+        body = tk.Frame(box, bg=PANEL)
+        body.pack(fill="x", padx=16, pady=(8, 0))
+        for index, (title, rows) in enumerate(SHORTCUT_GROUPS):
+            part = tk.Frame(body, bg=PANEL)
+            part.grid(row=index // 2, column=index % 2, sticky="nw", padx=(0, 24), pady=(0, 10))
+            tk.Label(part, text=title, bg=PANEL, fg=AMBER, font=(FONT_META, 9)).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 2))
+            for line, (keys, what) in enumerate(rows, start=1):
+                tk.Label(part, text=keys, bg=PANEL, fg=INK, font=(FONT_META, 9), anchor="w").grid(row=line, column=0, sticky="w", padx=(0, 10))
+                tk.Label(part, text=what, bg=PANEL, fg=SOFT, font=(FONT_UI, 9), anchor="w").grid(row=line, column=1, sticky="w")
+        self._tool(box, "ZAMKNIJ", box.destroy, SOFT).pack(anchor="e", padx=16, pady=(4, 14))
+        box.bind("<Escape>", lambda _event: box.destroy())
+        self._center(box)
 
     def _set_compact(self, on: bool) -> None:
         """A small window gives its room to the tracks: shorter rows, no second name of the program, no hints."""
@@ -2062,7 +2168,7 @@ class RecorderWindow:
             self.foot_label.pack_forget()
         else:
             self.brand_label.pack(side="left", before=self.kicker_label)
-            self.account_label.pack(side="right", padx=10, after=self.change_button)
+            self.account_label.pack(side="right", padx=10, after=self.keys_button)
             self.sel_row.pack(fill="x", padx=12, pady=(6, 0), after=self._flows[-1])
             self.foot_label.pack(side="bottom", fill="x", padx=12, pady=(0, 8), before=self.status_label)
         self._sync_hint()
@@ -2114,7 +2220,7 @@ class RecorderWindow:
         """In a small window the line under the devices is there only when it has something to say."""
         shown = not self._compact or self.probe_var.get() != GEAR_HINT
         if shown and not self.probe_label.winfo_manager():
-            self.probe_label.pack(fill="x", padx=12, pady=(4, 0), after=self._flows[2])
+            self.probe_label.pack(fill="x", padx=12, pady=(4, 0), after=self.head_area)
             self._fit_soon()
         elif not shown and self.probe_label.winfo_manager():
             self.probe_label.pack_forget()
@@ -2337,16 +2443,24 @@ class RecorderWindow:
         self._tool(top, "NOWY PROJEKT", self.new_project, SOFT).pack(side="right", padx=(0, 6))
         self.change_button = self._tool(top, "ZMIEŃ STUDIO", self.back_to_modes, SOFT)
         self.change_button.pack(side="right", padx=(0, 6))
+        self.keys_button = self._tool(top, "SKRÓTY", self.show_shortcuts, AMBER)
+        self.keys_button.pack(side="right", padx=(0, 6))
         self.save_project_button = self._tool(top, "ZAPISZ PROJEKT", self.save_project, SOFT)
         self.load_session_button = self._tool(top, "WCZYTAJ SESJĘ", self.load_offline_pack, SOFT)
         self.account_label = tk.Label(top, textvariable=self.account_line, bg=PAPER, fg=MUTE, font=(FONT_META, 9))
-        self.account_label.pack(side="right", padx=10)
+        self.account_label.pack(side="right", padx=10, after=self.keys_button)
         rule = tk.Frame(self.studio, bg=AMBER, height=2)
         rule.pack_propagate(False)
         rule.pack(fill="x", padx=12, pady=(4, 6))
 
-        setup_flow = Flow(self.studio, int(14 * self.ui), bg=PAPER)
-        setup_flow.pack(fill="x", padx=12)
+        # Bit, devices and, in a wide window, the shortcut legend on their right.
+        self.head_area = tk.Frame(self.studio, bg=PAPER)
+        self.head_area.pack(fill="x", padx=12)
+        self.head_left = tk.Frame(self.head_area, bg=PAPER)
+        self.head_left.pack(side="left", fill="x", expand=True)
+        self.legend = self._build_legend(self.head_area)
+        setup_flow = Flow(self.head_left, int(14 * self.ui), bg=PAPER)
+        setup_flow.pack(fill="x")
         setup = setup_flow.group()
         tk.Label(setup, text="BIT", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
         self.beat_button = self._tool(setup, "Wybierz bit z katalogu ▾", self.pick_beat, INK)
@@ -2382,8 +2496,8 @@ class RecorderWindow:
         self.delay_button = self._tool(late, "ZMIERZ", self.measure_delay, INK, size=11)
         self.delay_button.pack(side="left", padx=(8, 0))
 
-        gear_flow = Flow(self.studio, int(12 * self.ui), bg=PAPER)
-        gear_flow.pack(fill="x", padx=12, pady=(6, 0))
+        gear_flow = Flow(self.head_left, int(12 * self.ui), bg=PAPER)
+        gear_flow.pack(fill="x", pady=(6, 0))
         gear = gear_flow.group()
         tk.Label(gear, text="MIKROFON", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="left")
         self.device_menu = tk.OptionMenu(gear, self.device_var, "Szukam mikrofonów…")
@@ -2454,9 +2568,8 @@ class RecorderWindow:
             self.studio,
             text=(
                 "Klik: kursor. Przeciągnij: zaznaczenie, potem Wytnij, Usuń albo Podziel. Pasek klipu: przesuń. "
-                "● uzbrój ścieżkę, potem Spacja lub R: nagraj/stop. P: graj/stop. Esc: stop. "
-                "M: wycisz bit. Strzałki: kursor (±0,1 s, Shift ±1 s). Home: początek. "
-                "Delete, Ctrl+X/C/V, Ctrl+I, Ctrl+Z. Ctrl+kółko: zoom."
+                "● uzbrój ścieżkę, potem Spacja lub R: nagraj/stop. P: graj/stop. "
+                "Wszystkie skróty: F1 albo przycisk SKRÓTY u góry."
             ),
             bg=PAPER, fg=MUTE, font=(FONT_UI, 8), anchor="w", justify="left", wraplength=900,
         )

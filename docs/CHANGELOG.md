@@ -6,6 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-27 (53) — Nagrywarka 2026.11.49: legenda skrótów
+
+- Obok urządzeń 9 podstawowych skrótów, pełna lista pod przyciskiem SKRÓTY, F1 albo ?. W małym oknie tylko przycisk.
+
 ## 2026-11-27 (52) — Nagrywarka 2026.11.48: Tempo bitu
 
 - Program Windows (Studio Online i Offline): przyspieszenie bitu do +25% jak taśma, zapis w projekcie, to samo tempo w projekcie wysłanym do Studia. Lista z pliku sesji offline na stronie mówi o przyspieszonym bicie.
