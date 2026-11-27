@@ -27,6 +27,7 @@ const sound = (id: string): StudioFeatureEntry => ({ ...entry(id, "sound"), mixW
 export const STUDIO_FEATURES: readonly StudioFeatureEntry[] = [
   sound("autotune"),
   entry("latency", "record"),
+  entry("beatSpeed", "track"),
   entry("lyrics", "text"),
   entry("importVocal", "add"),
   sound("presets"),

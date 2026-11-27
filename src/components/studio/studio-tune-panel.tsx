@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { createContext, useContext, useEffect, useId, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
@@ -10,9 +10,13 @@ import { Button } from "@/components/ui/button";
 import type { StudioFxTuneParams, StudioTuneNoteEdit } from "@/lib/studio/studio-fx-chain";
 import type { NoteEditorClip } from "@/lib/studio/tune/note-editor-client";
 import { detectBeatKeyFromSession, fetchProjectBeatKey, type ProjectBeatKeyDto } from "@/lib/studio/tune/beat-key-client";
+import { shiftKeyByCents } from "@/lib/studio/studio-beat-speed";
 import { formatTuneKey, TUNE_KEY_NAMES, TUNE_STYLES, tuneStyleOf, type TuneKey, type TuneStyle } from "@/lib/studio/tune/tune";
 
-/** Beat key of the project (null while loading / unavailable). */
+/** How much higher the Bit sounds now ("Tempo bitu"), in cents. */
+export const StudioBeatPitchContext = createContext(0);
+
+/** Beat key of the project as it is heard (null while loading / unavailable). */
 export function useProjectBeatKey(projectId: string | null | undefined): ProjectBeatKeyDto | null {
   const [state, setState] = useState<{ id: string; value: ProjectBeatKeyDto | null } | null>(null);
   useEffect(() => {
@@ -25,7 +29,12 @@ export function useProjectBeatKey(projectId: string | null | undefined): Project
       cancelled = true;
     };
   }, [projectId]);
-  return state && state.id === projectId ? state.value : null;
+  const value = state && state.id === projectId ? state.value : null;
+  const cents = useContext(StudioBeatPitchContext);
+  return useMemo(
+    () => (value && cents !== 0 ? { ...value, key: shiftKeyByCents(value.key, cents) } : value),
+    [value, cents],
+  );
 }
 
 const SCALE_KEYS = ["dur", "moll", "chromatyczna"] as const;
@@ -55,6 +64,7 @@ export function StudioTunePanel({
   const keyId = useId();
   const scaleId = useId();
   const beat = useProjectBeatKey(projectId);
+  const beatCents = useContext(StudioBeatPitchContext);
   const presets = useFxPresets();
   const custom = presets.access.tuneCustom === true;
   const [local, setLocal] = useState<Partial<StudioFxTuneParams>>({});
@@ -78,8 +88,13 @@ export function StudioTunePanel({
       return;
     }
     const pct = Math.round(Math.max(0, Math.min(1, r.key.score)) * 100);
-    setDetectMsg(t("wykryto", { key: formatTuneKey(r.key, lang), pct }));
-    await commit({ keyRoot: r.key.keyRoot, scale: r.key.scale });
+    const heard = shiftKeyByCents({ keyRoot: r.key.keyRoot, scale: r.key.scale }, beatCents);
+    if (!heard) {
+      setDetectMsg(t("niewykryto"));
+      return;
+    }
+    setDetectMsg(t("wykryto", { key: formatTuneKey(heard, lang), pct }));
+    await commit({ keyRoot: heard.keyRoot, scale: heard.scale });
   }
 
   const slider = (path: "retuneMs" | "amount", label: string, max: number, step: number, unit: string) => {

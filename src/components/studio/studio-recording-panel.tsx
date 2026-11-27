@@ -2378,7 +2378,8 @@ export function StudioRecordingPanel({
       const found = await measureTakeLag({
         take,
         recPositionMs,
-        beatPositionMs: targetMs - clip.timelineStartMs + clip.sourceOffsetMs,
+        beatPositionMs: targetMs - clip.timelineStartMs + clip.sourceOffsetMs * (clip.stretchRatio ?? 1),
+        beatStretch: clip.stretchRatio ?? 1,
         maxMs: Math.min(
           clip.timelineStartMs + clip.durationMs - targetMs,
           a.mode === "loop" && a.section ? a.section.endMs - a.section.startMs : Number.POSITIVE_INFINITY,

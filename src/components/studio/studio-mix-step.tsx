@@ -7,6 +7,7 @@ import { StudioMixOverview } from "@/components/studio/studio-mix-overview";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
+import { studioHeardBpm } from "@/lib/studio/studio-beat-speed";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { audioToMidiNotes, downsampleMono, pickMidiTrackId } from "@/lib/studio/mix-analysis/audio-to-midi";
 import { renderTrack } from "@/lib/studio/mix-analysis/render";
@@ -1146,7 +1147,7 @@ export function StudioMixStep({
       {onApplyAutofix ? (
         <StudioVocalSetsCard
           tracks={doc.tracks}
-          bpm={doc.project.tempoBpm}
+          bpm={studioHeardBpm(doc.project.tempoBpm, doc.clips)}
           tuneKey={beatKey}
           maxEffects={maxEffects}
           disabled={running}

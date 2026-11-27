@@ -5,6 +5,7 @@
  */
 
 import { Fft } from "@/lib/studio/cleanup/fft";
+import { isBeatSpeedUp } from "@/lib/studio/studio-beat-speed";
 import { LATENCY_MAX_MS, LATENCY_MIN_MS } from "@/lib/studio/recording/latency";
 
 export const ALIGN_RATE = 12_000;
@@ -204,7 +205,7 @@ export type AlignBeatClip = {
   scratchReverse?: boolean;
 };
 
-/** The beat clip heard at `startMs`, when it plays as recorded (no stretch, pitch or scratch). */
+/** The beat clip heard at `startMs`, when it plays as recorded or only faster like a tape. */
 export function beatClipAt<C extends AlignBeatClip>(
   clips: readonly C[],
   tracks: readonly { id: string; muted: boolean; solo: boolean }[],
@@ -216,7 +217,8 @@ export function beatClipAt<C extends AlignBeatClip>(
       if (c.sourceKind !== "BEAT_REF" || c.muted) return false;
       const track = tracks.find((t) => t.id === c.trackId);
       if (!track || track.muted || (anySolo && !track.solo)) return false;
-      if ((c.stretchRatio ?? 1) !== 1 || (c.pitchCents ?? 0) !== 0 || (c.scratchRate ?? 1) !== 1 || c.scratchReverse) return false;
+      if (!isBeatSpeedUp({ stretch: c.stretchRatio ?? 1, pitchCents: c.pitchCents ?? 0 })) return false;
+      if ((c.scratchRate ?? 1) !== 1 || c.scratchReverse) return false;
       return startMs >= c.timelineStartMs && startMs < c.timelineStartMs + c.durationMs - ALIGN_MIN_SECONDS * 1000;
     }) ?? null
   );

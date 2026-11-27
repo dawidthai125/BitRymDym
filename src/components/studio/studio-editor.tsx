@@ -135,6 +135,9 @@ import { beatDurationMs } from "@/lib/studio/studio-daw-clock";
 import { buildStudioGrid, studioGridOriginMs, writeStudioViewPrefs } from "@/lib/studio/studio-grid";
 import { useStudioViewPrefs } from "@/lib/studio/use-studio-view-prefs";
 import { beatRestorePlan, isBeatClip, isClipLocked } from "@/lib/studio/studio-beat-lock";
+import { studioBeatPitchCents, studioHeardBpm } from "@/lib/studio/studio-beat-speed";
+import { StudioBeatSpeed } from "@/components/studio/studio-beat-speed";
+import { StudioBeatPitchContext } from "@/components/studio/studio-tune-panel";
 import { studioAdvancedRecordAllowed, studioRecordView } from "@/lib/studio/studio-record-view";
 import {
   clearClipSelection,
@@ -351,10 +354,11 @@ export function StudioEditor({
       timelineLengthMs={doc.project.timelineLengthMs}
       beatId={beatRef?.beatId ?? null}
       engineDocument={engineDocument}
-      tempoBpm={doc.project.tempoBpm}
+      tempoBpm={studioHeardBpm(doc.project.tempoBpm, doc.clips)}
       timeSignatureNum={doc.project.timeSignatureNum}
       gridOriginMs={metronomeOriginMs}
     >
+      <StudioBeatPitchContext.Provider value={studioBeatPitchCents(doc.clips)}>
       <StudioEditorInner
         doc={doc}
         setDoc={setDoc}
@@ -364,6 +368,7 @@ export function StudioEditor({
         onBeatTitle={setBeatTitle}
         fullBeatMs={doc.project.beatId === fullBeat.beatId ? fullBeat.ms : null}
       />
+      </StudioBeatPitchContext.Provider>
     </StudioTransportProvider>
   );
 }
@@ -448,17 +453,19 @@ function StudioEditorInner({
   );
   /** Ruler, track height and bar 1: remembered per project on this device. */
   const viewPrefs = useStudioViewPrefs(doc.project.id);
+  /** "Tempo bitu": the grid, metronome and new notes follow the tempo that is heard. */
+  const heardBpm = studioHeardBpm(doc.project.tempoBpm, doc.clips);
   const beatFileStartMs = studioGridOriginMs(doc.clips.filter((c) => c.sourceKind === "BEAT_REF"), 0);
   const gridOriginMs = beatFileStartMs + viewPrefs.gridShiftMs;
   const grid = useMemo(
     () =>
       buildStudioGrid({
-        bpm: doc.project.tempoBpm,
+        bpm: heardBpm,
         timeSignatureNum: doc.project.timeSignatureNum,
         timeSignatureDen: doc.project.timeSignatureDen,
         originMs: gridOriginMs,
       }),
-    [doc.project.tempoBpm, doc.project.timeSignatureNum, doc.project.timeSignatureDen, gridOriginMs],
+    [heardBpm, doc.project.timeSignatureNum, doc.project.timeSignatureDen, gridOriginMs],
   );
   const snapConfig = useMemo(() => withStudioSnapGrid(snapChoice, grid), [snapChoice, grid]);
   const laneHeightPx = viewPrefs.lanes === "low" ? STUDIO_DAW_LANE_HEIGHT_LOW_PX : STUDIO_DAW_LANE_HEIGHT_PX;
@@ -1003,6 +1010,14 @@ function StudioEditorInner({
     const target = focus[id];
     if (target) {
       focusRecordControl(target, staysSimple);
+      return;
+    }
+    if (id === "beatSpeed") {
+      const beatTrack = doc.tracks.find((t) => t.trackType === "BEAT");
+      if (!beatTrack) return;
+      setSelectedClipId(clearClipSelection());
+      setSelectedTrackId(beatTrack.id);
+      if (!staysSimple && !inspectorDesktopRail) openInspectorOverlay();
       return;
     }
     if (id === "mixer") {
@@ -3502,7 +3517,7 @@ function StudioEditorInner({
             getExpectedDocumentVersion={expectedDocumentVersion}
             enqueuePersistAsync={enqueuePersistAsync}
             title={tr("efekty", { v0: doc.tracks.find((t) => t.id === target.trackId)?.name ?? tr("sciezka") })}
-            vocalPresets={{ bpm: doc.project.tempoBpm }}
+            vocalPresets={{ bpm: heardBpm }}
             trackClips={doc.clips.filter((c) => c.trackId === target.trackId)}
             onClose={() => setFxPanel(null)}
             onFxPersisted={(effectsChain, documentVersion) => {
@@ -3685,6 +3700,21 @@ function StudioEditorInner({
     />
   ) : null;
 
+  const beatSpeedSection =
+    selectedTrack?.trackType === "BEAT" && activeSelectedTrackId === selectedTrack.id ? (
+      <StudioBeatSpeed
+        key={selectedTrack.id}
+        baseBpm={doc.project.tempoBpm}
+        beatClips={doc.clips.filter(isBeatClip)}
+        hasRecordings={doc.clips.some((c) => !isBeatClip(c))}
+        disabled={recordingLocked || pending}
+        onApply={(clipId, next) => {
+          transport.pause();
+          saveClipPlayback(clipId, next);
+        }}
+      />
+    ) : null;
+
   const inspectorContent = (
     <div
       className="min-h-0 flex-1 space-y-2 overflow-y-auto"
@@ -3702,6 +3732,8 @@ function StudioEditorInner({
           {tInspector(inspectorContext)}
         </p>
       )}
+
+      {beatSpeedSection}
 
       {inspectorContext === "record" ? <StudioRecordSlot host={recordHost} /> : null}
 
@@ -3803,7 +3835,7 @@ function StudioEditorInner({
           getPlayheadMs={getPlayheadMs}
           onSeek={transport.seek}
           onDocumentVersionAck={applyAckedDocumentVersion}
-          tempoBpm={doc.project.tempoBpm}
+          tempoBpm={heardBpm}
           gridOriginMs={gridOriginMs}
         />
       ) : null}
@@ -4379,7 +4411,7 @@ function StudioEditorInner({
         onTransportKeyboardModeChange={(mode) => {
           setStudioTransportKeyboardModeLive(mode);
         }}
-        tempoBpm={doc.project.tempoBpm}
+        tempoBpm={heardBpm}
         timeSignatureNum={doc.project.timeSignatureNum}
         timeSignatureDen={doc.project.timeSignatureDen}
         durationMs={songEndMs}
@@ -4461,7 +4493,7 @@ function StudioEditorInner({
           clipEditHandlers.onTrimRightToPlayhead();
         }}
         onFragmentNudge={(direction) => {
-          nudgeSelectedBy(direction * beatDurationMs(doc.project.tempoBpm, doc.project.timeSignatureDen));
+          nudgeSelectedBy(direction * beatDurationMs(heardBpm, doc.project.timeSignatureDen));
         }}
         onFragmentDuplicate={() => {
           setFragmentConfirmDelete(false);
@@ -4632,7 +4664,7 @@ function StudioEditorInner({
             title={tr("basOpis")}
             onClick={() => {
               if (hasMidi(trackMenuTrack.midi)) return;
-              saveTrackMidi(trackMenuTrack.id, bassLineAt(getPlayheadMs(),doc.project.tempoBpm));
+              saveTrackMidi(trackMenuTrack.id, bassLineAt(getPlayheadMs(),heardBpm));
               setTrackMenuId(null);
             }}
           >
@@ -4649,7 +4681,7 @@ function StudioEditorInner({
             title={tr("perkusjaOpis")}
             onClick={() => {
               if (hasMidi(trackMenuTrack.midi)) return;
-              saveTrackMidi(trackMenuTrack.id, drumPatternAt(getPlayheadMs(),doc.project.tempoBpm));
+              saveTrackMidi(trackMenuTrack.id, drumPatternAt(getPlayheadMs(),heardBpm));
               setTrackMenuId(null);
             }}
           >
@@ -4947,7 +4979,12 @@ function StudioEditorInner({
                 beatUnlocked={beatUnlocked}
                 onToggleBeatLock={() => setBeatUnlocked((value) => !value)}
                 menuOpen={trackMenuId === track.id}
-                onSelect={setSelectedTrackId}
+                onSelect={(id) => {
+                  // A tap on the Bit track opens its menu with "Tempo bitu", also a second tap on a closed sheet.
+                  const opensSheet = track.trackType === "BEAT" && !recordSimple && !inspectorDesktopRail && !recordingLocked;
+                  setSelectedTrackId(opensSheet ? track.id : id);
+                  if (opensSheet) openInspectorOverlay();
+                }}
                 onToggleMenu={() => setTrackMenuId((prev) => (prev === track.id ? null : track.id))}
                 patchTrack={patchTrack}
                 onToggleFlag={toggleTrackFlag}

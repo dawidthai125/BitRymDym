@@ -1,5 +1,6 @@
 import "server-only";
 
+import { studioBeatPitchCents, studioHeardBpm } from "@/lib/studio/studio-beat-speed";
 import { clipPitchForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { AuthError } from "@/lib/auth/session";
@@ -65,8 +66,9 @@ export async function previewBitekSamplePlacement(
       durationMs: Number(sample.duration_ms),
     },
     project: {
-      bpm: document.project.tempoBpm,
-      key: projectKey,
+      bpm: studioHeardBpm(document.project.tempoBpm, document.clips),
+      // A faster Bit is also higher. Between two keys there is none to match.
+      key: studioBeatPitchCents(document.clips) === 0 ? projectKey : null,
       timelineLengthMs: songEndMs,
       beatsPerBar: document.project.timeSignatureNum || 4,
       markers: (document.markers ?? []).map((m) => ({ kind: m.kind, positionMs: m.positionMs })),

@@ -4033,6 +4033,10 @@
         "makeSong": {
           "label": "Make the song (mix and mastering)",
           "keywords": "mix mastering finished song louder auto make"
+        },
+        "beatSpeed": {
+          "label": "Beat speed (faster)",
+          "keywords": "beat speed up faster tempo bpm tape"
         }
       }
     },
@@ -5680,6 +5684,22 @@
       "nagrania": "Recordings and samples in the project",
       "brakNagran": "Nothing here yet. Record a vocal or upload a file.",
       "importuj": "Record or upload a vocal"
+    },
+    "beatSpeed": {
+      "tytul": "Beat speed",
+      "normalne": "Normal speed: {bpm} BPM",
+      "zmiana": "+{procent}% · pitch up {poltony, plural, one {# semitone} other {# semitones}}",
+      "suwak": "Beat speed in BPM",
+      "wolniej": "1 BPM slower",
+      "szybciej": "1 BPM faster",
+      "opis": "The beat plays faster and higher, like a tape. Set the speed before you record vocals.",
+      "miedzyTonacjami": "The beat now sits between two keys. We cannot pick a key for vocal tuning.",
+      "maszNagrania": "You already have recordings on the tracks. After a speed change they will not fit the beat.",
+      "zmienTempo": "Change speed",
+      "anuluj": "Cancel",
+      "wroc": "Back to normal speed",
+      "pociety": "The beat is cut into pieces. Beat speed works when the beat is in one piece.",
+      "recznie": "This beat has a hand-set clip tempo. Go back to normal speed first."
     }
   },
   "nav": {

@@ -32,6 +32,7 @@ import { removeStudioProjectFiles, studioProjectCleanupKeys } from "@/lib/studio
 import { normalizeStudioProjectTitle } from "@/lib/studio/studio-project-title";
 import { parseClipPlaybackWrite } from "@/lib/studio/studio-clip-playback";
 import { clipPitchChangeAllowed } from "@/lib/studio/plan-feature-gates";
+import { isBeatSpeedUp } from "@/lib/studio/studio-beat-speed";
 import { StudioPlanFeatureError } from "@/lib/studio/presets/fx-presets-server";
 import {
   parseStudioClipGainDb,
@@ -2043,7 +2044,9 @@ export async function updateStudioClipPlaybackFor(
   const { clip } = await loadOwnedClip(context, input.projectId, input.clipId);
   const playback = parseClipPlaybackWrite({ stretch: input.stretch, pitchCents: input.pitchCents });
   const storedCents = clip.pitch_cents == null ? 0 : Math.round(num(clip.pitch_cents));
-  if (!clipPitchChangeAllowed("FREE", playback.pitchCents, storedCents)) {
+  // "Tempo bitu" is on every plan: a tape speed-up of the Bit raises its pitch too.
+  const beatSpeed = clip.source_kind === "BEAT_REF" && isBeatSpeedUp(playback);
+  if (!beatSpeed && !clipPitchChangeAllowed("FREE", playback.pitchCents, storedCents)) {
     const tier = (await resolveProductEntitlementForAuthContext(context)).premiumTier;
     if (!clipPitchForTier(tier) || !clipPitchChangeAllowed(tier, playback.pitchCents, storedCents)) {
       throw new StudioPlanFeatureError(

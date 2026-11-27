@@ -5,6 +5,7 @@
  * Identity (stretch 1, 0 cents) returns the same samples.
  */
 
+import { isTapePlayback, tapeResample } from "@/lib/studio/studio-beat-speed";
 import { resolveScratchSourceMs } from "@/lib/studio/studio-scratch-state";
 
 export const CLIP_STRETCH_MIN = 0.5;
@@ -126,6 +127,7 @@ function pitchKeepLength(input: Float32Array, cents: number): Float32Array {
 export function renderClipPlaybackMono(input: Float32Array, playback: ClipPlayback): Float32Array {
   const next = clampClipPlayback(playback);
   if (clipPlaybackIdentity(next)) return input;
+  if (isTapePlayback(next)) return tapeResample(input, Math.max(1, Math.round(input.length * next.stretch)));
   const pitched = pitchKeepLength(input, next.pitchCents);
   const stretched = Math.max(1, Math.round(pitched.length * next.stretch));
   return olaStretch(pitched, stretched);

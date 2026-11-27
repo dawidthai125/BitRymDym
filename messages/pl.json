@@ -4033,6 +4033,10 @@
         "makeSong": {
           "label": "Zrób utwór (mix i mastering)",
           "keywords": "mix miks mastering gotowy utwor glosniej automatyczny zrob"
+        },
+        "beatSpeed": {
+          "label": "Tempo bitu (przyspiesz)",
+          "keywords": "bit przyspieszyć przyspieszenie szybciej bpm prędkość podkład tempo taśma"
         }
       }
     },
@@ -5680,6 +5684,22 @@
       "nagrania": "Nagrania i sample w projekcie",
       "brakNagran": "Jeszcze nic tu nie ma. Nagraj wokal albo wgraj plik.",
       "importuj": "Nagraj albo wgraj wokal"
+    },
+    "beatSpeed": {
+      "tytul": "Tempo bitu",
+      "normalne": "Normalne tempo: {bpm} BPM",
+      "zmiana": "+{procent}% · tonacja wyżej o {poltony, plural, =1 {# półton} few {# półtony} many {# półtonów} other {# półtonu}}",
+      "suwak": "Tempo bitu w BPM",
+      "wolniej": "Wolniej o 1 BPM",
+      "szybciej": "Szybciej o 1 BPM",
+      "opis": "Bit gra szybciej i wyżej, jak taśma. Ustaw tempo przed nagraniem wokalu.",
+      "miedzyTonacjami": "Bit trafia teraz między tonacje. Nie dobierzemy tonacji do strojenia wokalu.",
+      "maszNagrania": "Masz już nagrania na ścieżkach. Po zmianie tempa nie będą pasować do bitu.",
+      "zmienTempo": "Zmień tempo",
+      "anuluj": "Anuluj",
+      "wroc": "Wróć do normalnego tempa",
+      "pociety": "Bit jest podzielony na kawałki. Tempo bitu działa, gdy bit jest w jednym kawałku.",
+      "recznie": "Ten bit ma ręcznie zmienione tempo klipu. Najpierw wróć do normalnego tempa."
     }
   },
   "nav": {

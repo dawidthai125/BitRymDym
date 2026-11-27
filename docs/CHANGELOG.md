@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-27 (51) — Studio: Tempo bitu
+
+- Ścieżka BIT ma „Tempo bitu”: przyspieszenie do +25% jak taśma (rośnie też tonacja), na wszystkich planach. Serwer przepuszcza zmianę wysokości tylko dla tej pary na klipie bitu.
+- Siatka, metronom, odliczanie, tonacja dla strojenia i automatyczne wyrównanie wokalu liczą od nowego tempa. Taśmowa para tempo/wysokość jest przeliczana bez ziaren (bez rozjazdu rytmu), także w eksporcie na Contabo.
+- Sprawdzone: testy jednostkowe, build, podgląd lokalny (tablet, komputer, bramka planu Bronze). Nie sprawdzone: odsłuch i nagranie na urządzeniu.
+
 ## 2026-11-27 (50) — Studio: pętle na siatce, przeciąganie plików, lista skrótów
 
 - Sekcje pętli, linijki punch, odliczanie i struktura zwrotek liczą od taktu 1 siatki, z dokładną długością uderzenia (zastępuje uwagę z (49) o liczeniu od zera osi).

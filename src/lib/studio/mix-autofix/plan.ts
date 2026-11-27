@@ -20,6 +20,7 @@
  *  - gentle gate/expander (~8 dB range, Producent P0 start) on noisy vocals
  */
 
+import { studioHeardBpm } from "@/lib/studio/studio-beat-speed";
 import type { StudioTrackRole } from "@/config/studio";
 import type { MixMetrics, TrackMetrics } from "@/lib/studio/mix-analysis/metrics";
 import type { MixCardId, MixCardStatus, MixVerdict } from "@/lib/studio/mix-analysis/verdict";
@@ -676,7 +677,7 @@ function fixTune(ctx: Ctx): void {
 
 /** Effective BPM for sync (project tempo, sane fallback). */
 export function autofixBpm(doc: StudioProjectDocument): number {
-  const bpm = doc.project.tempoBpm;
+  const bpm = studioHeardBpm(doc.project.tempoBpm, doc.clips);
   return Number.isFinite(bpm) && bpm >= 40 && bpm <= 250 ? bpm : MIX_AUTOFIX_TARGETS.defaultBpm;
 }
 

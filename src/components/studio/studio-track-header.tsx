@@ -23,6 +23,7 @@ import { StudioTrackLevelMeter } from "@/components/studio/studio-track-level-me
 import { Button } from "@/components/ui/button";
 import { isStudioTrackRole, STUDIO_TRACK_ROLES } from "@/config/studio";
 import { useLibText } from "@/i18n/use-lib-text";
+import { studioHeardBpm } from "@/lib/studio/studio-beat-speed";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import type { StudioProjectDocument, StudioTrackDto } from "@/lib/studio/studio-types";
 import { labelStudioTrackType } from "@/lib/ui/labels";
@@ -176,7 +177,7 @@ export function StudioTrackHeader({
         </div>
         {isBeat && !low ? (
           <p className="truncate px-1 text-[11px] leading-tight text-[var(--brd-ink-soft)]">
-            {tl(beatTitle ?? track.name)} · {doc.project.tempoBpm} BPM ·{" "}
+            {tl(beatTitle ?? track.name)} · {studioHeardBpm(doc.project.tempoBpm, doc.clips)} BPM ·{" "}
             {tl(
               formatStudioTimeMs(
                 doc.clips

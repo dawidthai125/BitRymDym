@@ -3,6 +3,7 @@
  * line them up and ask auto-align. Runs while the take uploads; never blocks or changes the recording.
  */
 
+import { tapeResample } from "@/lib/studio/studio-beat-speed";
 import { ALIGN_MAX_SECONDS, ALIGN_RATE, bleedLag, recordsWithoutAutoAlign, toAlignRate, type BleedLag } from "@/lib/studio/recording/auto-align";
 
 async function decodeMono(bytes: ArrayBuffer): Promise<Float32Array> {
@@ -44,8 +45,10 @@ export async function measureTakeLag(params: {
   take: Blob;
   /** Where the take's timeline start sits in the recording, before any correction. */
   recPositionMs: number;
-  /** The same moment in the beat file. */
+  /** The same moment in the beat as heard, so at its tape speed. */
   beatPositionMs: number;
+  /** "Tempo bitu": the heard length of the beat over the file length. 1 = as recorded. */
+  beatStretch?: number;
   maxMs: number;
   beatUrl: string;
 }): Promise<BleedLag | null> {
@@ -60,5 +63,7 @@ export async function measureTakeLag(params: {
     for (let i = 0; i < out.length; i += 1) out[i] = src[at + i] ?? 0;
     return out;
   };
-  return bleedLag(cut(mic, params.recPositionMs), cut(beat, params.beatPositionMs), () => new Promise((r) => setTimeout(r, 0)));
+  const stretch = params.beatStretch ?? 1;
+  const heard = stretch === 1 ? beat : tapeResample(beat, Math.round(beat.length * stretch));
+  return bleedLag(cut(mic, params.recPositionMs), cut(heard, params.beatPositionMs), () => new Promise((r) => setTimeout(r, 0)));
 }
