@@ -13,6 +13,7 @@ Format: data, zakres, skrót.
 - „Niskie ścieżki” (104 px zamiast 168). Poprawione rozjeżdżanie nagłówków i ścieżek o 4 px na ścieżkę.
 - Mikser domyślnie zamknięty; przycisk „Mikser” lub F9, na komputerze przypięty do dołu ekranu, Esc zamyka.
 - Usunięte ozdobne pionowe kreski na klipie bitu (udawały siatkę).
+- Telefon: w pasku nie ma listy przyciągania i przycisku miksera (są w „Więcej”); w poziomie także wysokość ścieżek jest w „Więcej”. Sprawdzone w przeglądarce 1280×715, 1180×820, 390×844 i 844×390, bez odtwarzania i bez prawdziwych urządzeń.
 
 ## 2026-11-26 (48) — Luki: prywatne linki, blokada zdjętych plików, oświadczenie przy wgraniu, dokumenty
 
