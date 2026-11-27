@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { planHipHopStructureMarkers } from "@/lib/studio/hiphop-marker-structure";
+import { barDurationMs, planHipHopStructureMarkers } from "@/lib/studio/hiphop-marker-structure";
 import { notifyStudioMarkersChanged } from "@/components/studio/studio-markers-events";
 import {
   studioMarkerKindLabelPl,
@@ -35,6 +35,8 @@ type StudioMarkersPanelProps = {
   onDocumentVersionAck?: (ack: unknown) => number;
   /** Project tempo for hip-hop structure template (default 90). */
   tempoBpm?: number;
+  /** Timeline position of bar 1: the section structure starts on the grid. */
+  gridOriginMs?: number;
 };
 
 async function fetchStudioMarkers(
@@ -65,6 +67,7 @@ export function StudioMarkersPanel({
   onSeek,
   onDocumentVersionAck,
   tempoBpm = 90,
+  gridOriginMs = 0,
 }: StudioMarkersPanelProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioMarkersPanel");
@@ -186,7 +189,10 @@ export function StudioMarkersPanel({
     setBusy("structure");
     setMessage(null);
     // A second click must not double the structure: skip markers that are already there.
-    const planned = planHipHopStructureMarkers({ bpm: tempoBpm }).filter(
+    // From the first bar of the grid that is on the timeline.
+    const barMs = barDurationMs(tempoBpm);
+    const startMs = gridOriginMs >= 0 ? gridOriginMs : gridOriginMs + Math.ceil(-gridOriginMs / barMs) * barMs;
+    const planned = planHipHopStructureMarkers({ bpm: tempoBpm, startMs: Math.round(startMs) }).filter(
       (row) => !markers.some((m) => m.kind === row.kind && m.positionMs === row.positionMs),
     );
     let failed = false;
@@ -203,7 +209,7 @@ export function StudioMarkersPanel({
     }
     setBusy(null);
     setMessage(failed ? t("nieUdaloSieZapisac") : t("wstawionoStrukture"));
-  }, [markers, persistOp, t, tempoBpm]);
+  }, [markers, persistOp, t, tempoBpm, gridOriginMs]);
 
   const sorted = markers.toSorted((a, b) => a.positionMs - b.positionMs);
 

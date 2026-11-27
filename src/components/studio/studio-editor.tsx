@@ -63,6 +63,7 @@ import { bassLineAt, drumPatternAt, emptyMidi, hasMidi, midiPhraseAt, reviewPlay
 import { fadeEdgePreset } from "@/lib/studio/studio-clip-fade";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
+import { StudioShortcutsDialog } from "@/components/studio/studio-shortcuts-dialog";
 import { StudioTransportBar } from "@/components/studio/studio-transport-bar";
 import { StudioStepNav } from "@/components/studio/studio-step-nav";
 import { StudioFeatureFinder } from "@/components/studio/studio-feature-finder";
@@ -395,6 +396,9 @@ function StudioEditorInner({
   /** "Dodaj" and the feature search point the recording panel at one of its controls. */
   const [recordFocus, setRecordFocus] = useState<StudioRecordFocus | null>(null);
   const recordFocusIdRef = useRef(0);
+  /** Files dropped on the timeline; the stem card asks for the rights statement before any upload. */
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [droppedStems, setDroppedStems] = useState<{ id: number; files: File[]; atMs: number } | null>(null);
   /** Simple view below xl: which group sheet is open (the recording panel is always on the page). */
   const [simpleGroup, setSimpleGroup] = useState<Exclude<StudioGroup, "record"> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -862,6 +866,24 @@ function StudioEditorInner({
     setRecordFocus({ id: recordFocusIdRef.current, target });
     setInspectorPreferRecord(true);
     if (!inPage) openInspectorOverlay();
+  }
+
+  function handleTimelineFileDrop(files: File[], atMs: number) {
+    if (recordingLocked) return;
+    if (maxStemsForTier(trackCapacity.premiumTier) < 1) {
+      // No stem import in the plan: show the single vocal import, which has its own rules.
+      setStatus(tr("upuszczanieBezStemow"));
+      focusRecordControl("importVocal", !advancedRecord || !recordFullView);
+      return;
+    }
+    // The stem card exists only in the full record view.
+    setSampleTab(false);
+    if (!recordFullView) setRecordFullView(true);
+    recordFocusIdRef.current += 1;
+    // A file dropped at the very end would have no room left.
+    const startMs = Math.max(0, Math.min(atMs, doc.project.timelineLengthMs - 1000));
+    setDroppedStems({ id: recordFocusIdRef.current, files, atMs: startMs });
+    focusRecordControl("stems");
   }
 
   /** The same five buttons in the simple view, with only what that view really has. */
@@ -3072,6 +3094,11 @@ function StudioEditorInner({
       if (isStudioTypingTarget(event.target)) return;
       const modal = studioModalState(document);
       if (modal === "modal") return;
+      if (event.key === "?" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        setShortcutsOpen(true);
+        return;
+      }
       if (
         !recordingLocked &&
         studioControlKeepsKey({
@@ -3521,6 +3548,8 @@ function StudioEditorInner({
           samplesMode={onSampleTab}
           stemLimit={maxStemsForTier(trackCapacity.premiumTier)}
           trackLimit={maxTracks}
+          droppedStems={droppedStems}
+          onDroppedStemsDone={() => setDroppedStems(null)}
           onSaveTrackMidi={saveTrackMidi}
           focusRequest={recordFocus}
           onFocusRequestHandled={() => setRecordFocus(null)}
@@ -3775,6 +3804,7 @@ function StudioEditorInner({
           onSeek={transport.seek}
           onDocumentVersionAck={applyAckedDocumentVersion}
           tempoBpm={doc.project.tempoBpm}
+          gridOriginMs={gridOriginMs}
         />
       ) : null}
 
@@ -3953,6 +3983,16 @@ function StudioEditorInner({
               onClick={() => setStudioTransportKeyboardModeLive(transportKeyboardMode === "quick_rec" ? "standard_daw" : "quick_rec")}
             >
               {tGroups("spacja")}{tGroups(transportKeyboardMode === "quick_rec" ? "spacjaNagrywa" : "spacjaGra")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 w-full [@media(pointer:coarse)]:hidden"
+              data-testid="studio-more-shortcuts"
+              onClick={() => setShortcutsOpen(true)}
+            >
+              {tr("skrotyKlawiszowe")}
             </Button>
           </StudioGroupSection>
           {advancedRecord ? (
@@ -4918,6 +4958,7 @@ function StudioEditorInner({
               />
             )}
             onSeek={seekSnapped}
+            onDropFiles={handleTimelineFileDrop}
             onSelectClip={(id) => {
               if (recordingLocked) return;
               setInspectorPreferRecord(
@@ -5009,6 +5050,10 @@ function StudioEditorInner({
         {mixerChannels}
       </StudioMixerOverlay>
       </>
+      ) : null}
+
+      {shortcutsOpen ? (
+        <StudioShortcutsDialog keyboardMode={transportKeyboardMode} onClose={() => setShortcutsOpen(false)} />
       ) : null}
 
       {fxPanel !== null ? (

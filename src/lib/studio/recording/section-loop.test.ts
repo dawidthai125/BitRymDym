@@ -145,3 +145,27 @@ describe("alignment", () => {
     ]);
   });
 });
+
+describe("loop and punch on the musical grid", () => {
+  const BAR_92 = 240_000 / 92;
+
+  it("counts bars from the grid origin without drifting", () => {
+    const section = sectionRange({ startMs: 135_700, bars: 4, barMs: BAR_92, timelineLengthMs: 360_000 })!;
+    expect(section).toEqual({ startMs: 135_652, endMs: 146_087 });
+    expect(sectionLines(section, BAR_92)).toHaveLength(4);
+    expect(sectionRange({ startMs: 3000, bars: 4, barMs: BAR_92, timelineLengthMs: 360_000, originMs: 300 })!.startMs).toBe(2909);
+    // Bar 1 before 0:00: the first section is the first whole bar on the timeline.
+    expect(sectionRange({ startMs: 0, bars: 4, barMs: BAR_92, timelineLengthMs: 360_000, originMs: -500 })!.startMs).toBe(2109);
+  });
+
+  it("keeps the line count with a whole-ms stored line length and returns whole ms for punch", () => {
+    // 16 bars at 92.1 BPM, lines stored as whole ms (rounded down): no extra sliver line.
+    const barMs = 240_000 / 92.1;
+    const range = { startMs: 0, endMs: Math.round(barMs * 16) };
+    const lines = sectionLines(range, Math.floor(barMs));
+    expect(lines).toHaveLength(16);
+    expect(lines.at(-1)!.endMs).toBe(range.endMs);
+    const win = punchLineWindow({ line: { startMs: 10_435, endMs: 13_043 }, barMs: BAR_92, beatMs: 60_000 / 92 });
+    for (const value of Object.values(win)) expect(Number.isInteger(value)).toBe(true);
+  });
+});

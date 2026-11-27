@@ -26,25 +26,33 @@ export function snapToBarMs(
 
 export type MsRange = { startMs: number; endMs: number };
 
-/** Bar-snapped section [start, start + bars) clamped to the timeline (≥ 1 bar). */
+/**
+ * Bar-snapped section [start, start + bars) clamped to the timeline (≥ 1 bar).
+ * Bars count from `originMs` (bar 1 of the grid); no section starts before 0:00.
+ */
 export function sectionRange(params: {
   startMs: number;
   bars: number;
   barMs: number;
   timelineLengthMs: number;
+  originMs?: number;
 }): MsRange | null {
   const { barMs, timelineLengthMs } = params;
+  const origin = params.originMs ?? 0;
   if (!(barMs > 0) || !(timelineLengthMs > 0)) return null;
-  const totalBars = Math.floor((timelineLengthMs + 1) / barMs);
+  /** First and last-plus-one bar that fit on the timeline, counted from the origin. */
+  const firstBar = Math.ceil((-origin - 0.5) / barMs);
+  const endBar = Math.floor((timelineLengthMs + 1 - origin) / barMs);
+  const totalBars = endBar - firstBar;
   if (totalBars < 1) return null;
   const bars = Math.max(1, Math.min(Math.round(params.bars), totalBars));
-  const startBar = Math.min(
-    barIndexAt(params.startMs, barMs),
-    totalBars - bars,
+  const startBar = Math.max(
+    firstBar,
+    Math.min(Math.floor((params.startMs - origin + 0.5) / barMs), endBar - bars),
   );
   return {
-    startMs: Math.round(startBar * barMs),
-    endMs: Math.round((startBar + bars) * barMs),
+    startMs: Math.max(0, Math.round(origin + startBar * barMs)),
+    endMs: Math.round(origin + (startBar + bars) * barMs),
   };
 }
 
@@ -53,6 +61,12 @@ export function sectionLines(range: MsRange, lineMs: number): MsRange[] {
   const out: MsRange[] = [];
   if (!(lineMs > 0) || range.endMs <= range.startMs) return out;
   for (let s = range.startMs; s < range.endMs - 1; s += lineMs) {
+    // A leftover of a few ms (stored whole-ms line length) belongs to the line before it.
+    const last = out[out.length - 1];
+    if (last && range.endMs - s < lineMs * 0.05) {
+      last.endMs = Math.round(range.endMs);
+      break;
+    }
     out.push({
       startMs: Math.round(s),
       endMs: Math.round(Math.min(range.endMs, s + lineMs)),
@@ -68,11 +82,11 @@ export function punchLineWindow(params: {
   barMs: number;
   beatMs: number;
 }): { recordFromMs: number; prerollMs: number; stopAtMs: number } {
-  const recordFromMs = Math.max(0, params.line.startMs - params.barMs);
+  const recordFromMs = Math.max(0, Math.round(params.line.startMs - params.barMs));
   return {
     recordFromMs,
     prerollMs: params.line.startMs - recordFromMs,
-    stopAtMs: params.line.endMs + Math.max(0, params.beatMs),
+    stopAtMs: params.line.endMs + Math.max(0, Math.round(params.beatMs)),
   };
 }
 

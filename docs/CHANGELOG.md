@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-27 (50) — Studio: pętle na siatce, przeciąganie plików, lista skrótów
+
+- Sekcje pętli, linijki punch, odliczanie i struktura zwrotek liczą od taktu 1 siatki, z dokładną długością uderzenia (zastępuje uwagę z (49) o liczeniu od zera osi).
+- Pliki audio upuszczone na oś (Silver/Gold) trafiają do karty „Importuj stemy”; wysyłka rusza po oświadczeniu o prawach i przycisku, a klipy stają w miejscu upuszczenia (z przyciąganiem). Bez importu stemów w planie otwiera się „Importuj wokal” z komunikatem.
+- Lista skrótów: klawisz „?” albo „Więcej” → „Skróty klawiszowe”.
+
 ## 2026-11-27 (49) — Studio: siatka w taktach, niskie ścieżki, mikser na przycisk
 
 - Linijka liczy takty (z BPM i metrum projektu), z kreskami taktów i uderzeń na ścieżkach; w „Więcej” przełącznik na czas. Takt 1 = początek pliku bitu; „Takt zaczyna się w miejscu głowicy” koryguje go (zapis tylko na urządzeniu, `brd-studio-view:<projekt>`). Metronom liczy od tego samego miejsca. Siatka i metronom używają dokładnej długości uderzenia (wcześniej metronom zaokrąglał do 1 ms i przy 92 BPM po 52 taktach był 36 ms obok). Sekcje pętli i znaczniki struktury w panelu nagrywania nadal liczą od zera osi.

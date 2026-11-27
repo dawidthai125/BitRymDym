@@ -2656,6 +2656,28 @@
     }
   },
   "studio": {
+    "shortcuts": {
+      "tytul": "Skróty klawiszowe",
+      "zamknij": "Zamknij skróty",
+      "spacjaKlawisz": "Spacja",
+      "lubKlik": "kółko myszy",
+      "graj": "Graj lub pauza",
+      "nagraj": "Nagrywanie: start i stop",
+      "cofnij": "Cofnij",
+      "ponow": "Ponów",
+      "poczatek": "Na początek",
+      "koniec": "Na koniec",
+      "podziel": "Podziel zaznaczony klip w miejscu głowicy",
+      "usun": "Usuń zaznaczony klip",
+      "przesun": "Przesuń zaznaczony klip o 1 ms",
+      "przesun10": "Przesuń o 10 ms",
+      "przesun20": "Przesuń o 20 ms",
+      "przybliz": "Przybliż lub oddal oś czasu",
+      "mikser": "Pokaż lub schowaj mikser",
+      "ekran": "Pełny ekran",
+      "odznacz": "Odznacz klip albo zamknij mikser",
+      "lista": "Ta lista"
+    },
     "sampleLab": {
       "metaTitle": "Pracownia sampli",
       "tytul": "Pracownia sampli",
@@ -2920,6 +2942,8 @@
       "snapOff": "WYŁ."
     },
     "studioEditor": {
+      "skrotyKlawiszowe": "Skróty klawiszowe (?)",
+      "upuszczanieBezStemow": "Przeciąganie plików na oś jest w planach z importem stemów. Pojedynczy wokal dodasz przyciskiem „Importuj wokal”.",
       "sciezkiNiskie": "Ścieżki: niskie",
       "sciezkiWysokie": "Ścieżki: wysokie",
       "przyciaganieUderzenie": "do uderzenia",
@@ -4941,6 +4965,10 @@
       "punkt": "Punkt {n}: {v}"
     },
     "stemImport": {
+      "upuszczone": "Upuszczone pliki. Każdy trafi na osobną ścieżkę od {czas}.",
+      "upuszczonePrawa": "Najpierw zaznacz oświadczenie o prawach powyżej.",
+      "importujUpuszczone": "Importuj upuszczone",
+      "anuluj": "Anuluj",
       "tytul": "Importuj stemy",
       "limit": "do {n, plural, one {# ścieżki} other {# ścieżek}} w planie",
       "opis": "Wybierz kilka plików WAV lub MP3 naraz (do 4 minut, do 48 MB). Każdy trafi na osobną ścieżkę od początku osi, a rolę podpowiem z nazwy pliku.",

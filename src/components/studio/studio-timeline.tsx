@@ -5,7 +5,7 @@
  * audit 2026-11-21). Clip geometry SSOT stays integer ms; zoom is view only.
  */
 
-import { Fragment, memo, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
+import { Fragment, memo, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type DragEvent, type ReactNode, type RefObject } from "react";
 import { useTranslations } from "next-intl";
 
 import { StudioClipLaneItem } from "@/components/studio/studio-clip-lane";
@@ -33,6 +33,7 @@ import {
   followPlayheadScrollLeft,
   msToPx,
   pxToMs,
+  snapTimelineMs,
   zoomInPxPerMs,
   zoomOutPxPerMs,
   type StudioSnapConfig,
@@ -310,6 +311,7 @@ export function StudioTimeline({
   onSelectClip,
   onClearSelection,
   onCommitClipGeometry,
+  onDropFiles,
 }: {
   tracks: StudioTrackDto[];
   clips: StudioClipDto[];
@@ -337,6 +339,8 @@ export function StudioTimeline({
   laneHeightPx?: number;
   onSeek: (ms: number) => void;
   onSelectClip: (clipId: string) => void;
+  /** Audio files dragged from the computer onto the lanes, at the (snapped) time under the pointer. */
+  onDropFiles?: (files: File[], atMs: number) => void;
   /** Click on an empty part of a lane. */
   onClearSelection?: () => void;
   onCommitClipGeometry: (
@@ -427,6 +431,35 @@ export function StudioTimeline({
     });
   }
 
+  /** Where a dragged file would land, null = nothing is dragged over the lanes. */
+  const [dropAtMs, setDropAtMs] = useState<number | null>(null);
+  function dropTimeMs(event: { currentTarget: HTMLDivElement; clientX: number }): number {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const localX = Math.min(widthPx, Math.max(0, event.clientX - rect.left));
+    return snapTimelineMs(pxToMs(localX, density), snapConfig, { minMs: 0, maxMs: timelineLengthMs });
+  }
+  const dropHandlers = onDropFiles
+    ? {
+        onDragOver: (event: DragEvent<HTMLDivElement>) => {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          // Always cancel: otherwise the browser opens the file and leaves the Studio.
+          event.preventDefault();
+          event.dataTransfer.dropEffect = interactionLocked ? "none" : "copy";
+          if (!interactionLocked) setDropAtMs(dropTimeMs(event));
+        },
+        onDragLeave: (event: DragEvent<HTMLDivElement>) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropAtMs(null);
+        },
+        onDrop: (event: DragEvent<HTMLDivElement>) => {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          event.preventDefault();
+          setDropAtMs(null);
+          const files = Array.from(event.dataTransfer.files);
+          if (files.length && !interactionLocked) onDropFiles(files, dropTimeMs(event));
+        },
+      }
+    : {};
+
   function seekFromPointer(event: {
     currentTarget: HTMLDivElement;
     target: EventTarget;
@@ -501,6 +534,7 @@ export function StudioTimeline({
               }`}
               style={{ width: widthPx, minWidth: "100%" }}
               onClick={seekFromPointer}
+              {...dropHandlers}
               role="group"
               aria-label={tl(interactionLocked ? tr("osCzasuTrybNagrywania") : tr("osCzasuKliknijAby"))}
             >
@@ -578,6 +612,17 @@ export function StudioTimeline({
                   </Fragment>
                 );
               })}
+              {dropAtMs != null ? (
+                <div
+                  className="pointer-events-none absolute bottom-0 top-0 z-[6] w-0.5 bg-[var(--brd-green)]"
+                  style={{ left: msToPx(dropAtMs, density) }}
+                  data-testid="studio-timeline-drop"
+                >
+                  <span className="absolute left-1 top-8 whitespace-nowrap rounded-sm bg-[var(--brd-green)] px-1 text-[11px] font-semibold text-black">
+                    {formatStudioTimeMs(dropAtMs)}
+                  </span>
+                </div>
+              ) : null}
               <TimelinePlayhead density={density} scrollRef={laneScrollRef} />
             </div>
           </div>

@@ -86,7 +86,7 @@ import {
   type LanePass,
   type TakeLane,
 } from "@/lib/studio/recording/comping";
-import { barDurationMs, beatDurationMs } from "@/lib/studio/studio-daw-clock";
+import { exactBeatDurationMs } from "@/lib/studio/studio-daw-clock";
 import type { StudioProjectDocument } from "@/lib/studio/studio-types";
 import {
   acquireMicStream,
@@ -271,6 +271,8 @@ export function StudioRecordingPanel({
   onRecordRequestHandled,
   stemLimit = 0,
   trackLimit = 0,
+  droppedStems = null,
+  onDroppedStemsDone,
   onSaveTrackMidi,
   focusRequest = null,
   onFocusRequestHandled,
@@ -342,6 +344,9 @@ export function StudioRecordingPanel({
   stemLimit?: number;
   /** Plan track cap (Bit not counted) — free slots for imported stems. */
   trackLimit?: number;
+  /** Files dropped on the timeline, waiting for confirmation in the stem card. */
+  droppedStems?: { id: number; files: File[]; atMs: number } | null;
+  onDroppedStemsDone?: () => void;
   /** Key clicks become MIDI notes on the armed track. */
   onSaveTrackMidi?: (trackId: string, midi: StudioMidiV1) => void;
   /** "Dodaj" and "Znajdź funkcję": open the pane with this control and scroll to it. */
@@ -490,9 +495,9 @@ export function StudioRecordingPanel({
   );
 
 
-  /** Stem import: put the READY take on its track at 0 ms. */
+  /** Stem import: put the READY take on its track (0 ms, or where the file was dropped). */
   const placeStemTake = useCallback(
-    async (input: { trackId: string; takeId: string }): Promise<{ ok: true } | { ok: false; message: string }> => {
+    async (input: { trackId: string; takeId: string; timelineStartMs?: number }): Promise<{ ok: true } | { ok: false; message: string }> => {
       const result = await enqueuePersistAsync(async () => {
         try {
           const response = await fetch(`/api/studio/projects/${projectId}/record/place`, {
@@ -501,7 +506,7 @@ export function StudioRecordingPanel({
             body: JSON.stringify({
               trackId: input.trackId,
               takeId: input.takeId,
-              timelineStartMs: 0,
+              timelineStartMs: input.timelineStartMs ?? 0,
               expectedDocumentVersion: persistVersionTip.expected(),
             }),
           });
@@ -802,8 +807,9 @@ export function StudioRecordingPanel({
     recordsWithoutAutoAlign(recorderMime());
   const [autoAlignedMs, setAutoAlignedMs] = useState<number | null>(null);
   const laneStore = useTakeLanes(projectId, true);
-  const barMs = barDurationMs(transport.tempoBpm, transport.timeSignatureNum);
-  const beatMs = beatDurationMs(transport.tempoBpm);
+  // Unrounded, and counted from the grid's bar 1: loops and punch lines match the timeline.
+  const beatMs = exactBeatDurationMs(transport.tempoBpm);
+  const barMs = beatMs * (transport.timeSignatureNum > 0 ? transport.timeSignatureNum : 4);
   const section =
     sectionStartMs != null
       ? sectionRange({
@@ -811,6 +817,7 @@ export function StudioRecordingPanel({
           bars: sectionBars,
           barMs,
           timelineLengthMs: transport.timelineLengthMs,
+          originMs: transport.gridOriginMs,
         })
       : null;
   const lines = section ? sectionLines(section, barMs) : [];
@@ -2132,11 +2139,12 @@ export function StudioRecordingPanel({
           transport.setLoop(prevLoop);
           if (!prevMetronome) transport.setMetronomeEnabled(false);
         };
-        align.headMs = barMs;
-        if (section.startMs >= barMs) {
-          transport.seek(section.startMs - barMs);
+        const barLeadMs = Math.round(barMs);
+        align.headMs = barLeadMs;
+        if (section.startMs >= barLeadMs) {
+          transport.seek(section.startMs - barLeadMs);
           transport.setMetronomeEnabled(true);
-          align.prerollMs = barMs;
+          align.prerollMs = barLeadMs;
           align.countdownTarget = section.startMs;
           align.restore = () => {
             if (!prevMetronome) transport.setMetronomeEnabled(false);
@@ -3441,6 +3449,8 @@ export function StudioRecordingPanel({
           stemLimit={stemLimit}
           createStemTrack={createStemTrack}
           placeStemTake={placeStemTake}
+          dropped={droppedStems}
+          onDroppedDone={onDroppedStemsDone}
           disabled={isRecordingBusy(state.phase)}
           onBusyChange={setStemsBusy}
         />

@@ -45,7 +45,8 @@ export function countInDurationMs(
   timeSignatureDen = 4,
 ): number {
   if (bars === 0) return 0;
-  return barDurationMs(bpm, timeSignatureNum, timeSignatureDen) * bars;
+  const beats = timeSignatureNum > 0 ? timeSignatureNum : 4;
+  return Math.round(exactBeatDurationMs(bpm, timeSignatureDen) * beats * bars);
 }
 
 export function countInSeekMs(

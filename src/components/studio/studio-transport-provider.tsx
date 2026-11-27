@@ -110,6 +110,8 @@ export type StudioTransportControlsApi = {
   releaseScratchLive: () => void;
   tempoBpm: number;
   timeSignatureNum: number;
+  /** Timeline position of bar 1 of the grid. */
+  gridOriginMs: number;
   metronomeEnabled: boolean;
   setMetronomeEnabled: (enabled: boolean) => void;
   loopEnabled: boolean;
@@ -795,6 +797,7 @@ export function StudioTransportProvider({
       releaseScratchLive,
       tempoBpm,
       timeSignatureNum,
+      gridOriginMs,
       metronomeEnabled,
       setMetronomeEnabled,
       loopEnabled,
@@ -831,6 +834,7 @@ export function StudioTransportProvider({
       releaseScratchLive,
       tempoBpm,
       timeSignatureNum,
+      gridOriginMs,
       metronomeEnabled,
       loopEnabled,
       loopStartMs,

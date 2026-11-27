@@ -2656,6 +2656,28 @@
     }
   },
   "studio": {
+    "shortcuts": {
+      "tytul": "Keyboard shortcuts",
+      "zamknij": "Close shortcuts",
+      "spacjaKlawisz": "Space",
+      "lubKlik": "mouse wheel",
+      "graj": "Play or pause",
+      "nagraj": "Start and stop recording",
+      "cofnij": "Undo",
+      "ponow": "Redo",
+      "poczatek": "Go to the start",
+      "koniec": "Go to the end",
+      "podziel": "Split the selected clip at the playhead",
+      "usun": "Delete the selected clip",
+      "przesun": "Move the selected clip by 1 ms",
+      "przesun10": "Move by 10 ms",
+      "przesun20": "Move by 20 ms",
+      "przybliz": "Zoom the timeline in or out",
+      "mikser": "Show or hide the mixer",
+      "ekran": "Full screen",
+      "odznacz": "Deselect the clip or close the mixer",
+      "lista": "This list"
+    },
     "sampleLab": {
       "metaTitle": "Sample Lab",
       "tytul": "Sample Lab",
@@ -2920,6 +2942,8 @@
       "snapOff": "OFF"
     },
     "studioEditor": {
+      "skrotyKlawiszowe": "Keyboard shortcuts (?)",
+      "upuszczanieBezStemow": "Dragging files onto the timeline comes with plans that include stem import. Use “Import vocal” for a single vocal.",
       "sciezkiNiskie": "Tracks: low",
       "sciezkiWysokie": "Tracks: tall",
       "przyciaganieUderzenie": "to the beat",
@@ -4941,6 +4965,10 @@
       "punkt": "Point {n}: {v}"
     },
     "stemImport": {
+      "upuszczone": "Dropped files. Each goes to its own track from {czas}.",
+      "upuszczonePrawa": "Tick the rights statement above first.",
+      "importujUpuszczone": "Import dropped files",
+      "anuluj": "Cancel",
       "tytul": "Import stems",
       "limit": "up to {n} tracks on your plan",
       "opis": "Pick several WAV or MP3 files at once (up to 4 minutes, up to 48 MB). Each one lands on its own track from the start of the timeline, and I guess the role from the file name.",

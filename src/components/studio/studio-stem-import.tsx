@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useLibText } from "@/i18n/use-lib-text";
 
 import { Button } from "@/components/ui/button";
+import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import { uploadStemBlob } from "@/lib/takes/client-upload";
 import { gateStemFile, guessStemRole, planStemImport, STEM_IMPORT_ACCEPT, stemTrackName } from "@/lib/takes/stem-import-client";
 
@@ -21,15 +22,18 @@ type Props = {
   stemLimit: number;
   /** Add a track named after the file; the panel runs it through the shared persist queue. */
   createStemTrack: (input: { name: string; role: string }) => Promise<StepResult>;
-  /** Put the READY take on that track at the start of the timeline. */
-  placeStemTake: (input: { trackId: string; takeId: string }) => Promise<StepResult>;
+  /** Put the READY take on that track (at the start of the timeline unless given). */
+  placeStemTake: (input: { trackId: string; takeId: string; timelineStartMs?: number }) => Promise<StepResult>;
+  /** Files dropped on the timeline: they wait here for the rights statement and a confirming press. */
+  dropped?: { id: number; files: File[]; atMs: number } | null;
+  onDroppedDone?: () => void;
   disabled?: boolean;
   /** Import in flight: the host keeps this card mounted and guards leaving the page. */
   onBusyChange?: (busy: boolean) => void;
 };
 
 /** Silver/Gold: import several audio files at once; each becomes a track on the timeline. */
-export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTrack, placeStemTake, disabled = false, onBusyChange }: Props) {
+export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTrack, placeStemTake, dropped = null, onDroppedDone, disabled = false, onBusyChange }: Props) {
   const tl = useLibText();
   const t = useTranslations("studio.stemImport");
   const id = useId();
@@ -42,7 +46,7 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
 
   const patch = (rowId: number, next: Partial<Row>) => setRows((cur) => cur.map((r) => (r.id === rowId ? { ...r, ...next } : r)));
 
-  async function importFiles(list: FileList) {
+  async function importFiles(list: ArrayLike<File>, timelineStartMs = 0) {
     const files = Array.from(list);
     const plan = planStemImport(files, freeSlots);
     setSkipped(plan.rejected);
@@ -69,9 +73,9 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
             continue;
           }
           patch(rowId, { state: "placing" });
-          let placed = await placeStemTake({ trackId: track.trackId, takeId: uploaded.takeId });
+          let placed = await placeStemTake({ trackId: track.trackId, takeId: uploaded.takeId, timelineStartMs });
           // One more try before leaving an empty track (a busy save queue is the usual cause).
-          if (!placed.ok) placed = await placeStemTake({ trackId: track.trackId, takeId: uploaded.takeId });
+          if (!placed.ok) placed = await placeStemTake({ trackId: track.trackId, takeId: uploaded.takeId, timelineStartMs });
           patch(rowId, placed.ok ? { state: "done" } : { state: "failed", message: placed.message });
         } catch (e) {
           patch(rowId, { state: "failed", message: e instanceof Error && e.message ? e.message : t("blad") });
@@ -98,6 +102,36 @@ export function StudioStemImport({ projectId, freeSlots, stemLimit, createStemTr
         <input type="checkbox" className="mt-0.5" checked={rights} disabled={busy} onChange={(e) => setRights(e.target.checked)} />
         <span>{t("prawa")}</span>
       </label>
+      {dropped ? (
+        <div className="space-y-1 rounded border border-[var(--brd-amber)] p-2 text-xs" data-testid="studio-stem-dropped" role="status">
+          <p className="font-medium">{t("upuszczone", { czas: formatStudioTimeMs(dropped.atMs) })}</p>
+          <ul>
+            {dropped.files.map((file, n) => (
+              <li key={n} className="break-all">{file.name}</li>
+            ))}
+          </ul>
+          {rights ? null : <p className="text-[var(--brd-mute)]">{t("upuszczonePrawa")}</p>}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              className="min-h-11"
+              data-testid="studio-stem-dropped-import"
+              disabled={disabled || busy || freeSlots < 1 || !rights}
+              onClick={() => {
+                const { files, atMs } = dropped;
+                onDroppedDone?.();
+                void importFiles(files, atMs);
+              }}
+            >
+              {t("importujUpuszczone")}
+            </Button>
+            <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => onDroppedDone?.()}>
+              {t("anuluj")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
       <input
         ref={inputRef}
         type="file"

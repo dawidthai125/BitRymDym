@@ -68,9 +68,9 @@ describe("stem import — wiring", () => {
     const editor = read("src/components/studio/studio-editor.tsx");
     expect(editor).toContain("stemLimit={maxStemsForTier(trackCapacity.premiumTier)}");
   });
-  it("stems are placed at 0 ms through the shared persist queue", () => {
+  it("stems are placed at 0 ms, or where they were dropped, through the shared persist queue", () => {
     const panel = read("src/components/studio/studio-recording-panel.tsx");
-    expect(panel).toContain("timelineStartMs: 0");
+    expect(panel).toContain("timelineStartMs: input.timelineStartMs ?? 0");
     expect(panel).toContain("/stems/track");
   });
   it("track route is gated by plan and uses the CAS services", () => {

@@ -171,6 +171,7 @@ export function StudioTextGroup(props: MarkersProps) {
           onSeek={props.onSeek}
           onDocumentVersionAck={ack}
           tempoBpm={props.tempoBpm}
+          gridOriginMs={props.gridOriginMs}
         />
       </StudioGroupSection>
     </div>
