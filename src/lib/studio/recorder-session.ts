@@ -45,6 +45,8 @@ export type RecorderSession = {
   beatGainDb: number;
   beatPan: number;
   beatMuted: boolean;
+  /** "Tempo bitu" of the recorder: heard length / file length, 1 = normal. */
+  beatStretch: number;
   tracks: RecorderSessionTrack[];
 };
 
@@ -141,6 +143,7 @@ export function parseRecorderSession(raw: unknown): RecorderSession | null {
     beatGainDb: Math.round(clampGain(beat.gainDb) * 100) / 100,
     beatPan: Math.round(clampPan(beat.pan) * 1000) / 1000,
     beatMuted: Boolean(beat.muted),
+    beatStretch: typeof beat.stretch === "number" && beat.stretch >= 0.8 && beat.stretch < 1 ? beat.stretch : 1,
     tracks,
   };
 }
@@ -157,6 +160,11 @@ export function sessionChecklist(session: RecorderSession): string[] {
   const lines = [
     `Bit (zostaje u Ciebie, nie jedzie na stronę): ${session.beatFileName || "niepodany"}, ${clockText(session.beatSeconds)}, ${session.beatGainDb >= 0 ? "+" : ""}${Math.round(session.beatGainDb)} dB, ${panText(session.beatPan)}${session.beatMuted ? ", wyciszony" : ""}.`,
   ];
+  if (session.beatStretch !== 1) {
+    lines.push(
+      `Wokal jest nagrany pod bit przyspieszony o ${Math.round((1 / session.beatStretch - 1) * 100)}% (szybciej i wyżej, jak taśma). Bit w normalnym tempie nie będzie pasował.`,
+    );
+  }
   for (const track of session.tracks) {
     const start = track.clips[0]?.start ?? 0;
     const role = track.role === "podbicie" ? "podbicie / adlib" : "wokal";

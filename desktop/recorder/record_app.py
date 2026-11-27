@@ -51,6 +51,7 @@ import urllib.request
 from pathlib import Path
 
 import auto_align
+import beat_speed
 import countin
 import offline_session
 import win_output
@@ -1179,6 +1180,7 @@ def mix_argv(
     beat_gain_db: float = 0.0,
     beat_pan: float = 0.0,
     clicks: tuple[Path, float] | None = None,
+    beat_stretch: float = 1.0,
 ) -> list[str]:
     """Beat from beat_start (the cursor) plus vocal tracks already rendered from the same point.
 
@@ -1187,10 +1189,12 @@ def mix_argv(
     argv = [ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin"]
     stems: list[tuple[float, float]] = []
     if beat:
-        if beat_start > 0:
-            argv.extend(["-ss", f"{beat_start:.3f}"])
+        # -ss and -t are times in the beat file; beat_start is on the timeline, where a faster beat is shorter.
+        file_start = beat_start / beat_stretch
+        if file_start > 0:
+            argv.extend(["-ss", f"{file_start:.3f}"])
         if isinstance(limit, int) and limit > 0:
-            argv.extend(["-t", str(max(1, int(math.ceil(limit - beat_start))))])
+            argv.extend(["-t", str(max(1, int(math.ceil(limit - file_start))))])
         if "://" in beat:
             # A dead connection ends the mix instead of hanging it (microseconds).
             argv.extend(["-rw_timeout", "20000000"])
@@ -1207,8 +1211,9 @@ def mix_argv(
     for index, (volume, pan) in enumerate(stems):
         left, right = pan_gains(pan)
         tag = f"a{index}"
+        faster = beat_speed.audio_filter(beat_stretch) if beat and index == 0 else ""
         bodies.append(
-            f"[{index}:a]aformat=channel_layouts=mono,{wait}volume={volume:.4f},"
+            f"[{index}:a]aformat=channel_layouts=mono,{faster}{wait}volume={volume:.4f},"
             f"pan=stereo|c0={left:.4f}*c0|c1={right:.4f}*c0[{tag}]"
         )
         tags.append(f"[{tag}]")
@@ -1907,6 +1912,9 @@ class RecorderWindow:
         self._live_canvas: tk.Canvas | None = None
         self._live_wave_at = 0.0
         self._beat_peaks: list[list[float]] = []
+        # "Tempo bitu": heard length / file length, 1 = normal. Asked once per project when there are takes.
+        self.beat_stretch = 1.0
+        self._speed_confirmed = False
         self._beat_peak_path = ""
         self._beat_wave_token = 0
         self.capture: subprocess.Popen[bytes] | None = None
@@ -2579,6 +2587,14 @@ class RecorderWindow:
         self.beat_mute.pack(side="right")
         self.beat_name = tk.Label(head, text="—", bg=PANEL, fg=INK, font=(FONT_UI, 9), anchor="w")
         self.beat_name.pack(fill="x", padx=8)
+        pace = tk.Frame(head, bg=PANEL)
+        pace.pack(fill="x", padx=8, pady=(4, 0))
+        tk.Label(pace, text="TEMPO", bg=PANEL, fg=AMBER, font=(FONT_META, 8)).pack(side="left", padx=(0, 4))
+        self._tool(pace, "−", lambda: self.step_beat_speed(-1), INK, size=11).pack(side="left")
+        self.speed_label = tk.Label(pace, text="1×", bg=PANEL, fg=INK, font=(FONT_META, 9), width=13)
+        self.speed_label.pack(side="left")
+        self._tool(pace, "+", lambda: self.step_beat_speed(1), INK, size=11).pack(side="left")
+        self._tool(pace, "1×", lambda: self.set_beat_speed(1.0), SOFT, size=9).pack(side="left", padx=(4, 0))
         gain = tk.Frame(head, bg=PANEL)
         gain.pack(fill="x", padx=8, pady=(4, 0))
         tk.Label(gain, text="dB", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
@@ -2829,6 +2845,47 @@ class RecorderWindow:
         if not self._mute_in_place():
             self._schedule_remix(40)
 
+    def _speed_base_bpm(self) -> float:
+        """BPM of the beat file: from the catalogue, offline the one typed by the user. 0 = unknown."""
+        if self.studio_mode == "offline":
+            return offline_tempo(self.tempo_var.get())
+        return float(self._beat_file_meta()[1])
+
+    def _sync_speed_label(self) -> None:
+        if hasattr(self, "speed_label"):
+            self.speed_label.configure(text=beat_speed.label(self._speed_base_bpm(), self.beat_stretch))
+
+    def step_beat_speed(self, direction: int) -> None:
+        self.set_beat_speed(beat_speed.step(self.beat_stretch, self._speed_base_bpm(), direction))
+
+    def set_beat_speed(self, stretch: float) -> None:
+        """Faster and higher, like a tape (up to +25%). Not during a take or while a take is being lined up."""
+        if self._busy() or self._waits_for_align():
+            return
+        if not self._beat_file_meta()[0]:
+            self.status.set("Najpierw wybierz bit.")
+            return
+        if stretch == self.beat_stretch:
+            return
+        recorded = any(track.clips for track in self.tracks)
+        if recorded and not self._speed_confirmed:
+            if not messagebox.askyesno(
+                "Tempo bitu", "Masz już nagrania na ścieżkach. Po zmianie tempa nie będą pasować do bitu.\n\nZmienić tempo?",
+                parent=self.root,
+            ):
+                return
+            self._speed_confirmed = True
+        if self.playing:
+            self.stop()
+        self.beat_stretch = stretch
+        self._save_desk()
+        self._sync_beat_button()
+        self._paint_all()
+        self.status.set(
+            "Bit gra w normalnym tempie." if stretch == 1
+            else f"Tempo bitu: {beat_speed.label(self._speed_base_bpm(), stretch)}. Bit gra szybciej i wyżej, jak taśma."
+        )
+
     def _mute_in_place(self) -> bool:
         """Only the beat plays and no other change is on its way: the sound goes silent and comes back at once."""
         player = self.monitor
@@ -2925,7 +2982,14 @@ class RecorderWindow:
 
         self.root.after(0, apply)
 
-    def _beat_meta(self) -> tuple[str, int, float]:
+    def _beat_meta(self) -> tuple[str, float, float]:
+        """(title, BPM, seconds) as heard, so at the chosen beat speed."""
+        title, bpm, seconds = self._beat_file_meta()
+        if self.beat_stretch == 1:
+            return (title, bpm, seconds)
+        return (title, beat_speed.heard_bpm(bpm, self.beat_stretch), seconds * self.beat_stretch)
+
+    def _beat_file_meta(self) -> tuple[str, int, float]:
         if self.studio_mode == "offline":
             name = offline_session.file_title(self.local_beat_path) if self.local_beat_path else ""
             return (name, 0, self.local_beat_seconds)
@@ -2941,10 +3005,12 @@ class RecorderWindow:
             empty = "Własny bit z pliku ▾" if self.studio_mode == "offline" else "Wybierz bit z katalogu ▾"
             self.beat_button.configure(text=empty)
             self.beat_name.configure(text=empty[:-2] if empty.endswith(" ▾") else empty)
+            self._sync_speed_label()
             return
         short = title if len(title) <= 34 else title[:33] + "…"
         self.beat_button.configure(text=f"{short} ▾")
-        parts = [f"{bpm} BPM" if bpm else "", f"{int(seconds // 60)}:{int(seconds % 60):02d}" if seconds else ""]
+        parts = [f"{bpm:g} BPM" if bpm else "", f"{int(seconds // 60)}:{int(seconds % 60):02d}" if seconds else ""]
+        self._sync_speed_label()
         self.beat_name.configure(text="  ".join(part for part in [short, *parts] if part))
 
     def pick_beat(self) -> None:
@@ -2997,6 +3063,8 @@ class RecorderWindow:
         search.focus_set()
 
     def _choose_beat(self, label: str) -> None:
+        if label != self.beat_var.get():
+            self.beat_stretch = 1.0
         self.beat_var.set(label)
         self._pref_beat = label
         self._save_prefs()
@@ -3014,6 +3082,8 @@ class RecorderWindow:
             self._use_local_beat(path)
 
     def _use_local_beat(self, path: str) -> None:
+        if path != self.local_beat_path:
+            self.beat_stretch = 1.0
         self.local_beat_path = path
         self.local_beat_seconds = 0.0
         self._beat_peaks = []
@@ -3300,7 +3370,7 @@ class RecorderWindow:
         if series:
             self._stroke_channels(
                 canvas, max(0.0, x1), min(float(width), x2), wave_top, wave_bottom, "#f3d7a1", "beatwave",
-                [(lambda t, row=row: self._level_at(row, t)) for row in series],
+                [(lambda t, row=row, pace=1 / self.beat_stretch: self._level_at(row, t * pace)) for row in series],
             )
         else:
             canvas.create_line(x1, mid, x2, mid, fill="#8a6326")
@@ -3838,6 +3908,7 @@ class RecorderWindow:
             "beatMuted": self.beat_muted,
             "beatGainDb": self.beat_gain_db,
             "beatPan": self.beat_pan,
+            "beatStretch": self.beat_stretch,
             "tracks": [
                 {
                     "name": track.name,
@@ -3869,6 +3940,8 @@ class RecorderWindow:
         self.sel = None
         self.local_beat_path = ""
         self.local_beat_seconds = 0.0
+        self.beat_stretch = 1.0
+        self._speed_confirmed = False
         try:
             raw = json.loads(self._desk_path().read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -3910,6 +3983,7 @@ class RecorderWindow:
                 self.beat_muted = bool(raw["beatMuted"])
             self.beat_gain_db = offline_session.clamp_gain(raw.get("beatGainDb"))
             self.beat_pan = offline_session.clamp_pan(raw.get("beatPan"))
+            self.beat_stretch = beat_speed.clean(raw.get("beatStretch"))
             if self.studio_mode == "offline":
                 local = raw.get("localBeat")
                 if isinstance(local, str):
@@ -3973,6 +4047,8 @@ class RecorderWindow:
         self.beat_muted = False
         self.beat_gain_db = 0.0
         self.beat_pan = 0.0
+        self.beat_stretch = 1.0
+        self._speed_confirmed = False
         self.title_var.set("Nagranie z komputera")
         if hasattr(self, "beat_gain_scale"):
             self.beat_gain_scale.set(0)
@@ -4384,14 +4460,14 @@ class RecorderWindow:
                 clicks = None
         target, limit, note = heard
         beat = target
-        if beat is not None and limit and start >= limit:
+        if beat is not None and limit and start >= limit * self.beat_stretch:
             beat = None
             note = f"Podgląd bitu ma tylko {limit} s, dalej gra bez bitu."
         if not (no_beat and record_to is not None) and (beat is not None or vocals or clicks is not None):
             try:
                 argv = mix_argv(
                     ffmpeg_exe(), beat, vocals, limit, beat_start=start,
-                    beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan, clicks=clicks,
+                    beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan, beat_stretch=self.beat_stretch, clicks=clicks,
                 )
                 feed = self._warm_mix(argv, lambda: token == self._play_token)
             except Exception as problem:
@@ -4404,7 +4480,7 @@ class RecorderWindow:
                 elif not error:
                     error = "Nie dało się złożyć odsłuchu."
         lead = clicks[1] if clicks is not None else 0.0
-        until = (float(limit) if limit else float("inf")) if beat is not None and feed is not None else 0.0
+        until = (float(limit) * self.beat_stretch if limit else float("inf")) if beat is not None and feed is not None else 0.0
         beat_only = beat is not None and feed is not None and not vocals
         self.root.after(
             0, lambda: self._start_play(token, start, feed, lead, bpm, record_to, note, error, no_beat, until, beat_only, self._play_mix if record_to is None else ())
@@ -4485,13 +4561,14 @@ class RecorderWindow:
         if self.studio_mode == "offline":
             # A file header can promise more than there is. The decoded wave is the real length.
             length = len(self._beat_peaks[0]) / 100.0 if self._beat_peaks and self._beat_peak_path == self.local_beat_path else 0.0
+            length *= self.beat_stretch
         self._beat_until = min(until, length)
         self._mix_beat_only = beat_only
         self._await_mic(token, start, feed, lead, note, time.monotonic() + MIC_OPEN_SECONDS)
 
     def _mix_settings(self) -> tuple[object, ...]:
         return (
-            self.beat_muted, self.beat_gain_db, self.beat_pan,
+            self.beat_muted, self.beat_gain_db, self.beat_pan, self.beat_stretch,
             *((track.muted, track.solo, track.gain_db, track.pan) for track in self.tracks),
         )
 
@@ -4752,7 +4829,7 @@ class RecorderWindow:
         if any(self._take_beat) and self.mix_was_on and (whole or not died):
             self._aligning += 1
             threading.Thread(
-                target=self._measure_take, args=(clip, base, self._take_beat, self._take_key), daemon=True
+                target=self._measure_take, args=(clip, base, self._take_beat, self._take_key, self.beat_stretch), daemon=True
             ).start()
 
     def _output_name(self) -> str:
@@ -4965,7 +5042,7 @@ class RecorderWindow:
         self._learn_delay(key, lag / 1000)
         self.status.set(f"Opóźnienie {lag:.0f} ms zapamiętane dla tego mikrofonu i odsłuchu. Następne nagrania będą równo z bitem.")
 
-    def _measure_take(self, clip: Clip, base: float, beat: tuple[str, str], key: str) -> None:
+    def _measure_take(self, clip: Clip, base: float, beat: tuple[str, str], key: str, stretch: float = 1.0) -> None:
         """The real delay of this take from the beat that leaked into the microphone. Off the Tk thread."""
         lag: float | None = None
         try:
@@ -4974,7 +5051,8 @@ class RecorderWindow:
             if target:
                 done = subprocess.run(
                     [
-                        ffmpeg_exe(), "-hide_banner", "-loglevel", "error", "-nostdin", "-ss", f"{clip.start:.3f}", "-i", target,
+                        ffmpeg_exe(), "-hide_banner", "-loglevel", "error", "-nostdin", "-ss", f"{clip.start / stretch:.3f}", "-i", target,
+                        *(["-af", beat_speed.audio_filter(stretch).rstrip(",")] if stretch != 1 else []),
                         "-t", str(auto_align.MAX_SECONDS + 1), "-ac", "1", "-ar", str(auto_align.RATE), "-f", "f32le", "pipe:1",
                     ],
                     stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=20, check=False,
@@ -5427,6 +5505,7 @@ class RecorderWindow:
             tracks=rows,
             beat_pan=self.beat_pan,
             beat_bpm=offline_tempo(self.tempo_var.get()),
+            beat_stretch=self.beat_stretch,
             saved_at=datetime.now().astimezone().isoformat(timespec="seconds"),
         )
         built = document.get("tracks")
@@ -5669,6 +5748,8 @@ class RecorderWindow:
             self.beat_gain_db = offline_session.clamp_gain(beat.get("gainDb"))
             self.beat_pan = offline_session.clamp_pan(beat.get("pan"))
             self.beat_muted = bool(beat.get("muted"))
+            self.beat_stretch = beat_speed.clean(beat.get("stretch"))
+            self._speed_confirmed = False
             if isinstance(beat.get("durationSeconds"), (int, float)):
                 self.local_beat_seconds = max(0.0, float(beat["durationSeconds"]))
         self.local_beat_path = ""
@@ -5793,6 +5874,9 @@ class RecorderWindow:
                 else:
                     save_pending(state)
             if state is not None:
+                if finish is None:
+                    # These takes were recorded to the speed set now.
+                    state.beat_stretch = self.beat_stretch
                 title, beat_id = state.title, state.beat_id
             resume = state
             send_id = state.send_id if state is not None and state.send_id else active_send_id
@@ -5812,6 +5896,7 @@ class RecorderWindow:
                 starts_ms=starts,
                 send_id=send_id,
                 account=account,
+                beat_stretch=resume.beat_stretch if resume is not None else self.beat_stretch,
                 progress=self._upload_say,
                 resume=resume,
                 on_state=self._remember_state,
@@ -6690,7 +6775,7 @@ class RecorderWindow:
         """Tempo of the count-in: the catalog beat's, offline the one typed next to it. 0 means unknown."""
         if self.studio_mode != "offline":
             return float(self._beat_meta()[1])
-        return offline_tempo(self.tempo_var.get())
+        return beat_speed.heard_bpm(offline_tempo(self.tempo_var.get()), self.beat_stretch)
 
     def _option_chosen(self, variable: tk.StringVar, value: str) -> None:
         variable.set(value)
@@ -6896,14 +6981,14 @@ class RecorderWindow:
             vocals = self._render_for_play(plan, head)
             target, limit, _note = heard
             beat = target
-            if beat is not None and limit and head >= limit:
+            if beat is not None and limit and head >= limit * self.beat_stretch:
                 beat = None
             if (beat_id or local) and target is None:
                 raise RuntimeError(heard[2] or "Bit się nie wczytał.")
             if beat is not None or vocals:
                 argv = mix_argv(
                     ffmpeg_exe(), beat, vocals, limit, beat_start=head,
-                    beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan,
+                    beat_gain_db=self.beat_gain_db, beat_pan=self.beat_pan, beat_stretch=self.beat_stretch,
                 )
                 feed = self._warm_mix(argv, lambda: token == self._remix_token, "_warm_remix")
                 if feed is None:

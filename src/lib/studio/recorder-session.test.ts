@@ -83,3 +83,19 @@ describe("parseRecorderSession", () => {
     expect(SITE_GOLD_TRACKS).toBe(16);
   });
 });
+
+describe("Tempo bitu in the offline project", () => {
+  it("tells that the vocals were recorded to a faster Bit", () => {
+    const fast = parseRecorderSession({ ...sample, beat: { ...sample.beat, stretch: 0.9091 } });
+    expect(fast?.beatStretch).toBe(0.9091);
+    expect(sessionChecklist(fast!).join(" ")).toContain("przyspieszony o 10%");
+  });
+
+  it("says nothing at normal speed or for an older file", () => {
+    for (const beat of [sample.beat, { ...sample.beat, stretch: 1 }, { ...sample.beat, stretch: 0.5 }]) {
+      const session = parseRecorderSession({ ...sample, beat });
+      expect(session?.beatStretch).toBe(1);
+      expect(sessionChecklist(session!).join(" ")).not.toContain("przyspieszony");
+    }
+  });
+});

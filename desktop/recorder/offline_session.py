@@ -14,6 +14,7 @@ import re
 import subprocess
 import zipfile
 import zlib
+import beat_speed
 from pathlib import Path
 
 from desk import write_atomic
@@ -262,6 +263,7 @@ def build_session(
     saved_at: str,
     beat_pan: float = 0.0,
     beat_bpm: float = 0.0,
+    beat_stretch: float = 1.0,
 ) -> dict[str, object]:
     """Portable document. Beat audio is never copied in. Stem names are files beside this JSON."""
     beat_name = file_title(beat_file_name) if beat_file_name else ""
@@ -303,6 +305,7 @@ def build_session(
             "gainDb": round(clamp_gain(beat_gain_db), 2),
             "pan": round(clamp_pan(beat_pan), 3),
             "bpm": round(beat_bpm, 2) if 20 <= beat_bpm <= 400 else 0,
+            "stretch": beat_speed.clean(beat_stretch),
             "muted": bool(beat_muted),
             "included": False,
         },
@@ -334,6 +337,7 @@ def parse_session(raw: object) -> dict[str, object] | None:
         tracks=[item for item in tracks if isinstance(item, dict)],
         beat_pan=clamp_pan(beat.get("pan")),
         beat_bpm=float(beat.get("bpm") or 0.0) if _is_number(beat.get("bpm")) else 0.0,
+        beat_stretch=beat_speed.clean(beat.get("stretch")),
         saved_at=str(raw.get("savedAt") or ""),
     )
     note = raw.get("rights")

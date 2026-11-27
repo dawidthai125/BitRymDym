@@ -12,6 +12,7 @@ import socket
 import urllib.error
 import urllib.request
 import wave
+import beat_speed
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable
@@ -333,6 +334,9 @@ class UploadState:
     loose_take: str = ""
     # Account e-mail of the send. Another account must not continue it.
     account: str = ""
+    # "Tempo bitu" of the send (heard / file length) and the Bit clip length at normal speed, once read.
+    beat_stretch: float = 1.0
+    beat_clip_ms: int = 0
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -358,6 +362,8 @@ class UploadState:
                 send_id=str(raw.get("send_id") or ""),
                 account=str(raw.get("account") or ""),
                 loose_take=str(raw.get("loose_take") or ""),
+                beat_stretch=beat_speed.clean(raw.get("beat_stretch")),
+                beat_clip_ms=int(raw.get("beat_clip_ms") or 0),
             )
         except (KeyError, TypeError, ValueError):
             return None
@@ -409,6 +415,22 @@ def send_one_take(client: Any, beat_id: str, wav: bytes, loose: Callable[[str], 
     return take_id
 
 
+def _set_beat_speed(client: Any, state: "UploadState", say: Callable[[str], None], saved: Callable[["UploadState"], None]) -> None:
+    """The Studio project gets the speed the takes were recorded to. Before any take is placed on it."""
+    if state.beat_stretch == 1 and not state.beat_clip_ms:
+        return
+
+    def remember(clip_ms: int) -> None:
+        state.beat_clip_ms = clip_ms
+        saved(state)
+
+    say("Ustawiam tempo bitu w projekcie.")
+    state.version = beat_speed.apply_to_project(
+        client, state.project_id, state.version, state.beat_stretch, state.beat_clip_ms, remember
+    )
+    saved(state)
+
+
 def empty_project_state(client: Any, old: "UploadState", title: str, wav_paths: list[str], track_of: list[int], starts_ms: list[int]) -> "UploadState | None":
     """The project of a send that placed nothing, taken over by a new arrangement of the same beat.
 
@@ -442,7 +464,7 @@ def empty_project_state(client: Any, old: "UploadState", title: str, wav_paths: 
 def restarted_state(state: "UploadState") -> "UploadState":
     """The project is gone from the account: the same recordings, sent from the start next time."""
     return replace(
-        state, project_id="", version=0, track_ids=[], take_ids=[], placed=0, fx_done=0,
+        state, project_id="", version=0, track_ids=[], take_ids=[], placed=0, fx_done=0, beat_clip_ms=0,
         # A send that placed something stays bound to that project. The next try claims another.
         send_id="" if state.placed else state.send_id,
     )
@@ -501,6 +523,7 @@ def upload_vocals(
     starts_ms: list[int] | None = None,
     send_id: str = "",
     account: str = "",
+    beat_stretch: float = 1.0,
 ) -> str:
     """One project.
 
@@ -537,7 +560,9 @@ def upload_vocals(
     clip_mode = track_of is not None
     noun = "klip" if clip_mode else "ścieżkę"
     if clip_mode:
-        return _upload_timeline(client, title, beat_id, wav_paths, blobs, lanes, starts, chain, say, saved, resume, send_id, account)
+        return _upload_timeline(
+            client, title, beat_id, wav_paths, blobs, lanes, starts, chain, say, saved, resume, send_id, account, beat_stretch
+        )
     if resume is None:
         say("Tworzę projekt na koncie.")
         document = client.create_project(title, beat_id)
@@ -551,6 +576,7 @@ def upload_vocals(
             track_of=lanes if clip_mode else [],
             starts_ms=starts if clip_mode else [],
             send_id=send_id,
+            beat_stretch=beat_stretch,
         )
         saved(state)
     else:
@@ -558,6 +584,7 @@ def upload_vocals(
         state = _with_send(resume, send_id)
     pid = state.project_id
     try:
+        _set_beat_speed(client, state, say, saved)
         while len(state.track_ids) < track_count:
             say(f"Dodaję ścieżkę wokalu {len(state.track_ids) + 1} z {track_count}.")
             added_id, state.version = client.add_vocal_track(pid, state.version)
@@ -611,6 +638,7 @@ def _upload_timeline(
     resume: UploadState | None,
     send_id: str = "",
     account: str = "",
+    beat_stretch: float = 1.0,
 ) -> str:
     """One recorder send: project, tracks, then each take uploaded and placed at once."""
     if resume is not None:
@@ -626,6 +654,7 @@ def _upload_timeline(
         starts_ms=list(starts),
         send_id=send_id,
         account=account,
+        beat_stretch=beat_stretch,
     )
     track_count = max(lanes) + 1
     # Project first, then take by take: each take is placed at once, so loose READY takes
@@ -643,6 +672,7 @@ def _upload_timeline(
         saved(state)
     pid = state.project_id
     try:
+        _set_beat_speed(client, state, say, saved)
         while len(state.track_ids) < track_count:
             say(f"Dodaję ścieżkę wokalu {len(state.track_ids) + 1} z {track_count}.")
             added_id, state.version = client.add_vocal_track(pid, state.version)

@@ -6,6 +6,11 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-27 (52) — Nagrywarka 2026.11.48: Tempo bitu
+
+- Program Windows (Studio Online i Offline): przyspieszenie bitu do +25% jak taśma, zapis w projekcie, to samo tempo w projekcie wysłanym do Studia. Lista z pliku sesji offline na stronie mówi o przyspieszonym bicie.
+- Sprawdzone: testy programu (w tym okno), testy strony, uderzenia w mixie programu do 1,2 ms od oczekiwanych. Nie sprawdzone: mikrofon i wysyłka na prawdziwym komputerze.
+
 ## 2026-11-27 (51) — Studio: Tempo bitu
 
 - Ścieżka BIT ma „Tempo bitu”: przyspieszenie do +25% jak taśma (rośnie też tonacja), na wszystkich planach. Serwer przepuszcza zmianę wysokości tylko dla tej pary na klipie bitu.
